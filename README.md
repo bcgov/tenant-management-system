@@ -1,3 +1,4 @@
+<!--
 [![MIT License](https://img.shields.io/github/license/bcgov/quickstart-openshift.svg)](/LICENSE)
 [![Lifecycle](https://img.shields.io/badge/Lifecycle-Experimental-339999)](https://github.com/bcgov/repomountie/blob/master/doc/lifecycle-badges.md)
 
@@ -28,9 +29,14 @@ Backend (JavaScript/TypeScript)
 [![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=quickstart-openshift_backend&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=quickstart-openshift_backend)
 [![Technical Debt](https://sonarcloud.io/api/project_badges/measure?project=quickstart-openshift_backend&metric=sqale_index)](https://sonarcloud.io/summary/new_code?id=quickstart-openshift_backend)
 [![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=quickstart-openshift_backend&metric=vulnerabilities)](https://sonarcloud.io/summary/new_code?id=quickstart-openshift_backend)
+-->
 
-# QuickStart for OpenShift
+# Tenant Management System
 
+The Tenant Management System (TMS) manages the tenants using multitenanted
+common components.
+
+<!--
 ## Pull Request-Based Workflows with Sample Stack
 
 The is a fully functional set of [GitHub Actions](https://github.com/bcgov/quickstart-openshift/actions) workflows and a starter application stack intended to help Agile teams hit the ground running.
@@ -257,7 +263,7 @@ Don't forget to add your team members!
 3. Use the search box to find people or teams
 4. Choose a role (read, triage, write, maintain, admin)
 5. Click Add
-
+-->
 # Workflows
 
 ## Pull Request
@@ -397,11 +403,13 @@ After a full workflow run and merge can been run, please do the following:
 6. Run npx prisma generate to generate the prisma client which will have all the entities populated based on fresh prisma schema.
 7. if using vscode be aware of [this issue](https://stackoverflow.com/questions/65663292/prisma-schema-not-updating-properly-after-adding-new-fields)
 
+<!--
 # Resources
 
 This repository is provided by NRIDS Architecture and Forestry Digital Services, courtesy of the Government of British Columbia.
 
 * NRID's [Kickstarter Guide](https://bcgov.github.io/nr-architecture-patterns-library/docs/Agile%20Team%20Kickstarter) (via. Confluence, links may be internal)
+-->
 
 ## Architecture
 ![Architecture](./.diagrams/architecture/arch.drawio.svg)
