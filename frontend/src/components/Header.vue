@@ -1,4 +1,6 @@
 <script setup lang="ts">
+// TODO: component names must be more than one word
+
 // Import necessary functions and refs from Vue and Keycloak service
 import { ref } from 'vue'
 import { logout, isLoggedIn as checkIsLoggedIn, getUser } from '@/services/keycloak'
