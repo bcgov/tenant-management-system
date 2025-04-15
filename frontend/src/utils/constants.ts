@@ -3,49 +3,49 @@ import type { InjectionKey } from 'vue'
 // TODO: is injection the right way to be doing things?
 // TODO: are these constants or should they be types?
 // Keys for injecting into Vue components
-export const INJECTION_KEYS = {
+export const INJECTION_KEYS = Object.freeze({
   error: Symbol('error') as InjectionKey<(message: string, error?: unknown) => void>,
   log: Symbol('log') as InjectionKey<(message: string) => void>,
   warn: Symbol('warn') as InjectionKey<(message: string) => void>,
-}
+})
 
 // List of ministries
 export const MINISTRIES = Object.freeze([
   'Agriculture and Food',
   'Attorney General',
-  'Crown Agencies and Board Resourcing Office',
+  'BC Elections',
+  'BC Public Service Agency',
+  'Children and Family Development',
+  "Citizens' Services",
   'Compliance & Enforcement Collaborative',
   'Corporate Information and Records Management Office',
-  "Citizens' Services",
+  'Crown Agencies and Board Resourcing Office',
   'Education and Child Care',
-  'Energy and Climate Solutions',
   'Emergency Management and Climate Readiness',
+  'Energy and Climate Solutions',
   'Environment and Parks',
-  'BC Elections',
   'Finance',
   'Forests',
   'Government Communications and Public Engagement',
-  'Housing and Municipal Affairs',
   'Health',
-  'Intergovernmental Relations Secretariat',
-  'Ministry of Infrastructure',
+  'Housing and Municipal Affairs',
   'Indigenous Relations & Reconciliation',
+  'Infrastructure',
+  'Intergovernmental Relations Secretariat',
   'Jobs, Economic Development and Innovation',
   'Labour',
   'Mining and Critical Materials',
-  'Children and Family Development',
-  'Office of the Comptroller General',
   'Office of the Chief Information Officer',
+  'Office of the Comptroller General',
   'Office of the Premier',
-  'BC Public Service Agency',
-  "Public Sector Employers' Council Secretariat",
   'Post-Secondary Education and Future Skills',
-  'Public Safety and Solicitor General',
   'Provincial Treasury',
+  'Public Safety and Solicitor General',
+  "Public Sector Employers' Council Secretariat",
   'Social Development and Poverty Reduction',
   'Tourism, Arts, Culture and Sport',
-  'Treasury Board Staff',
   'Transportation and Transit',
+  'Treasury Board Staff',
   'Water, Land and Resource Stewardship',
 ])
 

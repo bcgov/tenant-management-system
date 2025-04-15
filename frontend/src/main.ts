@@ -1,7 +1,7 @@
 import '@mdi/font/css/materialdesignicons.css';
 
-import { createApp } from 'vue'
 import { createPinia } from 'pinia'
+import { createApp } from 'vue'
 
 import App from '@/App.vue'
 import BaseSecure from '@/components/BaseSecure.vue'
