@@ -1,5 +1,7 @@
 {
   "dependencies": {
-    "@vue/cli": "^5.0.8"
+    "keycloak-js": "^26.1.5",
+    "uuid": "^11.1.0",
+    "vuetify": "^3.8.1"
   }
 }
