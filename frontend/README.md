@@ -1,61 +1,112 @@
-# frontend
+# Tenant Manager
 
-This template should help get you started developing with Vue 3 in Vite.
+This is the Tenant Manager frontend. It implements a Vue frontend with Keycloak authentication support. The Tenant Manager application allows users to log in using their standard login credentials. Once logged in, they can create a tenancy, search for users in the system to add to that tenancy, and assign roles within the tenancy.
 
-## Recommended IDE Setup
+## Configuration
 
-[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+The Tenant Manager frontend will require some configuration. We will need to configure the application to authenticate using a public client on the Keycloak standard realm. You can get a public client from [this link.](https://bcgov.github.io/sso-requests)
 
-## Type Support for `.vue` Imports in TS
+### Required .env variables
 
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the TypeScript language service aware of `.vue` types.
+| Name                      | Description                       | Example                     |
+| ------------------------- | --------------------------------- | --------------------------- |
+| VITE_KEYCLOAK_URL             | This is the authorization URL for the keycloak realm | https://dev.loginproxy.gov.bc.ca/auth |
+| VITE_KEYCLOAK_REALM           | The realm in the keycloak instance | standard    |
+| VITE_KEYCLOAK_CLIENT_ID | The client id in the realm   | example-client-id                        |
+| VITE_KEYCLOAK_LOGOUT_URL | The logout URL   | https://dev.loginproxy.gov.bc.ca.auth/realms/standard/protocol/openid-connect/logout |
+| VITE_BACKEND_API_URL | The URL of the backend   | localhost:4144                        |
+| VITE_ALLOWED_HOSTS | The URL of the hosts for the front end   | localhost:4173,localhost5173 |
 
-## Customize configuration
-
-See [Vite Configuration Reference](https://vite.dev/config/).
-
-## Project Setup
+### Project setup
 
 ```sh
 npm install
 ```
 
-### Compile and Hot-Reload for Development
+### Compiles and hot-reloads for development
 
 ```sh
-npm run dev
+npm run serve
 ```
 
-### Type-Check, Compile and Minify for Production
-
-```sh
-npm run build
-```
-
-### Run Unit Tests with [Vitest](https://vitest.dev/)
-
-```sh
-npm run test:unit
-```
-
-### Run End-to-End Tests with [Cypress](https://www.cypress.io/)
-
-```sh
-npm run test:e2e:dev
-```
-
-This runs the end-to-end tests against the Vite development server.
-It is much faster than the production build.
-
-But it's still recommended to test the production build with `test:e2e` before deploying (e.g. in CI environments):
+### Compiles and minifies for production
 
 ```sh
 npm run build
-npm run test:e2e
 ```
 
-### Lint with [ESLint](https://eslint.org/)
+### Lints and fixes files
 
 ```sh
 npm run lint
+```
+
+### Openshift Deployment
+
+#### Create secrets in OpenShift
+
+```sh
+oc create secret generic tms-frontend-secrets --from-literal=VITE_KEYCLOAK_URL=https://dev.loginproxy.gov.bc.ca/auth --from-literal=VITE_KEYCLOAK_REALM=standard --from-literal=VITE_KEYCLOAK_CLIENT_ID=my-client-id   --from-literal=VITE_KEYCLOAK_LOGOUT_URL=https://dev.loginproxy.gov.bc.ca/auth/realms/standard/protocol/openid-connect/logout --from-literal=VITE_ALLOWED_HOSTS=localhost:4173 --from-literal=VITE_BACKEND_API_URL=localhost:4144
+```
+
+#### Build and push the Docker image
+
+Create an ImageStream
+
+```sh
+oc create imagestream tms-frontend
+```
+
+Get the registry info
+
+```sh
+oc registry info
+```
+
+Get your password, example output (sha256~123456...)
+
+```sh
+oc whoami -t
+```
+
+Log in to the container registry. Replace REGISTRY_INFO with the earlier obtained registry. Replace YOUR_EMAIL with your email. Replace PASSWORD with the earlier obtained password.
+
+```sh
+docker login REGISTRY_INFO -u YOUR_EMAIL -p PASSWORD
+```
+
+Build and push the image. Replace REGISTRY_INFO with the earlier obtained registry. Replace NAMESPACE with your OpenShift namespace.
+
+```sh
+docker build -t REGISTRY_INFO/NAMESPACE/tms-frontend:latest .
+docker push REGISTRY_INFO/NAMESPACE/tms-frontend:latest
+```
+
+Tag the image
+
+```sh
+oc tag NAMESPACE/tms-frontend:latest tms-frontend:latest
+```
+
+#### Deploy to Openshift
+
+
+Package the Helm chart into a .tgz file
+
+```sh
+helm package devops/chart
+```
+
+Deploy to Openshift, replace NAMESPACE-LICENSEPLATE and replace mycustomdockerhubusername with your DockerHub username. Replace REGISTRY_INFO with the earlier obtained registry. Replace NAMESPACE with your OpenShift namespace
+
+```sh
+helm install tms-frontend ./tms-frontend-0.1.0.tgz --namespace NAMESPACE --set image.repository=REGISTRY_INFO/NAMESPACE/tms-frontend
+```
+
+#### Updating the application
+
+Build and push the Docker image, then upgrade the chart.
+
+```sh
+helm upgrade --install tms-frontend devops/chart --namespace NAMESPACE --set image.repository=REGISTRY_INFO/NAMESPACE/tms-frontend
 ```
