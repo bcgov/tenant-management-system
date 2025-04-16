@@ -1,0 +1,14 @@
+{
+  "configurations": [
+    {
+      "cwd": "${workspaceFolder}/frontend",
+      "name": "TMS Frontend",
+      "outputCapture": "std",
+      "request": "launch",
+      "runtimeArgs": ["run", "dev"],
+      "runtimeExecutable": "npm",
+      "type": "node"
+    }
+  ],
+  "version": "0.2.0"
+}
