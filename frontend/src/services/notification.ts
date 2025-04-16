@@ -11,7 +11,10 @@ const state = reactive<{ notifications: Notification[] }>({
  * @param {string} message - The message to display in the notification.
  * @param {string} [type='success'] - The type of notification ('success', 'error', 'info', etc.).
  */
-const addNotification = (message: string, type: NotificationType = 'success') => {
+const addNotification = (
+  message: string,
+  type: NotificationType = 'success',
+) => {
   const id = Date.now()
   state.notifications.push({ id, message, type })
   setTimeout(() => {
@@ -24,7 +27,9 @@ const addNotification = (message: string, type: NotificationType = 'success') =>
  * @param {number} id - The ID of the notification to remove.
  */
 const removeNotification = (id: number) => {
-  const index = state.notifications.findIndex((notification) => notification.id === id)
+  const index = state.notifications.findIndex(
+    (notification) => notification.id === id,
+  )
   if (index !== -1) {
     state.notifications.splice(index, 1)
   }

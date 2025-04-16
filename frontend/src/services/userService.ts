@@ -8,7 +8,8 @@ import type { User } from '@/types/User'
 
 // Create an instance of axios for user service
 const userService = axios.create({
-  baseURL: import.meta.env.VITE_BACKEND_API_URL || process.env.VITE_BACKEND_API_URL,
+  baseURL:
+    import.meta.env.VITE_BACKEND_API_URL || process.env.VITE_BACKEND_API_URL,
 })
 
 /**
@@ -27,7 +28,10 @@ export const getUserTenants = async (): Promise<Tenant[]> => {
       } else {
         logError('Error fetching user tenants:', error)
       }
-      notificationService.addNotification('Error fetching user tenants', 'error')
+      notificationService.addNotification(
+        'Error fetching user tenants',
+        'error',
+      )
       throw error
     }
   } else {
@@ -43,7 +47,9 @@ export const getUserTenants = async (): Promise<Tenant[]> => {
  * @param {Object} params - The search parameters.
  * @returns {Array} The list of matching IDIR users.
  */
-export const searchIdirUsers = async (params: IdirSearchParameters): Promise<User[]> => {
+export const searchIdirUsers = async (
+  params: IdirSearchParameters,
+): Promise<User[]> => {
   try {
     const response = await userService.get(`/users/bcgovssousers/idir/search`, {
       params,

@@ -15,7 +15,7 @@ function addNotification(notification: Notification) {
 }
 
 function removeNotification(id: string) {
-  const index = state.notifications.findIndex(n => n.id === id)
+  const index = state.notifications.findIndex((n) => n.id === id)
   if (index !== -1) {
     state.notifications.splice(index, 1)
   }

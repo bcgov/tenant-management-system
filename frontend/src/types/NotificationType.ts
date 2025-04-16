@@ -1,1 +1,6 @@
-export type NotificationType = 'error' | 'success' | 'warning' | 'info' | undefined
+export type NotificationType =
+  | 'error'
+  | 'success'
+  | 'warning'
+  | 'info'
+  | undefined

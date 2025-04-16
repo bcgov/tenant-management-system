@@ -17,9 +17,10 @@ export class Tenant {
   }
 
   getAdminUsers(): User[] {
-    return this.users.filter((user) =>
-      Array.isArray(user.roles) &&
-      user.roles.some((role) => role.name === ROLES.ADMIN)
+    return this.users.filter(
+      (user) =>
+        Array.isArray(user.roles) &&
+        user.roles.some((role) => role.name === ROLES.ADMIN),
     )
   }
 }

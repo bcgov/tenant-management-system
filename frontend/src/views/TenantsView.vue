@@ -39,7 +39,12 @@ onMounted(fetchTenants)
     <v-container class="mt-4">
       <v-row>
         <v-col cols="12">
-          <v-btn variant="text" color="primary" prepend-icon="mdi-plus-box" @click="openDialog">
+          <v-btn
+            variant="text"
+            color="primary"
+            prepend-icon="mdi-plus-box"
+            @click="openDialog"
+          >
             Create New Tenant
           </v-btn>
         </v-col>

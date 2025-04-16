@@ -6,7 +6,8 @@ import type { Tenancy } from '@/models/Tenant'
 import type { User } from '@/types/User'
 
 const tenantService = axios.create({
-  baseURL: import.meta.env.VITE_BACKEND_API_URL || process.env.VITE_BACKEND_API_URL,
+  baseURL:
+    import.meta.env.VITE_BACKEND_API_URL || process.env.VITE_BACKEND_API_URL,
 })
 
 function handleError(error: unknown, message: string) {
@@ -58,27 +59,40 @@ export const useTenants = () => {
 
   const getTenantUserRoles = async (tenancyId: string, userId: string) => {
     try {
-      const response = await tenantService.get(`/tenants/${tenancyId}/users/${userId}/roles`)
+      const response = await tenantService.get(
+        `/tenants/${tenancyId}/users/${userId}/roles`,
+      )
       return response.data.data.roles
     } catch (error) {
       handleError(error, 'Error getting tenancy user roles')
     }
   }
 
-  const addTenantUsers = async (tenancyId: string, user: User, roleId?: string) => {
+  const addTenantUsers = async (
+    tenancyId: string,
+    user: User,
+    roleId?: string,
+  ) => {
     try {
       const request: any = { user }
       if (roleId != null) {
         request.role = { id: roleId }
       }
-      const response = await tenantService.post(`/tenants/${tenancyId}/users`, request)
+      const response = await tenantService.post(
+        `/tenants/${tenancyId}/users`,
+        request,
+      )
       return response.data.data
     } catch (error) {
       handleError(error, 'Error adding user to tenancy')
     }
   }
 
-  const assignUserRoles = async (tenancyId: string, userId: string, roleId: string) => {
+  const assignUserRoles = async (
+    tenancyId: string,
+    userId: string,
+    roleId: string,
+  ) => {
     try {
       const response = await tenantService.put(
         `/tenants/${tenancyId}/users/${userId}/roles/${roleId}`,

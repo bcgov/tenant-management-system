@@ -4,7 +4,9 @@ import type { InjectionKey } from 'vue'
 // TODO: are these constants or should they be types?
 // Keys for injecting into Vue components
 export const INJECTION_KEYS = Object.freeze({
-  error: Symbol('error') as InjectionKey<(message: string, error?: unknown) => void>,
+  error: Symbol('error') as InjectionKey<
+    (message: string, error?: unknown) => void
+  >,
   log: Symbol('log') as InjectionKey<(message: string) => void>,
   warn: Symbol('warn') as InjectionKey<(message: string) => void>,
 })

@@ -17,12 +17,7 @@ const emit = defineEmits<{
 
 <template>
   <v-row>
-    <v-col
-      v-for="tenant in tenants"
-      :key="tenant.id"
-      cols="12"
-      md="4"
-    >
+    <v-col v-for="tenant in tenants" :key="tenant.id" cols="12" md="4">
       <TenantCard :tenant="tenant" @click="emit('select', tenant.id)" />
     </v-col>
   </v-row>

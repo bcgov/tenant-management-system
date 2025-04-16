@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { ref, watchEffect } from 'vue'
-import { logout, isLoggedIn as checkIsLoggedIn, getUser } from '@/services/keycloak'
+import {
+  logout,
+  isLoggedIn as checkIsLoggedIn,
+  getUser,
+} from '@/services/keycloak'
 import type { User } from '@/types/User'
 
 const isLoggedIn = ref(checkIsLoggedIn())
