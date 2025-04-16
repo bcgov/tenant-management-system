@@ -89,7 +89,7 @@ fetchUserTenants()
         --></v-col>
       </v-row>
       <!-- Row for displaying the tenancies -->
-<!--
+      <!--
       <v-row>
         <v-col v-for="tenancy in tenancies" :key="tenancy.id" cols="12" md="4">
           <v-card @click="goToManageTenancy(tenancy.id)">
@@ -103,7 +103,7 @@ fetchUserTenants()
         </v-col>
       </v-row>
 -->
-        </v-container>
+    </v-container>
     <!-- Create Tenancy Dialog component -->
     <!--
     <CreateTenancyDialog :visible="dialogVisible" @close="closeDialog" />

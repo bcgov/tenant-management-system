@@ -43,14 +43,20 @@ const addTenant = async () => {
         name: name.value,
         ministryName: ministryName.value,
         user: getUser(),
-        users: []
+        users: [],
       })
       // Reset form fields after successful creation
       name.value = ''
       ministryName.value = ''
-      notificationService.addNotification('New tenancy created successfully', 'success')
+      notificationService.addNotification(
+        'New tenancy created successfully',
+        'success',
+      )
     } catch (error) {
-      notificationService.addNotification('Failed to create new tenancy', 'error')
+      notificationService.addNotification(
+        'Failed to create new tenancy',
+        'error',
+      )
       $error('Failed to create new tenancy', error)
     } finally {
       emit('close')
@@ -104,7 +110,9 @@ const closeDialog = () => {
       </v-card-text>
       <v-card-actions>
         <v-btn variant="text" @click="closeDialog">Cancel</v-btn>
-        <v-btn variant="text" :disabled="!formValid" @click="addTenant">Finish</v-btn>
+        <v-btn variant="text" :disabled="!formValid" @click="addTenant"
+          >Finish</v-btn
+        >
       </v-card-actions>
     </v-card>
   </v-dialog>

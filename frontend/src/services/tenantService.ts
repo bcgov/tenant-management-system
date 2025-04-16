@@ -7,7 +7,8 @@ import type { Tenant } from '@/models/Tenant'
 import type { User } from '@/types/User'
 
 const tenantService = axios.create({
-  baseURL: import.meta.env.VITE_BACKEND_API_URL || process.env.VITE_BACKEND_API_URL,
+  baseURL:
+    import.meta.env.VITE_BACKEND_API_URL || process.env.VITE_BACKEND_API_URL,
 })
 
 const handleError = (message: string, error: unknown) => {
@@ -60,9 +61,14 @@ export const getTenantRoles = async (tenantId: string): Promise<Role[]> => {
   }
 }
 
-export const getUserRoles = async (tenantId: string, userId: string): Promise<Role[]> => {
+export const getUserRoles = async (
+  tenantId: string,
+  userId: string,
+): Promise<Role[]> => {
   try {
-    const response = await tenantService.get(`/tenants/${tenantId}/users/${userId}/roles`)
+    const response = await tenantService.get(
+      `/tenants/${tenantId}/users/${userId}/roles`,
+    )
     return response.data.data.roles as Role[]
   } catch (error) {
     handleError('Error getting Tenant users roles', error)
@@ -73,14 +79,17 @@ export const getUserRoles = async (tenantId: string, userId: string): Promise<Ro
 export const addUsers = async (
   tenantId: string,
   user: User,
-  roleId?: string
+  roleId?: string,
 ): Promise<User> => {
   try {
     const request: any = { user }
     if (roleId) {
       request.role = { id: roleId }
     }
-    const response = await tenantService.post(`/tenants/${tenantId}/users`, request)
+    const response = await tenantService.post(
+      `/tenants/${tenantId}/users`,
+      request,
+    )
     return response.data.data as User
   } catch (error) {
     handleError('Error adding user to Tenant', error)
@@ -91,10 +100,12 @@ export const addUsers = async (
 export const assignUserRoles = async (
   tenantId: string,
   userId: string,
-  roleId: string
+  roleId: string,
 ): Promise<void> => {
   try {
-    await tenantService.put(`/tenants/${tenantId}/users/${userId}/roles/${roleId}`)
+    await tenantService.put(
+      `/tenants/${tenantId}/users/${userId}/roles/${roleId}`,
+    )
   } catch (error) {
     handleError('Error assigning user role in Tenant', error)
     throw error

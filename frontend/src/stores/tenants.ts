@@ -1,7 +1,12 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
-import { createTenant, getUserTenants, getUsers, getUserRoles } from '@/services/tenantService'
+import {
+  createTenant,
+  getUserTenants,
+  getUsers,
+  getUserRoles,
+} from '@/services/tenantService'
 import type { Role } from '@/types/Role'
 import { Tenant } from '@/models/Tenant'
 import type { User } from '@/types/User'
@@ -24,11 +29,16 @@ export const useTenantStore = defineStore('tenant', () => {
           await Promise.all(
             userList.map(async (user) => {
               user.roles = await getUserRoles(tenant.id, user.id)
-            })
+            }),
           )
 
-          return new Tenant(tenant.id, tenant.name, tenant.ministryName, userList)
-        })
+          return new Tenant(
+            tenant.id,
+            tenant.name,
+            tenant.ministryName,
+            userList,
+          )
+        }),
       )
 
       tenants.value = tenantInstances

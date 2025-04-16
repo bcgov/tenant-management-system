@@ -19,7 +19,8 @@ export const initKeycloak = (onAuthenticatedCallback: () => void) => {
       onLoad: 'login-required', // Redirect to login if not authenticated
       checkLoginIframe: false, // Disable login status check iframe
     })
-    .then((authenticated: any) => { // TODO: any
+    .then((authenticated: any) => {
+      // TODO: any
       if (authenticated) {
         logMessage('Authenticated')
         onAuthenticatedCallback()
@@ -27,7 +28,8 @@ export const initKeycloak = (onAuthenticatedCallback: () => void) => {
         logWarning('Not authenticated')
       }
     })
-    .catch((error: any) => { // # TODO: any
+    .catch((error: any) => {
+      // # TODO: any
       logError('Failed to initialize', error)
     })
 }

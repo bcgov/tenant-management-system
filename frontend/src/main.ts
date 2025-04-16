@@ -1,4 +1,4 @@
-import '@mdi/font/css/materialdesignicons.css';
+import '@mdi/font/css/materialdesignicons.css'
 
 import { createPinia } from 'pinia'
 import { createApp } from 'vue'
@@ -6,7 +6,7 @@ import { createApp } from 'vue'
 import App from '@/App.vue'
 import BaseSecure from '@/components/BaseSecure.vue'
 import consolePlugin from '@/plugins/console'
-import notificationService from '@/services/notification';
+import notificationService from '@/services/notification'
 import vuetify from '@/plugins/vuetify'
 import router from '@/router'
 import { initKeycloak } from '@/services/keycloak'

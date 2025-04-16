@@ -121,6 +121,5 @@ onMounted(fetchTenantRoles)
 </script>
 
 <template>
-  <BaseSecure>
-  </BaseSecure>
+  <BaseSecure> </BaseSecure>
 </template>
