@@ -1,22 +1,24 @@
 <script setup lang="ts">
+/*
 import { storeToRefs } from 'pinia'
 import { computed, inject, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 import CreateTenancyDialog from '@/components/CreateTenancyDialog.vue'
-import { getTenantUsers, getTenantUserRoles } from '@/services/tenantService'
+import { useNotifications } from '@/composables/useNotification'
 import { getUserTenants } from '@/services/userService'
-import { useTenanciesStore } from '@/stores/tenancies'
-import { INJECTION_KEYS, ROLES } from '@/utils/constants'
+import { useTenantStore } from '@/stores/tenants'
+import type { Tenant } from '@/types/Tenant'
+import { ROLES } from '@/utils/constants'
 
 // Initialize tenancies store and router
-const tenanciesStore = useTenanciesStore()
-const $error = inject(INJECTION_KEYS.error)!
+const tenantStore = useTenantStore()
+const { notifyError } = useNotifications()
 const router = useRouter()
 
 // Reactive references for dialog visibility and tenancies
 const dialogVisible = ref(false)
-const { tenancies } = storeToRefs(tenanciesStore)
+const { tenant }: { tenant: ref<Tenant[]> } = storeToRefs(tenantStore)
 
 // Function to open the Create Tenancy dialog
 const openDialog = () => {
@@ -36,8 +38,8 @@ const goToManageTenancy = (id: string) => {
 // Computed property to find the first admin user in the tenancies
 const firstAdminUser = computed(() => {
   return (
-    tenancies.value
-      ?.flatMap((tenancy) => tenancy.users)
+    tenants.value
+      ?.flatMap((tenant) => tenant.users)
       ?.find((user) => user.roles.some((role) => role.name === ROLES.ADMIN)) || null
   )
 })
@@ -61,12 +63,13 @@ const fetchUserTenants = async () => {
     }
     tenancies.value = tcies
   } catch (error) {
-    $error('Error fetching user tenants', error)
+    notifyError('Error fetching user tenants', error)
   }
 }
 
 // Fetch user tenants when the component is created
 fetchUserTenants()
+*/
 </script>
 
 <template>
@@ -76,15 +79,17 @@ fetchUserTenants()
       <!-- Row for the Create New Tenancy button -->
       <v-row>
         <v-col cols="12">
+          <!--
           <v-btn variant="text" color="primary" prepend-icon="mdi-plus-box" @click="openDialog">
             <template #prepend>
               <v-icon color="primary" size="x-large"></v-icon>
             </template>
             Create New Tenancy
           </v-btn>
-        </v-col>
+        --></v-col>
       </v-row>
       <!-- Row for displaying the tenancies -->
+<!--
       <v-row>
         <v-col v-for="tenancy in tenancies" :key="tenancy.id" cols="12" md="4">
           <v-card @click="goToManageTenancy(tenancy.id)">
@@ -97,8 +102,10 @@ fetchUserTenants()
           </v-card>
         </v-col>
       </v-row>
-    </v-container>
+-->
+        </v-container>
     <!-- Create Tenancy Dialog component -->
+    <!--
     <CreateTenancyDialog :visible="dialogVisible" @close="closeDialog" />
-  </BaseSecure>
+  --></BaseSecure>
 </template>

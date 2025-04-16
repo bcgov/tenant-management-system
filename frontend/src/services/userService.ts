@@ -3,7 +3,7 @@ import { logError } from '@/plugins/console'
 import { getUser } from '@/services/keycloak'
 import notificationService from '@/services/notification'
 import type { IdirSearchParameters } from '@/types/IdirSearchParameters'
-import type { Tenancy } from '@/types/Tenancy'
+import type { Tenant } from '@/models/Tenant'
 import type { User } from '@/types/User'
 
 // Create an instance of axios for user service
@@ -12,10 +12,10 @@ const userService = axios.create({
 })
 
 /**
- * Gets the tenancies of the current user.
- * @returns {Array} The list of tenancies.
+ * Gets the tenants of the current user.
+ * @returns {Array} The list of tenants.
  */
-export const getUserTenants = async (): Promise<Tenancy[]> => {
+export const getUserTenants = async (): Promise<Tenant[]> => {
   const user = getUser()
   if (user && user.ssoUserId) {
     try {
