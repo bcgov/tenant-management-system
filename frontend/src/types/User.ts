@@ -3,6 +3,7 @@ import type { SsoUser } from '@/types/SsoUser'
 
 // TODO make this into a class
 export type User = {
+  id: string
   displayName: string
   email: string
   firstName: string

@@ -23,7 +23,8 @@ const handleLogout = () => {
 <template>
   <v-app-bar elevation="1">
     <v-toolbar-title>
-      <img src="/BCID_H_RGB_pos.svg" alt="Logo" class="logo" />Tenant Manager
+      <img src="/BCID_H_RGB_pos.svg" alt="Logo" class="logo" />
+      Tenant Management System
     </v-toolbar-title>
     <v-spacer></v-spacer>
     <template #append>

@@ -1,167 +1,102 @@
 import axios, { AxiosError } from 'axios'
+
 import { logError } from '@/plugins/console'
 import notificationService from '@/services/notification'
-import type { Tenancy } from '@/types/Tenancy'
+import type { Role } from '@/types/Role'
+import type { Tenant } from '@/models/Tenant'
 import type { User } from '@/types/User'
 
-// Create an instance of axios for tenant service
 const tenantService = axios.create({
   baseURL: import.meta.env.VITE_BACKEND_API_URL || process.env.VITE_BACKEND_API_URL,
 })
 
-/**
- * Creates a new tenancy.
- * @param {Object} tenancy - The tenancy data to be created.
- * @returns {Object} The created tenancy data.
- */
-export const createTenancy = async (tenancy: Tenancy) => {
+const handleError = (message: string, error: unknown) => {
+  if (error instanceof AxiosError && error.response) {
+    logError(message, error.response.data)
+  } else {
+    logError(message, error)
+  }
+
+  notificationService.addNotification(message, 'error')
+}
+
+export const createTenant = async (tenant: Tenant): Promise<Tenant> => {
   try {
-    const response = await tenantService.post(`/tenants`, tenancy)
-    return response.data.data.tenant
+    const response = await tenantService.post(`/tenants`, tenant)
+    return response.data.data.tenant as Tenant
   } catch (error) {
-    if (error instanceof AxiosError && error.response) {
-      logError('Error creating tenancy:', error.response.data)
-    } else {
-      logError('Error creating tenancy:', error)
-    }
-    notificationService.addNotification('Error creating tenancy', 'error')
+    handleError('Error creating Tenant', error)
     throw error
   }
 }
 
-/**
- * Gets the tenancies of a specific user.
- * @param {string} userId - The ID of the user.
- * @returns {Array} The list of tenancies.
- */
-export const getUserTenants = async (userId: string) => {
+export const getUserTenants = async (userId: string): Promise<Tenant[]> => {
   try {
     const response = await tenantService.get(`/users/${userId}/tenants`)
-    return response.data.data.users
+    return response.data.data.tenants as Tenant[]
   } catch (error) {
-    const message = 'Error getting users tenancies'
-    if (error instanceof AxiosError && error.response) {
-      logError(message, error.response.data)
-    } else {
-      logError(message, error)
-    }
-    notificationService.addNotification(message, 'error')
+    handleError('Error getting users tenants', error)
     throw error
   }
 }
 
-/**
- * Gets the users of a specific tenancy.
- * @param {string} tenancyId - The ID of the tenancy.
- * @returns {Array} The list of users.
- */
-export const getTenantUsers = async (tenancyId: string) => {
+export const getUsers = async (tenantId: string): Promise<User[]> => {
   try {
-    const response = await tenantService.get(`/tenants/${tenancyId}/users`)
-    return response.data.data.users
+    const response = await tenantService.get(`/tenants/${tenantId}/users`)
+    return response.data.data.users as User[]
   } catch (error) {
-    const message = 'Error getting tenancy users'
-    if (error instanceof AxiosError && error.response) {
-      logError(message, error.response.data)
-    } else {
-      logError(message, error)
-    }
-    notificationService.addNotification(message, 'error')
+    handleError('Error getting Tenant users', error)
     throw error
   }
 }
 
-/**
- * Gets the roles of a specific tenancy.
- * @param {string} tenancyId - The ID of the tenancy.
- * @returns {Array} The list of roles.
- */
-export const getTenantRoles = async (tenancyId: string) => {
+export const getTenantRoles = async (tenantId: string): Promise<Role[]> => {
   try {
-    const response = await tenantService.get(`/tenants/${tenancyId}/roles`)
-    return response.data.data.roles
+    const response = await tenantService.get(`/tenants/${tenantId}/roles`)
+    return response.data.data.roles as Role[]
   } catch (error) {
-    const message = 'Error getting tenancy roles'
-    if (error instanceof AxiosError && error.response) {
-      logError(message, error.response.data)
-    } else {
-      logError(message, error)
-    }
-    notificationService.addNotification(message, 'error')
+    handleError('Error getting Tenant roles', error)
     throw error
   }
 }
 
-/**
- * Gets the roles of a specific user in a tenancy.
- * @param {string} tenancyId - The ID of the tenancy.
- * @param {string} userId - The ID of the user.
- * @returns {Array} The list of user roles.
- */
-export const getTenantUserRoles = async (tenancyId: string, userId: string) => {
+export const getUserRoles = async (tenantId: string, userId: string): Promise<Role[]> => {
   try {
-    const response = await tenantService.get(`/tenants/${tenancyId}/users/${userId}/roles`)
-    return response.data.data.roles
+    const response = await tenantService.get(`/tenants/${tenantId}/users/${userId}/roles`)
+    return response.data.data.roles as Role[]
   } catch (error) {
-    const message = 'Error getting tenancy users roles'
-    if (error instanceof AxiosError && error.response) {
-      logError(message, error.response.data)
-    } else {
-      logError(message, error)
-    }
-    notificationService.addNotification('Error getting tenancy users roles', 'error')
+    handleError('Error getting Tenant users roles', error)
     throw error
   }
 }
 
-/**
- * Adds a user to a specific tenancy.
- * @param {string} tenancyId - The ID of the tenancy.
- * @param {Object} user - The user data to be added.
- * @param {string|null} [roleId=null] - The ID of the role to be assigned (optional).
- * @returns {Object} The added user data.
- */
-export const addTenantUsers = async (tenancyId: string, user: User, roleId?: string) => {
+export const addUsers = async (
+  tenantId: string,
+  user: User,
+  roleId?: string
+): Promise<User> => {
   try {
-    let request: any = { user }
-    if (roleId !== null) {
+    const request: any = { user }
+    if (roleId) {
       request.role = { id: roleId }
     }
-    const response = await tenantService.post(`/tenants/${tenancyId}/users`, request)
-    return response.data.data
+    const response = await tenantService.post(`/tenants/${tenantId}/users`, request)
+    return response.data.data as User
   } catch (error) {
-    const message = 'Error adding user to tenancy'
-    if (error instanceof AxiosError && error.response) {
-      logError(message, error.response.data)
-    } else {
-      logError(message, error)
-    }
-    notificationService.addNotification(message, 'error')
+    handleError('Error adding user to Tenant', error)
     throw error
   }
 }
 
-/**
- * Assigns a role to a specific user in a tenancy.
- * @param {string} tenancyId - The ID of the tenancy.
- * @param {string} userId - The ID of the user.
- * @param {string} roleId - The ID of the role to be assigned.
- * @returns {Object} The response data.
- */
-export const assignUserRoles = async (tenancyId: string, userId: string, roleId: string) => {
+export const assignUserRoles = async (
+  tenantId: string,
+  userId: string,
+  roleId: string
+): Promise<void> => {
   try {
-    const response = await tenantService.put(
-      `/tenants/${tenancyId}/users/${userId}/roles/${roleId}`,
-    )
-    return response.data
+    await tenantService.put(`/tenants/${tenantId}/users/${userId}/roles/${roleId}`)
   } catch (error) {
-    const message = 'Error assigning user role in tenancy'
-    if (error instanceof AxiosError && error.response) {
-      logError(message, error.response.data)
-    } else {
-      logError(message, error)
-    }
-    notificationService.addNotification(message, 'error')
+    handleError('Error assigning user role in Tenant', error)
     throw error
   }
 }

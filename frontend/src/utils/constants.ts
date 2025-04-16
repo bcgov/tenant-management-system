@@ -17,7 +17,7 @@ export const MINISTRIES = Object.freeze([
   'BC Public Service Agency',
   'Children and Family Development',
   "Citizens' Services",
-  'Compliance & Enforcement Collaborative',
+  'Compliance and Enforcement Collaborative',
   'Corporate Information and Records Management Office',
   'Crown Agencies and Board Resourcing Office',
   'Education and Child Care',
@@ -29,7 +29,7 @@ export const MINISTRIES = Object.freeze([
   'Government Communications and Public Engagement',
   'Health',
   'Housing and Municipal Affairs',
-  'Indigenous Relations & Reconciliation',
+  'Indigenous Relations and Reconciliation',
   'Infrastructure',
   'Intergovernmental Relations Secretariat',
   'Jobs, Economic Development and Innovation',
@@ -49,7 +49,7 @@ export const MINISTRIES = Object.freeze([
   'Water, Land and Resource Stewardship',
 ])
 
-// List of Tenant Manager roles
+// List of Tenant Management roles
 export const ROLES = Object.freeze({
   ADMIN: 'TMS.TENANT_ADMIN',
   USER: 'TMS.TENANT_USER',
