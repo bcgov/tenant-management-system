@@ -1,0 +1,49 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+{
+  "build": {
+    "context": "..",
+    "dockerfile": "Dockerfile"
+  },
+
+  // Configure tool-specific properties.
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "cweijan.vscode-postgresql-client2", // PostgreSQL Client
+        "dbaeumer.vscode-eslint", // Integrates ESLint JavaScript
+        "editorconfig.editorconfig", // EditorConfig Support
+        "esbenp.prettier-vscode", // Code formatter using prettier
+        "SonarSource.sonarlint-vscode", // Linter to detect & fix coding issues
+        "vitest.explorer", // Vite-native testing framework
+        "vue.volar" // Language Support for Vue
+      ],
+      "settings": {
+        "database-client.telemetry.usesOnlineServices": false,
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.formatOnSave": true
+      }
+    }
+  },
+
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+  },
+
+  // Ports forwarded from the container so they are available locally.
+  "forwardPorts": [
+    5173 // TMS Frontend
+  ],
+
+  "name": "tenant-management-system",
+
+  "portsAttributes": {
+    "5173": {
+      "label": "TMS Frontend"
+    }
+  },
+
+  // Use 'postCreateCommand' to run commands after the container is created.
+  "postCreateCommand": "bash ./.devcontainer/post-install.sh",
+
+  "remoteUser": "root"
+}
