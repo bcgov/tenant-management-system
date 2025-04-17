@@ -1,20 +1,22 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
+import { useNotification } from '@/composables/useNotification'
 import {
   createTenant,
   getUserTenants,
   getUsers,
   getUserRoles,
-} from '@/services/tenantService'
+} from '@/services/tenant.service'
 import type { Role } from '@/types/Role'
-import { Tenant } from '@/models/Tenant'
+import { Tenant } from '@/models/tenant.model'
 import type { User } from '@/types/User'
 
 export const useTenantStore = defineStore('tenant', () => {
   const tenants = ref<Tenant[]>([])
   const tenantUsers = ref<Record<string, User[]>>({})
   const tenantUserRoles = ref<Record<string, Record<string, Role[]>>>({})
+  const { addNotification } = useNotification()
 
   const loading = ref(false)
 
@@ -43,7 +45,11 @@ export const useTenantStore = defineStore('tenant', () => {
 
       tenants.value = tenantInstances
     } catch (error) {
-      // error already handled in the service
+      addNotification({
+        id: new Date().toString(),
+        message: 'Error fetching tenants: ' + error,
+        type: 'error',
+      })
     } finally {
       loading.value = false
     }
@@ -54,7 +60,11 @@ export const useTenantStore = defineStore('tenant', () => {
       const users = await getUsers(tenantId)
       tenantUsers.value[tenantId] = users
     } catch (error) {
-      // already handled
+      addNotification({
+        id: new Date().toString(),
+        message: 'Error fetching tenant users: ' + error,
+        type: 'error',
+      })
     }
   }
 
@@ -66,7 +76,11 @@ export const useTenantStore = defineStore('tenant', () => {
       }
       tenantUserRoles.value[tenantId][userId] = roles
     } catch (error) {
-      // already handled
+      addNotification({
+        id: new Date().toString(),
+        message: 'Error fetching tenant user roles: ' + error,
+        type: 'error',
+      })
     }
   }
 
@@ -75,7 +89,11 @@ export const useTenantStore = defineStore('tenant', () => {
       const newTenant = await createTenant(tenant)
       tenants.value.push(newTenant)
     } catch (error) {
-      // already handled
+      addNotification({
+        id: new Date().toString(),
+        message: 'Error adding tenant: ' + error,
+        type: 'error',
+      })
     }
   }
 

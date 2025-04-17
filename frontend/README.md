@@ -1,6 +1,7 @@
 # Frontend
 
 The Tenant Management System frontend uses:
+
 - Authentication is provide by Keycloak
 - Vue.js 3 composition components use a View ("smart") and Presentation ("dumb")
   pattern
@@ -8,6 +9,7 @@ The Tenant Management System frontend uses:
 - API calls are provided by services
 
 To keep the application simple and testable, it is important that:
+
 - The Presentation components receive data using props - they never call the
   stores or services
 - The Presentation components send data by emitting events - they never call the
@@ -26,14 +28,14 @@ authenticate in the Keycloak standard realm. Clients are created in the
 
 Add a `.env` file to the directory `frontend` containing:
 
-| Name                      | Description                       | Example                     |
-| ------------------------- | --------------------------------- | --------------------------- |
-| VITE_ALLOWED_HOSTS | The URL of the hosts for the front end | localhost:4173,localhost5173 |
-| VITE_BACKEND_API_URL | The URL of the backend | localhost:4144 |
-| VITE_KEYCLOAK_CLIENT_ID | The client id in the realm | example-client-id |
-| VITE_KEYCLOAK_LOGOUT_URL | The logout URL | https://dev.loginproxy.gov.bc.ca.auth/realms/standard/protocol/openid-connect/logout |
-| VITE_KEYCLOAK_REALM | The realm in the keycloak instance | standard |
-| VITE_KEYCLOAK_URL | This is the authorization URL for the keycloak realm | https://dev.loginproxy.gov.bc.ca/auth |
+| Name                     | Description                                          | Example                                                                              |
+| ------------------------ | ---------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| VITE_ALLOWED_HOSTS       | The URL of the hosts for the front end               | localhost:4173,localhost:5173                                                        |
+| VITE_BACKEND_API_URL     | The URL of the backend                               | localhost:4144                                                                       |
+| VITE_KEYCLOAK_CLIENT_ID  | The client id in the realm                           | example-client-id                                                                    |
+| VITE_KEYCLOAK_LOGOUT_URL | The logout URL                                       | https://dev.loginproxy.gov.bc.ca.auth/realms/standard/protocol/openid-connect/logout |
+| VITE_KEYCLOAK_REALM      | The realm in the keycloak instance                   | standard                                                                             |
+| VITE_KEYCLOAK_URL        | This is the authorization URL for the keycloak realm | https://dev.loginproxy.gov.bc.ca/auth                                                |
 
 ### Project setup
 
@@ -107,7 +109,6 @@ oc tag NAMESPACE/tms-frontend:latest tms-frontend:latest
 ```
 
 #### Deploy to Openshift
-
 
 Package the Helm chart into a .tgz file
 

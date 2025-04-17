@@ -2,7 +2,7 @@
 import axios, { AxiosError } from 'axios'
 import { logError } from '@/plugins/console'
 import notificationService from '@/services/notification'
-import type { Tenancy } from '@/models/Tenant'
+import type { Tenancy } from '@/models/tenant.model'
 import type { User } from '@/types/User'
 
 const tenantService = axios.create({

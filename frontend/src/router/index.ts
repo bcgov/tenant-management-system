@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import TenantsView from '../views/TenantsView.vue'
 import Roles from '@/components/Roles.vue'
-import ManageTenancy from '@/components/ManageTenancy.vue'
+import ManageTenancy from '@/components/ManageTenant.vue'
 
 // Define the routes for the application
 const routes = [
