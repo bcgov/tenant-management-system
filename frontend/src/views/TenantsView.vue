@@ -1,34 +1,33 @@
 <script setup lang="ts">
-import { ref, inject, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
+import { onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 
-import TenantList from '@/components/TenantList.vue'
 import CreateTenancyDialog from '@/components/CreateTenancyDialog.vue'
-import { useTenantStore } from '@/stores/tenants'
-import { INJECTION_KEYS } from '@/utils/constants'
+import TenantList from '@/components/TenantList.vue'
+import type { Tenant } from '@/models/tenant.model'
 import { getUser } from '@/services/keycloak'
+import { useTenantStore } from '@/stores/useTenantStore'
 
+// The Vue router to route to different pages.
 const router = useRouter()
-const tenantsStore = useTenantStore()
-const { tenants } = storeToRefs(tenantsStore)
-const $error = inject(INJECTION_KEYS.error)!
-const dialogVisible = ref(false)
 
-const openDialog = () => (dialogVisible.value = true)
-const closeDialog = () => (dialogVisible.value = false)
+// Set up any stores that are needed for Components used in this View.
+const tenantStore = useTenantStore()
+const { tenants } = storeToRefs(tenantStore)
 
-const fetchTenants = async () => {
-  try {
-    console.log('user', getUser())
-    await tenantsStore.fetchTenants(getUser().ssoUserId)
-  } catch (err) {
-    $error('Error fetching user tenants', err)
-  }
+// Route to the tenant details when clicked.
+const handleCardClick = (id: Tenant['id']) => {
+  router.push(`/tenants/${id}`)
 }
 
-const handleCardClick = (id: string) => {
-  router.push(`/tenants/${id}`)
+// Controls for the Create Tenant Dialog
+const dialogVisible = ref(false)
+const closeDialog = () => (dialogVisible.value = false)
+const openDialog = () => (dialogVisible.value = true)
+
+const fetchTenants = async () => {
+  await tenantStore.fetchTenants(getUser().ssoUserId)
 }
 
 onMounted(fetchTenants)

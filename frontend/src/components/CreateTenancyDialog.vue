@@ -4,7 +4,7 @@ import { storeToRefs } from 'pinia'
 import { ref, inject, computed } from 'vue'
 import { getUser } from '@/services/keycloak'
 import notificationService from '@/services/notification'
-import { useTenantStore } from '@/stores/tenants'
+import { useTenantStore } from '@/stores/useTenantStore'
 import { INJECTION_KEYS, MINISTRIES, ROLES } from '@/utils/constants'
 import { v4 as uuidv4 } from 'uuid'
 
@@ -15,7 +15,7 @@ const props = defineProps({
 const emit = defineEmits(['close'])
 
 // Initialize the tenants store and inject the notification service
-const tenantStore = useTenantStore()
+const tenantsStore = useTenantStore()
 const $error = inject(INJECTION_KEYS.error)!
 
 // Reactive references for form fields and state
@@ -23,7 +23,7 @@ const username = ref(getUser().displayName)
 const name = ref('')
 const ministryName = ref('')
 const formValid = ref(false)
-const { tenants } = storeToRefs(tenantStore)
+const { tenants } = storeToRefs(tenantsStore)
 
 // Validation rules for form fields
 const rules = {
@@ -38,7 +38,7 @@ const addTenant = async () => {
   if (formValid.value) {
     try {
       // Create tenant through the store (no direct call to the service)
-      await tenantStore.addTenant({
+      await tenantsStore.addTenant({
         id: uuidv4(),
         name: name.value,
         ministryName: ministryName.value,

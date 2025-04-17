@@ -1,24 +1,19 @@
 <script setup lang="ts">
-import TenantCard from './TenantCard.vue'
-import type { PropType } from 'vue'
-import type { Tenant } from '@/models/Tenant'
+import TenantCard from '@/components/TenantCard.vue'
+import type { Tenant } from '@/models/tenant.model'
 
-const props = defineProps({
-  tenants: {
-    type: Array as PropType<Tenant[]>,
-    required: true,
-  },
-})
+defineProps<{ tenants: Tenant[] }>()
 
-const emit = defineEmits<{
-  (e: 'select', id: string): void
-}>()
+type EmitFn = (event: 'select', id: Tenant['id']) => void
+const emit = defineEmits<EmitFn>()
+
+const handleClick = (id: Tenant['id']) => emit('select', id)
 </script>
 
 <template>
   <v-row>
     <v-col v-for="tenant in tenants" :key="tenant.id" cols="12" md="4">
-      <TenantCard :tenant="tenant" @click="emit('select', tenant.id)" />
+      <TenantCard :tenant="tenant" @click="handleClick(tenant.id)" />
     </v-col>
   </v-row>
 </template>

@@ -3,7 +3,7 @@ import { logError } from '@/plugins/console'
 import { getUser } from '@/services/keycloak'
 import notificationService from '@/services/notification'
 import type { IdirSearchParameters } from '@/types/IdirSearchParameters'
-import type { Tenant } from '@/models/Tenant'
+import type { Tenant } from '@/models/tenant.model'
 import type { User } from '@/types/User'
 
 // Create an instance of axios for user service
