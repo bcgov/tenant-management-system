@@ -1,0 +1,220 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  name: tms-api-deploy-template
+  annotations:
+    description: "Template to deploy TMS API" 
+    tags: "tms,api,tms-api" 
+parameters:
+  - name: NAMESPACE
+    required: true
+    value: "a191b5-tools"
+  - name: APP_NAME
+    required: true
+    value: "tms-api"
+  - name: IMAGE_NAMESPACE
+    required: true
+    value: "a191b5-tools"
+  - name: IMAGE_TAG
+    value: "latest"
+  - name: REPLICAS
+    value: "1"
+  - name: PORT
+    value: "4144"
+  - name: ALLOWED_ORIGINS
+    value: "*"
+  - name: CPU_REQUEST
+    value: "100m"
+  - name: CPU_LIMIT
+    value: "200m"
+  - name: MEMORY_REQUEST
+    value: "128Mi"
+  - name: MEMORY_LIMIT
+    value: "256Mi"
+  - name: DB_HOST
+    required: true
+    value: "tms-db"
+  - name: DB_PORT
+    required: true
+    value: "5432"
+  - name: DB_USER
+    required: true
+    value: "tmsuser"
+  - name: DB_PASSWORD
+    required: false
+  - name: DB_DATABASE
+    required: true
+    value: "tmsdb"
+  - name: BCGOV_SSO_API_URL
+    required: true
+    value: "https://api.loginproxy.gov.bc.ca/api/v1/dev/idir/users"
+  - name: BCGOV_TOKEN_URL
+    required: true
+    value: "https://loginproxy.gov.bc.ca/auth/realms/standard/protocol/openid-connect/token"
+  - name: BC_GOV_SSO_CLIENT_ID
+    required: true
+  - name: BCGOV_SSO_CLIENT_SECRET
+    required: true
+  - name: READINESS_INITIAL_DELAY
+    value: "20"
+  - name: READINESS_TIMEOUT
+    value: "5"
+  - name: LIVENESS_INITIAL_DELAY
+    value: "20"
+  - name: LIVENESS_TIMEOUT
+    value: "3"
+  - name: ROUTE_HOST
+    value: "tms-api-mynamespace.apps.silver.devops.gov.bc.ca"
+  - name: LOG_LEVEL
+    value: "info"
+  - name: LOGS_VOLUME_CAPACITY
+    value: "128Mi"
+
+objects:
+  - apiVersion: v1
+    kind: Secret
+    metadata:
+      name: ${APP_NAME}-secret
+      namespace: ${NAMESPACE}
+      labels:
+        app: ${APP_NAME}
+    type: Opaque
+    stringData:    
+      BC_GOV_SSO_CLIENT_ID: ${BC_GOV_SSO_CLIENT_ID}
+      BCGOV_SSO_CLIENT_SECRET: ${BCGOV_SSO_CLIENT_SECRET}
+
+  - apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
+      name: ${APP_NAME}-logs
+      namespace: ${NAMESPACE}
+      labels:
+        app: ${APP_NAME}
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: ${LOGS_VOLUME_CAPACITY}
+
+  - apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: ${APP_NAME}
+      namespace: ${NAMESPACE}
+      labels:
+        app: ${APP_NAME}
+    spec:
+      replicas: ${{REPLICAS}}
+      selector:
+        matchLabels:
+          app: ${APP_NAME}
+      template:
+        metadata:
+          labels:
+            app: ${APP_NAME}
+        spec:
+          containers:
+            - name: ${APP_NAME}
+              image: image-registry.openshift-image-registry.svc:5000/${IMAGE_NAMESPACE}/${APP_NAME}:${IMAGE_TAG}
+              ports:
+                - containerPort: ${{PORT}}
+                  protocol: TCP
+              volumeMounts:
+                - name: logs-volume
+                  mountPath: /app/tms-api/logs
+              resources:
+                requests:
+                  cpu: ${CPU_REQUEST}
+                  memory: ${MEMORY_REQUEST}
+                limits:
+                  cpu: ${CPU_LIMIT}
+                  memory: ${MEMORY_LIMIT}
+              env:
+                - name: PORT
+                  value: ${PORT}
+                - name: ALLOWED_ORIGINS
+                  value: ${ALLOWED_ORIGINS}
+                - name: DB_HOST
+                  value: ${DB_HOST}
+                - name: DB_PORT
+                  value: ${DB_PORT}
+                - name: DB_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: tms-db-custom-credentials
+                      key: database-user
+                - name: DB_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: tms-db-custom-credentials
+                      key: database-password
+                - name: DB_DATABASE
+                  value: ${DB_DATABASE}
+                - name: BCGOV_SSO_API_URL
+                  value: ${BCGOV_SSO_API_URL}
+                - name: BCGOV_TOKEN_URL
+                  value: ${BCGOV_TOKEN_URL}
+                - name: BC_GOV_SSO_CLIENT_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${APP_NAME}-secret
+                      key: BC_GOV_SSO_CLIENT_ID
+                - name: BCGOV_SSO_CLIENT_SECRET
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${APP_NAME}-secret
+                      key: BCGOV_SSO_CLIENT_SECRET
+              readinessProbe:
+                httpGet:
+                  path: /v1/health
+                  port: ${{PORT}}
+                initialDelaySeconds: ${{READINESS_INITIAL_DELAY}}
+                timeoutSeconds: ${{READINESS_TIMEOUT}}
+                failureThreshold: 5
+              livenessProbe:
+                httpGet:
+                  path: /v1/health
+                  port: ${{PORT}}
+                initialDelaySeconds: ${{LIVENESS_INITIAL_DELAY}}
+                timeoutSeconds: ${{LIVENESS_TIMEOUT}}
+                failureThreshold: 5
+          volumes:
+            - name: logs-volume
+              persistentVolumeClaim:
+                claimName: ${APP_NAME}-logs
+
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      name: ${APP_NAME}
+      namespace: ${NAMESPACE}
+      labels:
+        app: ${APP_NAME}
+    spec:
+      ports:
+        - name: http
+          port: ${{PORT}}
+          targetPort: ${{PORT}}
+          protocol: TCP
+      selector:
+        app: ${APP_NAME}
+
+  - apiVersion: route.openshift.io/v1
+    kind: Route
+    metadata:
+      name: ${APP_NAME}
+      namespace: ${NAMESPACE}
+      labels:
+        app: ${APP_NAME}
+    spec:
+      host: ${ROUTE_HOST}
+      path: /v1
+      port:
+        targetPort: http
+      to:
+        kind: Service
+        name: ${APP_NAME}
+      tls:
+        termination: edge
+        insecureEdgeTerminationPolicy: Redirect
