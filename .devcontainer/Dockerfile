@@ -1,4 +1,4 @@
-FROM node:20.19.0-bookworm
+FROM node:20.19.1-bookworm
 
 # Install some extras such as vim for interactive rebases. Also some
 # Cypress prerequisites for running in Debian containers:
