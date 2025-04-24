@@ -1,0 +1,172 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  name: tms-database-template
+  annotations:
+    description: "Deploy tms db with custom config. Create a default postgres database along with a custom TMS Database with its own user"
+
+parameters:
+- name: DATABASE_SERVICE_NAME
+  required: true
+  value: tms-db
+
+- name: POSTGRESQL_VERSION
+  required: true
+  value: '15'
+
+- name: POSTGRESQL_USER
+  required: true
+  value: postgres
+
+- name: POSTGRESQL_PASSWORD
+  required: true
+  generate: expression
+  from: '[a-zA-Z0-9]{16}'
+
+- name: POSTGRESQL_DATABASE
+  required: true
+  value: postgres
+
+- name: CUSTOM_DATABASE_NAME
+  required: true
+  value: tmsdb
+
+- name: CUSTOM_DATABASE_USER
+  value: tmsuser
+
+- name: CUSTOM_DATABASE_PASSWORD
+  required: true
+  generate: expression
+  from: '[a-zA-Z0-9]{16}'
+
+- name: POSTGRESQL_VOLUME_CAPACITY
+  required: true
+  value: 128Mi
+
+objects:
+- apiVersion: v1
+  kind: Secret
+  metadata:
+    name: ${DATABASE_SERVICE_NAME}-default-credentials
+  type: Opaque
+  stringData:
+    database-user: ${POSTGRESQL_USER}
+    database-password: ${POSTGRESQL_PASSWORD}
+    database-name: ${POSTGRESQL_DATABASE}
+
+- apiVersion: v1
+  kind: Secret
+  metadata:
+    name: ${DATABASE_SERVICE_NAME}-custom-credentials
+  type: Opaque
+  stringData:
+    database-user: ${CUSTOM_DATABASE_USER}
+    database-password: ${CUSTOM_DATABASE_PASSWORD}
+    database-name: ${CUSTOM_DATABASE_NAME}
+
+- apiVersion: v1
+  kind: Secret
+  metadata:
+    name: ${DATABASE_SERVICE_NAME}-admin-secrets
+  type: Opaque
+  stringData:
+    database-admin-password: ${CUSTOM_DATABASE_PASSWORD}
+
+- apiVersion: v1
+  kind: PersistentVolumeClaim
+  metadata:
+    name: ${DATABASE_SERVICE_NAME}
+  spec:
+    accessModes:
+    - ReadWriteOnce
+    resources:
+      requests:
+        storage: ${POSTGRESQL_VOLUME_CAPACITY}
+
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: ${DATABASE_SERVICE_NAME}
+    labels:
+      app: ${DATABASE_SERVICE_NAME}
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        app: ${DATABASE_SERVICE_NAME}
+    template:
+      metadata:
+        labels:
+          app: ${DATABASE_SERVICE_NAME}
+      spec:
+        containers:
+        - name: postgres
+          image: registry.redhat.io/rhel8/postgresql-${POSTGRESQL_VERSION}:latest
+          ports:
+          - containerPort: 5432
+          env:
+          - name: POSTGRESQL_USER
+            valueFrom:
+              secretKeyRef:
+                name: ${DATABASE_SERVICE_NAME}-default-credentials
+                key: database-user
+          - name: POSTGRESQL_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: ${DATABASE_SERVICE_NAME}-default-credentials
+                key: database-password
+          - name: POSTGRESQL_DATABASE
+            valueFrom:
+              secretKeyRef:
+                name: ${DATABASE_SERVICE_NAME}-default-credentials
+                key: database-name
+          - name: POSTGRESQL_ADMIN_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: ${DATABASE_SERVICE_NAME}-admin-secrets
+                key: database-admin-password
+          volumeMounts:
+          - name: postgresql-data
+            mountPath: /var/lib/pgsql/data
+          lifecycle:
+            postStart:
+              exec:
+                command:
+                - /bin/bash
+                - -c
+                - |
+                  set -e
+                  export PGPASSWORD=$POSTGRESQL_ADMIN_PASSWORD
+                  until psql -h localhost -U postgres -c "SELECT 1"; do
+                  echo "Waiting for PostgreSQL to be ready..."
+                  sleep 5
+                  done
+
+                  # Check if database already exists
+                  if ! psql -U postgres -lqt | cut -d \| -f 1 | grep -qw ${CUSTOM_DATABASE_NAME}; then
+                  psql -U postgres <<-EOSQL
+                  CREATE DATABASE ${CUSTOM_DATABASE_NAME};
+                  CREATE USER ${CUSTOM_DATABASE_USER} WITH SUPERUSER PASSWORD '${CUSTOM_DATABASE_PASSWORD}';
+                  GRANT ALL PRIVILEGES ON DATABASE ${CUSTOM_DATABASE_NAME} TO ${CUSTOM_DATABASE_USER};
+                  ALTER DATABASE ${CUSTOM_DATABASE_NAME} OWNER TO ${CUSTOM_DATABASE_USER};
+                  EOSQL
+                  else
+                  echo "Database ${CUSTOM_DATABASE_NAME} already exists. Skipping creation."
+                  fi
+                  
+        volumes:
+        - name: postgresql-data
+          persistentVolumeClaim:
+            claimName: ${DATABASE_SERVICE_NAME}
+
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: ${DATABASE_SERVICE_NAME}
+  spec:
+    selector:
+      app: ${DATABASE_SERVICE_NAME}
+    ports:
+    - protocol: TCP
+      port: 5432
+      targetPort: 5432

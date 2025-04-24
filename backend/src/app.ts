@@ -1,38 +1,41 @@
-import { NestFactory } from '@nestjs/core';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { AppModule } from './app.module';
-import { customLogger } from './common/logger.config';
-import { NestExpressApplication } from '@nestjs/platform-express';
-import helmet from 'helmet';
-import { VersioningType } from '@nestjs/common';
-import { metricsMiddleware } from "src/middleware/prom";
+import cors from 'cors'
+import express from 'express'
+import { Routes } from './routes/routes'
+import rTracer from 'cls-rtracer'
+import { requestLoggingMiddleware } from './common/logger.mw'
+import logger from './common/logger'
+require('dotenv').config()
 
-/**
- *
- */
-export async function bootstrap() {
-  const app: NestExpressApplication =
-    await NestFactory.create<NestExpressApplication>(AppModule, {
-      logger: customLogger,
-    });
-  app.use(helmet());
-  app.enableCors();
-  app.set("trust proxy", 1);
-  app.use(metricsMiddleware);
-  app.enableShutdownHooks();
-  app.setGlobalPrefix("api");
-  app.enableVersioning({
-    type: VersioningType.URI,
-    prefix: "v",
-  });
-  const config = new DocumentBuilder()
-    .setTitle("Users example")
-    .setDescription("The user API description")
-    .setVersion("1.0")
-    .addTag("users")
-    .build();
+export default class App {
+  public app: express.Application
+  public routes: Routes = new Routes()
 
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup("/api/docs", app, document);
-  return app;
+  constructor() {
+    this.app = express()
+    const allowedOrigins = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : ['*'];
+   
+    this.app.use(rTracer.expressMiddleware())
+    this.app.use(requestLoggingMiddleware)
+
+    this.app.use(cors({
+      origin: function(origin, callback) {
+        if (!origin) return callback(null, true)
+        if (allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
+          return callback(null, true)
+        } else {
+          const msg = `CORS Error: This site ${origin} does not have access`
+          logger.error(msg, { origin })
+          return callback(new Error(msg), false)
+        }
+      }
+    }))
+    
+    this.config()
+    this.routes.routes(this.app)
+  }
+
+  private config(): void {
+    this.app.use(express.json())
+    this.app.use(express.urlencoded({ extended: false }))
+  }
 }

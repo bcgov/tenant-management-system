@@ -1,6 +1,15 @@
 {
   "configurations": [
     {
+      "cwd": "${workspaceFolder}/backend",
+      "name": "TMS Backend",
+      "outputCapture": "std",
+      "request": "launch",
+      "runtimeArgs": ["run", "dev"],
+      "runtimeExecutable": "npm",
+      "type": "node"
+    },
+    {
       "cwd": "${workspaceFolder}/frontend",
       "name": "TMS Frontend",
       "outputCapture": "std",

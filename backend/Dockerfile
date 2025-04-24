@@ -1,37 +1,24 @@
-# Build
-FROM node:22.14.0-slim AS build
+FROM node:18-alpine
 
-# Copy, build static files; see .dockerignore for exclusions
-WORKDIR /app
-COPY . ./
-ENV PRISMA_CLI_BINARY_TARGETS=debian-openssl-3.0.x
-RUN npm run deploy
+WORKDIR /app/tms-api
 
-# Dependencies
-FROM node:22.14.0-slim AS dependencies
+COPY . .
 
-# Copy, build static files; see .dockerignore for exclusions
-WORKDIR /app
-COPY . ./
-ENV PRISMA_CLI_BINARY_TARGETS=debian-openssl-3.0.x
-RUN npm ci --ignore-scripts --no-update-notifier --omit=dev
+RUN set -x \
+        && chmod -R 755 /app/tms-api/
 
-# Deploy using minimal Distroless image
-FROM gcr.io/distroless/nodejs22-debian12:nonroot
-ENV NODE_ENV=production
+ENV NPM_PACKAGES=/.npm-packages \
+    PATH=$NPM_PACKAGES/bin:$PATH \
+    NODE_PATH=$NPM_PACKAGES/lib/node_modules:$NODE_PATH
+RUN echo "prefix = $NPM_PACKAGES" >> ~/.npmrc
 
-# Copy app and dependencies
-WORKDIR /app
-COPY --from=dependencies /app/node_modules ./node_modules
-COPY --from=build /app/node_modules/@prisma ./node_modules/@prisma
-COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=build /app/node_modules/prisma ./node_modules/prisma
-COPY --from=build /app/dist ./dist
+COPY ./package.json $NPM_PACKAGES/
+COPY ./package-lock.json $NPM_PACKAGES/
 
-# Boilerplate, not used in OpenShift/Kubernetes
-EXPOSE 3000
-HEALTHCHECK --interval=30s --timeout=3s CMD curl -f http://localhost:3000/api
+RUN ln -sf $NPM_PACKAGES/node_modules node_modules
 
-# Nonroot user, limit heap size to 50 MB
-USER nonroot
-CMD ["--max-old-space-size=50", "/app/dist/main"]
+RUN npm ci --prefix=$NPM_PACKAGES
+
+EXPOSE 4144
+
+ENTRYPOINT [ "sh", "start_api.sh" ]

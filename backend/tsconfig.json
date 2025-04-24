@@ -1,25 +1,19 @@
 {
-  "compilerOptions": {
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "strict": false,
-    "noUncheckedIndexedAccess": true,
-    "moduleDetection": "force",
-    "resolveJsonModule": true,
-    "allowJs": true,
-    "declaration": true,
-    "removeComments": true,
-    "emitDecoratorMetadata": true,
-    "experimentalDecorators": true,
-    "allowSyntheticDefaultImports": true,
-    "target": "es2022",
-    "sourceMap": true,
-    "outDir": "./dist",
-    "baseUrl": "./",
-    "incremental": true,
-    "skipLibCheck": true,
-    "lib": ["es2022"],
-    "types": ["vitest/globals", "node"]  
-  },
-  "include": ["src/**/*.ts", "test/**/*.ts"],
-}
+    "extends": "@tsconfig/node12/tsconfig.json",   
+    "compilerOptions": {
+       "lib": ["es2019", "es2020.promise", "es2020.bigint", "es2020.string"],
+       "target": "es2020",
+       "module": "NodeNext",
+       "moduleResolution": "NodeNext",
+       "outDir": "./build",
+       "emitDecoratorMetadata": true,
+       "experimentalDecorators": true,
+       "sourceMap": true,
+       "esModuleInterop":true,
+       "strict": false,
+       "resolveJsonModule": true
+    },
+    "include": [
+       "src"
+   ]
+ }

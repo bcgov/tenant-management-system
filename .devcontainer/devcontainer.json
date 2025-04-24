@@ -1,10 +1,4 @@
-// For format details, see https://aka.ms/devcontainer.json. For config options, see the
 {
-  "build": {
-    "context": "..",
-    "dockerfile": "Dockerfile"
-  },
-
   // Configure tool-specific properties.
   "customizations": {
     "vscode": {
@@ -25,25 +19,39 @@
     }
   },
 
+  "dockerComposeFile": ["docker-compose.yaml"],
+
   "features": {
     "ghcr.io/devcontainers/features/docker-in-docker:2": {}
   },
 
   // Ports forwarded from the container so they are available locally.
   "forwardPorts": [
-    5173 // TMS Frontend
+    4144, // TMS Backend
+    5173, // TMS Frontend
+    5432 // PostgreSQL
   ],
 
   "name": "tenant-management-system",
 
   "portsAttributes": {
+    "4144": {
+      "label": "TMS Backend"
+    },
     "5173": {
       "label": "TMS Frontend"
+    },
+    "5432": {
+      "label": "PostgreSQL"
     }
   },
 
   // Use 'postCreateCommand' to run commands after the container is created.
   "postCreateCommand": "bash ./.devcontainer/post-install.sh",
 
-  "remoteUser": "root"
+  "remoteUser": "root",
+
+  "service": "devcontainer",
+
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}"
 }
