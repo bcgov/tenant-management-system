@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, Timestamp, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, OneToMany } from 'typeorm'
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, OneToMany } from 'typeorm'
 import { TenantUser } from './TenantUser'
 import { Tenant } from './Tenant'
 import { TenantUserRole } from './TenantUserRole'
@@ -7,24 +7,26 @@ import { TenantUserRole } from './TenantUserRole'
 export class Role {
 
     @PrimaryGeneratedColumn('uuid', { name: 'id' })
-    id:string
+    id: string;
 
     @Column({ type: 'varchar', length: 100, name: 'name'})
-    name: string
+    name: string;
     
     @Column({ type: 'varchar', length: 255, name: 'description', nullable: true })
-    description: string
-
-    @ManyToOne(() => Tenant, (tenant) => tenant.roles, { nullable: true })
-    @JoinColumn({ name: 'tenant_id' })
-    tenant: Tenant;
+    description: string;
     
     @OneToMany(() => TenantUserRole, (tur) => tur.role)
     tenantUserRoles: TenantUserRole[];
 
-    @CreateDateColumn({ type: 'timestamp', name: 'created_datetime' })
-    createdDateTime : Timestamp
+    @CreateDateColumn({ type: 'date', name: 'created_datetime', nullable: true })
+    createdDateTime: Date;
 
-    @UpdateDateColumn({ type: 'timestamp', name: 'updated_datetime' })
-    updatedDateTime : Timestamp
+    @UpdateDateColumn({ type: 'date', name: 'updated_datetime', nullable: true })
+    updatedDateTime: Date;
+
+    @Column({ type: 'char', length: 32, name: 'created_by', nullable: true })
+    createdBy: string;
+
+    @Column({ type: 'char', length: 32, name: 'updated_by', nullable: true })
+    updatedBy: string;
 }

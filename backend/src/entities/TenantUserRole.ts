@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, ManyToOne, JoinColumn,CreateDateColumn,UpdateDateColumn,Timestamp } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, Column } from 'typeorm';
 import { TenantUser } from './TenantUser';
 import { Role } from './Role';
 
@@ -16,10 +16,15 @@ export class TenantUserRole {
   @JoinColumn({ name: 'role_id' })
   role: Role;
 
-  @CreateDateColumn({ type: 'timestamp', name: 'created_datetime' })
-  createdDateTime : Timestamp
+  @CreateDateColumn({ type: 'date', name: 'created_datetime', nullable: true })
+  createdDateTime: Date;
   
-  @UpdateDateColumn({ type: 'timestamp', name: 'updated_datetime' })
-  updatedDateTime : Timestamp
+  @UpdateDateColumn({ type: 'date', name: 'updated_datetime', nullable: true })
+  updatedDateTime: Date;
 
+  @Column({ type: 'char', length: 32, name: 'created_by', nullable: true })
+  createdBy: string;
+
+  @Column({ type: 'char', length: 32, name: 'updated_by', nullable: true })
+  updatedBy: string;
 }
