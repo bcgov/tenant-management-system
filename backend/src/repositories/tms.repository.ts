@@ -22,6 +22,10 @@ export class TMSRepository {
         await this.manager.transaction(async(transactionEntityManager) => {
 
         try {
+            if(await this.checkIfTenantNameAndMinistryNameExists(req.body.name, req.body.ministryName)) {
+                throw new ConflictError(`A tenant with name '${req.body.name}' and ministry name '${req.body.ministryName}' already exists`);
+            }
+
             const tenantUser:TenantUser = new TenantUser()
             const ssoUser:SSOUser = await this.setSSOUser(req.body.user.ssoUserId,req.body.user.firstName,req.body.user.lastName,req.body.user.displayName,
                 req.body.user.userName,req.body.user.email)
@@ -367,6 +371,16 @@ export class TMSRepository {
             .createQueryBuilder()
             .from(Tenant, "t")
             .where("t.id = :tenantId", { tenantId })
+            .getExists();
+        return tenantExists
+    }
+
+    public async checkIfTenantNameAndMinistryNameExists(name:string, ministryName:string) {
+        const tenantExists = await this.manager
+            .createQueryBuilder()
+            .from(Tenant, "t")
+            .where("t.name = :name", { name })
+            .andWhere("t.ministry_name = :ministryName", { ministryName })
             .getExists();
         return tenantExists
     }
