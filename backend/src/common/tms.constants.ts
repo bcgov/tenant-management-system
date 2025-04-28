@@ -1,6 +1,6 @@
 export class TMSConstants {
 
-    public static TENANT_USER = 'TMS.TENANT_USER'
-    public static TENANT_ADMIN = 'TMS.TENANT_ADMIN'
-
+    public static SERVICE_USER = 'TMS.SERVICE_USER'
+    public static TENANT_OWNER = 'TMS.TENANT_OWNER'
+    public static USER_ADMIN = 'TMS.TENANT_USER'
 }

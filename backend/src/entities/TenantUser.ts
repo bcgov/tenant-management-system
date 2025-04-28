@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, Timestamp, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, Index, OneToMany } from 'typeorm'
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, Index, OneToMany } from 'typeorm'
 import { Tenant } from './Tenant'
 import { SSOUser } from './SSOUser'
 import {TenantUserRole} from './TenantUserRole'
@@ -7,27 +7,32 @@ import {TenantUserRole} from './TenantUserRole'
 export class TenantUser {
 
     @PrimaryGeneratedColumn('uuid')
-    id:string
+    id: string;
 
     @Index()
     @ManyToOne(() => SSOUser,{eager:true, cascade:['insert']})
     @JoinColumn({ name: 'sso_id' })
-    ssoUser: SSOUser
+    ssoUser: SSOUser;
 
     @Index()
     @ManyToOne(() => Tenant, (tenant) => tenant.users, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'tenant_id' })
-    tenant: Tenant
+    tenant: Tenant;
   
     @OneToMany(() => TenantUserRole, (tur) => tur.tenantUser, {
         cascade: true,
     })
     roles: TenantUserRole[];
 
-    @CreateDateColumn({ type: 'timestamp', name: 'created_datetime' })
-    createdDateTime : Timestamp
+    @CreateDateColumn({ type: 'date', name: 'created_datetime', nullable: true })
+    createdDateTime: Date;
 
-    @UpdateDateColumn({ type: 'timestamp', name: 'updated_datetime' })
-    updatedDateTime: Timestamp
+    @UpdateDateColumn({ type: 'date', name: 'updated_datetime', nullable: true })
+    updatedDateTime: Date;
 
+    @Column({ type: 'char', length: 32, name: 'created_by', nullable: true })
+    createdBy: string;
+
+    @Column({ type: 'char', length: 32, name: 'updated_by', nullable: true })
+    updatedBy: string;
 }
