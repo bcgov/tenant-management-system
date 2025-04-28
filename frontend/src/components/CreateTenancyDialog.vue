@@ -82,7 +82,7 @@ const closeDialog = () => {
         <v-form v-model="formValid">
           <v-text-field
             v-model="username"
-            label="Tenant Owner/Admin"
+            label="Tenant Owner"
             readonly
             disabled
           ></v-text-field>

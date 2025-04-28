@@ -9,10 +9,10 @@ import AppNotifications from '@/components/layout/AppNotifications.vue'
     <!-- Custom Components common to all application views -->
     <AppNotifications />
     <AppHeader />
-    <AppNavigation />
 
     <!-- Router view for dynamic component rendering -->
     <v-main>
+      <AppNavigation />
       <router-view />
     </v-main>
   </v-app>

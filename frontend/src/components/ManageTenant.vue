@@ -163,11 +163,11 @@ onMounted(() => {
               class="readonly-field"
             ></v-text-field>
           </v-col>
-          <!-- Tenant Owner/Admin -->
+          <!-- Tenant Owner -->
           <v-col cols="12" md="6">
             <v-text-field
               :model-value="tenancy?.users[0]?.ssoUser?.displayName"
-              label="Tenant Owner/Admin"
+              label="Tenant Owner"
               readonly
               class="readonly-field"
             ></v-text-field>

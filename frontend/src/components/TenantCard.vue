@@ -14,12 +14,29 @@ const firstAdminUser = computed(() => tenant.getAdminUsers()[0])
 </script>
 
 <template>
-  <v-card @click="emit('click')" class="hoverable">
-    <v-card-title>{{ tenant.name }}</v-card-title>
+  <v-card @click="emit('click')" class="hoverable" variant="tonal">
+    <v-card-title>
+      <span class="card-link">
+        {{ tenant.name }}
+      </span>
+    </v-card-title>
     <v-card-subtitle>{{ tenant.ministryName }}</v-card-subtitle>
     <v-card-text v-if="firstAdminUser">
-      <p>Tenant Owner/Admin: {{ firstAdminUser.ssoUser.displayName }}</p>
+      <p>Tenant Owner: {{ firstAdminUser.ssoUser.displayName }}</p>
       <p>{{ firstAdminUser.ssoUser.email }}</p>
     </v-card-text>
   </v-card>
 </template>
+
+<style scoped>
+.card-link {
+  color: #1a73e8;
+  text-decoration: underline;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.card-link:hover {
+  color: #1558b0;
+}
+</style>
