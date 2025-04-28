@@ -104,6 +104,14 @@ let additionalSSOUserId:string = 'ad43f1cef7ca4b19a71104d4ecf7066d'
       expect(response.status).toBe(201);      
       expect(response.body.data.tenant).toMatchObject({ name: "Test Tenant" });
       expect(response.body.data.tenant.users[0].ssoUser).toMatchObject({ ssoUserId: "fd33f1cef7ca4b19a71104d4ecf7066b" });
+      expect(response.body.data.tenant.users[0].roles).toHaveLength(3);
+      expect(response.body.data.tenant.users[0].roles).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ role: expect.objectContaining({ name: "TMS.SERVICE_USER" }) }),
+          expect.objectContaining({ role: expect.objectContaining({ name: "TMS.TENANT_OWNER" }) }),
+          expect.objectContaining({ role: expect.objectContaining({ name: "TMS.TENANT_USER" }) })
+        ])
+      );
       tenantId = response.body.data.tenant.id;
       tenantUserId = response.body.data.tenant.users[0].id
     });
