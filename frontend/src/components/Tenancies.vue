@@ -96,7 +96,7 @@ fetchUserTenants()
             <v-card-title>{{ tenancy.name }}</v-card-title>
             <v-card-subtitle>{{ tenancy.ministryName }}</v-card-subtitle>
             <v-card-text v-if="firstAdminUser != null">
-              <p>Tenant Owner/Admin: {{ firstAdminUser.ssoUser.displayName }}</p>
+              <p>Tenant Owner: {{ firstAdminUser.ssoUser.displayName }}</p>
               <p>{{ firstAdminUser.ssoUser.email }}</p>
             </v-card-text>
           </v-card>

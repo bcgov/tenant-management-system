@@ -25,10 +25,10 @@ const handleLogout = () => {
 </script>
 
 <template>
-  <v-app-bar elevation="1">
+  <v-app-bar app class="px-4" elevation="1">
     <v-toolbar-title>
       <img src="/BCID_H_RGB_pos.svg" alt="Logo" class="logo" />
-      Tenant Management System
+      Tenant Management System (TMS)
     </v-toolbar-title>
     <v-spacer></v-spacer>
     <template #append>
@@ -44,7 +44,7 @@ const handleLogout = () => {
 <style scoped>
 .logo {
   vertical-align: middle;
-  height: 40px;
+  height: 60px;
   margin-right: 8px;
 }
 

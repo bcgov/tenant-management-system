@@ -35,13 +35,14 @@ onMounted(fetchTenants)
 
 <template>
   <BaseSecure>
-    <v-container class="mt-4">
+    <v-container>
       <v-row>
         <v-col cols="12">
           <v-btn
             variant="text"
             color="primary"
             prepend-icon="mdi-plus-box"
+            size="large"
             @click="openDialog"
           >
             Create New Tenant
