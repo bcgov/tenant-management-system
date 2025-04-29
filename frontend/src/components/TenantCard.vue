@@ -14,7 +14,7 @@ const firstAdminUser = computed(() => tenant.getAdminUsers()[0])
 </script>
 
 <template>
-  <v-card @click="emit('click')" class="hoverable" variant="tonal">
+  <v-card @click="emit('click')" class="hoverable bg-grey-lighten-4">
     <v-card-title>
       <span class="card-link">
         {{ tenant.name }}
