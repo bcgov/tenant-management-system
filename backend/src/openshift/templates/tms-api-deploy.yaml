@@ -69,6 +69,15 @@ parameters:
     value: "info"
   - name: LOGS_VOLUME_CAPACITY
     value: "128Mi"
+  - name: ALLOWED_AUDIENCES
+    required: true
+    value: "tenant-management-system-6014,tenant-manager-poc-5908"
+  - name: JWKS_URI
+    required: true
+    value: "https://dev.loginproxy.gov.bc.ca/auth/realms/standard/protocol/openid-connect/certs"
+  - name: ISSUER
+    required: true
+    value: "https://dev.loginproxy.gov.bc.ca/auth/realms/standard"
 
 objects:
   - apiVersion: v1
@@ -165,6 +174,12 @@ objects:
                     secretKeyRef:
                       name: ${APP_NAME}-secret
                       key: BCGOV_SSO_CLIENT_SECRET
+                - name: ALLOWED_AUDIENCES
+                  value: ${ALLOWED_AUDIENCES}
+                - name: JWKS_URI
+                  value: ${JWKS_URI}
+                - name: ISSUER
+                  value: ${ISSUER}
               readinessProbe:
                 httpGet:
                   path: /v1/health
