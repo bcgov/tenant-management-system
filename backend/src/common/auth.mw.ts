@@ -4,6 +4,10 @@ import jwksRsa from 'jwks-rsa';
 import logger from './logger';
 import { UnauthorizedError } from '../errors/UnauthorizedError';
 
+const ALLOWED_AUDIENCES = process.env.ALLOWED_AUDIENCES 
+  ? process.env.ALLOWED_AUDIENCES.split(',') 
+  : ['tenant-manager-poc-5908'];
+
 declare global {
   namespace Express {
     interface Request {
@@ -25,7 +29,7 @@ export const checkJwt = jwt({
     }
   }),
   issuer: 'https://dev.loginproxy.gov.bc.ca/auth/realms/standard',
-  audience: 'tenant-manager-poc-5908',
+  audience: ALLOWED_AUDIENCES,
   algorithms: ['RS256'],
   requestProperty: 'user',
   getToken: function fromHeaderOrQuerystring(req) {
