@@ -11,7 +11,7 @@ const ALLOWED_AUDIENCES = process.env.ALLOWED_AUDIENCES
 declare global {
   namespace Express {
     interface Request {
-      user?: {
+      decodedJwt?: {
         sub: string;
         [key: string]: any;
       };
@@ -31,7 +31,7 @@ export const checkJwt = jwt({
   issuer: 'https://dev.loginproxy.gov.bc.ca/auth/realms/standard',
   audience: ALLOWED_AUDIENCES,
   algorithms: ['RS256'],
-  requestProperty: 'user',
+  requestProperty: 'decodedJwt',
   getToken: function fromHeaderOrQuerystring(req) {
     const authHeader = req.headers.authorization
     if (authHeader && authHeader.split(' ')[0] === 'Bearer') {
@@ -44,17 +44,17 @@ export const checkJwt = jwt({
 }).unless({ path: ['/v1/health'] });
 
 export const extractOidcSub = (req: Request, res: Response, next: NextFunction) => {
-  if (req.user) {
+  if (req.decodedJwt) {
     logger.info('Authenticated request', { 
-      sub: req.user.sub,
+      sub: req.decodedJwt.sub,
       token: req.headers.authorization?.split(' ')[1]?.substring(0, 20) + '...',
-      user: req.user
+      decodedJwt: req.decodedJwt
     });
     next();
   } else {
-    logger.error('No user found in request', { 
+    logger.error('No decodedJwt found in request', { 
       headers: req.headers,
-      user: req.user 
+      decodedJwt: req.decodedJwt 
     });
     res.status(401).json({ error: 'Unauthorized' });
   }
