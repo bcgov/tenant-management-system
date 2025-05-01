@@ -3,6 +3,7 @@ import { expressjwt as jwt } from 'express-jwt';
 import jwksRsa from 'jwks-rsa';
 import logger from './logger';
 import { UnauthorizedError } from '../errors/UnauthorizedError';
+import {RoutesConstants} from './routes.constants'
 
 const ALLOWED_AUDIENCES = process.env.ALLOWED_AUDIENCES 
   ? process.env.ALLOWED_AUDIENCES.split(',') 
@@ -12,7 +13,6 @@ declare global {
   namespace Express {
     interface Request {
       decodedJwt?: {
-        sub: string;
         [key: string]: any;
       };
     }
@@ -22,13 +22,13 @@ declare global {
 export const checkJwt = jwt({
   secret: jwksRsa.expressJwtSecret({
     cache: true,
-    jwksUri: 'https://dev.loginproxy.gov.bc.ca/auth/realms/standard/protocol/openid-connect/certs',
+    jwksUri: process.env.JWKS_URI,
     handleSigningKeyError: (err, cb) => {
       logger.error('Error:', { error: err.message, stack: err.stack });
-      cb(new UnauthorizedError('Invalid token signature'));
+      cb(new UnauthorizedError('Error ocurred during authentication'));
     }
   }),
-  issuer: 'https://dev.loginproxy.gov.bc.ca/auth/realms/standard',
+  issuer: process.env.ISSUER,
   audience: ALLOWED_AUDIENCES,
   algorithms: ['RS256'],
   requestProperty: 'decodedJwt',
@@ -39,9 +39,9 @@ export const checkJwt = jwt({
       logger.info('Token found:')
       return token;
     }
-    throw new UnauthorizedError('No token provided');
+    throw new UnauthorizedError('Error ocurred during authentication');
   }
-}).unless({ path: ['/v1/health'] });
+}).unless({ path: [RoutesConstants.HEALTH] });
 
 export const extractOidcSub = (req: Request, res: Response, next: NextFunction) => {
   if (req.decodedJwt) {
@@ -52,11 +52,8 @@ export const extractOidcSub = (req: Request, res: Response, next: NextFunction) 
     });
     next();
   } else {
-    logger.error('No decodedJwt found in request', { 
-      headers: req.headers,
-      decodedJwt: req.decodedJwt 
-    });
-    res.status(401).json({ error: 'Unauthorized' });
+    logger.error('No decodedJwt found in request')
+    res.status(401).json({ error: 'Error ocurred during authentication' })
   }
 };
 
@@ -66,11 +63,10 @@ export const jwtErrorHandler = (err: any, req: Request, res: Response, next: Nex
       error: err.message,
       code: err.code,
       inner: err.inner?.message,
-      stack: err.stack
     });
     return res.status(401).json({ 
       error: 'Unauthorized',
-      message: err.message,
+      message: 'Error ocurred during authentication',
       statusCode: 401
     });
   }
