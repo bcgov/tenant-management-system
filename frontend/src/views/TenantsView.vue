@@ -3,7 +3,7 @@ import { storeToRefs } from 'pinia'
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
-import CreateTenancyDialog from '@/components/CreateTenancyDialog.vue'
+import CreateTenantDialog from '@/components/CreateTenantDialog.vue'
 import TenantList from '@/components/TenantList.vue'
 import type { Tenant } from '@/models/tenant.model'
 import { getUser } from '@/services/keycloak'
@@ -53,6 +53,6 @@ onMounted(fetchTenants)
       <TenantList :tenants="tenants" @select="handleCardClick" />
     </v-container>
 
-    <CreateTenancyDialog :visible="dialogVisible" @close="closeDialog" />
+    <CreateTenantDialog :visible="dialogVisible" @close="closeDialog" />
   </BaseSecure>
 </template>
