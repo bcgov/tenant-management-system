@@ -1,26 +1,28 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { ref } from 'vue'
 
 import { getUser } from '@/services/keycloak'
 import { MINISTRIES } from '@/utils/constants'
 
 // Props and emits
-const props = defineProps({
-  visible: Boolean,
-})
-const emit = defineEmits(['close', 'submit'])
+const props = defineProps<{ modelValue: boolean }>()
+const emit = defineEmits<{
+  (e: 'update:modelValue', value: boolean): void
+  (e: 'submit', payload: { name: string; ministryName: string }): void
+}>()
 
-// Reactive form state
-const username = ref(getUser().displayName)
-const name = ref('')
-const ministryName = ref('')
+const closeDialog = () => emit('update:modelValue', false)
+
+// Form state
 const formValid = ref(false)
+const ministryName = ref('')
+const name = ref('')
+const username = ref(getUser().displayName)
 
+// Validation
 const rules = {
   required: (value: any) => !!value || 'Required',
 }
-
-const visible = computed(() => props.visible)
 
 const handleSubmit = () => {
   if (formValid.value) {
@@ -28,21 +30,13 @@ const handleSubmit = () => {
       name: name.value,
       ministryName: ministryName.value,
     })
-    // Optionally reset form here or let parent decide
-    name.value = ''
-    ministryName.value = ''
+    // Let parent decide when to close the dialog
   }
 }
-
-const closeDialog = () => emit('close')
 </script>
 
 <template>
-  <v-dialog
-    :model-value="props.visible"
-    @update:modelValue="emit('close')"
-    max-width="600px"
-  >
+  <v-dialog :model-value="modelValue" persistent max-width="600px">
     <v-card>
       <v-card-title>Create New Tenant</v-card-title>
       <v-card-subtitle>
@@ -81,9 +75,9 @@ const closeDialog = () => emit('close')
       </v-card-text>
       <v-card-actions>
         <v-btn variant="text" @click="closeDialog">Cancel</v-btn>
-        <v-btn variant="text" :disabled="!formValid" @click="handleSubmit"
-          >Finish</v-btn
-        >
+        <v-btn variant="text" :disabled="!formValid" @click="handleSubmit">
+          Finish
+        </v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>

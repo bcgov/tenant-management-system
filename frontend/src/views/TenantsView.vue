@@ -12,22 +12,27 @@ import { getUser } from '@/services/keycloak'
 import notificationService from '@/services/notification'
 import { useTenantStore } from '@/stores/useTenantStore'
 
-// Routing for switching to other views.
+// Router
 const router = useRouter()
 const handleCardClick = (id: Tenant['id']) => {
   router.push(`/tenants/${id}`)
 }
 
-// State storage.
+// Tenant store
 const tenantStore = useTenantStore()
 const { tenants } = storeToRefs(tenantStore)
 
-// TODO: was there a spinner before?
-const fetchTenants = async () => {
-  await tenantStore.fetchTenants(getUser().ssoUserId)
-}
+// Dialog visibility state
+const dialogVisible = ref(false)
+const openDialog = () => (dialogVisible.value = true)
+const closeDialog = () => (dialogVisible.value = false)
 
-// Use a handler for submitting new tenant to the backend.
+// Fetch tenants on load
+onMounted(() => {
+  tenantStore.fetchTenants(getUser().ssoUserId)
+})
+
+// Submit handler
 const handleTenantSubmit = async ({
   name,
   ministryName,
@@ -48,20 +53,13 @@ const handleTenantSubmit = async ({
       'New tenancy created successfully',
       'success',
     )
-  } catch (err) {
-    notificationService.addNotification('Failed to create new tenancy', 'error')
-    logError('Failed to create new tenancy', err)
-  } finally {
+
     closeDialog()
+  } catch (err) {
+    notificationService.addNotification('Failed to create new tenant', 'error')
+    logError('Failed to create new tenant', err)
   }
 }
-
-onMounted(fetchTenants)
-
-// Dialog controls
-const dialogVisible = ref(false)
-const openDialog = () => (dialogVisible.value = true)
-const closeDialog = () => (dialogVisible.value = false)
 </script>
 
 <template>
@@ -84,10 +82,6 @@ const closeDialog = () => (dialogVisible.value = false)
       <TenantList :tenants="tenants" @select="handleCardClick" />
     </v-container>
 
-    <CreateTenantDialog
-      :visible="dialogVisible"
-      @close="closeDialog"
-      @submit="handleTenantSubmit"
-    />
+    <CreateTenantDialog v-model="dialogVisible" @submit="handleTenantSubmit" />
   </BaseSecure>
 </template>
