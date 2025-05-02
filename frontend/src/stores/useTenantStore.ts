@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
-import { useNotification } from '@/composables/useNotification'
 import {
   createTenant,
   getUserTenants,
@@ -16,7 +15,6 @@ export const useTenantStore = defineStore('tenant', () => {
   const tenants = ref<Tenant[]>([])
   const tenantUsers = ref<Record<string, User[]>>({})
   const tenantUserRoles = ref<Record<string, Record<string, Role[]>>>({})
-  const { addNotification } = useNotification()
 
   const loading = ref(false)
 
@@ -44,57 +42,27 @@ export const useTenantStore = defineStore('tenant', () => {
       )
 
       tenants.value = tenantInstances
-    } catch (error) {
-      addNotification({
-        id: new Date().toString(),
-        message: 'Error fetching tenants: ' + error,
-        type: 'error',
-      })
     } finally {
       loading.value = false
     }
   }
 
   const fetchTenantUsers = async (tenantId: string) => {
-    try {
-      const users = await getUsers(tenantId)
-      tenantUsers.value[tenantId] = users
-    } catch (error) {
-      addNotification({
-        id: new Date().toString(),
-        message: 'Error fetching tenant users: ' + error,
-        type: 'error',
-      })
-    }
+    const users = await getUsers(tenantId)
+    tenantUsers.value[tenantId] = users
   }
 
   const fetchTenantUserRoles = async (tenantId: string, userId: string) => {
-    try {
-      const roles = await getUserRoles(tenantId, userId)
-      if (!tenantUserRoles.value[tenantId]) {
-        tenantUserRoles.value[tenantId] = {}
-      }
-      tenantUserRoles.value[tenantId][userId] = roles
-    } catch (error) {
-      addNotification({
-        id: new Date().toString(),
-        message: 'Error fetching tenant user roles: ' + error,
-        type: 'error',
-      })
+    const roles = await getUserRoles(tenantId, userId)
+    if (!tenantUserRoles.value[tenantId]) {
+      tenantUserRoles.value[tenantId] = {}
     }
+    tenantUserRoles.value[tenantId][userId] = roles
   }
 
   const addTenant = async (tenant: Tenant) => {
-    try {
-      const newTenant = await createTenant(tenant)
-      tenants.value.push(newTenant)
-    } catch (error) {
-      addNotification({
-        id: new Date().toString(),
-        message: 'Error adding tenant: ' + error,
-        type: 'error',
-      })
-    }
+    const newTenant = await createTenant(tenant)
+    tenants.value.push(newTenant)
   }
 
   return {
