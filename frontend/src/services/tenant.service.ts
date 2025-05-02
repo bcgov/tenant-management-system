@@ -1,8 +1,8 @@
-import axios, { AxiosError } from 'axios'
+import axios from 'axios'
 
 import { logError } from '@/plugins/console'
-import type { Role } from '@/types/Role'
 import type { Tenant } from '@/models/tenant.model'
+import type { Role } from '@/types/Role'
 import type { User } from '@/types/User'
 
 const tenantApi = axios.create({
@@ -11,8 +11,8 @@ const tenantApi = axios.create({
 })
 
 const logApiError = (message: string, error: unknown) => {
-  if (error instanceof AxiosError && error.response) {
-    logError(message, error.response.data)
+  if (axios.isAxiosError(error)) {
+    logError(`${message}: ${error.message}`, error)
   } else {
     logError(message, error)
   }
@@ -79,7 +79,7 @@ export const addUsers = async (
   roleId?: string,
 ): Promise<User> => {
   try {
-    const request: any = { user }
+    const request: { user: User; role?: { id: string } } = { user }
     if (roleId) {
       request.role = { id: roleId }
     }

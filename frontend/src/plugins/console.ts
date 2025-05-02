@@ -3,16 +3,16 @@ import type { App } from 'vue'
 import { INJECTION_KEYS } from '@/utils/constants'
 
 /**
- * Logs an error message to the console.
- * @param {string} error - The error message to log.
+ * Logs an error message and optional error object to the console (in
+ * non-production environments).
+ *
+ * @param message - A short description of what went wrong.
+ * @param error - An optional error object for additional debugging context.
  */
 const logError = (message: string, error?: unknown) => {
   if (process.env.NODE_ENV !== 'production') {
-    // eslint-disable-next-line no-console
-    if (error instanceof Error) {
+    if (error !== undefined) {
       console.error(message, error)
-    } else if (error) {
-      console.error(message + ': ' + error)
     } else {
       console.error(message)
     }
@@ -20,23 +20,23 @@ const logError = (message: string, error?: unknown) => {
 }
 
 /**
- * Logs a regular message to the console.
- * @param {string} message - The message to log.
+ * Logs a regular message to the console (in non-production environments).
+ *
+ * @param message - A short description of what went wrong.
  */
 const logMessage = (message: string) => {
   if (process.env.NODE_ENV !== 'production') {
-    // eslint-disable-next-line no-console
     console.log(message)
   }
 }
 
 /**
- * Logs a warning message to the console.
- * @param {string} message - The warning message to log.
+ * Logs a warning message to the console (in non-production environments).
+ *
+ * @param message - A short description of what went wrong.
  */
 const logWarning = (message: string) => {
   if (process.env.NODE_ENV !== 'production') {
-    // eslint-disable-next-line no-console
     console.warn(message)
   }
 }
@@ -44,7 +44,8 @@ const logWarning = (message: string) => {
 export default {
   /**
    * Installs the plugin, adding global logging methods to the Vue instance.
-   * @param {Object} app - The Vue app instance.
+   *
+   * @param app - The Vue app instance.
    */
   install(app: App) {
     // TODO: this was Vue 2 code, remove if not needed

@@ -16,7 +16,7 @@ const { notifications, removeNotification } = useNotification()
         role="alert"
         aria-live="assertive"
         closable
-        @click:close="removeNotification(notification.id)"
+        @click="removeNotification(notification.id)"
       >
         {{ notification.message }}
       </v-alert>
