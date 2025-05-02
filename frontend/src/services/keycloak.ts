@@ -1,38 +1,63 @@
 import Keycloak from 'keycloak-js'
+
 import { logError, logMessage, logWarning } from '@/plugins/console'
 import type { User } from '@/types/User'
 
-// Initialize Keycloak instance with configuration from environment variables
 const keycloak = new Keycloak({
-  url: import.meta.env.VITE_KEYCLOAK_URL,
-  realm: import.meta.env.VITE_KEYCLOAK_REALM,
   clientId: import.meta.env.VITE_KEYCLOAK_CLIENT_ID,
+  realm: import.meta.env.VITE_KEYCLOAK_REALM,
+  url: import.meta.env.VITE_KEYCLOAK_URL,
 })
 
 /**
- * Initializes Keycloak and calls the provided callback if authenticated.
- * @param {Function} onAuthenticatedCallback - The callback to call once authenticated.
+ * Returns the current authentication token.
+ * @returns {string | undefined} The authentication token.
  */
-export const initKeycloak = (onAuthenticatedCallback: () => void) => {
-  keycloak
-    .init({
-      onLoad: 'login-required', // Redirect to login if not authenticated
-      checkLoginIframe: false, // Disable login status check iframe
-    })
-    .then((authenticated: any) => {
-      // TODO: any
-      if (authenticated) {
-        logMessage('Authenticated')
-        onAuthenticatedCallback()
-      } else {
-        logWarning('Not authenticated')
-      }
-    })
-    .catch((error: any) => {
-      // # TODO: any
-      logError('Failed to initialize', error)
-    })
+export const getToken = (): string | undefined => keycloak.token
+
+/**
+ * Returns the current user's information.
+ * @returns {User} The user's information.
+ */
+export const getUser = (): User => {
+  return {
+    firstName: keycloak.tokenParsed?.given_name,
+    lastName: keycloak.tokenParsed?.family_name,
+    displayName: keycloak.tokenParsed?.display_name,
+    userName: keycloak.tokenParsed?.idir_username,
+    ssoUserId: keycloak.tokenParsed?.idir_user_guid,
+    email: keycloak.tokenParsed?.email,
+  }
 }
+
+/**
+ * Initializes Keycloak and sets the authenticated if successful.
+ */
+export const initKeycloak = async (): Promise<void> => {
+  try {
+    const authenticated = await keycloak.init({
+      onLoad: 'login-required',
+      checkLoginIframe: false,
+    })
+
+    if (!authenticated) {
+      logWarning('User not authenticated')
+      throw new Error('User not authenticated')
+    }
+
+    logMessage('Keycloak authenticated')
+  } catch (error) {
+    logError('Keycloak init failed', error)
+
+    throw error
+  }
+}
+
+/**
+ * Checks if the user is logged in.
+ * @returns {boolean} True if the user is logged in, otherwise false.
+ */
+export const isLoggedIn = (): boolean => keycloak.authenticated === true
 
 /**
  * Initiates the login process using Keycloak.
@@ -60,31 +85,4 @@ export const logout = () => {
     .catch((error: Error) => {
       logError('Logout failed', error)
     })
-}
-
-/**
- * Returns the current authentication token.
- * @returns {string} The authentication token.
- */
-export const getToken = (): string | undefined => keycloak.token
-
-/**
- * Checks if the user is logged in.
- * @returns {boolean} True if the user is logged in, otherwise false.
- */
-export const isLoggedIn = (): boolean => !!keycloak.token
-
-/**
- * Returns the current user's information.
- * @returns {Object} The user's information.
- */
-export const getUser = (): User => {
-  return {
-    firstName: keycloak.tokenParsed?.given_name,
-    lastName: keycloak.tokenParsed?.family_name,
-    displayName: keycloak.tokenParsed?.display_name,
-    userName: keycloak.tokenParsed?.idir_username,
-    ssoUserId: keycloak.tokenParsed?.idir_user_guid,
-    email: keycloak.tokenParsed?.email,
-  }
 }
