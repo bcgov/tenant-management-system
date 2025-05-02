@@ -3,6 +3,7 @@ import express from 'express'
 import { Routes } from './routes/routes'
 import rTracer from 'cls-rtracer'
 import { requestLoggingMiddleware } from './common/logger.mw'
+import { checkJwt, jwtErrorHandler } from './common/auth.mw'
 import logger from './common/logger'
 require('dotenv').config()
 
@@ -31,6 +32,8 @@ export default class App {
     }))
     
     this.config()
+    this.app.use(checkJwt)
+    this.app.use(jwtErrorHandler)
     this.routes.routes(this.app)
   }
 
