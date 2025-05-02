@@ -2,35 +2,66 @@
 import { storeToRefs } from 'pinia'
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { v4 as uuidv4 } from 'uuid'
 
 import CreateTenantDialog from '@/components/CreateTenantDialog.vue'
 import TenantList from '@/components/TenantList.vue'
 import type { Tenant } from '@/models/tenant.model'
+import { logError } from '@/plugins/console'
 import { getUser } from '@/services/keycloak'
+import notificationService from '@/services/notification'
 import { useTenantStore } from '@/stores/useTenantStore'
 
-// The Vue router to route to different pages.
+// Routing for switching to other views.
 const router = useRouter()
-
-// Set up any stores that are needed for Components used in this View.
-const tenantStore = useTenantStore()
-const { tenants } = storeToRefs(tenantStore)
-
-// Route to the tenant details when clicked.
 const handleCardClick = (id: Tenant['id']) => {
   router.push(`/tenants/${id}`)
 }
 
-// Controls for the Create Tenant Dialog
-const dialogVisible = ref(false)
-const closeDialog = () => (dialogVisible.value = false)
-const openDialog = () => (dialogVisible.value = true)
+// State storage.
+const tenantStore = useTenantStore()
+const { tenants } = storeToRefs(tenantStore)
 
+// TODO: was there a spinner before?
 const fetchTenants = async () => {
   await tenantStore.fetchTenants(getUser().ssoUserId)
 }
 
+// Use a handler for submitting new tenant to the backend.
+const handleTenantSubmit = async ({
+  name,
+  ministryName,
+}: {
+  name: string
+  ministryName: string
+}) => {
+  try {
+    await tenantStore.addTenant({
+      id: uuidv4(),
+      name,
+      ministryName,
+      user: getUser(),
+      users: [],
+    })
+
+    notificationService.addNotification(
+      'New tenancy created successfully',
+      'success',
+    )
+  } catch (err) {
+    notificationService.addNotification('Failed to create new tenancy', 'error')
+    logError('Failed to create new tenancy', err)
+  } finally {
+    closeDialog()
+  }
+}
+
 onMounted(fetchTenants)
+
+// Dialog controls
+const dialogVisible = ref(false)
+const openDialog = () => (dialogVisible.value = true)
+const closeDialog = () => (dialogVisible.value = false)
 </script>
 
 <template>
@@ -53,6 +84,10 @@ onMounted(fetchTenants)
       <TenantList :tenants="tenants" @select="handleCardClick" />
     </v-container>
 
-    <CreateTenantDialog :visible="dialogVisible" @close="closeDialog" />
+    <CreateTenantDialog
+      :visible="dialogVisible"
+      @close="closeDialog"
+      @submit="handleTenantSubmit"
+    />
   </BaseSecure>
 </template>
