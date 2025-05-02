@@ -21,7 +21,11 @@ app.use(vuetify)
 app.use(consolePlugin)
 app.component('BaseSecure', BaseSecure)
 
-// Initialize Keycloak and mount the app once authenticated
-initKeycloak(() => {
-  app.mount('#app')
-})
+initKeycloak()
+  .then(() => {
+    app.mount('#app')
+  })
+  .catch((error) => {
+    console.error('App init failed due to Keycloak:', error)
+    // TODO: what does this look like to the user? Notification?
+  })
