@@ -10,7 +10,15 @@ export class TMSService {
     tmsRepository:TMSRepository = new TMSRepository(connection.manager)
     
     public async createTenant(req:Request) {
-        const savedTenant = await this.tmsRepository.saveTenant(req)
+        const savedTenant:any = await this.tmsRepository.saveTenant(req)
+        
+        if (savedTenant?.users) {
+            savedTenant.users = savedTenant.users.map(user => ({
+                ...user,
+                roles: user.roles.map(tur => tur.role)
+            }));
+        }
+
         return {
             data: { 
                 tenant:savedTenant
