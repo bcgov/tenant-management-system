@@ -174,6 +174,16 @@ export class TMSRepository {
         return response
     }
 
+    public async getExistingRolesForUser(tenantUserId: string, transactionEntityManager?: EntityManager) {
+        transactionEntityManager = transactionEntityManager ? transactionEntityManager : this.manager;
+        return await transactionEntityManager
+            .createQueryBuilder(Role, "role")
+            .innerJoin("role.tenantUserRoles", "tenantUserRole")
+            .innerJoin("tenantUserRole.tenantUser", "tenantUser")
+            .where("tenantUser.id = :tenantUserId", { tenantUserId })
+            .getMany();
+    }
+
     public async assignUserRoles(tenantId: string, tenantUserId: string, roleIds: string[], transactionEntityManager?: EntityManager) {
         transactionEntityManager = transactionEntityManager ? transactionEntityManager : this.manager
         
@@ -183,15 +193,8 @@ export class TMSRepository {
                 throw new NotFoundError(`Tenant user not found for tenant: ${tenantId}`)
             }
 
-            const existingRoles:Role[] = await this.manager
-                .createQueryBuilder(Role, "role")
-                .innerJoin("role.tenantUserRoles", "tenantUserRole")
-                .innerJoin("tenantUserRole.tenantUser", "tenantUser")
-                .where("tenantUser.id = :tenantUserId", { tenantUserId })
-                .getMany();
-
+            const existingRoles:Role[] = await this.getExistingRolesForUser(tenantUserId, transactionEntityManager);
             const existingRoleIds:string[] = existingRoles.map(role => role.id)
-            
             const newRoleIds:string[] = roleIds.filter(roleId => !existingRoleIds.includes(roleId))
             
             if (newRoleIds.length === 0) {
@@ -223,6 +226,7 @@ export class TMSRepository {
             throw error
         }
     }
+    
 
     public async getTenantRoles(req:Request) {
         const tenantId:string = req.params.tenantId
