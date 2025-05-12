@@ -20,14 +20,18 @@ export class TMSService {
 
     public async addTenantUser(req:Request) {       
         const response:any = await this.tmsRepository.addTenantUsers(req)  
-        const user:any = response.user? response.user : response     
+        const savedUser:any = response.user?.savedTenantUser || response.savedTenantUser
+        const roleAssignments:any = response.roleAssignments || []
+        const roles:any = roleAssignments.map(assignment => assignment.role)
         return {
-            data: {                 
-                user:user,
-                role: response.role
-            } 
-        }
-        
+            data: {
+              user: {
+                ...savedUser,
+                ssoUser: savedUser?.ssoUser
+              },
+              roles: roles
+            }
+        };
     }
 
     public async getTenantsForUser(req:Request) {
@@ -59,7 +63,7 @@ export class TMSService {
 
     public async assignUserRoles(req:Request) {
         const { tenantId, tenantUserId, roleId } = req.params;
-        const data = await this.tmsRepository.assignUserRoles(tenantId, tenantUserId, roleId,null)
+        const data = await this.tmsRepository.assignUserRoles(tenantId, tenantUserId, [roleId],null)
         return {
            data
         }
