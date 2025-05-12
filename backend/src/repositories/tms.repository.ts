@@ -204,7 +204,7 @@ export class TMSRepository {
                 throw new ConflictError("All roles are already assigned to the user")
             }
 
-            const validRoles:Role[] = await this.manager
+            const validRoles:Role[] = await transactionEntityManager
                 .createQueryBuilder(Role, "role")
                 .where("role.id IN (:...roleIds)", { roleIds: newRoleIds })
                 .getMany();
@@ -213,7 +213,7 @@ export class TMSRepository {
                 throw new NotFoundError("Role(s) not found")
             }
 
-            const tenantUser:TenantUser = await this.manager.findOne(TenantUser, { where: { id: tenantUserId } })
+            const tenantUser:TenantUser = await transactionEntityManager.findOne(TenantUser, { where: { id: tenantUserId } })
             const newAssignments:TenantUserRole[] = validRoles.map(role => {
                 const tenantUserRole:TenantUserRole = new TenantUserRole()
                 tenantUserRole.tenantUser = tenantUser
