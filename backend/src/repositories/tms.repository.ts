@@ -176,12 +176,14 @@ export class TMSRepository {
 
     public async getExistingRolesForUser(tenantUserId: string, transactionEntityManager?: EntityManager) {
         transactionEntityManager = transactionEntityManager ? transactionEntityManager : this.manager;
-        return await transactionEntityManager
-            .createQueryBuilder(Role, "role")
-            .innerJoin("role.tenantUserRoles", "tenantUserRole")
-            .innerJoin("tenantUserRole.tenantUser", "tenantUser")
+        const tenantUser:TenantUser = await transactionEntityManager
+            .createQueryBuilder(TenantUser, "tenantUser")
+            .leftJoinAndSelect("tenantUser.roles", "tenantUserRole")
+            .leftJoinAndSelect("tenantUserRole.role", "role")
             .where("tenantUser.id = :tenantUserId", { tenantUserId })
-            .getMany();
+            .getOne();
+        
+        return tenantUser?.roles?.map(tur => tur.role) || [];
     }
 
     public async assignUserRoles(tenantId: string, tenantUserId: string, roleIds: string[], transactionEntityManager?: EntityManager) {
@@ -194,6 +196,7 @@ export class TMSRepository {
             }
 
             const existingRoles:Role[] = await this.getExistingRolesForUser(tenantUserId, transactionEntityManager);
+
             const existingRoleIds:string[] = existingRoles.map(role => role.id)
             const newRoleIds:string[] = roleIds.filter(roleId => !existingRoleIds.includes(roleId))
             

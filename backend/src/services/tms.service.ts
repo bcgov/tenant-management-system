@@ -27,9 +27,10 @@ export class TMSService {
             data: {
               user: {
                 ...savedUser,
-                ssoUser: savedUser?.ssoUser
+                ssoUser: savedUser?.ssoUser,
+                roles: roles
               },
-              roles: roles
+              
             }
         };
     }
