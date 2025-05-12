@@ -10,7 +10,15 @@ export class TMSService {
     tmsRepository:TMSRepository = new TMSRepository(connection.manager)
     
     public async createTenant(req:Request) {
-        const savedTenant = await this.tmsRepository.saveTenant(req)
+        const savedTenant:any = await this.tmsRepository.saveTenant(req)
+        
+        if (savedTenant?.users) {
+            savedTenant.users = savedTenant.users.map(user => ({
+                ...user,
+                roles: user.roles.map(tur => tur.role)
+            }));
+        }
+
         return {
             data: { 
                 tenant:savedTenant
@@ -20,14 +28,19 @@ export class TMSService {
 
     public async addTenantUser(req:Request) {       
         const response:any = await this.tmsRepository.addTenantUsers(req)  
-        const user:any = response.user? response.user : response     
+        const savedUser:any = response.user?.savedTenantUser || response.savedTenantUser
+        const roleAssignments:any = response.roleAssignments || []
+        const roles:any = roleAssignments.map(assignment => assignment.role)
         return {
-            data: {                 
-                user:user,
-                role: response.role
-            } 
-        }
-        
+            data: {
+              user: {
+                ...savedUser,
+                ssoUser: savedUser?.ssoUser,
+                roles: roles
+              },
+              
+            }
+        };
     }
 
     public async getTenantsForUser(req:Request) {
@@ -59,7 +72,7 @@ export class TMSService {
 
     public async assignUserRoles(req:Request) {
         const { tenantId, tenantUserId, roleId } = req.params;
-        const data = await this.tmsRepository.assignUserRoles(tenantId, tenantUserId, roleId,null)
+        const data = await this.tmsRepository.assignUserRoles(tenantId, tenantUserId, [roleId],null)
         return {
            data
         }
@@ -105,6 +118,19 @@ export class TMSService {
 
     public async getTenant(req:Request) {
         const tenant = await this.tmsRepository.getTenant(req)
+        
+        const expand = typeof req.query.expand === "string" ? req.query.expand.split(",") : []
+        if (expand.includes("tenantUserRoles") && tenant?.users) {
+            const transformedUsers = tenant.users.map(user => {
+                const userRoles = user.roles?.map(tur => tur.role) || []
+                return {
+                    ...user,
+                    roles: userRoles
+                };
+            });
+            (tenant as any).users = transformedUsers;
+        }
+
         return {
             data: {
                 tenant

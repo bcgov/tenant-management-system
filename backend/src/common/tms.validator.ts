@@ -30,9 +30,9 @@ export default {
                 ssoUserId: Joi.string().required(), // will need to be updated to the right regex and length
                 email:Joi.string().email().max(100).required(),                
             }).required(),
-            role: Joi.object({
-                id: Joi.string().guid()
-            }).optional()
+            roles: Joi.array().items(
+                Joi.string().guid()
+            ).min(1).max(3).required()
         }).options({abortEarly:false,convert:false})
     },
 
