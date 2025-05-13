@@ -71,11 +71,19 @@ export class TMSService {
     }
 
     public async assignUserRoles(req:Request) {
-        const { tenantId, tenantUserId, roleId } = req.params;
-        const data = await this.tmsRepository.assignUserRoles(tenantId, tenantUserId, [roleId],null)
-        return {
-           data
+        const { tenantId, tenantUserId } = req.params;
+        const { roles } = req.body;
+        
+        if (!Array.isArray(roles) || roles.length === 0) {
+            throw new Error("roles must be a non-empty array");
         }
+
+        const data = await this.tmsRepository.assignUserRoles(tenantId, tenantUserId, roles, null);
+        return {
+            data: {
+                roles: data.map(assignment => assignment.role)
+            }
+        };
     }
 
     public async getTenantRoles(req:Request) {
