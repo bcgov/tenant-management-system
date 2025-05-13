@@ -63,8 +63,10 @@ export default {
     assignUserRoles: {
         params: Joi.object({
             tenantId: Joi.string().guid().required(),
-            tenantUserId: Joi.string().guid().required(),
-            roleId: Joi.string().guid().required()
+            tenantUserId: Joi.string().guid().required()
+        }),
+        body: Joi.object({
+            roles: Joi.array().items(Joi.string().guid()).min(1).required()
         }).options({abortEarly:false,convert:false})
     },
 
