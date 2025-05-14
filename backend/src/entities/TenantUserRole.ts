@@ -27,4 +27,7 @@ export class TenantUserRole {
 
   @Column({ type: 'char', length: 32, name: 'updated_by', nullable: true })
   updatedBy: string;
+
+  @Column({ type: 'boolean', name: 'is_deleted', default: false })
+  isDeleted: boolean;
 }

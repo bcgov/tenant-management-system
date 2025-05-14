@@ -263,10 +263,32 @@ export class TMSRepository {
         if(!assignedTenantUserRole) {
             throw new NotFoundError("Tenant: " + tenantId + ",  Users: " + tenantUserId +  " and / or roles: " + roleId +  " not found")
         } 
-        await this.manager.delete(TenantUserRole, {
+
+        const role = await this.manager.findOne(Role, { where: { id: roleId } });
+        if (role?.name === TMSConstants.TENANT_OWNER) {
+
+            const otherTenantOwnersCount = await this.manager
+                .createQueryBuilder(TenantUserRole, "tenantUserRole")
+                .innerJoin("tenantUserRole.tenantUser", "tenantUser")
+                .innerJoin("tenantUserRole.role", "role")
+                .where("tenantUser.tenant.id = :tenantId", { tenantId })
+                .andWhere("role.name = :roleName", { roleName: TMSConstants.TENANT_OWNER })
+                .andWhere("tenantUserRole.isDeleted = :isDeleted", { isDeleted: false })
+                .andWhere("tenantUserRole.tenantUser.id != :tenantUserId", { tenantUserId })
+                .getCount();
+
+            if (otherTenantOwnersCount === 0) {
+                throw new ConflictError("Cannot unassign tenant owner role. At least one tenant owner must remain.");
+            }
+        }
+
+        await this.manager.update(TenantUserRole, {
             tenantUser: { id: tenantUserId },
             role: { id: roleId }
-          });
+        }, {
+            isDeleted: true,
+            updatedBy: req.body.updatedBy || 'system'
+        });
     }
 
     public async getTenant(req:Request) {
@@ -329,8 +351,8 @@ export class TMSRepository {
             .innerJoin("tenantUser.tenant", "tenant") 
             .where("tenant.id = :tenantId", { tenantId })
             .andWhere("tenantUser.id = :tenantUserId", { tenantUserId }) 
-            .andWhere("role.id = :roleId", { roleId }) 
-        //    .andWhere("role.tenant_id = :tenantId", { tenantId }) 
+            .andWhere("role.id = :roleId", { roleId })
+            .andWhere("tenantUserRole.isDeleted = :isDeleted", { isDeleted: false })
             .getOne();
         return tenantUserRole
     }
