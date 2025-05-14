@@ -181,6 +181,7 @@ export class TMSRepository {
             .leftJoinAndSelect("tenantUser.roles", "tenantUserRole")
             .leftJoinAndSelect("tenantUserRole.role", "role")
             .where("tenantUser.id = :tenantUserId", { tenantUserId })
+            .andWhere("tenantUserRole.is_deleted = :isDeleted", { isDeleted: false })
             .getOne();
         
         return tenantUser?.roles?.map(tur => tur.role) || [];
