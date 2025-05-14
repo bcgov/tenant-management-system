@@ -303,7 +303,8 @@ export class TMSRepository {
         if (expand.includes("tenantUserRoles")) {
             tenantQuery.leftJoinAndSelect("tenant.users", "user").leftJoinAndSelect("user.ssoUser", "ssoUser")
             tenantQuery.leftJoinAndSelect("user.roles", "tenantUserRole")
-            tenantQuery.leftJoinAndSelect("tenantUserRole.role", "role")                     
+            tenantQuery.leftJoinAndSelect("tenantUserRole.role", "role")    
+            tenantQuery.andWhere("tenantUserRole.isDeleted = :isDeleted",{ isDeleted: false})                 
         }
         const tenant:Tenant = await tenantQuery.getOne();
         
