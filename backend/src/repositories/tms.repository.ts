@@ -293,18 +293,25 @@ export class TMSRepository {
         });
     }
 
-    public async checkUserTenantAccess(tenantId: string, ssoUserId: string, transactionEntityManager?: EntityManager) {
+    public async checkUserTenantAccess(tenantId: string, ssoUserId: string, requiredRoles?: string[], transactionEntityManager?: EntityManager) {
         transactionEntityManager = transactionEntityManager ? transactionEntityManager : this.manager;
         
-        const isUserMemberOfTenant = await transactionEntityManager
+        const query = transactionEntityManager
             .createQueryBuilder()
             .from(TenantUser, "tu")
             .innerJoin("tu.ssoUser", "su")
             .where("tu.tenant_id = :tenantId", { tenantId })
-            .andWhere("su.ssoUserId = :ssoUserId", { ssoUserId })
-            .getExists();
+            .andWhere("su.ssoUserId = :ssoUserId", { ssoUserId });
 
-       return isUserMemberOfTenant
+        if (requiredRoles && requiredRoles.length > 0) {
+            query
+                .innerJoin("tu.roles", "tur")
+                .innerJoin("tur.role", "role")
+                .andWhere("role.name IN (:...requiredRoles)", { requiredRoles })
+                .andWhere("tur.isDeleted = :isDeleted", { isDeleted: false });
+        }
+
+        return await query.getExists();
     }
 
     public async getTenant(req:Request) {
