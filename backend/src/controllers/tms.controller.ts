@@ -4,6 +4,7 @@ import { ErrorHandler } from '../common/error.handler';
 import { NotFoundError } from '../errors/NotFoundError';
 import { ConflictError } from '../errors/ConflictError';
 import logger from '../common/logger'
+import { ForbiddenError } from '../errors/ForbiddenError';
 
 export class TMSController {
 
@@ -177,6 +178,9 @@ export class TMSController {
             logger.error(error)            
             if (error instanceof NotFoundError) {
                 this.errorHandler.generalError(res,"Error occurred getting a tenant", error.message, error.statusCode, "Not Found")
+            }
+            else if (error instanceof ForbiddenError) {
+                this.errorHandler.generalError(res,"Error occured getting a tenant", error.message, error.statusCode, "Forbidden")
             }
             else {    
                 this.errorHandler.generalError(res,"Error occurred getting a tenant", error.message, 500, "Internal Server Error")
