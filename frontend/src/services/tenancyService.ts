@@ -48,7 +48,7 @@ export const getUsers = async (tenancyId: string): Promise<User[]> => {
   }
 }
 
-export const getTenantRoles = async (tenancyId: string): Promise<Role[]> => {
+export const getTenancyRoles = async (tenancyId: string): Promise<Role[]> => {
   try {
     const response = await tenancyApi.get(`/tenants/${tenancyId}/roles`)
     return response.data.data.roles as Role[]

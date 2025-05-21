@@ -126,7 +126,7 @@ const deleteTenancy = async () => {
   }
 } */
 
-// Fetch tenanciess when the component is mounted
+// Fetch tenancies when the component is mounted
 onMounted(() => {
   tenanciesStore.fetchTenancies(id)
 })

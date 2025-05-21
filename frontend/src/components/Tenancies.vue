@@ -7,18 +7,18 @@ import { useRouter } from 'vue-router'
 import CreateTenancyDialog from '@/components/CreateTenancyDialog.vue'
 import { useNotifications } from '@/composables/useNotification'
 import { getUserTenancies } from '@/services/userService'
-import { useTenancyStore } from '@/stores/useTenancyStore'
+import { useTenanciesStore } from '@/stores/useTenanciesStore'
 import type { Tenancy } from '@/types/Tenancy'
 import { ROLES } from '@/utils/constants'
 
 // Initialize tenancies store and router
-const tenancyStore = useTenancyStore()
+const tenanciesStore = useTenanciesStore()
 const { notifyError } = useNotifications()
 const router = useRouter()
 
 // Reactive references for dialog visibility and tenancies
 const dialogVisible = ref(false)
-const { tenancies }: { tenancies: ref<Tenancy[]> } = storeToRefs(useTenancyStore)
+const { tenancies }: { tenancies: ref<Tenancy[]> } = storeToRefs(tenanciesStore)
 
 // Function to open the Create Tenancy dialog
 const openDialog = () => {
