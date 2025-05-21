@@ -2,10 +2,10 @@
 import axios, { AxiosError } from 'axios'
 import { logError } from '@/plugins/console'
 import notificationService from '@/services/notification'
-import type { Tenancy } from '@/models/tenant.model'
+import type { Tenancy } from '@/models/tenancy.model'
 import type { User } from '@/types/User'
 
-const tenantService = axios.create({
+const tenancyService = axios.create({
   baseURL:
     import.meta.env.VITE_BACKEND_API_URL || process.env.VITE_BACKEND_API_URL,
 })
@@ -20,46 +20,46 @@ function handleError(error: unknown, message: string) {
   throw error
 }
 
-export const useTenants = () => {
-  const createTenant = async (tenancy: Tenancy) => {
+export const useTenancies = () => {
+  const createTenancy = async (tenancy: Tenancy) => {
     try {
-      const response = await tenantService.post(`/tenants`, tenancy)
+      const response = await tenancyService.post(`/tenants`, tenancy)
       return response.data.data.tenant
     } catch (error) {
       handleError(error, 'Error creating tenancy')
     }
   }
 
-  const getUserTenants = async (userId: string) => {
+  const getUserTenancies = async (userId: string) => {
     try {
-      const response = await tenantService.get(`/users/${userId}/tenants`)
+      const response = await tenancyService.get(`/users/${userId}/tenants`)
       return response.data.data.users
     } catch (error) {
       handleError(error, 'Error getting user’s tenants')
     }
   }
 
-  const getTenantUsers = async (tenancyId: string) => {
+  const getTenancyUsers = async (tenancyId: string) => {
     try {
-      const response = await tenantService.get(`/tenants/${tenancyId}/users`)
+      const response = await tenancyService.get(`/tenants/${tenancyId}/users`)
       return response.data.data.users
     } catch (error) {
       handleError(error, 'Error getting tenancy users')
     }
   }
 
-  const getTenantRoles = async (tenancyId: string) => {
+  const getTenancyRoles = async (tenancyId: string) => {
     try {
-      const response = await tenantService.get(`/tenants/${tenancyId}/roles`)
+      const response = await tenancyService.get(`/tenants/${tenancyId}/roles`)
       return response.data.data.roles
     } catch (error) {
       handleError(error, 'Error getting tenancy roles')
     }
   }
 
-  const getTenantUserRoles = async (tenancyId: string, userId: string) => {
+  const getTenancyUserRoles = async (tenancyId: string, userId: string) => {
     try {
-      const response = await tenantService.get(
+      const response = await tenancyService.get(
         `/tenants/${tenancyId}/users/${userId}/roles`,
       )
       return response.data.data.roles
@@ -68,7 +68,7 @@ export const useTenants = () => {
     }
   }
 
-  const addTenantUsers = async (
+  const addTenancyUsers = async (
     tenancyId: string,
     user: User,
     roleId?: string,
@@ -78,7 +78,7 @@ export const useTenants = () => {
       if (roleId != null) {
         request.role = { id: roleId }
       }
-      const response = await tenantService.post(
+      const response = await tenancyService.post(
         `/tenants/${tenancyId}/users`,
         request,
       )
@@ -94,7 +94,7 @@ export const useTenants = () => {
     roleId: string,
   ) => {
     try {
-      const response = await tenantService.put(
+      const response = await tenancyService.put(
         `/tenants/${tenancyId}/users/${userId}/roles/${roleId}`,
       )
       return response.data
@@ -104,12 +104,12 @@ export const useTenants = () => {
   }
 
   return {
-    createTenant,
-    getUserTenants,
-    getTenantUsers,
-    getTenantRoles,
-    getTenantUserRoles,
-    addTenantUsers,
+    createTenancy,
+    getUserTenancies,
+    getTenancyUsers,
+    getTenancyRoles,
+    getTenancyUserRoles,
+    addTenancyUsers,
     assignUserRoles,
   }
 }

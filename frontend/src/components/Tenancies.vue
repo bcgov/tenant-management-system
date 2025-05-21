@@ -6,19 +6,19 @@ import { useRouter } from 'vue-router'
 
 import CreateTenancyDialog from '@/components/CreateTenancyDialog.vue'
 import { useNotifications } from '@/composables/useNotification'
-import { getUserTenants } from '@/services/userService'
-import { useTenantStore } from '@/stores/tenants'
-import type { Tenant } from '@/types/Tenant'
+import { getUserTenancies } from '@/services/userService'
+import { useTenancyStore } from '@/stores/useTenancyStore'
+import type { Tenancy } from '@/types/Tenancy'
 import { ROLES } from '@/utils/constants'
 
 // Initialize tenancies store and router
-const tenantStore = useTenantStore()
+const tenancyStore = useTenancyStore()
 const { notifyError } = useNotifications()
 const router = useRouter()
 
 // Reactive references for dialog visibility and tenancies
 const dialogVisible = ref(false)
-const { tenant }: { tenant: ref<Tenant[]> } = storeToRefs(tenantStore)
+const { tenancies }: { tenancies: ref<Tenancy[]> } = storeToRefs(useTenancyStore)
 
 // Function to open the Create Tenancy dialog
 const openDialog = () => {
@@ -38,24 +38,24 @@ const goToManageTenancy = (id: string) => {
 // Computed property to find the first admin user in the tenancies
 const firstAdminUser = computed(() => {
   return (
-    tenants.value
-      ?.flatMap((tenant) => tenant.users)
+    tenancies.value
+      ?.flatMap((tenancy) => tenancy.users)
       ?.find((user) => user.roles.some((role) => role.name === ROLES.ADMIN)) || null
   )
 })
 
-// Function to fetch user tenants and their details
-const fetchUserTenants = async () => {
+// Function to fetch user tenancies and their details
+const fetchUserTenancies = async () => {
   try {
     let tcies = []
-    const data = await getUserTenants()
+    const data = await getUserTenancies()
     for (const tcy of data.data.tenants) {
       let tenancy = tcy
       tenancy.users = []
-      const tenancyUsers = await getTenantUsers(tcy.id)
+      const tenancyUsers = await getTenancyUsers(tcy.id)
       for (const tcyUser of tenancyUsers) {
         let tenancyUser = tcyUser
-        const userRoles = await getTenantUserRoles(tcy.id, tcyUser.id)
+        const userRoles = await getTenancyUserRoles(tcy.id, tcyUser.id)
         tenancyUser.roles = userRoles
         tenancy.users.push(tenancyUser)
       }
@@ -63,12 +63,12 @@ const fetchUserTenants = async () => {
     }
     tenancies.value = tcies
   } catch (error) {
-    notifyError('Error fetching user tenants', error)
+    notifyError('Error fetching user tenancies', error)
   }
 }
 
-// Fetch user tenants when the component is created
-fetchUserTenants()
+// Fetch user tenancies when the component is created
+fetchUserTenancies()
 */
 </script>
 
