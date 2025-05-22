@@ -1,14 +1,14 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import TenanciesView from '../views/TenanciesView.vue'
+import TenantsView from '../views/TenantsView.vue'
 import Roles from '@/components/Roles.vue'
-import ManageTenancy from '@/components/ManageTenancy.vue'
+import ManageTenancy from '@/components/ManageTenant.vue'
 
 // Define the routes for the application
 const routes = [
-  { path: '/', redirect: '/tenancies' }, // Redirect root path to /tenancies
-  { path: '/tenancies', component: TenanciesView }, // Route for Tenancies component
+  { path: '/', redirect: '/tenants' }, // Redirect root path to /tenants
+  { path: '/tenants', component: TenantsView }, // Route for Tenants component
   { path: '/roles', component: Roles }, // Route for Roles component
-  { path: '/tenancies/:id', component: ManageTenancy, props: true }, // Route for Manage Tenancy component with dynamic id
+  { path: '/tenants/:id', component: ManageTenancy, props: true }, // Route for Manage Tenancy component with dynamic id
 ]
 
 // Create a router instance with history mode

@@ -21,7 +21,6 @@ export const getToken = (): string | undefined => keycloak.token
  */
 export const getUser = (): User => {
   return {
-    id: keycloak.tokenParsed?.sub ?? '',
     firstName: keycloak.tokenParsed?.given_name,
     lastName: keycloak.tokenParsed?.family_name,
     displayName: keycloak.tokenParsed?.display_name,
