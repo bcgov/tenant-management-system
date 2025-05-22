@@ -1,37 +1,32 @@
 <script setup lang="ts">
 // Import necessary functions and refs from Vue, Vue Router, and Pinia
 import { storeToRefs } from 'pinia'
-import { ref, computed, inject, onMounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { Tenancy } from '@/models/tenancy.model'
-import { useTenanciesStore } from '@/stores/useTenanciesStore'
-import type { NotificationService } from '@/types/NotificationService'
-import { INJECTION_KEYS } from '@/utils/constants'
-
-const { id } = defineProps<{ id: string }>()
+import { ref, computed /*, inject, onMounted*/ } from 'vue'
+import { useRoute /*, useRouter*/ } from 'vue-router'
+import { useTenantStore } from '@/stores/useTenantStore'
 
 // Initialize route and router
 const route = useRoute()
-const router = useRouter()
+// const router = useRouter()
 
-// Initialize tenancy store and notification service
-const tenanciesStore = useTenanciesStore()
-const $error = inject<(message: string, error?: unknown) => void>(INJECTION_KEYS.error)
-const notificationService = inject<NotificationService>('notificationService')
-const { tenancies } = storeToRefs(tenanciesStore)
+// Initialize tenant store and notification service
+const tenantStore = useTenantStore()
+// const $error = inject('$error')
+// const notificationService = inject('notificationService')
+const { tenants } = storeToRefs(tenantStore)
 
 // Computed property to find the current tenancy based on route params
-const currentTenancy = computed(() =>
-  tenancies.value.find((t) => t.id === id),
+const tenancy = computed(() =>
+  tenants.value.find((t) => t.id === route.params.id),
 )
 
 // Breadcrumbs computed property for navigation
 const breadcrumbs = computed(() => [
-  { title: 'Tenancies', disabled: false, href: '/tenancies' },
+  { title: 'Tenants', disabled: false, href: '/tenancies' },
   {
-    title: currentTenancy.value?.name || '',
+    title: tenancy.value?.name || '',
     disabled: false,
-    href: `/tenancies/${currentTenancy.value?.id}`,
+    href: `/tenancies/${tenancy.value?.id}`,
   },
 ])
 
@@ -46,90 +41,84 @@ const selectedUser = ref(null)
 const selectedRole = ref('')
 const deleteDialogVisible = ref(false)
 
-// Function to fetch tenancy roles (using store's method)
-/* const fetchTenantRoles = async () => {
-  await tenanciesStore.fetchTenancyUserRoles(id, selectedUser.value.id)
-  roles.value =
-    tenanciesStore.tenancyUserRoles[id]?.[selectedUser.value.id] || []
-} */
+// Function to fetch tenant roles (using store's method)
+// const fetchTenantRoles = async () => {
+//   await tenantStore.fetchTenantUserRoles(route.params.id, selectedUser.value.id)
+//   roles.value =
+//     tenantStore.tenantUserRoles[route.params.id]?.[selectedUser.value.id] || []
+// }
 
 // Function to search users based on search option and text (using store's method)
-/* const searchUsers = async () => {
-  if (searchOption.value && searchText.value) {
-    try {
-      loadingSearchResults.value = true
-      await tenanciesStore.fetchTenantUsers(id)
-      const users = tenanciesStore.tenancyUsers[id] || []
+// const searchUsers = async () => {
+//   if (searchOption.value && searchText.value) {
+//     try {
+//       loadingSearchResults.value = true
+//       await tenantStore.fetchTenantUsers(route.params.id)
+//       const users = tenantStore.tenantUsers[route.params.id] || []
 
-      searchResults.value = users
-        .filter((user) => {
-          const userField = user[searchOption.value]
-          return (
-            userField &&
-            userField.toLowerCase().includes(searchText.value.toLowerCase())
-          )
-        })
-        .map((user) => ({
-          firstName: user.firstName,
-          lastName: user.lastName,
-          email: user.email,
-          ssoUserId: user.ssoUserId,
-        }))
-    } catch (error) {
-      $error(error)
-    } finally {
-      loadingSearchResults.value = false
-    }
-  }
-} */
+//       searchResults.value = users
+//         .filter((user) => {
+//           const userField = user[searchOption.value]
+//           return (
+//             userField &&
+//             userField.toLowerCase().includes(searchText.value.toLowerCase())
+//           )
+//         })
+//         .map((user) => ({
+//           firstName: user.firstName,
+//           lastName: user.lastName,
+//           email: user.email,
+//           ssoUserId: user.ssoUserId,
+//         }))
+//     } catch (error) {
+//       $error(error)
+//     } finally {
+//       loadingSearchResults.value = false
+//     }
+//   }
+// }
 
 // Function to add a user to the current tenancy
-/* const addUserToTenancy = async () => {
-  if (tenancy.value && selectedUser.value) {
-    try {
-      const tenant = new Tenant(
-        tenancy.value.id,
-        tenancy.value.name,
-        tenancy.value.ministryName,
-        [
-          {
-            ...selectedUser.value,
-            roles: [selectedRole.value],
-          },
-        ])
-      const response = await tenanciesStore.addTenancy(tenant)
-      notificationService.addNotification(
-        'User added to tenancy successfully',
-        'success',
-      )
-    } catch (error) {
-      $error(error)
-    } finally {
-      searchResults.value = []
-      selectedUser.value = null
-      selectedRole.value = ''
-    }
-  }
-} */
+// const addUserToTenancy = async () => {
+//   if (tenancy.value && selectedUser.value) {
+//     try {
+//       const response = await tenantStore.addTenantUserToTenancy(
+//         tenancy.value.id,
+//         selectedUser.value,
+//         selectedRole.value,
+//       )
+//       notificationService.addNotification(
+//         'User added to tenancy successfully',
+//         'success',
+//       )
+//     } catch (error) {
+//       $error(error)
+//     } finally {
+//       searchResults.value = []
+//       selectedUser.value = null
+//       selectedRole.value = ''
+//     }
+//   }
+// }
 
-/* // Function to delete the current tenancy
-const deleteTenancy = async () => {
-  try {
-    await tenanciesStore.deleteTenancy(tenancy.value.id)
-    notificationService.addNotification(
-      'Tenancy deleted successfully',
-      'success',
-    )
-    router.push('/tenancies')
-  } catch (error) {
-    $error(error)
-  }
-} */
+// Function to delete the current tenancy
+// const deleteTenancy = async () => {
+//   try {
+//     await tenantStore.deleteTenancy(tenancy.value.id)
+//     notificationService.addNotification(
+//       'Tenancy deleted successfully',
+//       'success',
+//     )
+//     router.push('/tenancies')
+//   } catch (error) {
+//     $error(error)
+//   }
+// }
 
-// Fetch tenancies when the component is mounted
-onMounted(() => {
-  tenanciesStore.fetchTenancies(id)
-})
+// // Fetch tenants when the component is mounted
+// onMounted(() => {
+//   tenantStore.fetchTenants(route.params.userId)
+// })
 </script>
 
 <template>
@@ -143,7 +132,7 @@ onMounted(() => {
         <v-row>
           <!-- Tenancy name -->
           <v-col cols="6">
-            <h1>{{ currentTenancy?.name }}</h1>
+            <h1>{{ tenancy?.name }}</h1>
           </v-col>
           <!-- Edit and Delete options -->
           <v-col cols="6" class="d-flex justify-end">
@@ -168,7 +157,7 @@ onMounted(() => {
           <!-- BC Ministry name -->
           <v-col cols="12" md="6">
             <v-text-field
-              :model-value="currentTenancy?.ministryName"
+              :model-value="tenancy?.ministryName"
               label="BC Ministry"
               readonly
               class="readonly-field"
@@ -177,7 +166,7 @@ onMounted(() => {
           <!-- Tenant Owner -->
           <v-col cols="12" md="6">
             <v-text-field
-              :model-value="currentTenancy?.users[0]?.ssoUser?.displayName"
+              :model-value="tenancy?.users[0]?.ssoUser?.displayName"
               label="Tenant Owner"
               readonly
               class="readonly-field"
@@ -207,16 +196,13 @@ onMounted(() => {
           </v-tabs-window-item>
 
           <!-- User Management Tab -->
+          <!--
           <v-tabs-window-item :value="2">
             <v-container fluid>
               <v-row>
                 <v-col cols="12">
-                  <div v-if="!currentTenancy">
-                    <v-skeleton-loader type="card"></v-skeleton-loader>
-                  </div>
                   <v-data-table
-                    v-else
-                    :items="currentTenancy.users"
+                    :items="tenancy.users"
                     item-value="id"
                     :headers="[
                       { title: 'Name', value: 'ssoUser.displayName' },
@@ -269,7 +255,7 @@ onMounted(() => {
                 </v-col>
               </v-row></v-container
             ></v-tabs-window-item
-          ></v-tabs-window
+          >--></v-tabs-window
         ></v-card
       ></v-container
     ></BaseSecure

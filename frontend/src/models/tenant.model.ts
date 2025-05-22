@@ -1,7 +1,7 @@
 import type { User } from '@/types/User'
 import { ROLES } from '@/utils/constants'
 
-export class Tenancy {
+export class Tenant {
   id: string
   name: string
   ministryName: string
