@@ -6,7 +6,7 @@ import { v4 as uuidv4 } from 'uuid'
 
 import CreateTenantDialog from '@/components/CreateTenantDialog.vue'
 import TenantList from '@/components/TenantList.vue'
-import type { Tenant } from '@/models/tenant.model'
+import { Tenant } from '@/models/tenant.model'
 import { logError } from '@/plugins/console'
 import { getUser } from '@/services/keycloak'
 import notificationService from '@/services/notification'
@@ -41,16 +41,10 @@ const handleTenantSubmit = async ({
   ministryName: string
 }) => {
   try {
-    await tenantStore.addTenant({
-      id: uuidv4(),
-      name,
-      ministryName,
-      user: getUser(),
-      users: [],
-    })
+    await tenantStore.addTenant(new Tenant(uuidv4(), name, ministryName, []))
 
     notificationService.addNotification(
-      'New tenancy created successfully',
+      'New tenant created successfully',
       'success',
     )
 
