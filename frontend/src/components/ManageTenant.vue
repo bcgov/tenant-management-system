@@ -1,18 +1,18 @@
 <script setup lang="ts">
 // Import necessary functions and refs from Vue, Vue Router, and Pinia
 import { storeToRefs } from 'pinia'
-import { ref, computed, inject, onMounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { ref, computed /*, inject, onMounted*/ } from 'vue'
+import { useRoute /*, useRouter*/ } from 'vue-router'
 import { useTenantStore } from '@/stores/useTenantStore'
 
 // Initialize route and router
 const route = useRoute()
-const router = useRouter()
+// const router = useRouter()
 
 // Initialize tenant store and notification service
 const tenantStore = useTenantStore()
-const $error = inject('$error')
-const notificationService = inject('notificationService')
+// const $error = inject('$error')
+// const notificationService = inject('notificationService')
 const { tenants } = storeToRefs(tenantStore)
 
 // Computed property to find the current tenancy based on route params
@@ -42,83 +42,83 @@ const selectedRole = ref('')
 const deleteDialogVisible = ref(false)
 
 // Function to fetch tenant roles (using store's method)
-const fetchTenantRoles = async () => {
-  await tenantStore.fetchTenantUserRoles(route.params.id, selectedUser.value.id)
-  roles.value =
-    tenantStore.tenantUserRoles[route.params.id]?.[selectedUser.value.id] || []
-}
+// const fetchTenantRoles = async () => {
+//   await tenantStore.fetchTenantUserRoles(route.params.id, selectedUser.value.id)
+//   roles.value =
+//     tenantStore.tenantUserRoles[route.params.id]?.[selectedUser.value.id] || []
+// }
 
 // Function to search users based on search option and text (using store's method)
-const searchUsers = async () => {
-  if (searchOption.value && searchText.value) {
-    try {
-      loadingSearchResults.value = true
-      await tenantStore.fetchTenantUsers(route.params.id)
-      const users = tenantStore.tenantUsers[route.params.id] || []
+// const searchUsers = async () => {
+//   if (searchOption.value && searchText.value) {
+//     try {
+//       loadingSearchResults.value = true
+//       await tenantStore.fetchTenantUsers(route.params.id)
+//       const users = tenantStore.tenantUsers[route.params.id] || []
 
-      searchResults.value = users
-        .filter((user) => {
-          const userField = user[searchOption.value]
-          return (
-            userField &&
-            userField.toLowerCase().includes(searchText.value.toLowerCase())
-          )
-        })
-        .map((user) => ({
-          firstName: user.firstName,
-          lastName: user.lastName,
-          email: user.email,
-          ssoUserId: user.ssoUserId,
-        }))
-    } catch (error) {
-      $error(error)
-    } finally {
-      loadingSearchResults.value = false
-    }
-  }
-}
+//       searchResults.value = users
+//         .filter((user) => {
+//           const userField = user[searchOption.value]
+//           return (
+//             userField &&
+//             userField.toLowerCase().includes(searchText.value.toLowerCase())
+//           )
+//         })
+//         .map((user) => ({
+//           firstName: user.firstName,
+//           lastName: user.lastName,
+//           email: user.email,
+//           ssoUserId: user.ssoUserId,
+//         }))
+//     } catch (error) {
+//       $error(error)
+//     } finally {
+//       loadingSearchResults.value = false
+//     }
+//   }
+// }
 
 // Function to add a user to the current tenancy
-const addUserToTenancy = async () => {
-  if (tenancy.value && selectedUser.value) {
-    try {
-      const response = await tenantStore.addTenantUserToTenancy(
-        tenancy.value.id,
-        selectedUser.value,
-        selectedRole.value,
-      )
-      notificationService.addNotification(
-        'User added to tenancy successfully',
-        'success',
-      )
-    } catch (error) {
-      $error(error)
-    } finally {
-      searchResults.value = []
-      selectedUser.value = null
-      selectedRole.value = ''
-    }
-  }
-}
+// const addUserToTenancy = async () => {
+//   if (tenancy.value && selectedUser.value) {
+//     try {
+//       const response = await tenantStore.addTenantUserToTenancy(
+//         tenancy.value.id,
+//         selectedUser.value,
+//         selectedRole.value,
+//       )
+//       notificationService.addNotification(
+//         'User added to tenancy successfully',
+//         'success',
+//       )
+//     } catch (error) {
+//       $error(error)
+//     } finally {
+//       searchResults.value = []
+//       selectedUser.value = null
+//       selectedRole.value = ''
+//     }
+//   }
+// }
 
 // Function to delete the current tenancy
-const deleteTenancy = async () => {
-  try {
-    await tenantStore.deleteTenancy(tenancy.value.id)
-    notificationService.addNotification(
-      'Tenancy deleted successfully',
-      'success',
-    )
-    router.push('/tenancies')
-  } catch (error) {
-    $error(error)
-  }
-}
+// const deleteTenancy = async () => {
+//   try {
+//     await tenantStore.deleteTenancy(tenancy.value.id)
+//     notificationService.addNotification(
+//       'Tenancy deleted successfully',
+//       'success',
+//     )
+//     router.push('/tenancies')
+//   } catch (error) {
+//     $error(error)
+//   }
+// }
 
-// Fetch tenants when the component is mounted
-onMounted(() => {
-  tenantStore.fetchTenants(route.params.userId)
-})
+// // Fetch tenants when the component is mounted
+// onMounted(() => {
+//   tenantStore.fetchTenants(route.params.userId)
+// })
 </script>
 
 <template>
@@ -196,6 +196,7 @@ onMounted(() => {
           </v-tabs-window-item>
 
           <!-- User Management Tab -->
+          <!--
           <v-tabs-window-item :value="2">
             <v-container fluid>
               <v-row>
@@ -254,7 +255,7 @@ onMounted(() => {
                 </v-col>
               </v-row></v-container
             ></v-tabs-window-item
-          ></v-tabs-window
+          >--></v-tabs-window
         ></v-card
       ></v-container
     ></BaseSecure
