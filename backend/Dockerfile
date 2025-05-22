@@ -7,9 +7,10 @@ COPY . .
 RUN set -x \
         && chmod -R 755 /app/tms-api/
 
-ENV NPM_PACKAGES=/.npm-packages \
-    PATH=$NPM_PACKAGES/bin:$PATH \
-    NODE_PATH=$NPM_PACKAGES/lib/node_modules:$NODE_PATH
+ENV NPM_PACKAGES=/.npm-packages
+ENV PATH=${NPM_PACKAGES}/bin:${PATH}
+ENV NODE_PATH=${NPM_PACKAGES}/lib/node_modules:${NODE_PATH}
+
 RUN echo "prefix = $NPM_PACKAGES" >> ~/.npmrc
 
 COPY ./package.json $NPM_PACKAGES/
