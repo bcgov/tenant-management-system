@@ -1,21 +1,21 @@
-# Build stage
-FROM node:20-alpine AS build
+# Build stage: build static files with Node
+FROM node:22-slim AS build
+
 WORKDIR /app
-COPY package*.json ./
-RUN npm ci
-COPY . .
+COPY . ./
 RUN npm run build
 
-# Production stage
-FROM nginx:alpine
-COPY --from=build /app/dist /usr/share/nginx/html
+# Deploy stage: serve static files with Caddy
+FROM caddy:2.10.0-alpine
 
-# Use the nginx user (UID 101)
-USER 101
+RUN apk add --no-cache ca-certificates
 
-EXPOSE 80
+# Copy built static files and Caddyfile
+COPY --from=build /app/dist /srv
+COPY Caddyfile /etc/caddy/Caddyfile
+RUN caddy fmt /etc/caddy/Caddyfile
 
-HEALTHCHECK --interval=30s --timeout=3s \
-  CMD wget --spider -q http://localhost || exit 1
+EXPOSE 3000
 
-CMD ["nginx", "-g", "daemon off;"]
+# Use non-root user for security
+USER 1001
