@@ -2,6 +2,12 @@
 FROM node:22-slim AS build
 
 WORKDIR /app
+
+# First copy package files and install dependencies
+COPY package*.json ./
+RUN npm ci
+
+# Then copy source code and build
 COPY . ./
 RUN npm run build
 
