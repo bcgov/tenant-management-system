@@ -19,6 +19,10 @@ RUN ln -sf $NPM_PACKAGES/node_modules node_modules
 
 RUN npm ci --prefix=$NPM_PACKAGES
 
+# Create logs directory with proper permissions
+RUN mkdir -p /app/tms-api/logs && \
+    chmod -R 777 /app/tms-api/logs
+
 EXPOSE 4144
 
 ENTRYPOINT [ "sh", "start_api.sh" ]
