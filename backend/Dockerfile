@@ -9,7 +9,7 @@ RUN set -x \
 
 ENV NPM_PACKAGES=/.npm-packages
 ENV PATH=${NPM_PACKAGES}/bin:${PATH}
-ENV NODE_PATH=${NPM_PACKAGES}/lib/node_modules:${NODE_PATH}
+ENV NODE_PATH=${NPM_PACKAGES}/lib/node_modules
 
 RUN echo "prefix = $NPM_PACKAGES" >> ~/.npmrc
 
