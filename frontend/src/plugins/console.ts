@@ -48,6 +48,11 @@ export default {
    * @param app - The Vue app instance.
    */
   install(app: App) {
+    // TODO: this was Vue 2 code, remove if not needed
+    // app.config.globalProperties.$error = logError
+    // app.config.globalProperties.$log = logMessage
+    // app.config.globalProperties.$warn = logWarning
+
     app.provide(INJECTION_KEYS.error, logError)
     app.provide(INJECTION_KEYS.log, logMessage)
     app.provide(INJECTION_KEYS.warn, logWarning)

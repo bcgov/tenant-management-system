@@ -1,29 +1,29 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import type { Tenancy } from '@/models/tenancy.model'
+import type { Tenant } from '@/models/tenant.model'
 
-const { tenancy } = defineProps<{
-  tenancy: Tenancy
+const { tenant } = defineProps<{
+  tenant: Tenant
 }>()
 
 type EmitFn = (event: 'click') => void
 const emit = defineEmits<EmitFn>()
 
-const firstAdminUser = computed(() => tenancy.getAdminUsers()[0])
+const firstAdminUser = computed(() => tenant.getAdminUsers()[0])
 </script>
 
 <template>
   <v-card @click="emit('click')" class="hoverable bg-grey-lighten-4">
     <v-card-title>
       <span class="card-link">
-        {{ tenancy.name }}
+        {{ tenant.name }}
       </span>
     </v-card-title>
-    <v-card-subtitle>{{ tenancy.ministryName }}</v-card-subtitle>
+    <v-card-subtitle>{{ tenant.ministryName }}</v-card-subtitle>
     <v-card-text v-if="firstAdminUser">
-      <p>Tenancy Owner: {{ firstAdminUser.ssoUser?.displayName }}</p>
-      <p>{{ firstAdminUser.ssoUser?.email }}</p>
+      <p>Tenant Owner: {{ firstAdminUser.ssoUser.displayName }}</p>
+      <p>{{ firstAdminUser.ssoUser.email }}</p>
     </v-card-text>
   </v-card>
 </template>

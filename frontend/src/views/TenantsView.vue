@@ -5,35 +5,35 @@ import { useRouter } from 'vue-router'
 import { v4 as uuidv4 } from 'uuid'
 
 import CreateTenantDialog from '@/components/CreateTenantDialog.vue'
-import TenancyList from '@/components/TenancyList.vue'
-import { Tenancy } from '@/models/tenancy.model'
+import TenantList from '@/components/TenantList.vue'
+import type { Tenant } from '@/models/tenant.model'
 import { logError } from '@/plugins/console'
 import { getUser } from '@/services/keycloak'
 import notificationService from '@/services/notification'
-import { useTenanciesStore } from '@/stores/useTenanciesStore'
+import { useTenantStore } from '@/stores/useTenantStore'
 
 // Router
 const router = useRouter()
-const handleCardClick = (id: Tenancy['id']) => {
-  router.push(`/tenancies/${id}`)
+const handleCardClick = (id: Tenant['id']) => {
+  router.push(`/tenants/${id}`)
 }
 
-// Tenancies store
-const tenanciesStore = useTenanciesStore()
-const { tenancies } = storeToRefs(tenanciesStore)
+// Tenant store
+const tenantStore = useTenantStore()
+const { tenants } = storeToRefs(tenantStore)
 
 // Dialog visibility state
 const dialogVisible = ref(false)
 const openDialog = () => (dialogVisible.value = true)
 const closeDialog = () => (dialogVisible.value = false)
 
-// Fetch tenancies on load
+// Fetch tenants on load
 onMounted(() => {
-  tenanciesStore.fetchTenancies(getUser().ssoUserId)
+  tenantStore.fetchTenants(getUser().ssoUserId)
 })
 
 // Submit handler
-const handleTenancySubmit = async ({
+const handleTenantSubmit = async ({
   name,
   ministryName,
 }: {
@@ -41,13 +41,13 @@ const handleTenancySubmit = async ({
   ministryName: string
 }) => {
   try {
-    const tenancy = new Tenancy(
-      uuidv4(),
+    await tenantStore.addTenant({
+      id: uuidv4(),
       name,
       ministryName,
-      [getUser()],
-    );
-    await tenanciesStore.addTenancy(tenancy)
+      user: getUser(),
+      users: [],
+    })
 
     notificationService.addNotification(
       'New tenancy created successfully',
@@ -56,8 +56,8 @@ const handleTenancySubmit = async ({
 
     closeDialog()
   } catch (err) {
-    notificationService.addNotification('Failed to create new tenancy', 'error')
-    logError('Failed to create new tenancy', err)
+    notificationService.addNotification('Failed to create new tenant', 'error')
+    logError('Failed to create new tenant', err)
   }
 }
 </script>
@@ -79,9 +79,9 @@ const handleTenancySubmit = async ({
         </v-col>
       </v-row>
 
-      <TenancyList :tenancies="tenancies" @select="handleCardClick" />
+      <TenantList :tenants="tenants" @select="handleCardClick" />
     </v-container>
 
-    <CreateTenantDialog v-model="dialogVisible" @submit="handleTenancySubmit" />
+    <CreateTenantDialog v-model="dialogVisible" @submit="handleTenantSubmit" />
   </BaseSecure>
 </template>

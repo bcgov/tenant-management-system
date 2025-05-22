@@ -3,7 +3,7 @@ import { logError } from '@/plugins/console'
 import { getUser } from '@/services/keycloak'
 import notificationService from '@/services/notification'
 import type { IdirSearchParameters } from '@/types/IdirSearchParameters'
-import type { Tenancy } from '@/models/tenancy.model'
+import type { Tenant } from '@/models/tenant.model'
 import type { User } from '@/types/User'
 
 // Create an instance of axios for user service
@@ -13,10 +13,10 @@ const userService = axios.create({
 })
 
 /**
- * Gets the tenancies of the current user.
- * @returns {Array} The list of tenancies.
+ * Gets the tenants of the current user.
+ * @returns {Array} The list of tenants.
  */
-export const getUserTenancies = async (): Promise<Tenancy[]> => {
+export const getUserTenants = async (): Promise<Tenant[]> => {
   const user = getUser()
   if (user && user.ssoUserId) {
     try {
@@ -24,12 +24,12 @@ export const getUserTenancies = async (): Promise<Tenancy[]> => {
       return response.data
     } catch (error) {
       if (error instanceof AxiosError && error.response) {
-        logError('Error fetching user tenancies:', error.response.data)
+        logError('Error fetching user tenants:', error.response.data)
       } else {
-        logError('Error fetching user tenancies:', error)
+        logError('Error fetching user tenants:', error)
       }
       notificationService.addNotification(
-        'Error fetching user tenancies',
+        'Error fetching user tenants',
         'error',
       )
       throw error
