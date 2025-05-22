@@ -29,12 +29,12 @@
     
     header {
         -Server
-		X-Frame-Options "SAMEORIGIN"
-		X-XSS-Protection "1;mode=block"
-		Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate"
-		X-Content-Type-Options "nosniff"
-		Strict-Transport-Security "max-age=31536000"
-		Content-Security-Policy "default-src 'self' https://*.gov.bc.ca;
+        X-Frame-Options "SAMEORIGIN"
+        X-XSS-Protection "1;mode=block"
+        Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate"
+        X-Content-Type-Options "nosniff"
+        Strict-Transport-Security "max-age=31536000"
+        Content-Security-Policy "default-src 'self' https://*.gov.bc.ca;
             script-src 'self' https://*.gov.bc.ca 'unsafe-inline' 'unsafe-eval';
             style-src 'self' https://fonts.googleapis.com https://use.fontawesome.com 'unsafe-inline';
             font-src 'self' https://fonts.gstatic.com;
@@ -43,9 +43,9 @@
             form-action 'self';
             block-all-mixed-content;
             connect-src 'self' https://*.gov.bc.ca wss://*.gov.bc.ca;"
-		Referrer-Policy "same-origin"
-		Permissions-Policy "fullscreen=(self), camera=(), microphone=()"
-		Cross-Origin-Resource-Policy "cross-origin"
-		Cross-Origin-Opener-Policy "same-origin"
+        Referrer-Policy "same-origin"
+        Permissions-Policy "fullscreen=(self), camera=(), microphone=()"
+        Cross-Origin-Resource-Policy "cross-origin"
+        Cross-Origin-Opener-Policy "same-origin"
     }
 }
