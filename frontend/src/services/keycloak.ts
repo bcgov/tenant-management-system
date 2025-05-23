@@ -21,12 +21,18 @@ export const getToken = (): string | undefined => keycloak.token
  */
 export const getUser = (): User => {
   return {
+    id: 'TODO',
     firstName: keycloak.tokenParsed?.given_name,
     lastName: keycloak.tokenParsed?.family_name,
     displayName: keycloak.tokenParsed?.display_name,
     userName: keycloak.tokenParsed?.idir_username,
+    ssoUser: {
+      displayName: 'TODO',
+      email: 'TODO',
+    },
     ssoUserId: keycloak.tokenParsed?.idir_user_guid,
     email: keycloak.tokenParsed?.email,
+    roles: [],
   }
 }
 
