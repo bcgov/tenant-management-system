@@ -38,9 +38,14 @@ jobs:
     secrets:
       oc_namespace: ${{ secrets.OC_NAMESPACE }}
       oc_token: ${{ secrets.OC_TOKEN }}
+      BC_GOV_SSO_CLIENT_ID: ${{ secrets.BC_GOV_SSO_CLIENT_ID }}
+      BCGOV_SSO_CLIENT_SECRET: ${{ secrets.BCGOV_SSO_CLIENT_SECRET }}
     with:
       db_user: app-${{ github.event.number }}
-      params: --set global.secrets.persist=false
+      params: >-
+        --set global.secrets.persist=false
+        --set-string backend.environment.bcGovSsoClientId=${{ secrets.BC_GOV_SSO_CLIENT_ID }}
+        --set-string backend.environment.bcgovSsoClientSecret=${{ secrets.BCGOV_SSO_CLIENT_SECRET }}
       triggers: ('backend/' 'frontend/' 'migrations/' 'charts/')
 
   tests:

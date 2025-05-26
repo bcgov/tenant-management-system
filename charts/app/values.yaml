@@ -28,6 +28,17 @@ global:
 backend:
   #-- enable or disable backend
   enabled: true
+  environment:
+    port: "4144"
+    allowedOrigins: "*"
+    bcgovSsoApiUrl: "https://api.loginproxy.gov.bc.ca/api/v1/dev/idir/users"
+    bcgovTokenUrl: "https://loginproxy.gov.bc.ca/auth/realms/standard/protocol/openid-connect/token"
+    bcGovSsoClientId: "client-id"  # Default value, override during deployment
+    bcgovSsoClientSecret: "secret"  # Default value, override during deployment
+    logLevel: "info"
+    allowedAudiences: "tenant-management-system-6014,tenant-manager-poc-5908"
+    jwksUri: "https://dev.loginproxy.gov.bc.ca/auth/realms/standard/protocol/openid-connect/certs"
+    issuer: "https://dev.loginproxy.gov.bc.ca/auth/realms/standard"
   #-- the deployment strategy, can be "Recreate" or "RollingUpdate"
   deploymentStrategy: Recreate
   #-- autoscaling for the component. it is optional and is an object.
