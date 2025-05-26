@@ -9,6 +9,9 @@ const keycloak = new Keycloak({
   url: import.meta.env.VITE_KEYCLOAK_URL,
 })
 
+// Holds the refresh timer so we can cancel it on logout or re-init
+let refreshTimer: number | undefined
+
 /**
  * Returns the current authentication token.
  * @returns {string | undefined} The authentication token.
@@ -37,6 +40,31 @@ export const getUser = (): User => {
 }
 
 /**
+ * Schedules a token refresh based on token expiration time.
+ */
+const scheduleTokenRefresh = () => {
+  if (refreshTimer) {
+    clearTimeout(refreshTimer)
+  }
+
+  refreshTimer = window.setTimeout(() => {
+    keycloak
+      .updateToken(30)
+      .then((refreshed) => {
+        if (refreshed) {
+          logMessage('Token successfully refreshed')
+        }
+      })
+      .catch((error) => {
+        logError('Failed to refresh token', error)
+      })
+      .finally(() => {
+        scheduleTokenRefresh()
+      })
+  }, 10000)
+}
+
+/**
  * Initializes Keycloak and sets the authenticated if successful.
  */
 export const initKeycloak = async (): Promise<void> => {
@@ -52,6 +80,7 @@ export const initKeycloak = async (): Promise<void> => {
     }
 
     logMessage('Keycloak authenticated')
+    scheduleTokenRefresh()
   } catch (error) {
     logError('Keycloak init failed', error)
 
@@ -71,17 +100,17 @@ export const isLoggedIn = (): boolean => keycloak.authenticated === true
 export const login = () => keycloak.login()
 
 /**
- * Logs out the user and clears local storage and session storage.
+ * Logs out the user and clears local/session storage and token refresh timer.
  */
 export const logout = () => {
-  // TODO: used below
-  // const logoutUrl = import.meta.env.VITE_KEYCLOAK_LOGOUT_URL
-  // const idToken = keycloak.idToken
+  if (refreshTimer) {
+    clearTimeout(refreshTimer)
+    refreshTimer = undefined
+  }
+
   keycloak
     .logout({
       redirectUri: window.location.origin,
-      // TODO: this doesn't exist in the KeycloakLogoutOptions object
-      // url: `${logoutUrl}?post_logout_redirect_uri=${encodeURIComponent(window.location.origin)}&id_token_hint=${idToken}`,
     })
     .then(() => {
       localStorage.clear()
