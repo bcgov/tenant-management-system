@@ -42,8 +42,8 @@ jobs:
       db_user: app-${{ github.event.number }}
       params: >-
         --set global.secrets.persist=false
-        --set-string backend.environment.bcGovSsoClientId=${{ secrets.BC_GOV_SSO_CLIENT_ID }}
-        --set-string backend.environment.bcgovSsoClientSecret=${{ secrets.BCGOV_SSO_CLIENT_SECRET }}
+        --set-string backend.environment.bcGovSsoClientId=client-id-placeholder
+        --set-string backend.environment.bcgovSsoClientSecret=secret-placeholder
       triggers: ('backend/' 'frontend/' 'migrations/' 'charts/')
 
   tests:
