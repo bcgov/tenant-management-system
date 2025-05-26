@@ -5,36 +5,49 @@ const { notifications, removeNotification } = useNotification()
 </script>
 
 <template>
-  <div v-if="notifications.length" class="notification-wrapper">
-    <div
-      v-for="notification in notifications"
-      :key="notification.id"
-      class="notification-container"
-    >
-      <v-alert
-        :type="notification.type"
-        role="alert"
-        aria-live="assertive"
-        closable
-        @click="removeNotification(notification.id)"
+  <transition-group name="fade" tag="div" class="notification-wrapper">
+    <div v-if="notifications.length" class="notification-wrapper">
+      <div
+        v-for="notification in notifications"
+        :key="notification.id"
+        class="notification-container"
       >
-        {{ notification.message }}
-      </v-alert>
+        <v-alert
+          :type="notification.type"
+          role="alert"
+          aria-live="assertive"
+          closable
+          @click="removeNotification(notification.id)"
+        >
+          {{ notification.message }}
+        </v-alert>
+      </div>
     </div>
-  </div>
+  </transition-group>
 </template>
 
 <style scoped>
-.notification-wrapper {
-  position: fixed;
-  top: 10px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 9999;
-  width: 80%;
+.fade-enter-active,
+.fade-leave-active {
+  transition: all 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
 }
 
 .notification-container {
   margin-bottom: 10px;
+}
+
+.notification-wrapper {
+  left: 50%;
+  position: fixed;
+  top: 10px;
+  transform: translateX(-50%);
+  width: 80%;
+  z-index: 9999;
 }
 </style>
