@@ -42,7 +42,7 @@ spec:
               value: "info"
           ports:
             - name: http
-              containerPort: 3000
+              containerPort: {{ index .Values.frontend.service.ports 0 "targetPort" }}
               protocol: TCP
           readinessProbe:
             httpGet:

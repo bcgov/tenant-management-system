@@ -103,10 +103,6 @@ frontend:
         targetPort: 3000
         #-- the protocol for the port. it can be TCP or UDP. TCP is the default and is recommended.
         protocol: TCP
-      - port: 3003
-        targetPort: 3003
-        protocol: TCP
-        name: metrics
   ingress:
     annotations:
       haproxy.router.openshift.io/balance: "roundrobin"
