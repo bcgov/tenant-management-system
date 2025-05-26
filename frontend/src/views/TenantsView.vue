@@ -44,7 +44,7 @@ const handleTenantSubmit = async ({
   ministryName: string
 }) => {
   try {
-    await tenantStore.addTenant(new Tenant(uuidv4(), name, ministryName, []))
+    await tenantStore.addTenant(name, ministryName)
     addNotification('New tenant created successfully', 'success')
     closeDialog()
   } catch (error) {

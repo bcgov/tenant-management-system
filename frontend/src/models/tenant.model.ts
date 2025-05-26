@@ -1,12 +1,10 @@
-import type { User } from '@/types/User'
+import type { User } from '@/models/user.model'
 import { ROLES } from '@/utils/constants'
 
 export class Tenant {
   id: string
   name: string
   ministryName: string
-  // TODO: this type should not have both User and User[]
-  // user: User
   users: User[]
 
   constructor(id: string, name: string, ministryName: string, users: User[]) {
@@ -14,6 +12,14 @@ export class Tenant {
     this.name = name
     this.ministryName = ministryName
     this.users = users
+  }
+
+  static fromApiData(apiData: {
+    id: string
+    name: string
+    ministryName: string
+  }): Tenant {
+    return new Tenant(apiData.id, apiData.name, apiData.ministryName, [])
   }
 
   getAdminUsers(): User[] {
