@@ -4,7 +4,7 @@ export class ForbiddenError extends Error {
 
     constructor(message: string) {
         super(message);
-        this.name = "NotFoundError";
+        this.name = "ForbiddenError";
         this.statusCode = 403;
         Object.setPrototypeOf(this, ForbiddenError.prototype);
     }

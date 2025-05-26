@@ -4,7 +4,9 @@ import {TMSController} from '../controllers/tms.controller'
 import { validate, ValidationError } from 'express-validation'
 import validator from '../common/tms.validator'
 import { checkJwt } from '../common/auth.mw'
+import { checkTenantAccess } from '../common/tenant-access.mw'
 import { UnauthorizedError } from 'express-jwt'
+import { TMSConstants } from '../common/tms.constants'
 
 require('dotenv').config()
 
@@ -15,7 +17,7 @@ export class Routes {
     public routes (app:any) {
         app.route(RoutesConstants.HEALTH).get((req:Request, res:Response) => this.tmsController.health(req, res))
         app.route(RoutesConstants.CREATE_TENANTS).post(checkJwt, validate(validator.createTenant,{},{}),(req:Request,res:Response) => this.tmsController.createTenant(req,res))
-        app.route(RoutesConstants.ADD_TENANT_USERS).post(checkJwt, validate(validator.addTenantUser,{},{}),(req:Request,res:Response) => this.tmsController.addTenantUser(req,res))
+        app.route(RoutesConstants.ADD_TENANT_USERS).post(checkJwt, validate(validator.addTenantUser,{},{}), checkTenantAccess([TMSConstants.TENANT_OWNER, TMSConstants.USER_ADMIN]),(req:Request,res:Response) => this.tmsController.addTenantUser(req,res))
         app.route(RoutesConstants.GET_USER_TENANTS).get(checkJwt,  validate(validator.getUserTenants,{},{}),(req:Request,res:Response) => this.tmsController.getTenantsForUser(req,res))
         app.route(RoutesConstants.GET_TENANT_USERS).get(checkJwt,  validate(validator.getTenantUsers,{},{}),(req:Request,res:Response) => this.tmsController.getUsersForTenant(req,res))
         app.route(RoutesConstants.CREATE_TENANT_ROLES).post(checkJwt,  validate(validator.createTenantRoles,{},{}),(req:Request,res:Response) => this.tmsController.createRoles(req,res))
@@ -37,6 +39,5 @@ export class Routes {
             console.log(error.message)
             res.status(500).json({ error: 'Internal Server Error' })
         })
-
     }
 }
