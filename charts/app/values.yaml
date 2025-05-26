@@ -79,6 +79,10 @@ backend:
     type: ClusterIP
     port: 80 # this is the service port, where it will be exposed internal to the namespace.
     targetPort: 4144 # this is container port where app listens on
+  ingress:
+    enabled: true
+    annotations:
+      route.openshift.io/termination: "edge"
   pdb:
     enabled: false # enable it in PRODUCTION for having pod disruption budget.
     minAvailable: 1 # the minimum number of pods that must be available during the disruption budget.
