@@ -46,6 +46,38 @@ jobs:
         --set-string backend.environment.bcgovSsoClientSecret=secret-placeholder
       triggers: ('backend/' 'frontend/' 'migrations/' 'charts/')
 
+  # Add this job after your deploys job
+  update_secrets:
+    name: Update Secrets
+    needs: [deploys]
+    if: needs.deploys.outputs.triggered == 'true'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: bcgov/action-oc-runner@12997e908fba505079d1aab6f694a17fe15e9b28 # v1.2.2
+        with:
+          oc_namespace: ${{ secrets.OC_NAMESPACE }}
+          oc_token: ${{ secrets.OC_TOKEN }}
+          oc_server: ${{ vars.oc_server }}
+          commands: |
+            # Get release name
+            RELEASE="${{ github.event.repository.name }}-${{ github.event.number }}"
+            
+            # Update secrets with real values
+            echo "Patching secret $RELEASE-backend"
+            
+            # Update client ID
+            CLIENT_ID=$(echo -n "${{ secrets.BCGOV_SSO_CLIENT_ID }}" | base64 -w0)
+            oc patch secret $RELEASE-backend \
+              -p '{"data":{"BC_GOV_SSO_CLIENT_ID":"'$CLIENT_ID'"}}'
+            
+            # Update client secret 
+            CLIENT_SECRET=$(echo -n "${{ secrets.BCGOV_SSO_CLIENT_SECRET }}" | base64 -w0)
+            oc patch secret $RELEASE-backend \
+              -p '{"data":{"BCGOV_SSO_CLIENT_SECRET":"'$CLIENT_SECRET'"}}'
+            
+            # Restart the backend deployment to pick up the new secrets
+            oc rollout restart deployment/$RELEASE-backend
+
   tests:
     name: Tests
     if: needs.deploys.outputs.triggered == 'true'
