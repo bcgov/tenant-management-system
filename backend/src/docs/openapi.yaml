@@ -76,6 +76,24 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        '403':
+          description: Forbidden - User does not have required roles
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        '409':
+          description: Conflict - Tenant with same name already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConflictErrorResponse'
         '500':
           description: Internal Server Error
           content:
@@ -135,6 +153,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        '403':
+          description: Forbidden - User does not have required roles (TENANT_OWNER or USER_ADMIN)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
         '404':
           description: Tenant not found
           content:
@@ -186,6 +216,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        '403':
+          description: Forbidden - User does not have access to the tenant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
         '404':
           description: Tenant not found
           content:
@@ -231,6 +273,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
         '404':
           description: User not found
           content:
@@ -300,12 +348,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        '403':
+          description: Forbidden - User does not have required roles (TENANT_OWNER or USER_ADMIN)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
         '404':
           description: Tenant or user not found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/NotFoundErrorResponse'
+        '409':
+          description: Role already assigned to user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConflictErrorResponse'
         '500':
           description: Internal Server Error
           content:
@@ -347,6 +413,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        '403':
+          description: Forbidden - User does not have required roles (TENANT_OWNER or USER_ADMIN)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
         '404':
           description: Tenant, user, or role not found
           content:
@@ -416,6 +494,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        '403':
+          description: Forbidden - User does not have access to the tenant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
         '404':
           description: Tenant not found
           content:
@@ -614,21 +704,34 @@ components:
                 type: string
                 example: "any.required"
 
-    InternalServerErrorResponse:
+    UnauthorizedErrorResponse:
       type: object
       properties:
         name:
           type: string
-          example: "Error occurred during tenant creation"
+          example: "Unauthorized"
         message:
           type: string
-          example: "This is an error message"
-        httpResponseCode:
+          example: "Error occurred during authentication"
+        statusCode:
           type: integer
-          example: 500
-        errorMessage:
+          example: 401
+
+    ForbiddenErrorResponse:
+      type: object
+      properties:
+        name:
           type: string
-          example: "Internal Server Error"
+          example: "ForbiddenError"
+        message:
+          type: string
+          example: "Access denied: User does not have required roles for tenant"
+        statusCode:
+          type: integer
+          example: 403
+        error:
+          type: string
+          example: "Forbidden"
 
     NotFoundErrorResponse:
       type: object
@@ -639,10 +742,10 @@ components:
         message:
           type: string
           example: "Tenant Not Found: 21eb86-9cf5-40a3-9a0d-81b551f50a2f"
-        httpResponseCode:
+        statusCode:
           type: integer
           example: 404
-        errorMessage:
+        error:
           type: string
           example: "Not Found"
 
@@ -655,9 +758,25 @@ components:
         message:
           type: string
           example: "User is already added to this tenant: 8821eb86-9cf5-40a3-9a0d-81b551f50a2f"
-        httpResponseCode:
+        statusCode:
           type: integer
           example: 409
-        errorMessage:
+        error:
           type: string
           example: "Conflict"
+
+    InternalServerErrorResponse:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "Error occurred during tenant creation"
+        message:
+          type: string
+          example: "This is an error message"
+        statusCode:
+          type: integer
+          example: 500
+        error:
+          type: string
+          example: "Internal Server Error"
