@@ -38,8 +38,6 @@ jobs:
     secrets:
       oc_namespace: ${{ secrets.OC_NAMESPACE }}
       oc_token: ${{ secrets.OC_TOKEN }}
-      BC_GOV_SSO_CLIENT_ID: ${{ secrets.BC_GOV_SSO_CLIENT_ID }}
-      BCGOV_SSO_CLIENT_SECRET: ${{ secrets.BCGOV_SSO_CLIENT_SECRET }}
     with:
       db_user: app-${{ github.event.number }}
       params: >-
