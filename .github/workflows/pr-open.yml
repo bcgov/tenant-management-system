@@ -66,7 +66,7 @@ jobs:
             echo "Patching secret $RELEASE-backend"
             
             # Update client ID
-            CLIENT_ID=$(echo -n "${{ secrets.BCGOV_SSO_CLIENT_ID }}" | base64 -w0)
+            CLIENT_ID=$(echo -n "${{ secrets.BC_GOV_SSO_CLIENT_ID }}" | base64 -w0)
             oc patch secret $RELEASE-backend \
               -p '{"data":{"BC_GOV_SSO_CLIENT_ID":"'$CLIENT_ID'"}}'
             
