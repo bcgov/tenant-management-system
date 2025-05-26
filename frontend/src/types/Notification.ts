@@ -1,7 +1,7 @@
 import type { NotificationType } from '@/types/NotificationType'
 
 export type Notification = {
-  id: number
+  id: string
   message: string
   type: NotificationType
 }

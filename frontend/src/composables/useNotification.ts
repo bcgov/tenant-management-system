@@ -1,17 +1,21 @@
 import { computed, reactive } from 'vue'
+import { v4 as uuidv4 } from 'uuid'
 
-type Notification = {
-  id: string
-  message: string
-  type: 'success' | 'error' | 'info' | 'warning'
-}
+import type { Notification } from '@/types/Notification'
+import type { NotificationType } from '@/types/NotificationType'
 
-const state = reactive({
-  notifications: [] as Notification[],
+const state = reactive<{ notifications: Notification[] }>({
+  notifications: [],
 })
 
-function addNotification(notification: Notification) {
+function addNotification(message: string, type: NotificationType = 'success') {
+  const id = uuidv4()
+  const notification: Notification = { id, message, type }
   state.notifications.push(notification)
+
+  setTimeout(() => {
+    removeNotification(id)
+  }, 3000)
 }
 
 function removeNotification(id: string) {

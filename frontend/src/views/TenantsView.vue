@@ -6,10 +6,10 @@ import { v4 as uuidv4 } from 'uuid'
 
 import CreateTenantDialog from '@/components/CreateTenantDialog.vue'
 import TenantList from '@/components/TenantList.vue'
+import { useNotification } from '@/composables/useNotification'
 import { Tenant } from '@/models/tenant.model'
 import { logError } from '@/plugins/console'
 import { getUser } from '@/services/keycloak'
-import notificationService from '@/services/notification'
 import { useTenantStore } from '@/stores/useTenantStore'
 
 // Router
@@ -17,6 +17,9 @@ const router = useRouter()
 const handleCardClick = (id: Tenant['id']) => {
   router.push(`/tenants/${id}`)
 }
+
+// User notification creation
+const { addNotification } = useNotification()
 
 // Tenant store
 const tenantStore = useTenantStore()
@@ -41,17 +44,12 @@ const handleTenantSubmit = async ({
   ministryName: string
 }) => {
   try {
-    await tenantStore.addTenant(new Tenant(uuidv4(), name, ministryName, []))
-
-    notificationService.addNotification(
-      'New tenant created successfully',
-      'success',
-    )
-
+    await tenantStore.addTenant(name, ministryName)
+    addNotification('New tenant created successfully', 'success')
     closeDialog()
-  } catch (err) {
-    notificationService.addNotification('Failed to create new tenant', 'error')
-    logError('Failed to create new tenant', err)
+  } catch (error) {
+    addNotification('Failed to create the new tenant', 'error')
+    logError('Failed to create the new tenant', error)
   }
 }
 </script>
