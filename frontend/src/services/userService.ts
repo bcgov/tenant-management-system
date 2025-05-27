@@ -23,11 +23,9 @@ const { addNotification } = useNotification()
 export const getUserTenants = async (): Promise<Tenant[]> => {
   const user = useAuthStore().user
 
-  if (user?.ssoUser?.id) {
+  if (user?.id) {
     try {
-      const response = await userService.get(
-        `/users/${user.ssoUser.id}/tenants`,
-      )
+      const response = await userService.get(`/users/${user.id}/tenants`)
 
       return response.data
     } catch (error) {

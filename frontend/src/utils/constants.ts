@@ -40,6 +40,7 @@ export const MINISTRIES = Object.freeze([
 
 // List of Tenant Management roles
 export const ROLES = Object.freeze({
-  ADMIN: 'TMS.TENANT_ADMIN',
-  USER: 'TMS.TENANT_USER',
+  SERVICE_USER: 'TMS.SERVICE_USER',
+  TENANT_OWNER: 'TMS.TENANT_OWNER',
+  USER_ADMIN: 'TMS.USER_ADMIN',
 })

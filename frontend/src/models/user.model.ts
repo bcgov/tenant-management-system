@@ -1,5 +1,4 @@
 import { Role } from '@/models/role.model'
-import { SsoUser } from '@/models/ssouser.model'
 
 export class User {
   id: string
@@ -9,7 +8,6 @@ export class User {
   lastName: string
   userName: string
   roles: Role[]
-  ssoUser: SsoUser
 
   constructor(
     id: string,
@@ -18,7 +16,6 @@ export class User {
     lastName: string,
     displayName: string,
     email: string,
-    ssoUser: SsoUser,
     roles: Role[],
   ) {
     this.id = id
@@ -27,29 +24,28 @@ export class User {
     this.firstName = firstName
     this.lastName = lastName
     this.userName = userName
-    this.ssoUser = ssoUser
     this.roles = roles
   }
 
   static fromApiData(apiData: {
-    id: string
-    displayName: string
-    email: string
-    firstName: string
-    lastName: string
-    userName: string
-    roles: Role[]
-    ssoUser: SsoUser
+    ssoUser: {
+      displayName: string
+      email: string
+      firstName: string
+      lastName: string
+      ssoUserId: string
+      userName: string
+    }
+    roles: []
   }): User {
     return new User(
-      apiData.id,
-      apiData.userName,
-      apiData.firstName,
-      apiData.lastName,
-      apiData.displayName,
-      apiData.email,
-      apiData.ssoUser,
-      apiData.roles,
+      apiData.ssoUser.ssoUserId,
+      apiData.ssoUser.userName,
+      apiData.ssoUser.firstName,
+      apiData.ssoUser.lastName,
+      apiData.ssoUser.displayName,
+      apiData.ssoUser.email,
+      apiData.roles.map(Role.fromApiData),
     )
   }
 }

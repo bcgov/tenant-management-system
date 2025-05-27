@@ -33,7 +33,7 @@ const closeDialog = () => (dialogVisible.value = false)
 // Fetch tenants on load
 onMounted(async () => {
   try {
-    await tenantStore.fetchTenants(authStore.user?.ssoUser.id || '')
+    await tenantStore.fetchTenants(authStore.user?.id || '')
   } catch (error) {
     addNotification('Failed to fetch tenants', 'error')
     logger.error('Failed to fetch tenants', error)
@@ -49,7 +49,7 @@ const handleTenantSubmit = async ({
   ministryName: string
 }) => {
   try {
-    await tenantStore.addTenant(name, ministryName)
+    await tenantStore.addTenant(name, ministryName, authStore.authenticatedUser)
     addNotification('New tenant created successfully', 'success')
     closeDialog()
   } catch (error) {

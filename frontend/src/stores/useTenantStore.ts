@@ -60,15 +60,16 @@ export const useTenantStore = defineStore('tenant', () => {
     tenantUserRoles.value[tenantId][userId] = roles
   }
 
-  const addTenant = async (name: string, ministryName: string) => {
-    const apiResponse = await createTenant(name, ministryName)
+  const addTenant = async (name: string, ministryName: string, user: User) => {
+    const apiResponse = await createTenant(name, ministryName, user)
+    console.log('api response', apiResponse)
     const newTenant = new Tenant(
       apiResponse.id,
       apiResponse.name,
       apiResponse.ministryName,
-      apiResponse.roles,
+      apiResponse.users.map(User.fromApiData),
     )
-
+    console.log('new tenant', newTenant)
     tenants.value.push(newTenant)
   }
 
