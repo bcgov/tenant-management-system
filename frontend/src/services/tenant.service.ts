@@ -1,9 +1,7 @@
 import axios from 'axios'
 
-import { logError } from '@/plugins/console'
-import type { Tenant } from '@/models/tenant.model'
-import type { Role } from '@/types/Role'
-import type { User } from '@/types/User'
+import { logger } from '@/utils/logger'
+import { User } from '@/models/user.model'
 
 const tenantApi = axios.create({
   baseURL:
@@ -12,63 +10,74 @@ const tenantApi = axios.create({
 
 const logApiError = (message: string, error: unknown) => {
   if (axios.isAxiosError(error)) {
-    logError(`${message}: ${error.message}`, error)
+    logger.error(`${message}: ${error.message}`, error)
   } else {
-    logError(message, error)
+    logger.error(message, error)
   }
 }
 
-export const createTenant = async (tenant: Tenant): Promise<Tenant> => {
+export const createTenant = async (name: string, ministryName: string) => {
   try {
-    const response = await tenantApi.post(`/tenants`, tenant)
-    return response.data.data.tenant as Tenant
+    const requestBody = {
+      name: name,
+      ministryName: ministryName,
+    }
+    const response = await tenantApi.post(`/tenants`, requestBody)
+
+    return response.data.data.tenant
   } catch (error) {
     logApiError('Error creating Tenant', error)
+
     throw error
   }
 }
 
-export const getUserTenants = async (userId: string): Promise<Tenant[]> => {
+export const getUserTenants = async (userId: string) => {
   try {
     const response = await tenantApi.get(`/users/${userId}/tenants`)
-    return response.data.data.tenants as Tenant[]
+
+    return response.data.data.tenants
   } catch (error) {
     logApiError('Error getting users tenants', error)
+
     throw error
   }
 }
 
-export const getUsers = async (tenantId: string): Promise<User[]> => {
+export const getUsers = async (tenantId: string) => {
   try {
     const response = await tenantApi.get(`/tenants/${tenantId}/users`)
-    return response.data.data.users as User[]
+
+    return response.data.data.users
   } catch (error) {
     logApiError('Error getting Tenant users', error)
+
     throw error
   }
 }
 
-export const getTenantRoles = async (tenantId: string): Promise<Role[]> => {
+export const getTenantRoles = async (tenantId: string) => {
   try {
     const response = await tenantApi.get(`/tenants/${tenantId}/roles`)
-    return response.data.data.roles as Role[]
+
+    return response.data.data.roles
   } catch (error) {
     logApiError('Error getting Tenant roles', error)
+
     throw error
   }
 }
 
-export const getUserRoles = async (
-  tenantId: string,
-  userId: string,
-): Promise<Role[]> => {
+export const getUserRoles = async (tenantId: string, userId: string) => {
   try {
     const response = await tenantApi.get(
       `/tenants/${tenantId}/users/${userId}/roles`,
     )
-    return response.data.data.roles as Role[]
+
+    return response.data.data.roles
   } catch (error) {
     logApiError('Error getting Tenant users roles', error)
+
     throw error
   }
 }
@@ -84,9 +93,11 @@ export const addUsers = async (
       request.role = { id: roleId }
     }
     const response = await tenantApi.post(`/tenants/${tenantId}/users`, request)
+
     return response.data.data as User
   } catch (error) {
     logApiError('Error adding user to Tenant', error)
+
     throw error
   }
 }
@@ -100,6 +111,7 @@ export const assignUserRoles = async (
     await tenantApi.put(`/tenants/${tenantId}/users/${userId}/roles/${roleId}`)
   } catch (error) {
     logApiError('Error assigning user role in Tenant', error)
+
     throw error
   }
 }
