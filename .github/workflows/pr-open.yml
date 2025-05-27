@@ -46,7 +46,6 @@ jobs:
         --set-string backend.environment.bcgovSsoClientSecret=secret-placeholder
       triggers: ('backend/' 'frontend/' 'migrations/' 'charts/')
 
-  # Add this job after your deploys job
   update_secrets:
     name: Update Secrets
     needs: [deploys]
