@@ -5,7 +5,7 @@ import {
   isLoggedIn as checkIsLoggedIn,
   getUser,
 } from '@/services/keycloak'
-import type { User } from '@/types/User'
+import { User } from '@/models/user.model'
 
 const isLoggedIn = ref(checkIsLoggedIn())
 const userInfo = ref<User | null>(null)

@@ -1,7 +1,8 @@
 import Keycloak from 'keycloak-js'
 
-import { logError, logMessage, logWarning } from '@/plugins/console'
-import type { User } from '@/types/User'
+import { logger } from '@/utils/logger'
+import { SsoUser } from '@/models/ssouser.model'
+import { User } from '@/models/user.model'
 
 const keycloak = new Keycloak({
   clientId: import.meta.env.VITE_KEYCLOAK_CLIENT_ID,
@@ -20,27 +21,32 @@ export const getToken = (): string | undefined => keycloak.token
 
 /**
  * Returns the current user's information.
+ *
  * @returns {User} The user's information.
  */
 export const getUser = (): User => {
-  return {
-    id: 'TODO',
-    firstName: keycloak.tokenParsed?.given_name,
-    lastName: keycloak.tokenParsed?.family_name,
-    displayName: keycloak.tokenParsed?.display_name,
-    userName: keycloak.tokenParsed?.idir_username,
-    ssoUser: {
-      displayName: 'TODO',
-      email: 'TODO',
-    },
-    ssoUserId: keycloak.tokenParsed?.idir_user_guid,
-    email: keycloak.tokenParsed?.email,
-    roles: [],
-  }
+  // TODO: how is this needed?
+  const ssoUser = new SsoUser(
+    keycloak.tokenParsed?.idir_user_guid,
+    keycloak.tokenParsed?.display_name,
+    keycloak.tokenParsed?.email,
+  )
+
+  return new User(
+    'TODO', // TODO: What is the ID for the user?
+    keycloak.tokenParsed?.idir_username,
+    keycloak.tokenParsed?.given_name,
+    keycloak.tokenParsed?.family_name,
+    keycloak.tokenParsed?.display_name,
+    keycloak.tokenParsed?.email,
+    ssoUser,
+    [],
+  )
 }
 
 /**
- * Schedules a token refresh based on token expiration time.
+ * Every ten seconds will call keycloak.updateToken to check if the token
+ * expires within 30 seconds. If so, it will be updated.
  */
 const scheduleTokenRefresh = () => {
   if (refreshTimer) {
@@ -52,11 +58,11 @@ const scheduleTokenRefresh = () => {
       .updateToken(30)
       .then((refreshed) => {
         if (refreshed) {
-          logMessage('Token successfully refreshed')
+          logger.info('Token successfully refreshed')
         }
       })
       .catch((error) => {
-        logError('Failed to refresh token', error)
+        logger.error('Failed to refresh token', error)
       })
       .finally(() => {
         scheduleTokenRefresh()
@@ -75,14 +81,14 @@ export const initKeycloak = async (): Promise<void> => {
     })
 
     if (!authenticated) {
-      logWarning('User not authenticated')
+      logger.warning('User not authenticated')
       throw new Error('User not authenticated')
     }
 
-    logMessage('Keycloak authenticated')
+    logger.info('Keycloak authenticated')
     scheduleTokenRefresh()
   } catch (error) {
-    logError('Keycloak init failed', error)
+    logger.error('Keycloak init failed', error)
 
     throw error
   }
@@ -90,6 +96,7 @@ export const initKeycloak = async (): Promise<void> => {
 
 /**
  * Checks if the user is logged in.
+ *
  * @returns {boolean} True if the user is logged in, otherwise false.
  */
 export const isLoggedIn = (): boolean => keycloak.authenticated === true
@@ -115,9 +122,9 @@ export const logout = () => {
     .then(() => {
       localStorage.clear()
       sessionStorage.clear()
-      logMessage('Logged out and storage cleared')
+      logger.info('Logged out and storage cleared')
     })
     .catch((error: Error) => {
-      logError('Logout failed', error)
+      logger.error('Logout failed', error)
     })
 }
