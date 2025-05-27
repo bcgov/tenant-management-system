@@ -160,8 +160,8 @@ export class TMSService {
             const response = await axios.post(
                 process.env.BCGOV_TOKEN_URL,
                 new URLSearchParams({
-                    client_id: process.env.BC_GOV_SSO_CLIENT_ID,
-                    client_secret: process.env.BCGOV_SSO_CLIENT_SECRET,
+                    client_id: process.env.BCGOV_SSO_API_CLIENT_ID,
+                    client_secret: process.env.BCGOV_SSO_API_CLIENT_SECRET,
                     grant_type: "client_credentials",
                 }),
                 { headers: { "Content-Type": "application/x-www-form-urlencoded" } }
