@@ -8,7 +8,7 @@ import TenantList from '@/components/TenantList.vue'
 import { useNotification } from '@/composables/useNotification'
 import { Tenant } from '@/models/tenant.model'
 import { logger } from '@/utils/logger'
-import { getUser } from '@/services/keycloak'
+import { useAuthStore } from '@/stores/useAuthStore'
 import { useTenantStore } from '@/stores/useTenantStore'
 
 // Router
@@ -20,7 +20,8 @@ const handleCardClick = (id: Tenant['id']) => {
 // User notification creation
 const { addNotification } = useNotification()
 
-// Tenant store
+// Stores
+const authStore = useAuthStore()
 const tenantStore = useTenantStore()
 const { tenants } = storeToRefs(tenantStore)
 
@@ -30,8 +31,13 @@ const openDialog = () => (dialogVisible.value = true)
 const closeDialog = () => (dialogVisible.value = false)
 
 // Fetch tenants on load
-onMounted(() => {
-  tenantStore.fetchTenants(getUser().ssoUser.id)
+onMounted(async () => {
+  try {
+    await tenantStore.fetchTenants(authStore.user?.ssoUser.id || '')
+  } catch (error) {
+    addNotification('Failed to fetch tenants', 'error')
+    logger.error('Failed to fetch tenants', error)
+  }
 })
 
 // Submit handler

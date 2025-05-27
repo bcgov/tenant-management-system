@@ -3,7 +3,7 @@ import axios, { AxiosError } from 'axios'
 import { useNotification } from '@/composables/useNotification'
 import type { Tenant } from '@/models/tenant.model'
 import type { User } from '@/models/user.model'
-import { getUser } from '@/services/keycloak'
+import { useAuthStore } from '@/stores/useAuthStore'
 import type { IdirSearchParameters } from '@/types/IdirSearchParameters'
 import { logger } from '@/utils/logger'
 
@@ -21,9 +21,9 @@ const { addNotification } = useNotification()
  * @returns {Array} The list of tenants.
  */
 export const getUserTenants = async (): Promise<Tenant[]> => {
-  const user = getUser()
+  const user = useAuthStore().user
 
-  if (user.ssoUser?.id) {
+  if (user?.ssoUser?.id) {
     try {
       const response = await userService.get(
         `/users/${user.ssoUser.id}/tenants`,
