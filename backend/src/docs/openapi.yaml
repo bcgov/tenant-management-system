@@ -8,29 +8,92 @@ servers:
     description: Local dev server
 
 paths:
+  /health:
+    get:
+      summary: Health check endpoint
+      description: Checks the health status of the API service
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  apiStatus:
+                    type: string
+                    example: "Healthy"
+                  time:
+                    type: string
+                    format: date-time
+                    example: "2024-03-21T10:00:00Z"
+        '503':
+          description: Service is unhealthy
+
   /v1/tenants:
     post:
       summary: Create a new tenant
-      description: Creates a new tenant in the system.
+      description: Creates a new tenant in the system
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateTenantRequest'
+              type: object
+              required:
+                - name
+                - ministryName
+                - user
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 30
+                  example: "Roads initiative"
+                ministryName:
+                  type: string
+                  minLength: 1
+                  maxLength: 100
+                  example: "Ministry of Natural Resources"
+                user:
+                  $ref: '#/components/schemas/BasicUser'
       responses:
         '201':
-          description: Tenant successfully created.
+          description: Tenant successfully created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CreateTenantResponse'
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      tenant:
+                        $ref: '#/components/schemas/TenantWithUsers'
         '400':
-          description: Invalid input (request fields, parameters, query parameters, schema violations).
+          description: Invalid input
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/BadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        '403':
+          description: Forbidden - User does not have required roles
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        '409':
+          description: Conflict - Tenant with same name already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConflictErrorResponse'
         '500':
           description: Internal Server Error
           content:
@@ -38,11 +101,10 @@ paths:
               schema:
                 $ref: '#/components/schemas/InternalServerErrorResponse'
 
-
   /v1/tenants/{tenantId}/users:
     post:
       summary: Add a user to a tenant
-      description: Adds a user to a tenant.
+      description: Adds a new user to an existing tenant
       parameters:
         - name: tenantId
           in: path
@@ -50,34 +112,67 @@ paths:
           schema:
             type: string
             format: uuid
-          description: The unique identifier of the tenant.
+          description: The unique identifier of the tenant
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/AddUserToTenantRequest'
+              type: object
+              required:
+                - user
+                - roles
+              properties:
+                user:
+                  $ref: '#/components/schemas/BasicUser'
+                roles:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+                  minItems: 1
+                  maxItems: 3
+                  example: ["14c6bb48-54e2-4ce0-9bbd-af4982fff13b"]
       responses:
         '201':
-          description: User successfully added to the tenant.
+          description: User successfully added to tenant
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AddUserToTenantResponse'
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+                  roles:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Role'
         '400':
-          description: Invalid input (request fields, parameters, query parameters, schema violations).
+          description: Invalid input
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/BadRequestResponse'
-        '400':
-          description: Tenant not found.
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        '403':
+          description: Forbidden - User does not have required roles (TENANT_OWNER or USER_ADMIN)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        '404':
+          description: Tenant not found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/NotFoundErrorResponse'
         '409':
-          description: Conflict with existing resource - ex - a user is already added to a tenant
+          description: User already exists in tenant
           content:
             application/json:
               schema:
@@ -90,18 +185,19 @@ paths:
                 $ref: '#/components/schemas/InternalServerErrorResponse'
 
     get:
-      summary: Get users associated with a tenant
-      description: Retrieves a list of users associated with a tenant.
+      summary: Get users for a tenant
+      description: Retrieves all users associated with a tenant
       parameters:
         - name: tenantId
           in: path
           required: true
           schema:
             type: string
-          description: The unique identifier of the tenant.
+            format: uuid
+          description: The unique identifier of the tenant
       responses:
         '200':
-          description: List of users associated with the tenant.
+          description: List of users for the tenant
           content:
             application/json:
               schema:
@@ -115,13 +211,25 @@ paths:
                         items:
                           $ref: '#/components/schemas/User'
         '400':
-          description: Invalid input (request fields, parameters, query parameters, schema violations).
+          description: Invalid input
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/BadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        '403':
+          description: Forbidden - User does not have access to the tenant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
         '404':
-          description: Tenant not found.
+          description: Tenant not found
           content:
             application/json:
               schema:
@@ -135,18 +243,18 @@ paths:
 
   /v1/users/{ssoUserId}/tenants:
     get:
-      summary: Get tenants associated with a user
-      description: Retrieves a list of tenants associated with a user.
+      summary: Get tenants for a user
+      description: Retrieves all tenants associated with a user
       parameters:
         - name: ssoUserId
           in: path
           required: true
           schema:
             type: string
-          description: The unique SSO user ID of the user.
+          description: The SSO user ID
       responses:
         '200':
-          description: List of tenants associated with the user.
+          description: List of tenants for the user
           content:
             application/json:
               schema:
@@ -160,13 +268,19 @@ paths:
                         items:
                           $ref: '#/components/schemas/Tenant'
         '400':
-          description: Invalid input (request fields, parameters, query parameters, schema violations).
+          description: Invalid input
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/BadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
         '404':
-          description: Tenant not found.
+          description: User not found
           content:
             application/json:
               schema:
@@ -178,93 +292,44 @@ paths:
               schema:
                 $ref: '#/components/schemas/InternalServerErrorResponse'
 
-  /v1/tenants/{tenantId}/roles:    
+  /v1/tenants/{tenantId}/users/{tenantUserId}/roles:
     post:
-      summary: Create a role for a tenant
-      description: Creates a new role for a tenant.
+      summary: Assign roles to a user in a tenant
+      description: Assigns one or more roles to a user within a tenant
       parameters:
         - name: tenantId
           in: path
           required: true
           schema:
             type: string
-          description: The unique identifier of the tenant.
+            format: uuid
+          description: The unique identifier of the tenant
+        - name: tenantUserId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The unique identifier of the user in the tenant
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
+              required:
+                - roles
               properties:
-                role:
-                  type: object
-                  description: Basic role details
-                  properties:
-                    name:
-                      type: string
-                      minLength: 1
-                      maxLength: 100
-                      description: Name of the role to be created.
-                      example: CHEFS.Reviewer
-                    description:
-                      minLength: 1
-                      maxLength: 255
-                      description: Description of the role to be created.
-                      example: CHEFS reviewer Role
-                  required:
-                    - name
-                    - description
-      responses:
-        '201':
-          description: Role successfully created.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: object
-                    properties:
-                      role:
-                        $ref: '#/components/schemas/Role'
-          '400':
-            description: Invalid input (request fields, parameters, query parameters, schema violations).
-            content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/BadRequestResponse'
-          '404':
-            description: Resource Not found (Tenant, User, Role etc).
-            content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/NotFoundErrorResponse'
-          '409':
-            description: Conflict with existing resource - ex - the role is already added to a tenant
-            content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/ConflictErrorResponse'
-          '500':
-            description: Internal Server Error
-            content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/InternalServerErrorResponse'         
-
-    get:
-      summary: Get all roles for a tenant
-      description: Retrieves a list of all roles for a tenant.
-      parameters:
-        - name: tenantId
-          in: path
-          required: true
-          schema:
-            type: string
-          description: The unique identifier of the tenant.
+                roles:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+                  minItems: 1
+                  example: ["14c6bb48-54e2-4ce0-9bbd-af4982fff13b"]
       responses:
         '200':
-          description: List of all roles for the tenant.
+          description: Roles successfully assigned
           content:
             application/json:
               schema:
@@ -278,125 +343,31 @@ paths:
                         items:
                           $ref: '#/components/schemas/Role'
         '400':
-          description: Invalid input (request fields, parameters, query parameters, schema violations).
+          description: Invalid input
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/BadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        '403':
+          description: Forbidden - User does not have required roles (TENANT_OWNER or USER_ADMIN)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
         '404':
-          description: Resource Not found (Tenant, User, Role etc).
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/NotFoundErrorResponse'
-        '500':
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/InternalServerErrorResponse' 
-
-  /v1/tenants/{tenantId}/users/{tenantUserId}/roles/{roleId}:
-    put:
-      summary: Associate a role with a user in a tenant
-      description: Associates a role with a user in a tenant.
-      parameters:
-        - name: tenantId
-          in: path
-          required: true
-          schema:
-            type: string
-          description: Tenant identifier.      
-        - name: tenantUserId
-          in: path
-          required: true
-          schema:
-            type: string
-          description: Tenant user ID - user ID for the tenant
-        - name: roleId
-          in: path
-          required: true
-          schema:
-            type: string
-          description: Role identifier.
-      responses:
-        '200':
-          description: Role successfully associated with the user in the tenant.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: object
-                    properties:
-                      user:
-                        $ref: '#/components/schemas/User'
-                      role:
-                        $ref: '#/components/schemas/Role'
-          '400':
-            description: Invalid input (request fields, parameters, query parameters, schema violations).
-            content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/BadRequestResponse'
-          '404':
-            description: Resource Not found (Tenant, User, Role etc).
-            content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/NotFoundErrorResponse'
-          '409':
-            description: Conflict with existing resource - ex - the role is already added to a tenant
-            content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/ConflictErrorResponse'
-          '500':
-            description: Internal Server Error
-            content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/InternalServerErrorResponse'         
-    delete:
-      summary: Remove a role from a user in a tenant
-      description: Removes a role from a user in a tenant.
-      parameters:
-        - name: tenantId
-          in: path
-          required: true
-          schema:
-            type: string
-          description: Tenant identifier.      
-        - name: tenantUserId
-          in: path
-          required: true
-          schema:
-            type: string
-          description: Tenant user ID - user ID for the tenant
-        - name: roleId
-          in: path
-          required: true
-          schema:
-            type: string
-          description: Role identifier.
-      responses:
-        '204':
-          description: No Content 
-        '400':
-          description: Invalid input (request fields, parameters, query parameters, schema violations).
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BadRequestResponse'
-        '404':
-          description: Resource Not found (Tenant, User, Role etc).
+          description: Tenant or user not found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/NotFoundErrorResponse'
         '409':
-          description: Conflict with existing resource - ex - the role is already added to a tenant
+          description: Role already assigned to user
           content:
             application/json:
               schema:
@@ -406,48 +377,56 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/InternalServerErrorResponse'         
+                $ref: '#/components/schemas/InternalServerErrorResponse'
 
-  /v1/tenants/{tenantId}/users/{tenantUserId}/roles:
-    get:
-      summary: Get roles associated with a user in a tenant
-      description: Retrieves a list of roles associated with a user in a tenant.
+    delete:
+      summary: Unassign a role from a user in a tenant
+      description: Removes a role from a user within a tenant
       parameters:
         - name: tenantId
           in: path
           required: true
           schema:
             type: string
-          description: Tenant identifier.      
+            format: uuid
+          description: The unique identifier of the tenant
         - name: tenantUserId
           in: path
           required: true
           schema:
             type: string
-          description: Tenant user ID - user ID for the tenant
+            format: uuid
+          description: The unique identifier of the user in the tenant
+        - name: roleId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The unique identifier of the role to unassign
       responses:
-        '200':
-          description: List of all roles for the user belonging to the tenant.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: object
-                    properties:
-                      roles:
-                        type: array
-                        items:
-                          $ref: '#/components/schemas/Role'
+        '204':
+          description: Role successfully unassigned
         '400':
-          description: Invalid input (request fields, parameters, query parameters, schema violations).
+          description: Invalid input
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/BadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        '403':
+          description: Forbidden - User does not have required roles (TENANT_OWNER or USER_ADMIN)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
         '404':
-          description: Resource Not found (Tenant, User, Role etc).
+          description: Tenant, user, or role not found
           content:
             application/json:
               schema:
@@ -457,30 +436,30 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/InternalServerErrorResponse' 
+                $ref: '#/components/schemas/InternalServerErrorResponse'
 
   /v1/tenants/{tenantId}:
     get:
       summary: Get tenant details
-      description: Retrieve tenant details, including roles and tenant user roles if specified in the `expand` query parameter.
+      description: Retrieves details of a specific tenant
       parameters:
         - name: tenantId
           in: path
           required: true
-          description: The unique identifier of the tenant
           schema:
             type: string
             format: uuid
+          description: The unique identifier of the tenant
         - name: expand
           in: query
           required: false
-          description: Optional query parameter to expand roles or tenant user roles
           schema:
             type: string
             enum: [roles, tenantUserRoles, 'roles,tenantUserRoles']
+          description: Optional query parameter to expand roles or tenant user roles
       responses:
-        "200":
-          description: Successful response with tenant details
+        '200':
+          description: Tenant details retrieved successfully
           content:
             application/json:
               schema:
@@ -490,32 +469,45 @@ paths:
                     type: object
                     properties:
                       tenant:
-                        type: object
                         allOf:
                           - $ref: '#/components/schemas/Tenant'
-                        properties:
-                          users:
-                            type: array
-                            items:
-                              allOf:
-                                - $ref: '#/components/schemas/User'                            
-                              properties:
-                                roles:
-                                  type: array
-                                  items:
-                                    $ref: '#/components/schemas/Role'
-                          roles:
-                            type: array
-                            items:
-                              $ref: '#/components/schemas/Role'
+                          - type: object
+                            properties:
+                              users:
+                                type: array
+                                items:
+                                  allOf:
+                                    - $ref: '#/components/schemas/User'
+                                    - type: object
+                                      properties:
+                                        roles:
+                                          type: array
+                                          items:
+                                            $ref: '#/components/schemas/Role'
+                              roles:
+                                type: array
+                                items:
+                                  $ref: '#/components/schemas/Role'
         '400':
-          description: Invalid input (request fields, parameters, query parameters, schema violations).
+          description: Invalid input
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/BadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        '403':
+          description: Forbidden - User does not have access to the tenant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
         '404':
-          description: Resource Not found (Tenant, User, Role etc).
+          description: Tenant not found
           content:
             application/json:
               schema:
@@ -525,120 +517,47 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/InternalServerErrorResponse' 
-
-  /v1/tenants/{tenantId}/ssousers/{ssoUserId}/roles:
-    get:
-      summary: Get roles for a tenant and SSO User
-      description: Retrieve roles for a tenant user in a tenant, given SSO user ID.
-      parameters:
-        - name: tenantId
-          in: path
-          required: true
-          description: The unique identifier of the tenant
-          schema:
-            type: string
-            format: uuid
-        - name: ssoUserId
-          in: path
-          required: true
-          description: The unique SSO user ID
-          schema:
-            type: string
-      responses:
-        '200':
-          description: List of all roles for the user belonging to the tenant.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: object
-                    properties:
-                      roles:
-                        type: array
-                        items:
-                          $ref: '#/components/schemas/Role'
-        '400':
-          description: Invalid input (request fields, parameters, query parameters, schema violations).
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BadRequestResponse'
-        '404':
-          description: Resource Not found (Tenant, User, Role etc).
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/NotFoundErrorResponse'
-        '500':
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/InternalServerErrorResponse'       
+                $ref: '#/components/schemas/InternalServerErrorResponse'
 
 components:
   schemas:
-    CreateTenantRequest:
+    BasicUser:
       type: object
       required:
-        - name
-        - ministryName
-        - user
-      properties:
-        name:
-          type: string
-          description: The name of the tenant.
-          minLength: 1
-          maxLength: 30
-          example: "Roads initiative"
-        ministryName:
-          type: string
-          description: The name of the ministry associated with the tenant.
-          minLength: 1
-          maxLength: 100
-          example: "Ministry of Natural Resources"
-        user:
-          $ref: '#/components/schemas/BasicUser'
-
-    BasicUser:
-      type: object    
+        - firstName
+        - lastName
+        - displayName
+        - userName
+        - ssoUserId
+        - email
       properties:
         firstName:
           type: string
-          description: The first name of the user.
           minLength: 1
           maxLength: 50
           example: "John"
         lastName:
           type: string
-          description: The last name of the user.
           minLength: 1
           maxLength: 50
           example: "Smith"
         displayName:
           type: string
-          description: The display name of the user in full.
           minLength: 1
           maxLength: 50
           example: "Smith, John: JEDI: EX"
         userName:
           type: string
-          description: The IDIR username of the user.
           minLength: 1
           maxLength: 50
           example: "JSMITH1"
         ssoUserId:
           type: string
-          description: The SSO user ID associated with the user.
           format: uuid
           example: "fd33f1cef7ca4b19a71104d4ecf7066b"
         email:
           type: string
           format: email
-          description: The email address of the user.
           example: "John@gov.bc.ca"
 
     User:
@@ -651,11 +570,11 @@ components:
         createdDateTime:
           type: string
           format: date-time
-          example: "2025-02-26T01:28:52.693Z"
+          example: "2024-03-21T10:00:00Z"
         updatedDateTime:
           type: string
           format: date-time
-          example: "2025-02-26T01:28:52.693Z"  
+          example: "2024-03-21T10:00:00Z"
         ssoUser:
           $ref: '#/components/schemas/SSOUser'
 
@@ -689,67 +608,37 @@ components:
         createdDateTime:
           type: string
           format: date-time
-          example: "2025-02-26T01:28:52.693Z"
+          example: "2024-03-21T10:00:00Z"
         updatedDateTime:
           type: string
           format: date-time
-          example: "2025-02-26T01:28:52.693Z"  
-
+          example: "2024-03-21T10:00:00Z"
 
     Role:
-      type: object           
+      type: object
       properties:
         id:
           type: string
-          description: The role ID as set in the database.
           format: uuid
+          example: "14c6bb48-54e2-4ce0-9bbd-af4982fff13b"
         name:
           type: string
           minLength: 1
           maxLength: 100
-          description: Name of the role
-          example: "CHEFS.SUBMITTER"
+          example: "TMS.USER_ADMIN"
         description:
           type: string
           minLength: 1
           maxLength: 255
-          description: Description of the role
-          example: "CHEFS submitter role"
+          example: "TMS User Admin Role"
         createdDateTime:
           type: string
           format: date-time
-          example: "2025-02-26T01:28:52.693Z"
+          example: "2024-03-21T10:00:00Z"
         updatedDateTime:
           type: string
           format: date-time
-          example: "2025-02-26T01:28:52.693Z"
-
-    AddUserToTenantRequest:
-      type: object
-      required:
-        - user
-      properties:
-        user:
-          $ref: '#/components/schemas/BasicUser'
-        role:
-          type: object
-          description: Optional role for the user.
-          properties:
-            id:
-              type: string
-              format: uuid
-              example: "14c6bb48-54e2-4ce0-9bbd-af4982fff13b"
-          required:
-            - id
-
-    CreateTenantResponse:
-      type: object
-      properties:
-        data:
-          type: object
-          properties:
-            tenant:
-              $ref: '#/components/schemas/TenantWithUsers'
+          example: "2024-03-21T10:00:00Z"
 
     Tenant:
       type: object
@@ -760,71 +649,43 @@ components:
           example: "f98cbbfb-b96c-4a40-a10b-c2a7e795022c"
         name:
           type: string
-          example: "New Tenant3"
+          example: "Roads initiative"
         ministryName:
           type: string
-          example: "New Ministry"
+          example: "Ministry of Natural Resources"
         createdDateTime:
           type: string
           format: date-time
-          example: "2025-03-11T03:01:23.697Z"
+          example: "2024-03-21T10:00:00Z"
         updatedDateTime:
           type: string
           format: date-time
-          example: "2025-03-11T03:01:23.697Z"
+          example: "2024-03-21T10:00:00Z"
 
     TenantWithUsers:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-          example: "f98cbbfb-b96c-4a40-a10b-c2a7e795022c"
-        name:
-          type: string
-          example: "New Tenant3"
-        ministryName:
-          type: string
-          example: "New Ministry"
-        createdDateTime:
-          type: string
-          format: date-time
-          example: "2025-03-11T03:01:23.697Z"
-        updatedDateTime:
-          type: string
-          format: date-time
-          example: "2025-03-11T03:01:23.697Z"
-        users:
-          type: array
-          items:
-            $ref: '#/components/schemas/User'
-
-    AddUserToTenantResponse:
-      type: object
-      properties:
-        user:
-          $ref: '#/components/schemas/User'
-        role:
-          $ref: '#/components/schemas/Role'
+      allOf:
+        - $ref: '#/components/schemas/Tenant'
+        - type: object
+          properties:
+            users:
+              type: array
+              items:
+                $ref: '#/components/schemas/User'
 
     BadRequestResponse:
       type: object
       properties:
         name:
           type: string
-          description: A brief description of the error.
           example: "ValidationError"
         message:
           type: string
-          description: A more detailed explanation of the error.
           example: "ValidationFailed"
         statusCode:
           type: integer
-          description: HTTP status code.
           example: 400
         error:
           type: string
-          description: A high-level error message.
           example: "Bad Request"
         body:
           type: array
@@ -842,80 +703,80 @@ components:
               type:
                 type: string
                 example: "any.required"
-              context:
-                type: object
-                properties:
-                  label:
-                    type: string
-                    example: "name"
-                  key:
-                    type: string
-                    example: "name"
-                  child:
-                    type: string
-                    example: "name1"
-                    nullable: true
-                  value:
-                    type: string
-                    example: "Tenant 1"
-                    nullable: true
 
-    InternalServerErrorResponse:
-       type: object
-       properties:
+    UnauthorizedErrorResponse:
+      type: object
+      properties:
         name:
           type: string
-          description: A brief description of the error.
-          example: "Error occurred during tenant creation"
+          example: "Unauthorized"
         message:
           type: string
-          description: A more detailed explanation of the error.
-          example: "This is an error message"
-        httpResponseCode:
+          example: "Error occurred during authentication"
+        statusCode:
           type: integer
-          description: HTTP status code.
-          example: 500
-        errorMessage:
-          type: string
-          description: A high-level error message.
-          example: "Internal Server Error"
+          example: 401
 
-    ConflictErrorResponse:
-       type: object
-       properties:
+    ForbiddenErrorResponse:
+      type: object
+      properties:
         name:
           type: string
-          description: A brief description of the error.
-          example: "Error occurred adding user to the tenant"
+          example: "ForbiddenError"
         message:
           type: string
-          description: A more detailed explanation of the error.
-          example: "User is already added to this tenant: 8821eb86-9cf5-40a3-9a0d-81b551f50a2f"
-        httpResponseCode:
+          example: "Access denied: User does not have required roles for tenant"
+        statusCode:
           type: integer
-          description: HTTP status code.
-          example: 409
-        errorMessage:
+          example: 403
+        error:
           type: string
-          description: A high-level error message.
-          example: "Conflict"
+          example: "Forbidden"
 
     NotFoundErrorResponse:
-       type: object
-       properties:
+      type: object
+      properties:
         name:
           type: string
-          description: A brief description of the error.
           example: "Tenant Not Found"
         message:
           type: string
-          description: A more detailed explanation of the error.
           example: "Tenant Not Found: 21eb86-9cf5-40a3-9a0d-81b551f50a2f"
-        httpResponseCode:
+        statusCode:
           type: integer
-          description: HTTP status code.
           example: 404
-        errorMessage:
+        error:
           type: string
-          description: A high-level error message.
           example: "Not Found"
+
+    ConflictErrorResponse:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "Error occurred adding user to the tenant"
+        message:
+          type: string
+          example: "User is already added to this tenant: 8821eb86-9cf5-40a3-9a0d-81b551f50a2f"
+        statusCode:
+          type: integer
+          example: 409
+        error:
+          type: string
+          example: "Conflict"
+
+    InternalServerErrorResponse:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "Error occurred during tenant creation"
+        message:
+          type: string
+          example: "This is an error message"
+        statusCode:
+          type: integer
+          example: 500
+        error:
+          type: string
+          example: "Internal Server Error"
