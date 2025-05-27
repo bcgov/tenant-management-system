@@ -3,11 +3,27 @@ import axios from 'axios'
 import { logger } from '@/utils/logger'
 import { User } from '@/models/user.model'
 
+/**
+ * Axios instance configured for tenant API requests.
+ *
+ * The base URL is determined from environment variables, supporting both
+ * Vite's import.meta.env and Node's process.env.
+ */
 const tenantApi = axios.create({
   baseURL:
     import.meta.env.VITE_BACKEND_API_URL ?? process.env.VITE_BACKEND_API_URL,
 })
 
+/**
+ * Logs an API error with a custom message.
+ *
+ * Differentiates between Axios errors and other error types for better logging
+ *   detail.
+ *
+ * @param {string} message - A descriptive message to include in the log.
+ * @param {unknown} error - The error object caught from an API call or other
+ *   source.
+ */
 const logApiError = (message: string, error: unknown) => {
   if (axios.isAxiosError(error)) {
     logger.error(`${message}: ${error.message}`, error)
@@ -16,6 +32,16 @@ const logApiError = (message: string, error: unknown) => {
   }
 }
 
+/**
+ * Creates a new tenant with the specified name and ministry.
+ *
+ * @param {string} name - The name of the tenant to create.
+ * @param {string} ministryName - The name of the ministry associated with the
+ *   tenant.
+ * @returns {Promise<object>} A promise that resolves to the newly created
+ *   tenant-like object.
+ * @throws Will throw an error if the API request fails.
+ */
 export const createTenant = async (name: string, ministryName: string) => {
   try {
     const requestBody = {
@@ -32,6 +58,14 @@ export const createTenant = async (name: string, ministryName: string) => {
   }
 }
 
+/**
+ * Retrieves the tenants associated with the specified user.
+ *
+ * @param {string} userId - The SSO user ID of the user.
+ * @returns {Promise<object[]>} A promise that resolves to an array of
+ *   tenant-like objects.
+ * @throws Will throw an error if the API request fails.
+ */
 export const getUserTenants = async (userId: string) => {
   try {
     const response = await tenantApi.get(`/users/${userId}/tenants`)
