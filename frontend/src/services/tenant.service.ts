@@ -2,6 +2,7 @@ import axios from 'axios'
 
 import { logger } from '@/utils/logger'
 import { User } from '@/models/user.model'
+import { authenticatedAxios } from '@/services/authenticated.axios'
 
 /**
  * Axios instance configured for tenant API requests.
@@ -9,10 +10,9 @@ import { User } from '@/models/user.model'
  * The base URL is determined from environment variables, supporting both
  * Vite's import.meta.env and Node's process.env.
  */
-const tenantApi = axios.create({
-  baseURL:
-    import.meta.env.VITE_BACKEND_API_URL ?? process.env.VITE_BACKEND_API_URL,
-})
+const tenantApi = authenticatedAxios()
+tenantApi.defaults.baseURL =
+  import.meta.env.VITE_BACKEND_API_URL ?? process.env.VITE_BACKEND_API_URL
 
 /**
  * Logs an API error with a custom message.
