@@ -2,13 +2,12 @@
 import { storeToRefs } from 'pinia'
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { v4 as uuidv4 } from 'uuid'
 
 import CreateTenantDialog from '@/components/CreateTenantDialog.vue'
 import TenantList from '@/components/TenantList.vue'
 import { useNotification } from '@/composables/useNotification'
 import { Tenant } from '@/models/tenant.model'
-import { logError } from '@/plugins/console'
+import { logger } from '@/utils/logger'
 import { getUser } from '@/services/keycloak'
 import { useTenantStore } from '@/stores/useTenantStore'
 
@@ -32,7 +31,7 @@ const closeDialog = () => (dialogVisible.value = false)
 
 // Fetch tenants on load
 onMounted(() => {
-  tenantStore.fetchTenants(getUser().ssoUserId)
+  tenantStore.fetchTenants(getUser().ssoUser.id)
 })
 
 // Submit handler
@@ -49,7 +48,7 @@ const handleTenantSubmit = async ({
     closeDialog()
   } catch (error) {
     addNotification('Failed to create the new tenant', 'error')
-    logError('Failed to create the new tenant', error)
+    logger.error('Failed to create the new tenant', error)
   }
 }
 </script>

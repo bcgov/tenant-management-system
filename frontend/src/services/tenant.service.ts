@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-import { logError } from '@/plugins/console'
+import { logger } from '@/utils/logger'
 import { User } from '@/models/user.model'
 
 const tenantApi = axios.create({
@@ -10,9 +10,9 @@ const tenantApi = axios.create({
 
 const logApiError = (message: string, error: unknown) => {
   if (axios.isAxiosError(error)) {
-    logError(`${message}: ${error.message}`, error)
+    logger.error(`${message}: ${error.message}`, error)
   } else {
-    logError(message, error)
+    logger.error(message, error)
   }
 }
 
