@@ -5,6 +5,9 @@ import rTracer from 'cls-rtracer'
 import { requestLoggingMiddleware } from './common/logger.mw'
 import { checkJwt, jwtErrorHandler } from './common/auth.mw'
 import logger from './common/logger'
+import swaggerUi from 'swagger-ui-express'
+import YAML from 'yamljs'
+import path from 'path'
 require('dotenv').config()
 
 export default class App {
@@ -32,6 +35,10 @@ export default class App {
     }))
     
     this.config()
+
+    const swaggerDocument = YAML.load(path.join(__dirname, "docs", "openapi.yaml"))
+    this.app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument))
+
     this.app.use(checkJwt)
     this.app.use(jwtErrorHandler)
     this.routes.routes(this.app)

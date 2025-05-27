@@ -3,6 +3,9 @@ import { TMSRepository } from '../repositories/tms.repository';
 import { connection } from './db.connection';
 import { ForbiddenError } from '../errors/ForbiddenError';
 import logger from './logger';
+import { ErrorHandler } from './error.handler';
+
+const errorHandler:ErrorHandler = new ErrorHandler();
 
 export const checkTenantAccess = (requiredRoles?: string[]) => {
     return async (req: Request, res: Response, next: NextFunction) => {
@@ -25,11 +28,7 @@ export const checkTenantAccess = (requiredRoles?: string[]) => {
         } catch (error) {
             logger.error('Tenant access check failed:', error);
             if (error instanceof ForbiddenError) {
-                res.status(403).json({ 
-                    error: 'Forbidden',
-                    message: error.message,
-                    statusCode: 403
-                });
+                errorHandler.generalError(res,"Authorization Failure", error.message, error.statusCode, "Forbidden")
             } else {
                 next(error);
             }

@@ -9,7 +9,6 @@ import { TMSConstants } from '../common/tms.constants'
 import { TenantUserRole } from '../entities/TenantUserRole'
 import { NotFoundError } from '../errors/NotFoundError'
 import { ConflictError } from '../errors/ConflictError'
-import { ForbiddenError } from '../errors/ForbiddenError'
 import logger from '../common/logger'
 
 export class TMSRepository {
@@ -317,13 +316,6 @@ export class TMSRepository {
     public async getTenant(req:Request) {
         const tenantId:string = req.params.tenantId
         const expand: string[] = typeof req.query.expand === "string" ? req.query.expand.split(",") : []
-        const requestingUserId:string = req.decodedJwt.idir_user_guid
-
-        const userHasAccess:boolean = await this.checkUserTenantAccess(tenantId, requestingUserId)
-
-        if(!userHasAccess) {
-            throw new ForbiddenError('Access denied: User does not have access to tenant: '+tenantId)
-        }
 
         const tenantQuery = this.manager
             .createQueryBuilder(Tenant, "tenant")
