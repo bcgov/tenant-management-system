@@ -30,8 +30,13 @@ const openDialog = () => (dialogVisible.value = true)
 const closeDialog = () => (dialogVisible.value = false)
 
 // Fetch tenants on load
-onMounted(() => {
-  tenantStore.fetchTenants(getUser().ssoUser.id)
+onMounted(async () => {
+  try {
+    await tenantStore.fetchTenants(getUser().ssoUser.id)
+  } catch (error) {
+    addNotification('Failed to fetch tenants', 'error')
+    logger.error('Failed to fetch tenants', error)
+  }
 })
 
 // Submit handler
