@@ -62,15 +62,7 @@ export const useTenantStore = defineStore('tenant', () => {
 
   const addTenant = async (name: string, ministryName: string, user: User) => {
     const apiResponse = await createTenant(name, ministryName, user)
-    console.log('api response', apiResponse)
-    const newTenant = new Tenant(
-      apiResponse.id,
-      apiResponse.name,
-      apiResponse.ministryName,
-      apiResponse.users.map(User.fromApiData),
-    )
-    console.log('new tenant', newTenant)
-    tenants.value.push(newTenant)
+    tenants.value.push(Tenant.fromApiData(apiResponse))
   }
 
   return {

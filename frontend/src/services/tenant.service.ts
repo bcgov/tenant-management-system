@@ -50,8 +50,8 @@ export const createTenant = async (
 ) => {
   try {
     const requestBody = {
-      name: name,
       ministryName: ministryName,
+      name: name,
       user: {
         displayName: user.displayName,
         email: user.email,
