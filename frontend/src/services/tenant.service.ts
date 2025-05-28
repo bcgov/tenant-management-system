@@ -38,15 +38,28 @@ const logApiError = (message: string, error: unknown) => {
  * @param {string} name - The name of the tenant to create.
  * @param {string} ministryName - The name of the ministry associated with the
  *   tenant.
+ * @param {string} user - The user that is creating the tenant.
  * @returns {Promise<object>} A promise that resolves to the newly created
  *   tenant-like object.
  * @throws Will throw an error if the API request fails.
  */
-export const createTenant = async (name: string, ministryName: string) => {
+export const createTenant = async (
+  name: string,
+  ministryName: string,
+  user: User,
+) => {
   try {
     const requestBody = {
       name: name,
       ministryName: ministryName,
+      user: {
+        displayName: user.displayName,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        ssoUserId: user.id,
+        userName: user.userName,
+      },
     }
     const response = await tenantApi.post(`/tenants`, requestBody)
 

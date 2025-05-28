@@ -166,7 +166,7 @@ const deleteDialogVisible = ref(false)
           <!-- Tenant Owner -->
           <v-col cols="12" md="6">
             <v-text-field
-              :model-value="tenancy?.users[0]?.ssoUser?.displayName"
+              :model-value="tenancy?.users[0]?.displayName"
               label="Tenant Owner"
               readonly
               class="readonly-field"

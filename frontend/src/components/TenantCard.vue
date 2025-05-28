@@ -10,7 +10,7 @@ const { tenant } = defineProps<{
 type EmitFn = (event: 'click') => void
 const emit = defineEmits<EmitFn>()
 
-const firstAdminUser = computed(() => tenant.getAdminUsers()[0])
+const firstOwner = computed(() => tenant.getOwners()[0])
 </script>
 
 <template>
@@ -21,9 +21,9 @@ const firstAdminUser = computed(() => tenant.getAdminUsers()[0])
       </span>
     </v-card-title>
     <v-card-subtitle>{{ tenant.ministryName }}</v-card-subtitle>
-    <v-card-text v-if="firstAdminUser">
-      <p>Tenant Owner: {{ firstAdminUser.ssoUser.displayName }}</p>
-      <p>{{ firstAdminUser.ssoUser.email }}</p>
+    <v-card-text v-if="firstOwner">
+      <p>Tenant Owner: {{ firstOwner.displayName }}</p>
+      <p>{{ firstOwner.email }}</p>
     </v-card-text>
   </v-card>
 </template>

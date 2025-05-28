@@ -22,11 +22,11 @@ export class Tenant {
     return new Tenant(apiData.id, apiData.name, apiData.ministryName, [])
   }
 
-  getAdminUsers(): User[] {
+  getOwners(): User[] {
     return this.users.filter(
       (user) =>
         Array.isArray(user.roles) &&
-        user.roles.some((role) => role.name === ROLES.ADMIN),
+        user.roles.some((role) => role.name === ROLES.TENANT_OWNER),
     )
   }
 }
