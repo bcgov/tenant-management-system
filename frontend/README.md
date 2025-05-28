@@ -1,12 +1,12 @@
 # Frontend
 
-The Tenant Management System frontend uses:
+The Tenant Management System frontend has:
 
-- Authentication is provide by Keycloak
-- Vue.js 3 composition components use a View ("smart") and Presentation ("dumb")
+- Authentication provided by Keycloak
+- Vue.js 3 composition components in a View ("smart") and Presentation ("dumb")
   pattern
-- Application state is provided by Pinia stores
-- API calls are provided by services
+- Application state provided by Pinia stores
+- API calls provided by services
 
 To keep the application simple and testable, it is important that:
 
@@ -16,7 +16,7 @@ To keep the application simple and testable, it is important that:
   stores or services
 - The View components call the stores to fetch or create data - they never call
   the services
-- The stores call the services to make API calls that fetch or create data
+- The stores call the services, which make the API calls
 
 ## Configuration
 
@@ -26,12 +26,12 @@ authenticate in the Keycloak standard realm. Clients are created in the
 
 ### Required .env variables
 
-Add a `.env` file to the directory `frontend` containing:
+Copy the `frontend/.env.sample` file to `frontend/.env`. Its settings are:
 
 | Name                     | Description                                          | Example                                                                              |
 | ------------------------ | ---------------------------------------------------- | ------------------------------------------------------------------------------------ |
 | VITE_ALLOWED_HOSTS       | The URL of the hosts for the front end               | localhost:4173,localhost:5173                                                        |
-| VITE_BACKEND_API_URL     | The URL of the backend                               | localhost:4144                                                                       |
+| VITE_BACKEND_API_URL     | The URL of the backend                               | localhost:4144/v1                                                                    |
 | VITE_KEYCLOAK_CLIENT_ID  | The client id in the realm                           | example-client-id                                                                    |
 | VITE_KEYCLOAK_LOGOUT_URL | The logout URL                                       | https://dev.loginproxy.gov.bc.ca.auth/realms/standard/protocol/openid-connect/logout |
 | VITE_KEYCLOAK_REALM      | The realm in the keycloak instance                   | standard                                                                             |
