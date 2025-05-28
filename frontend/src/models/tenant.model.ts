@@ -1,4 +1,4 @@
-import type { User } from '@/models/user.model'
+import { User } from '@/models/user.model'
 import { ROLES } from '@/utils/constants'
 
 export class Tenant {
@@ -18,8 +18,11 @@ export class Tenant {
     id: string
     name: string
     ministryName: string
+    users: []
   }): Tenant {
-    return new Tenant(apiData.id, apiData.name, apiData.ministryName, [])
+    const users = apiData.users?.map(User.fromApiData)
+
+    return new Tenant(apiData.id, apiData.name, apiData.ministryName, users)
   }
 
   getOwners(): User[] {
