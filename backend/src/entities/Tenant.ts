@@ -15,6 +15,9 @@ export class Tenant {
       @Column({length:100, name:'ministry_name'})
       ministryName: string;
 
+      @Column({ type: 'varchar', length: 500, name: 'description', nullable: true })
+      description: string;
+
       @OneToMany(()=>TenantUser,(tenantUser) => tenantUser.tenant, {
         cascade:true,
       })

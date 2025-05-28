@@ -1,10 +1,11 @@
 import axios, { AxiosError } from 'axios'
-import { logError } from '@/plugins/console'
-import { getUser } from '@/services/keycloak'
-import notificationService from '@/services/notification'
-import type { IdirSearchParameters } from '@/types/IdirSearchParameters'
+
+import { useNotification } from '@/composables/useNotification'
 import type { Tenant } from '@/models/tenant.model'
-import type { User } from '@/types/User'
+import type { User } from '@/models/user.model'
+import { useAuthStore } from '@/stores/useAuthStore'
+import type { IdirSearchParameters } from '@/types/IdirSearchParameters'
+import { logger } from '@/utils/logger'
 
 // Create an instance of axios for user service
 const userService = axios.create({
@@ -12,32 +13,37 @@ const userService = axios.create({
     import.meta.env.VITE_BACKEND_API_URL || process.env.VITE_BACKEND_API_URL,
 })
 
+// User notification creation
+const { addNotification } = useNotification()
+
 /**
  * Gets the tenants of the current user.
  * @returns {Array} The list of tenants.
  */
 export const getUserTenants = async (): Promise<Tenant[]> => {
-  const user = getUser()
-  if (user && user.ssoUserId) {
+  const user = useAuthStore().user
+
+  if (user?.id) {
     try {
-      const response = await userService.get(`/users/${user.ssoUserId}/tenants`)
+      const response = await userService.get(`/users/${user.id}/tenants`)
+
       return response.data
     } catch (error) {
       if (error instanceof AxiosError && error.response) {
-        logError('Error fetching user tenants:', error.response.data)
+        logger.error('Error fetching user tenants:', error.response.data)
       } else {
-        logError('Error fetching user tenants:', error)
+        logger.error('Error fetching user tenants:', error)
       }
-      notificationService.addNotification(
-        'Error fetching user tenants',
-        'error',
-      )
+
+      addNotification('Error fetching user tenants', 'error')
+
       throw error
     }
   } else {
     const error = new Error('User ID is not available')
-    logError(error.message)
-    notificationService.addNotification('User ID is not available', 'error')
+    logger.error(error.message)
+    addNotification('User ID is not available', 'error')
+
     throw error
   }
 }
@@ -54,14 +60,16 @@ export const searchIdirUsers = async (
     const response = await userService.get(`/users/bcgovssousers/idir/search`, {
       params,
     })
+
     return response.data.data
   } catch (error) {
     if (error instanceof AxiosError && error.response) {
-      logError('Error getting IDIR users:', error.response.data)
+      logger.error('Error getting IDIR users:', error.response.data)
     } else {
-      logError('Error getting IDIR users:', error)
+      logger.error('Error getting IDIR users:', error)
     }
-    notificationService.addNotification('Error getting IDIR users', 'error')
+    addNotification('Error getting IDIR users', 'error')
+
     throw error
   }
 }

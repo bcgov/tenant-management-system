@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 
-import { getUser } from '@/services/keycloak'
+import { useAuthStore } from '@/stores/useAuthStore'
 import { MINISTRIES } from '@/utils/constants'
 
 // Props and emits
@@ -17,7 +17,8 @@ const closeDialog = () => emit('update:modelValue', false)
 const formValid = ref(false)
 const ministryName = ref('')
 const name = ref('')
-const username = ref(getUser().displayName)
+const authStore = useAuthStore()
+const username = computed(() => authStore.user?.displayName || '')
 
 // Validation
 const rules = {

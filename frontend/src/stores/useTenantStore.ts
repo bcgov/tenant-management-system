@@ -7,9 +7,9 @@ import {
   getUsers,
   getUserRoles,
 } from '@/services/tenant.service'
-import type { Role } from '@/types/Role'
+import { Role } from '@/models/role.model'
 import { Tenant } from '@/models/tenant.model'
-import type { User } from '@/types/User'
+import { User } from '@/models/user.model'
 
 export const useTenantStore = defineStore('tenant', () => {
   const tenants = ref<Tenant[]>([])
@@ -23,21 +23,21 @@ export const useTenantStore = defineStore('tenant', () => {
     try {
       const tenantList = await getUserTenants(userId)
       const tenantInstances = await Promise.all(
-        tenantList.map(async (tenant) => {
-          const userList = await getUsers(tenant.id)
+        tenantList.map(async (tenantData: any) => {
+          const tenant = Tenant.fromApiData(tenantData)
 
-          await Promise.all(
-            userList.map(async (user) => {
-              user.roles = await getUserRoles(tenant.id, user.id)
+          const userListData = await getUsers(tenantData.id)
+          const users = await Promise.all(
+            userListData.map(async (userData: any) => {
+              const rolesData = await getUserRoles(tenant.id, userData.id)
+              userData.roles = rolesData
+              return User.fromApiData(userData)
             }),
           )
 
-          return new Tenant(
-            tenant.id,
-            tenant.name,
-            tenant.ministryName,
-            userList,
-          )
+          tenant.users = users
+
+          return tenant
         }),
       )
 
@@ -60,8 +60,16 @@ export const useTenantStore = defineStore('tenant', () => {
     tenantUserRoles.value[tenantId][userId] = roles
   }
 
-  const addTenant = async (tenant: Tenant) => {
-    const newTenant = await createTenant(tenant)
+  const addTenant = async (name: string, ministryName: string, user: User) => {
+    const apiResponse = await createTenant(name, ministryName, user)
+    console.log('api response', apiResponse)
+    const newTenant = new Tenant(
+      apiResponse.id,
+      apiResponse.name,
+      apiResponse.ministryName,
+      apiResponse.users.map(User.fromApiData),
+    )
+    console.log('new tenant', newTenant)
     tenants.value.push(newTenant)
   }
 

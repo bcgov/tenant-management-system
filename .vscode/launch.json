@@ -1,4 +1,10 @@
 {
+  "compounds": [
+    {
+      "configurations": ["TMS Backend", "TMS Frontend"],
+      "name": "TMS"
+    }
+  ],
   "configurations": [
     {
       "cwd": "${workspaceFolder}/backend",

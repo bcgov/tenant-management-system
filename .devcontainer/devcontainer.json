@@ -28,8 +28,7 @@
   // Ports forwarded from the container so they are available locally.
   "forwardPorts": [
     4144, // TMS Backend
-    5173, // TMS Frontend
-    5432 // PostgreSQL
+    5173 // TMS Frontend
   ],
 
   "name": "tenant-management-system",
@@ -40,9 +39,6 @@
     },
     "5173": {
       "label": "TMS Frontend"
-    },
-    "5432": {
-      "label": "PostgreSQL"
     }
   },
 

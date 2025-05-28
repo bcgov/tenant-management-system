@@ -1,21 +1,19 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { watchEffect } from 'vue'
 
-import { isLoggedIn as checkIsLoggedIn, login } from '@/services/keycloak'
+import { useAuthStore } from '@/stores/useAuthStore'
 
-const isAuthenticated = ref(false)
+const authStore = useAuthStore()
 
-onMounted(() => {
-  if (checkIsLoggedIn()) {
-    isAuthenticated.value = true
-  } else {
-    login()
+watchEffect(() => {
+  if (!authStore.isAuthenticated) {
+    authStore.login()
   }
 })
 </script>
 
 <template>
-  <div v-if="isAuthenticated">
+  <div v-if="authStore.isAuthenticated">
     <slot></slot>
   </div>
 </template>

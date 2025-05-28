@@ -2,14 +2,13 @@
 import { storeToRefs } from 'pinia'
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { v4 as uuidv4 } from 'uuid'
 
 import CreateTenantDialog from '@/components/CreateTenantDialog.vue'
 import TenantList from '@/components/TenantList.vue'
+import { useNotification } from '@/composables/useNotification'
 import { Tenant } from '@/models/tenant.model'
-import { logError } from '@/plugins/console'
-import { getUser } from '@/services/keycloak'
-import notificationService from '@/services/notification'
+import { logger } from '@/utils/logger'
+import { useAuthStore } from '@/stores/useAuthStore'
 import { useTenantStore } from '@/stores/useTenantStore'
 
 // Router
@@ -18,7 +17,11 @@ const handleCardClick = (id: Tenant['id']) => {
   router.push(`/tenants/${id}`)
 }
 
-// Tenant store
+// User notification creation
+const { addNotification } = useNotification()
+
+// Stores
+const authStore = useAuthStore()
 const tenantStore = useTenantStore()
 const { tenants } = storeToRefs(tenantStore)
 
@@ -28,8 +31,13 @@ const openDialog = () => (dialogVisible.value = true)
 const closeDialog = () => (dialogVisible.value = false)
 
 // Fetch tenants on load
-onMounted(() => {
-  tenantStore.fetchTenants(getUser().ssoUserId)
+onMounted(async () => {
+  try {
+    await tenantStore.fetchTenants(authStore.user?.id || '')
+  } catch (error) {
+    addNotification('Failed to fetch tenants', 'error')
+    logger.error('Failed to fetch tenants', error)
+  }
 })
 
 // Submit handler
@@ -41,17 +49,12 @@ const handleTenantSubmit = async ({
   ministryName: string
 }) => {
   try {
-    await tenantStore.addTenant(new Tenant(uuidv4(), name, ministryName, []))
-
-    notificationService.addNotification(
-      'New tenant created successfully',
-      'success',
-    )
-
+    await tenantStore.addTenant(name, ministryName, authStore.authenticatedUser)
+    addNotification('New tenant created successfully', 'success')
     closeDialog()
-  } catch (err) {
-    notificationService.addNotification('Failed to create new tenant', 'error')
-    logError('Failed to create new tenant', err)
+  } catch (error) {
+    addNotification('Failed to create the new tenant', 'error')
+    logger.error('Failed to create the new tenant', error)
   }
 }
 </script>

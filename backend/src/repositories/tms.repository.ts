@@ -34,6 +34,7 @@ export class TMSRepository {
             tenant.ministryName = req.body.ministryName
             tenant.name = req.body.name
             tenant.users = [tenantUser]
+            tenant.description = req.body.description
             tenant.createdBy = req.body.user.ssoUserId
             tenant.updatedBy = req.body.user.ssoUserId
 
@@ -292,6 +293,27 @@ export class TMSRepository {
         });
     }
 
+    public async checkUserTenantAccess(tenantId: string, ssoUserId: string, requiredRoles?: string[], transactionEntityManager?: EntityManager) {
+        transactionEntityManager = transactionEntityManager ? transactionEntityManager : this.manager;
+        
+        const query = transactionEntityManager
+            .createQueryBuilder()
+            .from(TenantUser, "tu")
+            .innerJoin("tu.ssoUser", "su")
+            .where("tu.tenant_id = :tenantId", { tenantId })
+            .andWhere("su.ssoUserId = :ssoUserId", { ssoUserId });
+
+        if (requiredRoles && requiredRoles.length > 0) {
+            query
+                .innerJoin("tu.roles", "tur")
+                .innerJoin("tur.role", "role")
+                .andWhere("role.name IN (:...requiredRoles)", { requiredRoles })
+                .andWhere("tur.isDeleted = :isDeleted", { isDeleted: false });
+        }
+
+        return await query.getExists();
+    }
+
     public async getTenant(req:Request) {
         const tenantId:string = req.params.tenantId
         const expand: string[] = typeof req.query.expand === "string" ? req.query.expand.split(",") : []
@@ -314,7 +336,6 @@ export class TMSRepository {
 
         if (expand.includes("roles")) {
             const tenantRoles:Role[] = await this.findTenantRoles(tenantId)
-           // tenant.roles = tenantRoles
         }
             
         return tenant

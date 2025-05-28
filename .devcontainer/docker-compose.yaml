@@ -1,3 +1,6 @@
+networks:
+  tms-net:
+
 services:
   devcontainer:
     build:
@@ -5,6 +8,8 @@ services:
       dockerfile: Dockerfile
     command: sleep infinity
     # container_name: tms_devcontainer
+    networks:
+      - tms-net
     volumes:
       - ../..:/workspaces:cached
 
@@ -15,8 +20,10 @@ services:
       POSTGRES_USER: tms
       POSTGRES_PASSWORD: mysecretpassword
     image: postgres:15.12-bookworm
-    # ports:
-    #   - "5432:5432"
+    networks:
+      - tms-net
+    ports:
+      - "5432:5432"
     restart: unless-stopped
     volumes:
       - postgres_data:/var/lib/postgresql/data

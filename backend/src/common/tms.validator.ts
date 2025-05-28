@@ -6,6 +6,7 @@ export default {
         body: Joi.object({
             name: Joi.string().min(1).max(30).required(),
             ministryName: Joi.string().min(1).max(100).required(),
+            description: Joi.string().min(1).max(500).optional(),
             user: Joi.object().keys({
                 firstName: Joi.string().min(1).max(50).required(),
                 lastName: Joi.string().min(1).max(50).required(),
@@ -13,7 +14,7 @@ export default {
                 userName: Joi.string().min(1).max(15).optional(),
                 ssoUserId: Joi.string().required(), // will need to be updated to the right regex and length
                 email:Joi.string().email().max(100).required(),                
-            }).min(1)
+            }).required()
         }).options({abortEarly:false,convert:false})
     },
 

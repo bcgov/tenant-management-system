@@ -1,26 +1,13 @@
 <script setup lang="ts">
-import { ref, watchEffect } from 'vue'
-import {
-  logout,
-  isLoggedIn as checkIsLoggedIn,
-  getUser,
-} from '@/services/keycloak'
-import type { User } from '@/types/User'
+import { computed } from 'vue'
+import { useAuthStore } from '@/stores/useAuthStore'
 
-const isLoggedIn = ref(checkIsLoggedIn())
-const userInfo = ref<User | null>(null)
-
-watchEffect(() => {
-  if (isLoggedIn.value) {
-    userInfo.value = getUser()
-  } else {
-    userInfo.value = null
-  }
-})
+const authStore = useAuthStore()
+const isLoggedIn = computed(() => authStore.isAuthenticated)
+const userInfo = computed(() => authStore.getUser)
 
 const handleLogout = () => {
-  logout()
-  isLoggedIn.value = false
+  authStore.logout()
 }
 </script>
 
