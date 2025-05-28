@@ -1,5 +1,6 @@
 import axios from 'axios'
 
+import { DuplicateEntityError, ValidationError } from '@/errors'
 import { logger } from '@/utils/logger'
 import { User } from '@/models/user.model'
 import { authenticatedAxios } from '@/services/authenticated.axios'
@@ -50,8 +51,8 @@ export const createTenant = async (
 ) => {
   try {
     const requestBody = {
-      name: name,
-      ministryName: ministryName,
+      ministryName,
+      name,
       user: {
         displayName: user.displayName,
         email: user.email,
@@ -61,16 +62,36 @@ export const createTenant = async (
         userName: user.userName,
       },
     }
+
     const response = await tenantApi.post(`/tenants`, requestBody)
 
     return response.data.data.tenant
-  } catch (error) {
+  } catch (error: any) {
     logApiError('Error creating Tenant', error)
 
+    // Handle HTTP 400 Bad Request (validation)
+    if (
+      error.response?.status === 400 &&
+      typeof error.response.data?.message === 'string'
+    ) {
+      const messageArray = error.response.data.details.body.map(
+        (item: { message: string }) => item.message,
+      )
+      throw new ValidationError(messageArray)
+    }
+
+    // Handle HTTP 409 Conflict (duplicate)
+    if (
+      error.response?.status === 409 &&
+      typeof error.response.data?.message === 'string'
+    ) {
+      throw new DuplicateEntityError(error.response.data.message)
+    }
+
+    // Re-throw all other errors
     throw error
   }
 }
-
 /**
  * Retrieves the tenants associated with the specified user.
  *
