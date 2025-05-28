@@ -6,6 +6,7 @@ import { useRouter } from 'vue-router'
 import CreateTenantDialog from '@/components/CreateTenantDialog.vue'
 import TenantList from '@/components/TenantList.vue'
 import { useNotification } from '@/composables/useNotification'
+import { DomainError } from '@/errors'
 import { Tenant } from '@/models/tenant.model'
 import { logger } from '@/utils/logger'
 import { useAuthStore } from '@/stores/useAuthStore'
@@ -52,9 +53,13 @@ const handleTenantSubmit = async ({
     await tenantStore.addTenant(name, ministryName, authStore.authenticatedUser)
     addNotification('New tenant created successfully', 'success')
     closeDialog()
-  } catch (error) {
-    addNotification('Failed to create the new tenant', 'error')
-    logger.error('Failed to create the new tenant', error)
+  } catch (error: any) {
+    if (error instanceof DomainError && error.userMessage) {
+      addNotification(error.userMessage, 'error')
+    } else {
+      addNotification('Failed to create the new tenant', 'error')
+      logger.error('Failed to create the new tenant', error)
+    }
   }
 }
 </script>
