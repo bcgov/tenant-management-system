@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 
 import { useAuthStore } from '@/stores/useAuthStore'
 import { MINISTRIES } from '@/utils/constants'
@@ -19,6 +19,20 @@ const ministryName = ref('')
 const name = ref('')
 const authStore = useAuthStore()
 const username = computed(() => authStore.user?.displayName || '')
+
+// Clear the state when the dialog is opened. This is for the case that the
+// user opens the dialog, enters data, cancels, and opens it again - the form
+// should be empty.
+watch(
+  () => props.modelValue,
+  (newVal) => {
+    if (newVal) {
+      ministryName.value = ''
+      name.value = ''
+      formValid.value = false
+    }
+  },
+)
 
 // Validation
 const rules = {
