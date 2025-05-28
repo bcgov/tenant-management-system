@@ -43,6 +43,7 @@ paths:
               required:
                 - name
                 - ministryName
+                - description
                 - user
               properties:
                 name:
@@ -55,6 +56,10 @@ paths:
                   minLength: 1
                   maxLength: 100
                   example: "Ministry of Natural Resources"
+                description:
+                  type: string
+                  maxLength: 500
+                  example: "My Tenant Description"
                 user:
                   $ref: '#/components/schemas/BasicUser'
       responses:
@@ -653,6 +658,9 @@ components:
         ministryName:
           type: string
           example: "Ministry of Natural Resources"
+        description:
+          type: string
+          example: "My Tenant Description"
         createdDateTime:
           type: string
           format: date-time
