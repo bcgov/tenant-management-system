@@ -54,14 +54,23 @@ services:
     depends_on:
       migrations:
         condition: service_started
-    entrypoint: sh -c "npm i && npm run start:dev"
+    entrypoint: sh -c "npm i && npm run dev"
     environment:
       <<: *postgres-vars
       NODE_ENV: development
+      ALLOWED_ORIGINS: '*'
+      BCGOV_SSO_API_URL: https://api.loginproxy.gov.bc.ca/api/v1/dev/idir/users
+      BCGOV_TOKEN_URL: https://loginproxy.gov.bc.ca/auth/realms/standard/protocol/openid-connect/token
+      BCGOV_SSO_API_CLIENT_ID: 'client-id'
+      BCGOV_SSO_API_CLIENT_SECRET: 'secret'
+      LOG_LEVEL: info
+      ALLOWED_AUDIENCES: tenant-management-system-6014,tenant-manager-poc-5908
+      JWKS_URI: https://dev.loginproxy.gov.bc.ca/auth/realms/standard/protocol/openid-connect/certs
+      ISSUER: https://dev.loginproxy.gov.bc.ca/auth/realms/standard
     image: node:22
-    ports: ["3001:3000"]
+    ports: ["4144:4144"]
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/api"]
+      test: ["CMD", "curl", "-f", "http://localhost:4144/v1/health"]
     working_dir: "/app"
     volumes: ["./backend:/app", "/app/node_modules"]
 
