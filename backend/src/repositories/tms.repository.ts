@@ -34,6 +34,7 @@ export class TMSRepository {
             tenant.ministryName = req.body.ministryName
             tenant.name = req.body.name
             tenant.users = [tenantUser]
+            tenant.description = req.body.description
             tenant.createdBy = req.body.user.ssoUserId
             tenant.updatedBy = req.body.user.ssoUserId
 
