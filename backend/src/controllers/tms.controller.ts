@@ -27,7 +27,12 @@ export class TMSController {
     } 
     catch(error) {
             logger.error(error)
-            this.errorHandler.generalError(res,"Error occurred during tenant creation", error.message, 500, "Internal Server Error")
+            if (error instanceof ConflictError) {
+                this.errorHandler.generalError(res,"Error occurred adding user to the tenant", error.message, error.statusCode, "Conflict")
+            } 
+            else {
+                this.errorHandler.generalError(res,"Error occurred during tenant creation", error.message, 500, "Internal Server Error")
+            }
         }
     }
 
