@@ -22,6 +22,8 @@ const username = computed(() => authStore.user?.displayName || '')
 
 // Validation
 const rules = {
+  maxLength: (max: number) => (v: string) =>
+    !v || v.length <= max || `Must be ${max} characters or less`,
   required: (value: any) => !!value || 'Required',
 }
 
@@ -57,7 +59,8 @@ const handleSubmit = () => {
               <v-text-field
                 v-model="name"
                 label="Name of Tenant"
-                :rules="[rules.required]"
+                :maxlength="30"
+                :rules="[rules.maxLength(30), rules.required]"
                 required
               />
             </v-col>
