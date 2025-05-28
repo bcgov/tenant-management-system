@@ -77,6 +77,17 @@ jobs:
             # Restart the backend deployment to pick up the new secrets
             oc rollout restart deployment/$RELEASE-backend
 
+            # Update frontend secrets
+            echo "Patching secret $RELEASE-frontend"
+
+            # Update keycloak client id
+            VITE_KEYCLOAK_CLIENT_ID=$(echo -n "${{ secrets.VITE_KEYCLOAK_CLIENT_ID }}" | base64 -w0)
+            oc patch secret $RELEASE-frontend \
+              -p '{"data":{"VITE_KEYCLOAK_CLIENT_ID":"'$VITE_KEYCLOAK_CLIENT_ID'"}}'
+
+            # Restart the frontend deployment to pick up the new secrets
+            oc rollout restart deployment/$RELEASE-frontend
+
   tests:
     name: Tests
     if: needs.deploys.outputs.triggered == 'true'

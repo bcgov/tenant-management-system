@@ -90,6 +90,11 @@ backend:
 frontend:
   # -- enable or disable a component deployment.
   enabled: true
+  environment:
+    viteKeycloakClientId: client-id
+    viteKeycloakRealm: standard
+    viteKeycloakLogoutUrl: https://dev.loginproxy.gov.bc.ca/auth/realms/standard/protocol/openid-connect/logout
+    viteKeycloakUrl: https://dev.loginproxy.gov.bc.ca/auth
   # -- the deployment strategy, can be "Recreate" or "RollingUpdate"
   deploymentStrategy: Recreate
 

@@ -30,7 +30,6 @@ Add a `.env` file to the directory `frontend` containing:
 
 | Name                     | Description                                          | Example                                                                              |
 | ------------------------ | ---------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| VITE_ALLOWED_HOSTS       | The URL of the hosts for the front end               | localhost:4173,localhost:5173                                                        |
 | VITE_BACKEND_API_URL     | The URL of the backend                               | localhost:4144                                                                       |
 | VITE_KEYCLOAK_CLIENT_ID  | The client id in the realm                           | example-client-id                                                                    |
 | VITE_KEYCLOAK_LOGOUT_URL | The logout URL                                       | https://dev.loginproxy.gov.bc.ca.auth/realms/standard/protocol/openid-connect/logout |
