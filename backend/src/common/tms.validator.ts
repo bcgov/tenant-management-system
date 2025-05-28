@@ -107,7 +107,7 @@ export default {
         }),
         query: Joi.object({
             expand: Joi.string().optional()
-            .pattern(/^(tenantUserRoles|roles)(,(tenantUserRoles|roles))?$/)
+            .pattern(/^(tenantUserRoles)?$/)
         }).optional()
     },
 
