@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-import { DuplicateEntityError } from '@/errors'
+import { DuplicateEntityError, ValidationError } from '@/errors'
 import { logger } from '@/utils/logger'
 import { User } from '@/models/user.model'
 import { authenticatedAxios } from '@/services/authenticated.axios'
@@ -68,6 +68,17 @@ export const createTenant = async (
     return response.data.data.tenant
   } catch (error: any) {
     logApiError('Error creating Tenant', error)
+
+    // Handle HTTP 400 Bad Request (validation)
+    if (
+      error.response?.status === 400 &&
+      typeof error.response.data?.message === 'string'
+    ) {
+      const messageArray = error.response.data.details.body.map(
+        (item: { message: string }) => item.message,
+      )
+      throw new ValidationError(messageArray)
+    }
 
     // Handle HTTP 409 Conflict (duplicate)
     if (
