@@ -6,15 +6,16 @@ import VBtnSecondary from '@/components/ui/VBtnSecondary.vue'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { MINISTRIES } from '@/utils/constants'
 
-// Props and emits
-const props = defineProps<{ modelValue: boolean; isDuplicateName?: boolean }>()
+// Auto-bound v-model from parent
+const dialogVisible = defineModel<boolean>()
+
+// Emits
 const emit = defineEmits<{
   (e: 'submit', payload: { name: string; ministryName: string }): void
-  (e: 'update:modelValue', value: boolean): void
   (e: 'clear-duplicate-error'): void
 }>()
 
-const closeDialog = () => emit('update:modelValue', false)
+const closeDialog = () => (dialogVisible.value = false)
 
 // Form state
 const formRef = ref()
@@ -24,11 +25,14 @@ const name = ref('')
 const authStore = useAuthStore()
 const username = computed(() => authStore.user?.displayName || '')
 
+// Props
+const props = defineProps<{ isDuplicateName?: boolean }>()
+
 // Clear the state when the dialog is opened. This is for the case that the
 // user opens the dialog, enters data, cancels, and opens it again - the form
 // should be empty.
 watch(
-  () => props.modelValue,
+  () => dialogVisible.value,
   async (newVal) => {
     if (newVal) {
       ministryName.value = ''
@@ -79,7 +83,7 @@ const handleSubmit = () => {
 </script>
 
 <template>
-  <v-dialog :model-value="modelValue" persistent max-width="600px">
+  <v-dialog v-model="dialogVisible" max-width="600px">
     <v-card class="pa-6">
       <v-card-title>Create New Tenant</v-card-title>
       <v-card-subtitle>
