@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 
 import VBtnPrimary from '@/components/ui/VBtnPrimary.vue'
 import VBtnSecondary from '@/components/ui/VBtnSecondary.vue'
@@ -11,7 +11,7 @@ const props = defineProps<{ modelValue: boolean; isDuplicateName?: boolean }>()
 const emit = defineEmits<{
   (e: 'submit', payload: { name: string; ministryName: string }): void
   (e: 'update:modelValue', value: boolean): void
-  (e: 'update-name'): void
+  (e: 'clear-duplicate-error'): void
 }>()
 
 const closeDialog = () => emit('update:modelValue', false)
@@ -29,7 +29,7 @@ const username = computed(() => authStore.user?.displayName || '')
 // should be empty.
 watch(
   () => props.modelValue,
-  (newVal) => {
+  async (newVal) => {
     if (newVal) {
       ministryName.value = ''
       name.value = ''
@@ -37,9 +37,8 @@ watch(
 
       // Trigger validation when dialog is shown, so that the user knows which
       // fields are required.
-      requestAnimationFrame(() => {
-        formRef.value?.validate()
-      })
+      await nextTick()
+      formRef.value?.validate()
     }
   },
 )
@@ -48,15 +47,14 @@ watch(
 // message is displayed.
 watch(
   () => props.isDuplicateName,
-  () => {
-    requestAnimationFrame(() => {
-      formRef.value?.validate()
-    })
+  async () => {
+    await nextTick()
+    formRef.value?.validate()
   },
 )
 
-watch(name, () => {
-  emit('update-name')
+watch([ministryName, name], () => {
+  emit('clear-duplicate-error')
 })
 
 // Validation

@@ -99,9 +99,9 @@ const handleTenantSubmit = async ({
 
     <CreateTenantDialog
       v-model="dialogVisible"
-      :name-duplicated="isDuplicateName"
+      :is-duplicate-name="isDuplicateName"
       @submit="handleTenantSubmit"
-      @update-name="isDuplicateName = false"
+      @clear-duplicate-error="isDuplicateName = false"
     />
   </BaseSecure>
 </template>
