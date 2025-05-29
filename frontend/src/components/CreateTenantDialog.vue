@@ -86,7 +86,6 @@ const handleSubmit = () => {
       <v-card-title>Create New Tenant</v-card-title>
       <v-card-subtitle>
         <a href="#">Learn more about Multi-Tenancy</a>
-        <v-icon color="primary">mdi-information-outline</v-icon>
       </v-card-subtitle>
       <v-card-text>
         <v-form ref="formRef" v-model="formValid">
