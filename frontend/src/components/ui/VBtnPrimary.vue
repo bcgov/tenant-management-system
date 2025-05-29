@@ -10,6 +10,7 @@ const emit = defineEmits<Emit>()
 
 <template>
   <v-btn
+    class="me-4"
     color="primary"
     variant="flat"
     :disabled="props.disabled"

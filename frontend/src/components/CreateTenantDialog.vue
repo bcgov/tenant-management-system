@@ -82,7 +82,7 @@ const handleSubmit = () => {
 
 <template>
   <v-dialog :model-value="modelValue" persistent max-width="600px">
-    <v-card>
+    <v-card class="pa-6">
       <v-card-title>Create New Tenant</v-card-title>
       <v-card-subtitle>
         <a href="#">Learn more about Multi-Tenancy</a>
