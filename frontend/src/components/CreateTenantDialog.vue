@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 
+import VBtnPrimary from '@/components/ui/VBtnPrimary.vue'
+import VBtnSecondary from '@/components/ui/VBtnSecondary.vue'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { MINISTRIES } from '@/utils/constants'
 
@@ -122,10 +124,12 @@ const handleSubmit = () => {
         </v-form>
       </v-card-text>
       <v-card-actions>
-        <v-btn variant="text" @click="closeDialog">Cancel</v-btn>
-        <v-btn variant="text" :disabled="!formValid" @click="handleSubmit">
-          Finish
-        </v-btn>
+        <VBtnSecondary text="Cancel" @click="closeDialog" />
+        <VBtnPrimary
+          text="Finish"
+          :disabled="!formValid"
+          @click="handleSubmit"
+        />
       </v-card-actions>
     </v-card>
   </v-dialog>
