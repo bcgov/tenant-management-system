@@ -5,15 +5,17 @@ import { useAuthStore } from '@/stores/useAuthStore'
 import { MINISTRIES } from '@/utils/constants'
 
 // Props and emits
-const props = defineProps<{ modelValue: boolean }>()
+const props = defineProps<{ modelValue: boolean; isDuplicateName?: boolean }>()
 const emit = defineEmits<{
-  (e: 'update:modelValue', value: boolean): void
   (e: 'submit', payload: { name: string; ministryName: string }): void
+  (e: 'update:modelValue', value: boolean): void
+  (e: 'update-name'): void
 }>()
 
 const closeDialog = () => emit('update:modelValue', false)
 
 // Form state
+const formRef = ref()
 const formValid = ref(false)
 const ministryName = ref('')
 const name = ref('')
@@ -30,14 +32,38 @@ watch(
       ministryName.value = ''
       name.value = ''
       formValid.value = false
+
+      // Trigger validation when dialog is shown, so that the user knows which
+      // fields are required.
+      requestAnimationFrame(() => {
+        formRef.value?.validate()
+      })
     }
   },
 )
+
+// When parent sets the duplicated name flag, force re-validation so that the
+// message is displayed.
+watch(
+  () => props.isDuplicateName,
+  () => {
+    requestAnimationFrame(() => {
+      formRef.value?.validate()
+    })
+  },
+)
+
+watch(name, () => {
+  emit('update-name')
+})
 
 // Validation
 const rules = {
   maxLength: (max: number) => (v: string) =>
     !v || v.length <= max || `Must be ${max} characters or less`,
+  notDuplicated: () =>
+    !props.isDuplicateName ||
+    'Name must be unique for this ministry/organization',
   required: (value: any) => !!value || 'Required',
 }
 
@@ -61,7 +87,7 @@ const handleSubmit = () => {
         <v-icon color="primary">mdi-information-outline</v-icon>
       </v-card-subtitle>
       <v-card-text>
-        <v-form v-model="formValid">
+        <v-form ref="formRef" v-model="formValid">
           <v-text-field
             v-model="username"
             label="Tenant Owner"
@@ -74,7 +100,11 @@ const handleSubmit = () => {
                 v-model="name"
                 label="Name of Tenant"
                 :maxlength="30"
-                :rules="[rules.maxLength(30), rules.required]"
+                :rules="[
+                  rules.required,
+                  rules.maxLength(30),
+                  rules.notDuplicated,
+                ]"
                 required
               />
             </v-col>
@@ -82,7 +112,7 @@ const handleSubmit = () => {
               <v-select
                 v-model="ministryName"
                 :items="MINISTRIES"
-                label="BC Ministries"
+                label="Ministry/Organization"
                 :rules="[rules.required]"
                 placeholder="Select an option..."
                 required
