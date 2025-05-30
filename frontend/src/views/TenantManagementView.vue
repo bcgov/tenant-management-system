@@ -61,7 +61,8 @@ async function handleUpdate(updatedTenant: Partial<Tenant>) {
 
       <TenantDetails
         :tenant="tenant"
-        :is-editing="isEditing"
+        v-model:delete-dialog="deleteDialogVisible"
+        v-model:is-editing="isEditing"
         @update="handleUpdate"
       />
 
