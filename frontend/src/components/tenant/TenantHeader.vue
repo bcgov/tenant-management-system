@@ -7,17 +7,27 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'update:deleteDialog', value: boolean): void
+  'update:deleteDialog': [value: boolean]
 }>()
+
+function openDeleteDialog() {
+  emit('update:deleteDialog', true)
+}
 </script>
 
 <template>
   <v-sheet class="pa-4" width="100%" color="grey-lighten-3">
     <v-row>
       <v-col cols="6">
-        <h1>{{ tenant?.name }}</h1>
+        <h1>Tenant Details</h1>
       </v-col>
-      <v-col cols="6" class="d-flex justify-end">
+      <v-col cols="1">
+        Date Created: <strong>{{ tenant?.createdDateTime }}</strong>
+      </v-col>
+      <v-col cols="1">
+        Created By: <strong>{{ tenant?.createdBy }}</strong>
+      </v-col>
+      <v-col cols="4" class="d-flex justify-end">
         <v-menu>
           <template #activator="{ props }">
             <v-btn icon v-bind="props">
@@ -28,7 +38,7 @@ const emit = defineEmits<{
             <v-list-item>
               <v-list-item-title>Edit Tenant</v-list-item-title>
             </v-list-item>
-            <v-list-item @click="emit('update:deleteDialog', true)">
+            <v-list-item @click="openDeleteDialog">
               <v-list-item-title>Delete Tenant</v-list-item-title>
             </v-list-item>
           </v-list>
