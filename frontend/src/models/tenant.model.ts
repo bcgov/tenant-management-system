@@ -4,6 +4,7 @@ import { ROLES } from '@/utils/constants'
 export class Tenant {
   createdBy: string
   createdDateTime: Date
+  description: string
   id: string
   name: string
   ministryName: string
@@ -12,6 +13,7 @@ export class Tenant {
   constructor(
     createdBy: string,
     createdDateTime: Date,
+    description: string,
     id: string,
     name: string,
     ministryName: string,
@@ -19,6 +21,7 @@ export class Tenant {
   ) {
     this.createdBy = createdBy
     this.createdDateTime = createdDateTime
+    this.description = description
     this.id = id
     this.name = name
     this.ministryName = ministryName
@@ -28,6 +31,7 @@ export class Tenant {
   static fromApiData(apiData: {
     createdBy: string
     createdDateTime: string
+    description: string
     id: string
     name: string
     ministryName: string
@@ -38,6 +42,7 @@ export class Tenant {
     return new Tenant(
       apiData.createdBy,
       new Date(apiData.createdDateTime),
+      apiData.description,
       apiData.id,
       apiData.name,
       apiData.ministryName,
