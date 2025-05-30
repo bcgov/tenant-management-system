@@ -21,6 +21,7 @@ const tenant = computed(() =>
 )
 
 // UI state
+const showDetail = ref(true)
 const deleteDialogVisible = ref(false)
 const isEditing = ref(false)
 
@@ -53,13 +54,10 @@ async function handleUpdate(updatedTenant: Partial<Tenant>) {
     <BreadcrumbBar :items="breadcrumbs" />
 
     <v-container fluid>
-      <TenantHeader
-        :tenant="tenant"
-        v-model:delete-dialog="deleteDialogVisible"
-        v-model:is-editing="isEditing"
-      />
+      <TenantHeader :tenant="tenant" v-model:show-detail="showDetail" />
 
       <TenantDetails
+        v-if="showDetail"
         :tenant="tenant"
         v-model:delete-dialog="deleteDialogVisible"
         v-model:is-editing="isEditing"
