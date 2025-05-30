@@ -2,16 +2,23 @@
 import type { Tenant } from '@/models/tenant.model'
 
 const props = defineProps<{
-  tenant?: Tenant
   deleteDialog: boolean
+  isEditing: boolean
+  tenant?: Tenant
 }>()
 
-const emit = defineEmits<{
-  'update:deleteDialog': [value: boolean]
-}>()
+type EmitFn = {
+  (event: 'update:deleteDialog', value: boolean): void
+  (event: 'update:isEditing', value: boolean): void
+}
+const emit = defineEmits<EmitFn>()
 
 function openDeleteDialog() {
   emit('update:deleteDialog', true)
+}
+
+function toggleEdit() {
+  emit('update:isEditing', !props.isEditing)
 }
 </script>
 
@@ -35,10 +42,12 @@ function openDeleteDialog() {
             </v-btn>
           </template>
           <v-list>
-            <v-list-item>
-              <v-list-item-title>Edit Tenant</v-list-item-title>
+            <v-list-item @click="toggleEdit">
+              <v-list-item-title>{{
+                isEditing ? 'Cancel Edit' : 'Edit Tenant'
+              }}</v-list-item-title>
             </v-list-item>
-            <v-list-item @click="openDeleteDialog">
+            <v-list-item @click="openDeleteDialog" :disabled="isEditing">
               <v-list-item-title>Delete Tenant</v-list-item-title>
             </v-list-item>
           </v-list>

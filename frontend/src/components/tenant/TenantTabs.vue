@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import type { Tenant } from '@/models/tenant.model'
-import TenantUserManagement from '@/components/tenant/TenantUserManagement.vue'
 
 defineProps<{
+  disabled?: boolean
   tenant?: Tenant
 }>()
 
@@ -12,7 +12,7 @@ const tab = ref(1)
 
 <template>
   <v-card>
-    <v-tabs v-model="tab">
+    <v-tabs v-model="tab" :disabled="disabled">
       <v-tab :value="1">Project Information</v-tab>
       <v-tab :value="2">User Management</v-tab>
       <v-tab :value="3">Available Services</v-tab>
@@ -30,7 +30,13 @@ const tab = ref(1)
       </v-tabs-window-item>
 
       <v-tabs-window-item :value="2">
-        <TenantUserManagement :tenant="tenant" />
+        <v-container fluid>
+          <v-row>
+            <v-col cols="12">
+              <p>Content for User Management tab</p>
+            </v-col>
+          </v-row>
+        </v-container>
       </v-tabs-window-item>
 
       <v-tabs-window-item :value="3">

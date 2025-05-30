@@ -35,7 +35,7 @@ export class Tenant {
     id: string
     name: string
     ministryName: string
-    users: []
+    users: any[]
   }): Tenant {
     const users = apiData.users?.map(User.fromApiData)
 
