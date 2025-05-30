@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
+import { VForm } from 'vuetify/components'
 
 import VBtnPrimary from '@/components/ui/VBtnPrimary.vue'
 import VBtnSecondary from '@/components/ui/VBtnSecondary.vue'
@@ -18,7 +19,7 @@ const emit = defineEmits<{
 const closeDialog = () => (dialogVisible.value = false)
 
 // Form state
-const formRef = ref()
+const formRef = ref<InstanceType<typeof VForm>>()
 const formValid = ref(false)
 const ministryName = ref('')
 const name = ref('')
@@ -83,7 +84,11 @@ const handleSubmit = () => {
 </script>
 
 <template>
-  <v-dialog v-model="dialogVisible" max-width="600px">
+  <v-dialog
+    v-model="dialogVisible"
+    aria-label="Create New Tenant Dialog"
+    max-width="600px"
+  >
     <v-card class="pa-6">
       <v-card-title>Create New Tenant</v-card-title>
       <v-card-subtitle>
@@ -124,7 +129,7 @@ const handleSubmit = () => {
           </v-row>
         </v-form>
       </v-card-text>
-      <v-card-actions>
+      <v-card-actions class="d-flex justify-start">
         <VBtnSecondary text="Cancel" @click="closeDialog" />
         <VBtnPrimary
           text="Finish"

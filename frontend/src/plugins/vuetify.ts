@@ -17,7 +17,7 @@ const bcgovTheme = {
     'on-surface-variant': '#EEEEEE',
     primary: '#1867C0',
     'primary-darken-1': '#1F5592',
-    secondary: '#EEEEEE',
+    secondary: '#000000',
     'secondary-darken-1': '#018786',
     error: '#B00020',
     info: '#2196F3',

@@ -12,7 +12,7 @@ const emit = defineEmits<Emit>()
   <v-btn
     class="me-4"
     color="secondary"
-    variant="flat"
+    variant="outlined"
     :disabled="props.disabled"
     @click="emit('click')"
   >
