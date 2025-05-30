@@ -1,43 +1,74 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
+import { VForm } from 'vuetify/components'
 
+import VBtnPrimary from '@/components/ui/VBtnPrimary.vue'
+import VBtnSecondary from '@/components/ui/VBtnSecondary.vue'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { MINISTRIES } from '@/utils/constants'
 
-// Props and emits
-const props = defineProps<{ modelValue: boolean }>()
+// Auto-bound v-model from parent
+const dialogVisible = defineModel<boolean>()
+
+// Emits
 const emit = defineEmits<{
-  (e: 'update:modelValue', value: boolean): void
   (e: 'submit', payload: { name: string; ministryName: string }): void
+  (e: 'clear-duplicate-error'): void
 }>()
 
-const closeDialog = () => emit('update:modelValue', false)
+const closeDialog = () => (dialogVisible.value = false)
 
 // Form state
+const formRef = ref<InstanceType<typeof VForm>>()
 const formValid = ref(false)
 const ministryName = ref('')
 const name = ref('')
 const authStore = useAuthStore()
 const username = computed(() => authStore.user?.displayName || '')
 
+// Props
+const props = defineProps<{ isDuplicateName?: boolean }>()
+
 // Clear the state when the dialog is opened. This is for the case that the
 // user opens the dialog, enters data, cancels, and opens it again - the form
 // should be empty.
 watch(
-  () => props.modelValue,
-  (newVal) => {
+  () => dialogVisible.value,
+  async (newVal) => {
     if (newVal) {
       ministryName.value = ''
       name.value = ''
       formValid.value = false
+
+      // Trigger validation when dialog is shown, so that the user knows which
+      // fields are required.
+      await nextTick()
+      formRef.value?.validate()
     }
   },
 )
+
+// When parent sets the duplicated name flag, force re-validation so that the
+// message is displayed.
+watch(
+  () => props.isDuplicateName,
+  async () => {
+    await nextTick()
+    formRef.value?.validate()
+  },
+)
+
+watch([ministryName, name], () => {
+  emit('clear-duplicate-error')
+})
 
 // Validation
 const rules = {
   maxLength: (max: number) => (v: string) =>
     !v || v.length <= max || `Must be ${max} characters or less`,
+  notDuplicated: () =>
+    !props.isDuplicateName ||
+    'Name must be unique for this ministry/organization',
   required: (value: any) => !!value || 'Required',
 }
 
@@ -53,15 +84,18 @@ const handleSubmit = () => {
 </script>
 
 <template>
-  <v-dialog :model-value="modelValue" persistent max-width="600px">
-    <v-card>
+  <v-dialog
+    v-model="dialogVisible"
+    aria-label="Create New Tenant Dialog"
+    max-width="600px"
+  >
+    <v-card class="pa-6">
       <v-card-title>Create New Tenant</v-card-title>
       <v-card-subtitle>
         <a href="#">Learn more about Multi-Tenancy</a>
-        <v-icon color="primary">mdi-information-outline</v-icon>
       </v-card-subtitle>
       <v-card-text>
-        <v-form v-model="formValid">
+        <v-form ref="formRef" v-model="formValid">
           <v-text-field
             v-model="username"
             label="Tenant Owner"
@@ -74,7 +108,11 @@ const handleSubmit = () => {
                 v-model="name"
                 label="Name of Tenant"
                 :maxlength="30"
-                :rules="[rules.maxLength(30), rules.required]"
+                :rules="[
+                  rules.required,
+                  rules.maxLength(30),
+                  rules.notDuplicated,
+                ]"
                 required
               />
             </v-col>
@@ -82,7 +120,7 @@ const handleSubmit = () => {
               <v-select
                 v-model="ministryName"
                 :items="MINISTRIES"
-                label="BC Ministries"
+                label="Ministry/Organization"
                 :rules="[rules.required]"
                 placeholder="Select an option..."
                 required
@@ -91,11 +129,13 @@ const handleSubmit = () => {
           </v-row>
         </v-form>
       </v-card-text>
-      <v-card-actions>
-        <v-btn variant="text" @click="closeDialog">Cancel</v-btn>
-        <v-btn variant="text" :disabled="!formValid" @click="handleSubmit">
-          Finish
-        </v-btn>
+      <v-card-actions class="d-flex justify-start">
+        <VBtnSecondary text="Cancel" @click="closeDialog" />
+        <VBtnPrimary
+          text="Finish"
+          :disabled="!formValid"
+          @click="handleSubmit"
+        />
       </v-card-actions>
     </v-card>
   </v-dialog>
