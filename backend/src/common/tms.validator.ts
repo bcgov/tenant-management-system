@@ -4,7 +4,7 @@ export default {
 
     createTenant: {
         body: Joi.object({
-            name: Joi.string().min(1).max(30).required(),
+            name: Joi.string().min(1).max(30).pattern(/^(?![0-9]+$)[a-zA-Z0-9][a-zA-Z0-9_\s-]*[a-zA-Z0-9_-]$/).required(),
             ministryName: Joi.string().min(1).max(100).required(),
             description: Joi.string().min(1).max(500).optional(),
             user: Joi.object().keys({
