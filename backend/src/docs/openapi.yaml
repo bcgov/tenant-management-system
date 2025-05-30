@@ -474,25 +474,7 @@ paths:
                     type: object
                     properties:
                       tenant:
-                        allOf:
-                          - $ref: '#/components/schemas/Tenant'
-                          - type: object
-                            properties:
-                              users:
-                                type: array
-                                items:
-                                  allOf:
-                                    - $ref: '#/components/schemas/User'
-                                    - type: object
-                                      properties:
-                                        roles:
-                                          type: array
-                                          items:
-                                            $ref: '#/components/schemas/Role'
-                              roles:
-                                type: array
-                                items:
-                                  $ref: '#/components/schemas/Role'
+                        $ref: '#/components/schemas/TenantWithUsers'
         '400':
           description: Invalid input
           content:
@@ -678,7 +660,14 @@ components:
             users:
               type: array
               items:
-                $ref: '#/components/schemas/User'
+                allOf:
+                  - $ref: '#/components/schemas/User'
+                  - type: object
+                    properties:
+                      roles:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Role'
 
     BadRequestResponse:
       type: object
