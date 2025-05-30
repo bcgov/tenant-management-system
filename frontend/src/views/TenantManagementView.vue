@@ -1,25 +1,33 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
 import TenantDetails from '@/components/tenant/TenantDetails.vue'
 import TenantHeader from '@/components/tenant/TenantHeader.vue'
 import TenantTabs from '@/components/tenant/TenantTabs.vue'
+import BreadcrumbBar from '@/components/ui/BreadcrumbBar.vue'
 import { Tenant } from '@/models/tenant.model'
 import { useTenantStore } from '@/stores/useTenantStore'
 
 // Initialize stores and route
 const route = useRoute()
 const tenantStore = useTenantStore()
-const { tenants } = storeToRefs(tenantStore)
+const tenant = ref<Tenant | undefined>()
 
-// Current tenant
-const tenant = computed(() =>
-  tenants.value.find((t) => t.id === route.params.id),
+// Watch for route changes and load fresh tenant data
+watch(
+  () => route.params.id,
+  async (newId) => {
+    if (newId) {
+      tenant.value = await tenantStore.fetchTenant(newId as string)
+    }
+  },
+  { immediate: true },
 )
 
 // UI state
+const showDetail = ref(true)
 const deleteDialogVisible = ref(false)
 const isEditing = ref(false)
 
@@ -49,18 +57,16 @@ async function handleUpdate(updatedTenant: Partial<Tenant>) {
 
 <template>
   <BaseSecure>
-    <v-breadcrumbs :items="breadcrumbs" divider=">" color="primary" />
+    <BreadcrumbBar :items="breadcrumbs" />
 
     <v-container fluid>
-      <TenantHeader
+      <TenantHeader :tenant="tenant" v-model:show-detail="showDetail" />
+
+      <TenantDetails
+        v-if="showDetail"
         :tenant="tenant"
         v-model:delete-dialog="deleteDialogVisible"
         v-model:is-editing="isEditing"
-      />
-
-      <TenantDetails
-        :tenant="tenant"
-        :is-editing="isEditing"
         @update="handleUpdate"
       />
 

@@ -156,6 +156,25 @@ export const tenantService = {
   },
 
   /**
+   * Retrieves the specified tenant.
+   *
+   * @param {string} tenantId - The ID of the tenant.
+   * @returns {Promise<object>} A promise that resolves a tenant-like object.
+   * @throws Will throw an error if the API request fails.
+   */
+  async getTenant(tenantId: string) {
+    try {
+      const response = await tenantApi.get(`/tenants/${tenantId}`)
+
+      return response.data.data.tenant
+    } catch (error) {
+      logApiError('Error getting tenant', error)
+
+      throw error
+    }
+  },
+
+  /**
    * Retrieves the tenants associated with the specified user.
    *
    * @param {string} userId - The SSO user ID of the user.

@@ -1,24 +1,21 @@
 <script setup lang="ts">
 import type { Tenant } from '@/models/tenant.model'
+import { ref } from 'vue'
 
 const props = defineProps<{
-  deleteDialog: boolean
-  isEditing: boolean
   tenant?: Tenant
 }>()
 
 type EmitFn = {
-  (event: 'update:deleteDialog', value: boolean): void
-  (event: 'update:isEditing', value: boolean): void
+  (event: 'update:showDetail', value: boolean): void
 }
 const emit = defineEmits<EmitFn>()
 
-function openDeleteDialog() {
-  emit('update:deleteDialog', true)
-}
+const showDetail = ref(true)
 
-function toggleEdit() {
-  emit('update:isEditing', !props.isEditing)
+function toggleDetail() {
+  showDetail.value = !showDetail.value
+  emit('update:showDetail', showDetail.value)
 }
 </script>
 
@@ -28,30 +25,24 @@ function toggleEdit() {
       <v-col cols="6">
         <h1>Tenant Details</h1>
       </v-col>
-      <v-col cols="1">
+      <v-col cols="3">
         Date Created: <strong>{{ tenant?.createdDateTime }}</strong>
       </v-col>
-      <v-col cols="1">
+      <v-col cols="2">
         Created By: <strong>{{ tenant?.createdBy }}</strong>
       </v-col>
-      <v-col cols="4" class="d-flex justify-end">
-        <v-menu>
-          <template #activator="{ props }">
-            <v-btn icon v-bind="props">
-              <v-icon>mdi-dots-vertical</v-icon>
-            </v-btn>
-          </template>
-          <v-list>
-            <v-list-item @click="toggleEdit">
-              <v-list-item-title>{{
-                isEditing ? 'Cancel Edit' : 'Edit Tenant'
-              }}</v-list-item-title>
-            </v-list-item>
-            <v-list-item @click="openDeleteDialog" :disabled="isEditing">
-              <v-list-item-title>Delete Tenant</v-list-item-title>
-            </v-list-item>
-          </v-list>
-        </v-menu>
+      <v-col cols="1" class="d-flex justify-end">
+        <v-btn
+          icon
+          variant="outlined"
+          rounded="lg"
+          size="small"
+          @click="toggleDetail"
+        >
+          <v-icon>
+            {{ showDetail ? 'mdi-chevron-up' : 'mdi-chevron-down' }}
+          </v-icon>
+        </v-btn>
       </v-col>
     </v-row>
   </v-sheet>
