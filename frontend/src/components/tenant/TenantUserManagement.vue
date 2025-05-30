@@ -28,7 +28,7 @@ const selectedRole = ref('')
           ]"
         >
           <template #no-data>
-            <v-alert type="info">You have no users in this tenancy.</v-alert>
+            <v-alert type="info">You have no users in this tenant.</v-alert>
           </template>
           <template #item.roles="{ item }">
             <v-chip

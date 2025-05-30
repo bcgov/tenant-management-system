@@ -7,9 +7,9 @@ import TenantsView from '@/views/TenantsView.vue'
 // Define the routes for the application
 const routes = [
   { path: '/', redirect: '/tenants' }, // Redirect root path to /tenants
-  { path: '/tenants', component: TenantsView }, // Route for Tenants component
-  { path: '/roles', component: Roles }, // Route for Roles component
-  { path: '/tenants/:id', component: TenantManagementView, props: true }, // Route for Manage Tenancy component with dynamic id
+  { path: '/tenants', component: TenantsView },
+  { path: '/roles', component: Roles },
+  { path: '/tenants/:id', component: TenantManagementView, props: true },
 ]
 
 // Create a router instance with history mode

@@ -26,10 +26,10 @@ const emit = defineEmits<{
           </template>
           <v-list>
             <v-list-item>
-              <v-list-item-title>Edit Tenancy</v-list-item-title>
+              <v-list-item-title>Edit Tenant</v-list-item-title>
             </v-list-item>
             <v-list-item @click="emit('update:deleteDialog', true)">
-              <v-list-item-title>Delete Tenancy</v-list-item-title>
+              <v-list-item-title>Delete Tenant</v-list-item-title>
             </v-list-item>
           </v-list>
         </v-menu>

@@ -14,7 +14,7 @@ const tenantStore = useTenantStore()
 const { tenants } = storeToRefs(tenantStore)
 
 // Current tenant
-const tenancy = computed(() =>
+const tenant = computed(() =>
   tenants.value.find((t) => t.id === route.params.id),
 )
 
@@ -23,11 +23,11 @@ const deleteDialogVisible = ref(false)
 
 // Breadcrumbs for navigation
 const breadcrumbs = computed(() => [
-  { title: 'Tenants', disabled: false, href: '/tenancies' },
+  { title: 'Tenants', disabled: false, href: '/tenants' },
   {
-    title: tenancy.value?.name || '',
+    title: tenant.value?.name || '',
     disabled: false,
-    href: `/tenancies/${tenancy.value?.id}`,
+    href: `/tenants/${tenant.value?.id}`,
   },
 ])
 </script>
@@ -38,13 +38,13 @@ const breadcrumbs = computed(() => [
 
     <v-container fluid>
       <TenantHeader
-        :tenant="tenancy"
+        :tenant="tenant"
         v-model:delete-dialog="deleteDialogVisible"
       />
 
-      <TenantDetails :tenant="tenancy" />
+      <TenantDetails :tenant="tenant" />
 
-      <TenantTabs :tenant="tenancy" />
+      <TenantTabs :tenant="tenant" />
     </v-container>
   </BaseSecure>
 </template>
