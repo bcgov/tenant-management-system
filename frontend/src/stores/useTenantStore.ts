@@ -13,6 +13,33 @@ export const useTenantStore = defineStore('tenant', () => {
 
   const loading = ref(false)
 
+  // Private methods
+
+  function upsertTenant(tenant: Tenant) {
+    const index = tenants.value.findIndex((t) => t.id === tenant.id)
+    if (index !== -1) {
+      tenants.value[index] = tenant
+    } else {
+      tenants.value.push(tenant)
+    }
+
+    return tenant
+  }
+
+  // Exported Methods
+
+  const fetchTenant = async (tenantId: string) => {
+    loading.value = true
+    try {
+      const tenantData = await tenantService.getTenant(tenantId)
+      const tenant = Tenant.fromApiData(tenantData)
+
+      return upsertTenant(tenant)
+    } finally {
+      loading.value = false
+    }
+  }
+
   const fetchTenants = async (userId: string) => {
     loading.value = true
     try {
@@ -64,7 +91,9 @@ export const useTenantStore = defineStore('tenant', () => {
       ministryName,
       user,
     )
-    tenants.value.push(Tenant.fromApiData(apiResponse))
+    const tenant = Tenant.fromApiData(apiResponse)
+
+    return upsertTenant(tenant)
   }
 
   const updateTenant = async (tenant: Partial<Tenant>) => {
@@ -80,16 +109,14 @@ export const useTenantStore = defineStore('tenant', () => {
       tenant.description ?? '',
     )
 
-    const index = tenants.value.findIndex((t) => t.id === tenant.id)
-    if (index !== -1) {
-      tenants.value.splice(index, 1)
-    }
+    const updatedTenant = Tenant.fromApiData(apiResponse)
 
-    tenants.value.push(Tenant.fromApiData(apiResponse))
+    return upsertTenant(updatedTenant)
   }
 
   return {
     addTenant,
+    fetchTenant,
     fetchTenants,
     fetchTenantUsers,
     fetchTenantUserRoles,

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
 import TenantDetails from '@/components/tenant/TenantDetails.vue'
@@ -13,11 +13,17 @@ import { useTenantStore } from '@/stores/useTenantStore'
 // Initialize stores and route
 const route = useRoute()
 const tenantStore = useTenantStore()
-const { tenants } = storeToRefs(tenantStore)
+const tenant = ref<Tenant | undefined>()
 
-// Current tenant
-const tenant = computed(() =>
-  tenants.value.find((t) => t.id === route.params.id),
+// Watch for route changes and load fresh tenant data
+watch(
+  () => route.params.id,
+  async (newId) => {
+    if (newId) {
+      tenant.value = await tenantStore.fetchTenant(newId as string)
+    }
+  },
+  { immediate: true },
 )
 
 // UI state
