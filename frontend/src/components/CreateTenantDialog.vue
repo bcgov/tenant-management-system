@@ -2,8 +2,8 @@
 import { computed, nextTick, ref, watch } from 'vue'
 import { VForm } from 'vuetify/components'
 
-import VBtnPrimary from '@/components/ui/VBtnPrimary.vue'
-import VBtnSecondary from '@/components/ui/VBtnSecondary.vue'
+import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
+import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { MINISTRIES } from '@/utils/constants'
 
@@ -130,8 +130,8 @@ const handleSubmit = () => {
         </v-form>
       </v-card-text>
       <v-card-actions class="d-flex justify-start">
-        <VBtnSecondary text="Cancel" @click="closeDialog" />
-        <VBtnPrimary
+        <ButtonSecondary text="Cancel" @click="closeDialog" />
+        <ButtonPrimary
           text="Finish"
           :disabled="!formValid"
           @click="handleSubmit"
