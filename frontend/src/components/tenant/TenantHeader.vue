@@ -7,9 +7,7 @@ const props = defineProps<{
   tenant?: Tenant
 }>()
 
-type EmitFn = {
-  (event: 'update:showDetail', value: boolean): void
-}
+type EmitFn = (event: 'update:showDetail', value: boolean) => void
 const emit = defineEmits<EmitFn>()
 
 const showDetail = ref(true)
