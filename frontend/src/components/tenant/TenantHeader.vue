@@ -20,11 +20,11 @@ function toggleDetail() {
 }
 
 const createdDate = computed(() => {
-  if (!props.tenant?.createdDateTime) {
+  if (!props.tenant?.createdDate) {
     return ''
   }
 
-  return props.tenant.createdDateTime
+  return props.tenant.createdDate
 })
 </script>
 
