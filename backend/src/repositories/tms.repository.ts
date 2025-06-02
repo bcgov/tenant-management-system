@@ -314,6 +314,11 @@ export class TMSRepository {
         return await query.getExists();
     }
 
+    private async getCreatorDisplayName(ssoUserId: string) {
+        const creator:SSOUser = await this.manager.findOne(SSOUser, { where: { ssoUserId } });
+        return creator;
+    }
+
     public async getTenant(req:Request) {
         const tenantId:string = req.params.tenantId
         const expand: string[] = typeof req.query.expand === "string" ? req.query.expand.split(",") : []
@@ -333,11 +338,10 @@ export class TMSRepository {
         if(!tenant) {
             throw new NotFoundError("Tenant Not Found: "+tenantId)
         }
-
-        if (expand.includes("roles")) {
-            const tenantRoles:Role[] = await this.findTenantRoles(tenantId)
-        }
             
+        if (tenant.createdBy) {
+            tenant.createdBy = (await this.getCreatorDisplayName(tenant.createdBy))?.userName || tenant.createdBy;
+        }
         return tenant
     }
 
