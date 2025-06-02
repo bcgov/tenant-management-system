@@ -164,7 +164,9 @@ export const tenantService = {
    */
   async getTenant(tenantId: string) {
     try {
-      const response = await tenantApi.get(`/tenants/${tenantId}`)
+      const response = await tenantApi.get(
+        `/tenants/${tenantId}?expand=tenantUserRoles`,
+      )
 
       return response.data.data.tenant
     } catch (error) {
