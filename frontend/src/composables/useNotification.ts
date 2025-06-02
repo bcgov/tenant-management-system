@@ -15,7 +15,7 @@ function addNotification(message: string, type: NotificationType = 'success') {
 
   setTimeout(() => {
     removeNotification(id)
-  }, 3000)
+  }, 10000)
 }
 
 function removeNotification(id: string) {
