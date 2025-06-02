@@ -333,10 +333,6 @@ export class TMSRepository {
         if(!tenant) {
             throw new NotFoundError("Tenant Not Found: "+tenantId)
         }
-
-        if (expand.includes("roles")) {
-            const tenantRoles:Role[] = await this.findTenantRoles(tenantId)
-        }
             
         return tenant
     }
