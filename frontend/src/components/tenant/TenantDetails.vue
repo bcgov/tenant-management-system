@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import { computed, ref, watch } from 'vue'
+
+import { useNotification } from '@/composables/useNotification'
 import type { Tenant } from '@/models/tenant.model'
-import { ref, watch } from 'vue'
 
 const props = defineProps<{
   deleteDialog: boolean
@@ -36,6 +38,21 @@ watch(
   },
   { immediate: true },
 )
+
+const { addNotification } = useNotification()
+
+const owner = computed(() => {
+  if (!props.tenant?.users?.length) {
+    addNotification(
+      `Critical: Tenant "${props.tenant?.name}" has no users assigned`,
+      'error',
+    )
+
+    return null
+  }
+
+  return props.tenant.users[0]
+})
 
 function handleSubmit() {
   emit('update', formData.value)
@@ -93,7 +110,7 @@ function toggleEdit() {
           <v-row>
             <v-col cols="12" md="6">
               <v-text-field
-                :model-value="tenant.users[0]?.userName"
+                :model-value="owner?.userName ?? 'No owner assigned'"
                 label="Tenant Owner"
                 readonly
                 class="readonly-field"
