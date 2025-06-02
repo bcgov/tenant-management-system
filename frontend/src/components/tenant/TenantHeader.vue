@@ -1,6 +1,7 @@
 <script setup lang="ts">
+import { computed, ref } from 'vue'
+
 import type { Tenant } from '@/models/tenant.model'
-import { ref } from 'vue'
 
 const props = defineProps<{
   tenant?: Tenant
@@ -17,6 +18,14 @@ function toggleDetail() {
   showDetail.value = !showDetail.value
   emit('update:showDetail', showDetail.value)
 }
+
+const createdDate = computed(() => {
+  if (!props.tenant?.createdDateTime) {
+    return ''
+  }
+
+  return props.tenant.createdDateTime
+})
 </script>
 
 <template>
@@ -26,7 +35,7 @@ function toggleDetail() {
         <h1>Tenant Details</h1>
       </v-col>
       <v-col cols="3">
-        Date Created: <strong>{{ tenant?.createdDateTime }}</strong>
+        Date Created: <strong>{{ createdDate }}</strong>
       </v-col>
       <v-col cols="2">
         Created By: <strong>{{ tenant?.createdBy }}</strong>

@@ -3,7 +3,7 @@ import { ROLES } from '@/utils/constants'
 
 export class Tenant {
   createdBy: string
-  createdDateTime: Date
+  createdDateTime: string
   description: string
   id: string
   name: string
@@ -12,7 +12,7 @@ export class Tenant {
 
   constructor(
     createdBy: string,
-    createdDateTime: Date,
+    createdDateTime: string,
     description: string,
     id: string,
     name: string,
@@ -41,7 +41,7 @@ export class Tenant {
 
     return new Tenant(
       apiData.createdBy,
-      new Date(apiData.createdDateTime),
+      apiData.createdDateTime,
       apiData.description,
       apiData.id,
       apiData.name,
