@@ -51,6 +51,10 @@ export class Tenant {
   }
 
   getOwners(): User[] {
+    if (!Array.isArray(this.users)) {
+      return []
+    }
+
     return this.users.filter(
       (user) =>
         Array.isArray(user.roles) &&
