@@ -27,13 +27,16 @@ const createdDate = computed(() => {
 </script>
 
 <template>
-  <v-sheet class="pa-4" width="100%" color="grey-lighten-3">
-    <v-row>
+  <v-sheet class="pa-4" width="100%" color="blue-lighten-5">
+    <v-row align="center">
       <v-col cols="6">
         <h1>Tenant Details</h1>
       </v-col>
       <v-col cols="3">
-        Date Created: <strong>{{ createdDate }}</strong>
+        Date Created:
+        <span class="text-no-wrap"
+          ><strong>{{ createdDate }}</strong></span
+        >
       </v-col>
       <v-col cols="2">
         Created By: <strong>{{ tenant?.createdBy }}</strong>
