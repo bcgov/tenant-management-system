@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
+import { useNotification } from '@/composables/useNotification'
 import type { Tenant } from '@/models/tenant.model'
 
 const { tenant } = defineProps<{
@@ -10,7 +11,21 @@ const { tenant } = defineProps<{
 type EmitFn = (event: 'click') => void
 const emit = defineEmits<EmitFn>()
 
-const firstOwner = computed(() => tenant.getOwners()[0])
+const { addNotification } = useNotification()
+
+const firstOwner = computed(() => {
+  const owners = tenant.getOwners()
+  if (!owners.length) {
+    addNotification(
+      `Critical: Tenant "${tenant.name}" has no owners assigned`,
+      'error',
+    )
+
+    return null
+  }
+
+  return owners[0]
+})
 </script>
 
 <template>
