@@ -40,7 +40,11 @@ export default {
     getUserTenants: {
         params: Joi.object({
             ssoUserId: Joi.string().min(2).required()
-        }).options({abortEarly:false,convert:false})
+        }),
+        query: Joi.object({
+            expand: Joi.string().optional()
+                .pattern(/^(tenantUserRoles)?$/)
+        }).optional()
     },
 
     getTenantUsers: {
@@ -107,7 +111,7 @@ export default {
         }),
         query: Joi.object({
             expand: Joi.string().optional()
-            .pattern(/^(tenantUserRoles)?$/)
+                .pattern(/^(tenantUserRoles)?$/)
         }).optional()
     },
 
