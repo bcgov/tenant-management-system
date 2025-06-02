@@ -44,29 +44,7 @@ export const useTenantStore = defineStore('tenant', () => {
     loading.value = true
     try {
       const tenantList = await tenantService.getUserTenants(userId)
-      const tenantInstances = await Promise.all(
-        tenantList.map(async (tenantData: any) => {
-          const tenant = Tenant.fromApiData(tenantData)
-
-          const userListData = await tenantService.getUsers(tenantData.id)
-          const users = await Promise.all(
-            userListData.map(async (userData: any) => {
-              const rolesData = await tenantService.getUserRoles(
-                tenant.id,
-                userData.id,
-              )
-              userData.roles = rolesData
-              return User.fromApiData(userData)
-            }),
-          )
-
-          tenant.users = users
-
-          return tenant
-        }),
-      )
-
-      tenants.value = tenantInstances
+      tenants.value = tenantList.map(Tenant.fromApiData)
     } finally {
       loading.value = false
     }
