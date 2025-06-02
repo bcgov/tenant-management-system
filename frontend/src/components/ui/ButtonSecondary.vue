@@ -4,8 +4,8 @@ const props = defineProps<{
   text: string
 }>()
 
-type Emit = (e: 'click') => void
-const emit = defineEmits<Emit>()
+type EmitFn = (e: 'click') => void
+const emit = defineEmits<EmitFn>()
 </script>
 
 <template>
