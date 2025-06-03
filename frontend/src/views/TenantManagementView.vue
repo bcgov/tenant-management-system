@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { storeToRefs } from 'pinia'
-import { ref, computed, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
 import TenantDetails from '@/components/tenant/TenantDetails.vue'
@@ -57,9 +56,9 @@ async function handleUpdate(updatedTenant: Partial<Tenant>) {
 
 <template>
   <BaseSecure>
-    <BreadcrumbBar :items="breadcrumbs" class="mb-6 px-0" />
+    <v-container fluid class="px-4">
+      <BreadcrumbBar :items="breadcrumbs" class="mb-6" />
 
-    <v-container class="ma-0 pa-0">
       <TenantHeader :tenant="tenant" v-model:show-detail="showDetail" />
 
       <TenantDetails
@@ -70,7 +69,7 @@ async function handleUpdate(updatedTenant: Partial<Tenant>) {
         @update="handleUpdate"
       />
 
-      <TenantTabs :tenant="tenant" :disabled="isEditing" />
+      <TenantTabs :tenant="tenant" :disabled="isEditing" class="mt-6" />
     </v-container>
   </BaseSecure>
 </template>

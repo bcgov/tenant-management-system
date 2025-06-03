@@ -1,9 +1,9 @@
 // src/plugins/vuetify.js
 import { createVuetify } from 'vuetify'
-import 'vuetify/styles'
-import { aliases, mdi } from 'vuetify/iconsets/mdi'
 import * as components from 'vuetify/components'
 import * as directives from 'vuetify/directives'
+import { aliases, mdi } from 'vuetify/iconsets/mdi'
+import 'vuetify/styles'
 
 // Define a custom theme with the colours typically used by BC Government.
 const bcgovTheme = {

@@ -1,10 +1,10 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
-import { tenantService } from '@/services/tenant.service'
 import { Role } from '@/models/role.model'
 import { Tenant } from '@/models/tenant.model'
 import { User } from '@/models/user.model'
+import { tenantService } from '@/services/tenant.service'
 
 export const useTenantStore = defineStore('tenant', () => {
   const tenants = ref<Tenant[]>([])

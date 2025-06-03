@@ -1,9 +1,9 @@
 import axios from 'axios'
 
 import { DuplicateEntityError, ValidationError } from '@/errors'
-import { logger } from '@/utils/logger'
 import { User } from '@/models/user.model'
 import { authenticatedAxios } from '@/services/authenticated.axios'
+import { logger } from '@/utils/logger'
 
 /**
  * Axios instance configured for tenant API requests.
