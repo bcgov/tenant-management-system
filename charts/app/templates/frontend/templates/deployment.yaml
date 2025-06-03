@@ -35,9 +35,6 @@ spec:
               add: [ "NET_BIND_SERVICE" ]
           image: "{{.Values.global.registry}}/{{.Values.global.repository}}/frontend:{{ .Values.global.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ default "Always" .Values.frontend.imagePullPolicy }}
-          envFrom:
-            - secretRef:
-                name: {{.Release.Name}}-frontend
           env:
             - name: VITE_BACKEND_API_URL
               value: "http://{{ .Release.Name }}-backend.apps.silver.devops.gov.bc.ca"
