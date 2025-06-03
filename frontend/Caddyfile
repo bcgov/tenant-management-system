@@ -16,16 +16,7 @@
     }
     rewrite @spa_router {http.matchers.file.relative}
 
-    @api {
-        path_regexp api ^/api/v1(/.*)?$
-    }
-
-    handle @api {
-        rewrite {
-            regexp ^/api/(.*)?$
-            to {1}
-        }
-
+    handle_path /api/v1/* {
         reverse_proxy ${VITE_BACKEND_API_URL} {
             header_up Host {upstream_hostport}
             header_up X-Real-IP {remote_host}
