@@ -57,9 +57,9 @@ async function handleUpdate(updatedTenant: Partial<Tenant>) {
 
 <template>
   <BaseSecure>
-    <BreadcrumbBar :items="breadcrumbs" />
+    <BreadcrumbBar :items="breadcrumbs" class="mb-6 px-0" />
 
-    <v-container fluid>
+    <v-container class="ma-0 pa-0">
       <TenantHeader :tenant="tenant" v-model:show-detail="showDetail" />
 
       <TenantDetails

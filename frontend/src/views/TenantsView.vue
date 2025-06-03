@@ -79,7 +79,8 @@ const handleTenantSubmit = async ({
 
 <template>
   <BaseSecure>
-    <v-container>
+    <!-- Remove the container spacing and let the parent decide that. -->
+    <v-container fluid class="ma-0 pa-0">
       <v-row>
         <v-col cols="12">
           <v-btn
@@ -88,6 +89,7 @@ const handleTenantSubmit = async ({
             prepend-icon="mdi-plus-box"
             size="large"
             @click="openDialog"
+            class="pa-2"
           >
             Create New Tenant
           </v-btn>
