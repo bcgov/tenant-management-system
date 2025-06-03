@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 
+import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
+import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
 import { useNotification } from '@/composables/useNotification'
 import type { Tenant } from '@/models/tenant.model'
+import { MINISTRIES } from '@/utils/constants'
 
 const props = defineProps<{
   deleteDialog: boolean
@@ -23,6 +26,9 @@ const formData = ref<Partial<Tenant>>({
   ministryName: '',
   name: '',
 })
+
+const form = ref<any>(null)
+const isFormValid = ref(false)
 
 // Reset form when tenant changes
 watch(
@@ -47,15 +53,29 @@ const owner = computed(() => {
       `Critical: Tenant "${props.tenant?.name}" has no users assigned`,
       'error',
     )
-
     return null
   }
-
   return props.tenant.users[0]
 })
 
-function handleSubmit() {
-  emit('update', formData.value)
+async function handleSubmit() {
+  const { valid } = await form.value.validate()
+  if (valid) {
+    emit('update', formData.value)
+    emit('update:isEditing', false)
+  }
+}
+
+function handleCancel() {
+  // Reset form data to original tenant values
+  if (props.tenant) {
+    formData.value = {
+      description: props.tenant.description,
+      ministryName: props.tenant.ministryName,
+      name: props.tenant.name,
+    }
+  }
+  emit('update:isEditing', false)
 }
 
 function openDeleteDialog() {
@@ -72,7 +92,12 @@ function toggleEdit() {
     <v-row>
       <!-- Form content -->
       <v-col cols="10">
-        <v-form @submit.prevent="handleSubmit" class="mt-6">
+        <v-form
+          ref="form"
+          @submit.prevent="handleSubmit"
+          v-model="isFormValid"
+          class="mt-6"
+        >
           <v-row>
             <v-col cols="12" md="6">
               <v-text-field
@@ -87,15 +112,16 @@ function toggleEdit() {
                 :model-value="tenant.name"
                 label="Tenant Name"
                 disabled
-                class="readonly-field"
               />
             </v-col>
             <v-col cols="12" md="6">
-              <v-text-field
+              <v-select
                 v-if="isEditing"
                 v-model="formData.ministryName"
+                :items="MINISTRIES"
                 label="Ministry/Organization"
                 :rules="[(v) => !!v || 'Ministry is required']"
+                placeholder="Select an option..."
                 required
               />
               <v-text-field
@@ -103,7 +129,6 @@ function toggleEdit() {
                 :model-value="tenant.ministryName"
                 label="Ministry/Organization"
                 disabled
-                class="readonly-field"
               />
             </v-col>
           </v-row>
@@ -113,27 +138,33 @@ function toggleEdit() {
                 :model-value="owner?.userName ?? 'No owner assigned'"
                 label="Tenant Owner"
                 disabled
-                class="readonly-field"
               />
             </v-col>
             <v-col cols="12" md="6">
-              <v-text-field
+              <v-textarea
                 v-if="isEditing"
                 v-model="formData.description"
                 label="Tenant Description"
-              />
-              <v-text-field
+                auto-grow
+                rows="1"
+              ></v-textarea>
+              <v-textarea
                 v-else
                 :model-value="tenant.description"
                 label="Tenant Description"
+                rows="1"
                 disabled
-                class="readonly-field"
-              />
+              ></v-textarea>
             </v-col>
           </v-row>
           <v-row v-if="isEditing">
-            <v-col class="d-flex justify-end">
-              <v-btn type="submit" color="primary">Save Changes</v-btn>
+            <v-col class="d-flex justify-start gap-4">
+              <ButtonSecondary text="Cancel" @click="handleCancel" />
+              <ButtonPrimary
+                text="Save and Close"
+                :disabled="!isFormValid"
+                @click="handleSubmit"
+              />
             </v-col>
           </v-row>
         </v-form>
