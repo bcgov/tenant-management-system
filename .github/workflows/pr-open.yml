@@ -91,7 +91,7 @@ jobs:
                 "realm": "standard",
                 "serverUrl": "https://dev.loginproxy.gov.bc.ca/auth",
                 "logoutUrl": "https://dev.loginproxy.gov.bc.ca/auth/realms/standard/protocol/openid-connect/logout"
-              },
+              }
             }
             EOF
             )
@@ -99,14 +99,15 @@ jobs:
             # Create a temporary file with the JSON content
             echo "$CONFIG_JSON" > default.json
 
-            # Create or replace the ConfigMap
-            oc create configmap $RELEASE-frontend-config --from-file=default.json --dry-run=client -o yaml | oc apply -f -
-
+            # Force delete and recreate the ConfigMap
+            oc delete configmap $RELEASE-frontend-config --ignore-not-found
+            oc create configmap $RELEASE-frontend-config --from-file=default.json
+            
             # Clean up the temporary file
             rm default.json
 
-            # Restart the frontend deployment to pick up the new configmap
-            oc rollout restart deployment/$RELEASE-frontend
+            # Replace the pod instead of restarting to ensure ConfigMap is refreshed
+            oc delete pods -l app.kubernetes.io/instance=$RELEASE-frontend 
 
   tests:
     name: Tests
