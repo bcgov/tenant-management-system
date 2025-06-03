@@ -16,7 +16,7 @@ export interface AppConfig {
 // Default config for development
 const defaultConfig: AppConfig = {
   api: {
-    baseUrl: import.meta.env.VITE_API_URL || 'http://localhost:4144'
+    baseUrl: import.meta.env.VITE_API_BASE_URL || '/api/v1'
   },
   oidc: {
     clientId: import.meta.env.VITE_KEYCLOAK_CLIENT_ID || 'client-id',
