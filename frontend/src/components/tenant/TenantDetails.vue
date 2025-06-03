@@ -172,7 +172,18 @@ function toggleEdit() {
 
       <!-- Menu on right side -->
       <v-col cols="2" class="d-flex align-start justify-end">
-        <v-menu>
+        <v-btn
+          v-if="isEditing"
+          icon
+          variant="outlined"
+          rounded="lg"
+          size="small"
+          @click="handleCancel"
+        >
+          <v-icon>mdi-close</v-icon>
+        </v-btn>
+
+        <v-menu v-else>
           <template #activator="{ props }">
             <v-btn
               icon
@@ -186,11 +197,9 @@ function toggleEdit() {
           </template>
           <v-list>
             <v-list-item @click="toggleEdit">
-              <v-list-item-title>
-                {{ isEditing ? 'Cancel Edit' : 'Edit Tenant' }}
-              </v-list-item-title>
+              <v-list-item-title>Edit Tenant</v-list-item-title>
             </v-list-item>
-            <v-list-item @click="openDeleteDialog" :disabled="isEditing">
+            <v-list-item @click="openDeleteDialog">
               <v-list-item-title>Delete Tenant</v-list-item-title>
             </v-list-item>
           </v-list>
