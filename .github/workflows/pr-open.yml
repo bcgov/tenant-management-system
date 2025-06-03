@@ -11,9 +11,51 @@ concurrency:
 permissions: {}
 
 jobs:
+  prebuild:
+    name: Prebuild
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: bcgov/action-oc-runner@12997e908fba505079d1aab6f694a17fe15e9b28 # v1.2.2
+        with:
+          oc_namespace: ${{ secrets.OC_NAMESPACE }}
+          oc_token: ${{ secrets.OC_TOKEN }}
+          oc_server: ${{ vars.oc_server }}
+          commands: |
+            # Get release name
+            RELEASE="${{ github.event.repository.name }}-${{ github.event.number }}"
+
+            # Update frontend ConfigMap
+            echo "Patching ConfigMap $RELEASE-config"
+
+            # Create a new default.json content with real values
+            CONFIG_JSON=$(cat <<EOF
+            {
+              "api": {
+                "baseUrl": "https://$RELEASE-backend.apps.silver.devops.gov.bc.ca"
+              },
+              "oidc": {
+                "clientId": "${{ secrets.VITE_KEYCLOAK_CLIENT_ID }}",
+                "realm": "standard",
+                "serverUrl": "https://dev.loginproxy.gov.bc.ca/auth",
+                "logoutUrl": "https://dev.loginproxy.gov.bc.ca/auth/realms/standard/protocol/openid-connect/logout"
+              },
+            }
+            EOF
+            )
+
+            # Create a temporary file with the JSON content
+            echo "$CONFIG_JSON" > default.json
+
+            # Create or replace the ConfigMap
+            oc create configmap $RELEASE-config --from-file=default.json --dry-run=client -o yaml | oc apply -f -
+
+            # Clean up the temporary file
+            rm default.json
+
   # https://github.com/bcgov/action-builder-ghcr
   builds:
     name: Builds
+    needs: [prebuild]
     permissions:
       packages: write
     runs-on: ubuntu-24.04
@@ -76,33 +118,6 @@ jobs:
             
             # Restart the backend deployment to pick up the new secrets
             oc rollout restart deployment/$RELEASE-backend
-
-            # Update frontend ConfigMap
-            echo "Patching ConfigMap $RELEASE-config"
-
-            # Create a new default.json content with real values
-            CONFIG_JSON=$(cat <<EOF
-            {
-              "api": {
-                "baseUrl": "https://$RELEASE-backend.apps.silver.devops.gov.bc.ca"
-              },
-              "oidc": {
-                "clientId": "${{ secrets.VITE_KEYCLOAK_CLIENT_ID }}",
-                "realm": "standard",
-                "serverUrl": "https://dev.loginproxy.gov.bc.ca/auth",
-                "logoutUrl": "https://dev.loginproxy.gov.bc.ca/auth/realms/standard/protocol/openid-connect/logout"
-              },
-            }
-            EOF
-            )
-
-            # Update the ConfigMap with the new default.json
-            oc patch configmap $RELEASE-config \
-              --type=merge \
-              -p '{"data":{"default.json": "'$(echo "$CONFIG_JSON" | sed 's/"/\\"/g' | tr -d '\n')'"}}'
-
-            # Restart the frontend deployment to pick up the new secrets
-            oc rollout restart deployment/$RELEASE-frontend
 
   tests:
     name: Tests
