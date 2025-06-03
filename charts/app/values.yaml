@@ -91,7 +91,7 @@ frontend:
   # -- enable or disable a component deployment.
   enabled: true
   environment:
-    viteKeycloakClientId: client-id
+    viteKeycloakClientId: tenant-management-system-6014
     viteKeycloakRealm: standard
     viteKeycloakLogoutUrl: https://dev.loginproxy.gov.bc.ca/auth/realms/standard/protocol/openid-connect/logout
     viteKeycloakUrl: https://dev.loginproxy.gov.bc.ca/auth

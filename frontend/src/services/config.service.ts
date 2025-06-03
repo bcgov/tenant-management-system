@@ -19,7 +19,7 @@ const defaultConfig: AppConfig = {
     baseUrl: import.meta.env.VITE_API_BASE_URL || '/api/v1'
   },
   oidc: {
-    clientId: import.meta.env.VITE_KEYCLOAK_CLIENT_ID || 'client-id',
+    clientId: import.meta.env.VITE_KEYCLOAK_CLIENT_ID || 'tenant-management-system-6014',
     realm: import.meta.env.VITE_KEYCLOAK_REALM || 'standard',
     serverUrl: import.meta.env.VITE_KEYCLOAK_URL || 'https://dev.loginproxy.gov.bc.ca/auth',
     logoutUrl: import.meta.env.VITE_KEYCLOAK_LOGOUT_URL || 'https://dev.loginproxy.gov.bc.ca/auth/realms/standard/protocol/openid-connect/logout'
