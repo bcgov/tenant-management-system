@@ -88,16 +88,11 @@ function toggleEdit() {
 </script>
 
 <template>
-  <div v-if="tenant" class="pa-4 bg-grey-lighten-5">
-    <v-row>
+  <div v-if="tenant" class="bg-grey-lighten-5">
+    <v-row class="pa-4" no-gutters>
       <!-- Form content -->
-      <v-col cols="10">
-        <v-form
-          ref="form"
-          @submit.prevent="handleSubmit"
-          v-model="isFormValid"
-          class="mt-6"
-        >
+      <v-col cols="12" lg="10">
+        <v-form ref="form" @submit.prevent="handleSubmit" v-model="isFormValid">
           <v-row>
             <v-col cols="12" md="6">
               <v-text-field
@@ -171,7 +166,7 @@ function toggleEdit() {
       </v-col>
 
       <!-- Menu on right side -->
-      <v-col cols="2" class="d-flex align-start justify-end">
+      <v-col cols="12" lg="2" class="d-flex justify-end">
         <v-btn
           v-if="isEditing"
           icon

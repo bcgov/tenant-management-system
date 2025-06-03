@@ -27,19 +27,19 @@ const createdDate = computed(() => {
 </script>
 
 <template>
-  <v-sheet width="100%" class="pb-2" color="blue-lighten-5">
-    <v-row align="center">
-      <v-col cols="6">
-        <h1 class="mx-6">Tenant Details</h1>
+  <v-sheet class="bg-blue-lighten-5">
+    <v-row align="center" class="pa-4" no-gutters>
+      <v-col cols="12" sm="6">
+        <h1>Tenant Details</h1>
       </v-col>
-      <v-col cols="6" class="d-flex align-center justify-end">
-        <div class="me-6">
+      <v-col cols="12" sm="6" class="d-flex align-center justify-end">
+        <div class="me-4">
           Date Created:
           <span class="text-no-wrap">
             <strong>{{ createdDate }}</strong>
           </span>
         </div>
-        <div class="me-6">
+        <div class="me-4">
           Created By:
           <strong>{{ tenant?.createdBy }}</strong>
         </div>
@@ -49,7 +49,6 @@ const createdDate = computed(() => {
           rounded="lg"
           size="small"
           @click="toggleDetail"
-          class="mx-4"
         >
           <v-icon>
             {{ showDetail ? 'mdi-chevron-up' : 'mdi-chevron-down' }}
