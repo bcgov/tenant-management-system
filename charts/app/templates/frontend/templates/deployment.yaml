@@ -37,7 +37,7 @@ spec:
           imagePullPolicy: {{ default "Always" .Values.frontend.imagePullPolicy }}
           env:
             - name: VITE_BACKEND_API_URL
-              value: "http://{{ .Release.Name }}-backend.apps.silver.devops.gov.bc.ca"
+              value: "https://{{ .Release.Name }}-backend.apps.silver.devops.gov.bc.ca"
             - name: VITE_API_BASE_URL
               value: /api
             - name: LOG_LEVEL

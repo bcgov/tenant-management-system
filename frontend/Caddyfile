@@ -17,11 +17,8 @@
     rewrite @spa_router {http.matchers.file.relative}
     
     reverse_proxy /api* {$VITE_BACKEND_API_URL} {
-        header_up Host {http.reverse_proxy.upstream.hostport}
+        header_up Host {upstream_host}
         header_up X-Real-IP {remote_host}
-        transport http {
-            tls
-        }
     }
     
     header {
