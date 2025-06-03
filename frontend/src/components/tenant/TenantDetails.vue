@@ -86,7 +86,7 @@ function toggleEdit() {
                 v-else
                 :model-value="tenant.name"
                 label="Tenant Name"
-                readonly
+                disabled
                 class="readonly-field"
               />
             </v-col>
@@ -102,7 +102,7 @@ function toggleEdit() {
                 v-else
                 :model-value="tenant.ministryName"
                 label="Ministry/Organization"
-                readonly
+                disabled
                 class="readonly-field"
               />
             </v-col>
@@ -112,7 +112,7 @@ function toggleEdit() {
               <v-text-field
                 :model-value="owner?.userName ?? 'No owner assigned'"
                 label="Tenant Owner"
-                readonly
+                disabled
                 class="readonly-field"
               />
             </v-col>
@@ -126,7 +126,7 @@ function toggleEdit() {
                 v-else
                 :model-value="tenant.description"
                 label="Tenant Description"
-                readonly
+                disabled
                 class="readonly-field"
               />
             </v-col>

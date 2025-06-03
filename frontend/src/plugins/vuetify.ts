@@ -29,7 +29,7 @@ const bcgovTheme = {
     'border-opacity': 0.12,
     'high-emphasis-opacity': 0.87,
     'medium-emphasis-opacity': 0.6,
-    'disabled-opacity': 0.5,
+    'disabled-opacity': 0.6,
     'idle-opacity': 0.04,
     'hover-opacity': 0.04,
     'focus-opacity': 0.12,
