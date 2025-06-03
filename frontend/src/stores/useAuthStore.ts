@@ -2,12 +2,13 @@ import Keycloak from 'keycloak-js'
 import { defineStore } from 'pinia'
 
 import { User } from '@/models/user.model'
+import { config } from '@/services/config.service'
 import { logger } from '@/utils/logger'
 
 const keycloak = new Keycloak({
-  clientId: import.meta.env.VITE_KEYCLOAK_CLIENT_ID,
-  realm: import.meta.env.VITE_KEYCLOAK_REALM,
-  url: import.meta.env.VITE_KEYCLOAK_URL,
+  clientId: config.oidc.clientId,
+  realm: config.oidc.realm,
+  url: config.oidc.serverUrl,
 })
 
 let refreshTimer: number | undefined

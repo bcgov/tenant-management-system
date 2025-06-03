@@ -81,7 +81,8 @@ spec:
         - name: data
           emptyDir: {}
         - name: config
-          emptyDir: {}
+          configMap:
+            name: {{ include "frontend.fullname" . }}-config
       affinity:
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:

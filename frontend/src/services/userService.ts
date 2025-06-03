@@ -3,14 +3,14 @@ import axios, { AxiosError } from 'axios'
 import { useNotification } from '@/composables/useNotification'
 import type { Tenant } from '@/models/tenant.model'
 import type { User } from '@/models/user.model'
+import { config } from '@/services/config.service'
 import { useAuthStore } from '@/stores/useAuthStore'
 import type { IdirSearchParameters } from '@/types/IdirSearchParameters'
 import { logger } from '@/utils/logger'
 
 // Create an instance of axios for user service
 const userService = axios.create({
-  baseURL:
-    import.meta.env.VITE_BACKEND_API_URL || process.env.VITE_BACKEND_API_URL,
+  baseURL: config.api.baseUrl,
 })
 
 // User notification creation

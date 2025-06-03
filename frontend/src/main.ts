@@ -8,22 +8,32 @@ import BaseSecure from '@/components/BaseSecure.vue'
 import vuetify from '@/plugins/vuetify'
 import router from '@/router'
 import { useAuthStore } from '@/stores/useAuthStore'
+import { loadConfig } from './services/config.service'
 
-const app = createApp(App)
+async function initializeApp() {
+  await loadConfig();
 
-app.use(createPinia())
-app.use(router)
-app.use(vuetify)
-app.component('BaseSecure', BaseSecure)
+  const app = createApp(App);
+  const pinia = createPinia();
 
-const authStore = useAuthStore()
+  app.use(pinia)
+  app.use(router)
+  app.use(vuetify)
+  app.component('BaseSecure', BaseSecure)
 
-authStore
-  .initKeycloak()
-  .then(() => {
-    app.mount('#app')
-  })
-  .catch((error) => {
-    console.error('App init failed due to Keycloak: ', error)
-    // TODO: what does this look like to the user? Notification?
-  })
+  const authStore = useAuthStore()
+
+  authStore
+    .initKeycloak()
+    .then(() => {
+      app.mount('#app')
+    })
+    .catch((error) => {
+      console.error('App init failed due to Keycloak: ', error)
+      // TODO: what does this look like to the user? Notification?
+    })
+}
+
+initializeApp().catch((error) => {
+  console.error('App initialization failed: ', error);
+});

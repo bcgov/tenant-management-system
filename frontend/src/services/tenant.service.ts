@@ -4,16 +4,14 @@ import { DuplicateEntityError, ValidationError } from '@/errors'
 import { logger } from '@/utils/logger'
 import { User } from '@/models/user.model'
 import { authenticatedAxios } from '@/services/authenticated.axios'
+import { config } from '@/services/config.service'
 
 /**
  * Axios instance configured for tenant API requests.
  *
- * The base URL is determined from environment variables, supporting both
- * Vite's import.meta.env and Node's process.env.
  */
 const tenantApi = authenticatedAxios()
-tenantApi.defaults.baseURL =
-  import.meta.env.VITE_BACKEND_API_URL ?? process.env.VITE_BACKEND_API_URL
+tenantApi.defaults.baseURL = config.api.baseUrl;
 
 /**
  * Logs an API error with a custom message.
