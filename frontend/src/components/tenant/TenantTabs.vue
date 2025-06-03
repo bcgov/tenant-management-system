@@ -11,7 +11,7 @@ const tab = ref<number | null>(null)
 </script>
 
 <template>
-  <v-card>
+  <v-card elevation="0">
     <v-tabs v-model="tab" :mandatory="false" :disabled="disabled">
       <v-tab :value="1">User Management</v-tab>
       <v-tab :value="2">Available Services</v-tab>

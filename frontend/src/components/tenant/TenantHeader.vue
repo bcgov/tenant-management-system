@@ -27,10 +27,10 @@ const createdDate = computed(() => {
 </script>
 
 <template>
-  <v-sheet width="100%" color="blue-lighten-5">
+  <v-sheet width="100%" class="pb-2" color="blue-lighten-5">
     <v-row align="center">
       <v-col cols="6">
-        <h1>Tenant Details</h1>
+        <h1 class="mx-6">Tenant Details</h1>
       </v-col>
       <v-col cols="6" class="d-flex align-center justify-end">
         <div class="me-6">
@@ -49,6 +49,7 @@ const createdDate = computed(() => {
           rounded="lg"
           size="small"
           @click="toggleDetail"
+          class="mx-4"
         >
           <v-icon>
             {{ showDetail ? 'mdi-chevron-up' : 'mdi-chevron-down' }}
