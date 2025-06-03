@@ -25,7 +25,7 @@ jobs:
             RELEASE="${{ github.event.repository.name }}-${{ github.event.number }}"
 
             # Update frontend ConfigMap
-            echo "Patching ConfigMap $RELEASE-config"
+            echo "Patching ConfigMap $RELEASE-frontend-config"
 
             # Create a new default.json content with real values
             CONFIG_JSON=$(cat <<EOF
@@ -47,7 +47,7 @@ jobs:
             echo "$CONFIG_JSON" > default.json
 
             # Create or replace the ConfigMap
-            oc create configmap $RELEASE-config --from-file=default.json --dry-run=client -o yaml | oc apply -f -
+            oc create configmap $RELEASE-frontend-config --from-file=default.json --dry-run=client -o yaml | oc apply -f -
 
             # Clean up the temporary file
             rm default.json
