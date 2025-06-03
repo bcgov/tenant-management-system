@@ -16,17 +16,22 @@ const selectedRole = ref('')
 </script>
 
 <template>
-  <v-container fluid>
+  <v-container fluid class="px-0">
     <v-row>
       <v-col cols="12">
         <v-data-table
           :items="tenant?.users || []"
           item-value="id"
           :headers="[
-            { title: 'Name', value: 'ssoUser.displayName' },
-            { title: 'Roles', value: 'roles' },
-            { title: 'Email', value: 'ssoUser.email' },
+            { title: 'Name', key: 'displayName', align: 'start' },
+            { title: 'Roles', key: 'roles', align: 'start' },
+            { title: 'Email', key: 'email', align: 'start' },
           ]"
+          hover
+          fixed-header
+          :header-props="{
+            class: 'text-body-1 font-weight-bold bg-surface-light',
+          }"
         >
           <template #no-data>
             <v-alert type="info">You have no users in this tenant.</v-alert>
@@ -48,3 +53,9 @@ const selectedRole = ref('')
     <!-- User search table -->
   </v-container>
 </template>
+
+<style scoped>
+:deep(.v-data-table-footer) {
+  background-color: rgb(var(--v-theme-surface-light));
+}
+</style>
