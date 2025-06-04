@@ -214,5 +214,21 @@ describe('Tenant API', () => {
         name: 'Error occurred adding user to the tenant'
       })
     })
+
+    it('should fail when user already exists in tenant', async () => {
+      mockTMSRepository.addTenantUsers.mockRejectedValue(new ConflictError(`User is already added to this tenant: ${tenantId}`))
+
+      const response = await request(app)
+        .post(`/v1/tenants/${tenantId}/users`)
+        .send(validUserData)
+
+      expect(response.status).toBe(409)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Conflict',
+        httpResponseCode: 409,
+        message: `User is already added to this tenant: ${tenantId}`,
+        name: 'Error occurred adding user to the tenant'
+      })
+    })
   })
 }) 
