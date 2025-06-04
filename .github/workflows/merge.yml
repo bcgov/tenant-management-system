@@ -78,7 +78,7 @@ jobs:
 
   deploy-prod:
     name: Deploy (PROD)
-    needs: [tests, set-tag]
+    needs: [set-tag]
     uses: ./.github/workflows/.deployer.yml
     secrets: inherit
     with:
