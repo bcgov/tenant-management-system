@@ -314,6 +314,11 @@ export class TMSRepository {
         return await query.getExists();
     }
 
+    private async getCreatorDisplayName(ssoUserId: string) {
+        const creator:SSOUser = await this.manager.findOne(SSOUser, { where: { ssoUserId } });
+        return creator;
+    }
+
     public async getTenant(req:Request) {
         const tenantId:string = req.params.tenantId
         const expand: string[] = typeof req.query.expand === "string" ? req.query.expand.split(",") : []
@@ -333,11 +338,10 @@ export class TMSRepository {
         if(!tenant) {
             throw new NotFoundError("Tenant Not Found: "+tenantId)
         }
-
-        if (expand.includes("roles")) {
-            const tenantRoles:Role[] = await this.findTenantRoles(tenantId)
-        }
             
+        if (tenant.createdBy) {
+            tenant.createdBy = (await this.getCreatorDisplayName(tenant.createdBy))?.userName || tenant.createdBy;
+        }
         return tenant
     }
 
@@ -436,12 +440,21 @@ export class TMSRepository {
         return tenantExists
     }
 
-    public async getTenantsForUser(ssoUserId:string) {
-        const tenants = this.manager.createQueryBuilder(Tenant, "t")
+    public async getTenantsForUser(ssoUserId:string, expand?: string[]) {
+        const tenantQuery = this.manager.createQueryBuilder(Tenant, "t")
             .innerJoin("t.users", "tu")
             .innerJoin("tu.ssoUser", "su")
-            .where("su.ssoUserId = :ssoUserId", { ssoUserId })
-            .getMany();
+            .where("su.ssoUserId = :ssoUserId", { ssoUserId });
+
+        if (expand?.includes("tenantUserRoles")) {
+            tenantQuery.leftJoinAndSelect("t.users", "user")
+                .leftJoinAndSelect("user.ssoUser", "ssoUser")
+                .leftJoinAndSelect("user.roles", "tenantUserRole")
+                .leftJoinAndSelect("tenantUserRole.role", "role")
+                .andWhere("tenantUserRole.isDeleted = :isDeleted", { isDeleted: false });
+        }
+
+        const tenants = await tenantQuery.getMany();
         return tenants;
     }
 

@@ -4,7 +4,7 @@ export default {
 
     createTenant: {
         body: Joi.object({
-            name: Joi.string().min(1).max(30).required(),
+            name: Joi.string().min(1).max(30).pattern(/^\S.*\S$/).required(),
             ministryName: Joi.string().min(1).max(100).required(),
             description: Joi.string().min(1).max(500).optional(),
             user: Joi.object().keys({
@@ -40,7 +40,11 @@ export default {
     getUserTenants: {
         params: Joi.object({
             ssoUserId: Joi.string().min(2).required()
-        }).options({abortEarly:false,convert:false})
+        }),
+        query: Joi.object({
+            expand: Joi.string().optional()
+                .pattern(/^(tenantUserRoles)?$/)
+        }).optional()
     },
 
     getTenantUsers: {
@@ -107,7 +111,7 @@ export default {
         }),
         query: Joi.object({
             expand: Joi.string().optional()
-            .pattern(/^(tenantUserRoles|roles)(,(tenantUserRoles|roles))?$/)
+                .pattern(/^(tenantUserRoles)?$/)
         }).optional()
     },
 

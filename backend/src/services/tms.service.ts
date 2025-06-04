@@ -44,7 +44,33 @@ export class TMSService {
     }
 
     public async getTenantsForUser(req:Request) {
-        const tenants = await this.tmsRepository.getTenantsForUser(req.params.ssoUserId)
+        const expand = typeof req.query.expand === "string" ? req.query.expand.split(",") : []
+        const tenants = await this.tmsRepository.getTenantsForUser(req.params.ssoUserId, expand)
+        
+        if (expand.includes("tenantUserRoles") && tenants) {
+            const transformedTenants = tenants.map(tenant => {
+                if (tenant.users) {
+                    const transformedUsers = tenant.users.map(user => {
+                        const userRoles = user.roles?.map(tur => tur.role) || []
+                        return {
+                            ...user,
+                            roles: userRoles
+                        };
+                    });
+                    return {
+                        ...tenant,
+                        users: transformedUsers
+                    };
+                }
+                return tenant;
+            });
+            return {
+                data: {
+                    tenants: transformedTenants
+                }
+            }
+        }
+
         return {
             data: {
                 tenants

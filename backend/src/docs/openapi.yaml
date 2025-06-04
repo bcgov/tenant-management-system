@@ -249,7 +249,7 @@ paths:
   /v1/users/{ssoUserId}/tenants:
     get:
       summary: Get tenants for a user
-      description: Retrieves all tenants associated with a user
+      description: Retrieves all tenants associated with a specific user
       parameters:
         - name: ssoUserId
           in: path
@@ -257,6 +257,13 @@ paths:
           schema:
             type: string
           description: The SSO user ID
+        - name: expand
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [tenantUserRoles]
+          description: Comma-separated list of relations to expand. Currently supports 'tenantUserRoles' to include user and role information.
       responses:
         '200':
           description: List of tenants for the user
@@ -271,7 +278,7 @@ paths:
                       tenants:
                         type: array
                         items:
-                          $ref: '#/components/schemas/Tenant'
+                          $ref: '#/components/schemas/TenantWithUsers'
         '400':
           description: Invalid input
           content:
@@ -460,8 +467,8 @@ paths:
           required: false
           schema:
             type: string
-            enum: [roles, tenantUserRoles, 'roles,tenantUserRoles']
-          description: Optional query parameter to expand roles or tenant user roles
+            enum: [tenantUserRoles]
+          description: Comma-separated list of relations to expand. Currently supports 'tenantUserRoles' to include user and role information.
       responses:
         '200':
           description: Tenant details retrieved successfully
@@ -474,25 +481,7 @@ paths:
                     type: object
                     properties:
                       tenant:
-                        allOf:
-                          - $ref: '#/components/schemas/Tenant'
-                          - type: object
-                            properties:
-                              users:
-                                type: array
-                                items:
-                                  allOf:
-                                    - $ref: '#/components/schemas/User'
-                                    - type: object
-                                      properties:
-                                        roles:
-                                          type: array
-                                          items:
-                                            $ref: '#/components/schemas/Role'
-                              roles:
-                                type: array
-                                items:
-                                  $ref: '#/components/schemas/Role'
+                        $ref: '#/components/schemas/TenantWithUsers'
         '400':
           description: Invalid input
           content:
@@ -678,7 +667,14 @@ components:
             users:
               type: array
               items:
-                $ref: '#/components/schemas/User'
+                allOf:
+                  - $ref: '#/components/schemas/User'
+                  - type: object
+                    properties:
+                      roles:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Role'
 
     BadRequestResponse:
       type: object

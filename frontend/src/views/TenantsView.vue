@@ -6,11 +6,11 @@ import { useRouter } from 'vue-router'
 import CreateTenantDialog from '@/components/CreateTenantDialog.vue'
 import TenantList from '@/components/TenantList.vue'
 import { useNotification } from '@/composables/useNotification'
-import { DomainError } from '@/errors'
+import { DomainError, DuplicateEntityError } from '@/errors'
 import { Tenant } from '@/models/tenant.model'
-import { logger } from '@/utils/logger'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { useTenantStore } from '@/stores/useTenantStore'
+import { logger } from '@/utils/logger'
 
 // Router
 const router = useRouter()
@@ -26,10 +26,16 @@ const authStore = useAuthStore()
 const tenantStore = useTenantStore()
 const { tenants } = storeToRefs(tenantStore)
 
+// Special dialog validation for uniqueness of the name.
+const isDuplicateName = ref(false)
+
 // Dialog visibility state
 const dialogVisible = ref(false)
 const openDialog = () => (dialogVisible.value = true)
-const closeDialog = () => (dialogVisible.value = false)
+const closeDialog = () => {
+  dialogVisible.value = false
+  isDuplicateName.value = false
+}
 
 // Fetch tenants on load
 onMounted(async () => {
@@ -52,11 +58,18 @@ const handleTenantSubmit = async ({
   try {
     await tenantStore.addTenant(name, ministryName, authStore.authenticatedUser)
     addNotification('New tenant created successfully', 'success')
+    isDuplicateName.value = false
     closeDialog()
   } catch (error: any) {
-    if (error instanceof DomainError && error.userMessage) {
+    if (error instanceof DuplicateEntityError) {
+      // If the API says that this name exists already, then show the name
+      // duplicated validation error.
+      isDuplicateName.value = true
+    } else if (error instanceof DomainError && error.userMessage) {
+      // For any other API Domain Error, display the user message.
       addNotification(error.userMessage, 'error')
     } else {
+      // Otherwise display a generic error message.
       addNotification('Failed to create the new tenant', 'error')
       logger.error('Failed to create the new tenant', error)
     }
@@ -66,7 +79,8 @@ const handleTenantSubmit = async ({
 
 <template>
   <BaseSecure>
-    <v-container>
+    <!-- Remove the container spacing and let the parent decide that. -->
+    <v-container fluid class="ma-0 pa-0">
       <v-row>
         <v-col cols="12">
           <v-btn
@@ -75,6 +89,7 @@ const handleTenantSubmit = async ({
             prepend-icon="mdi-plus-box"
             size="large"
             @click="openDialog"
+            class="pa-2"
           >
             Create New Tenant
           </v-btn>
@@ -84,6 +99,11 @@ const handleTenantSubmit = async ({
       <TenantList :tenants="tenants" @select="handleCardClick" />
     </v-container>
 
-    <CreateTenantDialog v-model="dialogVisible" @submit="handleTenantSubmit" />
+    <CreateTenantDialog
+      v-model="dialogVisible"
+      :is-duplicate-name="isDuplicateName"
+      @submit="handleTenantSubmit"
+      @clear-duplicate-error="isDuplicateName = false"
+    />
   </BaseSecure>
 </template>
