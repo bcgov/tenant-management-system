@@ -15,7 +15,7 @@
     }
     
     @spa_router {
-        not path /api*
+        not path /api* /config*
         file {
             try_files {path} /index.html
         }
