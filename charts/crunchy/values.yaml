@@ -44,7 +44,7 @@ crunchy: # enable it for TEST and PROD, for PR based pipelines simply use single
         memory: 32Mi
 
   pgBackRest:
-    enabled: true
+    enabled: false
     backupPath: /backups/test/cluster/version # change it for PROD, create values-prod.yaml
     clusterCounter: 1 # this is the number to identify what is the current counter for the cluster, each time it is cloned it should be incremented.
     # If retention-full-type set to 'count' then the oldest backups will expire when the number of backups reach the number defined in retention
@@ -60,10 +60,11 @@ crunchy: # enable it for TEST and PROD, for PR based pipelines simply use single
       fullBackupSchedule: ~ # make sure to provide values here, if s3 is enabled.
       incrementalBackupSchedule: ~ # make sure to provide values here, if s3 is enabled.
     pvc:
+      enabled: false
       retention: 1 # one day hot active backup in pvc
       retentionFullType: count
-      fullBackupSchedule: 0 8 * * *
-      incrementalBackupSchedule: 0 0,12 * * * # every 12 hour incremental
+      #fullBackupSchedule: 0 8 * * *
+      #incrementalBackupSchedule: 0 0,12 * * * # every 12 hour incremental
       volume:
         accessModes: "ReadWriteOnce"
         storage: 100Mi
@@ -113,7 +114,7 @@ crunchy: # enable it for TEST and PROD, for PR based pipelines simply use single
 
   # Postgres Cluster resource values:
   pgmonitor:
-    enabled: true
+    enabled: false
     exporter:
       image: # it's not necessary to specify an image as the images specified in the Crunchy Postgres Operator will be pulled by default
       requests:

@@ -28,6 +28,17 @@ global:
 backend:
   #-- enable or disable backend
   enabled: true
+  environment:
+    port: "4144"
+    allowedOrigins: "*"
+    bcgovSsoApiUrl: "https://api.loginproxy.gov.bc.ca/api/v1/dev/idir/users"
+    bcgovTokenUrl: "https://loginproxy.gov.bc.ca/auth/realms/standard/protocol/openid-connect/token"
+    bcGovSsoClientId: "client-id"  # Default value, override during deployment
+    bcgovSsoClientSecret: "secret"  # Default value, override during deployment
+    logLevel: "info"
+    allowedAudiences: "tenant-management-system-6014,tenant-manager-poc-5908"
+    jwksUri: "https://dev.loginproxy.gov.bc.ca/auth/realms/standard/protocol/openid-connect/certs"
+    issuer: "https://dev.loginproxy.gov.bc.ca/auth/realms/standard"
   #-- the deployment strategy, can be "Recreate" or "RollingUpdate"
   deploymentStrategy: Recreate
   #-- autoscaling for the component. it is optional and is an object.
@@ -35,9 +46,9 @@ backend:
     #-- enable or disable autoscaling.
     enabled: true
     #-- the minimum number of replicas.
-    minReplicas: 3
+    minReplicas: 1
     #-- the maximum number of replicas.
-    maxReplicas: 7
+    maxReplicas: 3
     #-- the target cpu utilization percentage, is from request cpu and NOT LIMIT CPU.
     targetCPUUtilizationPercentage: 80
   #-- vault, for injecting secrets from vault. it is optional and is an object. it creates an initContainer which reads from vault and app container can source those secrets. for referring to a working example with vault follow this link: https://github.com/bcgov/onroutebc/blob/main/charts/onroutebc/values.yaml#L171-L186
@@ -59,12 +70,19 @@ backend:
       requests:
         cpu: 50m
         memory: 25Mi
+      limits:
+        cpu: 100m
+        memory: 50Mi
   #-- the service for the component. for inter namespace communication, use the service name as the hostname.
   service:
     #-- the type of the service. it can be ClusterIP, NodePort, LoadBalancer, ExternalName. ClusterIP is the default and is recommended.
     type: ClusterIP
     port: 80 # this is the service port, where it will be exposed internal to the namespace.
-    targetPort: 3000 # this is container port where app listens on
+    targetPort: 4144 # this is container port where app listens on
+  ingress:
+    enabled: true
+    annotations:
+      route.openshift.io/termination: "edge"
   pdb:
     enabled: false # enable it in PRODUCTION for having pod disruption budget.
     minAvailable: 1 # the minimum number of pods that must be available during the disruption budget.
@@ -72,6 +90,11 @@ backend:
 frontend:
   # -- enable or disable a component deployment.
   enabled: true
+  environment:
+    viteKeycloakClientId: tenant-management-system-6014
+    viteKeycloakRealm: standard
+    viteKeycloakLogoutUrl: https://dev.loginproxy.gov.bc.ca/auth/realms/standard/protocol/openid-connect/logout
+    viteKeycloakUrl: https://dev.loginproxy.gov.bc.ca/auth
   # -- the deployment strategy, can be "Recreate" or "RollingUpdate"
   deploymentStrategy: Recreate
 
@@ -100,10 +123,6 @@ frontend:
         targetPort: 3000
         #-- the protocol for the port. it can be TCP or UDP. TCP is the default and is recommended.
         protocol: TCP
-      - port: 3003
-        targetPort: 3003
-        protocol: TCP
-        name: metrics
   ingress:
     annotations:
       haproxy.router.openshift.io/balance: "roundrobin"

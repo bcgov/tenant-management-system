@@ -40,13 +40,30 @@ jobs:
       oc_token: ${{ secrets.OC_TOKEN }}
     with:
       db_user: app-${{ github.event.number }}
-      params: --set global.secrets.persist=false
+      params: >-
+        --set global.secrets.persist=false
+        --set-string backend.environment.bcGovSsoClientId=client-id-placeholder
+        --set-string backend.environment.bcgovSsoClientSecret=secret-placeholder
       triggers: ('backend/' 'frontend/' 'migrations/' 'charts/')
+
+  update_secrets:
+    name: Update Secrets
+    needs: [deploys]
+    if: needs.deploys.outputs.triggered == 'true'
+    uses: ./.github/workflows/.update-secrets.yml
+    with:
+      release_name: ${{ github.event.repository.name }}-${{ github.event.number}}
+    secrets:
+      oc_namespace: ${{ secrets.OC_NAMESPACE }}
+      oc_token: ${{ secrets.OC_TOKEN }}
+      bcgov_sso_api_client_id: ${{ secrets.BCGOV_SSO_API_CLIENT_ID }}
+      bcgov_sso_api_client_secret: ${{ secrets.BCGOV_SSO_API_CLIENT_SECRET }}
+      vite_keycloak_client_id: ${{ secrets.VITE_KEYCLOAK_CLIENT_ID }}
 
   tests:
     name: Tests
     if: needs.deploys.outputs.triggered == 'true'
-    needs: [deploys]
+    needs: [deploys, update_secrets]
     uses: ./.github/workflows/.tests.yml
 
   results:

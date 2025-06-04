@@ -33,6 +33,20 @@ jobs:
       db_user: app
       tag: ${{ inputs.tag }}
 
+  update_test_secrets:
+    name: Update Test Secrets
+    needs: [deploy-test]
+    uses: ./.github/workflows/.update-secrets.yml
+    with:
+      release_name: ${{ github.event.repository.name }}-test
+      environment: test
+    secrets:
+      oc_namespace: ${{ secrets.OC_NAMESPACE }}
+      oc_token: ${{ secrets.OC_TOKEN }}
+      bcgov_sso_api_client_id: ${{ secrets.BCGOV_SSO_API_CLIENT_ID }}
+      bcgov_sso_api_client_secret: ${{ secrets.BCGOV_SSO_API_CLIENT_SECRET }}
+      vite_keycloak_client_id: ${{ secrets.VITE_KEYCLOAK_CLIENT_ID }}
+
   tests:
     name: Tests
     needs: [deploy-test]
@@ -56,9 +70,23 @@ jobs:
         --set backend.pdb.enabled=true
       tag: ${{ inputs.tag }}
 
+  update_prod_secrets:
+    name: Update Prod Secrets
+    needs: [deploy-prod]
+    uses: ./.github/workflows/.update-secrets.yml
+    with:
+      release_name: ${{ github.event.repository.name }}-prod
+      environment: prod
+    secrets:
+      oc_namespace: ${{ secrets.OC_NAMESPACE }}
+      oc_token: ${{ secrets.OC_TOKEN }}
+      bcgov_sso_api_client_id: ${{ secrets.BCGOV_SSO_API_CLIENT_ID }}
+      bcgov_sso_api_client_secret: ${{ secrets.BCGOV_SSO_API_CLIENT_SECRET }}
+      vite_keycloak_client_id: ${{ secrets.VITE_KEYCLOAK_CLIENT_ID }}
+
   promote:
     name: Promote Images
-    needs: [deploy-prod]
+    needs: [deploy-prod, update_prod_secrets]
     runs-on: ubuntu-24.04
     permissions:
       packages: write
