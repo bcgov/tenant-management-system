@@ -32,18 +32,35 @@ export const configLoaded = ref(false);
 
 // Load config at runtime
 export async function loadConfig(): Promise<void> {
+  if (configLoaded.value) {
+    return;
+  }
+
+  if (import.meta.env.VITE_DISABLE_RUNTIME_CONFIG === 'true') {
+    logger.info('Runtime configuration loading is disabled');
+    configLoaded.value = true;
+    return;
+  }
+
   try {
     // First try loading from the mounted ConfigMap
     const response = await fetch('/config/default.json');
     if (response.ok) {
       const runtimeConfig = await response.json();
-      console.log(runtimeConfig);
       Object.assign(config, runtimeConfig);
-      console.log(config);
       logger.info('Runtime configuration loaded from ConfigMap');
       configLoaded.value = true;
+      return;
+    } else {
+      throw new Error(`Failed to load config: ${response.status} ${response.statusText}`);
     }
   } catch (error) {
     logger.warning('Failed to load from ConfigMap');
+
+    setTimeout(() => {
+      loadConfig().catch(e => {
+        logger.error('Retry attempt failed:', e);
+      });
+    }, 2000);
   }
 }

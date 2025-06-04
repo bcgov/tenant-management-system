@@ -2,14 +2,8 @@ import Keycloak from 'keycloak-js'
 import { defineStore } from 'pinia'
 
 import { User } from '@/models/user.model'
-import { config } from '@/services/config.service'
+import { config, configLoaded } from '@/services/config.service'
 import { logger } from '@/utils/logger'
-
-const keycloak = new Keycloak({
-  clientId: config.oidc.clientId,
-  realm: config.oidc.realm,
-  url: config.oidc.serverUrl,
-})
 
 let refreshTimer: number | undefined
 
@@ -46,7 +40,7 @@ export const useAuthStore = defineStore('auth', {
     /**
      * The Keycloak instance used for authentication.
      */
-    keycloak: keycloak,
+    keycloak: null as Keycloak | null,
 
     /**
      * The current Keycloak JWT token as a string, or an empty string if not
@@ -115,6 +109,19 @@ export const useAuthStore = defineStore('auth', {
      */
     async initKeycloak(): Promise<void> {
       try {
+        if (!configLoaded.value) {
+          logger.error('Configuration not loaded yet')
+          throw new Error('Configuration not loaded')
+        }
+
+        if (!this.keycloak) {
+          this.keycloak = new Keycloak({
+            clientId: config.oidc.clientId,
+            realm: config.oidc.realm,
+            url: config.oidc.serverUrl,
+          });
+        }
+
         const authenticated = await this.keycloak.init({
           onLoad: 'login-required',
           checkLoginIframe: false,
@@ -143,7 +150,7 @@ export const useAuthStore = defineStore('auth', {
      * Keycloak will redirect back to the app.
      */
     login(): void {
-      this.keycloak.login()
+      this.keycloak?.login()
     },
 
     /**
@@ -161,7 +168,7 @@ export const useAuthStore = defineStore('auth', {
       }
 
       this.keycloak
-        .logout({
+        ?.logout({
           redirectUri: window.location.origin,
         })
         .then(() => {
@@ -187,7 +194,7 @@ export const useAuthStore = defineStore('auth', {
      * @returns The parsed `User` object or `null` if no token is present.
      */
     parseUserFromToken(): User | null {
-      const parsed = this.keycloak.tokenParsed
+      const parsed = this.keycloak?.tokenParsed
       if (!parsed) {
         return null
       }
@@ -217,10 +224,10 @@ export const useAuthStore = defineStore('auth', {
 
       refreshTimer = window.setTimeout(() => {
         this.keycloak
-          .updateToken(30)
+          ?.updateToken(30)
           .then((refreshed) => {
             if (refreshed) {
-              this.token = this.keycloak.token ?? ''
+              this.token = this.keycloak?.token ?? ''
               this.user = this.parseUserFromToken()
               logger.info('Token successfully refreshed')
             }
