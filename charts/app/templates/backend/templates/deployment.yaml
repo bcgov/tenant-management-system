@@ -68,7 +68,7 @@ spec:
               protocol: TCP
           readinessProbe:
             httpGet:
-              path: /api/health
+              path: /v1/health
               port: http
               scheme: HTTP
             initialDelaySeconds: 5
@@ -80,8 +80,8 @@ spec:
             successThreshold: 1
             failureThreshold: 3
             httpGet:
-              path: /api/health
-              port: 3000
+              path: /v1/health
+              port: http
               scheme: HTTP
             initialDelaySeconds: 15
             periodSeconds: 30

@@ -18,7 +18,7 @@ export function authenticatedAxios(timeout = 60000) {
       const authStore = useAuthStore()
 
       if (authStore.authenticated) {
-        cfg.headers.Authorization = `Bearer ${authStore.keycloak.token}`
+        cfg.headers.Authorization = `Bearer ${authStore.keycloak?.token}`
       }
 
       return cfg

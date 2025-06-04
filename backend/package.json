@@ -62,6 +62,7 @@
     "typeorm": "ts-node --transpile-only ./node_modules/typeorm/cli.js",
     "build": "tsc",
     "test": "jest --config jest.config.js --detectOpenHandles --forceExit",
+    "test:cov": "jest --config jest.config.js --coverage --detectOpenHandles --forceExit",
     "test:watch": "jest --watch"
   }
 }

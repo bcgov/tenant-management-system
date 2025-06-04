@@ -7,3 +7,10 @@ Government employees, public and members of the private sector are encouraged to
 Pull requests will be evaluated by the repository guardians on a schedule and if deemed beneficial will be committed to the main branch.
 
 All contributors retain the original copyright to their stuff, but by contributing to this project, you grant a world-wide, royalty-free, perpetual, irrevocable, non-exclusive, transferable license to all users **under the terms of the [license](./LICENSE.md) under which this project is distributed**.
+
+## Dev Containers: Podman & Docker Desktop
+
+- **Podman Desktop:** Install [Podman Desktop](https://podman-desktop.io/) and the `podman-docker` package for your OS.
+- **Docker Desktop:** Install [Docker Desktop](https://www.docker.com/products/docker-desktop/).
+
+VS Code Dev Containers will work with either engine as long as the `docker` CLI is available in your PATH.

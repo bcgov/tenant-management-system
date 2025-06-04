@@ -30,8 +30,7 @@ Copy the `frontend/.env.sample` file to `frontend/.env`. Its settings are:
 
 | Name                     | Description                                          | Example                                                                              |
 | ------------------------ | ---------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| VITE_ALLOWED_HOSTS       | The URL of the hosts for the front end               | localhost:4173,localhost:5173                                                        |
-| VITE_BACKEND_API_URL     | The URL of the backend                               | localhost:4144/v1                                                                    |
+| VITE_BACKEND_API_URL     | The URL of the backend                               | localhost:4144                                                                       |
 | VITE_KEYCLOAK_CLIENT_ID  | The client id in the realm                           | example-client-id                                                                    |
 | VITE_KEYCLOAK_LOGOUT_URL | The logout URL                                       | https://dev.loginproxy.gov.bc.ca.auth/realms/standard/protocol/openid-connect/logout |
 | VITE_KEYCLOAK_REALM      | The realm in the keycloak instance                   | standard                                                                             |
@@ -66,7 +65,7 @@ npm run lint
 #### Create secrets in OpenShift
 
 ```sh
-oc create secret generic tms-frontend-secrets --from-literal=VITE_KEYCLOAK_URL=https://dev.loginproxy.gov.bc.ca/auth --from-literal=VITE_KEYCLOAK_REALM=standard --from-literal=VITE_KEYCLOAK_CLIENT_ID=my-client-id   --from-literal=VITE_KEYCLOAK_LOGOUT_URL=https://dev.loginproxy.gov.bc.ca/auth/realms/standard/protocol/openid-connect/logout --from-literal=VITE_ALLOWED_HOSTS=localhost:4173 --from-literal=VITE_BACKEND_API_URL=localhost:4144
+oc create secret generic tms-frontend-secrets --from-literal=VITE_KEYCLOAK_URL=https://dev.loginproxy.gov.bc.ca/auth --from-literal=VITE_KEYCLOAK_REALM=standard --from-literal=VITE_KEYCLOAK_CLIENT_ID=my-client-id   --from-literal=VITE_KEYCLOAK_LOGOUT_URL=https://dev.loginproxy.gov.bc.ca/auth/realms/standard/protocol/openid-connect/logout --from-literal=VITE_API_BASE_URL=localhost:4144
 ```
 
 #### Build and push the Docker image

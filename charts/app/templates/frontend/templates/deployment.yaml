@@ -36,13 +36,15 @@ spec:
           image: "{{.Values.global.registry}}/{{.Values.global.repository}}/frontend:{{ .Values.global.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ default "Always" .Values.frontend.imagePullPolicy }}
           env:
-            - name: BACKEND_URL
-              value: "http://{{ .Release.Name }}-backend"
+            - name: VITE_BACKEND_API_URL
+              value: "https://{{ .Release.Name }}-backend.apps.silver.devops.gov.bc.ca"
+            - name: VITE_API_BASE_URL
+              value: /api
             - name: LOG_LEVEL
               value: "info"
           ports:
             - name: http
-              containerPort: 3000
+              containerPort: {{ index .Values.frontend.service.ports 0 "targetPort" }}
               protocol: TCP
           readinessProbe:
             httpGet:
@@ -78,7 +80,8 @@ spec:
         - name: data
           emptyDir: {}
         - name: config
-          emptyDir: {}
+          configMap:
+            name: {{ include "frontend.fullname" . }}-config
       affinity:
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:

@@ -1,0 +1,23 @@
+{{- if .Values.frontend.enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "frontend.fullname" . }}-config
+  labels:
+    {{- include "frontend.labels" . | nindent 4 }}
+data:
+  # This creates a default.json file that will be mounted at /config/default.json
+  default.json: |
+    {
+      "api": {
+        "baseUrl": "https://{{ include "backend.fullname" . }}.{{ .Values.global.domain }}"
+      },
+      "oidc": {
+        "clientId": "{{ .Values.frontend.environment.viteKeycloakClientId }}",
+        "realm": "{{ .Values.frontend.environment.viteKeycloakRealm }}",
+        "serverUrl": "{{ .Values.frontend.environment.viteKeycloakUrl }}",
+        "logoutUrl": "{{ .Values.frontend.environment.viteKeycloakLogoutUrl }}"
+      }
+    }
+{{- end }}

@@ -77,11 +77,30 @@ spec:
   ingress:
     - ports:
         - protocol: TCP
-          port: 3000
+          port: {{ .Values.backend.service.targetPort }}
       from:
         - podSelector:
             matchLabels:
               app.kubernetes.io/name: {{ template  "frontend.name"}}
               app.kubernetes.io/instance: {{ .Release.Name }}
+  policyTypes:
+    - Ingress
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ .Release.Name }}-openshift-ingress-to-backend
+  labels: {{- include "selectorLabels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: {{ template "backend.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              network.openshift.io/policy-group: ingress
   policyTypes:
     - Ingress
