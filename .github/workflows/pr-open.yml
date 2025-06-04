@@ -50,64 +50,15 @@ jobs:
     name: Update Secrets
     needs: [deploys]
     if: needs.deploys.outputs.triggered == 'true'
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: bcgov/action-oc-runner@12997e908fba505079d1aab6f694a17fe15e9b28 # v1.2.2
-        with:
-          oc_namespace: ${{ secrets.OC_NAMESPACE }}
-          oc_token: ${{ secrets.OC_TOKEN }}
-          oc_server: ${{ vars.oc_server }}
-          commands: |
-            # Get release name
-            RELEASE="${{ github.event.repository.name }}-${{ github.event.number }}"
-            
-            # Update secrets with real values
-            echo "Patching secret $RELEASE-backend"
-            
-            # Update client ID
-            CLIENT_ID=$(echo -n "${{ secrets.BCGOV_SSO_API_CLIENT_ID }}" | base64 -w0)
-            oc patch secret $RELEASE-backend \
-              -p '{"data":{"BCGOV_SSO_API_CLIENT_ID":"'$CLIENT_ID'"}}'
-            
-            # Update client secret 
-            CLIENT_SECRET=$(echo -n "${{ secrets.BCGOV_SSO_API_CLIENT_SECRET }}" | base64 -w0)
-            oc patch secret $RELEASE-backend \
-              -p '{"data":{"BCGOV_SSO_API_CLIENT_SECRET":"'$CLIENT_SECRET'"}}'
-            
-            # Restart the backend deployment to pick up the new secrets
-            oc rollout restart deployment/$RELEASE-backend
-
-            # Update frontend ConfigMap
-            echo "Patching ConfigMap $RELEASE-frontend-config"
-
-            # Create a new default.json content with real values
-            CONFIG_JSON=$(cat <<EOF
-            {
-              "api": {
-                "baseUrl": "https://$RELEASE-backend.apps.silver.devops.gov.bc.ca"
-              },
-              "oidc": {
-                "clientId": "${{ secrets.VITE_KEYCLOAK_CLIENT_ID }}",
-                "realm": "standard",
-                "serverUrl": "https://dev.loginproxy.gov.bc.ca/auth",
-                "logoutUrl": "https://dev.loginproxy.gov.bc.ca/auth/realms/standard/protocol/openid-connect/logout"
-              }
-            }
-            EOF
-            )
-
-            # Create a temporary file with the JSON content
-            echo "$CONFIG_JSON" > default.json
-
-            # Force delete and recreate the ConfigMap
-            oc delete configmap $RELEASE-frontend-config --ignore-not-found
-            oc create configmap $RELEASE-frontend-config --from-file=default.json
-            
-            # Clean up the temporary file
-            rm default.json
-
-            # Replace the pod instead of restarting to ensure ConfigMap is refreshed
-            oc delete pods -l app.kubernetes.io/instance=$RELEASE-frontend 
+    uses: ./.github/workflows/.update-secrets.yml
+    with:
+      release_name: ${{ github.event.repository.name }}-${{ github.event.number}}
+    secrets:
+      oc_namespace: ${{ secrets.OC_NAMESPACE }}
+      oc_token: ${{ secrets.OC_TOKEN }}
+      bcgov_sso_api_client_id: ${{ secrets.BCGOV_SSO_API_CLIENT_ID }}
+      bcgov_sso_api_client_secret: ${{ secrets.BCGOV_SSO_API_CLIENT_SECRET }}
+      vite_keycloak_client_id: ${{ secrets.VITE_KEYCLOAK_CLIENT_ID }}
 
   tests:
     name: Tests
