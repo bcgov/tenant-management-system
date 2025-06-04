@@ -28,6 +28,23 @@ export const useTenantStore = defineStore('tenant', () => {
 
   // Exported Methods
 
+  const addTenantUser = async (params: {
+    tenantId: string
+    user: User
+    role: string
+  }) => {
+    const { tenantId, user, role } = params
+
+    // First add the user to tenant
+    await tenantService.addUsers(tenantId, user)
+
+    // Then assign their role
+    await tenantService.assignUserRoles(tenantId, user.id, role)
+
+    // Refresh tenant users after adding
+    await fetchTenantUsers(tenantId)
+  }
+
   const fetchTenant = async (tenantId: string) => {
     loading.value = true
     try {
@@ -74,6 +91,34 @@ export const useTenantStore = defineStore('tenant', () => {
     return upsertTenant(tenant)
   }
 
+  const searchAvailableUsers = async (
+    tenantId: string,
+    searchCriteria: {
+      field: string
+      value: string
+    },
+  ) => {
+    try {
+      const users = await tenantService.getUsers(tenantId)
+      return users.filter((user: User) => {
+        const fieldValue = user[searchCriteria.field as keyof User]
+
+        // Handle different value types appropriately
+        const stringValue =
+          typeof fieldValue === 'object' && fieldValue !== null
+            ? JSON.stringify(fieldValue)
+            : String(fieldValue)
+
+        return stringValue
+          .toLowerCase()
+          .includes(searchCriteria.value.toLowerCase())
+      })
+    } catch (error) {
+      // logger.error('Error searching users', error)
+      throw error
+    }
+  }
+
   const updateTenant = async (tenant: Partial<Tenant>) => {
     if (!tenant.id || !tenant.name || !tenant.ministryName) {
       // TODO: kludgy; clean this argument up.
@@ -94,11 +139,13 @@ export const useTenantStore = defineStore('tenant', () => {
 
   return {
     addTenant,
+    addTenantUser,
     fetchTenant,
     fetchTenants,
     fetchTenantUsers,
     fetchTenantUserRoles,
     loading,
+    searchAvailableUsers,
     tenants,
     updateTenant,
   }
