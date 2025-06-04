@@ -8,6 +8,7 @@ import validator from '../common/tms.validator'
 import { Tenant } from '../entities/Tenant'
 import { TenantUser } from '../entities/TenantUser'
 import { ConflictError } from '../errors/ConflictError'
+import { NotFoundError } from '../errors/NotFoundError'
 
 jest.mock('../repositories/tms.repository')
 jest.mock('../common/db.connection', () => ({
@@ -191,6 +192,27 @@ describe('Tenant API', () => {
           body: validUserData
         })
       )
+    })
+
+    it('should fail when role ID does not exist', async () => {
+      const invalidUserData = {
+        ...validUserData,
+        roles: ['123e4567-e89b-12d3-a456-426614174999']
+      }
+
+      mockTMSRepository.addTenantUsers.mockRejectedValue(new NotFoundError('Role(s) not found'))
+
+      const response = await request(app)
+        .post(`/v1/tenants/${tenantId}/users`)
+        .send(invalidUserData)
+
+      expect(response.status).toBe(404)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Not Found',
+        httpResponseCode: 404,
+        message: 'Role(s) not found',
+        name: 'Error occurred adding user to the tenant'
+      })
     })
   })
 }) 
