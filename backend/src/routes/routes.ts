@@ -25,7 +25,7 @@ export class Routes {
         app.route(RoutesConstants.GET_TENANT_ROLES).get(checkJwt,  validate(validator.getTenantRoles,{},{}), checkTenantAccess([]),(req:Request,res:Response) => this.tmsController.getTenantRoles(req,res))
         app.route(RoutesConstants.GET_USER_ROLES).get(checkJwt,  validate(validator.getUserRoles,{},{}),(req:Request,res:Response) => this.tmsController.getUserRoles(req,res))
         app.route(RoutesConstants.UNASSIGN_USER_ROLES).delete(checkJwt,  validate(validator.unassignUserRoles,{},{}), checkTenantAccess([TMSConstants.TENANT_OWNER, TMSConstants.USER_ADMIN]),(req:Request,res:Response) => this.tmsController.unassignUserRoles(req,res))
-        app.route(RoutesConstants.SEARCH_BC_GOV_IDIR_USERS).get(checkJwt,  validate(validator.searchBCGOVSSOUsers,{},{}), checkTenantAccess([]),(req:Request,res:Response) => this.tmsController.searchBCGOVSSOUsers(req,res))
+        app.route(RoutesConstants.SEARCH_BC_GOV_IDIR_USERS).get(checkJwt,  validate(validator.searchBCGOVSSOUsers,{},{}),(req:Request,res:Response) => this.tmsController.searchBCGOVSSOUsers(req,res))
         app.route(RoutesConstants.GET_TENANT).get(checkJwt,  validate(validator.getTenant,{},{}), checkTenantAccess([]),(req:Request,res:Response) => this.tmsController.getTenant(req,res))
         app.route(RoutesConstants.GET_ROLES_FOR_SSO_USER).get(checkJwt,  validate(validator.getRolesForSSOUser,{},{}),(req:Request,res:Response) => this.tmsController.getRolesForSSOUser(req,res))
 
