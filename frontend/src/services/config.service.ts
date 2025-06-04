@@ -37,14 +37,13 @@ export async function loadConfig(): Promise<void> {
     const response = await fetch('/config/default.json');
     if (response.ok) {
       const runtimeConfig = await response.json();
+      console.log(runtimeConfig);
       Object.assign(config, runtimeConfig);
+      console.log(config);
       logger.info('Runtime configuration loaded from ConfigMap');
       configLoaded.value = true;
-      return;
     }
   } catch (error) {
     logger.warning('Failed to load from ConfigMap');
   }
-  
-  configLoaded.value = true;
 }
