@@ -38,6 +38,11 @@ describe('Tenant API', () => {
       validate(validator.createTenant, {}, {}),
       (req, res) => tmsController.createTenant(req, res)
     )
+
+    app.post('/v1/tenants/:tenantId/users',
+      validate(validator.addTenantUser, {}, {}),
+      (req, res) => tmsController.addTenantUser(req, res)
+    )
   })
 
   const validTenantData = {
@@ -123,6 +128,69 @@ describe('Tenant API', () => {
         message: errorMessage,
         name: 'Error occurred adding user to the tenant'
       })
+    })
+  })
+
+  describe('POST /v1/tenants/:tenantId/users', () => {
+    const tenantId = '123e4567-e89b-12d3-a456-426614174000'
+    const validUserData = {
+      user: {
+        firstName: 'Test',
+        lastName: 'User',
+        displayName: 'Test User',
+        ssoUserId: 'test-guid',
+        email: 'test@example.com'
+      },
+      roles: ['123e4567-e89b-12d3-a456-426614174002']
+    }
+
+    it('should add a user to a tenant successfully', async () => {
+      const mockResponse = {
+        savedTenantUser: {
+          id: '123e4567-e89b-12d3-a456-426614174001',
+          firstName: validUserData.user.firstName,
+          lastName: validUserData.user.lastName,
+          displayName: validUserData.user.displayName,
+          ssoUserId: validUserData.user.ssoUserId,
+          email: validUserData.user.email
+        },
+        roleAssignments: [{
+          role: {
+            id: validUserData.roles[0],
+            name: TMSConstants.SERVICE_USER,
+            description: 'Service User Role'
+          }
+        }]
+      }
+
+      mockTMSRepository.addTenantUsers.mockResolvedValue(mockResponse)
+
+      const response = await request(app)
+        .post(`/v1/tenants/${tenantId}/users`)
+        .send(validUserData)
+
+      expect(response.status).toBe(201)
+      expect(response.body).toMatchObject({
+        data: {
+          user: {
+            id: mockResponse.savedTenantUser.id,
+            firstName: validUserData.user.firstName,
+            lastName: validUserData.user.lastName,
+            ssoUserId: validUserData.user.ssoUserId,
+            roles: [{
+              id: validUserData.roles[0],
+              name: TMSConstants.SERVICE_USER
+            }]
+          }
+        }
+      })
+
+      expect(mockTMSRepository.addTenantUsers).toHaveBeenCalledWith(
+        expect.objectContaining({
+          params: { tenantId },
+          body: validUserData
+        })
+      )
     })
   })
 }) 
