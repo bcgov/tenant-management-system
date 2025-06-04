@@ -6,7 +6,12 @@
     }
     root * /srv
     encode zstd gzip
-    file_server
+
+    # Explicitly serve configuration files
+    handle /config/* {
+        root * /
+        file_server
+    }
     
     @spa_router {
         not path /api*
