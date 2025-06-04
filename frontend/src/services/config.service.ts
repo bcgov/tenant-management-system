@@ -43,32 +43,7 @@ export async function loadConfig(): Promise<void> {
       return;
     }
   } catch (error) {
-    logger.warning('Failed to load from ConfigMap, trying window.envConfig');
-  }
-  
-  // Fallback to window.envConfig if available
-  if (window.envConfig) {
-    if (window.envConfig.VITE_API_URL) {
-      config.api.baseUrl = window.envConfig.VITE_API_URL;
-    }
-    
-    if (window.envConfig.VITE_KEYCLOAK_URL) {
-      config.oidc.serverUrl = window.envConfig.VITE_KEYCLOAK_URL;
-    }
-
-    if (window.envConfig.VITE_KEYCLOAK_REALM) {
-      config.oidc.realm = window.envConfig.VITE_KEYCLOAK_REALM;
-    }
-
-    if (window.envConfig.VITE_KEYCLOAK_CLIENT_ID) {
-      config.oidc.clientId = window.envConfig.VITE_KEYCLOAK_CLIENT_ID;
-    }
-
-    if (window.envConfig.VITE_KEYCLOAK_LOGOUT_URL) {
-      config.oidc.logoutUrl = window.envConfig.VITE_KEYCLOAK_LOGOUT_URL;
-    }
-    
-    logger.info('Runtime configuration loaded from window.envConfig');
+    logger.warning('Failed to load from ConfigMap');
   }
   
   configLoaded.value = true;
