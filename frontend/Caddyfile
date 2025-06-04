@@ -6,6 +6,7 @@
     }
     root * /srv
     encode zstd gzip
+    file_server
 
     # Explicitly serve configuration files
     handle /config/* {
