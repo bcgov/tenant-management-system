@@ -32,10 +32,7 @@ jobs:
     with:
       tag: pr-${{ github.event.pull_request.number }}
       db_user: app-${{ github.event.number }}
-      params: >-
-        --set global.secrets.persist=false
-        --set-string backend.environment.bcGovSsoClientId=client-id-placeholder
-        --set-string backend.environment.bcgovSsoClientSecret=secret-placeholder
+      params: --set global.secrets.persist=false
       triggers: ('backend/' 'frontend/' 'migrations/' 'charts/')
 
   update_secrets:
