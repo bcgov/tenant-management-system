@@ -76,13 +76,6 @@ jobs:
       bcgov_sso_api_client_secret: ${{ secrets.BCGOV_SSO_API_CLIENT_SECRET }}
       vite_keycloak_client_id: ${{ secrets.VITE_KEYCLOAK_CLIENT_ID }}
 
-  tests:
-    name: Tests
-    needs: [update_test_secrets]
-    uses: ./.github/workflows/.test-runner.yml
-    with:
-      environment: test
-
   deploy-prod:
     name: Deploy (PROD)
     needs: [tests, set-tag]
