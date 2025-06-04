@@ -1,5 +1,5 @@
-// src/services/config.service.ts
 import { reactive, ref } from 'vue';
+import { logger } from '@/utils/logger'
 
 export interface AppConfig {
   api: {
@@ -38,12 +38,12 @@ export async function loadConfig(): Promise<void> {
     if (response.ok) {
       const runtimeConfig = await response.json();
       Object.assign(config, runtimeConfig);
-      console.log('Runtime configuration loaded from ConfigMap');
+      logger.info('Runtime configuration loaded from ConfigMap');
       configLoaded.value = true;
       return;
     }
   } catch (error) {
-    console.warn('Failed to load from ConfigMap, trying window.envConfig');
+    logger.warning('Failed to load from ConfigMap, trying window.envConfig');
   }
   
   // Fallback to window.envConfig if available
@@ -68,7 +68,7 @@ export async function loadConfig(): Promise<void> {
       config.oidc.logoutUrl = window.envConfig.VITE_KEYCLOAK_LOGOUT_URL;
     }
     
-    console.log('Runtime configuration loaded from window.envConfig');
+    logger.info('Runtime configuration loaded from window.envConfig');
   }
   
   configLoaded.value = true;
