@@ -14,21 +14,12 @@ jobs:
   # https://github.com/bcgov/action-builder-ghcr
   builds:
     name: Builds
+    uses: ./.github/workflows/.build-images.yml
     permissions:
       packages: write
-    runs-on: ubuntu-24.04
-    strategy:
-      matrix:
-        package: [backend, frontend, migrations]
-    timeout-minutes: 10
-    steps:
-      - uses: bcgov/action-builder-ghcr@ace71f7a527ca6fc43c15c7806314be5a4579d2c # v2.3.0
-        with:
-          keep_versions: 50
-          package: ${{ matrix.package }}
-          tag: ${{ github.event.number }}
-          tag_fallback: latest
-          triggers: ('${{ matrix.package }}/')
+    with:
+      tag: pr-${{ github.event.pull_request.number }}
+      keep_versions: 5  # Keep fewer versions for PR builds
 
   # https://github.com/bcgov/quickstart-openshift-helpers
   deploys:
@@ -39,6 +30,7 @@ jobs:
       oc_namespace: ${{ secrets.OC_NAMESPACE }}
       oc_token: ${{ secrets.OC_TOKEN }}
     with:
+      tag: pr-${{ github.event.pull_request.number }}
       db_user: app-${{ github.event.number }}
       params: >-
         --set global.secrets.persist=false
@@ -60,15 +52,9 @@ jobs:
       bcgov_sso_api_client_secret: ${{ secrets.BCGOV_SSO_API_CLIENT_SECRET }}
       vite_keycloak_client_id: ${{ secrets.VITE_KEYCLOAK_CLIENT_ID }}
 
-  tests:
-    name: Tests
-    if: needs.deploys.outputs.triggered == 'true'
-    needs: [deploys, update_secrets]
-    uses: ./.github/workflows/.tests.yml
-
   results:
     name: PR Results
-    needs: [builds, deploys, tests]
+    needs: [builds, deploys]
     if: always()
     runs-on: ubuntu-24.04
     steps:

@@ -11,9 +11,10 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Image tag set to deploy; e.g. PR number or prod"
+        description: "Image tag set to deploy (leave empty for auto tag)"
         type: string
-        default: 'prod'
+        default: ''
+        required: false
 
 concurrency:
   # Do not interrupt previous workflows
@@ -23,15 +24,43 @@ concurrency:
 permissions: {}
 
 jobs:
-  # https://github.com/bcgov/quickstart-openshift-helpers
+  # Set up a job to determine the tag once
+  set-tag:
+    name: Set Tag
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.set-tag.outputs.tag }}
+    steps:
+      - id: set-tag
+        name: Determine Tag
+        run: |
+          # Use manual input if provided, otherwise use main-{run_number} format
+          if [ -n "${{ inputs.tag }}" ]; then
+            echo "tag=${{ inputs.tag }}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=main-${{ github.run_number }}" >> $GITHUB_OUTPUT
+          fi
+          echo "Using tag: $(cat $GITHUB_OUTPUT | grep tag | cut -d= -f2)"
+  
+  builds:
+    name: Builds
+    needs: [set-tag]
+    uses: ./.github/workflows/.build-images.yml
+    permissions:
+      packages: write
+    with:
+      tag: ${{ needs.set-tag.outputs.tag }}
+  
+  # Make deploy-test depend on builds
   deploy-test:
     name: Deploy (TEST)
+    needs: [builds, set-tag]
     uses: ./.github/workflows/.deployer.yml
     secrets: inherit
     with:
       environment: test
       db_user: app
-      tag: ${{ inputs.tag }}
+      tag: ${{ needs.set-tag.outputs.tag }}
 
   update_test_secrets:
     name: Update Test Secrets
@@ -49,26 +78,26 @@ jobs:
 
   tests:
     name: Tests
-    needs: [deploy-test]
-    uses: ./.github/workflows/.tests.yml
+    needs: [update_test_secrets]
+    uses: ./.github/workflows/.test-runner.yml
     with:
-      target: test
+      environment: test
 
   deploy-prod:
     name: Deploy (PROD)
-    needs: [tests]
+    needs: [tests, set-tag]
     uses: ./.github/workflows/.deployer.yml
     secrets: inherit
     with:
       environment: prod
       db_user: app
-      params:
+      params: >-
         --set backend.deploymentStrategy=RollingUpdate
         --set frontend.deploymentStrategy=RollingUpdate
         --set global.autoscaling=true
         --set frontend.pdb.enabled=true
         --set backend.pdb.enabled=true
-      tag: ${{ inputs.tag }}
+      tag: ${{ needs.set-tag.outputs.tag }}
 
   update_prod_secrets:
     name: Update Prod Secrets
@@ -86,7 +115,7 @@ jobs:
 
   promote:
     name: Promote Images
-    needs: [deploy-prod, update_prod_secrets]
+    needs: [deploy-prod, update_prod_secrets, set-tag]
     runs-on: ubuntu-24.04
     permissions:
       packages: write
@@ -99,5 +128,5 @@ jobs:
         with:
           registry: ghcr.io
           repository: ${{ github.repository }}/${{ matrix.package }}
-          target: ${{ needs.deploy-prod.outputs.tag }}
+          target: ${{ needs.set-tag.outputs.tag }}
           tags: prod
