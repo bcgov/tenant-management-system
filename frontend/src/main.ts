@@ -60,13 +60,6 @@ async function initializeApp() {
     
     logger.info('Configuration loaded successfully');
     
-    // Skip Keycloak in local development
-    if (import.meta.env.VITE_DISABLE_RUNTIME_CONFIG === 'true') {
-      logger.info('Runtime config disabled, mounting app with default config');
-      app.mount('#app');
-      return;
-    }
-    
     // Step 2: Initialize Keycloak
     logger.info('Initializing Keycloak...');
     await authStore.initKeycloak();
