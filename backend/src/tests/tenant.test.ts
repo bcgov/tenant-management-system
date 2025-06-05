@@ -137,6 +137,21 @@ describe('Tenant API', () => {
         name: 'Error occurred adding user to the tenant'
       })
     })
+
+    it('should return 400 when ministry name is missing', async () => {
+      const invalidData = {
+        name: validTenantData.name,
+        user: validTenantData.user
+      }
+
+      const response = await request(app)
+        .post('/v1/tenants')
+        .send(invalidData)
+
+      expect(response.status).toBe(400)
+      expect(response.body.message).toBe("Validation Failed")
+      expect(response.body.details.body[0].message).toBe("\"ministryName\" is required")
+    })
   })
 
   describe('POST /v1/tenants/:tenantId/users', () => {
