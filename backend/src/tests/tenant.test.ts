@@ -389,5 +389,26 @@ describe('Tenant API', () => {
         ['tenantUserRoles']
       )
     })
+
+    it('should return empty tenants array for invalid SSO user ID', async () => {
+      const invalidSsoUserId = '005AFBBD68C4411F956BA3A1D91878EF'
+      mockTMSRepository.getTenantsForUser.mockResolvedValue([])
+
+      const response = await request(app)
+        .get(`/v1/users/${invalidSsoUserId}/tenants`)
+        .query({ expand: 'tenantUserRoles' })
+
+      expect(response.status).toBe(200)
+      expect(response.body).toMatchObject({
+        data: {
+          tenants: []
+        }
+      })
+
+      expect(mockTMSRepository.getTenantsForUser).toHaveBeenCalledWith(
+        invalidSsoUserId,
+        ['tenantUserRoles']
+      )
+    })
   })
 }) 
