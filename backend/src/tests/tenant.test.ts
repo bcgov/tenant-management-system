@@ -230,5 +230,21 @@ describe('Tenant API', () => {
         name: 'Error occurred adding user to the tenant'
       })
     })
+
+    it('should return 404 when tenant ID does not exist', async () => {
+      mockTMSRepository.addTenantUsers.mockRejectedValue(new NotFoundError('Tenant Not Found: 123e4567-e89b-12d3-a456-426614174999'))
+
+      const response = await request(app)
+        .post('/v1/tenants/123e4567-e89b-12d3-a456-426614174999/users')
+        .send(validUserData)
+
+      expect(response.status).toBe(404)
+      expect(response.body).toEqual({
+        errorMessage: "Not Found",
+        httpResponseCode: 404,
+        message: "Tenant Not Found: 123e4567-e89b-12d3-a456-426614174999",
+        name: "Error occurred adding user to the tenant"
+      })
+    })
   })
 }) 
