@@ -44,6 +44,13 @@ describe('Tenant API', () => {
       validate(validator.addTenantUser, {}, {}),
       (req, res) => tmsController.addTenantUser(req, res)
     )
+
+    app.use((err: any, req: any, res: any, next: any) => {
+      if (err.name === 'ValidationError') {
+        return res.status(err.statusCode).json(err)
+      }
+      next(err)
+    })
   })
 
   const validTenantData = {
@@ -245,6 +252,20 @@ describe('Tenant API', () => {
         message: "Tenant Not Found: 123e4567-e89b-12d3-a456-426614174999",
         name: "Error occurred adding user to the tenant"
       })
+    })
+
+    it('should return 400 when roles array is missing', async () => {
+      const invalidData = {
+        user: validUserData.user
+      }
+
+      const response = await request(app)
+        .post(`/v1/tenants/${tenantId}/users`)
+        .send(invalidData)
+
+      expect(response.status).toBe(400)
+      expect(response.body.message).toBe("Validation Failed")
+      expect(response.body.details.body[0].message).toBe("\"roles\" is required")
     })
   })
 }) 
