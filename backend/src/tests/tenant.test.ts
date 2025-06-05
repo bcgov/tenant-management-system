@@ -775,4 +775,203 @@ describe('Tenant API', () => {
       })
     })
   })
+
+  describe('GET /v1/tenants/:tenantId', () => {
+    const tenantId = '123e4567-e89b-12d3-a456-426614174000'
+    const mockTenant = {
+      id: tenantId,
+      name: 'Test Tenant',
+      ministryName: 'Test Ministry',
+      description: 'Test Description',
+      createdDateTime: new Date(),
+      updatedDateTime: new Date(),
+      createdBy: 'test-user',
+      updatedBy: 'test-user',
+      users: [{
+        id: '123e4567-e89b-12d3-a456-426614174001',
+        firstName: 'Test',
+        lastName: 'User',
+        displayName: 'Test User',
+        ssoUserId: 'F45AFBBD68C4411F956BA3A1D91878EF',
+        email: 'test@testministry.gov.bc.ca',
+        createdDateTime: new Date(),
+        updatedDateTime: new Date(),
+        createdBy: 'test-user',
+        updatedBy: 'test-user',
+        ssoUser: {
+          id: '123e4567-e89b-12d3-a456-426614174003',
+          ssoUserId: 'F45AFBBD68C4411F956BA3A1D91878EF',
+          firstName: 'Test',
+          lastName: 'User',
+          displayName: 'Test User',
+          userName: 'testuser',
+          email: 'test@testministry.gov.bc.ca',
+          createdDateTime: new Date(),
+          updatedDateTime: new Date(),
+          createdBy: 'test-user',
+          updatedBy: 'test-user',
+          tenantUsers: []
+        },
+        tenant: {
+          id: tenantId,
+          name: 'Test Tenant',
+          ministryName: 'Test Ministry',
+          description: 'Test Description',
+          createdDateTime: new Date(),
+          updatedDateTime: new Date(),
+          createdBy: 'test-user',
+          updatedBy: 'test-user',
+          users: []
+        },
+        roles: [{
+          id: '123e4567-e89b-12d3-a456-426614174002',
+          tenantUser: {
+            id: '123e4567-e89b-12d3-a456-426614174001'
+          },
+          role: {
+            id: '123e4567-e89b-12d3-a456-426614174002',
+            name: TMSConstants.TENANT_OWNER,
+            description: 'Tenant Owner Role',
+            tenantUserRoles: [],
+            createdDateTime: new Date(),
+            updatedDateTime: new Date(),
+            createdBy: 'test-user',
+            updatedBy: 'test-user'
+          },
+          createdDateTime: new Date(),
+          updatedDateTime: new Date(),
+          createdBy: 'test-user',
+          updatedBy: 'test-user',
+          isDeleted: false
+        }]
+      }]
+    }
+
+    beforeEach(() => {
+      app.get('/v1/tenants/:tenantId',
+        validate(validator.getTenant, {}, {}),
+        (req, res) => tmsController.getTenant(req, res)
+      )
+
+      app.use((err: any, req: any, res: any, next: any) => {
+        if (err.name === 'ValidationError') {
+          return res.status(err.statusCode).json(err)
+        }
+        next(err)
+      })
+    })
+
+    it('should get tenant details successfully', async () => {
+      mockTMSRepository.getTenant.mockResolvedValue(mockTenant as any)
+
+      const response = await request(app)
+        .get(`/v1/tenants/${tenantId}`)
+
+      expect(response.status).toBe(200)
+      expect(response.body).toMatchObject({
+        data: {
+          tenant: {
+            id: mockTenant.id,
+            name: mockTenant.name,
+            ministryName: mockTenant.ministryName,
+            description: mockTenant.description
+          }
+        }
+      })
+
+      expect(mockTMSRepository.getTenant).toHaveBeenCalledWith(
+        expect.objectContaining({
+          params: { tenantId },
+          query: {}
+        })
+      )
+    })
+
+    it('should get tenant details with expanded user roles', async () => {
+      mockTMSRepository.getTenant.mockResolvedValue(mockTenant as any)
+
+      const response = await request(app)
+        .get(`/v1/tenants/${tenantId}`)
+        .query({ expand: 'tenantUserRoles' })
+
+      expect(response.status).toBe(200)
+      expect(response.body).toMatchObject({
+        data: {
+          tenant: {
+            id: mockTenant.id,
+            name: mockTenant.name,
+            ministryName: mockTenant.ministryName,
+            description: mockTenant.description,
+            users: [{
+              firstName: mockTenant.users[0].firstName,
+              lastName: mockTenant.users[0].lastName,
+              ssoUserId: mockTenant.users[0].ssoUserId,
+              roles: [{
+                id: mockTenant.users[0].roles[0].id,
+                name: TMSConstants.TENANT_OWNER
+              }]
+            }]
+          }
+        }
+      })
+
+      expect(mockTMSRepository.getTenant).toHaveBeenCalledWith(
+        expect.objectContaining({
+          params: { tenantId },
+          query: { expand: 'tenantUserRoles' }
+        })
+      )
+    })
+
+    it('should return 400 when tenant ID is invalid', async () => {
+      const response = await request(app)
+        .get('/v1/tenants/invalid-uuid')
+
+      expect(response.status).toBe(400)
+      expect(response.body).toMatchObject({
+        name: 'ValidationError',
+        message: 'Validation Failed',
+        details: {
+          params: [{
+            message: '"tenantId" must be a valid GUID'
+          }]
+        }
+      })
+    })
+
+    it('should return 400 when expand parameter is invalid', async () => {
+      const response = await request(app)
+        .get(`/v1/tenants/${tenantId}`)
+        .query({ expand: 'invalidParameter' })
+
+      expect(response.status).toBe(400)
+      expect(response.body).toMatchObject({
+        name: 'ValidationError',
+        message: 'Validation Failed',
+        details: {
+          query: [{
+            message: '"expand" with value "invalidParameter" fails to match the required pattern: /^(tenantUserRoles)?$/'
+          }]
+        }
+      })
+    })
+
+    it('should return 404 when tenant not found', async () => {
+      const nonExistentTenantId = '123e4567-e89b-12d3-a456-426614174999'
+      mockTMSRepository.getTenant.mockRejectedValue(
+        new NotFoundError(`Tenant Not Found: ${nonExistentTenantId}`)
+      )
+
+      const response = await request(app)
+        .get(`/v1/tenants/${nonExistentTenantId}`)
+
+      expect(response.status).toBe(404)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Not Found',
+        httpResponseCode: 404,
+        message: `Tenant Not Found: ${nonExistentTenantId}`,
+        name: 'Error occurred getting a tenant'
+      })
+    })
+  })
 }) 
