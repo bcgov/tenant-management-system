@@ -55,6 +55,11 @@ describe('Tenant API', () => {
       (req, res) => tmsController.getUsersForTenant(req, res)
     )
 
+    app.post('/v1/tenants/:tenantId/users/:tenantUserId/roles',
+      validate(validator.assignUserRoles, {}, {}),
+      (req, res) => tmsController.assignUserRoles(req, res)
+    )
+
     app.use((err: any, req: any, res: any, next: any) => {
       if (err.name === 'ValidationError') {
         return res.status(err.statusCode).json(err)
@@ -171,7 +176,7 @@ describe('Tenant API', () => {
         firstName: 'Test',
         lastName: 'User',
         displayName: 'Test User',
-        ssoUserId: 'test-guid',
+        ssoUserId: 'F45AFBBD68C4466F956BA3A1D91878AD',
         email: 'test@example.com'
       },
       roles: ['123e4567-e89b-12d3-a456-426614174002']
@@ -295,7 +300,7 @@ describe('Tenant API', () => {
   })
 
   describe('GET /v1/users/:ssoUserId/tenants', () => {
-    const ssoUserId = 'F45AFBBD68C4411F956BA3A1D91878EF'
+    const ssoUserId = 'F45AFBBD68C4411F956BA3A2D91878EF'
     const mockTenants = [
       {
         id: '123e4567-e89b-12d3-a456-426614174000',
@@ -529,6 +534,156 @@ describe('Tenant API', () => {
       })
 
       expect(mockTMSRepository.getUsersForTenant).toHaveBeenCalledWith(nonExistentTenantId)
+    })
+  })
+
+  describe('POST /v1/tenants/:tenantId/users/:tenantUserId/roles', () => {
+    const tenantId = '123e4567-e89b-12d3-a456-426614174000'
+    const tenantUserId = '123e4567-e89b-12d3-a456-426614174001'
+    const roleIds = ['123e4567-e89b-12d3-a456-426614174002']
+
+    beforeEach(() => {
+      app.post('/v1/tenants/:tenantId/users/:tenantUserId/roles',
+        validate(validator.assignUserRoles, {}, {}),
+        (req, res) => tmsController.assignUserRoles(req, res)
+      )
+
+      app.use((err: any, req: any, res: any, next: any) => {
+        if (err.name === 'ValidationError') {
+          return res.status(err.statusCode).json(err)
+        }
+        next(err)
+      })
+    })
+
+    it('should assign roles to user successfully', async () => {
+      const mockRoleAssignments = [{
+        id: '123e4567-e89b-12d3-a456-426614174003',
+        role: {
+          id: roleIds[0],
+          name: TMSConstants.SERVICE_USER,
+          description: 'Service User Role',
+          tenantUserRoles: [],
+          createdDateTime: new Date(),
+          updatedDateTime: new Date(),
+          createdBy: 'test-user',
+          updatedBy: 'test-user'
+        },
+        tenantUser: {
+          id: tenantUserId,
+          ssoUser: {
+            id: '123e4567-e89b-12d3-a456-426614174004',
+            ssoUserId: 'F45AFBBD68C44D6F956BA3A1D91878AD',
+            firstName: 'Test',
+            lastName: 'User',
+            displayName: 'Test User',
+            userName: 'testuser',
+            email: 'test@example.com',
+            createdDateTime: new Date(),
+            updatedDateTime: new Date(),
+            createdBy: 'test-user',
+            updatedBy: 'test-user',
+            tenantUsers: []
+          },
+          tenant: {
+            id: tenantId,
+            name: 'Test Tenant',
+            ministryName: 'Test Ministry',
+            description: 'Test Description',
+            createdDateTime: new Date(),
+            updatedDateTime: new Date(),
+            createdBy: 'test-user',
+            updatedBy: 'test-user',
+            users: []
+          },
+          roles: [],
+          createdDateTime: new Date(),
+          updatedDateTime: new Date(),
+          createdBy: 'test-user',
+          updatedBy: 'test-user'
+        },
+        createdDateTime: new Date(),
+        updatedDateTime: new Date(),
+        createdBy: 'test-user',
+        updatedBy: 'test-user',
+        isDeleted: false
+      }]
+
+      mockTMSRepository.assignUserRoles.mockResolvedValue(mockRoleAssignments)
+
+      const response = await request(app)
+        .post(`/v1/tenants/${tenantId}/users/${tenantUserId}/roles`)
+        .send({ roles: roleIds })
+
+      expect(response.status).toBe(201)
+      expect(response.body).toMatchObject({
+        data: {
+          roles: [{
+            id: roleIds[0],
+            name: TMSConstants.SERVICE_USER
+          }]
+        }
+      })
+
+      expect(mockTMSRepository.assignUserRoles).toHaveBeenCalledWith(
+        tenantId,
+        tenantUserId,
+        roleIds,
+        null
+      )
+    })
+
+    it('should return 400 when roles array is empty', async () => {
+      const response = await request(app)
+        .post(`/v1/tenants/${tenantId}/users/${tenantUserId}/roles`)
+        .send({ roles: [] })
+
+      expect(response.status).toBe(400)
+      expect(response.body).toMatchObject({
+        name: 'ValidationError',
+        message: 'Validation Failed',
+        details: {
+          body: [{
+            message: '"roles" must contain at least 1 items'
+          }]
+        }
+      })
+    })
+
+    it('should return 404 when tenant user not found', async () => {
+      mockTMSRepository.assignUserRoles.mockRejectedValue(
+        new NotFoundError(`Tenant user not found for tenant: ${tenantId}`)
+      )
+
+      const response = await request(app)
+        .post(`/v1/tenants/${tenantId}/users/${tenantUserId}/roles`)
+        .send({ roles: roleIds })
+
+      expect(response.status).toBe(404)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Not Found',
+        httpResponseCode: 404,
+        message: `Tenant user not found for tenant: ${tenantId}`,
+        name: 'Error occurred assigning user role'
+      })
+    })
+
+    it('should return 409 when all roles are already assigned', async () => {
+      mockTMSRepository.assignUserRoles.mockRejectedValue(
+        new ConflictError('All roles are already assigned to the user')
+      )
+
+      const response = await request(app)
+        .post(`/v1/tenants/${tenantId}/users/${tenantUserId}/roles`)
+        .send({ roles: roleIds })
+
+      expect(response.status).toBe(409)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Conflict',
+        httpResponseCode: 409,
+        message: 'All roles are already assigned to the user',
+        name: 'Error occurred assigning user role'
+      })
     })
   })
 }) 
