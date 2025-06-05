@@ -60,6 +60,11 @@ describe('Tenant API', () => {
       (req, res) => tmsController.assignUserRoles(req, res)
     )
 
+    app.delete('/v1/tenants/:tenantId/users/:tenantUserId/roles/:roleId',
+      validate(validator.unassignUserRoles, {}, {}),
+      (req, res) => tmsController.unassignUserRoles(req, res)
+    )
+
     app.use((err: any, req: any, res: any, next: any) => {
       if (err.name === 'ValidationError') {
         return res.status(err.statusCode).json(err)
@@ -683,6 +688,90 @@ describe('Tenant API', () => {
         httpResponseCode: 409,
         message: 'All roles are already assigned to the user',
         name: 'Error occurred assigning user role'
+      })
+    })
+  })
+
+  describe('DELETE /v1/tenants/:tenantId/users/:tenantUserId/roles/:roleId', () => {
+    const tenantId = '123e4567-e89b-12d3-a456-426614174000'
+    const tenantUserId = '123e4567-e89b-12d3-a456-426614174001'
+    const roleId = '123e4567-e89b-12d3-a456-426614174002'
+
+    beforeEach(() => {
+      app.delete('/v1/tenants/:tenantId/users/:tenantUserId/roles/:roleId',
+        validate(validator.unassignUserRoles, {}, {}),
+        (req, res) => tmsController.unassignUserRoles(req, res)
+      )
+
+      app.use((err: any, req: any, res: any, next: any) => {
+        if (err.name === 'ValidationError') {
+          return res.status(err.statusCode).json(err)
+        }
+        next(err)
+      })
+    })
+
+    it('should unassign role from user successfully', async () => {
+      mockTMSRepository.unassignUserRoles.mockResolvedValue(undefined)
+
+      const response = await request(app)
+        .delete(`/v1/tenants/${tenantId}/users/${tenantUserId}/roles/${roleId}`)
+
+      expect(response.status).toBe(204)
+      expect(mockTMSRepository.unassignUserRoles).toHaveBeenCalledWith(
+        expect.objectContaining({
+          params: { tenantId, tenantUserId, roleId }
+        })
+      )
+    })
+
+    it('should return 400 when tenant ID is invalid', async () => {
+      const response = await request(app)
+        .delete(`/v1/tenants/invalid-uuid/users/${tenantUserId}/roles/${roleId}`)
+
+      expect(response.status).toBe(400)
+      expect(response.body).toMatchObject({
+        name: 'ValidationError',
+        message: 'Validation Failed',
+        details: {
+          params: [{
+            message: '"tenantId" must be a valid GUID'
+          }]
+        }
+      })
+    })
+
+    it('should return 404 when tenant user role not found', async () => {
+      mockTMSRepository.unassignUserRoles.mockRejectedValue(
+        new NotFoundError(`Tenant: ${tenantId},  Users: ${tenantUserId} and / or roles: ${roleId} not found`)
+      )
+
+      const response = await request(app)
+        .delete(`/v1/tenants/${tenantId}/users/${tenantUserId}/roles/${roleId}`)
+
+      expect(response.status).toBe(404)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Not Found',
+        httpResponseCode: 404,
+        message: `Tenant: ${tenantId},  Users: ${tenantUserId} and / or roles: ${roleId} not found`,
+        name: 'Error occurred unassigning user role'
+      })
+    })
+
+    it('should return 409 when trying to unassign last tenant owner', async () => {
+      mockTMSRepository.unassignUserRoles.mockRejectedValue(
+        new ConflictError('Cannot unassign tenant owner role. At least one tenant owner must remain.')
+      )
+
+      const response = await request(app)
+        .delete(`/v1/tenants/${tenantId}/users/${tenantUserId}/roles/${roleId}`)
+
+      expect(response.status).toBe(409)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Conflict',
+        httpResponseCode: 409,
+        message: 'Cannot unassign tenant owner role. At least one tenant owner must remain.',
+        name: 'Error occurred unassigning user role'
       })
     })
   })
