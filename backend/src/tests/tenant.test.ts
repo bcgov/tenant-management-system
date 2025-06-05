@@ -50,6 +50,11 @@ describe('Tenant API', () => {
       (req, res) => tmsController.getTenantsForUser(req, res)
     )
 
+    app.get('/v1/tenants/:tenantId/users',
+      validate(validator.getTenantUsers, {}, {}),
+      (req, res) => tmsController.getUsersForTenant(req, res)
+    )
+
     app.use((err: any, req: any, res: any, next: any) => {
       if (err.name === 'ValidationError') {
         return res.status(err.statusCode).json(err)
@@ -423,6 +428,87 @@ describe('Tenant API', () => {
         details: {
           query: [{
             message: '"expand" with value "invalidParameter" fails to match the required pattern: /^(tenantUserRoles)?$/'
+          }]
+        }
+      })
+    })
+  })
+
+  describe('GET /v1/tenants/:tenantId/users', () => {
+    const tenantId = '123e4567-e89b-12d3-a456-426614174000'
+    const mockUsers = [{
+      id: '123e4567-e89b-12d3-a456-426614174001',
+      firstName: 'Test',
+      lastName: 'User',
+      displayName: 'Test User',
+      ssoUserId: 'F45AFBBD68C4411F956BA3A1D91878EF',
+      email: 'test@testministry.gov.bc.ca',
+      createdDateTime: new Date(),
+      updatedDateTime: new Date(),
+      createdBy: 'test-user',
+      updatedBy: 'test-user',
+      tenant: {
+        id: tenantId,
+        name: 'Test Tenant',
+        ministryName: 'Test Ministry',
+        description: 'Test Description',
+        createdDateTime: new Date(),
+        updatedDateTime: new Date(),
+        createdBy: 'test-user',
+        updatedBy: 'test-user',
+        users: []
+      },
+      roles: [],
+      ssoUser: {
+        id: '123e4567-e89b-12d3-a456-426614174003',
+        ssoUserId: 'F45AFBBD68C4411F956BA3A1D91878EF',
+        firstName: 'Test',
+        lastName: 'User',
+        displayName: 'Test User',
+        userName: 'testuser',
+        email: 'test@testministry.gov.bc.ca',
+        createdDateTime: new Date(),
+        updatedDateTime: new Date(),
+        createdBy: 'test-user',
+        updatedBy: 'test-user',
+        tenantUsers: []
+      }
+    }]
+
+    it('should get users for tenant successfully', async () => {
+      mockTMSRepository.getUsersForTenant.mockResolvedValue(mockUsers)
+
+      const response = await request(app)
+        .get(`/v1/tenants/${tenantId}/users`)
+
+      expect(response.status).toBe(200)
+      expect(response.body).toMatchObject({
+        data: {
+          users: [{
+            id: mockUsers[0].id,
+            firstName: mockUsers[0].firstName,
+            lastName: mockUsers[0].lastName,
+            displayName: mockUsers[0].displayName,
+            ssoUserId: mockUsers[0].ssoUserId,
+            email: mockUsers[0].email
+          }]
+        }
+      })
+
+      expect(mockTMSRepository.getUsersForTenant).toHaveBeenCalledWith(tenantId)
+    })
+
+    it('should return 400 when tenant ID is invalid', async () => {
+      const response = await request(app)
+        .get('/v1/tenants/invalid-uuid/users')
+
+      expect(response.status).toBe(400)
+      expect(response.body).toMatchObject({
+        name: 'ValidationError',
+        message: 'Validation Failed',
+        details: {
+          params: [{
+            message: '"tenantId" must be a valid GUID'
           }]
         }
       })
