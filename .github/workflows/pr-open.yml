@@ -40,7 +40,7 @@ jobs:
     needs: [deploys]
     uses: ./.github/workflows/.update-secrets.yml
     with:
-      release_name: ${{ github.event.repository.name }}-${{ github.event.number}}
+      release_name: ${{ github.event.repository.name }}-pr-${{ github.event.number}}
     secrets:
       oc_namespace: ${{ secrets.OC_NAMESPACE }}
       oc_token: ${{ secrets.OC_TOKEN }}
