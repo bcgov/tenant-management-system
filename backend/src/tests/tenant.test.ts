@@ -513,5 +513,22 @@ describe('Tenant API', () => {
         }
       })
     })
+
+    it('should return empty users array for non-existent tenant', async () => {
+      const nonExistentTenantId = '123e4567-e89b-12d3-a456-426614174999'
+      mockTMSRepository.getUsersForTenant.mockResolvedValue([])
+
+      const response = await request(app)
+        .get(`/v1/tenants/${nonExistentTenantId}/users`)
+
+      expect(response.status).toBe(200)
+      expect(response.body).toMatchObject({
+        data: {
+          users: []
+        }
+      })
+
+      expect(mockTMSRepository.getUsersForTenant).toHaveBeenCalledWith(nonExistentTenantId)
+    })
   })
 }) 
