@@ -410,5 +410,22 @@ describe('Tenant API', () => {
         ['tenantUserRoles']
       )
     })
+
+    it('should return 400 when expand parameter is invalid', async () => {
+      const response = await request(app)
+        .get(`/v1/users/${ssoUserId}/tenants`)
+        .query({ expand: 'invalidParameter' })
+
+      expect(response.status).toBe(400)
+      expect(response.body).toMatchObject({
+        name: 'ValidationError',
+        message: 'Validation Failed',
+        details: {
+          query: [{
+            message: '"expand" with value "invalidParameter" fails to match the required pattern: /^(tenantUserRoles)?$/'
+          }]
+        }
+      })
+    })
   })
 }) 
