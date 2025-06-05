@@ -45,6 +45,11 @@ describe('Tenant API', () => {
       (req, res) => tmsController.addTenantUser(req, res)
     )
 
+    app.get('/v1/users/:ssoUserId/tenants',
+      validate(validator.getUserTenants, {}, {}),
+      (req, res) => tmsController.getTenantsForUser(req, res)
+    )
+
     app.use((err: any, req: any, res: any, next: any) => {
       if (err.name === 'ValidationError') {
         return res.status(err.statusCode).json(err)
@@ -281,6 +286,108 @@ describe('Tenant API', () => {
       expect(response.status).toBe(400)
       expect(response.body.message).toBe("Validation Failed")
       expect(response.body.details.body[0].message).toBe("\"roles\" is required")
+    })
+  })
+
+  describe('GET /v1/users/:ssoUserId/tenants', () => {
+    const ssoUserId = 'F45AFBBD68C4411F956BA3A1D91878EF'
+    const mockTenants = [
+      {
+        id: '123e4567-e89b-12d3-a456-426614174000',
+        name: 'Test Tenant 1',
+        ministryName: 'Test Ministry 1',
+        description: 'Test Description 1',
+        createdDateTime: new Date(),
+        updatedDateTime: new Date(),
+        createdBy: 'test-user',
+        updatedBy: 'test-user',
+        users: [{
+          id: '123e4567-e89b-12d3-a456-426614174001',
+          firstName: 'Test',
+          lastName: 'User',
+          displayName: 'Test User',
+          ssoUserId: ssoUserId,
+          email: 'test@testministry.gov.bc.ca',
+          createdDateTime: new Date(),
+          updatedDateTime: new Date(),
+          createdBy: 'test-user',
+          updatedBy: 'test-user',
+          ssoUser: {
+            id: '123e4567-e89b-12d3-a456-426614174003',
+            ssoUserId: ssoUserId,
+            firstName: 'Test',
+            lastName: 'User',
+            displayName: 'Test User',
+            userName: 'testuser',
+            email: 'test@testministry.gov.bc.ca',
+            createdDateTime: new Date(),
+            updatedDateTime: new Date(),
+            createdBy: 'test-user',
+            updatedBy: 'test-user',
+            tenantUsers: []
+          },
+          tenant: {
+            id: '123e4567-e89b-12d3-a456-426614174000',
+            name: 'Test Tenant 1',
+            ministryName: 'Test Ministry 1',
+            description: 'Test Description 1',
+            createdDateTime: new Date(),
+            updatedDateTime: new Date(),
+            createdBy: 'test-user',
+            updatedBy: 'test-user',
+            users: []
+          },
+          roles: [{
+            id: '123e4567-e89b-12d3-a456-426614174002',
+            tenantUser: {
+              id: '123e4567-e89b-12d3-a456-426614174001'
+            },
+            role: {
+              id: '123e4567-e89b-12d3-a456-426614174002',
+              name: TMSConstants.TENANT_OWNER,
+              description: 'Tenant Owner Role'
+            },
+            createdDateTime: new Date(),
+            updatedDateTime: new Date(),
+            createdBy: 'test-user',
+            updatedBy: 'test-user',
+            isDeleted: false
+          }]
+        }]
+      }
+    ]
+
+    it('should get tenants for user successfully', async () => {
+      mockTMSRepository.getTenantsForUser.mockResolvedValue(mockTenants as any)
+
+      const response = await request(app)
+        .get(`/v1/users/${ssoUserId}/tenants`)
+        .query({ expand: 'tenantUserRoles' })
+
+      expect(response.status).toBe(200)
+      expect(response.body).toMatchObject({
+        data: {
+          tenants: [{
+            id: mockTenants[0].id,
+            name: mockTenants[0].name,
+            ministryName: mockTenants[0].ministryName,
+            users: [{
+              firstName: mockTenants[0].users[0].firstName,
+              lastName: mockTenants[0].users[0].lastName,
+              ssoUserId: mockTenants[0].users[0].ssoUserId,
+              roles: [{
+                id: mockTenants[0].users[0].roles[0].id,
+                name: mockTenants[0].users[0].roles[0].role.name
+              }]
+            }]
+          }]
+        }
+      })
+
+      expect(mockTMSRepository.getTenantsForUser).toHaveBeenCalledWith(
+        ssoUserId,
+        ['tenantUserRoles']
+      )
     })
   })
 }) 
