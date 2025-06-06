@@ -974,4 +974,105 @@ describe('Tenant API', () => {
       })
     })
   })
+
+  describe('GET /v1/tenants/:tenantId/ssousers/:ssoUserId/roles', () => {
+    const tenantId = '123e4567-e89b-12d3-a456-426614174000'
+    const ssoUserId = 'F45AFBBD68C4411F956BA3A1D91878EF'
+    const mockRoles = [{
+      id: '123e4567-e89b-12d3-a456-426614174002',
+      name: TMSConstants.TENANT_OWNER,
+      description: 'Tenant Owner Role',
+      tenantUserRoles: [],
+      createdDateTime: new Date(),
+      updatedDateTime: new Date(),
+      createdBy: 'test-user',
+      updatedBy: 'test-user'
+    }]
+
+    beforeEach(() => {
+      app.get('/v1/tenants/:tenantId/ssousers/:ssoUserId/roles',
+        validate(validator.getRolesForSSOUser, {}, {}),
+        (req, res) => tmsController.getRolesForSSOUser(req, res)
+      )
+
+      app.use((err: any, req: any, res: any, next: any) => {
+        if (err.name === 'ValidationError') {
+          return res.status(err.statusCode).json(err)
+        }
+        next(err)
+      })
+    })
+
+    it('should get roles for SSO user successfully', async () => {
+      mockTMSRepository.getRolesForSSOUser.mockResolvedValue(mockRoles)
+
+      const response = await request(app)
+        .get(`/v1/tenants/${tenantId}/ssousers/${ssoUserId}/roles`)
+
+      expect(response.status).toBe(200)
+      expect(response.body).toMatchObject({
+        data: {
+          roles: [{
+            id: mockRoles[0].id,
+            name: mockRoles[0].name,
+            description: mockRoles[0].description
+          }]
+        }
+      })
+
+      expect(mockTMSRepository.getRolesForSSOUser).toHaveBeenCalledWith(
+        expect.objectContaining({
+          params: { tenantId, ssoUserId }
+        })
+      )
+    })
+
+    it('should return 400 when tenant ID is invalid', async () => {
+      const response = await request(app)
+        .get(`/v1/tenants/invalid-uuid/ssousers/${ssoUserId}/roles`)
+
+      expect(response.status).toBe(400)
+      expect(response.body).toMatchObject({
+        name: 'ValidationError',
+        message: 'Validation Failed',
+        details: {
+          params: [{
+            message: '"tenantId" must be a valid GUID'
+          }]
+        }
+      })
+    })
+
+    it('should return 404 when tenant not found', async () => {
+      const nonExistentTenantId = '123e4567-e89b-12d3-a456-426614174999'
+      mockTMSRepository.getRolesForSSOUser.mockRejectedValue(
+        new NotFoundError(`Tenant Not Found: ${nonExistentTenantId}`)
+      )
+
+      const response = await request(app)
+        .get(`/v1/tenants/${nonExistentTenantId}/ssousers/${ssoUserId}/roles`)
+
+      expect(response.status).toBe(404)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Not Found',
+        httpResponseCode: 404,
+        message: `Tenant Not Found: ${nonExistentTenantId}`,
+        name: 'Error occurred getting roles for SSO user'
+      })
+    })
+
+    it('should return empty roles array when user has no roles', async () => {
+      mockTMSRepository.getRolesForSSOUser.mockResolvedValue([])
+
+      const response = await request(app)
+        .get(`/v1/tenants/${tenantId}/ssousers/${ssoUserId}/roles`)
+
+      expect(response.status).toBe(200)
+      expect(response.body).toMatchObject({
+        data: {
+          roles: []
+        }
+      })
+    })
+  })
 }) 
