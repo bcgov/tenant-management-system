@@ -25,10 +25,10 @@ export class InitialDdl1745613711840 implements MigrationInterface {
         await queryRunner.query(`ALTER TABLE "TenantUser" DROP CONSTRAINT "FK_b3809deecee8518a500de5761c5"`);
         await queryRunner.query(`DROP TABLE "TenantUserRole"`);
         await queryRunner.query(`DROP TABLE "Role"`);
-        await queryRunner.query(`DROP INDEX "public"."IDX_11edd3c26961777406c54e6d90"`);
-        await queryRunner.query(`DROP INDEX "public"."IDX_b3809deecee8518a500de5761c"`);
+        await queryRunner.query(`DROP INDEX "IDX_11edd3c26961777406c54e6d90"`);
+        await queryRunner.query(`DROP INDEX "IDX_b3809deecee8518a500de5761c"`);
         await queryRunner.query(`DROP TABLE "TenantUser"`);
-        await queryRunner.query(`DROP INDEX "public"."IDX_5e01afdcafb2ed500384963501"`);
+        await queryRunner.query(`DROP INDEX "IDX_5e01afdcafb2ed500384963501"`);
         await queryRunner.query(`DROP TABLE "SSOUser"`);
         await queryRunner.query(`DROP TABLE "Tenant"`);
     }

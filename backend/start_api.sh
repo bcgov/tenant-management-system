@@ -1,6 +1,4 @@
 #!/bin/bash
-# filepath: c:\Users\Jason\Documents\GitHub\tenant-management-system\backend\start_api.sh
-
 set -e
 
 echo "Starting database connection check..."
@@ -28,6 +26,14 @@ done
 
 echo "Database connection established."
 
+# Get schema name from environment or use default
+DB_SCHEMA="${DB_SCHEMA:-app_$(echo $NODE_ENV | tr -d ' ')}"
+echo "Using database schema: $DB_SCHEMA"
+
+# Try to create schema
+echo "Ensuring schema exists..."
+npx typeorm-ts-node-commonjs query "CREATE SCHEMA IF NOT EXISTS \"$DB_SCHEMA\";" -d ./src/common/db.connection.ts || true
+
 # Run migrations
 echo "Starting database migrations..."
 npx typeorm-ts-node-commonjs migration:run -d ./src/common/db.connection.ts
@@ -37,6 +43,13 @@ if [ $? -eq 0 ]; then
   echo "Migrations completed successfully."
 else
   echo "ERROR: Migrations failed. Check database configuration and permissions."
+  
+  # Additional diagnostics
+  echo "Checking database user and permissions..."
+  npx typeorm-ts-node-commonjs query "SELECT current_user, current_database();" -d ./src/common/db.connection.ts || true
+  npx typeorm-ts-node-commonjs query "SELECT schema_name FROM information_schema.schemata;" -d ./src/common/db.connection.ts || true
+  npx typeorm-ts-node-commonjs query "SELECT * FROM information_schema.role_table_grants WHERE table_schema='public';" -d ./src/common/db.connection.ts || true
+  
   exit 1
 fi
 
