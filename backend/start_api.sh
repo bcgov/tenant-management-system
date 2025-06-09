@@ -27,7 +27,7 @@ done
 echo "Database connection established."
 
 # Get schema name from environment or use default
-DB_SCHEMA="${DB_SCHEMA:-app_$(echo $NODE_ENV | tr -d ' ')}"
+DB_SCHEMA="tms"
 echo "Using database schema: $DB_SCHEMA"
 
 # Try to create schema
