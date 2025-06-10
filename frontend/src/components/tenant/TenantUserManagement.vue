@@ -125,6 +125,7 @@ async function addUserToTenant() {
                 v-model="selectedRole"
                 label="Select Role"
                 :items="ROLES"
+                hide-details
                 required
               />
             </v-col>
