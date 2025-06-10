@@ -97,9 +97,8 @@ defineExpose({
           { title: 'Email', key: 'email', align: 'start' },
         ]"
         :loading="userStore.loading"
+        select-strategy="single"
         show-select
-        single-select
-        item-value="id"
         :header-props="{
           class: 'text-body-1 font-weight-bold bg-surface-light',
         }"
