@@ -56,58 +56,58 @@ defineExpose({
 </script>
 
 <template>
-  <div>
-    <!-- Search controls -->
-    <v-row>
-      <v-col cols="12" md="4">
-        <v-select
-          v-model="searchOption"
-          label="Search by"
-          :items="SEARCH_OPTIONS"
-        />
-      </v-col>
-      <v-col cols="12" md="8" class="d-flex gap-4">
-        <v-text-field
-          v-model="searchText"
-          label="Search text"
-          class="flex-grow-1"
-          @keyup.enter="search"
-        />
-        <v-btn
-          color="primary"
-          :loading="userStore.loading"
-          :disabled="!searchText"
-          @click="search"
-        >
-          Search
-        </v-btn>
-      </v-col>
-    </v-row>
+  <v-row>
+    <v-col md="2">
+      <v-select
+        v-model="searchOption"
+        label="Search by"
+        :items="SEARCH_OPTIONS"
+        hide-details
+      />
+    </v-col>
+    <v-col md="4">
+      <v-text-field
+        v-model="searchText"
+        label="Search text"
+        @keyup.enter="search"
+        hide-details
+      />
+    </v-col>
+    <v-col md="2" class="d-flex align-center">
+      <v-btn
+        color="primary"
+        :loading="userStore.loading"
+        :disabled="!searchText"
+        @click="search"
+      >
+        Search
+      </v-btn>
+    </v-col>
+  </v-row>
 
-    <!-- Results table -->
-    <v-row v-if="userStore.searchResults.length || userStore.loading">
-      <v-col cols="12">
-        <v-data-table
-          v-model="selectedUser"
-          :items="userStore.searchResults"
-          :headers="[
-            { title: 'First Name', key: 'firstName', align: 'start' },
-            { title: 'Last Name', key: 'lastName', align: 'start' },
-            { title: 'Email', key: 'email', align: 'start' },
-          ]"
-          :loading="userStore.loading"
-          show-select
-          single-select
-          item-value="id"
-          :header-props="{
-            class: 'text-body-1 font-weight-bold bg-surface-light',
-          }"
-        >
-          <template #no-data>
-            <v-alert type="info">Search for users to add</v-alert>
-          </template>
-        </v-data-table>
-      </v-col>
-    </v-row>
-  </div>
+  <!-- Results table -->
+  <v-row v-if="userStore.searchResults.length || userStore.loading">
+    <v-col cols="12">
+      <v-data-table
+        v-model="selectedUser"
+        :items="userStore.searchResults"
+        :headers="[
+          { title: 'First Name', key: 'firstName', align: 'start' },
+          { title: 'Last Name', key: 'lastName', align: 'start' },
+          { title: 'Email', key: 'email', align: 'start' },
+        ]"
+        :loading="userStore.loading"
+        show-select
+        single-select
+        item-value="id"
+        :header-props="{
+          class: 'text-body-1 font-weight-bold bg-surface-light',
+        }"
+      >
+        <template #no-data>
+          <v-alert type="info">Search for users to add</v-alert>
+        </template>
+      </v-data-table>
+    </v-col>
+  </v-row>
 </template>
