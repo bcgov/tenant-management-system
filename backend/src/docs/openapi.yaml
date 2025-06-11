@@ -513,6 +513,51 @@ paths:
               schema:
                 $ref: '#/components/schemas/InternalServerErrorResponse'
 
+  /v1/roles:
+    get:
+      summary: Get all available roles
+      description: Retrieves a list of all available roles in the system
+      responses:
+        '200':
+          description: Roles retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      roles:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Role'
+              example:
+                data:
+                  roles:
+                    - id: "14c6bb48-54e2-4ce0-9bbd-af4982fff13b"
+                      name: "TMS.TENANT_OWNER"
+                      description: "Tenant Owner Role"
+                      createdDateTime: "2024-03-21T10:00:00Z"
+                      updatedDateTime: "2024-03-21T10:00:00Z"
+                    - id: "25d7cc59-65f3-5df1-0cce-bg6093ggg24c"
+                      name: "TMS.USER_ADMIN"
+                      description: "User Admin Role"
+                      createdDateTime: "2024-03-21T10:00:00Z"
+                      updatedDateTime: "2024-03-21T10:00:00Z"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+
 components:
   schemas:
     BasicUser:
