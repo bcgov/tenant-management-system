@@ -234,14 +234,8 @@ export class TMSRepository {
     
 
     public async getTenantRoles(req:Request) {
-        const tenantId:string = req.params.tenantId
-        if(!await this.checkIfTenantExists(tenantId)) {
-            throw new NotFoundError("Tenant Not Found: "+tenantId)
-        }
-        else { 
-            const roles:Role [] = await this.findTenantRoles(tenantId)
-            return roles
-        }  
+        const roles:Role [] = await this.findTenantRoles()
+        return roles
     }
 
     public async getUserRoles(req:Request) {
@@ -510,11 +504,9 @@ export class TMSRepository {
         return ssoUser
     }
 
-    public async findTenantRoles(tenantId:string) {
+    public async findTenantRoles() {
         const roles = await this.manager
             .createQueryBuilder(Role, "role")
-            // .leftJoin("role.tenant", "tenant")
-            // .where("role.tenant.id = :tenantId OR role.tenant IS NULL", { tenantId })
             .getMany();
         return roles
     }
