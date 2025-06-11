@@ -2,8 +2,8 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
 import { useNotification } from '@/composables/useNotification'
-import { User } from '@/models/user.model'
-import { userService } from '@/services/user.service'
+import { User } from '@/models'
+import { userService } from '@/services'
 import type { IdirSearchParameters } from '@/types/IdirSearchParameters'
 
 export const useUserStore = defineStore('user', () => {

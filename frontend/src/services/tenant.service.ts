@@ -1,12 +1,46 @@
+import { authenticatedAxios } from './authenticated.axios'
+import { logApiError } from './utils'
 import { DuplicateEntityError, ValidationError } from '@/errors'
-import { Role } from '@/models/role.model'
-import { User } from '@/models/user.model'
-import { authenticatedAxios } from '@/services/authenticated.axios'
-import { logApiError } from '@/services/utils'
+import { Role, User } from '@/models'
 
 const api = authenticatedAxios()
 
 export const tenantService = {
+  async addUsers(tenantId: string, user: User, role: Role): Promise<User> {
+    try {
+      const request: { user: any; roles?: string[] } = { user }
+      request.roles = [role.id]
+
+      // TODO: this is temporary until some decisions are made about how close
+      // the mapping to the API should be.
+      request.user.ssoUserId = user.id
+      delete request.user.id
+      delete request.user.roles
+
+      const response = await api.post(`/tenants/${tenantId}/users`, request)
+
+      return response.data.data as User
+    } catch (error) {
+      logApiError('Error adding user to Tenant', error)
+
+      throw error
+    }
+  },
+
+  async assignUserRoles(
+    tenantId: string,
+    userId: string,
+    roleId: string,
+  ): Promise<void> {
+    try {
+      await api.put(`/tenants/${tenantId}/users/${userId}/roles/${roleId}`)
+    } catch (error) {
+      logApiError('Error assigning user role in Tenant', error)
+
+      throw error
+    }
+  },
+
   /**
    * Creates a new tenant with the specified name and ministry.
    *
@@ -59,6 +93,87 @@ export const tenantService = {
       }
 
       // Re-throw all other errors
+      throw error
+    }
+  },
+
+  /**
+   * Retrieves the specified tenant.
+   *
+   * @param {string} tenantId - The ID of the tenant.
+   * @returns {Promise<object>} A promise that resolves a tenant-like object.
+   * @throws Will throw an error if the API request fails.
+   */
+  async getTenant(tenantId: string) {
+    try {
+      const response = await api.get(
+        `/tenants/${tenantId}?expand=tenantUserRoles`,
+      )
+
+      return response.data.data.tenant
+    } catch (error) {
+      logApiError('Error getting tenant', error)
+
+      throw error
+    }
+  },
+
+  async getTenantRoles(tenantId: string) {
+    try {
+      const response = await api.get(`/tenants/${tenantId}/roles`)
+
+      return response.data.data.roles
+    } catch (error) {
+      logApiError('Error getting Tenant roles', error)
+
+      throw error
+    }
+  },
+
+  async getUserRoles(tenantId: string, userId: string) {
+    try {
+      const response = await api.get(
+        `/tenants/${tenantId}/users/${userId}/roles`,
+      )
+
+      return response.data.data.roles
+    } catch (error) {
+      logApiError('Error getting Tenant users roles', error)
+
+      throw error
+    }
+  },
+
+  /**
+   * Retrieves the tenants associated with the specified user.
+   *
+   * @param {string} userId - The SSO user ID of the user.
+   * @returns {Promise<object[]>} A promise that resolves to an array of
+   *   tenant-like objects.
+   * @throws Will throw an error if the API request fails.
+   */
+  async getUserTenants(userId: string) {
+    try {
+      const response = await api.get(
+        `/users/${userId}/tenants?expand=tenantUserRoles`,
+      )
+
+      return response.data.data.tenants
+    } catch (error) {
+      logApiError('Error getting users tenants', error)
+
+      throw error
+    }
+  },
+
+  async getUsers(tenantId: string) {
+    try {
+      const response = await api.get(`/tenants/${tenantId}/users`)
+
+      return response.data.data.users
+    } catch (error) {
+      logApiError('Error getting Tenant users', error)
+
       throw error
     }
   },
@@ -124,122 +239,6 @@ export const tenantService = {
       }
 
       // Re-throw all other errors
-      throw error
-    }
-  },
-
-  /**
-   * Retrieves the specified tenant.
-   *
-   * @param {string} tenantId - The ID of the tenant.
-   * @returns {Promise<object>} A promise that resolves a tenant-like object.
-   * @throws Will throw an error if the API request fails.
-   */
-  async getTenant(tenantId: string) {
-    try {
-      const response = await api.get(
-        `/tenants/${tenantId}?expand=tenantUserRoles`,
-      )
-
-      return response.data.data.tenant
-    } catch (error) {
-      logApiError('Error getting tenant', error)
-
-      throw error
-    }
-  },
-
-  /**
-   * Retrieves the tenants associated with the specified user.
-   *
-   * @param {string} userId - The SSO user ID of the user.
-   * @returns {Promise<object[]>} A promise that resolves to an array of
-   *   tenant-like objects.
-   * @throws Will throw an error if the API request fails.
-   */
-  async getUserTenants(userId: string) {
-    try {
-      const response = await api.get(
-        `/users/${userId}/tenants?expand=tenantUserRoles`,
-      )
-
-      return response.data.data.tenants
-    } catch (error) {
-      logApiError('Error getting users tenants', error)
-
-      throw error
-    }
-  },
-
-  async getUsers(tenantId: string) {
-    try {
-      const response = await api.get(`/tenants/${tenantId}/users`)
-
-      return response.data.data.users
-    } catch (error) {
-      logApiError('Error getting Tenant users', error)
-
-      throw error
-    }
-  },
-
-  async getTenantRoles(tenantId: string) {
-    try {
-      const response = await api.get(`/tenants/${tenantId}/roles`)
-
-      return response.data.data.roles
-    } catch (error) {
-      logApiError('Error getting Tenant roles', error)
-
-      throw error
-    }
-  },
-
-  async getUserRoles(tenantId: string, userId: string) {
-    try {
-      const response = await api.get(
-        `/tenants/${tenantId}/users/${userId}/roles`,
-      )
-
-      return response.data.data.roles
-    } catch (error) {
-      logApiError('Error getting Tenant users roles', error)
-
-      throw error
-    }
-  },
-
-  async addUsers(tenantId: string, user: User, role: Role): Promise<User> {
-    try {
-      const request: { user: any; roles?: string[] } = { user }
-      request.roles = [role.id]
-
-      // TODO: this is temporary until some decisions are made about how close
-      // the mapping to the API should be.
-      request.user.ssoUserId = user.id
-      delete request.user.id
-      delete request.user.roles
-
-      const response = await api.post(`/tenants/${tenantId}/users`, request)
-
-      return response.data.data as User
-    } catch (error) {
-      logApiError('Error adding user to Tenant', error)
-
-      throw error
-    }
-  },
-
-  async assignUserRoles(
-    tenantId: string,
-    userId: string,
-    roleId: string,
-  ): Promise<void> {
-    try {
-      await api.put(`/tenants/${tenantId}/users/${userId}/roles/${roleId}`)
-    } catch (error) {
-      logApiError('Error assigning user role in Tenant', error)
-
       throw error
     }
   },

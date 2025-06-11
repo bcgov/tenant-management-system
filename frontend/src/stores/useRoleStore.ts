@@ -1,8 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
-import { Role } from '@/models/role.model'
-import { roleService } from '@/services/role.service'
+import { Role } from '@/models'
+import { roleService } from '@/services'
 
 export const useRoleStore = defineStore('role', () => {
   const roles = ref<Role[]>([])
