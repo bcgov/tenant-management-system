@@ -14,11 +14,8 @@ export const useRoleStore = defineStore('role', () => {
   const fetchRoles = async () => {
     loading.value = true
     try {
-      console.log('Fetching roles...')
       const roleList = await roleService.getRoles()
-      console.log('Roles fetched:', roleList)
       roles.value = roleList.map(Role.fromApiData)
-      console.log('Roles processed:', roles.value)
     } finally {
       loading.value = false
     }
