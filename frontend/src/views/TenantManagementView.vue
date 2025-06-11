@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 
 import TenantDetails from '@/components/tenant/TenantDetails.vue'
@@ -7,14 +7,20 @@ import TenantHeader from '@/components/tenant/TenantHeader.vue'
 import TenantTabs from '@/components/tenant/TenantTabs.vue'
 import BreadcrumbBar from '@/components/ui/BreadcrumbBar.vue'
 import { Tenant } from '@/models/tenant.model'
+import { useRoleStore } from '@/stores/useRoleStore'
 import { useTenantStore } from '@/stores/useTenantStore'
 
 // Initialize stores and route
 const route = useRoute()
+const roleStore = useRoleStore()
 const tenantStore = useTenantStore()
 const tenant = ref<Tenant | undefined>()
 
-// Watch for route changes and load fresh tenant data
+onMounted(async () => {
+  await roleStore.fetchRoles()
+})
+
+// Watch for route changes and load tenant data
 watch(
   () => route.params.id,
   async (newId) => {
@@ -39,6 +45,8 @@ const breadcrumbs = computed(() => [
     href: `/tenants/${tenant.value?.id}`,
   },
 ])
+
+const roles = computed(() => roleStore.roles)
 
 async function handleUpdate(updatedTenant: Partial<Tenant>) {
   try {
@@ -69,7 +77,12 @@ async function handleUpdate(updatedTenant: Partial<Tenant>) {
         @update="handleUpdate"
       />
 
-      <TenantTabs :tenant="tenant" :disabled="isEditing" class="mt-6" />
+      <TenantTabs
+        :disabled="isEditing"
+        :roles="roles"
+        :tenant="tenant"
+        class="mt-6"
+      />
     </v-container>
   </BaseSecure>
 </template>

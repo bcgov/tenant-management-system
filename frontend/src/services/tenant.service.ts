@@ -1,6 +1,7 @@
 import axios from 'axios'
 
 import { DuplicateEntityError, ValidationError } from '@/errors'
+import { Role } from '@/models/role.model'
 import { User } from '@/models/user.model'
 import { authenticatedAxios } from '@/services/authenticated.axios'
 import { config } from '@/services/config.service'
@@ -234,12 +235,17 @@ export const tenantService = {
     }
   },
 
-  async addUsers(tenantId: string, user: User, roleId?: string): Promise<User> {
+  async addUsers(tenantId: string, user: User, role: Role): Promise<User> {
     try {
-      const request: { user: User; role?: { id: string } } = { user }
-      if (roleId) {
-        request.role = { id: roleId }
-      }
+      const request: { user: any; roles?: string[] } = { user }
+      request.roles = [role.id]
+
+      // TODO: this is temporary until some decisions are made about how close
+      // the mapping to the API should be.
+      request.user.ssoUserId = user.id
+      delete request.user.id
+      delete request.user.roles
+
       const response = await tenantApi.post(
         `/tenants/${tenantId}/users`,
         request,

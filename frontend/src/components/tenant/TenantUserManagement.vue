@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { useTenantStore } from '@/stores/useTenantStore'
 import { useNotification } from '@/composables/useNotification'
 import UserSearch from '@/components/user/UserSearch.vue'
@@ -8,6 +8,7 @@ import type { User } from '@/models/user.model'
 import type { Role } from '@/models/role.model'
 
 const props = defineProps<{
+  roles?: Role[]
   tenant?: Tenant
 }>()
 
@@ -37,12 +38,10 @@ async function addUserToTenant() {
   }
 
   try {
-    console.log('selectedUser', selectedUser.value)
-    console.log('selectedRole', selectedRole.value)
     await tenantStore.addTenantUser(
       props.tenant.id,
       selectedUser.value,
-      selectedRole.value.id,
+      selectedRole.value,
     )
 
     addNotification('User added successfully', 'success')
@@ -124,8 +123,8 @@ async function addUserToTenant() {
                 v-model="selectedRole"
                 label="Select Role"
                 :items="roles"
-                item-title="name"
-                item-value="id"
+                item-title="description"
+                return-object
                 hide-details
                 required
               />
