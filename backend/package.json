@@ -61,6 +61,7 @@
     "dev": "nodemon --exec ts-node src/index.ts",
     "typeorm": "ts-node --transpile-only ./node_modules/typeorm/cli.js",
     "migrate": "ts-node --transpile-only ./node_modules/typeorm/cli.js migration:run -d src/common/db.connection.ts",
+    "migrate:down": "ts-node --transpile-only ./node_modules/typeorm/cli.js migration:revert -d src/common/db.connection.ts",
     "build": "tsc",
     "test": "jest --config jest.config.js --detectOpenHandles --forceExit",
     "test:cov": "jest --config jest.config.js --coverage --detectOpenHandles --forceExit",

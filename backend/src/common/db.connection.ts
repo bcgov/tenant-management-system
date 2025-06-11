@@ -2,7 +2,9 @@ import { DataSource } from 'typeorm'
 
 const config = require('../ormconfig.ts')
 
-const AppDataSource = new DataSource(config)
+const AppDataSource = new DataSource({
+    ...config,
+})
 
 export const connection = AppDataSource
 

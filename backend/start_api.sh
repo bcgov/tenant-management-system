@@ -32,7 +32,7 @@ echo "Using database schema: $DB_SCHEMA"
 # Just ensure the schema exists
 echo "Ensuring schema exists..."
 npx typeorm-ts-node-commonjs query "CREATE SCHEMA IF NOT EXISTS \"$DB_SCHEMA\";" -d ./src/common/db.connection.ts
-
+npx typeorm-ts-node-commonjs query "SET search_path TO \"$DB_SCHEMA\", public;" -d ./src/common/db.connection.ts
 # Run migrations - TypeORM will track which ones have been run
 echo "Running migrations..."
 npx typeorm-ts-node-commonjs migration:run -d ./src/common/db.connection.ts || echo "Migration issues detected, but continuing startup"
