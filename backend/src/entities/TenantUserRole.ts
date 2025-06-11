@@ -2,7 +2,7 @@ import { Entity, PrimaryGeneratedColumn, ManyToOne, JoinColumn, CreateDateColumn
 import { TenantUser } from './TenantUser';
 import { Role } from './Role';
 
-@Entity('TenantUserRole')
+@Entity('TenantUserRole', { schema: 'tms' })
 export class TenantUserRole {
     
   @PrimaryGeneratedColumn('uuid')
