@@ -1,36 +1,10 @@
-import axios from 'axios'
-
 import { DuplicateEntityError, ValidationError } from '@/errors'
 import { Role } from '@/models/role.model'
 import { User } from '@/models/user.model'
 import { authenticatedAxios } from '@/services/authenticated.axios'
-import { config } from '@/services/config.service'
-import { logger } from '@/utils/logger'
+import { logApiError } from '@/services/utils'
 
-/**
- * Axios instance configured for tenant API requests.
- *
- */
-const tenantApi = authenticatedAxios()
-tenantApi.defaults.baseURL = config.api.baseUrl
-
-/**
- * Logs an API error with a custom message.
- *
- * Differentiates between Axios errors and other error types for better logging
- *   detail.
- *
- * @param {string} message - A descriptive message to include in the log.
- * @param {unknown} error - The error object caught from an API call or other
- *   source.
- */
-const logApiError = (message: string, error: unknown) => {
-  if (axios.isAxiosError(error)) {
-    logger.error(`${message}: ${error.message}`, error)
-  } else {
-    logger.error(message, error)
-  }
-}
+const api = authenticatedAxios()
 
 export const tenantService = {
   /**
@@ -59,7 +33,7 @@ export const tenantService = {
         },
       }
 
-      const response = await tenantApi.post(`/tenants`, requestBody)
+      const response = await api.post(`/tenants`, requestBody)
 
       return response.data.data.tenant
     } catch (error: any) {
@@ -163,7 +137,7 @@ export const tenantService = {
    */
   async getTenant(tenantId: string) {
     try {
-      const response = await tenantApi.get(
+      const response = await api.get(
         `/tenants/${tenantId}?expand=tenantUserRoles`,
       )
 
@@ -185,7 +159,7 @@ export const tenantService = {
    */
   async getUserTenants(userId: string) {
     try {
-      const response = await tenantApi.get(
+      const response = await api.get(
         `/users/${userId}/tenants?expand=tenantUserRoles`,
       )
 
@@ -199,7 +173,7 @@ export const tenantService = {
 
   async getUsers(tenantId: string) {
     try {
-      const response = await tenantApi.get(`/tenants/${tenantId}/users`)
+      const response = await api.get(`/tenants/${tenantId}/users`)
 
       return response.data.data.users
     } catch (error) {
@@ -211,7 +185,7 @@ export const tenantService = {
 
   async getTenantRoles(tenantId: string) {
     try {
-      const response = await tenantApi.get(`/tenants/${tenantId}/roles`)
+      const response = await api.get(`/tenants/${tenantId}/roles`)
 
       return response.data.data.roles
     } catch (error) {
@@ -223,7 +197,7 @@ export const tenantService = {
 
   async getUserRoles(tenantId: string, userId: string) {
     try {
-      const response = await tenantApi.get(
+      const response = await api.get(
         `/tenants/${tenantId}/users/${userId}/roles`,
       )
 
@@ -246,10 +220,7 @@ export const tenantService = {
       delete request.user.id
       delete request.user.roles
 
-      const response = await tenantApi.post(
-        `/tenants/${tenantId}/users`,
-        request,
-      )
+      const response = await api.post(`/tenants/${tenantId}/users`, request)
 
       return response.data.data as User
     } catch (error) {
@@ -265,9 +236,7 @@ export const tenantService = {
     roleId: string,
   ): Promise<void> {
     try {
-      await tenantApi.put(
-        `/tenants/${tenantId}/users/${userId}/roles/${roleId}`,
-      )
+      await api.put(`/tenants/${tenantId}/users/${userId}/roles/${roleId}`)
     } catch (error) {
       logApiError('Error assigning user role in Tenant', error)
 
