@@ -5,7 +5,7 @@ import { useNotification } from '@/composables/useNotification'
 import UserSearch from '@/components/user/UserSearch.vue'
 import type { Tenant } from '@/models/tenant.model'
 import type { User } from '@/models/user.model'
-import { ROLES } from '@/utils/constants'
+import type { Role } from '@/models/role.model'
 
 const props = defineProps<{
   tenant?: Tenant
@@ -16,19 +16,14 @@ const { addNotification } = useNotification()
 
 const showSearch = ref(false)
 const selectedUser = ref<User | null>(null)
-
-// Constants
-type TenantRole = (typeof ROLES)[keyof typeof ROLES]
-const selectedRole = ref<TenantRole | null>(null)
-
-const userSearchRef = ref<InstanceType<typeof UserSearch> | null>(null)
+const selectedRole = ref<Role | null>(null)
 
 function toggleSearch() {
   showSearch.value = !showSearch.value
   if (!showSearch.value) {
     selectedUser.value = null
     selectedRole.value = null
-    userSearchRef.value?.reset()
+    // userSearchRef.value?.reset()
   }
 }
 
@@ -43,11 +38,11 @@ async function addUserToTenant() {
 
   try {
     console.log('selectedUser', selectedUser.value)
-    console.log('selectedRole', selectedRole.value.value)
+    console.log('selectedRole', selectedRole.value)
     await tenantStore.addTenantUser(
       props.tenant.id,
       selectedUser.value,
-      selectedRole.value.value,
+      selectedRole.value.id,
     )
 
     addNotification('User added successfully', 'success')
@@ -88,10 +83,7 @@ async function addUserToTenant() {
               color="primary"
               class="mr-2"
             >
-              {{
-                Object.values(ROLES).find((r) => r.value === role.name)
-                  ?.title || role.name
-              }}
+              {{ role.description }}
             </v-chip>
           </template>
         </v-data-table>
@@ -131,7 +123,9 @@ async function addUserToTenant() {
               <v-select
                 v-model="selectedRole"
                 label="Select Role"
-                :items="Object.values(ROLES)"
+                :items="roles"
+                item-title="name"
+                item-value="id"
                 hide-details
                 required
               />
