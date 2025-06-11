@@ -26,6 +26,17 @@ export const useTenantStore = defineStore('tenant', () => {
 
   // Exported Methods
 
+  const addTenant = async (name: string, ministryName: string, user: User) => {
+    const apiResponse = await tenantService.createTenant(
+      name,
+      ministryName,
+      user,
+    )
+    const tenant = Tenant.fromApiData(apiResponse)
+
+    return upsertTenant(tenant)
+  }
+
   const addTenantUser = async (tenantId: string, user: User, role: Role) => {
     await tenantService.addUsers(tenantId, user, role)
 
@@ -45,21 +56,6 @@ export const useTenantStore = defineStore('tenant', () => {
     }
   }
 
-  const fetchTenants = async (userId: string) => {
-    loading.value = true
-    try {
-      const tenantList = await tenantService.getUserTenants(userId)
-      tenants.value = tenantList.map(Tenant.fromApiData)
-    } finally {
-      loading.value = false
-    }
-  }
-
-  const fetchTenantUsers = async (tenantId: string) => {
-    const users = await tenantService.getUsers(tenantId)
-    tenantUsers.value[tenantId] = users
-  }
-
   const fetchTenantUserRoles = async (tenantId: string, userId: string) => {
     const roles = await tenantService.getUserRoles(tenantId, userId)
     if (!tenantUserRoles.value[tenantId]) {
@@ -68,15 +64,19 @@ export const useTenantStore = defineStore('tenant', () => {
     tenantUserRoles.value[tenantId][userId] = roles
   }
 
-  const addTenant = async (name: string, ministryName: string, user: User) => {
-    const apiResponse = await tenantService.createTenant(
-      name,
-      ministryName,
-      user,
-    )
-    const tenant = Tenant.fromApiData(apiResponse)
+  const fetchTenantUsers = async (tenantId: string) => {
+    const users = await tenantService.getUsers(tenantId)
+    tenantUsers.value[tenantId] = users
+  }
 
-    return upsertTenant(tenant)
+  const fetchTenants = async (userId: string) => {
+    loading.value = true
+    try {
+      const tenantList = await tenantService.getUserTenants(userId)
+      tenants.value = tenantList.map(Tenant.fromApiData)
+    } finally {
+      loading.value = false
+    }
   }
 
   const searchAvailableUsers = async (
@@ -126,15 +126,16 @@ export const useTenantStore = defineStore('tenant', () => {
   }
 
   return {
+    loading,
+    tenants,
+
     addTenant,
     addTenantUser,
     fetchTenant,
     fetchTenants,
     fetchTenantUsers,
     fetchTenantUserRoles,
-    loading,
     searchAvailableUsers,
-    tenants,
     updateTenant,
   }
 })
