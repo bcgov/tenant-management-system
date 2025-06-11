@@ -1075,4 +1075,79 @@ describe('Tenant API', () => {
       })
     })
   })
+
+  describe('GET /v1/roles', () => {
+    const mockRoles = [{
+      id: '123e4567-e89b-12d3-a456-426614174002',
+      name: TMSConstants.TENANT_OWNER,
+      description: 'Tenant Owner Role',
+      tenantUserRoles: [],
+      createdDateTime: new Date(),
+      updatedDateTime: new Date(),
+      createdBy: 'test-user',
+      updatedBy: 'test-user'
+    }]
+
+    beforeEach(() => {
+      app.get('/v1/roles',
+        (req, res) => tmsController.getTenantRoles(req, res)
+      )
+
+      app.use((err: any, req: any, res: any, next: any) => {
+        if (err.name === 'ValidationError') {
+          return res.status(err.statusCode).json(err)
+        }
+        next(err)
+      })
+    })
+
+    it('should get all roles successfully', async () => {
+      mockTMSRepository.getTenantRoles.mockResolvedValue(mockRoles)
+
+      const response = await request(app)
+        .get('/v1/roles')
+
+      expect(response.status).toBe(200)
+      expect(response.body).toMatchObject({
+        data: {
+          roles: [{
+            id: mockRoles[0].id,
+            name: mockRoles[0].name,
+            description: mockRoles[0].description
+          }]
+        }
+      })
+
+      expect(mockTMSRepository.getTenantRoles).toHaveBeenCalled()
+    })
+
+    it('should return empty roles array when no roles exist', async () => {
+      mockTMSRepository.getTenantRoles.mockResolvedValue([])
+
+      const response = await request(app)
+        .get('/v1/roles')
+
+      expect(response.status).toBe(200)
+      expect(response.body).toMatchObject({
+        data: {
+          roles: []
+        }
+      })
+    })
+
+    it('should handle internal server error', async () => {
+      mockTMSRepository.getTenantRoles.mockRejectedValue(new Error('Database error'))
+
+      const response = await request(app)
+        .get('/v1/roles')
+
+      expect(response.status).toBe(500)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Internal Server Error',
+        httpResponseCode: 500,
+        message: 'Database error',
+        name: 'Error occurred getting tenant roles'
+      })
+    })
+  })
 }) 
