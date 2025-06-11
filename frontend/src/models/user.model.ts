@@ -48,4 +48,24 @@ export class User {
       apiData.roles.map(Role.fromApiData),
     )
   }
+
+  static fromSearchData(searchData: {
+    email: string
+    firstName: string
+    lastName: string
+    attributes: {
+      display_name: string[]
+      idir_user_guid: string[]
+    }
+  }): User {
+    return new User(
+      searchData.attributes.idir_user_guid[0],
+      '', // IDIR username is not provided in search results
+      searchData.firstName,
+      searchData.lastName,
+      searchData.attributes.display_name[0],
+      searchData.email,
+      [], // Roles are not provided in search results
+    )
+  }
 }

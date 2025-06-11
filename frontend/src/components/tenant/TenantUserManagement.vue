@@ -1,22 +1,67 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-
+import { useTenantStore } from '@/stores/useTenantStore'
+import { useNotification } from '@/composables/useNotification'
+import UserSearch from '@/components/user/UserSearch.vue'
 import type { Tenant } from '@/models/tenant.model'
+import type { User } from '@/models/user.model'
+import { ROLES } from '@/utils/constants'
 
-defineProps<{
+const props = defineProps<{
   tenant?: Tenant
 }>()
 
-const loadingSearchResults = ref(false)
-const searchOption = ref('firstName')
-const searchText = ref('')
-const searchResults = ref([])
-const selectedUser = ref(null)
-const selectedRole = ref('')
+const tenantStore = useTenantStore()
+const { addNotification } = useNotification()
+
+const showSearch = ref(false)
+const selectedUser = ref<User | null>(null)
+
+// Constants
+type TenantRole = (typeof ROLES)[keyof typeof ROLES]
+const selectedRole = ref<TenantRole | null>(null)
+
+const userSearchRef = ref<InstanceType<typeof UserSearch> | null>(null)
+
+function toggleSearch() {
+  showSearch.value = !showSearch.value
+  if (!showSearch.value) {
+    selectedUser.value = null
+    selectedRole.value = null
+    userSearchRef.value?.reset()
+  }
+}
+
+function onUserSelected(user: User) {
+  selectedUser.value = user
+}
+
+async function addUserToTenant() {
+  if (!props.tenant?.id || !selectedUser.value || !selectedRole.value) {
+    return
+  }
+
+  try {
+    console.log('selectedUser', selectedUser.value)
+    console.log('selectedRole', selectedRole.value.value)
+    await tenantStore.addTenantUser(
+      props.tenant.id,
+      selectedUser.value,
+      selectedRole.value.value,
+    )
+
+    addNotification('User added successfully', 'success')
+    toggleSearch()
+  } catch (error) {
+    addNotification('Failed to add user', 'error')
+    console.error(error)
+  }
+}
 </script>
 
 <template>
   <v-container fluid class="px-0">
+    <!-- Existing users table -->
     <v-row>
       <v-col cols="12">
         <v-data-table
@@ -43,19 +88,71 @@ const selectedRole = ref('')
               color="primary"
               class="mr-2"
             >
-              {{ role.name }}
+              {{
+                Object.values(ROLES).find((r) => r.value === role.name)
+                  ?.title || role.name
+              }}
             </v-chip>
           </template>
         </v-data-table>
       </v-col>
     </v-row>
-    <v-divider />
-    <!-- User search table -->
+
+    <!-- Add user button -->
+    <v-row class="mt-4">
+      <v-col cols="12">
+        <v-btn
+          variant="text"
+          color="primary"
+          prepend-icon="mdi-plus-box"
+          size="large"
+          @click="toggleSearch"
+          class="pa-2"
+        >
+          Add user to tenant
+        </v-btn>
+      </v-col>
+    </v-row>
+
+    <!-- Search section -->
+    <v-expand-transition>
+      <div v-if="showSearch">
+        <v-divider class="my-4" />
+        <template v-if="tenant?.id">
+          <UserSearch
+            ref="userSearchRef"
+            :tenant-id="tenant?.id"
+            @select="onUserSelected"
+          />
+
+          <!-- Role selection -->
+          <v-row v-if="selectedUser" class="mt-4">
+            <v-col cols="12" md="6">
+              <v-select
+                v-model="selectedRole"
+                label="Select Role"
+                :items="Object.values(ROLES)"
+                hide-details
+                required
+              />
+            </v-col>
+            <v-col cols="12" md="6" class="d-flex align-center">
+              <v-btn
+                color="primary"
+                :disabled="!selectedRole"
+                @click="addUserToTenant"
+              >
+                Add User to Tenant
+              </v-btn>
+            </v-col>
+          </v-row>
+        </template>
+        <v-alert
+          v-else
+          type="warning"
+          text="Cannot search users: No tenant selected"
+        />
+      </div>
+    </v-expand-transition>
   </v-container>
 </template>
-
-<style scoped>
-:deep(.v-data-table-footer) {
-  background-color: rgb(var(--v-theme-surface-light));
-}
-</style>
