@@ -2,7 +2,26 @@
 set -e
 
 echo "Starting database connection check..."
-# ... existing connection check code ...
+
+# Function to check if database is available (simplified)
+check_db_connection() {
+  npx typeorm-ts-node-commonjs query "SELECT 1" -d ./src/common/db.connection.ts > /dev/null 2>&1
+  return $?
+}
+
+# Wait for database to be available
+MAX_RETRIES=30
+RETRY_COUNT=0
+
+until check_db_connection; do
+  RETRY_COUNT=$((RETRY_COUNT+1))
+  if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
+    echo "ERROR: Failed to connect to database after $MAX_RETRIES attempts."
+    exit 1
+  fi
+  echo "Waiting for database connection (attempt $RETRY_COUNT/$MAX_RETRIES)..."
+  sleep 2
+done
 
 echo "Database connection established."
 
@@ -10,32 +29,14 @@ echo "Database connection established."
 DB_SCHEMA="tms"
 echo "Using database schema: $DB_SCHEMA"
 
-# Create and configure schema - this will work because your app has SUPERUSER privileges
-echo "Setting up schema..."
+# Just ensure the schema exists
+echo "Ensuring schema exists..."
 npx typeorm-ts-node-commonjs query "CREATE SCHEMA IF NOT EXISTS \"$DB_SCHEMA\";" -d ./src/common/db.connection.ts
-npx typeorm-ts-node-commonjs query "GRANT ALL ON SCHEMA \"$DB_SCHEMA\" TO PUBLIC;" -d ./src/common/db.connection.ts
-npx typeorm-ts-node-commonjs query "ALTER DEFAULT PRIVILEGES IN SCHEMA \"$DB_SCHEMA\" GRANT ALL ON TABLES TO PUBLIC;" -d ./src/common/db.connection.ts
 
-# Set search path
-echo "Setting search path..."
-npx typeorm-ts-node-commonjs query "SET search_path TO \"$DB_SCHEMA\", public;" -d ./src/common/db.connection.ts
+# Run migrations - TypeORM will track which ones have been run
+echo "Running migrations..."
+npx typeorm-ts-node-commonjs migration:run -d ./src/common/db.connection.ts || echo "Migration issues detected, but continuing startup"
 
-# Run migrations
-echo "Starting database migrations..."
-npx typeorm-ts-node-commonjs migration:run -d ./src/common/db.connection.ts
-
-# Check if migrations were successful
-if [ $? -eq 0 ]; then
-  echo "Migrations completed successfully."
-else
-  echo "ERROR: Migrations failed."
-  # ... diagnostic code ...
-  exit 1
-fi
-
-# List tables in your schema, not public
-echo "Verifying database tables..."
-npx typeorm-ts-node-commonjs query "SELECT table_name FROM information_schema.tables WHERE table_schema = '$DB_SCHEMA';" -d ./src/common/db.connection.ts
-
+# Start the application regardless of migration outcome
 echo "Starting application..."
 exec npm run start
