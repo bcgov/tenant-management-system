@@ -123,6 +123,8 @@ export class Tenant {
       return []
     }
 
+    // TODO - the must be a better way of doing this; matching on string name is
+    // not ideal.
     return this.users.filter(
       (user) =>
         Array.isArray(user.roles) &&
