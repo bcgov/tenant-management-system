@@ -11,7 +11,7 @@ import { logger } from '@/utils/logger'
  *
  */
 const tenantApi = authenticatedAxios()
-tenantApi.defaults.baseURL = config.api.baseUrl;
+tenantApi.defaults.baseURL = config.api.baseUrl
 
 /**
  * Logs an API error with a custom message.
