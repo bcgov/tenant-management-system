@@ -62,8 +62,6 @@ spec:
           env:
             - name: LOG_LEVEL
               value: info
-            - name: NODE_ENV
-              value: {{ .Values.global.config.nodeEnv | quote }}
           ports:
             - name: http
               containerPort: {{ .Values.backend.service.targetPort }}
