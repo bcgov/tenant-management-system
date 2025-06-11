@@ -3,7 +3,7 @@ import { TenantUser } from './TenantUser'
 import { Tenant } from './Tenant'
 import { TenantUserRole } from './TenantUserRole'
 
-@Entity('Role')
+@Entity('Role', { schema: 'tms' })
 export class Role {
 
     @PrimaryGeneratedColumn('uuid', { name: 'id' })

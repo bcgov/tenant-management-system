@@ -2,7 +2,7 @@ import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateCol
 import { TenantUser } from './TenantUser'
 import { Role } from './Role'
 
-@Entity('Tenant')
+@Entity('Tenant', { schema: 'tms' })
 @Unique(["name", "ministryName"])
 export class Tenant {
 
