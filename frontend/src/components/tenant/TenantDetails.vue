@@ -3,8 +3,8 @@ import { computed, ref, watch } from 'vue'
 
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
-import { useNotification } from '@/composables/useNotification'
-import type { Tenant } from '@/models/tenant.model'
+import { useNotification } from '@/composables'
+import type { Tenant } from '@/models'
 import { MINISTRIES } from '@/utils/constants'
 
 const props = defineProps<{

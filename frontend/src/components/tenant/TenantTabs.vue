@@ -2,8 +2,7 @@
 import { ref } from 'vue'
 
 import TenantUserManagement from '@/components/tenant/TenantUserManagement.vue'
-import type { Role } from '@/models/role.model'
-import type { Tenant } from '@/models/tenant.model'
+import type { Role, Tenant } from '@/models'
 
 defineProps<{
   disabled?: boolean

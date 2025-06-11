@@ -1,8 +1,7 @@
 import { computed, reactive } from 'vue'
 import { v4 as uuidv4 } from 'uuid'
 
-import type { Notification } from '@/types/Notification'
-import type { NotificationType } from '@/types/NotificationType'
+import type { Notification, NotificationType } from '@/types'
 
 const state = reactive<{ notifications: Notification[] }>({
   notifications: [],

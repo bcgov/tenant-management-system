@@ -1,10 +1,10 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
-import { useNotification } from '@/composables/useNotification'
+import { useNotification } from '@/composables'
 import { User } from '@/models'
 import { userService } from '@/services'
-import type { IdirSearchParameters } from '@/types/IdirSearchParameters'
+import type { IdirSearchParameters } from '@/types'
 
 export const useUserStore = defineStore('user', () => {
   const searchResults = ref<User[]>([])

@@ -1,6 +1,6 @@
 import { authenticatedAxios } from './authenticated.axios'
 import { logApiError } from './utils'
-import type { IdirSearchParameters } from '@/types/IdirSearchParameters'
+import type { IdirSearchParameters } from '@/types'
 
 const api = authenticatedAxios()
 

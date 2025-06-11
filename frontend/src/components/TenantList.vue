@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import TenantCard from '@/components/TenantCard.vue'
-import type { Tenant } from '@/models/tenant.model'
+import type { Tenant } from '@/models'
 
 defineProps<{ tenants: Tenant[] }>()
 
