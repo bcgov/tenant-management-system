@@ -15,7 +15,7 @@ const userStore = useUserStore()
 // Search state
 const searchOption = ref('firstName')
 const searchText = ref('')
-const selectedUser = ref<User | null>(null)
+const selectedUser = ref<User[]>([])
 
 // Constants
 const SEARCH_OPTIONS = [
@@ -24,10 +24,22 @@ const SEARCH_OPTIONS = [
   { title: 'Email', value: 'email' },
 ] as const
 
+// Watch for selection changes in the data table
+watch(selectedUser, (selection) => {
+  if (selection) {
+    // Find the full user object from searchResults using the selected ID
+    const userId = selection[0].id
+    const user = userStore.searchResults.find((user) => user.id === userId)
+    if (user) {
+      emit('select', user)
+    }
+  }
+})
+
 // Watch for selection changes
-watch(selectedUser, (user) => {
-  if (user) {
-    emit('select', user)
+watch(selectedUser, (selection) => {
+  if (selection && selection.length > 0) {
+    emit('select', selection[0])
   }
 })
 
@@ -45,7 +57,7 @@ async function search() {
 
 function reset() {
   searchText.value = ''
-  selectedUser.value = null
+  selectedUser.value = []
   searchOption.value = 'firstName'
   userStore.$reset()
 }
@@ -97,6 +109,7 @@ defineExpose({
           { title: 'Email', key: 'email', align: 'start' },
         ]"
         :loading="userStore.loading"
+        return-object
         select-strategy="single"
         show-select
         :header-props="{

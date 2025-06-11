@@ -28,18 +28,9 @@ export const useTenantStore = defineStore('tenant', () => {
 
   // Exported Methods
 
-  const addTenantUser = async (params: {
-    tenantId: string
-    user: User
-    role: string
-  }) => {
-    const { tenantId, user, role } = params
-
+  const addTenantUser = async (tenantId: string, user: User, role: string) => {
     // First add the user to tenant
-    await tenantService.addUsers(tenantId, user)
-
-    // Then assign their role
-    await tenantService.assignUserRoles(tenantId, user.id, role)
+    await tenantService.addUsers(tenantId, user, role)
 
     // Refresh tenant users after adding
     await fetchTenantUsers(tenantId)

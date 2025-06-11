@@ -126,7 +126,7 @@ export class Tenant {
     return this.users.filter(
       (user) =>
         Array.isArray(user.roles) &&
-        user.roles.some((role) => role.name === ROLES.TENANT_OWNER),
+        user.roles.some((role) => role.name === ROLES.TENANT_OWNER.value),
     )
   }
 }

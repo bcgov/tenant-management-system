@@ -5,6 +5,7 @@ import { useNotification } from '@/composables/useNotification'
 import UserSearch from '@/components/user/UserSearch.vue'
 import type { Tenant } from '@/models/tenant.model'
 import type { User } from '@/models/user.model'
+import { ROLES } from '@/utils/constants'
 
 const props = defineProps<{
   tenant?: Tenant
@@ -17,8 +18,7 @@ const showSearch = ref(false)
 const selectedUser = ref<User | null>(null)
 
 // Constants
-const ROLES = ['Admin', 'User'] as const
-type TenantRole = (typeof ROLES)[number]
+type TenantRole = (typeof ROLES)[keyof typeof ROLES]
 const selectedRole = ref<TenantRole | null>(null)
 
 const userSearchRef = ref<InstanceType<typeof UserSearch> | null>(null)
@@ -37,14 +37,18 @@ function onUserSelected(user: User) {
 }
 
 async function addUserToTenant() {
-  if (!props.tenant?.id || !selectedUser.value || !selectedRole.value) return
+  if (!props.tenant?.id || !selectedUser.value || !selectedRole.value) {
+    return
+  }
 
   try {
-    await tenantStore.addTenantUser({
-      tenantId: props.tenant.id,
-      user: selectedUser.value,
-      role: selectedRole.value,
-    })
+    console.log('selectedUser', selectedUser.value)
+    console.log('selectedRole', selectedRole.value.value)
+    await tenantStore.addTenantUser(
+      props.tenant.id,
+      selectedUser.value,
+      selectedRole.value.value,
+    )
 
     addNotification('User added successfully', 'success')
     toggleSearch()
@@ -84,7 +88,10 @@ async function addUserToTenant() {
               color="primary"
               class="mr-2"
             >
-              {{ role.name }}
+              {{
+                Object.values(ROLES).find((r) => r.value === role.name)
+                  ?.title || role.name
+              }}
             </v-chip>
           </template>
         </v-data-table>
@@ -124,7 +131,7 @@ async function addUserToTenant() {
               <v-select
                 v-model="selectedRole"
                 label="Select Role"
-                :items="ROLES"
+                :items="Object.values(ROLES)"
                 hide-details
                 required
               />
