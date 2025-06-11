@@ -158,6 +158,9 @@ export class TMSController {
             if (error instanceof NotFoundError) {
                 this.errorHandler.generalError(res,"Error occurred unassigning user role", error.message, error.statusCode, "Not Found")
             }
+            else if (error instanceof ConflictError) {
+                this.errorHandler.generalError(res,"Error occurred unassigning user role", error.message, error.statusCode, "Conflict")
+            }
             else {    
                 this.errorHandler.generalError(res,"Error occurred unassigning user role", error.message, 500, "Internal Server Error")
             } 

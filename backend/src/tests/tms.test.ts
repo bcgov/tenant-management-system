@@ -1,280 +1,1078 @@
-import request from 'supertest';
-import { DataSource } from 'typeorm';
-import * as dotenv from 'dotenv';
-const dbConfig = require('../ormconfig');
-dotenv.config();
+import request from 'supertest'
+import express from 'express'
+import { TMSRepository } from '../repositories/tms.repository'
+import { TMSConstants } from '../common/tms.constants'
+import { TMSController } from '../controllers/tms.controller'
+import { validate } from 'express-validation'
+import validator from '../common/tms.validator'
+import { Tenant } from '../entities/Tenant'
+import { TenantUser } from '../entities/TenantUser'
+import { ConflictError } from '../errors/ConflictError'
+import { NotFoundError } from '../errors/NotFoundError'
 
-let PostgreSqlContainer, testApp, App, container
-let dataSource: DataSource;
-
-beforeAll(async () => {
-
-  try {
-    const containerModule = require('@testcontainers/postgresql');
-    PostgreSqlContainer = containerModule.PostgreSqlContainer;
-  } catch (e) {
-    try {
-      const containerModule = require('testcontainers');
-      PostgreSqlContainer = containerModule.PostgreSqlContainer;
-    } catch (err) {
-      console.error('Could not import PostgreSqlContainer:', err);
-      process.exit(1);
+jest.mock('../repositories/tms.repository')
+jest.mock('../common/db.connection', () => ({
+  connection: {
+    manager: {
+      transaction: jest.fn().mockImplementation((callback) => callback()),
+      save: jest.fn(),
+      findOne: jest.fn(),
+      find: jest.fn()
     }
   }
-  try {
-    console.log('Starting PostgreSQL container...');   
-    container = await new PostgreSqlContainer()
-      .withUsername('testuser')
-      .withPassword('testpassword')
-      .withDatabase('testdb')
-      .withExposedPorts({
-        container: 5432,
-        host: 54321  
-      })
-      .start();
+}))
 
-    console.log('Container started...');
+describe('Tenant API', () => {
+  let app: express.Application
+  let mockTMSRepository: jest.Mocked<TMSRepository>
+  let tmsController: TMSController
 
-    dataSource = new DataSource(dbConfig);
-    await dataSource.initialize();
-    console.log('Database connection initialized successfully');
-
-    console.log('Running migrations...');
-    await dataSource.runMigrations();
-
-    App = require('../app').default;
-    testApp = new App().app;
+  beforeEach(() => {
+    jest.clearAllMocks()
+    app = express()
+    app.use(express.json())
     
-  } catch (error) {
-    console.error('Error in beforeAll:', error);
-    throw error;
-  }
-}, 60000); 
+    tmsController = new TMSController()
+    mockTMSRepository = TMSRepository.prototype as jest.Mocked<TMSRepository>
 
+    app.post('/v1/tenants', 
+      validate(validator.createTenant, {}, {}),
+      (req, res) => tmsController.createTenant(req, res)
+    )
 
-afterAll(async () => {
-  try {
-    if (dataSource && dataSource.isInitialized) {
-      await dataSource.destroy();
-      console.log('Database connection closed');
-    }
-    
-    if (container) {
-        await container.stop({
-            removeVolumes: true,
-            force: true
-          });
-      console.log('Container stopped');
-    }
-  } catch (error) {
-    console.error('Error in afterAll:', error);
-  } finally {
-    console.log('Test completed, cleaning up...');
-  }
-});
+    app.post('/v1/tenants/:tenantId/users',
+      validate(validator.addTenantUser, {}, {}),
+      (req, res) => tmsController.addTenantUser(req, res)
+    )
 
-console.log('Running tests...')
+    app.get('/v1/users/:ssoUserId/tenants',
+      validate(validator.getUserTenants, {}, {}),
+      (req, res) => tmsController.getTenantsForUser(req, res)
+    )
 
-let tenantId:string, roleId:string, tenantUserId:string
-let initialSSOUserId:string = 'fd33f1cef7ca4b19a71104d4ecf7066b'
-let additionalSSOUserId:string = 'ad43f1cef7ca4b19a71104d4ecf7066d'
+    app.get('/v1/tenants/:tenantId/users',
+      validate(validator.getTenantUsers, {}, {}),
+      (req, res) => tmsController.getUsersForTenant(req, res)
+    )
 
-  describe('Health Check API', () => {
-    it('should return 200 OK and healthy status', async () => {
-      const response = await request(testApp).get('/v1/health');
-      expect(response.status).toBe(200);
-      expect(response.body).toMatchObject({ apiStatus: 'Healthy' }); 
-    });
-  });
+    app.post('/v1/tenants/:tenantId/users/:tenantUserId/roles',
+      validate(validator.assignUserRoles, {}, {}),
+      (req, res) => tmsController.assignUserRoles(req, res)
+    )
 
-  describe('Create Tenant', () => {
-    it('should return basic tenant 201 Created', async () => {      
-      const response = await request(testApp).post('/v1/tenants').send({
-        "name": "Test Tenant",
-        "ministryName": "Test Ministry",
-        "user": {
-          "firstName": "John",
-          "lastName": "Smith",
-          "displayName": "Smith, John: MIN: EX",
-          "userName": "SMITHJ1",
-          "ssoUserId": initialSSOUserId,
-          "email": "john.smith@gov.bc.ca"
-        }
-      }); 
-      expect(response.status).toBe(201);      
-      expect(response.body.data.tenant).toMatchObject({ name: "Test Tenant" });
-      expect(response.body.data.tenant.users[0].ssoUser).toMatchObject({ ssoUserId: "fd33f1cef7ca4b19a71104d4ecf7066b" });
-      expect(response.body.data.tenant.users[0].roles).toHaveLength(3);
-      expect(response.body.data.tenant.users[0].roles).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({ role: expect.objectContaining({ name: "TMS.SERVICE_USER" }) }),
-          expect.objectContaining({ role: expect.objectContaining({ name: "TMS.TENANT_OWNER" }) }),
-          expect.objectContaining({ role: expect.objectContaining({ name: "TMS.TENANT_USER" }) })
-        ])
-      );
-      tenantId = response.body.data.tenant.id;
-      tenantUserId = response.body.data.tenant.users[0].id
-    });
-  });
+    app.delete('/v1/tenants/:tenantId/users/:tenantUserId/roles/:roleId',
+      validate(validator.unassignUserRoles, {}, {}),
+      (req, res) => tmsController.unassignUserRoles(req, res)
+    )
 
-  describe('Add user to a tenant', () => {
-    it('should return basic user created and added to tenant - 201', async () => {      
-      const response = await request(testApp).post(`/v1/tenants/${tenantId}/users`).send({
-        "user": {
-          "firstName": "Rocket",
-          "lastName": "Raccoon",
-          "displayName": "Raccoon, Rocket: MIN: EX",
-          "userName": "RACCOOR",
-          "ssoUserId": additionalSSOUserId,
-          "email": "rocket.raccoon@gov.bc.ca"
-        }
-      }); 
-      expect(response.status).toBe(201);            
-      expect(response.body.data.user.ssoUser).toMatchObject({ ssoUserId: additionalSSOUserId });      
-    });
-  });
-
-  describe('Add a role to a tenant', () => {
-    it('should return role created and added to tenant - 201', async () => {      
-      const response = await request(testApp).post(`/v1/tenants/${tenantId}/roles`).send({
-        "role": {
-          "name": "LOB.CUSTOM_ROLE",
-          "description":"Custom role for LOB"
+    app.use((err: any, req: any, res: any, next: any) => {
+      if (err.name === 'ValidationError') {
+        return res.status(err.statusCode).json(err)
       }
-      }); 
-      expect(response.status).toBe(201);            
-      expect(response.body.data.role).toMatchObject({ name: "LOB.CUSTOM_ROLE" });
-      roleId = response.body.data.role.id;
-    });
-  });
+      next(err)
+    })
+  })
 
-  describe( 'Get Tenant', () => {
-    it('should return a basic tenant - 200', async () => {
-      const response = await request(testApp).get(`/v1/tenants/${tenantId}`);
-      expect(response.status).toBe(200);
-      expect(response.body.data.tenant).toMatchObject({ id: tenantId });
-    });
-  });
+  const validTenantData = {
+    name: 'Test Tenant',
+    ministryName: 'Test Ministry',
+    description: 'Test Description',
+    user: {
+      firstName: 'Test',
+      lastName: 'User',
+      displayName: 'Test User',
+      ssoUserId: 'F45AFBBD68C51D6F956BA3A1DE1878A1',
+      email: 'test@testministry.gov.bc.ca'
+    }
+  }
 
-  describe( 'Get Users for a tenant', () => {
-    it('should return array of users for the tenant with 200', async () => {
-      const response = await request(testApp).get(`/v1/tenants/${tenantId}/users`);
-     expect(response.status).toBe(200);
-     expect(response.body.data.users).toBeDefined();
-     expect(response.body.data.users).toHaveLength(2)
-     expect(response.body.data.users).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ 
-          ssoUser: expect.objectContaining({ ssoUserId: initialSSOUserId }) 
-        }),
-        expect.objectContaining({ 
-          ssoUser: expect.objectContaining({ ssoUserId: additionalSSOUserId }) 
+  describe('POST /v1/tenants', () => {
+    it('should create a tenant successfully', async () => {
+      const mockTenant = {
+        id: '123e4567-e89b-12d3-a456-426614174000',
+        name: validTenantData.name,
+        ministryName: validTenantData.ministryName,
+        description: validTenantData.description,
+        tenantUsers: [{
+          id: '123e4567-e89b-12d3-a456-426614174001',
+          firstName: validTenantData.user.firstName,
+          lastName: validTenantData.user.lastName,
+          displayName: validTenantData.user.displayName,
+          ssoUserId: validTenantData.user.ssoUserId,
+          email: validTenantData.user.email,
+          tenantUserRoles: [{
+            role: {
+              id: '123e4567-e89b-12d3-a456-426614174002',
+              name: TMSConstants.TENANT_OWNER,
+              description: 'Tenant Owner Role'
+            }
+          }]
+        }]
+      }
+
+      mockTMSRepository.saveTenant.mockResolvedValue(mockTenant)
+
+      const response = await request(app).post('/v1/tenants').send(validTenantData)
+
+      expect(response.status).toBe(201)
+      expect(response.body).toMatchObject({
+        data: {
+          tenant: {
+            id: mockTenant.id,
+            name: mockTenant.name,
+            ministryName: mockTenant.ministryName,
+            description: mockTenant.description,
+            tenantUsers: expect.arrayContaining([
+              expect.objectContaining({
+                firstName: validTenantData.user.firstName,
+                lastName: validTenantData.user.lastName,
+                ssoUserId: validTenantData.user.ssoUserId
+              })
+            ])
+          }
+        }
+      })
+
+      expect(mockTMSRepository.saveTenant).toHaveBeenCalledWith(
+        expect.objectContaining({
+          body: validTenantData
         })
-      ])
-    );
-    });
-  });
+      )
 
-  describe( 'Get Tenants for SSO User', () => {
-    it('should return array of tenants for a sso user id with 200', async () => {
-      const response = await request(testApp).get(`/v1/users/${initialSSOUserId}/tenants`);
-      expect(response.status).toBe(200);
-      expect(response.body.data.tenants[0]).toMatchObject({ id: tenantId });
-    });
-  });
+      const actualCall = mockTMSRepository.saveTenant.mock.calls[0][0]
+      expect(actualCall.body).toEqual(validTenantData)
+    })
 
-  describe( 'Assign a user to a role in a tenant', () => {
-    it('should return the user with the associated role with 201', async () => {
-      const response = await request(testApp).put(`/v1/tenants/${tenantId}/users/${tenantUserId}/roles/${roleId}`);      
-      expect(response.status).toBe(201);
-      expect(response.body.data.user).toMatchObject({ id: tenantUserId });
-      expect(response.body.data.user.ssoUser).toMatchObject({ ssoUserId: initialSSOUserId });
-      expect(response.body.data.role).toMatchObject({ id: roleId });
-    });
-  });
+    it('should fail when tenant name and ministry name combination already exists', async () => {
+      const errorMessage = `A tenant with name '${validTenantData.name}' and ministry name '${validTenantData.ministryName}' already exists`
+      mockTMSRepository.saveTenant.mockRejectedValue(new ConflictError(errorMessage))
 
-  describe( 'Get roles for a user in a tenant', () => {
-    it('should return an an array of roles for the user with 200', async () => {
-      const response = await request(testApp).get(`/v1/tenants/${tenantId}/users/${tenantUserId}/roles`)
+      const response = await request(app).post('/v1/tenants').send(validTenantData)
+
+      expect(response.status).toBe(409)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Conflict',
+        httpResponseCode: 409,
+        message: errorMessage,
+        name: 'Error occurred adding user to the tenant'
+      })
+    })
+
+    it('should return 400 when ministry name is missing', async () => {
+      const invalidData = {
+        name: validTenantData.name,
+        user: validTenantData.user
+      }
+
+      const response = await request(app)
+        .post('/v1/tenants')
+        .send(invalidData)
+
+      expect(response.status).toBe(400)
+      expect(response.body.message).toBe("Validation Failed")
+      expect(response.body.details.body[0].message).toBe("\"ministryName\" is required")
+    })
+  })
+
+  describe('POST /v1/tenants/:tenantId/users', () => {
+    const tenantId = '123e4567-e89b-12d3-a456-426614174000'
+    const validUserData = {
+      user: {
+        firstName: 'Test',
+        lastName: 'User',
+        displayName: 'Test User',
+        ssoUserId: 'F45AFBBD68C4466F956BA3A1D91878AD',
+        email: 'test@example.com'
+      },
+      roles: ['123e4567-e89b-12d3-a456-426614174002']
+    }
+
+    it('should add a user to a tenant successfully', async () => {
+      const mockResponse = {
+        savedTenantUser: {
+          id: '123e4567-e89b-12d3-a456-426614174001',
+          firstName: validUserData.user.firstName,
+          lastName: validUserData.user.lastName,
+          displayName: validUserData.user.displayName,
+          ssoUserId: validUserData.user.ssoUserId,
+          email: validUserData.user.email
+        },
+        roleAssignments: [{
+          role: {
+            id: validUserData.roles[0],
+            name: TMSConstants.SERVICE_USER,
+            description: 'Service User Role'
+          }
+        }]
+      }
+
+      mockTMSRepository.addTenantUsers.mockResolvedValue(mockResponse)
+
+      const response = await request(app)
+        .post(`/v1/tenants/${tenantId}/users`)
+        .send(validUserData)
+
+      expect(response.status).toBe(201)
+      expect(response.body).toMatchObject({
+        data: {
+          user: {
+            id: mockResponse.savedTenantUser.id,
+            firstName: validUserData.user.firstName,
+            lastName: validUserData.user.lastName,
+            ssoUserId: validUserData.user.ssoUserId,
+            roles: [{
+              id: validUserData.roles[0],
+              name: TMSConstants.SERVICE_USER
+            }]
+          }
+        }
+      })
+
+      expect(mockTMSRepository.addTenantUsers).toHaveBeenCalledWith(
+        expect.objectContaining({
+          params: { tenantId },
+          body: validUserData
+        })
+      )
+    })
+
+    it('should fail when role ID does not exist', async () => {
+      const invalidUserData = {
+        ...validUserData,
+        roles: ['123e4567-e89b-12d3-a456-426614174999']
+      }
+
+      mockTMSRepository.addTenantUsers.mockRejectedValue(new NotFoundError('Role(s) not found'))
+
+      const response = await request(app)
+        .post(`/v1/tenants/${tenantId}/users`)
+        .send(invalidUserData)
+
+      expect(response.status).toBe(404)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Not Found',
+        httpResponseCode: 404,
+        message: 'Role(s) not found',
+        name: 'Error occurred adding user to the tenant'
+      })
+    })
+
+    it('should fail when user already exists in tenant', async () => {
+      mockTMSRepository.addTenantUsers.mockRejectedValue(new ConflictError(`User is already added to this tenant: ${tenantId}`))
+
+      const response = await request(app)
+        .post(`/v1/tenants/${tenantId}/users`)
+        .send(validUserData)
+
+      expect(response.status).toBe(409)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Conflict',
+        httpResponseCode: 409,
+        message: `User is already added to this tenant: ${tenantId}`,
+        name: 'Error occurred adding user to the tenant'
+      })
+    })
+
+    it('should return 404 when tenant ID does not exist', async () => {
+      mockTMSRepository.addTenantUsers.mockRejectedValue(new NotFoundError('Tenant Not Found: 123e4567-e89b-12d3-a456-426614174999'))
+
+      const response = await request(app)
+        .post('/v1/tenants/123e4567-e89b-12d3-a456-426614174999/users')
+        .send(validUserData)
+
+      expect(response.status).toBe(404)
+      expect(response.body).toEqual({
+        errorMessage: "Not Found",
+        httpResponseCode: 404,
+        message: "Tenant Not Found: 123e4567-e89b-12d3-a456-426614174999",
+        name: "Error occurred adding user to the tenant"
+      })
+    })
+
+    it('should return 400 when roles array is missing', async () => {
+      const invalidData = {
+        user: validUserData.user
+      }
+
+      const response = await request(app)
+        .post(`/v1/tenants/${tenantId}/users`)
+        .send(invalidData)
+
+      expect(response.status).toBe(400)
+      expect(response.body.message).toBe("Validation Failed")
+      expect(response.body.details.body[0].message).toBe("\"roles\" is required")
+    })
+  })
+
+  describe('GET /v1/users/:ssoUserId/tenants', () => {
+    const ssoUserId = 'F45AFBBD68C4411F956BA3A2D91878EF'
+    const mockTenants = [
+      {
+        id: '123e4567-e89b-12d3-a456-426614174000',
+        name: 'Test Tenant 1',
+        ministryName: 'Test Ministry 1',
+        description: 'Test Description 1',
+        createdDateTime: new Date(),
+        updatedDateTime: new Date(),
+        createdBy: 'test-user',
+        updatedBy: 'test-user',
+        users: [{
+          id: '123e4567-e89b-12d3-a456-426614174001',
+          firstName: 'Test',
+          lastName: 'User',
+          displayName: 'Test User',
+          ssoUserId: ssoUserId,
+          email: 'test@testministry.gov.bc.ca',
+          createdDateTime: new Date(),
+          updatedDateTime: new Date(),
+          createdBy: 'test-user',
+          updatedBy: 'test-user',
+          ssoUser: {
+            id: '123e4567-e89b-12d3-a456-426614174003',
+            ssoUserId: ssoUserId,
+            firstName: 'Test',
+            lastName: 'User',
+            displayName: 'Test User',
+            userName: 'testuser',
+            email: 'test@testministry.gov.bc.ca',
+            createdDateTime: new Date(),
+            updatedDateTime: new Date(),
+            createdBy: 'test-user',
+            updatedBy: 'test-user',
+            tenantUsers: []
+          },
+          tenant: {
+            id: '123e4567-e89b-12d3-a456-426614174000',
+            name: 'Test Tenant 1',
+            ministryName: 'Test Ministry 1',
+            description: 'Test Description 1',
+            createdDateTime: new Date(),
+            updatedDateTime: new Date(),
+            createdBy: 'test-user',
+            updatedBy: 'test-user',
+            users: []
+          },
+          roles: [{
+            id: '123e4567-e89b-12d3-a456-426614174002',
+            tenantUser: {
+              id: '123e4567-e89b-12d3-a456-426614174001'
+            },
+            role: {
+              id: '123e4567-e89b-12d3-a456-426614174002',
+              name: TMSConstants.TENANT_OWNER,
+              description: 'Tenant Owner Role'
+            },
+            createdDateTime: new Date(),
+            updatedDateTime: new Date(),
+            createdBy: 'test-user',
+            updatedBy: 'test-user',
+            isDeleted: false
+          }]
+        }]
+      }
+    ]
+
+    it('should get tenants for user successfully', async () => {
+      mockTMSRepository.getTenantsForUser.mockResolvedValue(mockTenants as any)
+
+      const response = await request(app)
+        .get(`/v1/users/${ssoUserId}/tenants`)
+        .query({ expand: 'tenantUserRoles' })
+
       expect(response.status).toBe(200)
-      expect(response.body.data.roles).toBeDefined()
-      expect(response.body.data.roles).toHaveLength(3)
-      expect(response.body.data.roles).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({ id: roleId })
-        ])
-      );
-    });
-  });
+      expect(response.body).toMatchObject({
+        data: {
+          tenants: [{
+            id: mockTenants[0].id,
+            name: mockTenants[0].name,
+            ministryName: mockTenants[0].ministryName,
+            users: [{
+              firstName: mockTenants[0].users[0].firstName,
+              lastName: mockTenants[0].users[0].lastName,
+              ssoUserId: mockTenants[0].users[0].ssoUserId,
+              roles: [{
+                id: mockTenants[0].users[0].roles[0].id,
+                name: mockTenants[0].users[0].roles[0].role.name
+              }]
+            }]
+          }]
+        }
+      })
 
-  describe( 'Get Roles for a SSO User in a tenant', () => {
-    it('should return array of roles for the SSO User in the tenant with 200', async () => {
-      const response = await request(testApp).get(`/v1/tenants/${tenantId}/ssousers/${initialSSOUserId}/roles`)
-     expect(response.status).toBe(200)
-     expect(response.body.data.roles).toBeDefined()
-     expect(response.body.data.roles).toHaveLength(3)
-     expect(response.body.data.roles).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ id: roleId })
-      ])
-      );
-    });
-  });
+      expect(mockTMSRepository.getTenantsForUser).toHaveBeenCalledWith(
+        ssoUserId,
+        ['tenantUserRoles']
+      )
+    })
 
-  describe( 'Unssign a user from a role in a tenant', () => {
-    it('should return an empty response with 204 indicating delete successful', async () => {
-      const response = await request(testApp).delete(`/v1/tenants/${tenantId}/users/${tenantUserId}/roles/${roleId}`);      
-      expect(response.status).toBe(204);     
-    });
-  });
+    it('should return empty tenants array for invalid SSO user ID', async () => {
+      const invalidSsoUserId = '005AFBBD68C4411F956BA3A1D91878EF'
+      mockTMSRepository.getTenantsForUser.mockResolvedValue([])
 
-  describe( 'Get Roles for a tenant', () => {
-    it('should return array of roles for the tenant with 200', async () => {
-      const response = await request(testApp).get(`/v1/tenants/${tenantId}/roles`)
-     expect(response.status).toBe(200)
-     expect(response.body.data.roles).toBeDefined()
-     expect(response.body.data.roles).toHaveLength(3)
-     expect(response.body.data.roles).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ id: roleId })
-      ])
-      );
-    });
-  });
+      const response = await request(app)
+        .get(`/v1/users/${invalidSsoUserId}/tenants`)
+        .query({ expand: 'tenantUserRoles' })
 
-  describe( 'Get expanded Tenant details', () => {
-    it('should return expanded tenant with all the details with 200', async () => {
-      const response = await request(testApp).get(`/v1/tenants/${tenantId}?expand=roles,tenantUserRoles`)
       expect(response.status).toBe(200)
-      expect(response.body.data.tenant).toMatchObject({ id: tenantId })
-      expect(response.body.data.tenant.users).toBeDefined()
-      expect(response.body.data.tenant.users).toHaveLength(2)
-      expect(response.body.data.tenant.roles).toBeDefined()
-      expect(response.body.data.tenant.roles).toHaveLength(3)
+      expect(response.body).toMatchObject({
+        data: {
+          tenants: []
+        }
+      })
 
-      expect(response.body.data.tenant.roles).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({ id: roleId })])
-      );
-      expect(response.body.data.tenant.users).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({ id: tenantUserId })])
-      );
-      expect(response.body.data.tenant.users).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            ssoUser: expect.objectContaining({ ssoUserId: initialSSOUserId })
-          })
-        ])
-      );
+      expect(mockTMSRepository.getTenantsForUser).toHaveBeenCalledWith(
+        invalidSsoUserId,
+        ['tenantUserRoles']
+      )
+    })
 
-      expect(response.body.data.tenant.users).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            ssoUser: expect.objectContaining({ ssoUserId: additionalSSOUserId })
-          })
-        ])
-      );
- 
-    });
-  });
+    it('should return 400 when expand parameter is invalid', async () => {
+      const response = await request(app)
+        .get(`/v1/users/${ssoUserId}/tenants`)
+        .query({ expand: 'invalidParameter' })
+
+      expect(response.status).toBe(400)
+      expect(response.body).toMatchObject({
+        name: 'ValidationError',
+        message: 'Validation Failed',
+        details: {
+          query: [{
+            message: '"expand" with value "invalidParameter" fails to match the required pattern: /^(tenantUserRoles)?$/'
+          }]
+        }
+      })
+    })
+  })
+
+  describe('GET /v1/tenants/:tenantId/users', () => {
+    const tenantId = '123e4567-e89b-12d3-a456-426614174000'
+    const mockUsers = [{
+      id: '123e4567-e89b-12d3-a456-426614174001',
+      firstName: 'Test',
+      lastName: 'User',
+      displayName: 'Test User',
+      ssoUserId: 'F45AFBBD68C4411F956BA3A1D91878EF',
+      email: 'test@testministry.gov.bc.ca',
+      createdDateTime: new Date(),
+      updatedDateTime: new Date(),
+      createdBy: 'test-user',
+      updatedBy: 'test-user',
+      tenant: {
+        id: tenantId,
+        name: 'Test Tenant',
+        ministryName: 'Test Ministry',
+        description: 'Test Description',
+        createdDateTime: new Date(),
+        updatedDateTime: new Date(),
+        createdBy: 'test-user',
+        updatedBy: 'test-user',
+        users: []
+      },
+      roles: [],
+      ssoUser: {
+        id: '123e4567-e89b-12d3-a456-426614174003',
+        ssoUserId: 'F45AFBBD68C4411F956BA3A1D91878EF',
+        firstName: 'Test',
+        lastName: 'User',
+        displayName: 'Test User',
+        userName: 'testuser',
+        email: 'test@testministry.gov.bc.ca',
+        createdDateTime: new Date(),
+        updatedDateTime: new Date(),
+        createdBy: 'test-user',
+        updatedBy: 'test-user',
+        tenantUsers: []
+      }
+    }]
+
+    it('should get users for tenant successfully', async () => {
+      mockTMSRepository.getUsersForTenant.mockResolvedValue(mockUsers)
+
+      const response = await request(app)
+        .get(`/v1/tenants/${tenantId}/users`)
+
+      expect(response.status).toBe(200)
+      expect(response.body).toMatchObject({
+        data: {
+          users: [{
+            id: mockUsers[0].id,
+            firstName: mockUsers[0].firstName,
+            lastName: mockUsers[0].lastName,
+            displayName: mockUsers[0].displayName,
+            ssoUserId: mockUsers[0].ssoUserId,
+            email: mockUsers[0].email
+          }]
+        }
+      })
+
+      expect(mockTMSRepository.getUsersForTenant).toHaveBeenCalledWith(tenantId)
+    })
+
+    it('should return 400 when tenant ID is invalid', async () => {
+      const response = await request(app)
+        .get('/v1/tenants/invalid-uuid/users')
+
+      expect(response.status).toBe(400)
+      expect(response.body).toMatchObject({
+        name: 'ValidationError',
+        message: 'Validation Failed',
+        details: {
+          params: [{
+            message: '"tenantId" must be a valid GUID'
+          }]
+        }
+      })
+    })
+
+    it('should return empty users array for non-existent tenant', async () => {
+      const nonExistentTenantId = '123e4567-e89b-12d3-a456-426614174999'
+      mockTMSRepository.getUsersForTenant.mockResolvedValue([])
+
+      const response = await request(app)
+        .get(`/v1/tenants/${nonExistentTenantId}/users`)
+
+      expect(response.status).toBe(200)
+      expect(response.body).toMatchObject({
+        data: {
+          users: []
+        }
+      })
+
+      expect(mockTMSRepository.getUsersForTenant).toHaveBeenCalledWith(nonExistentTenantId)
+    })
+  })
+
+  describe('POST /v1/tenants/:tenantId/users/:tenantUserId/roles', () => {
+    const tenantId = '123e4567-e89b-12d3-a456-426614174000'
+    const tenantUserId = '123e4567-e89b-12d3-a456-426614174001'
+    const roleIds = ['123e4567-e89b-12d3-a456-426614174002']
+
+    beforeEach(() => {
+      app.post('/v1/tenants/:tenantId/users/:tenantUserId/roles',
+        validate(validator.assignUserRoles, {}, {}),
+        (req, res) => tmsController.assignUserRoles(req, res)
+      )
+
+      app.use((err: any, req: any, res: any, next: any) => {
+        if (err.name === 'ValidationError') {
+          return res.status(err.statusCode).json(err)
+        }
+        next(err)
+      })
+    })
+
+    it('should assign roles to user successfully', async () => {
+      const mockRoleAssignments = [{
+        id: '123e4567-e89b-12d3-a456-426614174003',
+        role: {
+          id: roleIds[0],
+          name: TMSConstants.SERVICE_USER,
+          description: 'Service User Role',
+          tenantUserRoles: [],
+          createdDateTime: new Date(),
+          updatedDateTime: new Date(),
+          createdBy: 'test-user',
+          updatedBy: 'test-user'
+        },
+        tenantUser: {
+          id: tenantUserId,
+          ssoUser: {
+            id: '123e4567-e89b-12d3-a456-426614174004',
+            ssoUserId: 'F45AFBBD68C44D6F956BA3A1D91878AD',
+            firstName: 'Test',
+            lastName: 'User',
+            displayName: 'Test User',
+            userName: 'testuser',
+            email: 'test@example.com',
+            createdDateTime: new Date(),
+            updatedDateTime: new Date(),
+            createdBy: 'test-user',
+            updatedBy: 'test-user',
+            tenantUsers: []
+          },
+          tenant: {
+            id: tenantId,
+            name: 'Test Tenant',
+            ministryName: 'Test Ministry',
+            description: 'Test Description',
+            createdDateTime: new Date(),
+            updatedDateTime: new Date(),
+            createdBy: 'test-user',
+            updatedBy: 'test-user',
+            users: []
+          },
+          roles: [],
+          createdDateTime: new Date(),
+          updatedDateTime: new Date(),
+          createdBy: 'test-user',
+          updatedBy: 'test-user'
+        },
+        createdDateTime: new Date(),
+        updatedDateTime: new Date(),
+        createdBy: 'test-user',
+        updatedBy: 'test-user',
+        isDeleted: false
+      }]
+
+      mockTMSRepository.assignUserRoles.mockResolvedValue(mockRoleAssignments)
+
+      const response = await request(app)
+        .post(`/v1/tenants/${tenantId}/users/${tenantUserId}/roles`)
+        .send({ roles: roleIds })
+
+      expect(response.status).toBe(201)
+      expect(response.body).toMatchObject({
+        data: {
+          roles: [{
+            id: roleIds[0],
+            name: TMSConstants.SERVICE_USER
+          }]
+        }
+      })
+
+      expect(mockTMSRepository.assignUserRoles).toHaveBeenCalledWith(
+        tenantId,
+        tenantUserId,
+        roleIds,
+        null
+      )
+    })
+
+    it('should return 400 when roles array is empty', async () => {
+      const response = await request(app)
+        .post(`/v1/tenants/${tenantId}/users/${tenantUserId}/roles`)
+        .send({ roles: [] })
+
+      expect(response.status).toBe(400)
+      expect(response.body).toMatchObject({
+        name: 'ValidationError',
+        message: 'Validation Failed',
+        details: {
+          body: [{
+            message: '"roles" must contain at least 1 items'
+          }]
+        }
+      })
+    })
+
+    it('should return 404 when tenant user not found', async () => {
+      mockTMSRepository.assignUserRoles.mockRejectedValue(
+        new NotFoundError(`Tenant user not found for tenant: ${tenantId}`)
+      )
+
+      const response = await request(app)
+        .post(`/v1/tenants/${tenantId}/users/${tenantUserId}/roles`)
+        .send({ roles: roleIds })
+
+      expect(response.status).toBe(404)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Not Found',
+        httpResponseCode: 404,
+        message: `Tenant user not found for tenant: ${tenantId}`,
+        name: 'Error occurred assigning user role'
+      })
+    })
+
+    it('should return 409 when all roles are already assigned', async () => {
+      mockTMSRepository.assignUserRoles.mockRejectedValue(
+        new ConflictError('All roles are already assigned to the user')
+      )
+
+      const response = await request(app)
+        .post(`/v1/tenants/${tenantId}/users/${tenantUserId}/roles`)
+        .send({ roles: roleIds })
+
+      expect(response.status).toBe(409)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Conflict',
+        httpResponseCode: 409,
+        message: 'All roles are already assigned to the user',
+        name: 'Error occurred assigning user role'
+      })
+    })
+  })
+
+  describe('DELETE /v1/tenants/:tenantId/users/:tenantUserId/roles/:roleId', () => {
+    const tenantId = '123e4567-e89b-12d3-a456-426614174000'
+    const tenantUserId = '123e4567-e89b-12d3-a456-426614174001'
+    const roleId = '123e4567-e89b-12d3-a456-426614174002'
+
+    beforeEach(() => {
+      app.delete('/v1/tenants/:tenantId/users/:tenantUserId/roles/:roleId',
+        validate(validator.unassignUserRoles, {}, {}),
+        (req, res) => tmsController.unassignUserRoles(req, res)
+      )
+
+      app.use((err: any, req: any, res: any, next: any) => {
+        if (err.name === 'ValidationError') {
+          return res.status(err.statusCode).json(err)
+        }
+        next(err)
+      })
+    })
+
+    it('should unassign role from user successfully', async () => {
+      mockTMSRepository.unassignUserRoles.mockResolvedValue(undefined)
+
+      const response = await request(app)
+        .delete(`/v1/tenants/${tenantId}/users/${tenantUserId}/roles/${roleId}`)
+
+      expect(response.status).toBe(204)
+      expect(mockTMSRepository.unassignUserRoles).toHaveBeenCalledWith(
+        expect.objectContaining({
+          params: { tenantId, tenantUserId, roleId }
+        })
+      )
+    })
+
+    it('should return 400 when tenant ID is invalid', async () => {
+      const response = await request(app)
+        .delete(`/v1/tenants/invalid-uuid/users/${tenantUserId}/roles/${roleId}`)
+
+      expect(response.status).toBe(400)
+      expect(response.body).toMatchObject({
+        name: 'ValidationError',
+        message: 'Validation Failed',
+        details: {
+          params: [{
+            message: '"tenantId" must be a valid GUID'
+          }]
+        }
+      })
+    })
+
+    it('should return 404 when tenant user role not found', async () => {
+      mockTMSRepository.unassignUserRoles.mockRejectedValue(
+        new NotFoundError(`Tenant: ${tenantId},  Users: ${tenantUserId} and / or roles: ${roleId} not found`)
+      )
+
+      const response = await request(app)
+        .delete(`/v1/tenants/${tenantId}/users/${tenantUserId}/roles/${roleId}`)
+
+      expect(response.status).toBe(404)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Not Found',
+        httpResponseCode: 404,
+        message: `Tenant: ${tenantId},  Users: ${tenantUserId} and / or roles: ${roleId} not found`,
+        name: 'Error occurred unassigning user role'
+      })
+    })
+
+    it('should return 409 when trying to unassign last tenant owner', async () => {
+      mockTMSRepository.unassignUserRoles.mockRejectedValue(
+        new ConflictError('Cannot unassign tenant owner role. At least one tenant owner must remain.')
+      )
+
+      const response = await request(app)
+        .delete(`/v1/tenants/${tenantId}/users/${tenantUserId}/roles/${roleId}`)
+
+      expect(response.status).toBe(409)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Conflict',
+        httpResponseCode: 409,
+        message: 'Cannot unassign tenant owner role. At least one tenant owner must remain.',
+        name: 'Error occurred unassigning user role'
+      })
+    })
+  })
+
+  describe('GET /v1/tenants/:tenantId', () => {
+    const tenantId = '123e4567-e89b-12d3-a456-426614174000'
+    const mockTenant = {
+      id: tenantId,
+      name: 'Test Tenant',
+      ministryName: 'Test Ministry',
+      description: 'Test Description',
+      createdDateTime: new Date(),
+      updatedDateTime: new Date(),
+      createdBy: 'test-user',
+      updatedBy: 'test-user',
+      users: [{
+        id: '123e4567-e89b-12d3-a456-426614174001',
+        firstName: 'Test',
+        lastName: 'User',
+        displayName: 'Test User',
+        ssoUserId: 'F45AFBBD68C4411F956BA3A1D91878EF',
+        email: 'test@testministry.gov.bc.ca',
+        createdDateTime: new Date(),
+        updatedDateTime: new Date(),
+        createdBy: 'test-user',
+        updatedBy: 'test-user',
+        ssoUser: {
+          id: '123e4567-e89b-12d3-a456-426614174003',
+          ssoUserId: 'F45AFBBD68C4411F956BA3A1D91878EF',
+          firstName: 'Test',
+          lastName: 'User',
+          displayName: 'Test User',
+          userName: 'testuser',
+          email: 'test@testministry.gov.bc.ca',
+          createdDateTime: new Date(),
+          updatedDateTime: new Date(),
+          createdBy: 'test-user',
+          updatedBy: 'test-user',
+          tenantUsers: []
+        },
+        tenant: {
+          id: tenantId,
+          name: 'Test Tenant',
+          ministryName: 'Test Ministry',
+          description: 'Test Description',
+          createdDateTime: new Date(),
+          updatedDateTime: new Date(),
+          createdBy: 'test-user',
+          updatedBy: 'test-user',
+          users: []
+        },
+        roles: [{
+          id: '123e4567-e89b-12d3-a456-426614174002',
+          tenantUser: {
+            id: '123e4567-e89b-12d3-a456-426614174001'
+          },
+          role: {
+            id: '123e4567-e89b-12d3-a456-426614174002',
+            name: TMSConstants.TENANT_OWNER,
+            description: 'Tenant Owner Role',
+            tenantUserRoles: [],
+            createdDateTime: new Date(),
+            updatedDateTime: new Date(),
+            createdBy: 'test-user',
+            updatedBy: 'test-user'
+          },
+          createdDateTime: new Date(),
+          updatedDateTime: new Date(),
+          createdBy: 'test-user',
+          updatedBy: 'test-user',
+          isDeleted: false
+        }]
+      }]
+    }
+
+    beforeEach(() => {
+      app.get('/v1/tenants/:tenantId',
+        validate(validator.getTenant, {}, {}),
+        (req, res) => tmsController.getTenant(req, res)
+      )
+
+      app.use((err: any, req: any, res: any, next: any) => {
+        if (err.name === 'ValidationError') {
+          return res.status(err.statusCode).json(err)
+        }
+        next(err)
+      })
+    })
+
+    it('should get tenant details successfully', async () => {
+      mockTMSRepository.getTenant.mockResolvedValue(mockTenant as any)
+
+      const response = await request(app)
+        .get(`/v1/tenants/${tenantId}`)
+
+      expect(response.status).toBe(200)
+      expect(response.body).toMatchObject({
+        data: {
+          tenant: {
+            id: mockTenant.id,
+            name: mockTenant.name,
+            ministryName: mockTenant.ministryName,
+            description: mockTenant.description
+          }
+        }
+      })
+
+      expect(mockTMSRepository.getTenant).toHaveBeenCalledWith(
+        expect.objectContaining({
+          params: { tenantId },
+          query: {}
+        })
+      )
+    })
+
+    it('should get tenant details with expanded user roles', async () => {
+      mockTMSRepository.getTenant.mockResolvedValue(mockTenant as any)
+
+      const response = await request(app)
+        .get(`/v1/tenants/${tenantId}`)
+        .query({ expand: 'tenantUserRoles' })
+
+      expect(response.status).toBe(200)
+      expect(response.body).toMatchObject({
+        data: {
+          tenant: {
+            id: mockTenant.id,
+            name: mockTenant.name,
+            ministryName: mockTenant.ministryName,
+            description: mockTenant.description,
+            users: [{
+              firstName: mockTenant.users[0].firstName,
+              lastName: mockTenant.users[0].lastName,
+              ssoUserId: mockTenant.users[0].ssoUserId,
+              roles: [{
+                id: mockTenant.users[0].roles[0].id,
+                name: TMSConstants.TENANT_OWNER
+              }]
+            }]
+          }
+        }
+      })
+
+      expect(mockTMSRepository.getTenant).toHaveBeenCalledWith(
+        expect.objectContaining({
+          params: { tenantId },
+          query: { expand: 'tenantUserRoles' }
+        })
+      )
+    })
+
+    it('should return 400 when tenant ID is invalid', async () => {
+      const response = await request(app)
+        .get('/v1/tenants/invalid-uuid')
+
+      expect(response.status).toBe(400)
+      expect(response.body).toMatchObject({
+        name: 'ValidationError',
+        message: 'Validation Failed',
+        details: {
+          params: [{
+            message: '"tenantId" must be a valid GUID'
+          }]
+        }
+      })
+    })
+
+    it('should return 400 when expand parameter is invalid', async () => {
+      const response = await request(app)
+        .get(`/v1/tenants/${tenantId}`)
+        .query({ expand: 'invalidParameter' })
+
+      expect(response.status).toBe(400)
+      expect(response.body).toMatchObject({
+        name: 'ValidationError',
+        message: 'Validation Failed',
+        details: {
+          query: [{
+            message: '"expand" with value "invalidParameter" fails to match the required pattern: /^(tenantUserRoles)?$/'
+          }]
+        }
+      })
+    })
+
+    it('should return 404 when tenant not found', async () => {
+      const nonExistentTenantId = '123e4567-e89b-12d3-a456-426614174999'
+      mockTMSRepository.getTenant.mockRejectedValue(
+        new NotFoundError(`Tenant Not Found: ${nonExistentTenantId}`)
+      )
+
+      const response = await request(app)
+        .get(`/v1/tenants/${nonExistentTenantId}`)
+
+      expect(response.status).toBe(404)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Not Found',
+        httpResponseCode: 404,
+        message: `Tenant Not Found: ${nonExistentTenantId}`,
+        name: 'Error occurred getting a tenant'
+      })
+    })
+  })
+
+  describe('GET /v1/tenants/:tenantId/ssousers/:ssoUserId/roles', () => {
+    const tenantId = '123e4567-e89b-12d3-a456-426614174000'
+    const ssoUserId = 'F45AFBBD68C4411F956BA3A1D91878EF'
+    const mockRoles = [{
+      id: '123e4567-e89b-12d3-a456-426614174002',
+      name: TMSConstants.TENANT_OWNER,
+      description: 'Tenant Owner Role',
+      tenantUserRoles: [],
+      createdDateTime: new Date(),
+      updatedDateTime: new Date(),
+      createdBy: 'test-user',
+      updatedBy: 'test-user'
+    }]
+
+    beforeEach(() => {
+      app.get('/v1/tenants/:tenantId/ssousers/:ssoUserId/roles',
+        validate(validator.getRolesForSSOUser, {}, {}),
+        (req, res) => tmsController.getRolesForSSOUser(req, res)
+      )
+
+      app.use((err: any, req: any, res: any, next: any) => {
+        if (err.name === 'ValidationError') {
+          return res.status(err.statusCode).json(err)
+        }
+        next(err)
+      })
+    })
+
+    it('should get roles for SSO user successfully', async () => {
+      mockTMSRepository.getRolesForSSOUser.mockResolvedValue(mockRoles)
+
+      const response = await request(app)
+        .get(`/v1/tenants/${tenantId}/ssousers/${ssoUserId}/roles`)
+
+      expect(response.status).toBe(200)
+      expect(response.body).toMatchObject({
+        data: {
+          roles: [{
+            id: mockRoles[0].id,
+            name: mockRoles[0].name,
+            description: mockRoles[0].description
+          }]
+        }
+      })
+
+      expect(mockTMSRepository.getRolesForSSOUser).toHaveBeenCalledWith(
+        expect.objectContaining({
+          params: { tenantId, ssoUserId }
+        })
+      )
+    })
+
+    it('should return 400 when tenant ID is invalid', async () => {
+      const response = await request(app)
+        .get(`/v1/tenants/invalid-uuid/ssousers/${ssoUserId}/roles`)
+
+      expect(response.status).toBe(400)
+      expect(response.body).toMatchObject({
+        name: 'ValidationError',
+        message: 'Validation Failed',
+        details: {
+          params: [{
+            message: '"tenantId" must be a valid GUID'
+          }]
+        }
+      })
+    })
+
+    it('should return 404 when tenant not found', async () => {
+      const nonExistentTenantId = '123e4567-e89b-12d3-a456-426614174999'
+      mockTMSRepository.getRolesForSSOUser.mockRejectedValue(
+        new NotFoundError(`Tenant Not Found: ${nonExistentTenantId}`)
+      )
+
+      const response = await request(app)
+        .get(`/v1/tenants/${nonExistentTenantId}/ssousers/${ssoUserId}/roles`)
+
+      expect(response.status).toBe(404)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Not Found',
+        httpResponseCode: 404,
+        message: `Tenant Not Found: ${nonExistentTenantId}`,
+        name: 'Error occurred getting roles for SSO user'
+      })
+    })
+
+    it('should return empty roles array when user has no roles', async () => {
+      mockTMSRepository.getRolesForSSOUser.mockResolvedValue([])
+
+      const response = await request(app)
+        .get(`/v1/tenants/${tenantId}/ssousers/${ssoUserId}/roles`)
+
+      expect(response.status).toBe(200)
+      expect(response.body).toMatchObject({
+        data: {
+          roles: []
+        }
+      })
+    })
+  })
+}) 
