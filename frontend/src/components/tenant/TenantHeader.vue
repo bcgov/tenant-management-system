@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 
-import type { Tenant } from '@/models/tenant.model'
+import type { Tenant } from '@/models'
 
 const props = defineProps<{
   tenant?: Tenant

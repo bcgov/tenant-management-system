@@ -5,11 +5,10 @@ import { useRouter } from 'vue-router'
 
 import CreateTenantDialog from '@/components/CreateTenantDialog.vue'
 import TenantList from '@/components/TenantList.vue'
-import { useNotification } from '@/composables/useNotification'
+import { useNotification } from '@/composables'
 import { DomainError, DuplicateEntityError } from '@/errors'
-import { Tenant } from '@/models/tenant.model'
-import { useAuthStore } from '@/stores/useAuthStore'
-import { useTenantStore } from '@/stores/useTenantStore'
+import { Tenant } from '@/models'
+import { useAuthStore, useTenantStore } from '@/stores'
 import { logger } from '@/utils/logger'
 
 // Router

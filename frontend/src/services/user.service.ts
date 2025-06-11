@@ -1,10 +1,8 @@
-import { authenticatedAxios } from '@/services/authenticated.axios'
-import { config } from '@/services/config.service'
-import type { IdirSearchParameters } from '@/types/IdirSearchParameters'
-import { logger } from '@/utils/logger'
+import { authenticatedAxios } from './authenticated.axios'
+import { logApiError } from './utils'
+import type { IdirSearchParameters } from '@/types'
 
-const userApi = authenticatedAxios()
-userApi.defaults.baseURL = config.api.baseUrl
+const api = authenticatedAxios()
 
 export const userService = {
   /**
@@ -15,13 +13,13 @@ export const userService = {
    */
   async searchIdirUsers(params: IdirSearchParameters) {
     try {
-      const response = await userApi.get('/users/bcgovssousers/idir/search', {
+      const response = await api.get('/users/bcgovssousers/idir/search', {
         params,
       })
 
       return response.data.data
     } catch (error) {
-      logger.error('Error searching IDIR users:', error)
+      logApiError('Error searching IDIR users:', error)
 
       throw error
     }

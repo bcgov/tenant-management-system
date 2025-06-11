@@ -6,9 +6,8 @@ import TenantDetails from '@/components/tenant/TenantDetails.vue'
 import TenantHeader from '@/components/tenant/TenantHeader.vue'
 import TenantTabs from '@/components/tenant/TenantTabs.vue'
 import BreadcrumbBar from '@/components/ui/BreadcrumbBar.vue'
-import { Tenant } from '@/models/tenant.model'
-import { useRoleStore } from '@/stores/useRoleStore'
-import { useTenantStore } from '@/stores/useTenantStore'
+import { Tenant } from '@/models'
+import { useRoleStore, useTenantStore } from '@/stores'
 
 // Initialize stores and route
 const route = useRoute()

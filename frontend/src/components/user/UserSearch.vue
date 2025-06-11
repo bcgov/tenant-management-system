@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import type { User } from '@/models/user.model'
-import { useUserStore } from '@/stores/useUserStore'
+
+import type { User } from '@/models'
+import { useUserStore } from '@/stores'
 
 type EmitFn = (event: 'select', user: User) => void
 const emit = defineEmits<EmitFn>()

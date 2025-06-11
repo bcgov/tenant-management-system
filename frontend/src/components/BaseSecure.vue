@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { watchEffect } from 'vue'
 
-import { useAuthStore } from '@/stores/useAuthStore'
+import { useAuthStore } from '@/stores'
 
 const authStore = useAuthStore()
 

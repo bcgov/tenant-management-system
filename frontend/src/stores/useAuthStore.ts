@@ -1,7 +1,7 @@
 import Keycloak from 'keycloak-js'
 import { defineStore } from 'pinia'
 
-import { User } from '@/models/user.model'
+import { User } from '@/models'
 import { config, configLoaded } from '@/services/config.service'
 import { logger } from '@/utils/logger'
 
@@ -119,7 +119,7 @@ export const useAuthStore = defineStore('auth', {
             clientId: config.oidc.clientId,
             realm: config.oidc.realm,
             url: config.oidc.serverUrl,
-          });
+          })
         }
 
         const authenticated = await this.keycloak.init({

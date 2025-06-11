@@ -1,4 +1,4 @@
-import type { NotificationType } from '@/types/NotificationType'
+import type { NotificationType } from './NotificationType'
 
 export type Notification = {
   id: string
