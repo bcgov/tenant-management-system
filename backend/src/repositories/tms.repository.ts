@@ -122,7 +122,7 @@ export class TMSRepository {
                         ...(name && { name }),
                         ...(ministryName && { ministryName }),
                         ...(description && { description }),
-                        updatedBy: req.decodedJwt.ssoUserId || 'system'
+                        updatedBy: req.decodedJwt?.idir_user_guid || 'system'
                     })
                     .where('id = :tenantId', { tenantId })
                     .execute();
