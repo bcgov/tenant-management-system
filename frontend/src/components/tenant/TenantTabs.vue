@@ -2,10 +2,12 @@
 import { ref } from 'vue'
 
 import TenantUserManagement from '@/components/tenant/TenantUserManagement.vue'
+import type { Role } from '@/models/role.model'
 import type { Tenant } from '@/models/tenant.model'
 
 defineProps<{
   disabled?: boolean
+  roles?: Role[]
   tenant?: Tenant
 }>()
 
@@ -31,7 +33,7 @@ const tab = ref<number>(0)
       </v-window-item>
 
       <v-window-item :value="1">
-        <TenantUserManagement :tenant="tenant" />
+        <TenantUserManagement :roles="roles" :tenant="tenant" />
       </v-window-item>
 
       <v-window-item :value="2">

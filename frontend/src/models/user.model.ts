@@ -56,11 +56,12 @@ export class User {
     attributes: {
       display_name: string[]
       idir_user_guid: string[]
+      idir_username: string[]
     }
   }): User {
     return new User(
       searchData.attributes.idir_user_guid[0],
-      '', // IDIR username is not provided in search results
+      searchData.attributes.idir_username[0],
       searchData.firstName,
       searchData.lastName,
       searchData.attributes.display_name[0],
