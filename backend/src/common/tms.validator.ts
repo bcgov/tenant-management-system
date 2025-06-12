@@ -120,6 +120,17 @@ export default {
             tenantId: Joi.string().guid().required(),
             ssoUserId: Joi.string().required()
         }).options({abortEarly:false,convert:false})
+    },
+
+    updateTenant: {
+        params: Joi.object({
+            tenantId: Joi.string().guid().required()
+        }),
+        body: Joi.object({
+            name: Joi.string().min(1).max(30).pattern(/^\S.*\S$/).optional(),
+            ministryName: Joi.string().min(1).max(100).optional(),
+            description: Joi.string().min(1).max(500).optional()
+        }).options({abortEarly:false,convert:false})
     }
 
 }
