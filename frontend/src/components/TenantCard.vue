@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { useNotification } from '@/composables/useNotification'
-import type { Tenant } from '@/models/tenant.model'
+import { useNotification } from '@/composables'
+import type { Tenant } from '@/models'
 
 const { tenant } = defineProps<{
   tenant: Tenant

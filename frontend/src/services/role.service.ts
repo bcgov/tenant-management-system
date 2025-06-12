@@ -1,33 +1,7 @@
-import axios from 'axios'
+import { authenticatedAxios } from './authenticated.axios'
+import { logApiError } from './utils'
 
-import { authenticatedAxios } from '@/services/authenticated.axios'
-import { config } from '@/services/config.service'
-import { logger } from '@/utils/logger'
-
-/**
- * Axios instance configured for tenant API requests.
- *
- */
-const roleApi = authenticatedAxios()
-roleApi.defaults.baseURL = config.api.baseUrl
-
-/**
- * Logs an API error with a custom message.
- *
- * Differentiates between Axios errors and other error types for better logging
- *   detail.
- *
- * @param {string} message - A descriptive message to include in the log.
- * @param {unknown} error - The error object caught from an API call or other
- *   source.
- */
-const logApiError = (message: string, error: unknown) => {
-  if (axios.isAxiosError(error)) {
-    logger.error(`${message}: ${error.message}`, error)
-  } else {
-    logger.error(message, error)
-  }
-}
+const api = authenticatedAxios()
 
 export const roleService = {
   /**
@@ -39,7 +13,7 @@ export const roleService = {
    */
   async getRoles() {
     try {
-      const response = await roleApi.get('/roles')
+      const response = await api.get('/roles')
 
       return response.data.data.roles
     } catch (error) {

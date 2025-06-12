@@ -1,7 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany, Index } from 'typeorm'
 import { TenantUser } from './TenantUser'
 
-@Entity('SSOUser')
+@Entity('SSOUser', { schema: 'tms' })
 export class SSOUser {
     
     @PrimaryGeneratedColumn('uuid', { name: 'id' })

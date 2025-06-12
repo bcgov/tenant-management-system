@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
-import { useTenantStore } from '@/stores/useTenantStore'
-import { useNotification } from '@/composables/useNotification'
+import { ref } from 'vue'
+
+import { useNotification } from '@/composables'
 import UserSearch from '@/components/user/UserSearch.vue'
-import type { Tenant } from '@/models/tenant.model'
-import type { User } from '@/models/user.model'
-import type { Role } from '@/models/role.model'
+import type { Role, Tenant, User } from '@/models'
+import { useTenantStore } from '@/stores'
 
 const props = defineProps<{
   roles?: Role[]
