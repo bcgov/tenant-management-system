@@ -29,8 +29,7 @@ jobs:
     permissions:
       packages: write
     with:
-      tags: |
-        ${{ inputs.tag || 'latest' }}
+      tag: ${{ inputs.tag || 'latest' }}
   
   # Make deploy-test depend on builds
   deploy-test:

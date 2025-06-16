@@ -18,8 +18,7 @@ jobs:
     permissions:
       packages: write
     with:
-      tags: |
-        pr-${{ github.event.pull_request.number }}
+      tag: pr-${{ github.event.pull_request.number }}
       keep_versions: 5  # Keep fewer versions for PR builds
 
   # https://github.com/bcgov/quickstart-openshift-helpers
