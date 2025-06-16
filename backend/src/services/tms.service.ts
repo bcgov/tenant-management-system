@@ -172,6 +172,16 @@ export class TMSService {
         }
     }
 
+    public async updateTenant(req: Request) {
+        const updatedTenant = await this.tmsRepository.updateTenant(req);
+
+        return {
+            data: {
+                tenant: updatedTenant
+            }
+        };
+    }
+
     public async getRolesForSSOUser(req:Request) {
         const roles = await this.tmsRepository.getRolesForSSOUser(req)
         return {

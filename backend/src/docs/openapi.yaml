@@ -468,7 +468,7 @@ paths:
           schema:
             type: string
             enum: [tenantUserRoles]
-          description: Comma-separated list of relations to expand. Currently supports 'tenantUserRoles' to include user and role information.
+          description: Optional parameter to expand the response with additional details
       responses:
         '200':
           description: Tenant details retrieved successfully
@@ -506,6 +506,82 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/NotFoundErrorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+
+    put:
+      summary: Update tenant details
+      description: Updates the details of an existing tenant
+      parameters:
+        - name: tenantId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The unique identifier of the tenant
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 30
+                  example: "Updated Roads Initiative"
+                ministryName:
+                  type: string
+                  minLength: 1
+                  maxLength: 100
+                  example: "Updated Ministry of Natural Resources"
+                description:
+                  type: string
+                  maxLength: 500
+                  example: "Updated tenant description"
+      responses:
+        '200':
+          description: Tenant successfully updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      tenant:
+                        $ref: '#/components/schemas/Tenant'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        '404':
+          description: Tenant not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+        '409':
+          description: Conflict - Tenant with same name and ministry name already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConflictErrorResponse'
         '500':
           description: Internal Server Error
           content:

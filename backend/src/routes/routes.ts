@@ -28,6 +28,7 @@ export class Routes {
         app.route(RoutesConstants.SEARCH_BC_GOV_IDIR_USERS).get(checkJwt,  validate(validator.searchBCGOVSSOUsers,{},{}),(req:Request,res:Response) => this.tmsController.searchBCGOVSSOUsers(req,res))
         app.route(RoutesConstants.GET_TENANT).get(checkJwt,  validate(validator.getTenant,{},{}), checkTenantAccess([]),(req:Request,res:Response) => this.tmsController.getTenant(req,res))
         app.route(RoutesConstants.GET_ROLES_FOR_SSO_USER).get(checkJwt,  validate(validator.getRolesForSSOUser,{},{}),(req:Request,res:Response) => this.tmsController.getRolesForSSOUser(req,res))
+        app.route(RoutesConstants.UPDATE_TENANT).put(checkJwt, validate(validator.updateTenant,{},{}), checkTenantAccess([TMSConstants.TENANT_OWNER]),(req:Request,res:Response) => this.tmsController.updateTenant(req,res))
 
         app.use(function (error: Error, req: any, res: Response<any, Record<string, any>>, next: any) {
             if (error instanceof ValidationError) {

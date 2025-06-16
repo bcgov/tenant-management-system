@@ -90,6 +90,57 @@ export class TMSRepository {
         
     }
 
+    public async updateTenant(req: Request) {
+        const tenantId:string = req.params.tenantId;
+        const { name, ministryName, description, updatedBy }  = req.body;
+
+        let tenantResponse:Tenant = null
+        await this.manager.transaction(async(transactionEntityManager) => {
+            try {
+
+                if (!await this.checkIfTenantExists(tenantId, transactionEntityManager)) {
+                    throw new NotFoundError(`Tenant not found: ${tenantId}`)
+                }
+
+                if (name || ministryName) {
+                    const existingTenant = await transactionEntityManager
+                        .createQueryBuilder(Tenant, 't')
+                        .where('t.name = :name', { name })
+                        .andWhere('t.ministry_name = :ministryName', { ministryName })
+                        .andWhere('t.id != :tenantId', { tenantId })
+                        .getOne();
+
+                    if (existingTenant) {
+                        throw new ConflictError(`A tenant with name '${name}' and ministry name '${ministryName}' already exists`)
+                    }
+                }
+
+                await transactionEntityManager
+                    .createQueryBuilder()
+                    .update(Tenant)
+                    .set({
+                        ...(name && { name }),
+                        ...(ministryName && { ministryName }),
+                        ...(description && { description }),
+                        updatedBy: req.decodedJwt?.idir_user_guid || 'system'
+                    })
+                    .where('id = :tenantId', { tenantId })
+                    .execute();
+
+                tenantResponse = await transactionEntityManager
+                    .createQueryBuilder(Tenant, 'tenant')
+                    .where('tenant.id = :id', { id: tenantId })
+                    .getOne();
+
+            } catch (error) {
+                logger.error('Update tenant transaction failure - rolling back changes', error);
+                throw error
+            }
+        });
+
+        return tenantResponse
+    }
+
     public async addTenantUsers(req:Request) {
 
         let response = {}

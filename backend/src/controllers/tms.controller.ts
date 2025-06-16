@@ -196,6 +196,25 @@ export class TMSController {
         }
     }
 
+    public async updateTenant(req:Request, res:Response) {
+        try {
+            const tenant = await this.tmsService.updateTenant(req)
+            return res.status(200).send(tenant)
+        }
+        catch(error) {
+            logger.error(error)            
+            if (error instanceof NotFoundError) {
+                this.errorHandler.generalError(res,"Error occurred updating tenant", error.message, error.statusCode, "Not Found")
+            }
+            else if (error instanceof ConflictError) {
+                this.errorHandler.generalError(res,"Error occurred updating tenant", error.message, error.statusCode, "Conflict")
+            }
+            else {    
+                this.errorHandler.generalError(res,"Error occurred updating tenant", error.message, 500, "Internal Server Error")
+            } 
+        }
+    }
+
     public async getRolesForSSOUser(req:Request, res:Response) {    
         try {
             const roles = await this.tmsService.getRolesForSSOUser(req)
