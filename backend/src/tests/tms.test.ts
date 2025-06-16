@@ -1150,4 +1150,142 @@ describe('Tenant API', () => {
       })
     })
   })
+
+  describe('PUT /v1/tenants/:tenantId', () => {
+    const tenantId = '123e4567-e89b-12d3-a456-426614174000'
+    const validUpdateData = {
+      name: 'Updated Tenant',
+      ministryName: 'Updated Ministry',
+      description: 'Updated Description'
+    }
+
+    beforeEach(() => {
+      app.put('/v1/tenants/:tenantId',
+        validate(validator.updateTenant, {}, {}),
+        (req, res) => tmsController.updateTenant(req, res)
+      )
+
+      app.use((err: any, req: any, res: any, next: any) => {
+        if (err.name === 'ValidationError') {
+          return res.status(err.statusCode).json(err)
+        }
+        next(err)
+      })
+    })
+
+    it('should update tenant successfully', async () => {
+      const mockUpdatedTenant = {
+        id: tenantId,
+        ...validUpdateData,
+        createdDateTime: new Date(),
+        updatedDateTime: new Date(),
+        createdBy: 'test-user',
+        updatedBy: 'test-user',
+        users: []
+      }
+
+      mockTMSRepository.updateTenant.mockResolvedValue(mockUpdatedTenant)
+
+      const response = await request(app)
+        .put(`/v1/tenants/${tenantId}`)
+        .send(validUpdateData)
+
+      expect(response.status).toBe(200)
+      expect(response.body).toMatchObject({
+        data: {
+          tenant: {
+            id: mockUpdatedTenant.id,
+            name: mockUpdatedTenant.name,
+            ministryName: mockUpdatedTenant.ministryName,
+            description: mockUpdatedTenant.description
+          }
+        }
+      })
+
+      expect(mockTMSRepository.updateTenant).toHaveBeenCalledWith(
+        expect.objectContaining({
+          params: { tenantId },
+          body: validUpdateData
+        })
+      )
+    })
+
+    it('should return 404 when tenant does not exist', async () => {
+      mockTMSRepository.updateTenant.mockRejectedValue(new NotFoundError(`Tenant not found: ${tenantId}`))
+
+      const response = await request(app)
+        .put(`/v1/tenants/${tenantId}`)
+        .send(validUpdateData)
+
+      expect(response.status).toBe(404)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Not Found',
+        httpResponseCode: 404,
+        message: `Tenant not found: ${tenantId}`,
+        name: 'Error occurred updating tenant'
+      })
+    })
+
+    it('should return 409 when name and ministry name combination already exists', async () => {
+      mockTMSRepository.updateTenant.mockRejectedValue(
+        new ConflictError(`A tenant with name '${validUpdateData.name}' and ministry name '${validUpdateData.ministryName}' already exists`)
+      )
+
+      const response = await request(app)
+        .put(`/v1/tenants/${tenantId}`)
+        .send(validUpdateData)
+
+      expect(response.status).toBe(409)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Conflict',
+        httpResponseCode: 409,
+        message: `A tenant with name '${validUpdateData.name}' and ministry name '${validUpdateData.ministryName}' already exists`,
+        name: 'Error occurred updating tenant'
+      })
+    })
+
+    it('should return 400 when tenant ID is invalid', async () => {
+      const response = await request(app)
+        .put('/v1/tenants/invalid-uuid')
+        .send(validUpdateData)
+
+      expect(response.status).toBe(400)
+      expect(response.body).toMatchObject({
+        name: 'ValidationError',
+        message: 'Validation Failed',
+        details: {
+          params: [{
+            message: '"tenantId" must be a valid GUID'
+          }]
+        }
+      })
+    })
+
+    it('should return 400 when update data is invalid', async () => {
+      const invalidData = {
+        name: 'a'.repeat(31), 
+        ministryName: 'b'.repeat(101) 
+      }
+
+      const response = await request(app)
+        .put(`/v1/tenants/${tenantId}`)
+        .send(invalidData)
+
+      expect(response.status).toBe(400)
+      expect(response.body).toMatchObject({
+        name: 'ValidationError',
+        message: 'Validation Failed',
+        details: {
+          body: expect.arrayContaining([
+            expect.objectContaining({
+              message: '"name" length must be less than or equal to 30 characters long'
+            }),
+            expect.objectContaining({
+              message: '"ministryName" length must be less than or equal to 100 characters long'
+            })
+          ])
+        }
+      })
+    })
+  })
 }) 
