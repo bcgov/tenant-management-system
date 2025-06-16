@@ -191,6 +191,15 @@ export class TMSService {
         }
     }
 
+    public async createTenantRequest(req: Request) {
+        const tenantRequest = await this.tmsRepository.saveTenantRequest(req)
+        return {
+            data: {
+                tenantRequest
+            }
+        }
+    }
+    
     private async getToken() {
         try {
             const response = await axios.post(

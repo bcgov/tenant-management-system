@@ -231,4 +231,18 @@ export class TMSController {
         }
     }
 
+    public async createTenantRequest(req: Request, res: Response) {
+        try {
+            const tenantRequest = await this.tmsService.createTenantRequest(req)
+            res.status(201).send(tenantRequest)
+        } catch (error) {
+            logger.error(error)
+            if (error instanceof ConflictError) {
+                this.errorHandler.generalError(res, "Error occurred creating tenant request", error.message, error.statusCode, "Conflict")
+            } else {
+                this.errorHandler.generalError(res, "Error occurred creating tenant request", error.message, 500, "Internal Server Error")
+            }
+        }
+    }
+
 }
