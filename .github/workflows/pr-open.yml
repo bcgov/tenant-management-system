@@ -33,7 +33,7 @@ jobs:
       tag: pr-${{ github.event.pull_request.number }}
       db_user: app-${{ github.event.number }}
       params: --set global.secrets.persist=false
-      triggers: ('backend/' 'frontend/' 'migrations/' 'charts/')
+      triggers: ('backend/' 'frontend/' 'migrations/' 'charts/' 'github/')
 
   update_secrets:
     name: Update Secrets
