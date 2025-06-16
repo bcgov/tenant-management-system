@@ -105,7 +105,16 @@ jobs:
           # Vars: tag and release
 
           # Tag defaults to PR number, but can be overridden by inputs.tag
-          tag=${{ inputs.tag || steps.pr.outputs.pr }}
+          if [ -n "${{ inputs.tag }}" ]; then
+            # Explicit tag provided
+            tag="${{ inputs.tag }}"
+          elif [ -n "${{ steps.pr.outputs.pr }}" ]; then
+            # PR number available
+            tag="pr-${{ steps.pr.outputs.pr }}"
+          else
+            # Fall back to latest for production/test environments
+            tag="latest"
+          fi
 
           # Release name includes run numbers to ensure uniqueness
           release=${{ github.event.repository.name }}-${{ inputs.environment || steps.pr.outputs.pr || inputs.tag }}

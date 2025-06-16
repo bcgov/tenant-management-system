@@ -10,8 +10,8 @@ on:
         default: 50
       tag:
         description: "Tag to use for built images"
-        required: true
         type: string
+        default: latest
 
 permissions:
   packages: write
