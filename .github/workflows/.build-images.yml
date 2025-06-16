@@ -8,10 +8,9 @@ on:
         required: false
         type: number
         default: 50
-      tag:
+      tags:
         description: "Tag to use for built images"
-        required: true
-        type: string
+        default: latest
 
 permissions:
   packages: write
@@ -31,6 +30,6 @@ jobs:
         with:
           keep_versions: ${{ inputs.keep_versions }}
           package: ${{ matrix.package }}
-          tag: ${{ inputs.tag }}
+          tags: ${{ inputs.tags }}
           tag_fallback: latest
           triggers: ('${{ matrix.package }}/')
