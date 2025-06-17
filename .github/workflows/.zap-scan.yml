@@ -23,6 +23,11 @@ on:
         type: boolean
         default: false
         description: 'Fail workflow on HIGH alerts'
+      scan_type:
+        required: false
+        type: string
+        default: 'baseline'
+        description: 'Type of scan: baseline, full, or api'
     secrets:
       zap_secret:
         required: false
@@ -34,18 +39,37 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      # Use action-full-scan for more comprehensive testing
-      - name: ZAP Full Scan
-        uses: zaproxy/action-full-scan@v0.7.0
+      - name: ZAP Baseline Scan
+        if: inputs.scan_type == 'baseline' || inputs.scan_type == ''
+        uses: zaproxy/action-baseline@v0.14.0
         with:
           target: ${{ inputs.target_url }}
           rules_file_name: '.zap/rules.tsv'
           cmd_options: '-a'
+          allow_issue_writing: false
+
+      - name: ZAP Full Scan
+        if: inputs.scan_type == 'full'
+        uses: zaproxy/action-full-scan@v0.12.0
+        with:
+          target: ${{ inputs.target_url }}
+          rules_file_name: '.zap/rules.tsv'
+          cmd_options: '-a'
+          allow_issue_writing: false
+
+      - name: ZAP API Scan
+        if: inputs.scan_type == 'api'
+        uses: zaproxy/action-api-scan@v0.9.0
+        with:
+          target: ${{ inputs.target_url }}
+          rules_file_name: '.zap/rules.tsv'
+          cmd_options: '-a'
+          allow_issue_writing: false
           
       - name: Save ZAP Results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: zap-scan-results-${{ inputs.environment || inputs.pr_number }}
           path: |
