@@ -4,6 +4,7 @@ import { connection } from '../common/db.connection'
 import { URLSearchParams } from 'url'
 import axios from 'axios';
 import logger from '../common/logger'
+import { TenantRequest } from '../entities/TenantRequest'
 
 export class TMSService {
 
@@ -191,6 +192,18 @@ export class TMSService {
         }
     }
 
+    public async createTenantRequest(req: Request) {
+        const tenantRequest = await this.tmsRepository.saveTenantRequest(req) as TenantRequest
+        return {
+            data: {
+                tenantRequest: {
+                    ...tenantRequest,
+                    requestedBy: tenantRequest.requestedBy?.displayName
+                }
+            }
+        }
+    }
+    
     private async getToken() {
         try {
             const response = await axios.post(

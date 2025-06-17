@@ -634,6 +634,90 @@ paths:
               schema:
                 $ref: '#/components/schemas/InternalServerErrorResponse'
 
+  /tenant-requests:
+    post:
+      summary: Create a new tenant request
+      description: Creates a new request for a tenant with the specified details
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - ministryName
+                - user
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 30
+                  example: "Roads Initiative"
+                ministryName:
+                  type: string
+                  minLength: 1
+                  maxLength: 100
+                  example: "Ministry of Natural Resources"
+                description:
+                  type: string
+                  maxLength: 500
+                  example: "Tenant for managing road infrastructure"
+                user:
+                  type: object
+                  required:
+                    - firstName
+                    - lastName
+                    - displayName
+                    - ssoUserId
+                    - userName
+                    - email
+                  properties:
+                    firstName:
+                      type: string
+                      example: "John"
+                    lastName:
+                      type: string
+                      example: "Smith"
+                    displayName:
+                      type: string
+                      example: "John Smith: ENV: EX"
+                    ssoUserId:
+                      type: string
+                      example: "F45AFBBD68C4466F956BA3A1D91878AD"
+                    userName:
+                      type: string
+                      example: "johnSmith"
+                    email:
+                      type: string
+                      format: email
+                      example: "john.Smith@example.com"
+      responses:
+        '201':
+          description: Tenant request successfully created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      tenantRequest:
+                        $ref: '#/components/schemas/TenantRequest'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+
 components:
   schemas:
     BasicUser:
@@ -905,3 +989,58 @@ components:
         error:
           type: string
           example: "Internal Server Error"
+
+    TenantRequest:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        name:
+          type: string
+          example: "Roads Initiative"
+        ministryName:
+          type: string
+          example: "Ministry of Natural Resources"
+        description:
+          type: string
+          example: "Tenant for managing road infrastructure"
+        status:
+          type: string
+          enum: [NEW, APPROVED, REJECTED]
+          example: "NEW"
+        requestedBy:
+          type: string
+          example: "John Smith: ENV"
+        requestedAt:
+          type: string
+          format: date
+          example: "2024-03-15"
+        decisionedBy:
+          type: string
+          nullable: true
+          example: null
+        decisionedAt:
+          type: string
+          format: date
+          nullable: true
+          example: null
+        rejectionReason:
+          type: string
+          nullable: true
+          example: null
+        createdDateTime:
+          type: string
+          format: date
+          example: "2024-03-15"
+        updatedDateTime:
+          type: string
+          format: date
+          example: "2024-03-15"
+        createdBy:
+          type: string
+          example: "F45AFBBD68C4466F956BA3A1D91878AD"
+        updatedBy:
+          type: string
+          example: "F45AFBBD68C4466F956BA3A1D91878AD"

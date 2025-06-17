@@ -10,6 +10,7 @@ import { TenantUserRole } from '../entities/TenantUserRole'
 import { NotFoundError } from '../errors/NotFoundError'
 import { ConflictError } from '../errors/ConflictError'
 import logger from '../common/logger'
+import { TenantRequest } from '../entities/TenantRequest'
 
 export class TMSRepository {
 
@@ -560,6 +561,46 @@ export class TMSRepository {
             .createQueryBuilder(Role, "role")
             .getMany();
         return roles
+    }
+
+    public async getTenantRequestById(transactionEntityManager: EntityManager, tenantRequestId: string) {
+        return await transactionEntityManager
+            .createQueryBuilder(TenantRequest, 'tenantRequest')
+            .leftJoinAndSelect('tenantRequest.requestedBy', 'sso')
+            .where('tenantRequest.id = :id', { id: tenantRequestId })
+            .getOne()
+    }
+
+    public async saveTenantRequest(req: Request) {
+        let tenantRequestResponse = {}
+        await this.manager.transaction(async(transactionEntityManager) => {
+            try {
+                const tenantRequest:TenantRequest = new TenantRequest()
+                tenantRequest.name = req.body.name
+                tenantRequest.ministryName = req.body.ministryName
+                tenantRequest.description = req.body.description
+                tenantRequest.status = 'NEW'
+                tenantRequest.requestedBy = await this.setSSOUser(
+                    req.body.user.ssoUserId,
+                    req.body.user.firstName,
+                    req.body.user.lastName,
+                    req.body.user.displayName,
+                    req.body.user.userName,
+                    req.body.user.email
+                )
+                tenantRequest.createdBy = req.body.user.ssoUserId
+                tenantRequest.updatedBy = req.body.user.ssoUserId
+
+                const savedTenantRequest:TenantRequest = await transactionEntityManager.save(tenantRequest)
+                tenantRequestResponse = await this.getTenantRequestById(transactionEntityManager, savedTenantRequest.id)
+                    
+            } catch (error) {
+                logger.error('Create tenant request transaction failure - rolling back inserts ', error)
+                throw error
+            }
+        })
+
+        return tenantRequestResponse
     }
 
 }

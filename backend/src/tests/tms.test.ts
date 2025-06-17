@@ -1288,4 +1288,165 @@ describe('Tenant API', () => {
       })
     })
   })
+
+  describe('POST /v1/tenant-requests', () => {
+    const validTenantRequestData = {
+      name: 'Test Tenant Request',
+      ministryName: 'Test Ministry',
+      description: 'Test Description',
+      user: {
+        firstName: 'Test',
+        lastName: 'User',
+        displayName: 'Test User',
+        ssoUserId: 'F45AFBBD68C4466F956BA3A1D91878AD',
+        userName: 'testuser',
+        email: 'test@example.com'
+      }
+    }
+
+    beforeEach(() => {
+      app.post('/v1/tenant-requests',
+        validate(validator.createTenantRequest, {}, {}),
+        (req, res) => tmsController.createTenantRequest(req, res)
+      )
+
+      app.use((err: any, req: any, res: any, next: any) => {
+        if (err.name === 'ValidationError') {
+          return res.status(err.statusCode).json(err)
+        }
+        next(err)
+      })
+    })
+
+    it('should create a tenant request successfully', async () => {
+      const mockTenantRequest = {
+        id: '123e4567-e89b-12d3-a456-426614174000',
+        name: validTenantRequestData.name,
+        ministryName: validTenantRequestData.ministryName,
+        description: validTenantRequestData.description,
+        status: 'NEW',
+        requestedBy: {
+          id: '123e4567-e89b-12d3-a456-426614174001',
+          firstName: validTenantRequestData.user.firstName,
+          lastName: validTenantRequestData.user.lastName,
+          displayName: validTenantRequestData.user.displayName,
+          ssoUserId: validTenantRequestData.user.ssoUserId,
+          userName: validTenantRequestData.user.userName,
+          email: validTenantRequestData.user.email
+        },
+        createdDateTime: new Date(),
+        updatedDateTime: new Date(),
+        createdBy: validTenantRequestData.user.ssoUserId,
+        updatedBy: validTenantRequestData.user.ssoUserId
+      }
+
+      mockTMSRepository.saveTenantRequest.mockResolvedValue(mockTenantRequest)
+
+      const response = await request(app)
+        .post('/v1/tenant-requests')
+        .send(validTenantRequestData)
+
+      expect(response.status).toBe(201)
+      expect(response.body).toMatchObject({
+        data: {
+          tenantRequest: {
+            id: mockTenantRequest.id,
+            name: mockTenantRequest.name,
+            ministryName: mockTenantRequest.ministryName,
+            description: mockTenantRequest.description,
+            status: mockTenantRequest.status,
+            requestedBy: mockTenantRequest.requestedBy.displayName
+          }
+        }
+      })
+
+      expect(mockTMSRepository.saveTenantRequest).toHaveBeenCalledWith(
+        expect.objectContaining({
+          body: validTenantRequestData
+        })
+      )
+    })
+
+    it('should return 400 when required fields are missing', async () => {
+      const invalidData = {
+        name: 'Test Tenant Request',
+        // ministryName is missing
+        description: 'Test Description',
+        user: {
+          firstName: 'Test',
+          lastName: 'User',
+          displayName: 'Test User',
+          ssoUserId: 'F45AFBBD68C4466F956BA3A1D91878AD',
+          userName: 'testuser',
+          email: 'test@example.com'
+        }
+      }
+
+      const response = await request(app)
+        .post('/v1/tenant-requests')
+        .send(invalidData)
+
+      expect(response.status).toBe(400)
+      expect(response.body).toMatchObject({
+        name: 'ValidationError',
+        message: 'Validation Failed',
+        details: {
+          body: expect.arrayContaining([
+            expect.objectContaining({
+              message: expect.stringContaining('ministryName')
+            })
+          ])
+        }
+      })
+    })
+
+    it('should return 400 when user information is incomplete', async () => {
+      const invalidData = {
+        name: 'Test Tenant Request',
+        ministryName: 'Test Ministry',
+        description: 'Test Description',
+        user: {
+          firstName: 'Test',
+          lastName: 'User',
+          // no displayName field
+          ssoUserId: 'F45AFBBD68C4466F956BA3A1D91878AD',
+          userName: 'testuser',
+          email: 'test@example.com'
+        }
+      }
+
+      const response = await request(app)
+        .post('/v1/tenant-requests')
+        .send(invalidData)
+
+      expect(response.status).toBe(400)
+      expect(response.body).toMatchObject({
+        name: 'ValidationError',
+        message: 'Validation Failed',
+        details: {
+          body: expect.arrayContaining([
+            expect.objectContaining({
+              message: expect.stringContaining('displayName')
+            })
+          ])
+        }
+      })
+    })
+
+    it('should return 500 when repository throws an error', async () => {
+      mockTMSRepository.saveTenantRequest.mockRejectedValue(new Error('Database error'))
+
+      const response = await request(app)
+        .post('/v1/tenant-requests')
+        .send(validTenantRequestData)
+
+      expect(response.status).toBe(500)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Internal Server Error',
+        httpResponseCode: 500,
+        message: 'Database error',
+        name: 'Error occurred creating tenant request'
+      })
+    })
+  })
 }) 

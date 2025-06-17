@@ -13,4 +13,5 @@ export class RoutesConstants {
     public static GET_TENANT = '/v1/tenants/:tenantId'
     public static GET_ROLES_FOR_SSO_USER = '/v1/tenants/:tenantId/ssousers/:ssoUserId/roles'
     public static UPDATE_TENANT = '/v1/tenants/:tenantId'
+    public static CREATE_TENANT_REQUEST = '/v1/tenant-requests'
 }

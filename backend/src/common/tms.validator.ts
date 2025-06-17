@@ -131,6 +131,22 @@ export default {
             ministryName: Joi.string().min(1).max(100).optional(),
             description: Joi.string().min(1).max(500).optional()
         }).options({abortEarly:false,convert:false})
+    },
+
+    createTenantRequest: {
+        body: Joi.object({
+            name: Joi.string().min(1).max(30).pattern(/^\S.*\S$/).required(),
+            ministryName: Joi.string().min(1).max(100).required(),
+            description: Joi.string().min(1).max(500).optional(),
+            user: Joi.object().keys({
+                firstName: Joi.string().min(1).max(50).required(),
+                lastName: Joi.string().min(1).max(50).required(),
+                displayName: Joi.string().min(1).max(50).required(),
+                userName: Joi.string().min(1).max(15).optional(),
+                ssoUserId: Joi.string().required(),
+                email: Joi.string().email().max(100).required(),                
+            }).required()
+        }).options({abortEarly:false,convert:false})
     }
 
 }
