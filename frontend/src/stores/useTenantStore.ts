@@ -79,34 +79,6 @@ export const useTenantStore = defineStore('tenant', () => {
     }
   }
 
-  const searchAvailableUsers = async (
-    tenantId: string,
-    searchCriteria: {
-      field: string
-      value: string
-    },
-  ) => {
-    try {
-      const users = await tenantService.getUsers(tenantId)
-      return users.filter((user: User) => {
-        const fieldValue = user[searchCriteria.field as keyof User]
-
-        // Handle different value types appropriately
-        const stringValue =
-          typeof fieldValue === 'object' && fieldValue !== null
-            ? JSON.stringify(fieldValue)
-            : String(fieldValue)
-
-        return stringValue
-          .toLowerCase()
-          .includes(searchCriteria.value.toLowerCase())
-      })
-    } catch (error) {
-      // logger.error('Error searching users', error)
-      throw error
-    }
-  }
-
   const updateTenant = async (tenant: Partial<Tenant>) => {
     if (!tenant.id || !tenant.name || !tenant.ministryName) {
       // TODO: kludgy; clean this argument up.
@@ -135,7 +107,6 @@ export const useTenantStore = defineStore('tenant', () => {
     fetchTenants,
     fetchTenantUsers,
     fetchTenantUserRoles,
-    searchAvailableUsers,
     updateTenant,
   }
 })
