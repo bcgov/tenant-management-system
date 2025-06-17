@@ -18,7 +18,8 @@ export class TMSRepository {
         this.manager = manager
     }
 
-    public async saveTenant(req: Request | { body: any }) {
+    public async saveTenant(req: Request | { body: any }, transactionEntityManager?: EntityManager) {
+        transactionEntityManager = transactionEntityManager ? transactionEntityManager : this.manager;
         let tenantResponse = {}
         await this.manager.transaction(async(transactionEntityManager) => {
             try {
@@ -640,7 +641,7 @@ export class TMSRepository {
                             }
                         }
                     };
-                    const savedTenant = await this.saveTenant(tenantRequestBody)
+                    const savedTenant = await this.saveTenant(tenantRequestBody,transactionEntityManager)
                     response = { tenant: savedTenant }
                 }
 
