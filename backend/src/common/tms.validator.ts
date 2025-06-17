@@ -147,6 +147,20 @@ export default {
                 email: Joi.string().email().max(100).required(),                
             }).required()
         }).options({abortEarly:false,convert:false})
+    },
+
+    updateTenantRequestStatus: {
+        params: Joi.object({
+            requestId: Joi.string().required()
+        }),
+        body: Joi.object({
+            status: Joi.string().valid('APPROVED', 'REJECTED').required(),
+            rejectionReason: Joi.string().when('status', {
+                is: 'REJECTED',
+                then: Joi.string().required(),
+                otherwise: Joi.string().optional()
+            })
+        })
     }
 
 }

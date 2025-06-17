@@ -7,6 +7,7 @@ import { checkJwt } from '../common/auth.mw'
 import { checkTenantAccess } from '../common/tenant-access.mw'
 import { UnauthorizedError } from 'express-jwt'
 import { TMSConstants } from '../common/tms.constants'
+import { checkOperationsAdmin } from '../common/operations-admin.mw'
 
 require('dotenv').config()
 
@@ -30,6 +31,7 @@ export class Routes {
         app.route(RoutesConstants.GET_ROLES_FOR_SSO_USER).get(checkJwt,  validate(validator.getRolesForSSOUser,{},{}),(req:Request,res:Response) => this.tmsController.getRolesForSSOUser(req,res))
         app.route(RoutesConstants.UPDATE_TENANT).put(checkJwt, validate(validator.updateTenant,{},{}), checkTenantAccess([TMSConstants.TENANT_OWNER]),(req:Request,res:Response) => this.tmsController.updateTenant(req,res))
         app.route(RoutesConstants.CREATE_TENANT_REQUEST).post(checkJwt, validate(validator.createTenantRequest,{},{}),(req:Request,res:Response) => this.tmsController.createTenantRequest(req,res))
+        app.route(RoutesConstants.UPDATE_TENANT_REQUEST_STATUS).patch(checkJwt, checkOperationsAdmin, validate(validator.updateTenantRequestStatus,{},{}),(req:Request,res:Response) => this.tmsController.updateTenantRequestStatus(req,res))
 
         app.use(function (error: Error, req: any, res: Response<any, Record<string, any>>, next: any) {
             if (error instanceof ValidationError) {
