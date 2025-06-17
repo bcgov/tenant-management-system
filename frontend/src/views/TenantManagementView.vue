@@ -1,20 +1,22 @@
 <script setup lang="ts">
-import { computed, ref, watch, onMounted } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
 import TenantDetails from '@/components/tenant/TenantDetails.vue'
 import TenantHeader from '@/components/tenant/TenantHeader.vue'
 import TenantUserManagement from '@/components/tenant/TenantUserManagement.vue'
 import BreadcrumbBar from '@/components/ui/BreadcrumbBar.vue'
-import { Role, Tenant, User } from '@/models'
-import { useRoleStore, useTenantStore, useUserStore } from '@/stores'
 import { useNotification } from '@/composables'
 import { DuplicateEntityError } from '@/errors'
+import { Role, Tenant, User } from '@/models'
+import { useRoleStore, useTenantStore, useUserStore } from '@/stores'
 
 const route = useRoute()
+
 const roleStore = useRoleStore()
 const tenantStore = useTenantStore()
 const userStore = useUserStore()
+
 const tenant = ref<Tenant | undefined>()
 
 onMounted(async () => {

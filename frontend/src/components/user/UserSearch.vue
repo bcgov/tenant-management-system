@@ -1,15 +1,14 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
+
 import type { User } from '@/models'
 
-// Props from parent
 const props = defineProps<{
   tenantId: string
   loading?: boolean
   results: User[]
 }>()
 
-// Emits to parent
 const emit = defineEmits<{
   (event: 'select', user: User): void
   (event: 'search', query: Record<string, string>): void

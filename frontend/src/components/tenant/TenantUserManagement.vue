@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+
 import UserSearch from '@/components/user/UserSearch.vue'
 import type { Role, Tenant, User } from '@/models'
 
 const props = defineProps<{
-  roles?: Role[]
-  tenant?: Tenant
-  searchResults: User[]
   loadingSearch: boolean
+  roles?: Role[]
+  searchResults: User[]
+  tenant?: Tenant
 }>()
 
 const emit = defineEmits<{
