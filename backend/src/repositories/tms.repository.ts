@@ -18,77 +18,74 @@ export class TMSRepository {
         this.manager = manager
     }
 
-    public async saveTenant(req:Request) {
+    public async saveTenant(req: Request | { body: any }) {
         let tenantResponse = {}
         await this.manager.transaction(async(transactionEntityManager) => {
-
-        try {
-            if(await this.checkIfTenantNameAndMinistryNameExists(req.body.name, req.body.ministryName)) {
-                throw new ConflictError(`A tenant with name '${req.body.name}' and ministry name '${req.body.ministryName}' already exists`);
-            }
-
-            const tenantUser:TenantUser = new TenantUser()
-            const ssoUser:SSOUser = await this.setSSOUser(req.body.user.ssoUserId,req.body.user.firstName,req.body.user.lastName,req.body.user.displayName,
-                req.body.user.userName,req.body.user.email)
-            tenantUser.ssoUser = ssoUser
-            const tenant:Tenant = new Tenant()
-            tenant.ministryName = req.body.ministryName
-            tenant.name = req.body.name
-            tenant.users = [tenantUser]
-            tenant.description = req.body.description
-            tenant.createdBy = req.body.user.ssoUserId
-            tenant.updatedBy = req.body.user.ssoUserId
-
-
-            const savedTenant:Tenant = await transactionEntityManager.save(tenant)
-                  
-            const globalTenantRoles = [TMSConstants.SERVICE_USER, TMSConstants.TENANT_OWNER, TMSConstants.USER_ADMIN]
-
-            const roles:Role[] = await this.findRoles(globalTenantRoles,null)
-
-            let savedRoles:Role[]
-
-            if(roles?.length === 0) { 
-                const newRoles:Role [] = []
-                for(const role of globalTenantRoles) {
-                    const tempRole:Role = new Role()
-                    tempRole.name = role
-                    tempRole.description = role === TMSConstants.TENANT_OWNER ? "Tenant Owner" :
-                                        role === TMSConstants.SERVICE_USER ? "Service User" :
-                                        role === TMSConstants.USER_ADMIN ? "User Admin" : "";
-                    newRoles.push(tempRole)  
+            try {
+                if(await this.checkIfTenantNameAndMinistryNameExists(req.body.name, req.body.ministryName)) {
+                    throw new ConflictError(`A tenant with name '${req.body.name}' and ministry name '${req.body.ministryName}' already exists`);
                 }
-                savedRoles = await transactionEntityManager.save(newRoles)
-            }
-            else {
-                savedRoles = roles
-            }
 
-            const tenantUserRoles:TenantUserRole [] = []
-            for(const role of savedRoles) {
-                const tenantUserRole:TenantUserRole = new TenantUserRole()
-                tenantUserRole.role = role
-                tenantUserRole.tenantUser = savedTenant.users[0]
-                tenantUserRoles.push(tenantUserRole)
+                const tenantUser:TenantUser = new TenantUser()
+                const ssoUser:SSOUser = await this.setSSOUser(req.body.user.ssoUserId,req.body.user.firstName,req.body.user.lastName,req.body.user.displayName,
+                    req.body.user.userName,req.body.user.email)
+                tenantUser.ssoUser = ssoUser
+                const tenant:Tenant = new Tenant()
+                tenant.ministryName = req.body.ministryName
+                tenant.name = req.body.name
+                tenant.users = [tenantUser]
+                tenant.description = req.body.description
+                tenant.createdBy = req.body.user.ssoUserId
+                tenant.updatedBy = req.body.user.ssoUserId
+
+                const savedTenant:Tenant = await transactionEntityManager.save(tenant)
+                  
+                const globalTenantRoles = [TMSConstants.SERVICE_USER, TMSConstants.TENANT_OWNER, TMSConstants.USER_ADMIN]
+
+                const roles:Role[] = await this.findRoles(globalTenantRoles,null)
+
+                let savedRoles:Role[]
+
+                if(roles?.length === 0) { 
+                    const newRoles:Role [] = []
+                    for(const role of globalTenantRoles) {
+                        const tempRole:Role = new Role()
+                        tempRole.name = role
+                        tempRole.description = role === TMSConstants.TENANT_OWNER ? "Tenant Owner" :
+                                            role === TMSConstants.SERVICE_USER ? "Service User" :
+                                            role === TMSConstants.USER_ADMIN ? "User Admin" : "";
+                        newRoles.push(tempRole)  
+                    }
+                    savedRoles = await transactionEntityManager.save(newRoles)
+                }
+                else {
+                    savedRoles = roles
+                }
+
+                const tenantUserRoles:TenantUserRole [] = []
+                for(const role of savedRoles) {
+                    const tenantUserRole:TenantUserRole = new TenantUserRole()
+                    tenantUserRole.role = role
+                    tenantUserRole.tenantUser = savedTenant.users[0]
+                    tenantUserRoles.push(tenantUserRole)
+                }
+                await transactionEntityManager.save(tenantUserRoles)
+
+                tenantResponse = await transactionEntityManager
+                    .createQueryBuilder(Tenant, 'tenant')
+                    .leftJoinAndSelect('tenant.users','tu')
+                    .leftJoinAndSelect('tu.ssoUser','sso')
+                    .leftJoinAndSelect('tu.roles','turoles')
+                    .leftJoinAndSelect('turoles.role','role')
+                    .where('tenant.id = :id', { id: savedTenant.id })
+                    .getOne(); 
+            } catch(error) {
+                logger.error('Create tenant transaction failure - rolling back inserts ', error);
+                throw error
             }
-            await transactionEntityManager.save(tenantUserRoles)
+        });
 
-            tenantResponse = await transactionEntityManager
-                .createQueryBuilder(Tenant, 'tenant')
-                .leftJoinAndSelect('tenant.users','tu')
-                .leftJoinAndSelect('tu.ssoUser','sso')
-                .leftJoinAndSelect('tu.roles','turoles')
-                .leftJoinAndSelect('turoles.role','role')
-                .where('tenant.id = :id', { id: savedTenant.id })
-                .getOne(); 
-        } catch(error) {
-            logger.error('Create tenant transaction failure - rolling back inserts ', error);
-            throw error
-        }
-    });
-
-    return tenantResponse
-        
+        return tenantResponse
     }
 
     public async updateTenant(req: Request) {
@@ -610,7 +607,7 @@ export class TMSRepository {
 
         await this.manager.transaction(async(transactionEntityManager) => {
             try {
-                const tenantRequest = await this.getTenantRequestById(transactionEntityManager, requestId);
+                const tenantRequest:TenantRequest = await this.getTenantRequestById(transactionEntityManager, requestId);
                 if (!tenantRequest) {
                     throw new NotFoundError(`Tenant request not found: ${requestId}`);
                 }
@@ -628,31 +625,32 @@ export class TMSRepository {
                         throw new ConflictError(`A tenant with name '${tenantRequest.name}' and ministry name '${tenantRequest.ministryName}' already exists`);
                     }
 
-                    // Create tenant from request
-                    const tenantUser = new TenantUser();
-                    const ssoUser = tenantRequest.requestedBy;
-                    tenantUser.ssoUser = ssoUser;
-
-                    const tenant = new Tenant();
-                    tenant.ministryName = tenantRequest.ministryName;
-                    tenant.name = tenantRequest.name;
-                    tenant.users = [tenantUser];
-                    tenant.description = tenantRequest.description;
-                    tenant.createdBy = req.decodedJwt?.idir_user_guid || 'system';
-                    tenant.updatedBy = req.decodedJwt?.idir_user_guid || 'system';
-
-                    const savedTenant = await transactionEntityManager.save(tenant);
-                    response = { tenant: savedTenant };
+                    const tenantRequestBody = {
+                        body: {
+                            name: tenantRequest.name,
+                            ministryName: tenantRequest.ministryName,
+                            description: tenantRequest.description,
+                            user: {
+                                ssoUserId: tenantRequest.requestedBy.ssoUserId,
+                                firstName: tenantRequest.requestedBy.firstName,
+                                lastName: tenantRequest.requestedBy.lastName,
+                                displayName: tenantRequest.requestedBy.displayName,
+                                userName: tenantRequest.requestedBy.userName,
+                                email: tenantRequest.requestedBy.email
+                            }
+                        }
+                    };
+                    const savedTenant = await this.saveTenant(tenantRequestBody)
+                    response = { tenant: savedTenant }
                 }
 
-                // Update tenant request status
                 const decisionMaker = await this.setSSOUser(
                     req.decodedJwt?.idir_user_guid || 'system',
                     req.decodedJwt?.given_name || 'System',
                     req.decodedJwt?.family_name || 'User',
                     req.decodedJwt?.display_name || 'System User',
                     req.decodedJwt?.preferred_username || 'system',
-                    req.decodedJwt?.email || 'system@example.com'
+                    req.decodedJwt?.email || 'system@gov.bc.ca'
                 );
 
                 tenantRequest.status = status;

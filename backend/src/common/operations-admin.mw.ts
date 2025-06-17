@@ -1,27 +1,28 @@
 import { Request, Response, NextFunction } from 'express'
 import { UnauthorizedError } from '../errors/UnauthorizedError'
 import logger from './logger'
+import { ForbiddenError } from '../errors/ForbiddenError'
 
 export const checkOperationsAdmin = (req: Request, res: Response, next: NextFunction) => {
     try {
         const roles = req.decodedJwt?.roles || []
         
         if (!roles.includes('TMS.OPERATIONS_ADMIN')) {
-            logger.warn('Access denied: User does not have TMS.OPERATIONS_ADMIN role', {
+            logger.warn('Access denied: User does not have required role: TMS.OPERATIONS_ADMIN', {
                 userId: req.decodedJwt?.idir_user_guid,
                 roles: roles
             })
-            throw new UnauthorizedError('Access denied: Operations Admin role required')
+            throw new ForbiddenError('Access denied: User does not have required role')
         }
 
         next()
     } catch (error) {
-        if (error instanceof UnauthorizedError) {
+        if (error instanceof ForbiddenError) {
             res.status(403).json({
                 errorMessage: 'Forbidden',
                 httpResponseCode: 403,
                 message: error.message,
-                name: 'Unauthorized access'
+                name: 'User does not have access to this operation and / resource'
             })
         } else {
             logger.error('Error checking operations admin role', error)
