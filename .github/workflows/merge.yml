@@ -56,6 +56,16 @@ jobs:
       bcgov_sso_api_client_secret: ${{ secrets.BCGOV_SSO_API_CLIENT_SECRET }}
       vite_keycloak_client_id: ${{ secrets.VITE_KEYCLOAK_CLIENT_ID }}
 
+  test_security_scan:
+    name: ZAP Security Scan (TEST)
+    needs: [deploy-test, update-test-secrets]
+    uses: ./.github/workflows/.zap-scan.yml
+    with:
+      pr_number: ${{ github.event.number }}
+      target_url: https://${{ github.event.repository.name }}-test-frontend.apps.silver.devops.gov.bc.ca
+      enable_ajax_spider: true
+      fail_on_high: false
+
   deploy-prod:
     name: Deploy (PROD)
     needs: [update_test_secrets]

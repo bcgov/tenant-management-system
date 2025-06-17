@@ -1,0 +1,65 @@
+name: .ZAP Security Scan
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        required: false
+        type: string
+        description: 'Environment name (e.g., test, prod)'
+      pr_number:
+        required: false
+        type: string
+        description: 'PR number for PR environments'
+      target_url:
+        required: true
+        type: string
+        description: 'URL to scan'
+      enable_ajax_spider:
+        required: false
+        type: boolean
+        default: true
+        description: 'Enable AJAX spider'
+      fail_on_high:
+        required: false
+        type: boolean
+        default: false
+        description: 'Fail workflow on HIGH alerts'
+    secrets:
+      zap_secret:
+        required: false
+        description: 'Secret for auth if needed'
+
+jobs:
+  zap-scan:
+    name: ZAP Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      # Use action-full-scan for more comprehensive testing
+      - name: ZAP Full Scan
+        uses: zaproxy/action-full-scan@v0.7.0
+        with:
+          target: ${{ inputs.target_url }}
+          rules_file_name: '.zap/rules.tsv'
+          cmd_options: '${{ inputs.enable_ajax_spider && "-j" || "" }}'
+          
+      - name: Save ZAP Results
+        uses: actions/upload-artifact@v3
+        with:
+          name: zap-scan-results-${{ inputs.environment || inputs.pr_number }}
+          path: |
+            report.html
+            
+      - name: Check for High Alerts
+        if: ${{ inputs.fail_on_high }}
+        run: |
+          HIGH_ALERTS=$(cat report.html | grep -c 'data-tags="high"' || echo "0")
+          echo "Found $HIGH_ALERTS HIGH alerts"
+          
+          if [[ $HIGH_ALERTS -gt 0 ]]; then
+            echo "::error ::Security scan detected $HIGH_ALERTS HIGH severity issues"
+            exit 1
+          fi
