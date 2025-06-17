@@ -18,11 +18,6 @@ on:
         required: true
         type: string
         description: 'URL to scan'
-      enable_ajax_spider:
-        required: false
-        type: boolean
-        default: true
-        description: 'Enable AJAX spider'
       fail_on_high:
         required: false
         type: boolean
@@ -47,7 +42,7 @@ jobs:
         with:
           target: ${{ inputs.target_url }}
           rules_file_name: '.zap/rules.tsv'
-          cmd_options: '${{ inputs.enable_ajax_spider && "-j" || "" }}'
+          cmd_options: '-a'
           
       - name: Save ZAP Results
         uses: actions/upload-artifact@v3

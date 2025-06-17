@@ -63,7 +63,6 @@ jobs:
     with:
       pr_number: ${{ github.event.number }}
       target_url: https://${{ github.event.repository.name }}-test-frontend.apps.silver.devops.gov.bc.ca
-      enable_ajax_spider: true
       fail_on_high: false
 
   deploy-prod:
