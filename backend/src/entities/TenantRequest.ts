@@ -25,7 +25,7 @@ export class TenantRequest {
     status: 'NEW' | 'APPROVED' | 'REJECTED';
 
     @Index()
-    @ManyToOne(() => SSOUser, { eager: true })
+    @ManyToOne(() => SSOUser, { eager: true, cascade:['insert'] })
     @JoinColumn({ name: 'requested_by' })
     requestedBy: SSOUser;
 
