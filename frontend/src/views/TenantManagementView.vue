@@ -4,22 +4,23 @@ import { useRoute } from 'vue-router'
 
 import TenantDetails from '@/components/tenant/TenantDetails.vue'
 import TenantHeader from '@/components/tenant/TenantHeader.vue'
-import TenantTabs from '@/components/tenant/TenantTabs.vue'
+import TenantUserManagement from '@/components/tenant/TenantUserManagement.vue'
 import BreadcrumbBar from '@/components/ui/BreadcrumbBar.vue'
-import { Tenant } from '@/models'
-import { useRoleStore, useTenantStore } from '@/stores'
+import { Role, Tenant, User } from '@/models'
+import { useRoleStore, useTenantStore, useUserStore } from '@/stores'
+import { useNotification } from '@/composables'
+import { DuplicateEntityError } from '@/errors'
 
-// Initialize stores and route
 const route = useRoute()
 const roleStore = useRoleStore()
 const tenantStore = useTenantStore()
+const userStore = useUserStore()
 const tenant = ref<Tenant | undefined>()
 
 onMounted(async () => {
   await roleStore.fetchRoles()
 })
 
-// Watch for route changes and load tenant data
 watch(
   () => route.params.id,
   async (newId) => {
@@ -34,8 +35,8 @@ watch(
 const showDetail = ref(true)
 const deleteDialogVisible = ref(false)
 const isEditing = ref(false)
+const tab = ref<number>(0)
 
-// Breadcrumbs for navigation
 const breadcrumbs = computed(() => [
   { title: 'Tenants', disabled: false, href: '/tenants' },
   {
@@ -46,6 +47,23 @@ const breadcrumbs = computed(() => [
 ])
 
 const roles = computed(() => roleStore.roles)
+const { addNotification } = useNotification()
+
+const searchResults = ref<User[]>([])
+const loadingSearch = ref(false)
+
+async function handleSearch(query: Record<string, string>) {
+  loadingSearch.value = true
+  try {
+    searchResults.value = await userStore.searchIdirUsers(query)
+  } catch (error) {
+    console.error('Search failed:', error)
+    addNotification('User search failed', 'error')
+    searchResults.value = []
+  } finally {
+    loadingSearch.value = false
+  }
+}
 
 async function handleUpdate(updatedTenant: Partial<Tenant>) {
   try {
@@ -57,6 +75,20 @@ async function handleUpdate(updatedTenant: Partial<Tenant>) {
   } catch (error) {
     console.error('Failed to update tenant:', error)
     // TODO: Add error handling
+  }
+}
+
+async function handleAddUser({ user, role }: { user: User; role: Role }) {
+  try {
+    await tenantStore.addTenantUser(tenant.value?.id as string, user, role)
+    addNotification('User added successfully')
+  } catch (error) {
+    if (error instanceof DuplicateEntityError) {
+      addNotification(error.message, 'error')
+    } else {
+      addNotification('Failed to add user', 'error')
+      console.error('Failed to add user:', error)
+    }
   }
 }
 </script>
@@ -76,12 +108,39 @@ async function handleUpdate(updatedTenant: Partial<Tenant>) {
         @update="handleUpdate"
       />
 
-      <TenantTabs
-        :disabled="isEditing"
-        :roles="roles"
-        :tenant="tenant"
-        class="mt-6"
-      />
+      <!-- Inlined Tabs -->
+      <v-card elevation="0" class="mt-6">
+        <v-tabs v-model="tab" :mandatory="false" :disabled="isEditing">
+          <v-tab :value="0" class="pa-0 ma-0" style="min-width: 0px" />
+          <v-tab :value="1">User Management</v-tab>
+          <v-tab :value="2">Available Services</v-tab>
+        </v-tabs>
+
+        <v-window v-model="tab">
+          <v-window-item :value="0" />
+
+          <v-window-item :value="1">
+            <TenantUserManagement
+              :roles="roles"
+              :tenant="tenant"
+              :search-results="searchResults"
+              :loading-search="loadingSearch"
+              @add="handleAddUser"
+              @search="handleSearch"
+            />
+          </v-window-item>
+
+          <v-window-item :value="2">
+            <v-container fluid>
+              <v-row>
+                <v-col cols="12">
+                  <p>Content for Available Services tab</p>
+                </v-col>
+              </v-row>
+            </v-container>
+          </v-window-item>
+        </v-window>
+      </v-card>
     </v-container>
   </BaseSecure>
 </template>

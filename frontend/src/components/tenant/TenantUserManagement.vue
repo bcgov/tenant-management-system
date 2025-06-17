@@ -1,18 +1,19 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-
-import { useNotification } from '@/composables'
 import UserSearch from '@/components/user/UserSearch.vue'
 import type { Role, Tenant, User } from '@/models'
-import { useTenantStore } from '@/stores'
 
 const props = defineProps<{
   roles?: Role[]
   tenant?: Tenant
+  searchResults: User[]
+  loadingSearch: boolean
 }>()
 
-const tenantStore = useTenantStore()
-const { addNotification } = useNotification()
+const emit = defineEmits<{
+  (event: 'add', payload: { user: User; role: Role }): void
+  (event: 'search', query: Record<string, string>): void
+}>()
 
 const showSearch = ref(false)
 const selectedUser = ref<User | null>(null)
@@ -23,7 +24,6 @@ function toggleSearch() {
   if (!showSearch.value) {
     selectedUser.value = null
     selectedRole.value = null
-    // userSearchRef.value?.reset()
   }
 }
 
@@ -31,24 +31,21 @@ function onUserSelected(user: User) {
   selectedUser.value = user
 }
 
-async function addUserToTenant() {
-  if (!props.tenant?.id || !selectedUser.value || !selectedRole.value) {
+function onSearch(query: Record<string, string>) {
+  emit('search', query)
+}
+
+function handleAddUser() {
+  if (!selectedUser.value || !selectedRole.value) {
     return
   }
 
-  try {
-    await tenantStore.addTenantUser(
-      props.tenant.id,
-      selectedUser.value,
-      selectedRole.value,
-    )
+  emit('add', {
+    user: selectedUser.value,
+    role: selectedRole.value,
+  })
 
-    addNotification('User added successfully', 'success')
-    toggleSearch()
-  } catch (error) {
-    addNotification('Failed to add user', 'error')
-    console.error(error)
-  }
+  toggleSearch()
 }
 </script>
 
@@ -110,9 +107,11 @@ async function addUserToTenant() {
         <v-divider class="my-4" />
         <template v-if="tenant?.id">
           <UserSearch
-            ref="userSearchRef"
-            :tenant-id="tenant?.id"
+            :tenant-id="tenant.id"
+            :loading="loadingSearch"
+            :results="searchResults"
             @select="onUserSelected"
+            @search="onSearch"
           />
 
           <!-- Role selection -->
@@ -132,7 +131,7 @@ async function addUserToTenant() {
               <v-btn
                 color="primary"
                 :disabled="!selectedRole"
-                @click="addUserToTenant"
+                @click="handleAddUser"
               >
                 Add User to Tenant
               </v-btn>
