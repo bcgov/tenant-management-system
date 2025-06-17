@@ -48,9 +48,21 @@ jobs:
       bcgov_sso_api_client_secret: ${{ secrets.BCGOV_SSO_API_CLIENT_SECRET }}
       vite_keycloak_client_id: ${{ secrets.VITE_KEYCLOAK_CLIENT_ID }}
 
+  security_scan:
+    permissions:
+      contents: read
+    name: ZAP Security Scan (PR ${{ github.event.number }})
+    needs: [update_secrets]
+    uses: ./.github/workflows/.zap-scan.yml
+    with:
+      pr_number: ${{ github.event.number }}
+      target_url: https://${{ github.event.repository.name }}-pr-${{ github.event.number }}-frontend.apps.silver.devops.gov.bc.ca
+      fail_on_high: false
+      scan_type: baseline
+
   results:
     name: PR Results
-    needs: [builds, deploys]
+    needs: [builds, deploys, update_secrets, security_scan]
     if: always()
     runs-on: ubuntu-24.04
     steps:

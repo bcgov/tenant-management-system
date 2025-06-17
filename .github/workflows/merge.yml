@@ -42,7 +42,7 @@ jobs:
       db_user: app
       tag: ${{ inputs.tag || 'latest' }}
 
-  update_test_secrets:
+  update-test-secrets:
     name: Update Test Secrets
     needs: [deploy-test]
     uses: ./.github/workflows/.update-secrets.yml
@@ -56,9 +56,21 @@ jobs:
       bcgov_sso_api_client_secret: ${{ secrets.BCGOV_SSO_API_CLIENT_SECRET }}
       vite_keycloak_client_id: ${{ secrets.VITE_KEYCLOAK_CLIENT_ID }}
 
+  test_security_scan:
+    permissions:
+      contents: read
+    name: ZAP Security Scan (TEST)
+    needs: [deploy-test, update-test-secrets]
+    uses: ./.github/workflows/.zap-scan.yml
+    with:
+      pr_number: ${{ github.event.number }}
+      target_url: https://${{ github.event.repository.name }}-test-frontend.apps.silver.devops.gov.bc.ca
+      fail_on_high: true
+      scan_type: full
+
   deploy-prod:
     name: Deploy (PROD)
-    needs: [update_test_secrets]
+    needs: [update-test-secrets]
     uses: ./.github/workflows/.deployer.yml
     secrets: inherit
     with:
@@ -72,7 +84,7 @@ jobs:
         --set backend.pdb.enabled=true
       tag: ${{ inputs.tag || 'latest' }}
 
-  update_prod_secrets:
+  update-prod-secrets:
     name: Update Prod Secrets
     needs: [deploy-prod]
     uses: ./.github/workflows/.update-secrets.yml
@@ -88,7 +100,7 @@ jobs:
 
   promote:
     name: Promote Images
-    needs: [deploy-prod, update_prod_secrets]
+    needs: [deploy-prod, update-prod-secrets]
     runs-on: ubuntu-24.04
     permissions:
       packages: write
