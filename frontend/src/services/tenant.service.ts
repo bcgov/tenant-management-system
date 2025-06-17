@@ -6,7 +6,7 @@ import { Role, User } from '@/models'
 const api = authenticatedAxios()
 
 export const tenantService = {
-  async addUsers(tenantId: string, user: User, role: Role): Promise<User> {
+  async addUser(tenantId: string, user: User, role: Role) {
     try {
       const request: { user: any; roles?: string[] } = { user }
       request.roles = [role.id]
@@ -19,7 +19,7 @@ export const tenantService = {
 
       const response = await api.post(`/tenants/${tenantId}/users`, request)
 
-      return response.data.data as User
+      return response.data.data.user
     } catch (error) {
       logApiError('Error adding user to Tenant', error)
 

@@ -34,11 +34,12 @@ export const useTenantStore = defineStore('tenant', () => {
     return upsertTenant(tenant)
   }
 
-  const addTenantUser = async (tenantId: string, user: User, role: Role) => {
-    await tenantService.addUsers(tenantId, user, role)
+  const addTenantUser = async (tenant: Tenant, user: User, role: Role) => {
+    const apiResponse = await tenantService.addUser(tenant.id, user, role)
 
-    // Refresh tenant users after adding
-    // TODO
+    // Update tenant users after adding
+    const addedUser = User.fromApiData(apiResponse)
+    tenant.users.push(addedUser)
   }
 
   const fetchTenant = async (tenantId: string) => {

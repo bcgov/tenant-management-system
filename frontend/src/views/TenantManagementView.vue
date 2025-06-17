@@ -82,8 +82,10 @@ async function handleUpdate(updatedTenant: Partial<Tenant>) {
 
 async function handleAddUser({ user, role }: { user: User; role: Role }) {
   try {
-    await tenantStore.addTenantUser(tenant.value?.id as string, user, role)
-    addNotification('User added successfully')
+    if (tenant.value) {
+      await tenantStore.addTenantUser(tenant.value, user, role)
+      addNotification('User added successfully')
+    }
   } catch (error) {
     if (error instanceof DuplicateEntityError) {
       addNotification(error.message, 'error')
