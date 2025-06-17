@@ -88,7 +88,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/UnauthorizedErrorResponse'
         '403':
-          description: Forbidden - User Smiths not have required roles
+          description: Forbidden - User does not have required roles
           content:
             application/json:
               schema:
@@ -165,7 +165,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/UnauthorizedErrorResponse'
         '403':
-          description: Forbidden - User Smiths not have required roles (TENANT_OWNER or USER_ADMIN)
+          description: Forbidden - User does not have required roles (TENANT_OWNER or USER_ADMIN)
           content:
             application/json:
               schema:
@@ -228,7 +228,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/UnauthorizedErrorResponse'
         '403':
-          description: Forbidden - User Smiths not have access to the tenant
+          description: Forbidden - User does not have access to the tenant
           content:
             application/json:
               schema:
@@ -367,7 +367,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/UnauthorizedErrorResponse'
         '403':
-          description: Forbidden - User Smiths not have required roles (TENANT_OWNER or USER_ADMIN)
+          description: Forbidden - User does not have required roles (TENANT_OWNER or USER_ADMIN)
           content:
             application/json:
               schema:
@@ -432,7 +432,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/UnauthorizedErrorResponse'
         '403':
-          description: Forbidden - User Smiths not have required roles (TENANT_OWNER or USER_ADMIN)
+          description: Forbidden - User does not have required roles (TENANT_OWNER or USER_ADMIN)
           content:
             application/json:
               schema:
@@ -495,7 +495,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/UnauthorizedErrorResponse'
         '403':
-          description: Forbidden - User Smiths not have access to the tenant
+          description: Forbidden - User does not have access to the tenant
           content:
             application/json:
               schema:
