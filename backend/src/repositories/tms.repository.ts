@@ -603,5 +603,75 @@ export class TMSRepository {
         return tenantRequestResponse
     }
 
+    public async updateTenantRequestStatus(req: Request) {
+        const requestId: string = req.params.requestId;
+        const { status, rejectionReason } = req.body;
+        let response = {};
+
+        await this.manager.transaction(async(transactionEntityManager) => {
+            try {
+                const tenantRequest = await this.getTenantRequestById(transactionEntityManager, requestId);
+                if (!tenantRequest) {
+                    throw new NotFoundError(`Tenant request not found: ${requestId}`);
+                }
+
+                if (tenantRequest.status !== 'NEW') {
+                    throw new ConflictError(`Cannot update tenant request with status: ${tenantRequest.status}`);
+                }
+
+                if (status === 'REJECTED' && !rejectionReason) {
+                    throw new ConflictError('Rejection reason is required when rejecting a tenant request');
+                }
+
+                if (status === 'APPROVED') {
+                    if (await this.checkIfTenantNameAndMinistryNameExists(tenantRequest.name, tenantRequest.ministryName)) {
+                        throw new ConflictError(`A tenant with name '${tenantRequest.name}' and ministry name '${tenantRequest.ministryName}' already exists`);
+                    }
+
+                    // Create tenant from request
+                    const tenantUser = new TenantUser();
+                    const ssoUser = tenantRequest.requestedBy;
+                    tenantUser.ssoUser = ssoUser;
+
+                    const tenant = new Tenant();
+                    tenant.ministryName = tenantRequest.ministryName;
+                    tenant.name = tenantRequest.name;
+                    tenant.users = [tenantUser];
+                    tenant.description = tenantRequest.description;
+                    tenant.createdBy = req.decodedJwt?.idir_user_guid || 'system';
+                    tenant.updatedBy = req.decodedJwt?.idir_user_guid || 'system';
+
+                    const savedTenant = await transactionEntityManager.save(tenant);
+                    response = { tenant: savedTenant };
+                }
+
+                // Update tenant request status
+                const decisionMaker = await this.setSSOUser(
+                    req.decodedJwt?.idir_user_guid || 'system',
+                    req.decodedJwt?.given_name || 'System',
+                    req.decodedJwt?.family_name || 'User',
+                    req.decodedJwt?.display_name || 'System User',
+                    req.decodedJwt?.preferred_username || 'system',
+                    req.decodedJwt?.email || 'system@example.com'
+                );
+
+                tenantRequest.status = status;
+                tenantRequest.decisionedBy = decisionMaker;
+                tenantRequest.decisionedAt = new Date();
+                tenantRequest.rejectionReason = status === 'REJECTED' ? rejectionReason : null;
+                tenantRequest.updatedBy = req.decodedJwt?.idir_user_guid || 'system';
+
+                const updatedRequest = await transactionEntityManager.save(tenantRequest);
+                response = { ...response, tenantRequest: updatedRequest };
+
+            } catch (error) {
+                logger.error('Update tenant request status transaction failure - rolling back changes', error);
+                throw error;
+            }
+        });
+
+        return response;
+    }
+
 }
 

@@ -245,4 +245,20 @@ export class TMSController {
         }
     }
 
+    public async updateTenantRequestStatus(req: Request, res: Response) {
+        try {
+            const response = await this.tmsService.updateTenantRequestStatus(req);
+            res.status(200).send(response);
+        } catch (error) {
+            logger.error(error);
+            if (error instanceof NotFoundError) {
+                this.errorHandler.generalError(res, "Error occurred updating tenant request status", error.message, error.statusCode, "Not Found");
+            } else if (error instanceof ConflictError) {
+                this.errorHandler.generalError(res, "Error occurred updating tenant request status", error.message, error.statusCode, "Conflict");
+            } else {
+                this.errorHandler.generalError(res, "Error occurred updating tenant request status", error.message, 500, "Internal Server Error");
+            }
+        }
+    }
+
 }
