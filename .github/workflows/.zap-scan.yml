@@ -73,15 +73,21 @@ jobs:
         with:
           name: zap-scan-results-${{ inputs.environment || inputs.pr_number }}
           path: |
-            report.html
+            zap_scan.html
+            zap_scan.json
+            zap_scan.md
             
       - name: Check for High Alerts
         if: ${{ inputs.fail_on_high }}
         run: |
-          HIGH_ALERTS=$(cat report.html | grep -c 'data-tags="high"' || echo "0")
-          echo "Found $HIGH_ALERTS HIGH alerts"
-          
-          if [[ $HIGH_ALERTS -gt 0 ]]; then
-            echo "::error ::Security scan detected $HIGH_ALERTS HIGH severity issues"
-            exit 1
+          if [ -f "zap_scan.json" ]; then
+            HIGH_ALERTS=$(cat zap_scan.json | grep -c '"riskcode": "3"' || echo "0")
+            echo "Found $HIGH_ALERTS HIGH alerts"
+            
+            if [[ $HIGH_ALERTS -gt 0 ]]; then
+              echo "::error ::Security scan detected $HIGH_ALERTS HIGH severity issues"
+              exit 1
+            fi
+          else
+            echo "ZAP scan JSON report not found. Cannot check for high alerts."
           fi
