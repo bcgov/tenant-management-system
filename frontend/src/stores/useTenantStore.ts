@@ -104,9 +104,9 @@ export const useTenantStore = defineStore('tenant', () => {
     addTenant,
     addTenantUser,
     fetchTenant,
-    fetchTenants,
-    fetchTenantUsers,
     fetchTenantUserRoles,
+    fetchTenantUsers,
+    fetchTenants,
     updateTenant,
   }
 })
