@@ -641,11 +641,20 @@ export class TMSRepository {
                             }
                         }
                     };
-                    const savedTenant = await this.saveTenant(tenantRequestBody,transactionEntityManager)
-                    response = { tenant: savedTenant }
+                    const savedTenant: Tenant = await this.saveTenant(tenantRequestBody, transactionEntityManager) as Tenant;
+
+                    const basicTenantInfo = {
+                        id: savedTenant.id,
+                        name: savedTenant.name,
+                        ministryName: savedTenant.ministryName,
+                        description: savedTenant.description,
+                        createdBy: savedTenant.createdBy,
+                        updatedBy: savedTenant.updatedBy
+                    };
+                    response = { tenant: basicTenantInfo }
                 }
 
-                const decisionMaker = await this.setSSOUser(
+                let opsAdminSSOUser:SSOUser = await this.setSSOUser(
                     req.decodedJwt?.idir_user_guid || 'system',
                     req.decodedJwt?.given_name || 'System',
                     req.decodedJwt?.family_name || 'User',
@@ -654,14 +663,20 @@ export class TMSRepository {
                     req.decodedJwt?.email || 'system@gov.bc.ca'
                 );
 
+                opsAdminSSOUser = await transactionEntityManager.save(opsAdminSSOUser)
+
                 tenantRequest.status = status;
-                tenantRequest.decisionedBy = decisionMaker;
+                tenantRequest.decisionedBy = opsAdminSSOUser;
                 tenantRequest.decisionedAt = new Date();
                 tenantRequest.rejectionReason = status === 'REJECTED' ? rejectionReason : null;
                 tenantRequest.updatedBy = req.decodedJwt?.idir_user_guid || 'system';
 
                 const updatedRequest = await transactionEntityManager.save(tenantRequest);
-                response = { ...response, tenantRequest: updatedRequest };
+
+                const tenantRequestResponse = {
+                    ...updatedRequest,
+                };
+                response = { ...response, tenantRequest: tenantRequestResponse };
 
             } catch (error) {
                 logger.error('Update tenant request status transaction failure - rolling back changes', error);
