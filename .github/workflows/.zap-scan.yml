@@ -1,5 +1,8 @@
 name: .ZAP Security Scan
 
+permissions:
+    contents: read
+
 on:
   workflow_call:
     inputs:
