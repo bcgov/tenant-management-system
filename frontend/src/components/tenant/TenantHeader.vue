@@ -7,8 +7,17 @@ const props = defineProps<{
   tenant?: Tenant
 }>()
 
-type EmitFn = (event: 'update:showDetail', value: boolean) => void
-const emit = defineEmits<EmitFn>()
+/**
+ * SonarQube rule S6598 triggers when there is a single emitter, and it suggests
+ * using function type syntax rather than call signature syntax. However, the
+ * Vue standard is to use call signature syntax. This intentional deviation from
+ * the SonarQube rule is to be compatible with Vue's recommendation.
+ *
+ * @see https://vuejs.org/guide/typescript/composition-api.html#typing-component-emits
+ */
+const emit = defineEmits<{
+  (event: 'update:showDetail', value: boolean): void // NOSONAR: S6598
+}>()
 
 const showDetail = ref(true)
 

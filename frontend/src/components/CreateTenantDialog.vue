@@ -7,14 +7,17 @@ import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
 import { useAuthStore } from '@/stores'
 import { MINISTRIES } from '@/utils/constants'
 
+const props = defineProps<{
+  isDuplicateName?: boolean
+}>()
+
+const emit = defineEmits<{
+  (event: 'submit', payload: { name: string; ministryName: string }): void
+  (event: 'clear-duplicate-error'): void
+}>()
+
 // Auto-bound v-model from parent
 const dialogVisible = defineModel<boolean>()
-
-// Emits
-const emit = defineEmits<{
-  (e: 'submit', payload: { name: string; ministryName: string }): void
-  (e: 'clear-duplicate-error'): void
-}>()
 
 const closeDialog = () => (dialogVisible.value = false)
 
@@ -25,9 +28,6 @@ const ministryName = ref('')
 const name = ref('')
 const authStore = useAuthStore()
 const username = computed(() => authStore.user?.displayName || '')
-
-// Props
-const props = defineProps<{ isDuplicateName?: boolean }>()
 
 // Clear the state when the dialog is opened. This is for the case that the
 // user opens the dialog, enters data, cancels, and opens it again - the form
