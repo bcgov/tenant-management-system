@@ -5,11 +5,8 @@ import { Role, Tenant, User } from '@/models'
 import { tenantService } from '@/services'
 
 export const useTenantStore = defineStore('tenant', () => {
-  const tenants = ref<Tenant[]>([])
-  const tenantUsers = ref<Record<string, User[]>>({})
-  const tenantUserRoles = ref<Record<string, Record<string, Role[]>>>({})
-
   const loading = ref(false)
+  const tenants = ref<Tenant[]>([])
 
   // Private methods
 
@@ -41,7 +38,7 @@ export const useTenantStore = defineStore('tenant', () => {
     await tenantService.addUsers(tenantId, user, role)
 
     // Refresh tenant users after adding
-    await fetchTenantUsers(tenantId)
+    // TODO
   }
 
   const fetchTenant = async (tenantId: string) => {
@@ -54,19 +51,6 @@ export const useTenantStore = defineStore('tenant', () => {
     } finally {
       loading.value = false
     }
-  }
-
-  const fetchTenantUserRoles = async (tenantId: string, userId: string) => {
-    const roles = await tenantService.getUserRoles(tenantId, userId)
-    if (!tenantUserRoles.value[tenantId]) {
-      tenantUserRoles.value[tenantId] = {}
-    }
-    tenantUserRoles.value[tenantId][userId] = roles
-  }
-
-  const fetchTenantUsers = async (tenantId: string) => {
-    const users = await tenantService.getUsers(tenantId)
-    tenantUsers.value[tenantId] = users
   }
 
   const fetchTenants = async (userId: string) => {
@@ -104,8 +88,6 @@ export const useTenantStore = defineStore('tenant', () => {
     addTenant,
     addTenantUser,
     fetchTenant,
-    fetchTenantUserRoles,
-    fetchTenantUsers,
     fetchTenants,
     updateTenant,
   }
