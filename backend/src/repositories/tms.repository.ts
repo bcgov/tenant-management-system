@@ -563,6 +563,14 @@ export class TMSRepository {
         return roles
     }
 
+    public async getTenantRequestById(transactionEntityManager: EntityManager, tenantRequestId: string) {
+        return await transactionEntityManager
+            .createQueryBuilder(TenantRequest, 'tenantRequest')
+            .leftJoinAndSelect('tenantRequest.requestedBy', 'sso')
+            .where('tenantRequest.id = :id', { id: tenantRequestId })
+            .getOne()
+    }
+
     public async saveTenantRequest(req: Request) {
         let tenantRequestResponse = {}
         await this.manager.transaction(async(transactionEntityManager) => {
@@ -583,13 +591,8 @@ export class TMSRepository {
                 tenantRequest.createdBy = req.body.user.ssoUserId
                 tenantRequest.updatedBy = req.body.user.ssoUserId
 
-                const savedTenantRequest = await transactionEntityManager.save(tenantRequest)
-
-                tenantRequestResponse = await transactionEntityManager
-                    .createQueryBuilder(TenantRequest, 'tenantRequest')
-                    .leftJoinAndSelect('tenantRequest.requestedBy', 'sso')
-                    .where('tenantRequest.id = :id', { id: savedTenantRequest.id })
-                    .getOne()
+                const savedTenantRequest:TenantRequest = await transactionEntityManager.save(tenantRequest)
+                tenantRequestResponse = await this.getTenantRequestById(transactionEntityManager, savedTenantRequest.id)
                     
             } catch (error) {
                 logger.error('Create tenant request transaction failure - rolling back inserts ', error)
