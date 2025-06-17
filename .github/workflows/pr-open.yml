@@ -49,6 +49,8 @@ jobs:
       vite_keycloak_client_id: ${{ secrets.VITE_KEYCLOAK_CLIENT_ID }}
 
   security_scan:
+    permissions:
+      contents: read
     name: ZAP Security Scan (PR ${{ github.event.number }})
     needs: [deploys, update_secrets]
     uses: ./.github/workflows/.zap-scan.yml

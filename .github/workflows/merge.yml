@@ -57,6 +57,8 @@ jobs:
       vite_keycloak_client_id: ${{ secrets.VITE_KEYCLOAK_CLIENT_ID }}
 
   test_security_scan:
+    permissions:
+      contents: read
     name: ZAP Security Scan (TEST)
     needs: [deploy-test, update-test-secrets]
     uses: ./.github/workflows/.zap-scan.yml
