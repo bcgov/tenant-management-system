@@ -5,6 +5,7 @@ import { URLSearchParams } from 'url'
 import axios from 'axios';
 import logger from '../common/logger'
 import { TenantRequest } from '../entities/TenantRequest'
+import { Tenant } from '../entities/Tenant'
 
 export class TMSService {
 
@@ -219,5 +220,24 @@ export class TMSService {
         } catch (error) {
             throw new Error("Failed to obtain access token: "+error)
         }
+    }
+
+    public async updateTenantRequestStatus(req: Request) {
+        const response = await this.tmsRepository.updateTenantRequestStatus(req) as { tenantRequest: TenantRequest; tenant?: Tenant };
+        const formattedResponse: { data: { tenantRequest: any; tenant?: Tenant } } = {
+            data: {
+                tenantRequest: {
+                    ...response.tenantRequest,
+                    requestedBy: response.tenantRequest.requestedBy?.displayName,
+                    decisionedBy: response.tenantRequest.decisionedBy?.displayName
+                }
+            }
+        };
+
+        if (response.tenant) {
+            formattedResponse.data.tenant = response.tenant;
+        }
+
+        return formattedResponse;
     }
 }
