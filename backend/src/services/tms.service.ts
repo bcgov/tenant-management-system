@@ -240,4 +240,22 @@ export class TMSService {
 
         return formattedResponse;
     }
+
+    public async getTenantRequests(req: Request) {
+        const status = req.query.status as string;
+        const tenantRequests = await this.tmsRepository.getTenantRequests(status);
+        
+        const formattedRequests = tenantRequests.map(request => ({
+            ...request,
+            requestedBy: request.requestedBy?.displayName,
+            decisionedBy: request.decisionedBy?.displayName
+        }));
+
+        return {
+            data: {
+                tenantRequests: formattedRequests
+            }
+        };
+    }
+
 }

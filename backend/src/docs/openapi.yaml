@@ -634,7 +634,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/InternalServerErrorResponse'
 
-  /tenant-requests:
+  /v1/tenant-requests:
     post:
       summary: Create a new tenant request
       description: Creates a new request for a tenant with the specified details
@@ -720,7 +720,94 @@ paths:
               schema:
                 $ref: '#/components/schemas/InternalServerErrorResponse'
 
-  /tenant-requests/{requestId}/status:
+    get:
+      summary: Get all tenant requests
+      description: |
+        Retrieves a list of all tenant requests. Only users with the TMS.OPERATIONS_ADMIN role can access this endpoint.
+        Results are ordered by request date (most recent first).
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [NEW, APPROVED, REJECTED]
+          description: Filter tenant requests by status
+          example: "NEW"
+      responses:
+        '200':
+          description: Tenant requests retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      tenantRequests:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/TenantRequest'
+              example:
+                data:
+                  tenantRequests:
+                    - id: "123e4567-e89b-12d3-a456-426614174000"
+                      name: "Roads Initiative"
+                      ministryName: "Ministry of Natural Resources"
+                      description: "Tenant for managing road infrastructure"
+                      status: "NEW"
+                      requestedBy: "John Smith: ENV: EX"
+                      requestedAt: "2024-03-15"
+                      decisionedBy: null
+                      decisionedAt: null
+                      rejectionReason: null
+                      createdDateTime: "2024-03-15"
+                      updatedDateTime: "2024-03-15"
+                      createdBy: "123e4567e89b12d3a456426614174000"
+                      updatedBy: "123e4567e89b12d3a456426614174000"
+                    - id: "456f7890-f12c-23d4-e567-537725285111"
+                      name: "Health Portal"
+                      ministryName: "Ministry of Health"
+                      description: "Tenant for health services portal"
+                      status: "APPROVED"
+                      requestedBy: "Jane Doe: HLTH: EX"
+                      requestedAt: "2024-03-10"
+                      decisionedBy: "Admin User"
+                      decisionedAt: "2024-03-12"
+                      rejectionReason: null
+                      createdDateTime: "2024-03-10"
+                      updatedDateTime: "2024-03-12"
+                      createdBy: "456f7890f12c23d4e567537725285111"
+                      updatedBy: "admin-user-guid"
+        '400':
+          description: Invalid query parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        '403':
+          description: Forbidden - User does not have the required TMS.OPERATIONS_ADMIN role
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+
+  /v1/tenant-requests/{requestId}/status:
     patch:
       summary: Update the status of a tenant request
       description: |
