@@ -65,6 +65,11 @@ describe('Tenant API', () => {
       (req, res) => tmsController.unassignUserRoles(req, res)
     )
 
+    app.patch('/v1/tenant-requests/:requestId/status',
+      validate(validator.updateTenantRequestStatus, {}, {}),
+      (req, res) => tmsController.updateTenantRequestStatus(req, res)
+    )
+
     app.use((err: any, req: any, res: any, next: any) => {
       if (err.name === 'ValidationError') {
         return res.status(err.statusCode).json(err)
@@ -1447,6 +1452,65 @@ describe('Tenant API', () => {
         message: 'Database error',
         name: 'Error occurred creating tenant request'
       })
+    })
+  })
+
+  describe('PATCH /v1/tenant-requests/:requestId/status', () => {
+    const requestId = '123e4567-e89b-12d3-a456-426614174000'
+    const validApproveData = {
+      status: 'APPROVED'
+    }
+
+    it('should approve a tenant request successfully', async () => {
+      const mockTenantRequest = {
+        id: requestId,
+        status: 'NEW',
+        requestedBy: {
+          id: '123e4567-e89b-12d3-a456-426614174001',
+          email: 'test@example.com',
+          displayName: 'Test User'
+        },
+        tenant: {
+          id: '123e4567-e89b-12d3-a456-426614174002',
+          name: 'Test Tenant',
+          ministryName: 'Test Ministry'
+        }
+      }
+
+      mockTMSRepository.updateTenantRequestStatus.mockResolvedValue({
+        tenantRequest: {
+          ...mockTenantRequest,
+          status: 'APPROVED',
+          decisionedBy: {
+            id: '123e4567-e89b-12d3-a456-426614174003',
+            email: 'ops@example.com',
+            displayName: 'Ops Admin'
+          }
+        }
+      })
+
+      const response = await request(app)
+        .patch(`/v1/tenant-requests/${requestId}/status`)
+        .send(validApproveData)
+
+      expect(response.status).toBe(200)
+      expect(response.body).toMatchObject({
+        data: {
+          tenantRequest: {
+            id: requestId,
+            status: 'APPROVED',
+            requestedBy: 'Test User',
+            decisionedBy: 'Ops Admin'
+          }
+        }
+      })
+
+      expect(mockTMSRepository.updateTenantRequestStatus).toHaveBeenCalledWith(
+        expect.objectContaining({
+          params: { requestId },
+          body: validApproveData
+        })
+      )
     })
   })
 }) 
