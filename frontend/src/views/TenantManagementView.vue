@@ -8,8 +8,9 @@ import TenantUserManagement from '@/components/tenant/TenantUserManagement.vue'
 import BreadcrumbBar from '@/components/ui/BreadcrumbBar.vue'
 import { useNotification } from '@/composables'
 import { DuplicateEntityError } from '@/errors'
-import { Role, Tenant, User } from '@/models'
+import { Tenant, User } from '@/models'
 import { useRoleStore, useTenantStore, useUserStore } from '@/stores'
+import { logger } from '@/utils/logger'
 
 const route = useRoute()
 
@@ -59,7 +60,7 @@ async function handleSearch(query: Record<string, string>) {
   try {
     searchResults.value = await userStore.searchIdirUsers(query)
   } catch (error) {
-    console.error('Search failed:', error)
+    logger.error('User search failed', error)
     addNotification('User search failed', 'error')
     searchResults.value = []
   } finally {
@@ -75,13 +76,12 @@ async function handleUpdate(updatedTenant: Partial<Tenant>) {
     })
     isEditing.value = false
   } catch (error) {
-    console.error('Failed to update tenant:', error)
+    logger.error('Failed to update tenant', error)
     // TODO: Add error handling
   }
 }
 
 async function handleAddUser(user: User) {
-  console.log('Adding user:', user)
   try {
     if (tenant.value) {
       await tenantStore.addTenantUser(tenant.value, user)
@@ -92,7 +92,6 @@ async function handleAddUser(user: User) {
       addNotification(error.message, 'error')
     } else {
       addNotification('Failed to add user', 'error')
-      console.error('Failed to add user:', error)
     }
   }
 }
