@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 
 import UserSearch from '@/components/user/UserSearch.vue'
 import type { Role, Tenant, User } from '@/models'
 
 const props = defineProps<{
   loadingSearch: boolean
-  roles?: Role[]
+  possibleRoles?: Role[]
   searchResults: User[]
   tenant?: Tenant
 }>()
@@ -18,13 +18,15 @@ const emit = defineEmits<{
 
 const showSearch = ref(false)
 const selectedUser = ref<User | null>(null)
-const selectedRole = ref<Role | null>(null)
+const selectedRoles = ref<Role[]>([])
+
+const roles = computed(() => props.possibleRoles ?? [])
 
 function toggleSearch() {
   showSearch.value = !showSearch.value
   if (!showSearch.value) {
     selectedUser.value = null
-    selectedRole.value = null
+    selectedRoles.value = []
   }
 }
 
@@ -36,15 +38,22 @@ function onSearch(query: Record<string, string>) {
   emit('search', query)
 }
 
-function handleAddUser() {
-  if (!selectedUser.value || !selectedRole.value) {
-    return
+function toggleRole(role: Role, checked: boolean) {
+  if (checked) {
+    if (!selectedRoles.value.find((r) => r.id === role.id)) {
+      selectedRoles.value.push(role)
+    }
+  } else {
+    selectedRoles.value = selectedRoles.value.filter((r) => r.id !== role.id)
   }
+}
 
-  emit('add', {
-    user: selectedUser.value,
-    role: selectedRole.value,
-  })
+function handleAddUser() {
+  if (!selectedUser.value || selectedRoles.value.length === 0) return
+
+  for (const role of selectedRoles.value) {
+    emit('add', { user: selectedUser.value, role })
+  }
 
   toggleSearch()
 }
@@ -52,7 +61,6 @@ function handleAddUser() {
 
 <template>
   <v-container fluid class="px-0">
-    <!-- Existing users table -->
     <v-row>
       <v-col cols="12">
         <v-data-table
@@ -86,7 +94,6 @@ function handleAddUser() {
       </v-col>
     </v-row>
 
-    <!-- Add user button -->
     <v-row class="mt-4">
       <v-col cols="12">
         <v-btn
@@ -102,7 +109,6 @@ function handleAddUser() {
       </v-col>
     </v-row>
 
-    <!-- Search section -->
     <v-expand-transition>
       <div v-if="showSearch">
         <v-divider class="my-4" />
@@ -115,24 +121,24 @@ function handleAddUser() {
             @search="onSearch"
           />
 
-          <!-- Role selection -->
           <v-row v-if="selectedUser" class="mt-4">
-            <v-col cols="12" md="6">
-              <v-select
-                v-model="selectedRole"
-                label="Select Role"
-                :items="roles"
-                item-title="description"
-                return-object
-                hide-details
-                required
+            <v-col cols="12">
+              <p class="text-subtitle-1 mb-2">Assign Role(s):</p>
+
+              <v-checkbox
+                v-for="role in roles"
+                :key="role.id"
+                :label="role.description"
+                :model-value="selectedRoles.some((r) => r.id === role.id)"
+                @update:model-value="(checked) => toggleRole(role, !!checked)"
+                class="mb-1"
               />
-            </v-col>
-            <v-col cols="12" md="6" class="d-flex align-center">
+
               <v-btn
                 color="primary"
-                :disabled="!selectedRole"
+                :disabled="selectedRoles.length === 0"
                 @click="handleAddUser"
+                class="mt-4"
               >
                 Add User to Tenant
               </v-btn>

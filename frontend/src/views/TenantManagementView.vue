@@ -125,7 +125,7 @@ async function handleAddUser({ user, role }: { user: User; role: Role }) {
 
           <v-window-item :value="1">
             <TenantUserManagement
-              :roles="roles"
+              :possible-roles="roles"
               :tenant="tenant"
               :search-results="searchResults"
               :loading-search="loadingSearch"
