@@ -1759,4 +1759,104 @@ describe('Tenant API', () => {
       )
     })
   })
+
+  describe('GET /v1/tenant-requests', () => {
+    const mockTenantRequests: any[] = [{
+      id: '123e4567-e89b-12d3-a456-426614174000',
+      name: 'Test Tenant',
+      ministryName: 'Test Ministry',
+      description: 'Test Description',
+      status: 'NEW',
+      requestedBy: {
+        id: '123e4567-e89b-12d3-a456-426614174001',
+        email: 'test@gov.bc.ca',
+        displayName: 'Test User'
+      },
+      requestedAt: new Date('2024-01-15'),
+      decisionedBy: null,
+      decisionedAt: null,
+      rejectionReason: null,
+      createdDateTime: new Date('2024-01-15'),
+      updatedDateTime: new Date('2024-01-15'),
+      createdBy: '123e4567e89b12d3a456426614174001',
+      updatedBy: '123e4567e89b12d3a456426614174001'
+    }]
+
+    beforeEach(() => {
+      app.get('/v1/tenant-requests',
+        validate(validator.getTenantRequests, {}, {}),
+        (req, res) => tmsController.getTenantRequests(req, res)
+      )
+
+      app.use((err: any, req: any, res: any, next: any) => {
+        if (err.name === 'ValidationError') {
+          return res.status(err.statusCode).json(err)
+        }
+        next(err)
+      })
+    })
+
+    it('should get all tenant requests successfully', async () => {
+      mockTMSRepository.getTenantRequests.mockResolvedValue(mockTenantRequests)
+
+      const response = await request(app)
+        .get('/v1/tenant-requests')
+
+      expect(response.status).toBe(200)
+      expect(response.body).toMatchObject({
+        data: {
+          tenantRequests: [{
+            id: mockTenantRequests[0].id,
+            name: mockTenantRequests[0].name,
+            ministryName: mockTenantRequests[0].ministryName,
+            description: mockTenantRequests[0].description,
+            status: mockTenantRequests[0].status,
+            requestedBy: mockTenantRequests[0].requestedBy.displayName
+          }]
+        }
+      })
+
+      expect(mockTMSRepository.getTenantRequests).toHaveBeenCalledWith(undefined)
+    })
+
+    it('should get tenant requests filtered by NEW status', async () => {
+      mockTMSRepository.getTenantRequests.mockResolvedValue(mockTenantRequests)
+
+      const response = await request(app)
+        .get('/v1/tenant-requests?status=NEW')
+
+      expect(response.status).toBe(200)
+      expect(response.body).toMatchObject({
+        data: {
+          tenantRequests: [{
+            id: mockTenantRequests[0].id,
+            name: mockTenantRequests[0].name,
+            status: 'NEW',
+            requestedBy: mockTenantRequests[0].requestedBy.displayName
+          }]
+        }
+      })
+
+      expect(mockTMSRepository.getTenantRequests).toHaveBeenCalledWith('NEW')
+    })
+
+    it('should return 400 when status parameter is invalid', async () => {
+      const response = await request(app)
+        .get('/v1/tenant-requests?status=INVALID_STATUS')
+
+      expect(response.status).toBe(400)
+      expect(response.body).toMatchObject({
+        message: 'Validation Failed',
+        details: {
+          query: expect.arrayContaining([
+            expect.objectContaining({
+              message: '"status" must be one of [NEW, APPROVED, REJECTED]'
+            })
+          ])
+        }
+      })
+
+      expect(mockTMSRepository.getTenantRequests).not.toHaveBeenCalled()
+    })
+  })
 }) 
