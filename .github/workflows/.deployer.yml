@@ -92,8 +92,8 @@ jobs:
     name: Stack
     needs: deployer-db
     environment:
-        name: ${{ inputs.environment }}
-        url: ${{ inputs.deployment_url }}
+      name: ${{ inputs.environment }}
+      url: ${{ inputs.deployment_url }}
     runs-on: ubuntu-24.04
     outputs:
       tag: ${{ inputs.tag || steps.pr.outputs.pr }}

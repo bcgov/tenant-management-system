@@ -8,7 +8,9 @@ concurrency:
   group: ${{ github.event.number }}
   cancel-in-progress: true
 
-permissions: {}
+permissions:
+  contents: read
+  deployments: write
 
 jobs:
   # https://github.com/bcgov/action-builder-ghcr
