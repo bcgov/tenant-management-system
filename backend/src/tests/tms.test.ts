@@ -1858,5 +1858,24 @@ describe('Tenant API', () => {
 
       expect(mockTMSRepository.getTenantRequests).not.toHaveBeenCalled()
     })
+
+    it('should return 500 when database error occurs', async () => {
+      mockTMSRepository.getTenantRequests.mockRejectedValue(
+        new Error('Database error')
+      )
+
+      const response = await request(app)
+        .get('/v1/tenant-requests')
+
+      expect(response.status).toBe(500)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Internal Server Error',
+        httpResponseCode: 500,
+        message: 'Database error',
+        name: 'Error occurred getting tenant requests'
+      })
+
+      expect(mockTMSRepository.getTenantRequests).toHaveBeenCalledWith(undefined)
+    })
   })
 }) 
