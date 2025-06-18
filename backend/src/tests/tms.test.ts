@@ -187,7 +187,7 @@ describe('Tenant API', () => {
         lastName: 'User',
         displayName: 'Test User',
         ssoUserId: 'F45AFBBD68C4466F956BA3A1D91878AD',
-        email: 'test@example.com'
+        email: 'test@gov.bc.ca'
       },
       roles: ['123e4567-e89b-12d3-a456-426614174002']
     }
@@ -588,7 +588,7 @@ describe('Tenant API', () => {
             lastName: 'User',
             displayName: 'Test User',
             userName: 'testuser',
-            email: 'test@example.com',
+            email: 'test@gov.bc.ca',
             createdDateTime: new Date(),
             updatedDateTime: new Date(),
             createdBy: 'test-user',
@@ -1305,7 +1305,7 @@ describe('Tenant API', () => {
         displayName: 'Test User',
         ssoUserId: 'F45AFBBD68C4466F956BA3A1D91878AD',
         userName: 'testuser',
-        email: 'test@example.com'
+        email: 'test@gov.bc.ca'
       }
     }
 
@@ -1383,7 +1383,7 @@ describe('Tenant API', () => {
           displayName: 'Test User',
           ssoUserId: 'F45AFBBD68C4466F956BA3A1D91878AD',
           userName: 'testuser',
-          email: 'test@example.com'
+          email: 'test@gov.bc.ca'
         }
       }
 
@@ -1416,7 +1416,7 @@ describe('Tenant API', () => {
           // no displayName field
           ssoUserId: 'F45AFBBD68C4466F956BA3A1D91878AD',
           userName: 'testuser',
-          email: 'test@example.com'
+          email: 'test@gov.bc.ca'
         }
       }
 
@@ -1467,7 +1467,7 @@ describe('Tenant API', () => {
         status: 'NEW',
         requestedBy: {
           id: '123e4567-e89b-12d3-a456-426614174001',
-          email: 'test@example.com',
+          email: 'test@gov.bc.ca',
           displayName: 'Test User'
         },
         tenant: {
@@ -1483,7 +1483,7 @@ describe('Tenant API', () => {
           status: 'APPROVED',
           decisionedBy: {
             id: '123e4567-e89b-12d3-a456-426614174003',
-            email: 'ops@example.com',
+            email: 'ops@gov.bc.ca',
             displayName: 'Ops Admin'
           }
         }
@@ -1503,6 +1503,95 @@ describe('Tenant API', () => {
             decisionedBy: 'Ops Admin'
           }
         }
+      })
+
+      expect(mockTMSRepository.updateTenantRequestStatus).toHaveBeenCalledWith(
+        expect.objectContaining({
+          params: { requestId },
+          body: validApproveData
+        })
+      )
+    })
+
+    it('should reject a tenant request successfully', async () => {
+      const mockTenantRequest = {
+        id: requestId,
+        status: 'NEW',
+        requestedBy: {
+          id: '123e4567-e89b-12d3-a456-426614174001',
+          email: 'test@gov.bc.ca',
+          displayName: 'Test User'
+        }
+      }
+
+      const validRejectData = {
+        status: 'REJECTED',
+        rejectionReason: 'Insufficient information provided'
+      }
+
+      mockTMSRepository.updateTenantRequestStatus.mockResolvedValue({
+        tenantRequest: {
+          ...mockTenantRequest,
+          status: 'REJECTED',
+          rejectionReason: validRejectData.rejectionReason,
+          decisionedBy: {
+            id: '123e4567-e89b-12d3-a456-426614174003',
+            email: 'ops@gov.bc.ca',
+            displayName: 'Ops Admin'
+          }
+        }
+      })
+
+      const response = await request(app)
+        .patch(`/v1/tenant-requests/${requestId}/status`)
+        .send(validRejectData)
+
+      expect(response.status).toBe(200)
+      expect(response.body).toMatchObject({
+        data: {
+          tenantRequest: {
+            id: requestId,
+            status: 'REJECTED',
+            requestedBy: 'Test User',
+            decisionedBy: 'Ops Admin',
+            rejectionReason: validRejectData.rejectionReason
+          }
+        }
+      })
+
+      expect(mockTMSRepository.updateTenantRequestStatus).toHaveBeenCalledWith(
+        expect.objectContaining({
+          params: { requestId },
+          body: validRejectData
+        })
+      )
+    })
+
+    it('should return 409 when trying to update a non-NEW request', async () => {
+      const mockTenantRequest = {
+        id: requestId,
+        status: 'APPROVED',
+        requestedBy: {
+          id: '123e4567-e89b-12d3-a456-426614174001',
+          email: 'test@gov.bc.ca',
+          displayName: 'Test User'
+        }
+      }
+
+      mockTMSRepository.updateTenantRequestStatus.mockRejectedValue(
+        new ConflictError(`Cannot update tenant request with status: ${mockTenantRequest.status}`)
+      )
+
+      const response = await request(app)
+        .patch(`/v1/tenant-requests/${requestId}/status`)
+        .send(validApproveData)
+
+      expect(response.status).toBe(409)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Conflict',
+        httpResponseCode: 409,
+        message: `Cannot update tenant request with status: ${mockTenantRequest.status}`,
+        name: 'Error occurred updating tenant request status'
       })
 
       expect(mockTMSRepository.updateTenantRequestStatus).toHaveBeenCalledWith(
