@@ -1,15 +1,20 @@
 import { authenticatedAxios } from './authenticated.axios'
 import { logApiError } from './utils'
 import { DuplicateEntityError, ValidationError } from '@/errors'
-import { Role, User } from '@/models'
+import { User } from '@/models'
 
 const api = authenticatedAxios()
 
 export const tenantService = {
-  async addUser(tenantId: string, user: User, role: Role) {
+  async addUser(tenantId: string, user: User) {
     try {
+      console.log('user', user)
       const request: { user: any; roles?: string[] } = { user }
-      request.roles = [role.id]
+
+      // Extract array of role IDs from user.roles
+      if (user.roles && user.roles.length > 0) {
+        request.roles = user.roles.map((r) => r.id)
+      }
 
       // TODO: this is temporary until some decisions are made about how close
       // the mapping to the API should be.

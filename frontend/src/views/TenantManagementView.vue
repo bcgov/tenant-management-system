@@ -80,10 +80,11 @@ async function handleUpdate(updatedTenant: Partial<Tenant>) {
   }
 }
 
-async function handleAddUser({ user, role }: { user: User; role: Role }) {
+async function handleAddUser(user: User) {
+  console.log('Adding user:', user)
   try {
     if (tenant.value) {
-      await tenantStore.addTenantUser(tenant.value, user, role)
+      await tenantStore.addTenantUser(tenant.value, user)
       addNotification('User added successfully')
     }
   } catch (error) {

@@ -12,7 +12,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (event: 'add', payload: { user: User; role: Role }): void
+  (event: 'add', user: User): void
   (event: 'search', query: Record<string, string>): void
 }>()
 
@@ -51,9 +51,8 @@ function toggleRole(role: Role, checked: boolean) {
 function handleAddUser() {
   if (!selectedUser.value || selectedRoles.value.length === 0) return
 
-  for (const role of selectedRoles.value) {
-    emit('add', { user: selectedUser.value, role })
-  }
+  selectedUser.value.roles = [...selectedRoles.value]
+  emit('add', selectedUser.value)
 
   toggleSearch()
 }
