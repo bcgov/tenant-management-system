@@ -5,7 +5,7 @@ import { ForbiddenError } from '../errors/ForbiddenError'
 
 export const checkOperationsAdmin = (req: Request, res: Response, next: NextFunction) => {
     try {
-        const roles = req.decodedJwt?.roles || []
+        const roles = req.decodedJwt?.client_roles || []
         
         if (!roles.includes('TMS.OPERATIONS_ADMIN')) {
             logger.warn('Access denied: User does not have required role: TMS.OPERATIONS_ADMIN', {
