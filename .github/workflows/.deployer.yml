@@ -192,8 +192,41 @@ jobs:
             oc delete po --field-selector=status.phase==Succeeded || true
       - name: Add deployment summary
         if: success() && inputs.deployment_url != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
+          ENV_NAME="${{ inputs.environment || inputs.tag }}"
+          URL="${{ inputs.deployment_url }}"
           echo "## 🚀 Deployment Information" >> $GITHUB_STEP_SUMMARY
-          echo "**Environment:** ${{ inputs.environment || format('PR-{0}', inputs.tag) }}" >> $GITHUB_STEP_SUMMARY
-          echo "**URL:** [${{ inputs.deployment_url }}](${{ inputs.deployment_url }})" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment:** $ENV_NAME" >> $GITHUB_STEP_SUMMARY
+          echo "**URL:** [$URL]($URL)" >> $GITHUB_STEP_SUMMARY
           echo "**Status:** ✅ Success" >> $GITHUB_STEP_SUMMARY
+          
+          # Use GitHub CLI to create deployment
+          gh api \
+            --method POST \
+            /repos/${{ github.repository }}/deployments \
+            -f ref="${{ github.ref }}" \
+            -f environment="$ENV_NAME" \
+            -f auto_merge=false \
+            -f required_contexts='[]' \
+            -f description="Deployed via GitHub Actions"
+          
+          # Get the latest deployment ID
+          DEPLOYMENT_ID=$(gh api /repos/${{ github.repository }}/deployments?environment=$ENV_NAME | jq -r '.[0].id')
+          
+          if [[ -n "$DEPLOYMENT_ID" && "$DEPLOYMENT_ID" != "null" ]]; then
+            echo "Found deployment ID: $DEPLOYMENT_ID"
+            
+            # Create successful deployment status with URL
+            gh api \
+              --method POST \
+              /repos/${{ github.repository }}/deployments/$DEPLOYMENT_ID/statuses \
+              -f state="success" \
+              -f environment_url="$URL" \
+              -f log_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            
+            echo "Updated deployment status with URL: $URL"
+          else
+            echo "No deployment found to update"
+          fi
