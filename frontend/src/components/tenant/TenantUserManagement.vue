@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 
+import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
+import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
 import UserSearch from '@/components/user/UserSearch.vue'
 import type { Role, Tenant, User } from '@/models'
 
@@ -13,6 +15,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (event: 'add', user: User): void
+  (event: 'cancel'): void
   (event: 'search', query: Record<string, string>): void
 }>()
 
@@ -49,11 +52,17 @@ function toggleRole(role: Role, checked: boolean) {
 }
 
 function handleAddUser() {
-  if (!selectedUser.value || selectedRoles.value.length === 0) return
+  if (!selectedUser.value || selectedRoles.value.length === 0) {
+    return
+  }
 
   selectedUser.value.roles = [...selectedRoles.value]
   emit('add', selectedUser.value)
+  toggleSearch()
+}
 
+function handleCancel() {
+  emit('cancel')
   toggleSearch()
 }
 </script>
@@ -68,7 +77,7 @@ function handleAddUser() {
           item-value="id"
           :headers="[
             { title: 'Name', key: 'displayName', align: 'start' },
-            { title: 'Roles', key: 'roles', align: 'start' },
+            { title: 'TMS Roles', key: 'roles', align: 'start' },
             { title: 'Email', key: 'email', align: 'start' },
           ]"
           hover
@@ -95,8 +104,8 @@ function handleAddUser() {
       </v-col>
     </v-row>
 
-    <v-row class="mt-4">
-      <v-col cols="12">
+    <v-row v-if="!showSearch" class="mt-4">
+      <v-col cols="12" class="d-flex justify-start">
         <v-btn
           variant="text"
           color="primary"
@@ -144,18 +153,23 @@ function handleAddUser() {
                 @update:model-value="(checked) => toggleRole(role, !!checked)"
                 class="my-0 py-0"
               />
+            </v-col>
+          </v-row>
 
-              <v-btn
-                color="primary"
+          <v-row class="mt-8">
+            <v-col cols="12" class="d-flex justify-start gap-4">
+              <ButtonSecondary text="Cancel" @click="handleCancel" />
+
+              <ButtonPrimary
+                v-if="selectedUser"
+                text="Add User"
                 :disabled="selectedRoles.length === 0"
                 @click="handleAddUser"
-                class="mt-4"
-              >
-                Add User
-              </v-btn>
+              />
             </v-col>
           </v-row>
         </template>
+
         <v-alert
           v-else
           type="warning"

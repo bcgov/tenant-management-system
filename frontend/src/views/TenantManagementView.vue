@@ -136,6 +136,7 @@ async function handleAddUser(user: User) {
               :search-results="searchResults"
               :loading-search="loadingSearch"
               @add="handleAddUser"
+              @cancel="searchResults = []"
               @search="handleSearch"
             />
           </v-window-item>
