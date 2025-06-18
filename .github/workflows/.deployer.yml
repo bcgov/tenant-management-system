@@ -54,6 +54,10 @@ on:
         default: 'values.yaml'
         required: false
         type: string
+      deployment_url:
+        description: 'Deployment URL; used for environments'
+        required: true
+        type: string
 
     outputs:
       tag:
@@ -87,7 +91,9 @@ jobs:
   deploy:
     name: Stack
     needs: deployer-db
-    environment: ${{ inputs.environment }}
+    environment:
+        name: ${{ inputs.environment }}
+        url: ${{ inputs.deployment_url }}
     runs-on: ubuntu-24.04
     outputs:
       tag: ${{ inputs.tag || steps.pr.outputs.pr }}

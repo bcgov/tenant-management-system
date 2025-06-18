@@ -41,6 +41,7 @@ jobs:
       environment: test
       db_user: app
       tag: ${{ inputs.tag || 'latest' }}
+      deployment_url: https://${{ github.event.repository.name }}-test-frontend.apps.silver.devops.gov.bc.ca
 
   update-test-secrets:
     name: Update Test Secrets
@@ -83,6 +84,7 @@ jobs:
         --set frontend.pdb.enabled=true
         --set backend.pdb.enabled=true
       tag: ${{ inputs.tag || 'latest' }}
+      deployment_url: https://${{ github.event.repository.name }}-prod-frontend.apps.silver.devops.gov.bc.ca
 
   update-prod-secrets:
     name: Update Prod Secrets
