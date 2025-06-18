@@ -97,6 +97,8 @@ async function handleAddUser(user: User) {
     } else {
       addNotification('Failed to add user', 'error')
     }
+
+    searchResults.value = []
   }
 }
 </script>
