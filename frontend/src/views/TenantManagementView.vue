@@ -88,8 +88,12 @@ async function handleAddUser(user: User) {
       addNotification('User added successfully')
     }
   } catch (error) {
+    logger.error('Failed to add user', error)
     if (error instanceof DuplicateEntityError) {
-      addNotification(error.message, 'error')
+      addNotification(
+        `Cannot add user "${user.displayName}": already a user in this tenant`,
+        'error',
+      )
     } else {
       addNotification('Failed to add user', 'error')
     }

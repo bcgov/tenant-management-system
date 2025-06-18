@@ -24,8 +24,16 @@ export const tenantService = {
       const response = await api.post(`/tenants/${tenantId}/users`, request)
 
       return response.data.data.user
-    } catch (error) {
+    } catch (error: any) {
       logApiError('Error adding user to Tenant', error)
+
+      // Handle HTTP 409 Conflict (duplicate)
+      if (
+        error.response?.status === 409 &&
+        typeof error.response.data?.message === 'string'
+      ) {
+        throw new DuplicateEntityError(error.response.data.message)
+      }
 
       throw error
     }
