@@ -77,6 +77,8 @@ defineExpose({ reset })
 
   <v-row v-if="results.length || loading">
     <v-col cols="12">
+      <h2 class="my-6">Search Results</h2>
+
       <v-data-table
         v-model="selectedUser"
         :items="results"

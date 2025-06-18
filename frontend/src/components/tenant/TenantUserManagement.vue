@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 
+import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
+import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
 import UserSearch from '@/components/user/UserSearch.vue'
 import type { Role, Tenant, User } from '@/models'
 
@@ -13,6 +15,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (event: 'add', user: User): void
+  (event: 'cancel'): void
   (event: 'search', query: Record<string, string>): void
 }>()
 
@@ -49,11 +52,17 @@ function toggleRole(role: Role, checked: boolean) {
 }
 
 function handleAddUser() {
-  if (!selectedUser.value || selectedRoles.value.length === 0) return
+  if (!selectedUser.value || selectedRoles.value.length === 0) {
+    return
+  }
 
   selectedUser.value.roles = [...selectedRoles.value]
   emit('add', selectedUser.value)
+  toggleSearch()
+}
 
+function handleCancel() {
+  emit('cancel')
   toggleSearch()
 }
 </script>
@@ -62,16 +71,18 @@ function handleAddUser() {
   <v-container fluid class="px-0">
     <v-row>
       <v-col cols="12">
+        <h2 class="mb-6 mt-12">Tenant Users</h2>
         <v-data-table
           :items="tenant?.users || []"
           item-value="id"
           :headers="[
             { title: 'Name', key: 'displayName', align: 'start' },
-            { title: 'Roles', key: 'roles', align: 'start' },
+            { title: 'TMS Roles', key: 'roles', align: 'start' },
             { title: 'Email', key: 'email', align: 'start' },
           ]"
           hover
           fixed-header
+          :sort-by="[{ key: 'displayName', order: 'asc' }]"
           :header-props="{
             class: 'text-body-1 font-weight-bold bg-surface-light',
           }"
@@ -93,8 +104,8 @@ function handleAddUser() {
       </v-col>
     </v-row>
 
-    <v-row class="mt-4">
-      <v-col cols="12">
+    <v-row v-if="!showSearch" class="mt-4">
+      <v-col cols="12" class="d-flex justify-start">
         <v-btn
           variant="text"
           color="primary"
@@ -110,7 +121,14 @@ function handleAddUser() {
 
     <v-expand-transition>
       <div v-if="showSearch">
-        <v-divider class="my-4" />
+        <v-divider class="my-12" />
+
+        <h2 class="mb-4">Add a user to this Tenant</h2>
+
+        <p class="text-subtitle-1 mb-2 mt-8">
+          1. Search for a user based on the selection criteria below:
+        </p>
+
         <template v-if="tenant?.id">
           <UserSearch
             :tenant-id="tenant.id"
@@ -122,28 +140,36 @@ function handleAddUser() {
 
           <v-row v-if="selectedUser" class="mt-4">
             <v-col cols="12">
-              <p class="text-subtitle-1 mb-2">Assign Role(s):</p>
+              <p class="text-subtitle-1 mb-2">
+                2. Assign role(s) to this user:
+              </p>
 
               <v-checkbox
                 v-for="role in roles"
+                hide-details
                 :key="role.id"
                 :label="role.description"
                 :model-value="selectedRoles.some((r) => r.id === role.id)"
                 @update:model-value="(checked) => toggleRole(role, !!checked)"
-                class="mb-1"
+                class="my-0 py-0"
               />
+            </v-col>
+          </v-row>
 
-              <v-btn
-                color="primary"
+          <v-row class="mt-8">
+            <v-col cols="12" class="d-flex justify-start gap-4">
+              <ButtonSecondary text="Cancel" @click="handleCancel" />
+
+              <ButtonPrimary
+                v-if="selectedUser"
+                text="Add User"
                 :disabled="selectedRoles.length === 0"
                 @click="handleAddUser"
-                class="mt-4"
-              >
-                Add User to Tenant
-              </v-btn>
+              />
             </v-col>
           </v-row>
         </template>
+
         <v-alert
           v-else
           type="warning"
