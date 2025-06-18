@@ -638,6 +638,8 @@ paths:
     post:
       summary: Create a new tenant request
       description: Creates a new request for a tenant with the specified details
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -717,6 +719,153 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/InternalServerErrorResponse'
+
+  /tenant-requests/{requestId}/status:
+    patch:
+      summary: Update the status of a tenant request
+      description: |
+        Updates the status of a tenant request. If approved, creates a new tenant.
+        Only users with the TMS.OPERATIONS_ADMIN role can perform this action.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: requestId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The unique identifier of the tenant request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+              properties:
+                status:
+                  type: string
+                  enum: [APPROVED, REJECTED]
+                  description: New status for the tenant request
+                  example: "APPROVED"
+                rejectionReason:
+                  type: string
+                  description: Required when status is REJECTED
+                  maxLength: 500
+                  example: "Insufficient information provided"
+      responses:
+        '200':
+          description: Tenant request status updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tenantRequest:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                        description: Unique identifier of the tenant request
+                        example: "123e4567-e89b-12d3-a456-426614174000"
+                      name:
+                        type: string
+                        description: Name of the tenant
+                        example: "Ministry of Health"
+                      ministryName:
+                        type: string
+                        description: Name of the ministry
+                        example: "Health"
+                      description:
+                        type: string
+                        description: Description of the tenant
+                        example: "Tenant for Ministry of Health applications"
+                      status:
+                        type: string
+                        enum: [NEW, APPROVED, REJECTED]
+                        description: Current status of the tenant request
+                        example: "APPROVED"
+                      requestedBy:
+                        type: string
+                        description: Display name of the user who requested the tenant
+                        example: "John Smith"
+                      decisionedBy:
+                        type: string
+                        description: Display name of the operations admin who made the decision
+                        example: "Jane Doe"
+                      decisionedAt:
+                        type: string
+                        format: date-time
+                        description: Timestamp when the decision was made
+                        example: "2024-03-20T10:30:00Z"
+                      rejectionReason:
+                        type: string
+                        description: Reason for rejection, if the request was rejected
+                        example: "Insufficient information provided"
+                      createdBy:
+                        type: string
+                        description: SSO user ID of the user who created the request
+                        minLength: 32
+                        maxLength: 32
+                        example: "123e4567e89b12d3a456426614174000"
+                      updatedBy:
+                        type: string
+                        description: SSO user ID of the user who last updated the request
+                        minLength: 32
+                        maxLength: 32
+                        example: "123e4567e89b12d3a456426614174000"
+                  tenant:
+                    type: object
+                    description: Basic tenant information (only included when status is APPROVED)
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                        description: Unique identifier of the tenant
+                        example: "123e4567-e89b-12d3-a456-426614174000"
+                      name:
+                        type: string
+                        description: Name of the tenant
+                        example: "Ministry of Health"
+                      ministryName:
+                        type: string
+                        description: Name of the ministry
+                        example: "Health"
+                      description:
+                        type: string
+                        description: Description of the tenant
+                        example: "Tenant for Ministry of Health applications"
+                      createdBy:
+                        type: string
+                        description: SSO user ID of the user who created the tenant
+                        minLength: 32
+                        maxLength: 32
+                        example: "123e4567e89b12d3a456426614174000"
+                      updatedBy:
+                        type: string
+                        description: SSO user ID of the user who last updated the tenant
+                        minLength: 32
+                        maxLength: 32
+                        example: "123e4567e89b12d3a456426614174000"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Forbidden - User does not have the required TMS.OPERATIONS_ADMIN role
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
 components:
   schemas:
@@ -1040,7 +1189,64 @@ components:
           example: "2024-03-15"
         createdBy:
           type: string
-          example: "F45AFBBD68C4466F956BA3A1D91878AD"
+          description: SSO user ID of the user who created the request
+          minLength: 32
+          maxLength: 32
+          example: "123e4567e89b12d3a456426614174000"
         updatedBy:
           type: string
-          example: "F45AFBBD68C4466F956BA3A1D91878AD"
+          description: SSO user ID of the user who last updated the request
+          minLength: 32
+          maxLength: 32
+          example: "123e4567e89b12d3a456426614174000"
+
+    TenantRequestCreate:
+      type: object
+      required:
+        - name
+        - ministryName
+        - user
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 30
+          example: "Roads Initiative"
+        ministryName:
+          type: string
+          minLength: 1
+          maxLength: 100
+          example: "Ministry of Natural Resources"
+        description:
+          type: string
+          maxLength: 500
+          example: "Tenant for managing road infrastructure"
+        user:
+          type: object
+          required:
+            - firstName
+            - lastName
+            - displayName
+            - ssoUserId
+            - userName
+            - email
+          properties:
+            firstName:
+              type: string
+              example: "John"
+            lastName:
+              type: string
+              example: "Smith"
+            displayName:
+              type: string
+              example: "John Smith: ENV: EX"
+            ssoUserId:
+              type: string
+              example: "F45AFBBD68C4466F956BA3A1D91878AD"
+            userName:
+              type: string
+              example: "johnSmith"
+            email:
+              type: string
+              format: email
+              example: "john.Smith@example.com"
