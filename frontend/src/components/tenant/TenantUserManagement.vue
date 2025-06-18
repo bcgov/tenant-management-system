@@ -62,6 +62,7 @@ function handleAddUser() {
   <v-container fluid class="px-0">
     <v-row>
       <v-col cols="12">
+        <h2 class="text-h6 font-weight-bold mb-4 mt-12">Tenant Users</h2>
         <v-data-table
           :items="tenant?.users || []"
           item-value="id"
