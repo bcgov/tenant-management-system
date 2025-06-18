@@ -162,7 +162,7 @@ jobs:
         with:
           step: start
           token: ${{ github.token }}
-          env: ${{ inputs.environment }}
+          env: ${{ inputs.environment || 'dev' }}
           desc: "Starting deployment..."
 
       - name: Helm Deploy
@@ -208,6 +208,6 @@ jobs:
           step: finish
           token: ${{ github.token }}
           status: ${{ job.status }}
-          env: ${{ inputs.environment }}
+          env: ${{ inputs.environment || 'dev' }}
           deployment_id: ${{ steps.deployment.outputs.deployment_id }}
           env_url: ${{ inputs.deployment_url }}
