@@ -190,3 +190,10 @@ jobs:
 
             # Completed pod cleanup
             oc delete po --field-selector=status.phase==Succeeded || true
+      - name: Add deployment summary
+        if: success() && inputs.deployment_url != ''
+        run: |
+          echo "## 🚀 Deployment Information" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment:** ${{ inputs.environment || format('PR-{0}', inputs.tag) }}" >> $GITHUB_STEP_SUMMARY
+          echo "**URL:** [${{ inputs.deployment_url }}](${{ inputs.deployment_url }})" >> $GITHUB_STEP_SUMMARY
+          echo "**Status:** ✅ Success" >> $GITHUB_STEP_SUMMARY

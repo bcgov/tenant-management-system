@@ -20,7 +20,9 @@ concurrency:
   group: ${{ github.workflow }}
   cancel-in-progress: false
 
-permissions: {}
+permissions:
+  contents: read
+  deployments: write
 
 jobs:
   builds:
