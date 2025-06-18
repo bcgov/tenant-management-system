@@ -46,10 +46,6 @@ defineExpose({ reset })
 </script>
 
 <template>
-  <div class="mb-12">
-    1. Search for a user based on the selection criteria below:
-  </div>
-
   <v-row>
     <v-col md="2">
       <v-select
@@ -81,6 +77,8 @@ defineExpose({ reset })
 
   <v-row v-if="results.length || loading">
     <v-col cols="12">
+      <h2 class="my-6">Search Results</h2>
+
       <v-data-table
         v-model="selectedUser"
         :items="results"

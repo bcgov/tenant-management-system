@@ -62,7 +62,7 @@ function handleAddUser() {
   <v-container fluid class="px-0">
     <v-row>
       <v-col cols="12">
-        <h2 class="text-h6 font-weight-bold mb-4 mt-12">Tenant Users</h2>
+        <h2 class="mb-6 mt-12">Tenant Users</h2>
         <v-data-table
           :items="tenant?.users || []"
           item-value="id"
@@ -112,7 +112,14 @@ function handleAddUser() {
 
     <v-expand-transition>
       <div v-if="showSearch">
-        <v-divider class="my-4" />
+        <v-divider class="my-12" />
+
+        <h2 class="mb-4">Add a user to this Tenant</h2>
+
+        <p class="text-subtitle-1 mb-2 mt-8">
+          1. Search for a user based on the selection criteria below:
+        </p>
+
         <template v-if="tenant?.id">
           <UserSearch
             :tenant-id="tenant.id"
@@ -124,15 +131,18 @@ function handleAddUser() {
 
           <v-row v-if="selectedUser" class="mt-4">
             <v-col cols="12">
-              <p class="text-subtitle-1 mb-2">Assign Role(s):</p>
+              <p class="text-subtitle-1 mb-2">
+                2. Assign role(s) to this user:
+              </p>
 
               <v-checkbox
                 v-for="role in roles"
+                hide-details
                 :key="role.id"
                 :label="role.description"
                 :model-value="selectedRoles.some((r) => r.id === role.id)"
                 @update:model-value="(checked) => toggleRole(role, !!checked)"
-                class="mb-1"
+                class="my-0 py-0"
               />
 
               <v-btn
@@ -141,7 +151,7 @@ function handleAddUser() {
                 @click="handleAddUser"
                 class="mt-4"
               >
-                Add User to Tenant
+                Add User
               </v-btn>
             </v-col>
           </v-row>
