@@ -73,6 +73,7 @@ function handleAddUser() {
           ]"
           hover
           fixed-header
+          :sort-by="[{ key: 'displayName', order: 'asc' }]"
           :header-props="{
             class: 'text-body-1 font-weight-bold bg-surface-light',
           }"
