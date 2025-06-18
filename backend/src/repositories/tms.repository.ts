@@ -687,5 +687,19 @@ export class TMSRepository {
         return response;
     }
 
+    public async getTenantRequests(status?: string) {
+        const queryBuilder = this.manager
+            .createQueryBuilder(TenantRequest, 'tenantRequest')
+            .leftJoinAndSelect('tenantRequest.requestedBy', 'requestedBy')
+            .leftJoinAndSelect('tenantRequest.decisionedBy', 'decisionedBy')
+            .orderBy('tenantRequest.requestedAt', 'DESC');
+
+        if (status) {
+            queryBuilder.where('tenantRequest.status = :status', { status });
+        }
+
+        return await queryBuilder.getMany();
+    }
+
 }
 

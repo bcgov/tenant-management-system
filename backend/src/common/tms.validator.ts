@@ -161,6 +161,12 @@ export default {
                 otherwise: Joi.string().optional()
             })
         })
+    },
+
+    getTenantRequests: {
+        query: Joi.object({
+            status: Joi.string().valid('NEW', 'APPROVED', 'REJECTED').optional()
+        }).optional()
     }
 
 }

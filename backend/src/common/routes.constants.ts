@@ -15,4 +15,6 @@ export class RoutesConstants {
     public static UPDATE_TENANT = '/v1/tenants/:tenantId'
     public static CREATE_TENANT_REQUEST = '/v1/tenant-requests'
     public static UPDATE_TENANT_REQUEST_STATUS = '/v1/tenant-requests/:requestId/status'
+    public static GET_TENANT_REQUESTS = '/v1/tenant-requests'
+
 }
