@@ -46,6 +46,10 @@ defineExpose({ reset })
 </script>
 
 <template>
+  <div class="mb-12">
+    1. Search for a user based on the selection criteria below:
+  </div>
+
   <v-row>
     <v-col md="2">
       <v-select
