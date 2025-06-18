@@ -261,4 +261,14 @@ export class TMSController {
         }
     }
 
+    public async getTenantRequests(req: Request, res: Response) {
+        try {
+            const response = await this.tmsService.getTenantRequests(req);
+            res.status(200).send(response);
+        } catch (error) {
+            logger.error(error);
+            this.errorHandler.generalError(res, "Error occurred getting tenant requests", error.message, 500, "Internal Server Error");
+        }
+    }
+
 }
