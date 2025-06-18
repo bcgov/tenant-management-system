@@ -8,7 +8,6 @@ const api = authenticatedAxios()
 export const tenantService = {
   async addUser(tenantId: string, user: User) {
     try {
-      console.log('user', user)
       const request: { user: any; roles?: string[] } = { user }
 
       // Extract array of role IDs from user.roles
