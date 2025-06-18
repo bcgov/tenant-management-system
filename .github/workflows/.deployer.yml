@@ -54,6 +54,10 @@ on:
         default: 'values.yaml'
         required: false
         type: string
+      deployment_url:
+        description: 'Deployment URL; used for environments'
+        required: true
+        type: string
 
     outputs:
       tag:
@@ -71,7 +75,9 @@ on:
         description: OpenShift token
         required: true
 
-permissions: {}
+permissions:
+  contents: read
+  deployments: write
 
 jobs:
   deployer-db:
@@ -87,7 +93,9 @@ jobs:
   deploy:
     name: Stack
     needs: deployer-db
-    environment: ${{ inputs.environment }}
+    environment:
+      name: ${{ inputs.environment }}
+      url: ${{ inputs.deployment_url }}
     runs-on: ubuntu-24.04
     outputs:
       tag: ${{ inputs.tag || steps.pr.outputs.pr }}
@@ -148,6 +156,14 @@ jobs:
               helm rollback ${{ steps.vars.outputs.release }} || \
                 helm uninstall ${{ steps.vars.outputs.release }}
             fi
+      - name: Start deployment
+        uses: bobheadxi/deployments@v1.4.0
+        id: deployment
+        with:
+          step: start
+          token: ${{ github.token }}
+          env: ${{ inputs.environment || 'dev' }}
+          desc: "Starting deployment..."
 
       - name: Helm Deploy
         id: deploy
@@ -184,3 +200,14 @@ jobs:
 
             # Completed pod cleanup
             oc delete po --field-selector=status.phase==Succeeded || true
+
+      - name: Update deployment status
+        uses: bobheadxi/deployments@v1.4.0
+        if: always()
+        with:
+          step: finish
+          token: ${{ github.token }}
+          status: ${{ job.status }}
+          env: ${{ inputs.environment || 'dev' }}
+          deployment_id: ${{ steps.deployment.outputs.deployment_id }}
+          env_url: ${{ inputs.deployment_url }}

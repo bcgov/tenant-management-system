@@ -8,7 +8,10 @@ concurrency:
   group: ${{ github.event.number }}
   cancel-in-progress: true
 
-permissions: {}
+permissions:
+  contents: read
+  deployments: write
+  pull-requests: write
 
 jobs:
   # https://github.com/bcgov/action-builder-ghcr
@@ -34,6 +37,7 @@ jobs:
       db_user: app-${{ github.event.number }}
       params: --set global.secrets.persist=false
       triggers: ('backend/' 'frontend/' 'migrations/' 'charts/' 'github/')
+      deployment_url: https://${{ github.event.repository.name }}-pr-${{ github.event.pull_request.number }}-frontend.apps.silver.devops.gov.bc.ca
 
   update_secrets:
     name: Update Secrets
