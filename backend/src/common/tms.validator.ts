@@ -151,7 +151,7 @@ export default {
 
     updateTenantRequestStatus: {
         params: Joi.object({
-            requestId: Joi.string().required()
+            requestId: Joi.string().guid().required()
         }),
         body: Joi.object({
             status: Joi.string().valid('APPROVED', 'REJECTED').required(),

@@ -1601,5 +1601,162 @@ describe('Tenant API', () => {
         })
       )
     })
+
+    it('should return 400 when rejecting without a reason', async () => {
+      const invalidRejectData = {
+        status: 'REJECTED'
+      }
+
+      const response = await request(app)
+        .patch(`/v1/tenant-requests/${requestId}/status`)
+        .send(invalidRejectData)
+
+      expect(response.status).toBe(400)
+      expect(response.body).toMatchObject({
+        message: 'Validation Failed',
+        details: {
+          body: expect.arrayContaining([
+            expect.objectContaining({
+              message: '"rejectionReason" is required'
+            })
+          ])
+        }
+      })
+
+      expect(mockTMSRepository.updateTenantRequestStatus).not.toHaveBeenCalled()
+    })
+
+    it('should return 404 when tenant request does not exist', async () => {
+      mockTMSRepository.updateTenantRequestStatus.mockRejectedValue(
+        new NotFoundError(`Tenant request not found: ${requestId}`)
+      )
+
+      const response = await request(app)
+        .patch(`/v1/tenant-requests/${requestId}/status`)
+        .send(validApproveData)
+
+      expect(response.status).toBe(404)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Not Found',
+        httpResponseCode: 404,
+        message: `Tenant request not found: ${requestId}`,
+        name: 'Error occurred updating tenant request status'
+      })
+
+      expect(mockTMSRepository.updateTenantRequestStatus).toHaveBeenCalledWith(
+        expect.objectContaining({
+          params: { requestId },
+          body: validApproveData
+        })
+      )
+    })
+
+    it('should return 409 when approving a request for existing tenant', async () => {
+      const mockTenantRequest = {
+        id: requestId,
+        status: 'NEW',
+        name: 'Test Tenant',
+        ministryName: 'Test Ministry',
+        requestedBy: {
+          id: '123e4567-e89b-12d3-a456-426614174001',
+          email: 'test@gov.bc.ca',
+          displayName: 'Test User'
+        }
+      }
+
+      mockTMSRepository.updateTenantRequestStatus.mockRejectedValue(
+        new ConflictError(`A tenant with name '${mockTenantRequest.name}' and ministry name '${mockTenantRequest.ministryName}' already exists`)
+      )
+
+      const response = await request(app)
+        .patch(`/v1/tenant-requests/${requestId}/status`)
+        .send(validApproveData)
+
+      expect(response.status).toBe(409)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Conflict',
+        httpResponseCode: 409,
+        message: `A tenant with name '${mockTenantRequest.name}' and ministry name '${mockTenantRequest.ministryName}' already exists`,
+        name: 'Error occurred updating tenant request status'
+      })
+
+      expect(mockTMSRepository.updateTenantRequestStatus).toHaveBeenCalledWith(
+        expect.objectContaining({
+          params: { requestId },
+          body: validApproveData
+        })
+      )
+    })
+
+    it('should return 400 when status is invalid', async () => {
+      const invalidStatusData = {
+        status: 'INVALID_STATUS'
+      }
+
+      const response = await request(app)
+        .patch(`/v1/tenant-requests/${requestId}/status`)
+        .send(invalidStatusData)
+
+      expect(response.status).toBe(400)
+      expect(response.body).toMatchObject({
+        message: 'Validation Failed',
+        details: {
+          body: expect.arrayContaining([
+            expect.objectContaining({
+              message: '"status" must be one of [APPROVED, REJECTED]'
+            })
+          ])
+        }
+      })
+
+      expect(mockTMSRepository.updateTenantRequestStatus).not.toHaveBeenCalled()
+    })
+
+    it('should return 400 when request ID is invalid', async () => {
+      const invalidRequestId = 'invalid-uuid'
+
+      const response = await request(app)
+        .patch(`/v1/tenant-requests/${invalidRequestId}/status`)
+        .send(validApproveData)
+
+      expect(response.status).toBe(400)
+      expect(response.body).toMatchObject({
+        message: 'Validation Failed',
+        details: {
+          params: expect.arrayContaining([
+            expect.objectContaining({
+              message: '"requestId" must be a valid GUID'
+            })
+          ])
+        }
+      })
+
+      expect(mockTMSRepository.updateTenantRequestStatus).not.toHaveBeenCalled()
+    })
+
+    it('should return 500 when database error occurs', async () => {
+      mockTMSRepository.updateTenantRequestStatus.mockRejectedValue(
+        new Error('Database error')
+      )
+
+      const response = await request(app)
+        .patch(`/v1/tenant-requests/${requestId}/status`)
+        .send(validApproveData)
+
+      expect(response.status).toBe(500)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Internal Server Error',
+        httpResponseCode: 500,
+        message: 'Database error',
+        name: 'Error occurred updating tenant request status'
+      })
+
+      expect(mockTMSRepository.updateTenantRequestStatus).toHaveBeenCalledWith(
+        expect.objectContaining({
+          params: { requestId },
+          body: validApproveData
+        })
+      )
+    })
   })
 }) 
