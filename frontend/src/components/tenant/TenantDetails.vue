@@ -13,12 +13,11 @@ const props = defineProps<{
   tenant?: Tenant
 }>()
 
-type EmitFn = {
+const emit = defineEmits<{
   (event: 'update', tenant: Partial<Tenant>): void
   (event: 'update:deleteDialog', value: boolean): void
   (event: 'update:isEditing', value: boolean): void
-}
-const emit = defineEmits<EmitFn>()
+}>()
 
 // Form state
 const formData = ref<Partial<Tenant>>({
