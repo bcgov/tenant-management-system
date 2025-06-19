@@ -78,8 +78,7 @@ services:
     container_name: frontend
     entrypoint: sh -c "npm ci && npm run dev"
     environment:
-      VITE_BACKEND_API_URL: http://backend:3000
-      VITE_API_URL: /api
+      VITE_API_BASE_URL: /api/v1
       PORT: 3000
       NODE_ENV: development
     image: node:22
