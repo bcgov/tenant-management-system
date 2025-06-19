@@ -209,25 +209,14 @@ export const tenantService = {
   ) {
     try {
       const requestBody = {
-        id: id,
         description: description,
         ministryName: ministryName,
         name: name,
       }
 
-      // const response = await tenantApi.put(`/tenants/${id}`, requestBody)
+      const response = await api.put(`/tenants/${id}`, requestBody)
 
-      // return response
-
-      return {
-        createdBy: 'TODO',
-        createdDateTime: new Date().toISOString(),
-        description: requestBody.description,
-        id: id,
-        name: requestBody.name,
-        ministryName: requestBody.ministryName,
-        users: [],
-      }
+      return response.data.data.tenant
     } catch (error: any) {
       logApiError('Error updating Tenant', error)
 

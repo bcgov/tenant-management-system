@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 
 import TenantDetails from '@/components/tenant/TenantDetails.vue'
@@ -7,7 +7,7 @@ import TenantHeader from '@/components/tenant/TenantHeader.vue'
 import TenantUserManagement from '@/components/tenant/TenantUserManagement.vue'
 import BreadcrumbBar from '@/components/ui/BreadcrumbBar.vue'
 import { useNotification } from '@/composables'
-import { DuplicateEntityError } from '@/errors'
+import { DomainError, DuplicateEntityError } from '@/errors'
 import { Tenant, User } from '@/models'
 import { useRoleStore, useTenantStore, useUserStore } from '@/stores'
 import { logger } from '@/utils/logger'
@@ -18,27 +18,15 @@ const roleStore = useRoleStore()
 const tenantStore = useTenantStore()
 const userStore = useUserStore()
 
+const { addNotification } = useNotification()
+
+// Component Data
+
 const tenant = ref<Tenant | undefined>()
+const roles = computed(() => roleStore.roles)
+const searchResults = ref<User[]>([])
 
-onMounted(async () => {
-  await roleStore.fetchRoles()
-})
-
-watch(
-  () => route.params.id,
-  async (newId) => {
-    if (newId) {
-      tenant.value = await tenantStore.fetchTenant(newId as string)
-    }
-  },
-  { immediate: true },
-)
-
-// UI state
-const showDetail = ref(true)
-const deleteDialogVisible = ref(false)
-const isEditing = ref(false)
-const tab = ref<number>(0)
+// Component State
 
 const breadcrumbs = computed(() => [
   { title: 'Tenants', disabled: false, href: '/tenants' },
@@ -49,37 +37,20 @@ const breadcrumbs = computed(() => [
   },
 ])
 
-const roles = computed(() => roleStore.roles)
-const { addNotification } = useNotification()
-
-const searchResults = ref<User[]>([])
+const showDetail = ref(true)
+const deleteDialogVisible = ref(false)
+const isEditing = ref(false)
+const tab = ref<number>(0)
 const loadingSearch = ref(false)
 
-async function handleSearch(query: Record<string, string>) {
-  loadingSearch.value = true
-  try {
-    searchResults.value = await userStore.searchIdirUsers(query)
-  } catch (error) {
-    logger.error('User search failed', error)
-    addNotification('User search failed', 'error')
-    searchResults.value = []
-  } finally {
-    loadingSearch.value = false
-  }
-}
+// Component Lifecycle
 
-async function handleUpdate(updatedTenant: Partial<Tenant>) {
-  try {
-    await tenantStore.updateTenant({
-      ...tenant.value,
-      ...updatedTenant,
-    })
-    isEditing.value = false
-  } catch (error) {
-    logger.error('Failed to update tenant', error)
-    // TODO: Add error handling
-  }
-}
+onMounted(async () => {
+  await roleStore.fetchRoles()
+  tenant.value = await tenantStore.fetchTenant(route.params.id as string)
+})
+
+// Subcomponent Event Handlers
 
 async function handleAddUser(user: User) {
   try {
@@ -101,6 +72,42 @@ async function handleAddUser(user: User) {
     searchResults.value = []
   }
 }
+
+async function handleUserSearch(query: Record<string, string>) {
+  loadingSearch.value = true
+  try {
+    searchResults.value = await userStore.searchIdirUsers(query)
+  } catch (error) {
+    logger.error('User search failed', error)
+    addNotification('User search failed', 'error')
+    searchResults.value = []
+  } finally {
+    loadingSearch.value = false
+  }
+}
+
+async function handleUpdateTenant(updatedTenant: Partial<Tenant>) {
+  try {
+    tenant.value = await tenantStore.updateTenant({
+      ...tenant.value,
+      ...updatedTenant,
+    })
+    isEditing.value = false
+  } catch (error) {
+    if (error instanceof DuplicateEntityError) {
+      // If the API says that this name exists already, then show the name
+      // duplicated validation error.
+      // isDuplicateName.value = true
+    } else if (error instanceof DomainError && error.userMessage) {
+      // For any other API Domain Error, display the user message.
+      addNotification(error.userMessage, 'error')
+    } else {
+      // Otherwise display a generic error message.
+      addNotification('Failed to udpate the tenant', 'error')
+      logger.error('Failed to update the tenant', error)
+    }
+  }
+}
 </script>
 
 <template>
@@ -115,7 +122,7 @@ async function handleAddUser(user: User) {
         :tenant="tenant"
         v-model:delete-dialog="deleteDialogVisible"
         v-model:is-editing="isEditing"
-        @update="handleUpdate"
+        @update="handleUpdateTenant"
       />
 
       <!-- Inlined Tabs -->
@@ -137,7 +144,7 @@ async function handleAddUser(user: User) {
               :loading-search="loadingSearch"
               @add="handleAddUser"
               @cancel="searchResults = []"
-              @search="handleSearch"
+              @search="handleUserSearch"
             />
           </v-window-item>
 
