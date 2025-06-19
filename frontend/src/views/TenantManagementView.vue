@@ -7,7 +7,7 @@ import TenantHeader from '@/components/tenant/TenantHeader.vue'
 import TenantUserManagement from '@/components/tenant/TenantUserManagement.vue'
 import BreadcrumbBar from '@/components/ui/BreadcrumbBar.vue'
 import { useNotification } from '@/composables'
-import { DuplicateEntityError } from '@/errors'
+import { DomainError, DuplicateEntityError } from '@/errors'
 import { Tenant, User } from '@/models'
 import { useRoleStore, useTenantStore, useUserStore } from '@/stores'
 import { logger } from '@/utils/logger'
@@ -24,15 +24,14 @@ onMounted(async () => {
   await roleStore.fetchRoles()
 })
 
-watch(
-  () => route.params.id,
-  async (newId) => {
-    if (newId) {
-      tenant.value = await tenantStore.fetchTenant(newId as string)
-    }
-  },
-  { immediate: true },
-)
+onMounted(async () => {
+  await roleStore.fetchRoles()
+
+  const tenantId = route.params.id as string
+  if (tenantId) {
+    tenant.value = await tenantStore.fetchTenant(tenantId)
+  }
+})
 
 // UI state
 const showDetail = ref(true)
@@ -76,8 +75,18 @@ async function handleUpdate(updatedTenant: Partial<Tenant>) {
     })
     isEditing.value = false
   } catch (error) {
-    logger.error('Failed to update tenant', error)
-    // TODO: Add error handling
+    if (error instanceof DuplicateEntityError) {
+      // If the API says that this name exists already, then show the name
+      // duplicated validation error.
+      // isDuplicateName.value = true
+    } else if (error instanceof DomainError && error.userMessage) {
+      // For any other API Domain Error, display the user message.
+      addNotification(error.userMessage, 'error')
+    } else {
+      // Otherwise display a generic error message.
+      addNotification('Failed to udpate the tenant', 'error')
+      logger.error('Failed to update the tenant', error)
+    }
   }
 }
 
