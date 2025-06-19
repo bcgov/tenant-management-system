@@ -22,15 +22,7 @@ const tenant = ref<Tenant | undefined>()
 
 onMounted(async () => {
   await roleStore.fetchRoles()
-})
-
-onMounted(async () => {
-  await roleStore.fetchRoles()
-
-  const tenantId = route.params.id as string
-  if (tenantId) {
-    tenant.value = await tenantStore.fetchTenant(tenantId)
-  }
+  tenant.value = await tenantStore.fetchTenant(route.params.id as string)
 })
 
 // UI state
