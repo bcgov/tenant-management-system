@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 
 import TenantDetails from '@/components/tenant/TenantDetails.vue'
@@ -88,7 +88,7 @@ async function handleUserSearch(query: Record<string, string>) {
 
 async function handleUpdateTenant(updatedTenant: Partial<Tenant>) {
   try {
-    await tenantStore.updateTenant({
+    tenant.value = await tenantStore.updateTenant({
       ...tenant.value,
       ...updatedTenant,
     })
