@@ -34,7 +34,7 @@ jobs:
         ports:
           - 5432:5432
     steps:
-      - uses: bcgov/action-test-and-analyse@802833ad99951d349af0867a8e7ceb7cf5420a50 # v1.2.1
+      - uses: bcgov/action-test-and-analyse@e2ba34132662c1638dbde806064eb7004b3761c3 # v1.3.0
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_BACKEND }}
         with:
@@ -59,7 +59,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
-      - uses: bcgov/action-test-and-analyse@802833ad99951d349af0867a8e7ceb7cf5420a50 # v1.2.1
+      - uses: bcgov/action-test-and-analyse@e2ba34132662c1638dbde806064eb7004b3761c3 # v1.3.0
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_FRONTEND }}
         with:
@@ -90,7 +90,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Run Trivy vulnerability scanner in repo mode
-        uses: aquasecurity/trivy-action@6c175e9c4083a92bbca2f9724c8a5e33bc2d97a5 # 0.30.0
+        uses: aquasecurity/trivy-action@76071ef0d7ec797419534a183b498b4d6366cf37 # 0.31.0
         with:
           format: "sarif"
           output: "trivy-results.sarif"

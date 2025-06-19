@@ -14,7 +14,7 @@ permissions: {}
 jobs:
   cleanup:
     name: Cleanup and Image Promotion
-    uses: bcgov/quickstart-openshift-helpers/.github/workflows/.pr-close.yml@v0.9.0
+    uses: bcgov/quickstart-openshift-helpers/.github/workflows/.pr-close.yml@0b8121a528aaa05ef8def2f79be9081691dfe98a # v0.9.0
     permissions:
       packages: write
     secrets:
@@ -23,7 +23,6 @@ jobs:
     with:
       cleanup: helm
       packages: backend frontend migrations
-      target: pr-${{ github.event.pull_request.number }}
 
   cleanup_db: # TODO move it off to another action later.
     name: Remove DB User from Crunchy
@@ -32,7 +31,7 @@ jobs:
       - uses: bcgov/action-crunchy@ac46670c974c2238fffb635eee7bbd27735c25bc # v1.2.1
         name: Remove PR Specific User
         with:
-          oc_namespace: ${{ secrets.OC_NAMESPACE }}
-          oc_token: ${{ secrets.OC_TOKEN }}
-          oc_server: ${{ vars.OC_SERVER }}
+          oc_namespace: ${{ secrets.oc_namespace }}
+          oc_token: ${{ secrets.oc_token }}
+          oc_server: ${{ vars.oc_server }}
           values_file: charts/crunchy/values.yml

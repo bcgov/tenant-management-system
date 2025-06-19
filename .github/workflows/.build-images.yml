@@ -8,7 +8,7 @@ on:
         required: false
         type: number
         default: 50
-      tag:
+      tags:
         description: "Tag to use for built images"
         type: string
         default: latest
@@ -27,10 +27,10 @@ jobs:
         package: [backend, frontend, migrations]
     timeout-minutes: 10
     steps:
-      - uses: bcgov/action-builder-ghcr@ace71f7a527ca6fc43c15c7806314be5a4579d2c # v2.3.0
+      - uses: bcgov/action-builder-ghcr@fd17bc1cbb16a60514e0df3966d42dff9fc232bc # v4.0.0
         with:
           keep_versions: ${{ inputs.keep_versions }}
           package: ${{ matrix.package }}
-          tag: ${{ inputs.tag }}
+          tags: ${{ inputs.tags }}
           tag_fallback: latest
           triggers: ('${{ matrix.package }}/')

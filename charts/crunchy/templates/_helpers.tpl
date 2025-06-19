@@ -2,7 +2,7 @@
 Expand the name of the chart.
 */}}
 {{- define "crunchy-postgres.name" -}}
-{{- default "crunchy" .Values.crunchy.nameOverride | trunc 63 | trimSuffix "-" }}
+{{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
@@ -11,10 +11,10 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 If release name contains chart name it will be used as a full name.
 */}}
 {{- define "crunchy-postgres.fullname" -}}
-{{- if .Values.crunchy.fullnameOverride }}
-{{- .Values.crunchy.fullnameOverride | trunc 63 | trimSuffix "-" }}
+{{- if .Values.fullnameOverride }}
+{{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
 {{- else }}
-{{- $name := default "crunchy" .Values.crunchy.nameOverride }}
+{{- $name := default .Chart.Name .Values.nameOverride }}
 {{- if contains $name .Release.Name }}
 {{- .Release.Name | trunc 63 | trimSuffix "-" }}
 {{- else }}
@@ -54,17 +54,9 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 Create the name of the service account to use
 */}}
 {{- define "crunchy-postgres.serviceAccountName" -}}
-{{- if .Values.crunchy.serviceAccount.create }}
-{{- default (include "crunchy-postgres.fullname" .) .Values.crunchy.serviceAccount.name }}
+{{- if .Values.serviceAccount.create }}
+{{- default (include "crunchy-postgres.fullname" .) .Values.serviceAccount.name }}
 {{- else }}
-{{- default "default" .Values.crunchy.serviceAccount.name }}
+{{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
-
-{{- define "crunchy.s3" }}
-{{- if .Values.crunchy.pgBackRest.s3.enabled}}
-[global]
-repo2-s3-key={{ .Values.crunchy.pgBackRest.s3.accessKey }}
-repo2-s3-key-secret={{ .Values.crunchy.pgBackRest.s3.secretKey }}
-{{ end }}
-{{ end }}
