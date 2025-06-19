@@ -5,11 +5,8 @@ import { Role, Tenant, User } from '@/models'
 import { tenantService } from '@/services'
 
 export const useTenantStore = defineStore('tenant', () => {
-  const tenants = ref<Tenant[]>([])
-  const tenantUsers = ref<Record<string, User[]>>({})
-  const tenantUserRoles = ref<Record<string, Record<string, Role[]>>>({})
-
   const loading = ref(false)
+  const tenants = ref<Tenant[]>([])
 
   // Private methods
 
@@ -37,11 +34,12 @@ export const useTenantStore = defineStore('tenant', () => {
     return upsertTenant(tenant)
   }
 
-  const addTenantUser = async (tenantId: string, user: User, role: Role) => {
-    await tenantService.addUsers(tenantId, user, role)
+  const addTenantUser = async (tenant: Tenant, user: User) => {
+    const apiResponse = await tenantService.addUser(tenant.id, user)
 
-    // Refresh tenant users after adding
-    await fetchTenantUsers(tenantId)
+    // Update tenant users after adding
+    const addedUser = User.fromApiData(apiResponse)
+    tenant.users.push(addedUser)
   }
 
   const fetchTenant = async (tenantId: string) => {
@@ -56,19 +54,6 @@ export const useTenantStore = defineStore('tenant', () => {
     }
   }
 
-  const fetchTenantUserRoles = async (tenantId: string, userId: string) => {
-    const roles = await tenantService.getUserRoles(tenantId, userId)
-    if (!tenantUserRoles.value[tenantId]) {
-      tenantUserRoles.value[tenantId] = {}
-    }
-    tenantUserRoles.value[tenantId][userId] = roles
-  }
-
-  const fetchTenantUsers = async (tenantId: string) => {
-    const users = await tenantService.getUsers(tenantId)
-    tenantUsers.value[tenantId] = users
-  }
-
   const fetchTenants = async (userId: string) => {
     loading.value = true
     try {
@@ -76,34 +61,6 @@ export const useTenantStore = defineStore('tenant', () => {
       tenants.value = tenantList.map(Tenant.fromApiData)
     } finally {
       loading.value = false
-    }
-  }
-
-  const searchAvailableUsers = async (
-    tenantId: string,
-    searchCriteria: {
-      field: string
-      value: string
-    },
-  ) => {
-    try {
-      const users = await tenantService.getUsers(tenantId)
-      return users.filter((user: User) => {
-        const fieldValue = user[searchCriteria.field as keyof User]
-
-        // Handle different value types appropriately
-        const stringValue =
-          typeof fieldValue === 'object' && fieldValue !== null
-            ? JSON.stringify(fieldValue)
-            : String(fieldValue)
-
-        return stringValue
-          .toLowerCase()
-          .includes(searchCriteria.value.toLowerCase())
-      })
-    } catch (error) {
-      // logger.error('Error searching users', error)
-      throw error
     }
   }
 
@@ -133,9 +90,6 @@ export const useTenantStore = defineStore('tenant', () => {
     addTenantUser,
     fetchTenant,
     fetchTenants,
-    fetchTenantUsers,
-    fetchTenantUserRoles,
-    searchAvailableUsers,
     updateTenant,
   }
 })
