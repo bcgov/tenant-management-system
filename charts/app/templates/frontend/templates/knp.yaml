@@ -51,7 +51,7 @@ spec:
   ingress:
     - ports:
         - protocol: TCP
-          port: {{ .Values.backend.service.targetPort }}
+          port: 3000
       from:
         - podSelector:
             matchLabels:
