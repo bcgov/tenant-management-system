@@ -38,7 +38,7 @@ spec:
           imagePullPolicy: {{ default "Always" .Values.frontend.imagePullPolicy }}
           env:
             - name: VITE_BACKEND_API_URL
-              value: "https://{{ .Release.Name }}-backend:{{ .Values.backend.service.targetPort }}"
+              value: "http://{{ .Release.Name }}-backend:{{ .Values.backend.service.targetPort }}"
             - name: VITE_API_BASE_URL
               value: /api
             - name: LOG_LEVEL
