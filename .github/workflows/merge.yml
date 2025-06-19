@@ -10,7 +10,7 @@ on:
       - '!.github/workflows/**'
   workflow_dispatch:
     inputs:
-      tag:
+      tags:
         description: 'Tag to use for the deployment (default: latest)'
         type: string
         default: latest
@@ -31,7 +31,7 @@ jobs:
     permissions:
       packages: write
     with:
-      tag: ${{ inputs.tag || 'latest' }}
+      tags: ${{ inputs.tags || 'latest' }}
   
   # Make deploy-test depend on builds
   deploy-test:

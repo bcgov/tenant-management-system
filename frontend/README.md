@@ -30,7 +30,7 @@ Copy the `frontend/.env.sample` file to `frontend/.env`. Its settings are:
 
 | Name                     | Description                                          | Example                                                                              |
 | ------------------------ | ---------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| VITE_BACKEND_API_URL     | The URL of the backend                               | localhost:4144                                                                       |
+| VITE_API_BASE_URL     | The URL of the backend                               | localhost:4144                                                                       |
 | VITE_KEYCLOAK_CLIENT_ID  | The client id in the realm                           | example-client-id                                                                    |
 | VITE_KEYCLOAK_LOGOUT_URL | The logout URL                                       | https://dev.loginproxy.gov.bc.ca.auth/realms/standard/protocol/openid-connect/logout |
 | VITE_KEYCLOAK_REALM      | The realm in the keycloak instance                   | standard                                                                             |

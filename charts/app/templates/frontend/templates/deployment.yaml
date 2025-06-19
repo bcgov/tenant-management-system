@@ -3,6 +3,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "frontend.fullname" . }}
+  namespace: {{ .Release.Namespace }}
   labels:
     {{- include "frontend.labels" . | nindent 4 }}
 spec:
@@ -36,10 +37,10 @@ spec:
           image: "{{.Values.global.registry}}/{{.Values.global.repository}}/frontend:{{ .Values.global.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ default "Always" .Values.frontend.imagePullPolicy }}
           env:
-            - name: VITE_BACKEND_API_URL
-              value: "https://{{ .Release.Name }}-backend.apps.silver.devops.gov.bc.ca"
+            - name: CADDY_REVERSE_PROXY_API_URL
+              value: "http://{{ .Release.Name }}-backend.{{ .Release.Namespace }}.svc.cluster.local:80"
             - name: VITE_API_BASE_URL
-              value: /api
+              value: /api/v1
             - name: LOG_LEVEL
               value: "info"
           ports:

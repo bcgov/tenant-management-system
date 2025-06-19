@@ -21,9 +21,7 @@ global:
     nodeEnv: development
   #-- domain of the application, it is required, apps.silver.devops.gov.bc.ca for silver cluster and apps.devops.gov.bc.ca for gold cluster
   domain: "apps.silver.devops.gov.bc.ca" # it is apps.gold.devops.gov.bc.ca for gold cluster
-  #-- the database Alias gives a nice way to switch to different databases, crunchy, patroni ... etc.
-  #databaseAlias: bitnamipg #uncomment when using bitnami pg and comment below.
-  databaseAlias: postgres-crunchy #uncomment when using crunchy and comment above.
+  databaseAlias: ~ # set using github action workflow during helm deploy.
 
 #-- the components of the application, backend.
 backend:
@@ -71,19 +69,12 @@ backend:
       requests:
         cpu: 50m
         memory: 25Mi
-      limits:
-        cpu: 100m
-        memory: 50Mi
   #-- the service for the component. for inter namespace communication, use the service name as the hostname.
   service:
     #-- the type of the service. it can be ClusterIP, NodePort, LoadBalancer, ExternalName. ClusterIP is the default and is recommended.
     type: ClusterIP
     port: 80 # this is the service port, where it will be exposed internal to the namespace.
     targetPort: 4144 # this is container port where app listens on
-  ingress:
-    enabled: true
-    annotations:
-      route.openshift.io/termination: "edge"
   pdb:
     enabled: false # enable it in PRODUCTION for having pod disruption budget.
     minAvailable: 1 # the minimum number of pods that must be available during the disruption budget.
@@ -104,9 +95,9 @@ frontend:
     #-- enable or disable autoscaling.
     enabled: true
     #-- the minimum number of replicas.
-    minReplicas: 3
+    minReplicas: 1
     #-- the maximum number of replicas.
-    maxReplicas: 7
+    maxReplicas: 3
     #-- the target cpu utilization percentage, is from request cpu and NOT LIMIT CPU.
     targetCPUUtilizationPercentage: 80
   #-- the service for the component. for inter namespace communication, use the service name as the hostname.
@@ -137,47 +128,5 @@ frontend:
     enabled: false # enable it in PRODUCTION for having pod disruption budget.
     minAvailable: 1 # the minimum number of pods that must be available during the disruption budget.
 
-crunchy:
-  enabled: true # make this false and bitnami-pg true to switch from crunchy to bitnami single postgis.
-
-bitnamipg:
+bitnami-pg:
   enabled: false
-  image:
-    registry: ghcr.io
-    repository: bcgov/nr-containers/bitnami/postgresql
-    tag: 15.10.0
-  auth:
-    existingSecret: '{{ .Release.Name }}-database'
-    username: 'quickstart' # make sure this is aligned with secret.yaml
-    database: quickstart # make sure this is aligned with secret.yaml
-  shmVolume:
-    enabled: false
-  backup:
-    enabled: false
-    cronjob:
-      containerSecurityContext: { }
-      podSecurityContext:
-        enabled: false
-      storage:
-        size: 200Mi
-  primary:
-    persistence:
-      enabled: true
-      storageClass: netapp-block-standard
-      accessModes:
-        - ReadWriteOnce
-      size: 100Mi
-    containerSecurityContext:
-      enabled: false
-    podSecurityContext:
-      enabled: false
-    initdb:
-      scripts: # remove the below script, if POSTGIS is not required.
-        postgis.sh: |
-          #!/bin/sh
-          PGPASSWORD=$POSTGRES_PASSWORD psql -U postgres -d quickstart -c "CREATE EXTENSION postgis;"
-    resources:
-      requests:
-        cpu: 50m
-        memory: 150Mi
-
