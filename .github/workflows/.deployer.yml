@@ -9,9 +9,9 @@ on:
       ### Typical / recommended
       atomic:
         description: Atomic deployment?  That means fail all or nothing
-        default: true
+        default: false
         required: false
-        type: string
+        type: boolean
       directory:
         description: Chart directory
         default:  'charts/app'
@@ -41,7 +41,13 @@ on:
       db_user:
         description: The database user
         required: false
+        default: 'app'
         type: string
+      debug:
+        description: Debug mode
+        default: false
+        required: false
+        type: boolean
 
       ### Usually a bad idea / not recommended
       timeout-minutes:
@@ -80,19 +86,8 @@ permissions:
   deployments: write
 
 jobs:
-  deployer-db:
-    name: Database
-    uses: ./.github/workflows/.deployer-db.yml
-    secrets:
-      oc_namespace: ${{ secrets.OC_NAMESPACE }}
-      oc_token: ${{ secrets.OC_TOKEN }}
-    with:
-      environment: ${{ inputs.environment }}
-      triggers: ${{ inputs.triggers }}
-
   deploy:
     name: Stack
-    needs: deployer-db
     environment:
       name: ${{ inputs.environment }}
       url: ${{ inputs.deployment_url }}
@@ -101,7 +96,15 @@ jobs:
       tag: ${{ inputs.tag || steps.pr.outputs.pr }}
       triggered: ${{ steps.deploy.outputs.triggered }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: bcgov/action-crunchy@ac46670c974c2238fffb635eee7bbd27735c25bc # v1.2.1
+        name: Deploy Crunchy
+        id: deploy_crunchy
+        with:
+          oc_namespace: ${{ secrets.OC_NAMESPACE }}
+          oc_token: ${{ secrets.OC_TOKEN }}
+          environment: ${{ inputs.environment }}
+          values_file: charts/crunchy/values.yml
+          triggers: ${{ inputs.triggers }}
 
       # Variables
       - if: inputs.tag  == ''
@@ -113,16 +116,7 @@ jobs:
           # Vars: tag and release
 
           # Tag defaults to PR number, but can be overridden by inputs.tag
-          if [ -n "${{ inputs.tag }}" ]; then
-            # Explicit tag provided
-            tag="${{ inputs.tag }}"
-          elif [ -n "${{ steps.pr.outputs.pr }}" ]; then
-            # PR number available
-            tag="pr-${{ steps.pr.outputs.pr }}"
-          else
-            # Fall back to latest for production/test environments
-            tag="latest"
-          fi
+          tag=${{ inputs.tag || steps.pr.outputs.pr }}
 
           # Release name includes run numbers to ensure uniqueness
           release=${{ github.event.repository.name }}-${{ inputs.environment || steps.pr.outputs.pr || inputs.tag }}
@@ -142,7 +136,7 @@ jobs:
 
       - name: Stop pre-existing deployments on PRs (status = pending-upgrade)
         if: github.event_name == 'pull_request'
-        uses: bcgov/action-oc-runner@12997e908fba505079d1aab6f694a17fe15e9b28 # v1.2.2
+        uses: bcgov/action-oc-runner@10033668ef4374d9bb78149faa73e4ccda0e93dd # v1.2.3
         with:
           oc_namespace: ${{ secrets.oc_namespace }}
           oc_token: ${{ secrets.oc_token }}
@@ -156,6 +150,12 @@ jobs:
               helm rollback ${{ steps.vars.outputs.release }} || \
                 helm uninstall ${{ steps.vars.outputs.release }}
             fi
+
+      - uses: actions/checkout@v4
+      - name: Debug Values File
+        if: inputs.debug == 'true'
+        run: ls -l charts/crunchy/values.yml
+
       - name: Start deployment
         uses: bobheadxi/deployments@v1.4.0
         id: deployment
@@ -167,12 +167,13 @@ jobs:
 
       - name: Helm Deploy
         id: deploy
-        uses: bcgov/action-oc-runner@12997e908fba505079d1aab6f694a17fe15e9b28 # v1.2.2
+        uses: bcgov/action-oc-runner@10033668ef4374d9bb78149faa73e4ccda0e93dd # v1.2.3
         with:
           oc_namespace: ${{ secrets.oc_namespace }}
           oc_token: ${{ secrets.oc_token }}
           oc_server: ${{ vars.oc_server }}
           triggers: ${{ inputs.triggers }}
+          ref: ${{ github.ref }}
           commands: |
             # Deploy
 
@@ -182,13 +183,14 @@ jobs:
             # Helm package
             sed -i 's/^name:.*/name: ${{ github.event.repository.name }}/' Chart.yaml
             helm package -u . --app-version="tag-${{ steps.vars.outputs.tag }}_run-${{ github.run_number }}" --version=${{ steps.pr.outputs.pr || steps.vars.outputs.version }}
-
+            # print the values.yaml file to see the values being used
             # Helm upgrade/rollout
             helm upgrade \
               --set-string global.repository=${{ github.repository }} \
-              --set-string global.tag=${{ steps.vars.outputs.tag }} \
-              --set-string global.config.databaseUser=${{ inputs.db_user }} \
+              --set-string global.tag="${{ steps.vars.outputs.tag }}" \
+              --set-string global.config.databaseUser="${{ inputs.db_user }}" \
               --set-string global.config.nodeEnv=${{ (inputs.environment == 'prod' || inputs.environment == 'production') && 'production' || (inputs.environment == 'test' && 'test' || 'development') }} \
+              --set-string global.databaseAlias="${{ steps.deploy_crunchy.outputs.release }}-crunchy" \
               ${{ inputs.params }} \
               --install --wait ${{ inputs.atomic && '--atomic' || '' }} ${{ steps.vars.outputs.release }} \
               --timeout ${{ inputs.timeout-minutes }}m \
