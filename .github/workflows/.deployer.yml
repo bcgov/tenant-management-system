@@ -64,6 +64,10 @@ on:
         description: 'Deployment URL; used for environments'
         required: true
         type: string
+      db_triggers:
+        description: Paths used to trigger a database deployment; e.g. ('charts/crunchy/')
+        required: false
+        type: string
 
     outputs:
       tag:
@@ -96,7 +100,7 @@ jobs:
       tag: ${{ inputs.tag || steps.pr.outputs.pr }}
       triggered: ${{ steps.deploy.outputs.triggered }}
     steps:
-      - uses: bcgov/action-crunchy@ac46670c974c2238fffb635eee7bbd27735c25bc # v1.2.1
+      - uses: bcgov/action-crunchy@v1.2.2
         name: Deploy Crunchy
         id: deploy_crunchy
         with:
@@ -104,7 +108,7 @@ jobs:
           oc_token: ${{ secrets.OC_TOKEN }}
           environment: ${{ inputs.environment }}
           values_file: charts/crunchy/values.yml
-          triggers: ${{ inputs.triggers }}
+          triggers: ${{ inputs.db_triggers }}
 
       # Variables
       - if: inputs.tag  == ''
