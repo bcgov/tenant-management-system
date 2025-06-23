@@ -7,11 +7,13 @@ import { Request } from 'express'
 import { NotFoundError } from '../errors/NotFoundError'
 import { ConflictError } from '../errors/ConflictError'
 import logger from '../common/logger'
+import { TMSRepository } from './tms.repository'
 
 export class TMRepository {
 
-    constructor(private manager: EntityManager) {
+    constructor(private manager: EntityManager, private tmsRepository: TMSRepository) {
         this.manager = manager
+        this.tmsRepository = tmsRepository
     }
 
     public async saveGroup(req: Request, transactionEntityManager?: EntityManager) {
@@ -24,7 +26,7 @@ export class TMRepository {
                 const tenantId = req.params.tenantId;
                 const createdBy = req.body.user?.ssoUserId || req.decodedJwt?.idir_user_guid || 'system';
 
-                if (!await this.checkIfTenantExists(tenantId, transactionEntityManager)) {
+                if (!await this.tmsRepository.checkIfTenantExists(tenantId, transactionEntityManager)) {
                     throw new NotFoundError(`Tenant not found: ${tenantId}`)
                 }
 
@@ -101,13 +103,6 @@ export class TMRepository {
             .getOne();
 
         return !!existingGroupUser;
-    }
-
-    public async checkIfTenantExists(tenantId: string, transactionEntityManager?: EntityManager) {
-        transactionEntityManager = transactionEntityManager ? transactionEntityManager : this.manager;
-        
-        const tenant:Tenant = await transactionEntityManager.findOne(Tenant, { where: { id: tenantId } });
-        return !!tenant;
     }
 
     public async checkIfTenantUserExists(tenantUserId: string, transactionEntityManager?: EntityManager) {
