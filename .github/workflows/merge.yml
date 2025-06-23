@@ -71,9 +71,18 @@ jobs:
       fail_on_high: true
       scan_type: full
 
+  wait-for-approval:
+    name: Wait for Approval
+    needs: [test_security_scan]
+    runs-on: ubuntu-24.04
+    environment: prod
+    steps:
+      - name: Wait for manual approval
+        run: echo "Production deployment approved!"
+
   deploy-prod:
     name: Deploy (PROD)
-    needs: [update-test-secrets]
+    needs: [wait-for-approval]
     uses: ./.github/workflows/.deployer.yml
     secrets: inherit
     with:
