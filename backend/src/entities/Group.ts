@@ -1,5 +1,6 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, Index, Unique } from 'typeorm'
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, Index, Unique, OneToMany } from 'typeorm'
 import { Tenant } from './Tenant'
+import { GroupUser } from './GroupUser'
 
 @Entity('Group', { schema: 'tms' })
 @Unique(["name", "tenant"])
@@ -18,6 +19,11 @@ export class Group {
     @ManyToOne(() => Tenant, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'tenant_id' })
     tenant: Tenant;
+
+    @OneToMany(() => GroupUser, (groupUser) => groupUser.group, {
+        cascade: true,
+    })
+    users: GroupUser[];
 
     @CreateDateColumn({ type: 'date', name: 'created_datetime', nullable: true })
     createdDateTime: Date;

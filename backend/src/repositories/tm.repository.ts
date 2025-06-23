@@ -66,7 +66,7 @@ export class TMRepository {
 
                 groupResponse = await transactionEntityManager
                     .createQueryBuilder(Group, 'group')
-                    .leftJoinAndSelect('group.tenant', 'tenant')
+                    .leftJoinAndSelect('group.users', 'groupUsers')
                     .where('group.id = :id', { id: savedGroup.id })
                     .getOne();
 
@@ -94,7 +94,7 @@ export class TMRepository {
     public async checkIfTenantUserAlreadyInGroup(tenantUserId: string, tenantId: string, transactionEntityManager?: EntityManager) {
         transactionEntityManager = transactionEntityManager ? transactionEntityManager : this.manager;
         
-        const existingGroupUser = await transactionEntityManager
+        const existingGroupUser:GroupUser = await transactionEntityManager
             .createQueryBuilder(GroupUser, 'groupUser')
             .leftJoin('groupUser.group', 'group')
             .where('groupUser.tenantUser.id = :tenantUserId', { tenantUserId })
