@@ -22,9 +22,10 @@ const { addNotification } = useNotification()
 
 // Component Data
 
-const tenant = ref<Tenant | undefined>()
+const isDuplicateName = ref(false)
 const roles = computed(() => roleStore.roles)
 const searchResults = ref<User[]>([])
+const tenant = ref<Tenant | undefined>()
 
 // Component State
 
@@ -97,7 +98,7 @@ async function handleUpdateTenant(updatedTenant: Partial<Tenant>) {
     if (error instanceof DuplicateEntityError) {
       // If the API says that this name exists already, then show the name
       // duplicated validation error.
-      // isDuplicateName.value = true
+      isDuplicateName.value = true
     } else if (error instanceof DomainError && error.userMessage) {
       // For any other API Domain Error, display the user message.
       addNotification(error.userMessage, 'error')
@@ -119,9 +120,11 @@ async function handleUpdateTenant(updatedTenant: Partial<Tenant>) {
 
       <TenantDetails
         v-if="showDetail"
+        :is-duplicate-name="isDuplicateName"
         :tenant="tenant"
         v-model:delete-dialog="deleteDialogVisible"
         v-model:is-editing="isEditing"
+        @clear-duplicate-error="isDuplicateName = false"
         @update="handleUpdateTenant"
       />
 

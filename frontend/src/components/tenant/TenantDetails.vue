@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
+import { VForm } from 'vuetify/components'
 
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
@@ -9,24 +10,25 @@ import { MINISTRIES } from '@/utils/constants'
 
 const props = defineProps<{
   deleteDialog: boolean
+  isDuplicateName: boolean
   isEditing: boolean
   tenant?: Tenant
 }>()
 
 const emit = defineEmits<{
+  (event: 'clear-duplicate-error'): void
   (event: 'update', tenant: Partial<Tenant>): void
   (event: 'update:deleteDialog', value: boolean): void
   (event: 'update:isEditing', value: boolean): void
 }>()
 
 // Form state
+const form = ref<any>(null)
 const formData = ref<Partial<Tenant>>({
   description: '',
   ministryName: '',
   name: '',
 })
-
-const form = ref<any>(null)
 const isFormValid = ref(false)
 
 // Reset form when tenant changes
@@ -44,6 +46,34 @@ watch(
   { immediate: true },
 )
 
+// Validation
+const rules = {
+  maxLength: (max: number) => (v: string) =>
+    !v || v.length <= max || `Must be ${max} characters or less`,
+  notDuplicated: () =>
+    !props.isDuplicateName ||
+    'Name must be unique for this ministry/organization',
+  required: (value: any) => !!value || 'Required',
+}
+
+// When parent sets the duplicated name flag, force re-validation so that the
+// message is displayed.
+watch(
+  () => props.isDuplicateName,
+  async () => {
+    await nextTick()
+    form.value?.validate()
+  },
+)
+
+watch(
+  () => [formData.value.name, formData.value.ministryName],
+  () => {
+    console.log('event')
+    emit('clear-duplicate-error')
+  },
+)
+
 const { addNotification } = useNotification()
 
 const owner = computed(() => {
@@ -54,14 +84,13 @@ const owner = computed(() => {
     )
     return null
   }
-  return props.tenant.users[0]
+  return props.tenant.users[0] // TODO - this isn't right.
 })
 
 async function handleSubmit() {
   const { valid } = await form.value.validate()
   if (valid) {
     emit('update', formData.value)
-    emit('update:isEditing', false)
   }
 }
 
@@ -98,7 +127,11 @@ function toggleEdit() {
                 v-if="isEditing"
                 v-model="formData.name"
                 label="Tenant Name"
-                :rules="[(v) => !!v || 'Name is required']"
+                :rules="[
+                  rules.required,
+                  rules.maxLength(30),
+                  rules.notDuplicated,
+                ]"
                 required
               />
               <v-text-field
@@ -113,14 +146,15 @@ function toggleEdit() {
                 v-if="isEditing"
                 v-model="formData.ministryName"
                 :items="MINISTRIES"
-                label="Ministry/Organization"
                 :rules="[(v) => !!v || 'Ministry is required']"
+                label="Ministry/Organization"
                 placeholder="Select an option..."
                 required
               />
               <v-text-field
                 v-else
                 :model-value="tenant.ministryName"
+                :rules="[rules.required, rules.notDuplicated]"
                 label="Ministry/Organization"
                 disabled
               />
