@@ -32,8 +32,14 @@ export class TMRepository {
                     throw new ConflictError(`A group with name '${name}' already exists in this tenant`)
                 }
 
-                if (tenantUserId && await this.checkIfTenantUserAlreadyInGroup(tenantUserId, tenantId, transactionEntityManager)) {
-                    throw new ConflictError(`User is already assigned to a group in this tenant`)
+                if (tenantUserId) {
+                    if (!await this.checkIfTenantUserExists(tenantUserId, transactionEntityManager)) {
+                        throw new NotFoundError(`Tenant user not found: ${tenantUserId}`)
+                    }
+                    
+                    if (await this.checkIfTenantUserAlreadyInGroup(tenantUserId, tenantId, transactionEntityManager)) {
+                        throw new ConflictError(`User is already assigned to a group in this tenant`)
+                    }
                 }
 
                 const group: Group = new Group()
@@ -102,6 +108,13 @@ export class TMRepository {
         
         const tenant:Tenant = await transactionEntityManager.findOne(Tenant, { where: { id: tenantId } });
         return !!tenant;
+    }
+
+    public async checkIfTenantUserExists(tenantUserId: string, transactionEntityManager?: EntityManager) {
+        transactionEntityManager = transactionEntityManager ? transactionEntityManager : this.manager;
+        
+        const tenantUser = await transactionEntityManager.findOne(TenantUser, { where: { id: tenantUserId } });
+        return !!tenantUser;
     }
 
     public async getGroupsForTenant(tenantId: string) {
