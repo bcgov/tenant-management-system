@@ -174,7 +174,10 @@ function toggleEdit() {
                 v-model="formData.description"
                 label="Tenant Description"
                 auto-grow
+                counter="500"
                 rows="1"
+                :rules="[rules.required, rules.maxLength(500)]"
+                required
               ></v-textarea>
               <v-textarea
                 v-else
