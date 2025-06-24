@@ -8,6 +8,7 @@ import { NotFoundError } from '../errors/NotFoundError'
 import { ConflictError } from '../errors/ConflictError'
 import logger from '../common/logger'
 import { TMSRepository } from './tms.repository'
+import { TMSConstants } from '../common/tms.constants'
 
 export class TMRepository {
 
@@ -163,7 +164,7 @@ export class TMRepository {
     }
 
     public async addGroupUser(req: Request) {
-        let groupUserResponse = {}
+        let groupUserResponse: any = null
         
         await this.manager.transaction(async(transactionEntityManager) => {
             try {
@@ -191,9 +192,17 @@ export class TMRepository {
                     }
                     tenantUser = existingTenantUser;
                 } else {
+                    const serviceUserRole = await this.tmsRepository.findRoles([TMSConstants.SERVICE_USER], null)
+                    if (serviceUserRole.length === 0) {
+                        throw new NotFoundError('Service User role not found')
+                    }
+                    
                     const addTenantUsersRequest = {
                         params: { tenantId },
-                        body: { user, roles: ['SERVICE_USER'] }
+                        body: { 
+                            user: user, 
+                            roles: [serviceUserRole[0].id]
+                        }
                     } as any;
                     
                     const tenantResponse: any = await this.tmsRepository.addTenantUsers(addTenantUsersRequest)
@@ -215,8 +224,25 @@ export class TMRepository {
 
                 groupUserResponse = await transactionEntityManager
                     .createQueryBuilder(GroupUser, 'groupUser')
+                    .leftJoinAndSelect('groupUser.tenantUser', 'tenantUser')
+                    .leftJoinAndSelect('tenantUser.ssoUser', 'ssoUser')
+                    .leftJoinAndSelect('tenantUser.roles', 'tenantUserRoles')
+                    .leftJoinAndSelect('tenantUserRoles.role', 'role')
                     .where('groupUser.id = :id', { id: savedGroupUser.id })
                     .getOne();
+
+                if (groupUserResponse) {
+                    const userRoles = groupUserResponse.tenantUser.roles?.map(tur => tur.role) || []
+                    groupUserResponse = {
+                        ...groupUserResponse,
+                        user: {
+                            ...groupUserResponse.tenantUser,
+                            ssoUser: groupUserResponse.tenantUser.ssoUser,
+                            roles: userRoles
+                        }
+                    };
+                    delete groupUserResponse.tenantUser
+                }
 
             } catch(error) {
                 logger.error('Add user to group transaction failure - rolling back inserts ', error)
