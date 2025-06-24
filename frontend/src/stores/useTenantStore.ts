@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
-import { Role, Tenant, User } from '@/models'
+import { Tenant, User } from '@/models'
 import { tenantService } from '@/services'
 
 export const useTenantStore = defineStore('tenant', () => {
@@ -78,6 +78,10 @@ export const useTenantStore = defineStore('tenant', () => {
     )
 
     const updatedTenant = Tenant.fromApiData(apiResponse)
+
+    // The API call only returns the updated tenant data, not the users. Copy
+    // them from the original tenant.
+    updatedTenant.users = tenant.users || []
 
     return upsertTenant(updatedTenant)
   }
