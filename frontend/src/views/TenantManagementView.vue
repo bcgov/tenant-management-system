@@ -74,6 +74,32 @@ async function handleAddUser(user: User) {
   }
 }
 
+async function handleRemoveRole({
+  userId,
+  roleId,
+}: {
+  userId: string
+  roleId: string
+}) {
+  if (!tenant.value) {
+    addNotification('No tenant selected', 'error')
+
+    return
+  }
+
+  try {
+    await tenantStore.removeTenantUserRole(tenant.value, userId, roleId)
+    addNotification('The role was successfully removed from the user.')
+
+    // Refresh local tenant data to reflect role removal
+    tenant.value = await tenantStore.fetchTenant(tenant.value.id)
+  } catch (error) {
+    logger.error('Failed to remove user role', error)
+
+    addNotification('Failed to remove user role', 'error')
+  }
+}
+
 async function handleUserSearch(query: Record<string, string>) {
   loadingSearch.value = true
   try {
@@ -147,6 +173,7 @@ async function handleUpdateTenant(updatedTenant: Partial<Tenant>) {
               :loading-search="loadingSearch"
               @add="handleAddUser"
               @cancel="searchResults = []"
+              @remove-role="handleRemoveRole"
               @search="handleUserSearch"
             />
           </v-window-item>
