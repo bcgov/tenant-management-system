@@ -126,10 +126,17 @@ export class TMSRepository {
                     .where('id = :tenantId', { tenantId })
                     .execute();
 
-                tenantResponse = await transactionEntityManager
+                const tenant:Tenant = await transactionEntityManager
                     .createQueryBuilder(Tenant, 'tenant')
                     .where('tenant.id = :id', { id: tenantId })
                     .getOne();
+
+                const createdBy:SSOUser = tenant.createdBy ? await transactionEntityManager.findOne(SSOUser, { where: { ssoUserId: tenant.createdBy } }) : null;
+
+                tenantResponse = {
+                    ...tenant,
+                    createdBy: createdBy?.userName || tenant.createdBy,
+                };
 
             } catch (error) {
                 logger.error('Update tenant transaction failure - rolling back changes', error);
@@ -538,7 +545,7 @@ export class TMSRepository {
         return roles ?? []
     }
 
-    private async setSSOUser(ssoUserId:string, firstName:string, lastName:string, displayName:string,userName:string, email:string) {
+    public async setSSOUser(ssoUserId:string, firstName:string, lastName:string, displayName:string,userName:string, email:string) {
         let ssoUser:SSOUser = await this.manager.findOne(SSOUser,{where:{ssoUserId:ssoUserId}})
         if(!ssoUser) { 
             ssoUser = new SSOUser()
@@ -699,6 +706,31 @@ export class TMSRepository {
         }
 
         return await queryBuilder.getMany();
+    }
+
+
+    public async getTenantUserBySsoId(ssoUserId: string, tenantId: string, transactionEntityManager?: EntityManager) {
+        transactionEntityManager = transactionEntityManager ? transactionEntityManager : this.manager
+        
+        const tenantUser:TenantUser = await transactionEntityManager
+            .createQueryBuilder(TenantUser, 'tenantUser')
+            .leftJoinAndSelect('tenantUser.ssoUser', 'ssoUser')
+            .where('tenantUser.tenant.id = :tenantId', { tenantId })
+            .andWhere('ssoUser.ssoUserId = :ssoUserId', { ssoUserId })
+            .getOne();
+
+        return tenantUser
+    }
+
+    public async assignDefaultRoleToUser(tenantUserId: string, tenantId: string, transactionEntityManager?: EntityManager) {
+        transactionEntityManager = transactionEntityManager ? transactionEntityManager : this.manager
+        
+        const serviceUserRole:Role[] = await this.findRoles([TMSConstants.SERVICE_USER], null)
+        if (serviceUserRole.length === 0) {
+            throw new NotFoundError('SERVICE_USER role not found')
+        }
+
+        await this.assignUserRoles(tenantId, tenantUserId, [serviceUserRole[0].id], transactionEntityManager)
     }
 
 }

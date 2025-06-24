@@ -1,6 +1,7 @@
 import { Request, Response } from 'express'
 import { RoutesConstants } from '../common/routes.constants'
 import {TMSController} from '../controllers/tms.controller'
+import {TMController} from '../controllers/tm.controller'
 import { validate, ValidationError } from 'express-validation'
 import validator from '../common/tms.validator'
 import { checkJwt } from '../common/auth.mw'
@@ -14,6 +15,7 @@ require('dotenv').config()
 export class Routes {
 
     public tmsController:TMSController = new TMSController()
+    public tmController:TMController = new TMController()
 
     public routes (app:any) {
         app.route(RoutesConstants.HEALTH).get((req:Request, res:Response) => this.tmsController.health(req, res))
@@ -33,6 +35,8 @@ export class Routes {
         app.route(RoutesConstants.CREATE_TENANT_REQUEST).post(checkJwt, validate(validator.createTenantRequest,{},{}),(req:Request,res:Response) => this.tmsController.createTenantRequest(req,res))
         app.route(RoutesConstants.UPDATE_TENANT_REQUEST_STATUS).patch(checkJwt, checkOperationsAdmin, validate(validator.updateTenantRequestStatus,{},{}),(req:Request,res:Response) => this.tmsController.updateTenantRequestStatus(req,res))
         app.route(RoutesConstants.GET_TENANT_REQUESTS).get(checkJwt, checkOperationsAdmin, validate(validator.getTenantRequests,{},{}),(req:Request,res:Response) => this.tmsController.getTenantRequests(req,res))
+        
+        app.route(RoutesConstants.CREATE_GROUP).post(checkJwt, validate(validator.createGroup,{},{}), checkTenantAccess([TMSConstants.TENANT_OWNER, TMSConstants.USER_ADMIN]),(req:Request,res:Response) => this.tmController.createGroup(req,res))
 
         app.use(function (error: Error, req: any, res: Response<any, Record<string, any>>, next: any) {
             if (error instanceof ValidationError) {

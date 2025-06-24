@@ -167,6 +167,17 @@ export default {
         query: Joi.object({
             status: Joi.string().valid('NEW', 'APPROVED', 'REJECTED').optional()
         }).optional()
+    },
+
+    createGroup: {
+        params: Joi.object({
+            tenantId: Joi.string().guid().required()
+        }),
+        body: Joi.object({
+            name: Joi.string().min(1).max(30).pattern(/^\S.*\S$/).required(),
+            description: Joi.string().min(1).max(500).optional(),
+            tenantUserId: Joi.string().guid().optional()
+        }).options({abortEarly:false,convert:false})
     }
 
 }
