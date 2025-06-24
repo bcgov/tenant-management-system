@@ -16,6 +16,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (event: 'add', user: User): void
   (event: 'cancel'): void
+  (event: 'remove-role', payload: { userId: string; roleId: string }): void
   (event: 'search', query: Record<string, string>): void
 }>()
 
@@ -91,14 +92,20 @@ function handleCancel() {
             <v-alert type="info">You have no users in this tenant.</v-alert>
           </template>
           <template #item.roles="{ item }">
-            <v-chip
-              v-for="role in item.roles"
-              :key="role.id"
-              color="primary"
-              class="mr-2"
-            >
-              {{ role.description }}
-            </v-chip>
+            <div class="d-flex flex-wrap" style="gap: 8px; margin-block: 4px">
+              <v-chip
+                v-for="role in item.roles"
+                :key="role.id"
+                color="primary"
+                class="d-inline-flex align-center"
+                closable
+                @click:close="
+                  emit('remove-role', { userId: item.id, roleId: role.id })
+                "
+              >
+                {{ role.description }}
+              </v-chip>
+            </div>
           </template>
         </v-data-table>
       </v-col>
