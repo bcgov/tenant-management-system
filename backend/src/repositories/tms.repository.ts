@@ -126,10 +126,17 @@ export class TMSRepository {
                     .where('id = :tenantId', { tenantId })
                     .execute();
 
-                tenantResponse = await transactionEntityManager
+                const tenant:Tenant = await transactionEntityManager
                     .createQueryBuilder(Tenant, 'tenant')
                     .where('tenant.id = :id', { id: tenantId })
                     .getOne();
+
+                const createdBy:SSOUser = tenant.createdBy ? await transactionEntityManager.findOne(SSOUser, { where: { ssoUserId: tenant.createdBy } }) : null;
+
+                tenantResponse = {
+                    ...tenant,
+                    createdBy: createdBy?.userName || tenant.createdBy,
+                };
 
             } catch (error) {
                 logger.error('Update tenant transaction failure - rolling back changes', error);
