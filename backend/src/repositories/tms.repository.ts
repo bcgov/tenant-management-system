@@ -320,7 +320,7 @@ export class TMSRepository {
         const role = await this.manager.findOne(Role, { where: { id: roleId } });
         if (role?.name === TMSConstants.TENANT_OWNER) {
 
-            const otherTenantOwnersCount = await this.manager
+            const otherTenantOwnersCount:number = await this.manager
                 .createQueryBuilder(TenantUserRole, "tenantUserRole")
                 .innerJoin("tenantUserRole.tenantUser", "tenantUser")
                 .innerJoin("tenantUserRole.role", "role")
@@ -333,6 +333,18 @@ export class TMSRepository {
             if (otherTenantOwnersCount === 0) {
                 throw new ConflictError("Cannot unassign tenant owner role. At least one tenant owner must remain.");
             }
+        }
+
+        const userRoleCount:number = await this.manager
+            .createQueryBuilder(TenantUserRole, "tenantUserRole")
+            .innerJoin("tenantUserRole.tenantUser", "tenantUser")
+            .where("tenantUser.tenant.id = :tenantId", { tenantId })
+            .andWhere("tenantUser.id = :tenantUserId", { tenantUserId })
+            .andWhere("tenantUserRole.isDeleted = :isDeleted", { isDeleted: false })
+            .getCount();
+
+        if (userRoleCount === 1) {
+            throw new ConflictError("Cannot unassign the last role from a user. User must have at least one role in the tenant");
         }
 
         await this.manager.update(TenantUserRole, {

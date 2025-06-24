@@ -779,6 +779,23 @@ describe('Tenant API', () => {
         name: 'Error occurred unassigning user role'
       })
     })
+
+    it('should return 409 when trying to unassign last role from user', async () => {
+      mockTMSRepository.unassignUserRoles.mockRejectedValue(
+        new ConflictError('Cannot unassign the last role from a user. User must have at least one role in the tenant')
+      )
+
+      const response = await request(app)
+        .delete(`/v1/tenants/${tenantId}/users/${tenantUserId}/roles/${roleId}`)
+
+      expect(response.status).toBe(409)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Conflict',
+        httpResponseCode: 409,
+        message: 'Cannot unassign the last role from a user. User must have at least one role in the tenant',
+        name: 'Error occurred unassigning user role'
+      })
+    })
   })
 
   describe('GET /v1/tenants/:tenantId', () => {
