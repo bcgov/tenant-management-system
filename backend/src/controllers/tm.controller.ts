@@ -28,4 +28,23 @@ export class TMController {
             }
         }
     }
+
+    public async addGroupUser(req: Request, res: Response) {
+        try {
+            const groupUserResponse = await this.tmService.addGroupUser(req)
+            res.status(201).send(groupUserResponse)
+        } 
+        catch(error) {
+            logger.error(error)
+            if (error instanceof ConflictError) {
+                this.errorHandler.generalError(res, "Error occurred adding user to group", error.message, error.statusCode, "Conflict")
+            } 
+            else if (error instanceof NotFoundError) {
+                this.errorHandler.generalError(res, "Error occurred adding user to group", error.message, error.statusCode, "Not Found")
+            }
+            else {
+                this.errorHandler.generalError(res, "Error occurred adding user to group", error.message, 500, "Internal Server Error")
+            }
+        }
+    }
 } 

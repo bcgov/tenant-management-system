@@ -148,4 +148,82 @@ export class TMRepository {
 
         return groupUsers;
     }
+
+    public async checkIfUserExistsInGroup(tenantUserId: string, groupId: string, transactionEntityManager?: EntityManager) {
+        transactionEntityManager = transactionEntityManager ? transactionEntityManager : this.manager
+        
+        const existingGroupUser = await transactionEntityManager
+            .createQueryBuilder(GroupUser, 'groupUser')
+            .where('groupUser.tenantUser.id = :tenantUserId', { tenantUserId })
+            .andWhere('groupUser.group.id = :groupId', { groupId })
+            .andWhere('groupUser.isDeleted = :isDeleted', { isDeleted: false })
+            .getOne();
+
+        return !!existingGroupUser
+    }
+
+    public async addGroupUser(req: Request) {
+        let groupUserResponse = {}
+        
+        await this.manager.transaction(async(transactionEntityManager) => {
+            try {
+                const tenantId:string = req.params.tenantId
+                const groupId:string = req.params.groupId
+                const { user } = req.body
+                const createdBy:string = req.decodedJwt?.idir_user_guid || 'system'
+
+                if (!await this.tmsRepository.checkIfTenantExists(tenantId, transactionEntityManager)) {
+                    throw new NotFoundError(`Tenant not found: ${tenantId}`)
+                }
+
+                const group:Group = await this.getGroupById(groupId)
+                if (group.tenant.id !== tenantId) {
+                    throw new NotFoundError(`Group does not belong to tenant: ${tenantId}`)
+                }
+
+                let tenantUser: TenantUser
+                const existingTenant:Tenant = await this.tmsRepository.getTenantIfUserDoesNotExistForTenant(user.ssoUserId, tenantId)
+
+                if (!existingTenant) {
+                    const existingTenantUser:TenantUser = await this.tmsRepository.getTenantUserBySsoId(user.ssoUserId, tenantId, transactionEntityManager)
+                    if (!existingTenantUser) {
+                        throw new NotFoundError(`Tenant user not found: ${user.ssoUserId}`)
+                    }
+                    tenantUser = existingTenantUser;
+                } else {
+                    const addTenantUsersRequest = {
+                        params: { tenantId },
+                        body: { user, roles: ['SERVICE_USER'] }
+                    } as any;
+                    
+                    const tenantResponse: any = await this.tmsRepository.addTenantUsers(addTenantUsersRequest)
+                    tenantUser = tenantResponse.savedTenantUser
+                }
+
+                if (await this.checkIfUserExistsInGroup(tenantUser.id, groupId, transactionEntityManager)) {
+                    throw new ConflictError(`User is already a member of this group`)
+                }
+
+                const groupUser: GroupUser = new GroupUser()
+                groupUser.group = { id: groupId } as Group
+                groupUser.tenantUser = tenantUser
+                groupUser.isDeleted = false
+                groupUser.createdBy = createdBy
+                groupUser.updatedBy = createdBy
+
+                const savedGroupUser: GroupUser = await transactionEntityManager.save(groupUser)
+
+                groupUserResponse = await transactionEntityManager
+                    .createQueryBuilder(GroupUser, 'groupUser')
+                    .where('groupUser.id = :id', { id: savedGroupUser.id })
+                    .getOne();
+
+            } catch(error) {
+                logger.error('Add user to group transaction failure - rolling back inserts ', error)
+                throw error
+            }
+        });
+
+        return groupUserResponse
+    }
 } 

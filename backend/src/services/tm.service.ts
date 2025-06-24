@@ -17,4 +17,14 @@ export class TMService {
             }   
         }       
     }
+
+    public async addGroupUser(req: Request) {
+        const savedGroupUser: any = await this.tmRepository.addGroupUser(req)
+        
+        return {
+            data: { 
+                groupUser: savedGroupUser
+            }   
+        }       
+    }
 } 
