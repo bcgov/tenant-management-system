@@ -38,32 +38,30 @@ jobs:
     name: Deploy (TEST)
     needs: [builds]
     uses: ./.github/workflows/.deployer.yml
-    secrets: inherit
-    with:
-      environment: test
-      db_user: app
-      tag: ${{ inputs.tag || 'latest' }}
-      deployment_url: https://${{ github.event.repository.name }}-test-frontend.apps.silver.devops.gov.bc.ca
-
-  update-test-secrets:
-    name: Update Test Secrets
-    needs: [deploy-test]
-    uses: ./.github/workflows/.update-secrets.yml
-    with:
-      release_name: ${{ github.event.repository.name }}-test
-      environment: test
     secrets:
       oc_namespace: ${{ secrets.OC_NAMESPACE }}
       oc_token: ${{ secrets.OC_TOKEN }}
       bcgov_sso_api_client_id: ${{ secrets.BCGOV_SSO_API_CLIENT_ID }}
       bcgov_sso_api_client_secret: ${{ secrets.BCGOV_SSO_API_CLIENT_SECRET }}
       vite_keycloak_client_id: ${{ secrets.VITE_KEYCLOAK_CLIENT_ID }}
+    with:
+      release_name: ${{ github.event.repository.name }}-test
+      environment: test
+      db_user: app
+      params: >-
+        --set backend.deploymentStrategy=RollingUpdate
+        --set frontend.deploymentStrategy=RollingUpdate
+        --set global.autoscaling=true
+        --set frontend.pdb.enabled=true
+        --set backend.pdb.enabled=true
+      tag: ${{ inputs.tags || 'latest' }}
+      deployment_url: https://${{ github.event.repository.name }}-test-frontend.apps.silver.devops.gov.bc.ca
 
   test_security_scan:
     permissions:
       contents: read
     name: ZAP Security Scan (TEST)
-    needs: [deploy-test, update-test-secrets]
+    needs: [deploy-test]
     uses: ./.github/workflows/.zap-scan.yml
     with:
       pr_number: ${{ github.event.number }}
@@ -71,21 +69,18 @@ jobs:
       fail_on_high: true
       scan_type: full
 
-  wait-for-approval:
-    name: Wait for Approval
-    needs: [test_security_scan]
-    runs-on: ubuntu-24.04
-    environment: prod
-    steps:
-      - name: Wait for manual approval
-        run: echo "Production deployment approved!"
-
   deploy-prod:
     name: Deploy (PROD)
-    needs: [wait-for-approval]
+    needs: [builds]
     uses: ./.github/workflows/.deployer.yml
-    secrets: inherit
+    secrets:
+      oc_namespace: ${{ secrets.OC_NAMESPACE }}
+      oc_token: ${{ secrets.OC_TOKEN }}
+      bcgov_sso_api_client_id: ${{ secrets.BCGOV_SSO_API_CLIENT_ID }}
+      bcgov_sso_api_client_secret: ${{ secrets.BCGOV_SSO_API_CLIENT_SECRET }}
+      vite_keycloak_client_id: ${{ secrets.VITE_KEYCLOAK_CLIENT_ID }}
     with:
+      release_name: ${{ github.event.repository.name }}-prod
       environment: prod
       db_user: app
       params: >-
@@ -94,26 +89,12 @@ jobs:
         --set global.autoscaling=true
         --set frontend.pdb.enabled=true
         --set backend.pdb.enabled=true
-      tag: ${{ inputs.tag || 'latest' }}
+      tag: ${{ inputs.tags || 'latest' }}
       deployment_url: https://${{ github.event.repository.name }}-prod-frontend.apps.silver.devops.gov.bc.ca
-
-  update-prod-secrets:
-    name: Update Prod Secrets
-    needs: [deploy-prod]
-    uses: ./.github/workflows/.update-secrets.yml
-    with:
-      release_name: ${{ github.event.repository.name }}-prod
-      environment: prod
-    secrets:
-      oc_namespace: ${{ secrets.OC_NAMESPACE }}
-      oc_token: ${{ secrets.OC_TOKEN }}
-      bcgov_sso_api_client_id: ${{ secrets.BCGOV_SSO_API_CLIENT_ID }}
-      bcgov_sso_api_client_secret: ${{ secrets.BCGOV_SSO_API_CLIENT_SECRET }}
-      vite_keycloak_client_id: ${{ secrets.VITE_KEYCLOAK_CLIENT_ID }}
 
   promote:
     name: Promote Images
-    needs: [deploy-prod, update-prod-secrets]
+    needs: [deploy-prod]
     runs-on: ubuntu-24.04
     permissions:
       packages: write

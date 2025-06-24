@@ -23,6 +23,7 @@ jobs:
     with:
       cleanup: helm
       packages: backend frontend migrations
+      target: pr-${{ github.event.pull_request.number }}
 
   cleanup_db: # TODO move it off to another action later.
     name: Remove DB User from Crunchy
