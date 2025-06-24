@@ -28,18 +28,18 @@ export class User {
   }
 
   static fromApiData(apiData: {
+    id: string
     ssoUser: {
       displayName: string
       email: string
       firstName: string
       lastName: string
-      ssoUserId: string
       userName: string
     }
     roles: []
   }): User {
     return new User(
-      apiData.ssoUser.ssoUserId,
+      apiData.id,
       apiData.ssoUser.userName,
       apiData.ssoUser.firstName,
       apiData.ssoUser.lastName,
@@ -49,6 +49,8 @@ export class User {
     )
   }
 
+  // TODO: this abuses the id field - it should be the user id, not the sso id.
+  // Figure out a cleaner way to handle this.
   static fromSearchData(searchData: {
     email: string
     firstName: string

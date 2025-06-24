@@ -25,7 +25,7 @@ export const tenantService = {
 
       return response.data.data.user
     } catch (error: any) {
-      logApiError('Error adding user to Tenant', error)
+      logApiError('Error adding user to tenant', error)
 
       // Handle HTTP 409 Conflict (duplicate)
       if (
@@ -39,6 +39,19 @@ export const tenantService = {
     }
   },
 
+  /**
+   * Assigns a role to a user within a specific tenant.
+   *
+   * This sends a PUT request to the API endpoint to assign the given role
+   * to the specified user in the tenant. If the request fails, the error
+   * is logged and rethrown.
+   *
+   * @param tenantId - The unique identifier of the tenant.
+   * @param userId - The unique identifier of the user.
+   * @param roleId - The unique identifier of the role to assign.
+   * @returns A promise that resolves when the role is successfully assigned.
+   * @throws An error if the API request fails.
+   */
   async assignUserRoles(
     tenantId: string,
     userId: string,
@@ -47,7 +60,7 @@ export const tenantService = {
     try {
       await api.put(`/tenants/${tenantId}/users/${userId}/roles/${roleId}`)
     } catch (error) {
-      logApiError('Error assigning user role in Tenant', error)
+      logApiError('Error assigning user role in tenant', error)
 
       throw error
     }
@@ -83,7 +96,7 @@ export const tenantService = {
 
       return response.data.data.tenant
     } catch (error: any) {
-      logApiError('Error creating Tenant', error)
+      logApiError('Error creating tenant', error)
 
       // Handle HTTP 400 Bad Request (validation)
       if (
@@ -136,7 +149,7 @@ export const tenantService = {
 
       return response.data.data.roles
     } catch (error) {
-      logApiError('Error getting Tenant roles', error)
+      logApiError('Error getting tenant roles', error)
 
       throw error
     }
@@ -150,7 +163,7 @@ export const tenantService = {
 
       return response.data.data.roles
     } catch (error) {
-      logApiError('Error getting Tenant users roles', error)
+      logApiError('Error getting tenant users roles', error)
 
       throw error
     }
@@ -184,8 +197,34 @@ export const tenantService = {
 
       return response.data.data.users
     } catch (error) {
-      logApiError('Error getting Tenant users', error)
+      logApiError('Error getting tenant users', error)
 
+      throw error
+    }
+  },
+
+  /**
+   * Removes a role from a user within a specific tenant.
+   *
+   * This sends a DELETE request to the API endpoint to unassign the given role
+   * from the specified user in the tenant. If the request fails, the error
+   * is logged and rethrown.
+   *
+   * @param tenantId - The unique identifier of the tenant.
+   * @param userId - The unique identifier of the user.
+   * @param roleId - The unique identifier of the role to remove.
+   * @returns A promise that resolves when the role is successfully removed.
+   * @throws An error if the API request fails.
+   */
+  async removeUserRole(
+    tenantId: string,
+    userId: string,
+    roleId: string,
+  ): Promise<void> {
+    try {
+      await api.delete(`/tenants/${tenantId}/users/${userId}/roles/${roleId}`)
+    } catch (error) {
+      logApiError('Error removing user role from tenant', error)
       throw error
     }
   },
@@ -218,7 +257,7 @@ export const tenantService = {
 
       return response.data.data.tenant
     } catch (error: any) {
-      logApiError('Error updating Tenant', error)
+      logApiError('Error updating tenant', error)
 
       // Handle HTTP 400 Bad Request (validation)
       if (

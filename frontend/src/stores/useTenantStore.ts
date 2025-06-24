@@ -64,6 +64,21 @@ export const useTenantStore = defineStore('tenant', () => {
     }
   }
 
+  const removeTenantUserRole = async (
+    tenant: Tenant,
+    userId: string,
+    roleId: string,
+  ) => {
+    await tenantService.removeUserRole(tenant.id, userId, roleId)
+
+    const user = tenant.users.find((u) => u.id === userId)
+    if (!user) {
+      throw new Error(`User with ID ${userId} not found in tenant ${tenant.id}`)
+    }
+
+    user.roles = user.roles.filter((role) => role.id !== roleId)
+  }
+
   const updateTenant = async (tenant: Partial<Tenant>) => {
     if (!tenant.id || !tenant.name || !tenant.ministryName) {
       // TODO: kludgy; clean this argument up.
@@ -94,6 +109,7 @@ export const useTenantStore = defineStore('tenant', () => {
     addTenantUser,
     fetchTenant,
     fetchTenants,
+    removeTenantUserRole,
     updateTenant,
   }
 })
