@@ -18,6 +18,7 @@
     "format": "prettier --write src/"
   },
   "dependencies": {
+    "@bcgov/design-tokens": "^3.2.0",
     "keycloak-js": "26.1.4",
     "pinia": "^3.0.1",
     "uuid": "11.1.0",
