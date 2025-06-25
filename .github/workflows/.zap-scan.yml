@@ -73,15 +73,15 @@ jobs:
         with:
           name: zap-scan-results-${{ inputs.environment || inputs.pr_number }}
           path: |
-            zap_scan.html
-            zap_scan.json
-            zap_scan.md
+            report_html.html
+            report_json.json
+            report_md.md
             
       - name: Check for High Alerts
         if: ${{ inputs.fail_on_high }}
         run: |
-          if [ -f "zap_scan.json" ]; then
-            HIGH_ALERTS=$(cat zap_scan.json | grep -c '"riskcode": "3"' || echo "0")
+          if [ -f "report_json.json" ]; then
+            HIGH_ALERTS=$(cat report_json.json | grep -c '"riskcode": "3"' || echo "0")
             echo "Found $HIGH_ALERTS HIGH alerts"
             
             if [[ $HIGH_ALERTS -gt 0 ]]; then
