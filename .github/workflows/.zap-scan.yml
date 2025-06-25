@@ -10,10 +10,6 @@ on:
         required: false
         type: string
         description: 'Environment name (e.g., test, prod)'
-      pr_number:
-        required: false
-        type: string
-        description: 'PR number for PR environments'
       target_url:
         required: true
         type: string
@@ -67,21 +63,16 @@ jobs:
           rules_file_name: '.zap/rules.tsv'
           cmd_options: '-a'
           allow_issue_writing: false
-          
-      - name: Save ZAP Results
-        uses: actions/upload-artifact@v4
-        with:
-          name: zap-scan-results-${{ inputs.environment || inputs.pr_number }}
-          path: |
-            report_html.html
-            report_json.json
-            report_md.md
             
       - name: Check for High Alerts
         if: ${{ inputs.fail_on_high }}
         run: |
-          if [ -f "report_json.json" ]; then
-            HIGH_ALERTS=$(cat report_json.json | grep -c '"riskcode": "3"' || echo "0")
+          # Find any JSON report file
+          JSON_FILE=$(find . -name "*report*.json" -type f | head -n 1)
+          
+          if [ -n "$JSON_FILE" ]; then
+            echo "Found JSON report: $JSON_FILE"
+            HIGH_ALERTS=$(cat "$JSON_FILE" | grep -c '"riskcode": "3"' || echo "0")
             echo "Found $HIGH_ALERTS HIGH alerts"
             
             if [[ $HIGH_ALERTS -gt 0 ]]; then
