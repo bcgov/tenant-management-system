@@ -51,7 +51,6 @@ jobs:
     needs: [deploys]
     uses: ./.github/workflows/.zap-scan.yml
     with:
-      pr_number: ${{ github.event.number }}
       target_url: https://${{ github.event.repository.name }}-pr-${{ github.event.number }}-frontend.apps.silver.devops.gov.bc.ca
       fail_on_high: false
       scan_type: baseline
