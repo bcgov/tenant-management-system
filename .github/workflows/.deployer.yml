@@ -117,7 +117,7 @@ jobs:
           oc_namespace: ${{ secrets.OC_NAMESPACE }}
           oc_token: ${{ secrets.OC_TOKEN }}
           environment: ${{ inputs.environment }}
-          values_file: ${{ inputs.tag == '' && 'charts/crunchy/values-pr.yml' || 'charts/crunchy/values.yml' }}
+          values_file: ${{ inputs.environment == '' && 'charts/crunchy/values-pr.yml' || 'charts/crunchy/values.yml' }}
           triggers: ${{ inputs.db_triggers }}
 
       # Variables
