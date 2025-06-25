@@ -16,6 +16,100 @@ concurrency:
 permissions: {}
 
 jobs:
+  check-changes:
+    name: Check Changed Files
+    runs-on: ubuntu-24.04
+    outputs:
+      backend: ${{ steps.diff-backend.outputs.triggered }}
+      frontend: ${{ steps.diff-frontend.outputs.triggered }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Required for diff-triggers to work properly
+      
+      - name: Check Backend Changes
+        id: diff-backend
+        uses: bcgov/action-diff-triggers@970552c34a063e429eb96fdc700eac4f924366a1
+        with:
+          triggers: ('backend/')
+          
+      - name: Check Frontend Changes
+        id: diff-frontend
+        uses: bcgov/action-diff-triggers@970552c34a063e429eb96fdc700eac4f924366a1
+        with:
+          triggers: ('frontend/')
+      
+      - name: Print Changed Status
+        run: |
+          echo "Backend changes: ${{ steps.diff-backend.outputs.triggered }}"
+          echo "Frontend changes: ${{ steps.diff-frontend.outputs.triggered }}"
+
+  backend-tests:
+    name: Backend Tests
+    needs: check-changes
+    if: (! github.event.pull_request.draft) && (github.event_name == 'workflow_dispatch' || github.event_name == 'push' || needs.check-changes.outputs.backend == 'true')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: 'backend/package-lock.json'
+      
+      - name: Install dependencies
+        working-directory: backend
+        run: npm ci
+      
+      - name: Run tests with coverage
+        working-directory: backend
+        run: npm run test:cov
+      
+      - name: Publish Test Results
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-test-results
+          path: |
+            backend/coverage/**/*
+            backend/test-results/**/*
+          retention-days: 7
+
+  frontend-tests:
+    name: Frontend Tests
+    needs: check-changes
+    if: (! github.event.pull_request.draft) && (github.event_name == 'workflow_dispatch' || github.event_name == 'push' || needs.check-changes.outputs.frontend == 'true')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: 'frontend/package-lock.json'
+      
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+      
+      - name: Run tests with coverage
+        working-directory: frontend
+        run: npm run test:cov
+      
+      - name: Publish Test Results
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-test-results
+          path: |
+            frontend/coverage/**/*
+            frontend/test-results/**/*
+          retention-days: 7
+
   # https://github.com/marketplace/actions/aqua-security-trivy
   trivy:
     name: Trivy Security Scan
@@ -44,10 +138,12 @@ jobs:
 
   results:
     name: Analysis Results
-    needs: [trivy]
-    if: (! github.event.pull_request.draft)
+    needs: [backend-tests, frontend-tests, trivy]
+    if: (! github.event.pull_request.draft) && always()
     runs-on: ubuntu-24.04
     steps:
-      - if: contains(needs.*.result, 'failure')||contains(needs.*.result, 'canceled')
+      - if: contains(needs.*.result, 'failure') && contains(needs.*.result, 'success')
         run: echo "At least one job has failed." && exit 1
+      - if: contains(needs.*.result, 'cancelled')
+        run: echo "At least one job was cancelled." && exit 1
       - run: echo "Success!"
