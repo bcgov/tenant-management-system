@@ -27,4 +27,14 @@ export class TMService {
             }   
         }       
     }
+
+    public async updateGroup(req: Request) {
+        const updatedGroup: any = await this.tmRepository.updateGroup(req)
+        
+        return {
+            data: { 
+                group: updatedGroup
+            }   
+        }       
+    }
 } 

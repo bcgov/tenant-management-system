@@ -37,6 +37,7 @@ export class Routes {
         app.route(RoutesConstants.GET_TENANT_REQUESTS).get(checkJwt, checkOperationsAdmin, validate(validator.getTenantRequests,{},{}),(req:Request,res:Response) => this.tmsController.getTenantRequests(req,res))
         
         app.route(RoutesConstants.CREATE_GROUP).post(checkJwt, validate(validator.createGroup,{},{}), checkTenantAccess([TMSConstants.TENANT_OWNER, TMSConstants.USER_ADMIN]),(req:Request,res:Response) => this.tmController.createGroup(req,res))
+        app.route(RoutesConstants.UPDATE_GROUP).put(checkJwt, validate(validator.updateGroup,{},{}), checkTenantAccess([TMSConstants.TENANT_OWNER, TMSConstants.USER_ADMIN]),(req:Request,res:Response) => this.tmController.updateGroup(req,res))
         app.route(RoutesConstants.ADD_GROUP_USER).post(checkJwt, validate(validator.addGroupUser,{},{}), checkTenantAccess([TMSConstants.TENANT_OWNER, TMSConstants.USER_ADMIN]),(req:Request,res:Response) => this.tmController.addGroupUser(req,res))
 
         app.use(function (error: Error, req: any, res: Response<any, Record<string, any>>, next: any) {

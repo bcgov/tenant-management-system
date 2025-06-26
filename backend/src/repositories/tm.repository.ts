@@ -39,10 +39,6 @@ export class TMRepository {
                     if (!await this.checkIfTenantUserExists(tenantUserId, transactionEntityManager)) {
                         throw new NotFoundError(`Tenant user not found: ${tenantUserId}`)
                     }
-                    
-                    if (await this.checkIfTenantUserAlreadyInGroup(tenantUserId, tenantId, transactionEntityManager)) {
-                        throw new ConflictError(`User is already assigned to a group in this tenant`)
-                    }
                 }
 
                 const group: Group = new Group()
@@ -80,16 +76,33 @@ export class TMRepository {
         return groupResponse;
     }
 
-    public async checkIfGroupNameExistsInTenant(name: string, tenantId: string, transactionEntityManager?: EntityManager) {
+    public async checkIfGroupNameExistsInTenant(name: string, tenantId: string, transactionEntityManager?: EntityManager, excludeGroupId?: string) {
+        transactionEntityManager = transactionEntityManager ? transactionEntityManager : this.manager;
+        
+        const queryBuilder = transactionEntityManager
+            .createQueryBuilder(Group, 'group')
+            .where('group.name = :name', { name })
+            .andWhere('group.tenant.id = :tenantId', { tenantId });
+
+        if (excludeGroupId) {
+            queryBuilder.andWhere('group.id != :excludeGroupId', { excludeGroupId });
+        }
+
+        const existingGroup = await queryBuilder.getOne();
+
+        return !!existingGroup;
+    }
+
+    public async checkIfGroupExistsInTenant(groupId: string, tenantId: string, transactionEntityManager?: EntityManager) {
         transactionEntityManager = transactionEntityManager ? transactionEntityManager : this.manager;
         
         const existingGroup = await transactionEntityManager
             .createQueryBuilder(Group, 'group')
-            .where('group.name = :name', { name })
+            .where('group.id = :groupId', { groupId })
             .andWhere('group.tenant.id = :tenantId', { tenantId })
             .getOne();
 
-        return !!existingGroup;
+        return existingGroup;
     }
 
     public async checkIfTenantUserAlreadyInGroup(tenantUserId: string, tenantId: string, transactionEntityManager?: EntityManager) {
@@ -177,9 +190,9 @@ export class TMRepository {
                     throw new NotFoundError(`Tenant not found: ${tenantId}`)
                 }
 
-                const group:Group = await this.getGroupById(groupId)
-                if (group.tenant.id !== tenantId) {
-                    throw new NotFoundError(`Group does not belong to tenant: ${tenantId}`)
+                const group = await this.checkIfGroupExistsInTenant(groupId, tenantId, transactionEntityManager);
+                if (!group) {
+                    throw new NotFoundError(`Group not found: ${groupId}`)
                 }
 
                 let tenantUser: TenantUser
@@ -251,5 +264,54 @@ export class TMRepository {
         });
 
         return groupUserResponse
+    }
+
+    public async updateGroup(req: Request) {
+        const groupId: string = req.params.groupId;
+        const tenantId: string = req.params.tenantId;
+        const { name, description } = req.body;
+
+        let groupResponse: Group = null
+        await this.manager.transaction(async(transactionEntityManager) => {
+            try {
+                if (!await this.tmsRepository.checkIfTenantExists(tenantId, transactionEntityManager)) {
+                    throw new NotFoundError(`Tenant not found: ${tenantId}`)
+                }
+
+                const existingGroup = await this.checkIfGroupExistsInTenant(groupId, tenantId, transactionEntityManager);
+                if (!existingGroup) {
+                    throw new NotFoundError(`Group not found: ${groupId}`)
+                }
+
+                if (name) {
+                    if (await this.checkIfGroupNameExistsInTenant(name, tenantId, transactionEntityManager, groupId)) {
+                        throw new ConflictError(`A group with name '${name}' already exists in this tenant`)
+                    }
+                }
+
+                await transactionEntityManager
+                    .createQueryBuilder()
+                    .update(Group)
+                    .set({
+                        ...(name && { name }),
+                        ...(description && { description }),
+                        updatedBy: req.decodedJwt?.idir_user_guid || 'system'
+                    })
+                    .where('id = :groupId', { groupId })
+                    .execute();
+
+                groupResponse = await transactionEntityManager
+                    .createQueryBuilder(Group, 'group')
+                    .leftJoinAndSelect('group.tenant', 'tenant')
+                    .where('group.id = :id', { id: groupId })
+                    .getOne();
+
+            } catch (error) {
+                logger.error('Update group transaction failure - rolling back changes', error);
+                throw error
+            }
+        });
+
+        return groupResponse
     }
 } 

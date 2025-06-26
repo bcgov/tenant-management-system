@@ -180,6 +180,17 @@ export default {
         }).options({abortEarly:false,convert:false})
     },
 
+    updateGroup: {
+        params: Joi.object({
+            tenantId: Joi.string().guid().required(),
+            groupId: Joi.string().guid().required()
+        }),
+        body: Joi.object({
+            name: Joi.string().min(1).max(30).pattern(/^\S.*\S$/).optional(),
+            description: Joi.string().min(1).max(500).optional()
+        }).options({abortEarly:false,convert:false})
+    },
+
     addGroupUser: {
         params: Joi.object({
             tenantId: Joi.string().guid().required(),
