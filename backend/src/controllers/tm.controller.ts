@@ -47,4 +47,23 @@ export class TMController {
             }
         }
     }
+
+    public async updateGroup(req: Request, res: Response) {
+        try {
+            const groupResponse = await this.tmService.updateGroup(req)
+            res.status(200).send(groupResponse)
+        } 
+        catch(error) {
+            logger.error(error)
+            if (error instanceof ConflictError) {
+                this.errorHandler.generalError(res, "Error occurred updating group", error.message, error.statusCode, "Conflict")
+            } 
+            else if (error instanceof NotFoundError) {
+                this.errorHandler.generalError(res, "Error occurred updating group", error.message, error.statusCode, "Not Found")
+            }
+            else {
+                this.errorHandler.generalError(res, "Error occurred updating group", error.message, 500, "Internal Server Error")
+            }
+        }
+    }
 } 
