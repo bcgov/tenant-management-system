@@ -27,15 +27,15 @@ crunchy: # enable it for TEST and PROD, for PR based pipelines simply use single
     target: ~ # 2024-03-24 17:16:00-07 this is the target timestamp to go back to in current cluster
   instances:
     name: db # high availability
-    replicas: 2 # 2 or 3 for high availability in TEST and PROD.
+    replicas: 1 # 2 or 3 for high availability in TEST and PROD.
     metadata:
       annotations:
         prometheus.io/scrape: 'true'
         prometheus.io/port: '9187'
     dataVolumeClaimSpec:
-      storage: 300Mi
+      storage: 3Gi
       storageClassName: netapp-block-standard
-      walStorage: 300Mi
+      walStorage: 1Gi
 
     requests:
       cpu: 50m
