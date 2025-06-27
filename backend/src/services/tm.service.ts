@@ -37,4 +37,14 @@ export class TMService {
             }   
         }       
     }
+
+    public async removeGroupUser(req: Request) {
+        await this.tmRepository.removeGroupUser(req)
+        
+        return {
+            data: { 
+                message: "User successfully removed from group"
+            }   
+        }       
+    }
 } 

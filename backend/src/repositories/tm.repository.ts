@@ -267,9 +267,9 @@ export class TMRepository {
     }
 
     public async updateGroup(req: Request) {
-        const groupId: string = req.params.groupId;
-        const tenantId: string = req.params.tenantId;
-        const { name, description } = req.body;
+        const groupId: string = req.params.groupId
+        const tenantId: string = req.params.tenantId
+        const { name, description } = req.body
 
         let groupResponse: Group = null
         await this.manager.transaction(async(transactionEntityManager) => {
@@ -278,7 +278,7 @@ export class TMRepository {
                     throw new NotFoundError(`Tenant not found: ${tenantId}`)
                 }
 
-                const existingGroup = await this.checkIfGroupExistsInTenant(groupId, tenantId, transactionEntityManager);
+                const existingGroup:Group = await this.checkIfGroupExistsInTenant(groupId, tenantId, transactionEntityManager)
                 if (!existingGroup) {
                     throw new NotFoundError(`Group not found: ${groupId}`)
                 }
@@ -307,11 +307,57 @@ export class TMRepository {
                     .getOne();
 
             } catch (error) {
-                logger.error('Update group transaction failure - rolling back changes', error);
+                logger.error('Update group transaction failure - rolling back changes', error)
                 throw error
             }
         });
 
         return groupResponse
+    }
+
+    public async removeGroupUser(req: Request) {
+        const groupUserId: string = req.params.groupUserId
+        const groupId: string = req.params.groupId
+        const tenantId: string = req.params.tenantId
+
+        await this.manager.transaction(async(transactionEntityManager) => {
+            try {
+                if (!await this.tmsRepository.checkIfTenantExists(tenantId, transactionEntityManager)) {
+                    throw new NotFoundError(`Tenant not found: ${tenantId}`)
+                }
+
+                const group: Group = await this.checkIfGroupExistsInTenant(groupId, tenantId, transactionEntityManager)
+                if (!group) {
+                    throw new NotFoundError(`Group not found: ${groupId}`)
+                }
+
+                const groupUser: GroupUser = await transactionEntityManager
+                    .createQueryBuilder(GroupUser, 'groupUser')
+                    .leftJoin('groupUser.group', 'group')
+                    .where('groupUser.id = :groupUserId', { groupUserId })
+                    .andWhere('groupUser.group.id = :groupId', { groupId })
+                    .andWhere('group.tenant.id = :tenantId', { tenantId })
+                    .andWhere('groupUser.isDeleted = :isDeleted', { isDeleted: false })
+                    .getOne();
+
+                if (!groupUser) {
+                    throw new NotFoundError(`Group user not found: ${groupUserId}`)
+                }
+
+                await transactionEntityManager
+                    .createQueryBuilder()
+                    .update(GroupUser)
+                    .set({
+                        isDeleted: true,
+                        updatedBy: req.decodedJwt?.idir_user_guid || 'system'
+                    })
+                    .where('id = :groupUserId', { groupUserId })
+                    .execute();
+
+            } catch (error) {
+                logger.error('Remove user from group transaction failure - rolling back changes', error)
+                throw error
+            }
+        });
     }
 } 
