@@ -25,7 +25,7 @@ const emit = defineEmits<{
   <v-btn
     base-color="secondary"
     border="sm opacity-100"
-    class="me-4"
+    class="tms-button-secondary me-4"
     variant="flat"
     :disabled="props.disabled"
     @click="emit('click')"
@@ -35,11 +35,11 @@ const emit = defineEmits<{
 </template>
 
 <style scoped>
-.v-btn:disabled {
+.tms-button-secondary:disabled {
   background-color: rgb(var(--v-theme-secondary-disabled)) !important;
 }
 
-.v-btn:hover:not(:disabled) {
+.tms-button-secondary:hover:not(:disabled) {
   background-color: rgb(var(--v-theme-secondary-hover)) !important;
 }
 </style>
