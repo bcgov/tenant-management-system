@@ -41,6 +41,7 @@ export class Routes {
         app.route(RoutesConstants.ADD_GROUP_USER).post(checkJwt, validate(validator.addGroupUser,{},{}), checkTenantAccess([TMSConstants.TENANT_OWNER, TMSConstants.USER_ADMIN]),(req:Request,res:Response) => this.tmController.addGroupUser(req,res))
         app.route(RoutesConstants.REMOVE_GROUP_USER).delete(checkJwt, validate(validator.removeGroupUser,{},{}), checkTenantAccess([TMSConstants.TENANT_OWNER, TMSConstants.USER_ADMIN]),(req:Request,res:Response) => this.tmController.removeGroupUser(req,res))
         app.route(RoutesConstants.GET_GROUP).get(checkJwt, validate(validator.getGroup,{},{}), checkTenantAccess([]),(req:Request,res:Response) => this.tmController.getGroup(req,res))
+        app.route(RoutesConstants.GET_TENANT_GROUPS).get(checkJwt, validate(validator.getTenantGroups,{},{}), checkTenantAccess([]),(req:Request,res:Response) => this.tmController.getTenantGroups(req,res))
         
         app.use(function (error: Error, req: any, res: Response<any, Record<string, any>>, next: any) {
             if (error instanceof ValidationError) {

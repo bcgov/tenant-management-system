@@ -101,4 +101,20 @@ export class TMController {
             }
         }
     }
+
+    public async getTenantGroups(req: Request, res: Response) {
+        try {
+            const groupsResponse = await this.tmService.getTenantGroups(req)
+            res.status(200).send(groupsResponse)
+        } 
+        catch(error) {
+            logger.error(error)
+            if (error instanceof NotFoundError) {
+                this.errorHandler.generalError(res, "Error occurred getting tenant groups", error.message, error.statusCode, "Not Found")
+            }
+            else {
+                this.errorHandler.generalError(res, "Error occurred getting tenant groups", error.message, 500, "Internal Server Error")
+            }
+        }
+    }
 } 

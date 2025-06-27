@@ -224,6 +224,11 @@ export default {
         query: Joi.object({
             expand: Joi.string().pattern(/^(groupUsers)?$/).optional()
         }).optional()
-    }
+    },
 
+    getTenantGroups: {
+        params: Joi.object({
+            tenantId: Joi.string().guid().required()
+        })
+    }
 }

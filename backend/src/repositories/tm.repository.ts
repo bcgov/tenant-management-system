@@ -126,10 +126,15 @@ export class TMRepository {
         return !!tenantUser;
     }
 
-    public async getGroupsForTenant(tenantId: string) {
-        const groups:Group[] = await this.manager
+    public async getTenantGroups(req: Request) {
+        const tenantId: string = req.params.tenantId
+
+        if (!await this.tmsRepository.checkIfTenantExists(tenantId)) {
+            throw new NotFoundError(`Tenant not found: ${tenantId}`)
+        }
+
+        const groups: any[] = await this.manager
             .createQueryBuilder(Group, 'group')
-            .leftJoinAndSelect('group.tenant', 'tenant')
             .where('group.tenant.id = :tenantId', { tenantId })
             .getMany();
 

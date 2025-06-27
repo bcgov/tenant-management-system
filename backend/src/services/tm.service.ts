@@ -57,4 +57,14 @@ export class TMService {
             }   
         }       
     }
+
+    public async getTenantGroups(req: Request) {
+        const groups: any = await this.tmRepository.getTenantGroups(req)
+        
+        return {
+            data: { 
+                groups: groups
+            }   
+        }       
+    }
 } 
