@@ -5,6 +5,7 @@ The Tenant Management System frontend has:
 - Authentication provided by Keycloak
 - Vue.js 3 composition components in a View ("smart") and Presentation ("dumb")
   pattern
+- Styling provided by a Vuetify theme that uses the [BC Gov Design Tokens](https://www.npmjs.com/package/@bcgov/design-tokens)
 - Application state provided by Pinia stores
 - API calls provided by services
 
@@ -28,13 +29,14 @@ authenticate in the Keycloak standard realm. Clients are created in the
 
 Copy the `frontend/.env.sample` file to `frontend/.env`. Its settings are:
 
-| Name                     | Description                                          | Example                                                                              |
-| ------------------------ | ---------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| VITE_API_BASE_URL     | The URL of the backend                               | localhost:4144                                                                       |
-| VITE_KEYCLOAK_CLIENT_ID  | The client id in the realm                           | example-client-id                                                                    |
-| VITE_KEYCLOAK_LOGOUT_URL | The logout URL                                       | https://dev.loginproxy.gov.bc.ca.auth/realms/standard/protocol/openid-connect/logout |
-| VITE_KEYCLOAK_REALM      | The realm in the keycloak instance                   | standard                                                                             |
-| VITE_KEYCLOAK_URL        | This is the authorization URL for the keycloak realm | https://dev.loginproxy.gov.bc.ca/auth                                                |
+| Name                        | Description                                          | Example                                                                              |
+| --------------------------- | ---------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| VITE_API_BASE_URL           | The URL of the backend                               | http://localhost:4144/v1                                                             |
+| VITE_DISABLE_RUNTIME_CONFIG | Can disable the runtime config for devcontainer      | true                                                                                 |
+| VITE_KEYCLOAK_CLIENT_ID     | The client id in the realm                           | example-client-id                                                                    |
+| VITE_KEYCLOAK_LOGOUT_URL    | The logout URL                                       | https://dev.loginproxy.gov.bc.ca.auth/realms/standard/protocol/openid-connect/logout |
+| VITE_KEYCLOAK_REALM         | The realm in the keycloak instance                   | standard                                                                             |
+| VITE_KEYCLOAK_URL           | This is the authorization URL for the keycloak realm | https://dev.loginproxy.gov.bc.ca/auth                                                |
 
 ### Project setup
 

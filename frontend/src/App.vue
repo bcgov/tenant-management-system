@@ -21,5 +21,5 @@ import AppNotifications from '@/components/layout/AppNotifications.vue'
 </template>
 
 <style scoped>
-@import 'vuetify/styles';
+/* @import 'vuetify/styles'; */
 </style>
