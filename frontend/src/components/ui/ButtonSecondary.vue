@@ -18,13 +18,28 @@ const emit = defineEmits<{
 </script>
 
 <template>
+  <!--
+    Use a flat button even though the desired style is outlined. In theory flat
+    buttons do less "fancy" stuff and makes it easier to control colours, etc.
+  -->
   <v-btn
+    base-color="secondary"
+    border="sm opacity-100"
     class="me-4"
-    color="secondary"
-    variant="outlined"
+    variant="flat"
     :disabled="props.disabled"
     @click="emit('click')"
   >
     {{ props.text }}
   </v-btn>
 </template>
+
+<style scoped>
+.v-btn:disabled {
+  background-color: rgb(var(--v-theme-secondary-disabled)) !important;
+}
+
+.v-btn:hover:not(:disabled) {
+  background-color: rgb(var(--v-theme-secondary-hover)) !important;
+}
+</style>
