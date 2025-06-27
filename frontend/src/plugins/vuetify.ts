@@ -44,8 +44,8 @@ const vuetify = createVuetify({
 
   // Use the Material Design Icons (MDI) icon set.
   icons: {
-    defaultSet: 'mdi',
     aliases,
+    defaultSet: 'mdi',
     sets: { mdi },
   },
 
