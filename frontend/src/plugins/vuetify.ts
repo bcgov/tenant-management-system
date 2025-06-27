@@ -1,83 +1,66 @@
 import * as tokens from '@bcgov/design-tokens/js'
-import { createVuetify } from 'vuetify'
+import { createVuetify, type ThemeDefinition } from 'vuetify'
 import * as components from 'vuetify/components'
 import * as directives from 'vuetify/directives'
 import { aliases, mdi } from 'vuetify/iconsets/mdi'
 import 'vuetify/styles'
 
 // Define a custom Vuetify theme that uses the BC Government design tokens.
-const bcgovTheme = {
-  dark: false,
+const bcgovLight: ThemeDefinition = {
   colors: {
-    // Background colors using BC tokens
+    // Set both the background and surface to the default white background from
+    // the design tokens. Vuetify uses 'background' for the app-level background
+    // and 'surface' for container-level elements like cards.
     background: tokens.surfaceColorBackgroundWhite,
-    surface: tokens.surfaceColorSecondaryDefault,
-    'surface-bright': tokens.surfaceColorBackgroundWhite,
-    'surface-light': tokens.surfaceColorBackgroundLightGray,
-    'surface-variant': tokens.themeGray40,
-    'on-surface-variant': tokens.typographyColorSecondary,
+    surface: tokens.surfaceColorBackgroundWhite,
+    'on-surface': tokens.typographyColorPrimary,
 
-    // Primary colors using BC blue theme
+    // Colours for primary button.
     primary: tokens.themePrimaryBlue,
-    'primary-darken-1': tokens.surfaceColorPrimaryPressed,
+    'primary-hover': tokens.surfaceColorPrimaryButtonHover,
 
-    // Secondary colors
+    // Colours for secondary button - note that these are overridden because the
+    // BCGov design system conflicts with Vuetify's secondary button styles.
     secondary: tokens.surfaceColorSecondaryDefault,
-    'secondary-darken-1': tokens.surfaceColorSecondaryPressed,
+    'on-secondary': tokens.typographyColorSecondary,
+    'secondary-disabled': tokens.surfaceColorSecondaryButtonDisabled,
+    'secondary-hover': tokens.surfaceColorSecondaryButtonHover,
 
-    // Status colors using BC support colors
+    // Colours for application notifications.
     error: tokens.supportBorderColorDanger,
     info: tokens.supportBorderColorInfo,
     success: tokens.supportBorderColorSuccess,
     warning: tokens.supportBorderColorWarning,
   },
-  variables: {
-    // Border styling using BC tokens
-    'border-color': tokens.surfaceColorBorderDefault,
-    'border-opacity': tokens.surfaceOpacity20,
 
-    // Opacity levels using BC tokens
-    'high-emphasis-opacity': tokens.surfaceOpacity90,
-    'medium-emphasis-opacity': tokens.surfaceOpacity60,
-    'disabled-opacity': tokens.surfaceOpacity40,
-    'idle-opacity': tokens.surfaceOpacity10,
-    'hover-opacity': tokens.surfaceOpacity10,
-    'focus-opacity': tokens.surfaceOpacity20,
-    'selected-opacity': tokens.surfaceOpacity20,
-    'activated-opacity': tokens.surfaceOpacity30,
-    'pressed-opacity': tokens.surfaceOpacity30,
-    'dragged-opacity': tokens.surfaceOpacity20,
-
-    // Code and keyboard colors
-    'theme-kbd': tokens.themeGray100,
-    'theme-on-kbd': tokens.typographyColorPrimaryInvert,
-    'theme-code': tokens.themeGray20,
-    'theme-on-code': tokens.typographyColorPrimary,
-  },
+  dark: false,
 }
 
-// Create a Vuetify instance with custom settings
+// Create a Vuetify instance with custom settings.
 const vuetify = createVuetify({
+  // Tree shake the components and directives.
   components,
   directives,
+
+  // Use the Material Design Icons (MDI) icon set.
   icons: {
     defaultSet: 'mdi',
     aliases,
     sets: { mdi },
   },
+
+  // Use the custom theme defined above.
   theme: {
-    defaultTheme: 'bcgovTheme',
+    defaultTheme: 'bcgovLight',
     themes: {
-      bcgovTheme,
+      bcgovLight,
     },
   },
+
+  // Use BC Sans for everything by default.
   defaults: {
     global: {
       style: `font-family: ${tokens.typographyFontFamiliesBcSans} !important`,
-    },
-    VCard: {
-      elevation: 0,
-      style: `box-shadow: ${tokens.surfaceShadowMedium}`,
     },
   },
 })

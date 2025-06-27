@@ -28,3 +28,14 @@ const emit = defineEmits<{
     {{ props.text }}
   </v-btn>
 </template>
+
+<style scoped>
+.v-btn:disabled {
+  background-color: rgb(var(--v-theme-primary-disabled)) !important;
+  color: rgb(var(--v-theme-on-surface)) !important;
+}
+
+.v-btn:hover:not(:disabled) {
+  background-color: rgb(var(--v-theme-primary-hover)) !important;
+}
+</style>
