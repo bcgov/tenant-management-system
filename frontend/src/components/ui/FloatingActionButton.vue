@@ -21,7 +21,7 @@ const emit = defineEmits<{
 <template>
   <v-btn
     color="primary"
-    class="tms-floating-action-button pa-2"
+    class="tms-floating-action-button py-2 px-4"
     size="large"
     variant="text"
     :disabled="props.disabled"
