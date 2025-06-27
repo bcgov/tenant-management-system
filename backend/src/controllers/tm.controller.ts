@@ -66,4 +66,23 @@ export class TMController {
             }
         }
     }
+
+    public async removeGroupUser(req: Request, res: Response) {
+        try {
+            await this.tmService.removeGroupUser(req)
+            res.status(204).send()
+        } 
+        catch(error) {
+            logger.error(error)
+            if (error instanceof ConflictError) {
+                this.errorHandler.generalError(res, "Error occurred removing user from group", error.message, error.statusCode, "Conflict")
+            } 
+            else if (error instanceof NotFoundError) {
+                this.errorHandler.generalError(res, "Error occurred removing user from group", error.message, error.statusCode, "Not Found")
+            }
+            else {
+                this.errorHandler.generalError(res, "Error occurred removing user from group", error.message, 500, "Internal Server Error")
+            }
+        }
+    }
 } 

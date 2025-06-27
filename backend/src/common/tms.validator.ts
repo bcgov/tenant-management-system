@@ -206,6 +206,14 @@ export default {
                 email: Joi.string().email().max(100).required()
             }).required()
         }).options({abortEarly:false,convert:false})
+    },
+
+    removeGroupUser: {
+        params: Joi.object({
+            tenantId: Joi.string().guid().required(),
+            groupId: Joi.string().guid().required(),
+            groupUserId: Joi.string().guid().required()
+        }).options({abortEarly:false,convert:false})
     }
 
 }
