@@ -85,4 +85,20 @@ export class TMController {
             }
         }
     }
+
+    public async getGroup(req: Request, res: Response) {
+        try {
+            const groupResponse = await this.tmService.getGroup(req)
+            res.status(200).send(groupResponse)
+        } 
+        catch(error) {
+            logger.error(error)
+            if (error instanceof NotFoundError) {
+                this.errorHandler.generalError(res, "Error occurred getting a group", error.message, error.statusCode, "Not Found")
+            }
+            else {
+                this.errorHandler.generalError(res, "Error occurred getting a group", error.message, 500, "Internal Server Error")
+            }
+        }
+    }
 } 

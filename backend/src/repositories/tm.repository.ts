@@ -360,4 +360,57 @@ export class TMRepository {
             }
         });
     }
+
+    public async getGroup(req: Request) {
+        const groupId: string = req.params.groupId
+        const tenantId: string = req.params.tenantId
+        const expand: string[] = typeof req.query.expand === "string" ? req.query.expand.split(",") : []
+
+        if (!await this.tmsRepository.checkIfTenantExists(tenantId)) {
+            throw new NotFoundError(`Tenant not found: ${tenantId}`)
+        }
+
+        const existingGroup: Group = await this.checkIfGroupExistsInTenant(groupId, tenantId)
+        if (!existingGroup) {
+            throw new NotFoundError(`Group not found: ${groupId}`)
+        }
+
+        const groupQuery = this.manager
+            .createQueryBuilder(Group, "group")
+            .where("group.id = :groupId", { groupId });
+
+        if (expand.includes("groupUsers")) {
+            groupQuery.leftJoinAndSelect("group.users", "groupUsers")
+                .leftJoinAndSelect("groupUsers.tenantUser", "tenantUser")
+                .leftJoinAndSelect("tenantUser.ssoUser", "ssoUser")
+        }
+
+        const group: any = await groupQuery.getOne();
+        
+        if(!group) {
+            throw new NotFoundError(`Group not found: ${groupId}`)
+        }
+            
+        if (group.createdBy) {
+            const creator: any = await this.manager.findOne('SSOUser', { where: { ssoUserId: group.createdBy } });
+            group.createdBy = creator?.userName || group.createdBy;
+        }
+
+        if (expand.includes("groupUsers") && group.users) {
+            const transformedUsers = group.users
+                .filter((groupUser: any) => !groupUser.isDeleted)
+                .map((groupUser: any) => ({
+                    id: groupUser.id,
+                    isDeleted: groupUser.isDeleted,
+                    createdDateTime: groupUser.createdDateTime,
+                    updatedDateTime: groupUser.updatedDateTime,
+                    createdBy: groupUser.createdBy,
+                    updatedBy: groupUser.updatedBy,
+                    ssoUser: groupUser.tenantUser?.ssoUser
+                }));
+            group.users = transformedUsers;
+        }
+
+        return group
+    }
 } 

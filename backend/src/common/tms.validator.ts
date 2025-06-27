@@ -214,6 +214,16 @@ export default {
             groupId: Joi.string().guid().required(),
             groupUserId: Joi.string().guid().required()
         }).options({abortEarly:false,convert:false})
+    },
+
+    getGroup: {
+        params: Joi.object({
+            tenantId: Joi.string().guid().required(),
+            groupId: Joi.string().guid().required()
+        }),
+        query: Joi.object({
+            expand: Joi.string().pattern(/^(groupUsers)?$/).optional()
+        }).optional()
     }
 
 }

@@ -40,7 +40,8 @@ export class Routes {
         app.route(RoutesConstants.UPDATE_GROUP).put(checkJwt, validate(validator.updateGroup,{},{}), checkTenantAccess([TMSConstants.TENANT_OWNER, TMSConstants.USER_ADMIN]),(req:Request,res:Response) => this.tmController.updateGroup(req,res))
         app.route(RoutesConstants.ADD_GROUP_USER).post(checkJwt, validate(validator.addGroupUser,{},{}), checkTenantAccess([TMSConstants.TENANT_OWNER, TMSConstants.USER_ADMIN]),(req:Request,res:Response) => this.tmController.addGroupUser(req,res))
         app.route(RoutesConstants.REMOVE_GROUP_USER).delete(checkJwt, validate(validator.removeGroupUser,{},{}), checkTenantAccess([TMSConstants.TENANT_OWNER, TMSConstants.USER_ADMIN]),(req:Request,res:Response) => this.tmController.removeGroupUser(req,res))
-
+        app.route(RoutesConstants.GET_GROUP).get(checkJwt, validate(validator.getGroup,{},{}), checkTenantAccess([]),(req:Request,res:Response) => this.tmController.getGroup(req,res))
+        
         app.use(function (error: Error, req: any, res: Response<any, Record<string, any>>, next: any) {
             if (error instanceof ValidationError) {
                 return res.status(error.statusCode).json(error)
