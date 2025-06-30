@@ -377,6 +377,43 @@ export class TMSRepository {
         return await query.getExists();
     }
 
+    public async getUserTenantAccessWithRoles(tenantId: string, ssoUserId: string, requiredRoles?: string[], transactionEntityManager?: EntityManager) {
+        transactionEntityManager = transactionEntityManager ? transactionEntityManager : this.manager
+        
+        const query = transactionEntityManager
+            .createQueryBuilder(TenantUser, "tu")
+            .leftJoinAndSelect("tu.ssoUser", "su")
+            .leftJoinAndSelect("tu.roles", "tur")
+            .leftJoinAndSelect("tur.role", "role")
+            .where("tu.tenant_id = :tenantId", { tenantId })
+            .andWhere("su.ssoUserId = :ssoUserId", { ssoUserId })
+            .andWhere("tur.isDeleted = :isDeleted", { isDeleted: false });
+
+        const tenantUser:TenantUser = await query.getOne()
+        
+        if (!tenantUser) {
+            return { 
+                hasAccess: false, 
+                user: null, 
+                roles: [],
+                tenantId,
+                ssoUserId
+            };
+        }
+
+        const userRoles:string[] = tenantUser.roles?.map(tur => tur.role.name) || []
+        const hasRequiredRoles:boolean = !requiredRoles || requiredRoles.length === 0 || 
+            requiredRoles.some(role => userRoles.includes(role))
+
+        return {
+            hasAccess: hasRequiredRoles,
+            user: tenantUser,
+            roles: userRoles,
+            tenantId,
+            ssoUserId
+        };
+    }
+
     private async getCreatorDisplayName(ssoUserId: string) {
         const creator:SSOUser = await this.manager.findOne(SSOUser, { where: { ssoUserId } });
         return creator;
