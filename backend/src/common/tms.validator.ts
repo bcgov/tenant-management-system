@@ -244,5 +244,14 @@ export default {
                 })
             ).min(1).max(10).required()
         }).options({abortEarly:false,convert:false})
+    },
+
+    associateSharedServiceToTenant: {
+        params: Joi.object({
+            tenantId: Joi.string().guid().required()
+        }),
+        body: Joi.object({
+            sharedServiceId: Joi.string().guid().required()
+        }).options({abortEarly:false,convert:false})
     }
 }
