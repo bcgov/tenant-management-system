@@ -271,4 +271,18 @@ export class TMSController {
         }
     }
 
+    public async createSharedService(req: Request, res: Response) {
+        try {
+            const sharedService = await this.tmsService.createSharedService(req)
+            res.status(201).send(sharedService)
+        } catch (error) {
+            logger.error(error)
+            if (error instanceof ConflictError) {
+                this.errorHandler.generalError(res, "Error occurred creating shared service", error.message, error.statusCode, "Conflict")
+            } else {
+                this.errorHandler.generalError(res, "Error occurred creating shared service", error.message, 500, "Internal Server Error")
+            }
+        }
+    }
+
 }
