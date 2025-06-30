@@ -13,6 +13,7 @@ import logger from '../common/logger'
 import { TenantRequest } from '../entities/TenantRequest'
 import { SharedService } from '../entities/SharedService'
 import { SharedServiceRole } from '../entities/SharedServiceRole'
+import { TenantSharedService } from '../entities/TenantSharedService'
 
 export class TMSRepository {
 
@@ -842,6 +843,62 @@ export class TMSRepository {
             .where("ss.name = :name", { name })
             .getExists();
         return sharedServiceExists
+    }
+
+    public async associateSharedServiceToTenant(req: Request) {
+        const tenantId: string = req.params.tenantId
+        const sharedServiceId: string = req.body.sharedServiceId
+        const ssoUserId: string = req.decodedJwt?.idir_user_guid || 'system'
+        
+        await this.manager.transaction(async(transactionEntityManager) => {
+            try {
+                if (!await this.checkIfTenantExists(tenantId, transactionEntityManager)) {
+                    throw new NotFoundError(`Tenant not found: ${tenantId}`)
+                }
+
+                const sharedService:SharedService = await transactionEntityManager
+                    .createQueryBuilder(SharedService, 'sharedService')
+                    .where('sharedService.id = :id', { id: sharedServiceId })
+                    .getOne();
+                
+                if (!sharedService) {
+                    throw new NotFoundError(`Shared service not found: ${sharedServiceId}`)
+                }
+
+                if (!sharedService.isActive) {
+                    throw new ConflictError(`Cannot associate inactive shared service '${sharedService.name}' to tenant`)
+                }
+
+                const existingAssociation:TenantSharedService = await transactionEntityManager
+                    .createQueryBuilder(TenantSharedService, 'tss')
+                    .where('tss.tenant.id = :tenantId', { tenantId })
+                    .andWhere('tss.sharedService.id = :sharedServiceId', { sharedServiceId })
+                    .andWhere('tss.isDeleted = :isDeleted', { isDeleted: false })
+                    .getOne();
+
+                if (existingAssociation) {
+                    throw new ConflictError(`Shared service '${sharedService.name}' is already associated with this tenant`)
+                }
+
+                const tenant:Tenant = await transactionEntityManager
+                    .createQueryBuilder(Tenant, 'tenant')
+                    .where('tenant.id = :id', { id: tenantId })
+                    .getOne();
+
+                const tenantSharedService: TenantSharedService = new TenantSharedService()
+                tenantSharedService.tenant = tenant
+                tenantSharedService.sharedService = sharedService
+                tenantSharedService.isDeleted = false
+                tenantSharedService.createdBy = ssoUserId
+                tenantSharedService.updatedBy = ssoUserId
+
+                await transactionEntityManager.save(tenantSharedService)
+
+            } catch (error) {
+                logger.error('Associate shared service to tenant transaction failure - rolling back inserts', error)
+                throw error
+            }
+        });
     }
 
 }

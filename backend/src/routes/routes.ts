@@ -45,6 +45,8 @@ export class Routes {
         
         app.route(RoutesConstants.CREATE_SHARED_SERVICE).post(checkJwt, checkOperationsAdmin, validate(validator.createSharedService,{},{}),(req:Request,res:Response) => this.tmsController.createSharedService(req,res))
         
+        app.route(RoutesConstants.ASSOCIATE_SHARED_SERVICE_TO_TENANT).post(checkJwt, validate(validator.associateSharedServiceToTenant,{},{}), checkTenantAccess([TMSConstants.TENANT_OWNER]),(req:Request,res:Response) => this.tmsController.associateSharedServiceToTenant(req,res))
+        
         app.use(function (error: Error, req: any, res: Response<any, Record<string, any>>, next: any) {
             if (error instanceof ValidationError) {
                 return res.status(error.statusCode).json(error)

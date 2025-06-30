@@ -285,4 +285,20 @@ export class TMSController {
         }
     }
 
+    public async associateSharedServiceToTenant(req: Request, res: Response) {
+        try {
+            await this.tmsService.associateSharedServiceToTenant(req)
+            res.status(201).send()
+        } catch (error) {
+            logger.error(error)
+            if (error instanceof NotFoundError) {
+                this.errorHandler.generalError(res, "Error occurred associating shared service to tenant", error.message, error.statusCode, "Not Found")
+            } else if (error instanceof ConflictError) {
+                this.errorHandler.generalError(res, "Error occurred associating shared service to tenant", error.message, error.statusCode, "Conflict")
+            } else {
+                this.errorHandler.generalError(res, "Error occurred associating shared service to tenant", error.message, 500, "Internal Server Error")
+            }
+        }
+    }
+
 }

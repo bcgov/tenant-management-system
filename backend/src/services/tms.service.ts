@@ -213,6 +213,10 @@ export class TMSService {
             }
         }
     }
+
+    public async associateSharedServiceToTenant(req: Request) {
+        await this.tmsRepository.associateSharedServiceToTenant(req)
+    }
     
     private async getToken() {
         try {
