@@ -1,6 +1,7 @@
 <script setup lang="ts">
 const props = defineProps<{
   disabled?: boolean
+  icon: string
   text: string
 }>()
 
@@ -18,16 +19,13 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <!--
-    Use a flat button even though the desired style is outlined. In theory flat
-    buttons do less "fancy" stuff and makes it easier to control colours, etc.
-  -->
   <v-btn
-    base-color="secondary"
-    border="sm opacity-100"
-    class="tms-button-secondary me-4"
-    variant="flat"
+    color="primary"
+    class="tms-floating-action-button py-2 px-4"
+    size="large"
+    variant="text"
     :disabled="props.disabled"
+    :prepend-icon="props.icon"
     @click="emit('click')"
   >
     {{ props.text }}
@@ -35,11 +33,14 @@ const emit = defineEmits<{
 </template>
 
 <style scoped>
-.tms-button-secondary:disabled {
-  background-color: rgb(var(--v-theme-secondary-disabled)) !important;
+.tms-floating-action-button:hover:not(:disabled) {
+  /* Since this button has inverted colour, use the grey background on hover. */
+  background-color: rgb(var(--v-theme-secondary-hover)) !important;
 }
 
-.tms-button-secondary:hover:not(:disabled) {
-  background-color: rgb(var(--v-theme-secondary-hover)) !important;
+.tms-floating-action-button :deep(.v-icon) {
+  font-size: 28px;
+  height: 28px;
+  width: 28px;
 }
 </style>

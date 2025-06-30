@@ -19,7 +19,3 @@ import AppNotifications from '@/components/layout/AppNotifications.vue'
     </v-main>
   </v-app>
 </template>
-
-<style scoped>
-@import 'vuetify/styles';
-</style>

@@ -5,6 +5,7 @@ import { useRouter } from 'vue-router'
 
 import CreateTenantDialog from '@/components/CreateTenantDialog.vue'
 import TenantList from '@/components/TenantList.vue'
+import FloatingActionButton from '@/components/ui/FloatingActionButton.vue'
 import { useNotification } from '@/composables'
 import { DomainError, DuplicateEntityError } from '@/errors'
 import { Tenant } from '@/models'
@@ -82,16 +83,11 @@ const handleTenantSubmit = async ({
     <v-container fluid class="ma-0 pa-0">
       <v-row>
         <v-col cols="12">
-          <v-btn
-            variant="text"
-            color="primary"
-            prepend-icon="mdi-plus-box"
-            size="large"
+          <FloatingActionButton
+            icon="mdi-plus-box"
+            text="Create New Tenant"
             @click="openDialog"
-            class="pa-2"
-          >
-            Create New Tenant
-          </v-btn>
+          />
         </v-col>
       </v-row>
 
