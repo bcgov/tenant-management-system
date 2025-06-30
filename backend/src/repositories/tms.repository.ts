@@ -11,6 +11,8 @@ import { NotFoundError } from '../errors/NotFoundError'
 import { ConflictError } from '../errors/ConflictError'
 import logger from '../common/logger'
 import { TenantRequest } from '../entities/TenantRequest'
+import { SharedService } from '../entities/SharedService'
+import { SharedServiceRole } from '../entities/SharedServiceRole'
 
 export class TMSRepository {
 
@@ -780,6 +782,66 @@ export class TMSRepository {
         }
 
         await this.assignUserRoles(tenantId, tenantUserId, [serviceUserRole[0].id], transactionEntityManager)
+    }
+
+    public async saveSharedService(req: Request) {
+        const { name, description, isActive, roles } = req.body
+        let sharedServiceResponse = {}
+        await this.manager.transaction(async(transactionEntityManager) => {
+            try {
+                if(await this.checkIfSharedServiceNameExists(name)) {
+                    throw new ConflictError(`A shared service with name '${name}' already exists`)
+                }
+
+                const sharedService:SharedService = new SharedService()
+                sharedService.name = name
+                sharedService.description = description
+                sharedService.isActive = isActive !== undefined ? isActive : true
+                sharedService.createdBy = req.decodedJwt?.idir_user_guid || 'system'
+                sharedService.updatedBy = req.decodedJwt?.idir_user_guid || 'system'
+
+                const savedSharedService:SharedService = await transactionEntityManager.save(sharedService)
+
+                const sharedServiceRoles:SharedServiceRole[] = []
+                for(const role of roles) {
+                    const sharedServiceRole:SharedServiceRole = new SharedServiceRole()
+                    sharedServiceRole.name = role.name
+                    sharedServiceRole.description = role.description
+                    sharedServiceRole.sharedService = savedSharedService
+                    sharedServiceRole.createdBy = req.decodedJwt?.idir_user_guid || 'system'
+                    sharedServiceRole.updatedBy = req.decodedJwt?.idir_user_guid || 'system'
+                    sharedServiceRoles.push(sharedServiceRole)
+                }
+                await transactionEntityManager.save(sharedServiceRoles)
+
+                sharedServiceResponse = await this.getSharedServiceWithRoles(savedSharedService.id, transactionEntityManager)
+            } catch(error) {
+                logger.error('Create shared service transaction failure - rolling back inserts ', error);
+                throw error
+            }
+        });
+
+        return sharedServiceResponse
+    }
+
+    public async getSharedServiceWithRoles(sharedServiceId: string, transactionEntityManager?: EntityManager) {
+        transactionEntityManager = transactionEntityManager ? transactionEntityManager : this.manager
+        return await transactionEntityManager
+            .createQueryBuilder(SharedService, 'sharedService')
+            .leftJoinAndSelect('sharedService.roles','roles')
+            .where('sharedService.id = :id', { id: sharedServiceId })
+            .andWhere('roles.isDeleted = :isDeleted', { isDeleted: false })
+            .getOne();
+    }
+
+    public async checkIfSharedServiceNameExists(name: string, transactionEntityManager?: EntityManager) {
+        transactionEntityManager = transactionEntityManager ? transactionEntityManager : this.manager
+        const sharedServiceExists = await transactionEntityManager
+            .createQueryBuilder()
+            .from(SharedService, "ss")
+            .where("ss.name = :name", { name })
+            .getExists();
+        return sharedServiceExists
     }
 
 }

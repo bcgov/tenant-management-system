@@ -230,5 +230,19 @@ export default {
         params: Joi.object({
             tenantId: Joi.string().guid().required()
         })
+    },
+
+    createSharedService: {
+        body: Joi.object({
+            name: Joi.string().min(1).max(30).pattern(/^\S.*\S$/).required(),
+            description: Joi.string().min(1).max(500).optional(),
+            isActive: Joi.boolean().optional(),
+            roles: Joi.array().items(
+                Joi.object().keys({
+                    name: Joi.string().min(1).max(30).pattern(/^\S.*\S$/).required(),
+                    description: Joi.string().min(1).max(255).optional()
+                })
+            ).min(1).max(10).required()
+        }).options({abortEarly:false,convert:false})
     }
 }

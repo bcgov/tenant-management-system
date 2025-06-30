@@ -22,4 +22,5 @@ export class RoutesConstants {
     public static REMOVE_GROUP_USER = '/v1/tenants/:tenantId/groups/:groupId/users/:groupUserId'
     public static GET_GROUP = '/v1/tenants/:tenantId/groups/:groupId'
     public static GET_TENANT_GROUPS = '/v1/tenants/:tenantId/groups'
+    public static CREATE_SHARED_SERVICE = '/v1/shared-services'
 }

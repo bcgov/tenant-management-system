@@ -204,6 +204,15 @@ export class TMSService {
             }
         }
     }
+
+    public async createSharedService(req: Request) {
+        const savedSharedService = await this.tmsRepository.saveSharedService(req)
+        return {
+            data: {
+                sharedService: savedSharedService
+            }
+        }
+    }
     
     private async getToken() {
         try {
