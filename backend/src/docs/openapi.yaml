@@ -954,6 +954,622 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
+  /v1/shared-services:
+    post:
+      summary: Create a new shared service
+      description: Creates a new shared service with roles. Only operations administrators can create shared services.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - roles
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 30
+                  pattern: '^\S.*\S$'
+                  example: "Email Service"
+                description:
+                  type: string
+                  maxLength: 500
+                  example: "Shared email service for all tenants"
+                isActive:
+                  type: boolean
+                  default: true
+                  example: true
+                roles:
+                  type: array
+                  minItems: 1
+                  maxItems: 10
+                  items:
+                    type: object
+                    required:
+                      - name
+                    properties:
+                      name:
+                        type: string
+                        minLength: 1
+                        maxLength: 30
+                        pattern: '^\S.*\S$'
+                        example: "Email User"
+                      description:
+                        type: string
+                        maxLength: 255
+                        example: "Can send emails through the service"
+      responses:
+        '201':
+          description: Shared service successfully created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      sharedService:
+                        $ref: '#/components/schemas/SharedServiceWithRoles'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        '403':
+          description: Forbidden - User is not an operations administrator
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        '409':
+          description: Conflict - Shared service with same name already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConflictErrorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+
+  /v1/tenants/{tenantId}/shared-services:
+    post:
+      summary: Associate a shared service to a tenant
+      description: Associates an existing shared service with a tenant. Only tenant owners can perform this operation.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: tenantId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The unique identifier of the tenant
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - sharedServiceId
+              properties:
+                sharedServiceId:
+                  type: string
+                  format: uuid
+                  example: "123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '201':
+          description: Shared service successfully associated with tenant
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        '403':
+          description: Forbidden - User is not a tenant owner
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        '404':
+          description: Tenant or shared service not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+        '409':
+          description: Conflict - Shared service is already associated with tenant or shared service is inactive
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConflictErrorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+
+  /v1/tenants/{tenantId}/groups:
+    post:
+      summary: Create a new group in a tenant
+      description: Creates a new group within a tenant. Only tenant owners and user admins can create groups.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: tenantId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The unique identifier of the tenant
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 30
+                  pattern: '^\S.*\S$'
+                  example: "Development Team"
+                description:
+                  type: string
+                  maxLength: 500
+                  example: "Group for development team members"
+                tenantUserId:
+                  type: string
+                  format: uuid
+                  example: "123e4567-e89b-12d3-a456-426614174001"
+      responses:
+        '201':
+          description: Group successfully created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      group:
+                        $ref: '#/components/schemas/Group'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        '403':
+          description: Forbidden - User does not have required roles (TENANT_OWNER or USER_ADMIN)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        '404':
+          description: Tenant not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+        '409':
+          description: Conflict - Group with same name already exists in tenant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConflictErrorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+
+    get:
+      summary: Get all groups for a tenant
+      description: Retrieves all groups associated with a tenant
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: tenantId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The unique identifier of the tenant
+      responses:
+        '200':
+          description: List of groups for the tenant
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      groups:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Group'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        '403':
+          description: Forbidden - User does not have access to the tenant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        '404':
+          description: Tenant not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+
+  /v1/tenants/{tenantId}/groups/{groupId}:
+    get:
+      summary: Get a specific group in a tenant
+      description: Retrieves details of a specific group within a tenant
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: tenantId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The unique identifier of the tenant
+        - name: groupId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The unique identifier of the group
+        - name: expand
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [groupUsers]
+          description: Comma-separated list of relations to expand. Currently supports 'groupUsers' to include user information.
+      responses:
+        '200':
+          description: Group details retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      group:
+                        allOf:
+                          - $ref: '#/components/schemas/Group'
+                          - type: object
+                            properties:
+                              users:
+                                type: array
+                                items:
+                                  $ref: '#/components/schemas/GroupUserWithUser'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        '403':
+          description: Forbidden - User does not have access to the tenant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        '404':
+          description: Tenant or group not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+
+    put:
+      summary: Update a group in a tenant
+      description: Updates an existing group within a tenant. Only tenant owners and user admins can update groups.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: tenantId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The unique identifier of the tenant
+        - name: groupId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The unique identifier of the group
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 30
+                  pattern: '^\S.*\S$'
+                  example: "Updated Development Team"
+                description:
+                  type: string
+                  maxLength: 500
+                  example: "Updated description for development team"
+      responses:
+        '200':
+          description: Group successfully updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      group:
+                        $ref: '#/components/schemas/Group'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        '403':
+          description: Forbidden - User does not have required roles (TENANT_OWNER or USER_ADMIN)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        '404':
+          description: Tenant or group not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+        '409':
+          description: Conflict - Group with same name already exists in tenant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConflictErrorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+
+  /v1/tenants/{tenantId}/groups/{groupId}/users:
+    post:
+      summary: Add a user to a group
+      description: Adds a user to an existing group within a tenant. Only tenant owners and user admins can add users to groups.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: tenantId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The unique identifier of the tenant
+        - name: groupId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The unique identifier of the group
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - user
+              properties:
+                user:
+                  $ref: '#/components/schemas/BasicUser'
+      responses:
+        '201':
+          description: User successfully added to group
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      groupUser:
+                        $ref: '#/components/schemas/GroupUserWithUser'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        '403':
+          description: Forbidden - User does not have required roles (TENANT_OWNER or USER_ADMIN)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        '404':
+          description: Tenant, group, or user not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+        '409':
+          description: Conflict - User is already in the group
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConflictErrorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+
+  /v1/tenants/{tenantId}/groups/{groupId}/users/{groupUserId}:
+    delete:
+      summary: Remove a user from a group
+      description: Removes a user from an existing group within a tenant. Only tenant owners and user admins can remove users from groups.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: tenantId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The unique identifier of the tenant
+        - name: groupId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The unique identifier of the group
+        - name: groupUserId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The unique identifier of the group user to remove
+      responses:
+        '204':
+          description: User successfully removed from group
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        '403':
+          description: Forbidden - User does not have required roles (TENANT_OWNER or USER_ADMIN)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        '404':
+          description: Tenant, group, or group user not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+
 components:
   schemas:
     BasicUser:
@@ -1337,3 +1953,201 @@ components:
               type: string
               format: email
               example: "john.Smith@example.com"
+
+    Group:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        name:
+          type: string
+          minLength: 1
+          maxLength: 30
+          example: "Development Team"
+        description:
+          type: string
+          maxLength: 500
+          example: "Group for development team members"
+        createdDateTime:
+          type: string
+          format: date-time
+          example: "2024-03-21T10:00:00Z"
+        updatedDateTime:
+          type: string
+          format: date-time
+          example: "2024-03-21T10:00:00Z"
+
+    GroupUserWithUser:
+      allOf:
+        - $ref: '#/components/schemas/GroupUser'
+        - type: object
+          properties:
+            user:
+              $ref: '#/components/schemas/User'
+
+    GroupUser:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        groupId:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        tenantUserId:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174001"
+        isDeleted:
+          type: boolean
+          default: false
+          example: false
+        createdDateTime:
+          type: string
+          format: date-time
+          example: "2024-03-21T10:00:00Z"
+        updatedDateTime:
+          type: string
+          format: date-time
+          example: "2024-03-21T10:00:00Z"
+        createdBy:
+          type: string
+          example: "user123"
+        updatedBy:
+          type: string
+          example: "user123"
+
+    SharedServiceWithRoles:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        name:
+          type: string
+          minLength: 1
+          maxLength: 30
+          example: "Email Service"
+        description:
+          type: string
+          maxLength: 500
+          example: "Shared email service for all tenants"
+        isActive:
+          type: boolean
+          default: true
+          example: true
+        roles:
+          type: array
+          minItems: 1
+          maxItems: 10
+          items:
+            type: object
+            required:
+              - name
+            properties:
+              name:
+                type: string
+                minLength: 1
+                maxLength: 30
+                pattern: '^\S.*\S$'
+                example: "Email User"
+              description:
+                type: string
+                maxLength: 255
+                example: "Can send emails through the service"
+        createdDateTime:
+          type: string
+          format: date-time
+          example: "2024-03-21T10:00:00Z"
+        updatedDateTime:
+          type: string
+          format: date-time
+          example: "2024-03-21T10:00:00Z"
+        createdBy:
+          type: string
+          example: "user123"
+        updatedBy:
+          type: string
+          example: "user123"
+
+    SharedService:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        name:
+          type: string
+          minLength: 1
+          maxLength: 30
+          example: "Email Service"
+        description:
+          type: string
+          maxLength: 500
+          example: "Shared email service for all tenants"
+        isActive:
+          type: boolean
+          default: true
+          example: true
+        createdDateTime:
+          type: string
+          format: date-time
+          example: "2024-03-21T10:00:00Z"
+        updatedDateTime:
+          type: string
+          format: date-time
+          example: "2024-03-21T10:00:00Z"
+        createdBy:
+          type: string
+          example: "user123"
+        updatedBy:
+          type: string
+          example: "user123"
+
+    SharedServiceRole:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174001"
+        name:
+          type: string
+          minLength: 1
+          maxLength: 30
+          example: "Email User"
+        description:
+          type: string
+          maxLength: 255
+          example: "Can send emails through the service"
+        isDeleted:
+          type: boolean
+          default: false
+          example: false
+        createdDateTime:
+          type: string
+          format: date-time
+          example: "2024-03-21T10:00:00Z"
+        updatedDateTime:
+          type: string
+          format: date-time
+          example: "2024-03-21T10:00:00Z"
+        createdBy:
+          type: string
+          example: "user123"
+        updatedBy:
+          type: string
+          example: "user123"
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token for authentication
