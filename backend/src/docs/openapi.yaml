@@ -938,21 +938,41 @@ paths:
                         maxLength: 32
                         example: "123e4567e89b12d3a456426614174000"
         '400':
-          $ref: '#/components/responses/BadRequest'
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestResponse'
         '401':
-          $ref: '#/components/responses/Unauthorized'
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
         '403':
           description: Forbidden - User does not have the required TMS.OPERATIONS_ADMIN role
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
         '404':
-          $ref: '#/components/responses/NotFound'
+          description: Tenant request not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
         '409':
-          $ref: '#/components/responses/Conflict'
+          description: Conflict - Cannot update tenant request with current status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConflictErrorResponse'
         '500':
-          $ref: '#/components/responses/InternalServerError'
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
 
   /v1/shared-services:
     post:
