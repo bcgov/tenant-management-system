@@ -98,8 +98,8 @@ export default {
 
     searchBCGOVSSOUsers: {
         query: Joi.object({
-            firstName: Joi.string(),
-            lastName: Joi.string(),
+            firstName: Joi.string().min(2),
+            lastName: Joi.string().min(2),
             email: Joi.string(),
             guid: Joi.string()
         }).or('firstName', 'lastName', 'email', 'guid')

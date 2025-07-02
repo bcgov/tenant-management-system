@@ -6,6 +6,7 @@ import axios from 'axios';
 import logger from '../common/logger'
 import { TenantRequest } from '../entities/TenantRequest'
 import { Tenant } from '../entities/Tenant'
+import { BadRequestError } from '../errors/BadRequestError'
 
 export class TMSService {
 
@@ -146,8 +147,11 @@ export class TMSService {
             });       
             return await response.data
         }
-        catch(error) {
+        catch(error: any) {
             logger.error(error)
+            if (error.response?.status === 400) {
+                throw new BadRequestError(`BC GOV SSO API returned bad request: ${error.response.data?.message || error.message}`)
+            }
             throw new Error("Error invoking BC GOV SSO API. "+error)
         }
     }
