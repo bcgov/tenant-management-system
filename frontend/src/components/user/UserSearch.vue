@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 
+import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import type { User } from '@/models'
 
 const props = defineProps<{
@@ -33,8 +34,9 @@ watch(selectedUser, (selection) => {
 })
 
 function search() {
-  if (!searchOption.value || !searchText.value) return
-  emit('search', { [searchOption.value]: searchText.value })
+  if (searchOption.value && searchText.value) {
+    emit('search', { [searchOption.value]: searchText.value })
+  }
 }
 
 function reset() {
@@ -64,14 +66,7 @@ defineExpose({ reset })
       />
     </v-col>
     <v-col md="2" class="d-flex align-center">
-      <v-btn
-        color="primary"
-        :loading="loading"
-        :disabled="!searchText"
-        @click="search"
-      >
-        Search
-      </v-btn>
+      <ButtonPrimary text="Search" :disabled="!searchText" @click="search" />
     </v-col>
   </v-row>
 
