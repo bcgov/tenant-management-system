@@ -226,6 +226,16 @@ export class TMSService {
             }
         }
     }
+
+    public async getSharedServicesForTenant(req: Request) {
+        const tenantId = req.params.tenantId
+        const sharedServices = await this.tmsRepository.getSharedServicesForTenant(tenantId)
+        return {
+            data: {
+                sharedServices
+            }
+        }
+    }
     
     private async getToken() {
         try {

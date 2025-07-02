@@ -1165,6 +1165,64 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/InternalServerErrorResponse'
+    get:
+      summary: Get shared services associated with a tenant
+      description: Retrieves all shared services that are associated with a specific tenant. Returns shared services with their associated roles.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: tenantId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The unique identifier of the tenant
+      responses:
+        '200':
+          description: Shared services for the tenant successfully retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      sharedServices:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/SharedServiceWithRoles'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        '403':
+          description: Forbidden - User does not have access to the tenant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        '404':
+          description: Tenant not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
 
   /v1/tenants/{tenantId}/groups:
     post:

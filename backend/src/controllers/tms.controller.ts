@@ -311,4 +311,14 @@ export class TMSController {
         }
     }
 
+    public async getSharedServicesForTenant(req: Request, res: Response) {
+        try {
+            const sharedServices = await this.tmsService.getSharedServicesForTenant(req)
+            res.status(200).send(sharedServices)
+        } catch (error) {
+            logger.error(error)
+            this.errorHandler.generalError(res, "Error occurred getting shared services for tenant", error.message, 500, "Internal Server Error")
+        }
+    }
+
 }
