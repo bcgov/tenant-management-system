@@ -256,8 +256,12 @@ function handleConfirmCancel() {
           </v-row>
 
           <v-row class="mt-8">
-            <v-col cols="12" class="d-flex justify-start gap-4">
-              <ButtonSecondary text="Cancel" @click="handleCancel" />
+            <v-col cols="12" class="d-flex justify-start">
+              <ButtonSecondary
+                class="me-4"
+                text="Cancel"
+                @click="handleCancel"
+              />
 
               <ButtonPrimary
                 v-if="selectedUser"

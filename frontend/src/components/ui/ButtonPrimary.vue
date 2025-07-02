@@ -19,7 +19,7 @@ const emit = defineEmits<{
 
 <template>
   <v-btn
-    class="tms-button-primary me-4"
+    class="tms-button-primary"
     color="primary"
     variant="flat"
     :disabled="props.disabled"

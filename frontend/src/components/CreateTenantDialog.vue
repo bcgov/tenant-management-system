@@ -130,7 +130,7 @@ const handleSubmit = () => {
         </v-form>
       </v-card-text>
       <v-card-actions class="d-flex justify-start">
-        <ButtonSecondary text="Cancel" @click="closeDialog" />
+        <ButtonSecondary class="me-4" text="Cancel" @click="closeDialog" />
         <ButtonPrimary
           text="Finish"
           :disabled="!formValid"

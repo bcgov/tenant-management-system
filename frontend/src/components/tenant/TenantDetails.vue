@@ -189,8 +189,12 @@ function toggleEdit() {
             </v-col>
           </v-row>
           <v-row v-if="isEditing">
-            <v-col class="d-flex justify-start gap-4">
-              <ButtonSecondary text="Cancel" @click="handleCancel" />
+            <v-col class="d-flex justify-start">
+              <ButtonSecondary
+                class="me-4"
+                text="Cancel"
+                @click="handleCancel"
+              />
               <ButtonPrimary
                 text="Save and Close"
                 :disabled="!isFormValid"

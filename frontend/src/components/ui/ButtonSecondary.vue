@@ -25,7 +25,7 @@ const emit = defineEmits<{
   <v-btn
     base-color="secondary"
     border="sm opacity-100"
-    class="tms-button-secondary me-4"
+    class="tms-button-secondary"
     variant="flat"
     :disabled="props.disabled"
     @click="emit('click')"
