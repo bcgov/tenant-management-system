@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
+import FloatingActionButton from '@/components/ui/FloatingActionButton.vue'
 import UserSearch from '@/components/user/UserSearch.vue'
 import DialogBox from '@/components/ui/DialogBox.vue'
 import type { Role, Tenant, User } from '@/models'
@@ -205,16 +206,11 @@ function handleConfirmCancel() {
 
     <v-row v-if="!showSearch" class="mt-4">
       <v-col cols="12" class="d-flex justify-start">
-        <v-btn
-          variant="text"
-          color="primary"
-          prepend-icon="mdi-plus-box"
-          size="large"
+        <FloatingActionButton
+          icon="mdi-plus-box"
+          text="Add User to Tenant"
           @click="toggleSearch"
-          class="pa-2"
-        >
-          Add user to tenant
-        </v-btn>
+        />
       </v-col>
     </v-row>
 
