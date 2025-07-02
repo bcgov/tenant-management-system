@@ -3,6 +3,7 @@ import { TMSService } from '../services/tms.service'
 import { ErrorHandler } from '../common/error.handler';
 import { NotFoundError } from '../errors/NotFoundError';
 import { ConflictError } from '../errors/ConflictError';
+import { BadRequestError } from '../errors/BadRequestError';
 import logger from '../common/logger'
 import { ForbiddenError } from '../errors/ForbiddenError';
 
@@ -172,8 +173,13 @@ export class TMSController {
             const users = await this.tmsService.searchBCGOVSSOUsers(req)
             return res.status(200).send(users)
         }
-        catch(error) {            
-                this.errorHandler.generalError(res,"Error occurred searching SSO users", error.message, 500, "Internal Server Error")
+        catch(error) {
+            logger.error(error)
+            if (error instanceof BadRequestError) {
+                this.errorHandler.generalError(res, "Error occurred searching SSO users", error.message, error.statusCode, "Bad Request")
+            } else {
+                this.errorHandler.generalError(res, "Error occurred searching SSO users", error.message, 500, "Internal Server Error")
+            }
         }   
     }
 
