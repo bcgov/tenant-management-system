@@ -69,7 +69,6 @@ watch(
 watch(
   () => [formData.value.name, formData.value.ministryName],
   () => {
-    console.log('event')
     emit('clear-duplicate-error')
   },
 )
@@ -82,8 +81,10 @@ const owner = computed(() => {
       `Critical: Tenant "${props.tenant?.name}" has no users assigned`,
       'error',
     )
+
     return null
   }
+
   return props.tenant.users[0] // TODO - this isn't right.
 })
 
