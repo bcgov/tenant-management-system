@@ -253,5 +253,11 @@ export default {
         body: Joi.object({
             sharedServiceId: Joi.string().guid().required()
         }).options({abortEarly:false,convert:false})
+    },
+
+    getSharedServicesForTenant: {
+        params: Joi.object({
+            tenantId: Joi.string().guid().required()
+        }).options({abortEarly:false,convert:false})
     }
 }

@@ -901,5 +901,30 @@ export class TMSRepository {
         });
     }
 
+    public async getAllActiveSharedServices() {
+        return await this.manager
+            .createQueryBuilder(SharedService, 'sharedService')
+            .leftJoinAndSelect('sharedService.roles', 'roles')
+            .where('sharedService.isActive = :isActive', { isActive: true })
+            .andWhere('roles.isDeleted = :isDeleted', { isDeleted: false })
+            .orderBy('sharedService.name', 'ASC')
+            .getMany();
+    }
+
+    public async getSharedServicesForTenant(tenantId: string) {
+        return await this.manager
+            .createQueryBuilder(TenantSharedService, 'tss')
+            .leftJoinAndSelect('tss.sharedService', 'sharedService')
+            .leftJoinAndSelect('sharedService.roles', 'roles')
+            .where('tss.tenant.id = :tenantId', { tenantId })
+            .andWhere('tss.isDeleted = :isDeleted', { isDeleted: false })
+            .andWhere('roles.isDeleted = :rolesDeleted', { rolesDeleted: false })
+            .orderBy('sharedService.name', 'ASC')
+            .getMany()
+            .then(tenantSharedServices => 
+                tenantSharedServices.map(tss => tss.sharedService)
+            );
+    }
+
 }
 
