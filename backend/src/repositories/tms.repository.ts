@@ -606,7 +606,7 @@ export class TMSRepository {
             ssoUser.displayName = displayName
             ssoUser.userName = userName
             ssoUser.ssoUserId = ssoUserId
-            ssoUser.email = email        
+            ssoUser.email = email || null
             ssoUser.createdBy = ssoUserId
             ssoUser.updatedBy = ssoUserId
         }

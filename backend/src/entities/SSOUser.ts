@@ -23,7 +23,7 @@ export class SSOUser {
     @Column({ type: 'varchar', length: 15, name: 'user_name', nullable: true })
     userName: string;
 
-    @Column({ type: 'varchar', length: 100, name: 'email', unique: true})
+    @Column({ type: 'varchar', length: 100, name: 'email', nullable: true })
     email: string;
 
     @OneToMany(() => TenantUser, (tenantUser) => tenantUser.ssoUser)
