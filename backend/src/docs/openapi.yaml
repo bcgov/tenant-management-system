@@ -1066,6 +1066,38 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/InternalServerErrorResponse'
+    get:
+      summary: Get all active shared services
+      description: Retrieves all shared services that are currently active. Returns shared services with their associated roles.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Active shared services successfully retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      sharedServices:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/SharedServiceWithRoles'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
 
   /v1/tenants/{tenantId}/shared-services:
     post:

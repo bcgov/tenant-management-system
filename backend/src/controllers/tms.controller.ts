@@ -301,4 +301,14 @@ export class TMSController {
         }
     }
 
+    public async getAllActiveSharedServices(req: Request, res: Response) {
+        try {
+            const sharedServices = await this.tmsService.getAllActiveSharedServices(req)
+            res.status(200).send(sharedServices)
+        } catch (error) {
+            logger.error(error)
+            this.errorHandler.generalError(res, "Error occurred getting active shared services", error.message, 500, "Internal Server Error")
+        }
+    }
+
 }

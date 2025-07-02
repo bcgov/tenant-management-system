@@ -44,6 +44,7 @@ export class Routes {
         app.route(RoutesConstants.GET_TENANT_GROUPS).get(checkJwt, validate(validator.getTenantGroups,{},{}), checkTenantAccess([]),(req:Request,res:Response) => this.tmController.getTenantGroups(req,res))
         
         app.route(RoutesConstants.CREATE_SHARED_SERVICE).post(checkJwt, checkOperationsAdmin, validate(validator.createSharedService,{},{}),(req:Request,res:Response) => this.tmsController.createSharedService(req,res))
+        app.route(RoutesConstants.GET_ALL_ACTIVE_SHARED_SERVICES).get(checkJwt, (req:Request,res:Response) => this.tmsController.getAllActiveSharedServices(req,res))
         
         app.route(RoutesConstants.ASSOCIATE_SHARED_SERVICE_TO_TENANT).post(checkJwt, validate(validator.associateSharedServiceToTenant,{},{}), checkTenantAccess([TMSConstants.TENANT_OWNER]),(req:Request,res:Response) => this.tmsController.associateSharedServiceToTenant(req,res))
         

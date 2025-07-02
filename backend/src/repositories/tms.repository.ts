@@ -901,5 +901,15 @@ export class TMSRepository {
         });
     }
 
+    public async getAllActiveSharedServices() {
+        return await this.manager
+            .createQueryBuilder(SharedService, 'sharedService')
+            .leftJoinAndSelect('sharedService.roles', 'roles')
+            .where('sharedService.isActive = :isActive', { isActive: true })
+            .andWhere('roles.isDeleted = :isDeleted', { isDeleted: false })
+            .orderBy('sharedService.name', 'ASC')
+            .getMany();
+    }
+
 }
 
