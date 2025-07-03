@@ -63,6 +63,44 @@ export default defineConfigWithVueTs(
           alphabetical: true,
         },
       ],
+      'vue/component-name-in-template-casing': [
+        'error',
+        'PascalCase',
+        {
+          registeredComponentsOnly: false,
+          ignores: [
+            // All Vuetify components
+            '/^v-/',
+            // Vue Router components
+            'router-link',
+            'router-view',
+            // Vue built-ins
+            'component',
+            'keep-alive',
+            'slot',
+            'template',
+            'transition',
+            'transition-group',
+          ],
+        },
+      ],
+      'vue/html-self-closing': [
+        'error',
+        {
+          html: {
+            component: 'always',
+            normal: 'always',
+            void: 'always',
+          },
+        },
+      ],
+      'vue/max-attributes-per-line': [
+        'error',
+        {
+          multiline: { max: 1 },
+          singleline: { max: 1 },
+        },
+      ],
     },
   },
 
