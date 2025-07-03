@@ -8,9 +8,9 @@ export interface AppConfig {
   }
   oidc: {
     clientId: string
+    logoutUrl: string
     realm: string
     serverUrl: string
-    logoutUrl: string
   }
 }
 
@@ -23,13 +23,13 @@ const defaultConfig: AppConfig = {
     clientId:
       import.meta.env.VITE_KEYCLOAK_CLIENT_ID ??
       'tenant-management-system-6014',
+    logoutUrl:
+      import.meta.env.VITE_KEYCLOAK_LOGOUT_URL ??
+      'https://dev.loginproxy.gov.bc.ca/auth/realms/standard/protocol/openid-connect/logout',
     realm: import.meta.env.VITE_KEYCLOAK_REALM ?? 'standard',
     serverUrl:
       import.meta.env.VITE_KEYCLOAK_URL ??
       'https://dev.loginproxy.gov.bc.ca/auth',
-    logoutUrl:
-      import.meta.env.VITE_KEYCLOAK_LOGOUT_URL ??
-      'https://dev.loginproxy.gov.bc.ca/auth/realms/standard/protocol/openid-connect/logout',
   },
 }
 
