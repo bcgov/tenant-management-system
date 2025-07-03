@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import TenantCard from '@/components/TenantCard.vue'
+import TenantListCard from '@/components/tenant/TenantListCard.vue'
 import type { Tenant } from '@/models'
 
 defineProps<{
@@ -18,13 +18,15 @@ const emit = defineEmits<{
   (event: 'select', id: Tenant['id']): void // NOSONAR: S6598
 }>()
 
-const handleClick = (id: Tenant['id']) => emit('select', id)
+function handleClick(id: Tenant['id']) {
+  emit('select', id)
+}
 </script>
 
 <template>
   <v-row>
     <v-col v-for="tenant in tenants" :key="tenant.id" cols="12" md="4">
-      <TenantCard :tenant="tenant" @click="handleClick(tenant.id)" />
+      <TenantListCard :tenant="tenant" @click="handleClick(tenant.id)" />
     </v-col>
   </v-row>
 </template>

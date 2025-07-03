@@ -4,7 +4,7 @@ import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 import CreateTenantDialog from '@/components/CreateTenantDialog.vue'
-import TenantList from '@/components/TenantList.vue'
+import TenantList from '@/components/tenant/TenantList.vue'
 import FloatingActionButton from '@/components/ui/FloatingActionButton.vue'
 import { useNotification } from '@/composables'
 import { DomainError, DuplicateEntityError } from '@/errors'
