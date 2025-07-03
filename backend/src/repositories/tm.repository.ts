@@ -9,6 +9,9 @@ import { ConflictError } from '../errors/ConflictError'
 import logger from '../common/logger'
 import { TMSRepository } from './tms.repository'
 import { TMSConstants } from '../common/tms.constants'
+import { SharedServiceRole } from '../entities/SharedServiceRole'
+import { TenantSharedService } from '../entities/TenantSharedService'
+import { GroupSharedServiceRole } from '../entities/GroupSharedServiceRole'
 
 export class TMRepository {
 
@@ -417,5 +420,74 @@ export class TMRepository {
         }
 
         return group
+    }
+
+    public async getSharedServiceRolesForGroup(req: Request) {
+        const tenantId = req.params.tenantId
+        const groupId = req.params.groupId
+        
+        const group: any = await this.manager
+            .createQueryBuilder('Group', 'group')
+            .where('group.id = :groupId', { groupId })
+            .andWhere('group.tenant.id = :tenantId', { tenantId })
+            .getOne();
+
+        if (!group) {
+            throw new NotFoundError(`Group not found or does not belong to tenant: ${groupId}`);
+        }
+      
+        const result = await this.manager
+            .createQueryBuilder('SharedServiceRole', 'ssr')
+            .leftJoinAndSelect('ssr.sharedService', 'ss')
+            .leftJoin('TenantSharedService', 'tss', 'ss.id = tss.sharedService.id')
+            .leftJoin('GroupSharedServiceRole', 'gssr', 
+                'ssr.id = gssr.sharedServiceRole.id AND gssr.group.id = :groupId AND gssr.isDeleted = :gssrDeleted')
+            .addSelect('CASE WHEN gssr.id IS NOT NULL THEN true ELSE false END', 'isSet')
+            .addSelect('gssr.createdDateTime', 'assignedAt')
+            .addSelect('gssr.createdBy', 'assignedBy')
+            .where('tss.tenant.id = :tenantId', { tenantId })
+            .andWhere('tss.isDeleted = :tssDeleted', { tssDeleted: false })
+            .andWhere('ss.isActive = :ssActive', { ssActive: true })
+            .andWhere('ssr.isDeleted = :ssrDeleted', { ssrDeleted: false })
+            .setParameter('groupId', groupId)
+            .setParameter('gssrDeleted', false)
+            .orderBy('ss.name', 'ASC')
+            .addOrderBy('ssr.name', 'ASC')
+            .getRawAndEntities();
+
+        const sharedServicesMap = new Map();
+
+        result.entities.forEach((ssr, index) => {
+            const raw = result.raw[index];
+            const sharedServiceId = ssr.sharedService.id;
+            
+            if (!sharedServicesMap.has(sharedServiceId)) {
+                sharedServicesMap.set(sharedServiceId, {
+                    id: ssr.sharedService.id,
+                    name: ssr.sharedService.name,
+                    description: ssr.sharedService.description,
+                    createdDateTime: ssr.sharedService.createdDateTime,
+                    updatedDateTime: ssr.sharedService.updatedDateTime,
+                    createdBy: ssr.sharedService.createdBy,
+                    updatedBy: ssr.sharedService.updatedBy,
+                    sharedServiceRoles: []
+                });
+            }
+
+            const sharedService = sharedServicesMap.get(sharedServiceId);
+            sharedService.sharedServiceRoles.push({
+                id: ssr.id,
+                name: ssr.name,
+                description: ssr.description,
+                isSet: raw.isSet === 'true' || raw.isSet === true,
+                createdDateTime: raw.assignedAt ? new Date(raw.assignedAt) : null,
+                createdBy: raw.assignedBy || null
+            });
+        });
+
+        const sharedServices = Array.from(sharedServicesMap.values());
+        sharedServices.sort((a, b) => a.name.localeCompare(b.name));
+
+        return sharedServices;
     }
 } 

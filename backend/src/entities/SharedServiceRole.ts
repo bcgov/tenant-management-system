@@ -1,5 +1,6 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, Unique } from 'typeorm'
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, Unique, OneToMany } from 'typeorm'
 import { SharedService } from './SharedService'
+import { GroupSharedServiceRole } from './GroupSharedServiceRole'
 
 @Entity('SharedServiceRole', { schema: 'tms' })
 @Unique(["name", "sharedService"])
@@ -20,6 +21,11 @@ export class SharedServiceRole {
     @ManyToOne(() => SharedService, (sharedService) => sharedService.roles, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'shared_service_id' })
     sharedService: SharedService;
+
+    @OneToMany(() => GroupSharedServiceRole, (groupSharedServiceRole) => groupSharedServiceRole.sharedServiceRole, {
+        cascade: true,
+    })
+    groupAssignments: GroupSharedServiceRole[];
 
     @CreateDateColumn({ type: 'date', name: 'created_datetime', nullable: true })
     createdDateTime: Date;

@@ -117,4 +117,20 @@ export class TMController {
             }
         }
     }
+
+    public async getSharedServiceRolesForGroup(req: Request, res: Response) {
+        try {
+            const sharedServiceRolesResponse = await this.tmService.getSharedServiceRolesForGroup(req)
+            res.status(200).send(sharedServiceRolesResponse)
+        } 
+        catch(error) {
+            logger.error(error)
+            if (error instanceof NotFoundError) {
+                this.errorHandler.generalError(res, "Error occurred getting shared service roles for group", error.message, error.statusCode, "Not Found")
+            }
+            else {
+                this.errorHandler.generalError(res, "Error occurred getting shared service roles for group", error.message, 500, "Internal Server Error")
+            }
+        }
+    }
 } 

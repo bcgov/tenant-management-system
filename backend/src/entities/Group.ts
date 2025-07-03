@@ -1,6 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, Index, Unique, OneToMany } from 'typeorm'
 import { Tenant } from './Tenant'
 import { GroupUser } from './GroupUser'
+import { GroupSharedServiceRole } from './GroupSharedServiceRole'
 
 @Entity('Group', { schema: 'tms' })
 @Unique(["name", "tenant"])
@@ -24,6 +25,11 @@ export class Group {
         cascade: true,
     })
     users: GroupUser[];
+
+    @OneToMany(() => GroupSharedServiceRole, (groupSharedServiceRole) => groupSharedServiceRole.group, {
+        cascade: true,
+    })
+    sharedServiceRoles: GroupSharedServiceRole[];
 
     @CreateDateColumn({ type: 'date', name: 'created_datetime', nullable: true })
     createdDateTime: Date;
