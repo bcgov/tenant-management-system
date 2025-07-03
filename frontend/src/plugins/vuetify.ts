@@ -32,7 +32,7 @@ const bcgovLight: ThemeDefinition = {
     success: tokens.supportBorderColorSuccess,
     warning: tokens.supportBorderColorWarning,
 
-    // Custom semantic colours.
+    // Custom colours.
     'surface-light-gray': tokens.surfaceColorBackgroundLightGray,
     'typography-link-color': tokens.typographyColorLink,
     'typography-link-color-hover': tokens.surfaceColorBorderActive,
