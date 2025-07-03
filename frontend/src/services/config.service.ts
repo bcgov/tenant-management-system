@@ -17,18 +17,18 @@ export interface AppConfig {
 // Default config for development
 const defaultConfig: AppConfig = {
   api: {
-    baseUrl: import.meta.env.VITE_API_BASE_URL || '/api/v1',
+    baseUrl: import.meta.env.VITE_API_BASE_URL ?? '/api/v1',
   },
   oidc: {
     clientId:
-      import.meta.env.VITE_KEYCLOAK_CLIENT_ID ||
+      import.meta.env.VITE_KEYCLOAK_CLIENT_ID ??
       'tenant-management-system-6014',
-    realm: import.meta.env.VITE_KEYCLOAK_REALM || 'standard',
+    realm: import.meta.env.VITE_KEYCLOAK_REALM ?? 'standard',
     serverUrl:
-      import.meta.env.VITE_KEYCLOAK_URL ||
+      import.meta.env.VITE_KEYCLOAK_URL ??
       'https://dev.loginproxy.gov.bc.ca/auth',
     logoutUrl:
-      import.meta.env.VITE_KEYCLOAK_LOGOUT_URL ||
+      import.meta.env.VITE_KEYCLOAK_LOGOUT_URL ??
       'https://dev.loginproxy.gov.bc.ca/auth/realms/standard/protocol/openid-connect/logout',
   },
 }
