@@ -182,7 +182,7 @@ function handleConfirmCancel() {
           <template #no-data>
             <v-alert type="info">You have no users in this tenant.</v-alert>
           </template>
-          <template #item.roles="{ item }">
+          <template #[`item.roles`]="{ item }">
             <div class="d-flex flex-wrap" style="gap: 8px; margin-block: 4px">
               <v-chip
                 v-for="role in item.roles"
@@ -241,12 +241,12 @@ function handleConfirmCancel() {
 
               <v-checkbox
                 v-for="role in roles"
-                hide-details
                 :key="role.id"
                 :label="role.description"
                 :model-value="selectedRoles.some((r) => r.id === role.id)"
-                @update:model-value="(checked) => toggleRole(role, !!checked)"
                 class="my-0 py-0"
+                hide-details
+                @update:model-value="(checked) => toggleRole(role, !!checked)"
               />
             </v-col>
           </v-row>

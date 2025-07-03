@@ -4,7 +4,7 @@ import { ref, watch } from 'vue'
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import type { User } from '@/models'
 
-const props = defineProps<{
+defineProps<{
   tenantId: string
   loading?: boolean
   results: User[]
@@ -60,9 +60,9 @@ defineExpose({ reset })
     <v-col md="4">
       <v-text-field
         v-model="searchText"
+        hide-details
         label="Search text"
         @keyup.enter="search"
-        hide-details
       />
     </v-col>
     <v-col md="2" class="d-flex align-center">

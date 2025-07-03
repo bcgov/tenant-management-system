@@ -64,12 +64,12 @@ watch([ministryName, name], () => {
 
 // Validation
 const rules = {
-  maxLength: (max: number) => (v: string) =>
-    !v || v.length <= max || `Must be ${max} characters or less`,
+  maxLength: (max: number) => (value: string) =>
+    !value || value.length <= max || `Must be ${max} characters or less`,
   notDuplicated: () =>
     !props.isDuplicateName ||
     'Name must be unique for this ministry/organization',
-  required: (value: any) => !!value || 'Required',
+  required: (value: string) => !!value || 'Required',
 }
 
 const handleSubmit = () => {

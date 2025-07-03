@@ -18,12 +18,11 @@ const props = defineProps<{
 const emit = defineEmits<{
   (event: 'clear-duplicate-error'): void
   (event: 'update', tenant: Partial<Tenant>): void
-  (event: 'update:deleteDialog', value: boolean): void
-  (event: 'update:isEditing', value: boolean): void
+  (event: 'update:deleteDialog' | 'update:isEditing', value: boolean): void
 }>()
 
 // Form state
-const form = ref<any>(null)
+const form = ref<InstanceType<typeof VForm> | null>(null)
 const formData = ref<Partial<Tenant>>({
   description: '',
   ministryName: '',
@@ -48,12 +47,12 @@ watch(
 
 // Validation
 const rules = {
-  maxLength: (max: number) => (v: string) =>
-    !v || v.length <= max || `Must be ${max} characters or less`,
+  maxLength: (max: number) => (value: string) =>
+    !value || value.length <= max || `Must be ${max} characters or less`,
   notDuplicated: () =>
     !props.isDuplicateName ||
     'Name must be unique for this ministry/organization',
-  required: (value: any) => !!value || 'Required',
+  required: (value: string) => !!value || 'Required',
 }
 
 // When parent sets the duplicated name flag, force re-validation so that the
@@ -62,7 +61,7 @@ watch(
   () => props.isDuplicateName,
   async () => {
     await nextTick()
-    form.value?.validate()
+    await form.value?.validate()
   },
 )
 
@@ -89,8 +88,8 @@ const owner = computed(() => {
 })
 
 async function handleSubmit() {
-  const { valid } = await form.value.validate()
-  if (valid) {
+  const result = await form.value?.validate()
+  if (result?.valid) {
     emit('update', formData.value)
   }
 }
@@ -121,7 +120,7 @@ function toggleEdit() {
     <v-row class="pa-4" no-gutters>
       <!-- Form content -->
       <v-col cols="12" lg="10">
-        <v-form ref="form" @submit.prevent="handleSubmit" v-model="isFormValid">
+        <v-form ref="form" v-model="isFormValid" @submit.prevent="handleSubmit">
           <v-row>
             <v-col cols="12" md="6">
               <v-text-field
@@ -211,22 +210,22 @@ function toggleEdit() {
         <v-btn
           v-if="isEditing"
           icon
-          variant="outlined"
           rounded="lg"
           size="small"
+          variant="outlined"
           @click="handleCancel"
         >
           <v-icon>mdi-close</v-icon>
         </v-btn>
 
         <v-menu v-else>
-          <template #activator="{ props }">
+          <template #activator="{ props: slotProps }">
             <v-btn
               icon
-              v-bind="props"
-              variant="outlined"
               rounded="lg"
               size="small"
+              variant="outlined"
+              v-bind="slotProps"
             >
               <v-icon>mdi-dots-vertical</v-icon>
             </v-btn>

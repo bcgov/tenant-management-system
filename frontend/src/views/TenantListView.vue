@@ -60,7 +60,7 @@ const handleTenantSubmit = async ({
     addNotification('New tenant created successfully', 'success')
     isDuplicateName.value = false
     closeDialog()
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (error instanceof DuplicateEntityError) {
       // If the API says that this name exists already, then show the name
       // duplicated validation error.

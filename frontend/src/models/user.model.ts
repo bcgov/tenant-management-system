@@ -1,21 +1,21 @@
 import { Role } from '@/models/role.model'
 
 export class User {
-  id: string
   displayName: string
-  email: string
+  email?: string
   firstName: string
+  id: string
   lastName: string
-  userName: string
   roles: Role[]
+  userName?: string
 
   constructor(
     id: string,
-    userName: string,
+    userName: string | undefined,
     firstName: string,
     lastName: string,
     displayName: string,
-    email: string,
+    email: string | undefined,
     roles: Role[],
   ) {
     this.id = id
@@ -56,19 +56,26 @@ export class User {
     firstName: string
     lastName: string
     attributes: {
-      display_name: string[]
-      idir_user_guid: string[]
-      idir_username: string[]
+      [key: string]: string[] | undefined
     }
   }): User {
+    // The SSO API doesn't always return the expected fields - try to be lenient
+    // but if the username is undefined then it will cause issues.
+    const attributes = searchData.attributes
+    const userId =
+      attributes.idir_user_guid?.[0] ?? attributes.idir_userid?.[0] ?? ''
+    const username = attributes.idir_username?.[0]
+    const displayName =
+      attributes.display_name?.[0] ?? attributes.displayName?.[0] ?? ''
+
     return new User(
-      searchData.attributes.idir_user_guid[0],
-      searchData.attributes.idir_username[0],
+      userId,
+      username,
       searchData.firstName,
       searchData.lastName,
-      searchData.attributes.display_name[0],
+      displayName,
       searchData.email,
-      [], // Roles are not provided in search results
+      [], // Roles are not provided in search results,
     )
   }
 }

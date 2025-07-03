@@ -142,14 +142,14 @@ async function handleUpdateTenant(updatedTenant: Partial<Tenant>) {
     <v-container fluid class="px-4">
       <BreadcrumbBar :items="breadcrumbs" class="mb-6" />
 
-      <TenantHeader :tenant="tenant" v-model:show-detail="showDetail" />
+      <TenantHeader v-model:show-detail="showDetail" :tenant="tenant" />
 
       <TenantDetails
         v-if="showDetail"
-        :is-duplicate-name="isDuplicateName"
-        :tenant="tenant"
         v-model:delete-dialog="deleteDialogVisible"
         v-model:is-editing="isEditing"
+        :is-duplicate-name="isDuplicateName"
+        :tenant="tenant"
         @clear-duplicate-error="isDuplicateName = false"
         @update="handleUpdateTenant"
       />

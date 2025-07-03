@@ -38,7 +38,7 @@ const firstOwner = computed(() => {
 </script>
 
 <template>
-  <v-card @click="emit('click')" class="hoverable bg-grey-lighten-4">
+  <v-card class="hoverable bg-grey-lighten-4" @click="emit('click')">
     <v-card-title>
       <span class="card-link">
         {{ tenant.name }}
