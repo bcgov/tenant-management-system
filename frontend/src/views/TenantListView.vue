@@ -80,7 +80,7 @@ const handleTenantSubmit = async ({
 <template>
   <BaseSecure>
     <!-- Remove the container spacing and let the parent decide that. -->
-    <v-container fluid class="ma-0 pa-0">
+    <v-container class="ma-0 pa-0" fluid>
       <v-row>
         <v-col cols="12">
           <FloatingActionButton
@@ -97,8 +97,8 @@ const handleTenantSubmit = async ({
     <CreateTenantDialog
       v-model="dialogVisible"
       :is-duplicate-name="isDuplicateName"
-      @submit="handleTenantSubmit"
       @clear-duplicate-error="isDuplicateName = false"
+      @submit="handleTenantSubmit"
     />
   </BaseSecure>
 </template>

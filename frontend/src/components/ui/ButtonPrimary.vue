@@ -19,10 +19,10 @@ const emit = defineEmits<{
 
 <template>
   <v-btn
+    :disabled="props.disabled"
     class="tms-button-primary"
     color="primary"
     variant="flat"
-    :disabled="props.disabled"
     @click="emit('click')"
   >
     {{ props.text }}

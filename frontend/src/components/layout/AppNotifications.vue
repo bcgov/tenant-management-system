@@ -5,7 +5,7 @@ const { notifications, removeNotification } = useNotification()
 </script>
 
 <template>
-  <transition-group name="fade" tag="div" class="notification-wrapper">
+  <transition-group class="notification-wrapper" name="fade" tag="div">
     <div v-if="notifications.length" class="notification-wrapper">
       <div
         v-for="notification in notifications"
@@ -14,8 +14,8 @@ const { notifications, removeNotification } = useNotification()
       >
         <v-alert
           :type="notification.type"
-          role="alert"
           aria-live="assertive"
+          role="alert"
           closable
           @click="removeNotification(notification.id)"
         >

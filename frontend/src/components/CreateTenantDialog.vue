@@ -99,20 +99,20 @@ const handleSubmit = () => {
           <v-text-field
             v-model="username"
             label="Tenant Owner"
-            readonly
             disabled
+            readonly
           />
           <v-row>
             <v-col cols="12" md="6">
               <v-text-field
                 v-model="name"
-                label="Name of Tenant"
                 :maxlength="30"
                 :rules="[
                   rules.required,
                   rules.maxLength(30),
                   rules.notDuplicated,
                 ]"
+                label="Name of Tenant"
                 required
               />
             </v-col>
@@ -120,8 +120,8 @@ const handleSubmit = () => {
               <v-select
                 v-model="ministryName"
                 :items="MINISTRIES"
-                label="Ministry/Organization"
                 :rules="[rules.required]"
+                label="Ministry/Organization"
                 placeholder="Select an option..."
                 required
               />
@@ -132,8 +132,8 @@ const handleSubmit = () => {
       <v-card-actions class="d-flex justify-start">
         <ButtonSecondary class="me-4" text="Cancel" @click="closeDialog" />
         <ButtonPrimary
-          text="Finish"
           :disabled="!formValid"
+          text="Finish"
           @click="handleSubmit"
         />
       </v-card-actions>

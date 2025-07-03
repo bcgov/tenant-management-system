@@ -126,12 +126,12 @@ function toggleEdit() {
               <v-text-field
                 v-if="isEditing"
                 v-model="formData.name"
-                label="Tenant Name"
                 :rules="[
                   rules.required,
                   rules.maxLength(30),
                   rules.notDuplicated,
                 ]"
+                label="Tenant Name"
                 required
               />
               <v-text-field
@@ -172,11 +172,11 @@ function toggleEdit() {
               <v-textarea
                 v-if="isEditing"
                 v-model="formData.description"
-                label="Tenant Description"
-                auto-grow
-                counter="500"
-                rows="1"
                 :rules="[rules.required, rules.maxLength(500)]"
+                counter="500"
+                label="Tenant Description"
+                rows="1"
+                auto-grow
                 required
               ></v-textarea>
               <v-textarea
@@ -196,8 +196,8 @@ function toggleEdit() {
                 @click="handleCancel"
               />
               <ButtonPrimary
-                text="Save and Close"
                 :disabled="!isFormValid"
+                text="Save and Close"
                 @click="handleSubmit"
               />
             </v-col>
@@ -206,13 +206,13 @@ function toggleEdit() {
       </v-col>
 
       <!-- Menu on right side -->
-      <v-col cols="12" lg="2" class="d-flex justify-end">
+      <v-col class="d-flex justify-end" cols="12" lg="2">
         <v-btn
           v-if="isEditing"
-          icon
           rounded="lg"
           size="small"
           variant="outlined"
+          icon
           @click="handleCancel"
         >
           <v-icon>mdi-close</v-icon>
@@ -221,10 +221,10 @@ function toggleEdit() {
         <v-menu v-else>
           <template #activator="{ props: slotProps }">
             <v-btn
-              icon
               rounded="lg"
               size="small"
               variant="outlined"
+              icon
               v-bind="slotProps"
             >
               <v-icon>mdi-dots-vertical</v-icon>

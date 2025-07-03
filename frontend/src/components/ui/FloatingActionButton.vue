@@ -20,12 +20,12 @@ const emit = defineEmits<{
 
 <template>
   <v-btn
-    color="primary"
-    class="tms-floating-action-button py-2 px-4"
-    size="large"
-    variant="text"
     :disabled="props.disabled"
     :prepend-icon="props.icon"
+    class="tms-floating-action-button py-2 px-4"
+    color="primary"
+    size="large"
+    variant="text"
     @click="emit('click')"
   >
     {{ props.text }}
