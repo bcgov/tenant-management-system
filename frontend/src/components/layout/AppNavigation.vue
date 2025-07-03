@@ -8,21 +8,21 @@ const isTenantRoute = computed(() => route.path.startsWith('/tenant'))
 </script>
 
 <template>
-  <v-toolbar class="px-12" flat elevation="0">
+  <v-toolbar class="px-12" elevation="0" flat>
     <div class="d-flex align-center" style="gap: 8px">
       <v-btn
-        to="/tenants"
-        variant="text"
         :active="isTenantRoute"
         exact-active-class=""
+        to="/tenants"
+        variant="text"
       >
         Tenants
       </v-btn>
       <v-btn
-        to="/roles"
-        variant="text"
         :active="isRolesRoute"
         exact-active-class=""
+        to="/roles"
+        variant="text"
       >
         My Roles
       </v-btn>

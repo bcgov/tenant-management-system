@@ -41,7 +41,7 @@ const createdDate = computed(() => {
       <v-col cols="12" sm="6">
         <h1>Tenant Details</h1>
       </v-col>
-      <v-col cols="12" sm="6" class="d-flex align-center justify-end">
+      <v-col class="d-flex align-center justify-end" cols="12" sm="6">
         <div class="me-4">
           Date Created:
           <span class="text-no-wrap">
@@ -53,10 +53,10 @@ const createdDate = computed(() => {
           <strong>{{ tenant?.createdBy }}</strong>
         </div>
         <v-btn
-          icon
-          variant="outlined"
           rounded="lg"
           size="small"
+          variant="outlined"
+          icon
           @click="toggleDetail"
         >
           <v-icon>

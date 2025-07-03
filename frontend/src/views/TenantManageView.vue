@@ -139,24 +139,24 @@ async function handleUpdateTenant(updatedTenant: Partial<Tenant>) {
 
 <template>
   <BaseSecure>
-    <v-container fluid class="px-4">
+    <v-container class="px-4" fluid>
       <BreadcrumbBar :items="breadcrumbs" class="mb-6" />
 
-      <TenantHeader :tenant="tenant" v-model:show-detail="showDetail" />
+      <TenantHeader v-model:show-detail="showDetail" :tenant="tenant" />
 
       <TenantDetails
         v-if="showDetail"
-        :is-duplicate-name="isDuplicateName"
-        :tenant="tenant"
         v-model:delete-dialog="deleteDialogVisible"
         v-model:is-editing="isEditing"
+        :is-duplicate-name="isDuplicateName"
+        :tenant="tenant"
         @clear-duplicate-error="isDuplicateName = false"
         @update="handleUpdateTenant"
       />
 
       <!-- Inlined Tabs -->
-      <v-card elevation="0" class="mt-6">
-        <v-tabs v-model="tab" :mandatory="false" :disabled="isEditing">
+      <v-card class="mt-6" elevation="0">
+        <v-tabs v-model="tab" :disabled="isEditing" :mandatory="false">
           <v-tab :value="0" class="pa-0 ma-0" style="min-width: 0px" />
           <v-tab :value="1">User Management</v-tab>
           <v-tab :value="2">Available Services</v-tab>
@@ -167,10 +167,10 @@ async function handleUpdateTenant(updatedTenant: Partial<Tenant>) {
 
           <v-window-item :value="1">
             <TenantUserManagement
-              :possible-roles="roles"
-              :tenant="tenant"
-              :search-results="searchResults"
               :loading-search="loadingSearch"
+              :possible-roles="roles"
+              :search-results="searchResults"
+              :tenant="tenant"
               @add="handleAddUser"
               @cancel="searchResults = []"
               @remove-role="handleRemoveRole"

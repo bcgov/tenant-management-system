@@ -2,7 +2,7 @@
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
 
-const props = defineProps<{
+defineProps<{
   modelValue: boolean
   title?: string
   message?: string
@@ -38,9 +38,9 @@ function onButtonClick(action: string) {
       </v-card-text>
       <v-card-actions class="justify-end">
         <component
+          :is="btn.type === 'primary' ? ButtonPrimary : ButtonSecondary"
           v-for="btn in buttons"
           :key="btn.action"
-          :is="btn.type === 'primary' ? ButtonPrimary : ButtonSecondary"
           :text="btn.text"
           @click="onButtonClick(btn.action)"
         />

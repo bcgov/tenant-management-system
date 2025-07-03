@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 
+import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import type { User } from '@/models'
 
-const props = defineProps<{
+defineProps<{
   tenantId: string
   loading?: boolean
   results: User[]
@@ -33,8 +34,9 @@ watch(selectedUser, (selection) => {
 })
 
 function search() {
-  if (!searchOption.value || !searchText.value) return
-  emit('search', { [searchOption.value]: searchText.value })
+  if (searchOption.value && searchText.value) {
+    emit('search', { [searchOption.value]: searchText.value })
+  }
 }
 
 function reset() {
@@ -50,8 +52,8 @@ defineExpose({ reset })
     <v-col md="2">
       <v-select
         v-model="searchOption"
-        label="Search by"
         :items="SEARCH_OPTIONS"
+        label="Search by"
         hide-details
       />
     </v-col>
@@ -59,19 +61,12 @@ defineExpose({ reset })
       <v-text-field
         v-model="searchText"
         label="Search text"
-        @keyup.enter="search"
         hide-details
+        @keyup.enter="search"
       />
     </v-col>
-    <v-col md="2" class="d-flex align-center">
-      <v-btn
-        color="primary"
-        :loading="loading"
-        :disabled="!searchText"
-        @click="search"
-      >
-        Search
-      </v-btn>
+    <v-col class="d-flex align-center" md="2">
+      <ButtonPrimary :disabled="!searchText" text="Search" @click="search" />
     </v-col>
   </v-row>
 
@@ -81,19 +76,19 @@ defineExpose({ reset })
 
       <v-data-table
         v-model="selectedUser"
-        :items="results"
+        :header-props="{
+          class: 'text-body-1 font-weight-bold bg-surface-light',
+        }"
         :headers="[
           { title: 'First Name', key: 'firstName', align: 'start' },
           { title: 'Last Name', key: 'lastName', align: 'start' },
           { title: 'Email', key: 'email', align: 'start' },
         ]"
+        :items="results"
         :loading="loading"
-        return-object
         select-strategy="single"
+        return-object
         show-select
-        :header-props="{
-          class: 'text-body-1 font-weight-bold bg-surface-light',
-        }"
       >
         <template #no-data>
           <v-alert type="info">Search for users to add</v-alert>

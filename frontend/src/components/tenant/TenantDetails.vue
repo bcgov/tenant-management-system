@@ -18,12 +18,11 @@ const props = defineProps<{
 const emit = defineEmits<{
   (event: 'clear-duplicate-error'): void
   (event: 'update', tenant: Partial<Tenant>): void
-  (event: 'update:deleteDialog', value: boolean): void
-  (event: 'update:isEditing', value: boolean): void
+  (event: 'update:deleteDialog' | 'update:isEditing', value: boolean): void
 }>()
 
 // Form state
-const form = ref<any>(null)
+const form = ref<InstanceType<typeof VForm> | null>(null)
 const formData = ref<Partial<Tenant>>({
   description: '',
   ministryName: '',
@@ -48,12 +47,12 @@ watch(
 
 // Validation
 const rules = {
-  maxLength: (max: number) => (v: string) =>
-    !v || v.length <= max || `Must be ${max} characters or less`,
+  maxLength: (max: number) => (value: string) =>
+    !value || value.length <= max || `Must be ${max} characters or less`,
   notDuplicated: () =>
     !props.isDuplicateName ||
     'Name must be unique for this ministry/organization',
-  required: (value: any) => !!value || 'Required',
+  required: (value: string) => !!value || 'Required',
 }
 
 // When parent sets the duplicated name flag, force re-validation so that the
@@ -62,14 +61,13 @@ watch(
   () => props.isDuplicateName,
   async () => {
     await nextTick()
-    form.value?.validate()
+    await form.value?.validate()
   },
 )
 
 watch(
   () => [formData.value.name, formData.value.ministryName],
   () => {
-    console.log('event')
     emit('clear-duplicate-error')
   },
 )
@@ -82,14 +80,16 @@ const owner = computed(() => {
       `Critical: Tenant "${props.tenant?.name}" has no users assigned`,
       'error',
     )
+
     return null
   }
+
   return props.tenant.users[0] // TODO - this isn't right.
 })
 
 async function handleSubmit() {
-  const { valid } = await form.value.validate()
-  if (valid) {
+  const result = await form.value?.validate()
+  if (result?.valid) {
     emit('update', formData.value)
   }
 }
@@ -120,18 +120,18 @@ function toggleEdit() {
     <v-row class="pa-4" no-gutters>
       <!-- Form content -->
       <v-col cols="12" lg="10">
-        <v-form ref="form" @submit.prevent="handleSubmit" v-model="isFormValid">
+        <v-form ref="form" v-model="isFormValid" @submit.prevent="handleSubmit">
           <v-row>
             <v-col cols="12" md="6">
               <v-text-field
                 v-if="isEditing"
                 v-model="formData.name"
-                label="Tenant Name"
                 :rules="[
                   rules.required,
                   rules.maxLength(30),
                   rules.notDuplicated,
                 ]"
+                label="Tenant Name"
                 required
               />
               <v-text-field
@@ -172,11 +172,11 @@ function toggleEdit() {
               <v-textarea
                 v-if="isEditing"
                 v-model="formData.description"
-                label="Tenant Description"
-                auto-grow
-                counter="500"
-                rows="1"
                 :rules="[rules.required, rules.maxLength(500)]"
+                counter="500"
+                label="Tenant Description"
+                rows="1"
+                auto-grow
                 required
               ></v-textarea>
               <v-textarea
@@ -189,11 +189,15 @@ function toggleEdit() {
             </v-col>
           </v-row>
           <v-row v-if="isEditing">
-            <v-col class="d-flex justify-start gap-4">
-              <ButtonSecondary text="Cancel" @click="handleCancel" />
+            <v-col class="d-flex justify-start">
+              <ButtonSecondary
+                class="me-4"
+                text="Cancel"
+                @click="handleCancel"
+              />
               <ButtonPrimary
-                text="Save and Close"
                 :disabled="!isFormValid"
+                text="Save and Close"
                 @click="handleSubmit"
               />
             </v-col>
@@ -202,26 +206,26 @@ function toggleEdit() {
       </v-col>
 
       <!-- Menu on right side -->
-      <v-col cols="12" lg="2" class="d-flex justify-end">
+      <v-col class="d-flex justify-end" cols="12" lg="2">
         <v-btn
           v-if="isEditing"
-          icon
-          variant="outlined"
           rounded="lg"
           size="small"
+          variant="outlined"
+          icon
           @click="handleCancel"
         >
           <v-icon>mdi-close</v-icon>
         </v-btn>
 
         <v-menu v-else>
-          <template #activator="{ props }">
+          <template #activator="{ props: slotProps }">
             <v-btn
-              icon
-              v-bind="props"
-              variant="outlined"
               rounded="lg"
               size="small"
+              variant="outlined"
+              icon
+              v-bind="slotProps"
             >
               <v-icon>mdi-dots-vertical</v-icon>
             </v-btn>

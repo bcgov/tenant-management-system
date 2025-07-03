@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
+import FloatingActionButton from '@/components/ui/FloatingActionButton.vue'
 import UserSearch from '@/components/user/UserSearch.vue'
 import DialogBox from '@/components/ui/DialogBox.vue'
 import type { Role, Tenant, User } from '@/models'
@@ -159,41 +160,41 @@ function handleConfirmCancel() {
 </script>
 
 <template>
-  <v-container fluid class="px-0">
+  <v-container class="px-0" fluid>
     <v-row>
       <v-col cols="12">
         <h2 class="mb-6 mt-12">Tenant Users</h2>
         <v-data-table
-          :items="tenant?.users || []"
-          item-value="id"
+          :header-props="{
+            class: 'text-body-1 font-weight-bold bg-surface-light',
+          }"
           :headers="[
             { title: 'Name', key: 'displayName', align: 'start' },
             { title: 'TMS Roles', key: 'roles', align: 'start' },
             { title: 'Email', key: 'email', align: 'start' },
           ]"
-          hover
-          fixed-header
+          :items="tenant?.users || []"
           :sort-by="[{ key: 'displayName', order: 'asc' }]"
-          :header-props="{
-            class: 'text-body-1 font-weight-bold bg-surface-light',
-          }"
+          item-value="id"
+          fixed-header
+          hover
         >
           <template #no-data>
             <v-alert type="info">You have no users in this tenant.</v-alert>
           </template>
-          <template #item.roles="{ item }">
+          <template #[`item.roles`]="{ item }">
             <div class="d-flex flex-wrap" style="gap: 8px; margin-block: 4px">
               <v-chip
                 v-for="role in item.roles"
                 :key="role.id"
-                color="primary"
                 class="d-inline-flex align-center"
+                color="primary"
               >
                 {{ role.description }}
                 <v-icon
+                  class="ml-1 cursor-pointer"
                   icon="mdi-close"
                   size="small"
-                  class="ml-1 cursor-pointer"
                   @click.stop="onRemoveRole(item, role)"
                 />
               </v-chip>
@@ -204,17 +205,12 @@ function handleConfirmCancel() {
     </v-row>
 
     <v-row v-if="!showSearch" class="mt-4">
-      <v-col cols="12" class="d-flex justify-start">
-        <v-btn
-          variant="text"
-          color="primary"
-          prepend-icon="mdi-plus-box"
-          size="large"
+      <v-col class="d-flex justify-start" cols="12">
+        <FloatingActionButton
+          icon="mdi-plus-box"
+          text="Add User to Tenant"
           @click="toggleSearch"
-          class="pa-2"
-        >
-          Add user to tenant
-        </v-btn>
+        />
       </v-col>
     </v-row>
 
@@ -230,11 +226,11 @@ function handleConfirmCancel() {
 
         <template v-if="tenant?.id">
           <UserSearch
-            :tenant-id="tenant.id"
             :loading="loadingSearch"
             :results="searchResults"
-            @select="onUserSelected"
+            :tenant-id="tenant.id"
             @search="onSearch"
+            @select="onUserSelected"
           />
 
           <v-row v-if="selectedUser" class="mt-4">
@@ -245,24 +241,28 @@ function handleConfirmCancel() {
 
               <v-checkbox
                 v-for="role in roles"
-                hide-details
                 :key="role.id"
                 :label="role.description"
                 :model-value="selectedRoles.some((r) => r.id === role.id)"
-                @update:model-value="(checked) => toggleRole(role, !!checked)"
                 class="my-0 py-0"
+                hide-details
+                @update:model-value="(checked) => toggleRole(role, !!checked)"
               />
             </v-col>
           </v-row>
 
           <v-row class="mt-8">
-            <v-col cols="12" class="d-flex justify-start gap-4">
-              <ButtonSecondary text="Cancel" @click="handleCancel" />
+            <v-col class="d-flex justify-start" cols="12">
+              <ButtonSecondary
+                class="me-4"
+                text="Cancel"
+                @click="handleCancel"
+              />
 
               <ButtonPrimary
                 v-if="selectedUser"
-                text="Add User"
                 :disabled="selectedRoles.length === 0"
+                text="Add User"
                 @click="handleAddUser"
               />
             </v-col>
@@ -271,8 +271,8 @@ function handleConfirmCancel() {
 
         <v-alert
           v-else
-          type="warning"
           text="Cannot search users: No tenant selected"
+          type="warning"
         />
       </div>
     </v-expand-transition>
@@ -280,20 +280,20 @@ function handleConfirmCancel() {
     <!-- Info dialog for single-button notifications -->
     <DialogBox
       v-model="showInfoDialog"
-      :title="infoDialog.title"
-      :message="infoDialog.message"
       :buttons="infoDialog.buttons"
+      :message="infoDialog.message"
+      :title="infoDialog.title"
       @ok="handleInfoClose"
     />
 
     <!-- Confirmation dialog for yes/no decisions -->
     <DialogBox
       v-model="showConfirmDialog"
-      :title="confirmDialog.title"
-      :message="confirmDialog.message"
       :buttons="confirmDialog.buttons"
-      @remove="handleConfirmRemove"
+      :message="confirmDialog.message"
+      :title="confirmDialog.title"
       @cancel="handleConfirmCancel"
+      @remove="handleConfirmRemove"
     />
   </v-container>
 </template>
