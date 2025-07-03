@@ -5,7 +5,7 @@ import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
 import FloatingActionButton from '@/components/ui/FloatingActionButton.vue'
 import UserSearch from '@/components/user/UserSearch.vue'
-import DialogBox from '@/components/ui/DialogBox.vue'
+import SimpleDialog from '@/components/ui/SimpleDialog.vue'
 import type { Role, Tenant, User } from '@/models'
 import { ROLES } from '@/utils/constants'
 
@@ -278,7 +278,7 @@ function handleConfirmCancel() {
     </v-expand-transition>
 
     <!-- Info dialog for single-button notifications -->
-    <DialogBox
+    <SimpleDialog
       v-model="showInfoDialog"
       :buttons="infoDialog.buttons"
       :message="infoDialog.message"
@@ -287,7 +287,7 @@ function handleConfirmCancel() {
     />
 
     <!-- Confirmation dialog for yes/no decisions -->
-    <DialogBox
+    <SimpleDialog
       v-model="showConfirmDialog"
       :buttons="confirmDialog.buttons"
       :message="confirmDialog.message"
