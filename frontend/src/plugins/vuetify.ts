@@ -31,6 +31,11 @@ const bcgovLight: ThemeDefinition = {
     info: tokens.supportBorderColorInfo,
     success: tokens.supportBorderColorSuccess,
     warning: tokens.supportBorderColorWarning,
+
+    // Custom semantic colours.
+    'surface-light-gray': tokens.surfaceColorBackgroundLightGray,
+    'typography-link-color': tokens.typographyColorLink,
+    'typography-link-color-hover': tokens.surfaceColorBorderActive,
   },
 
   dark: false,
