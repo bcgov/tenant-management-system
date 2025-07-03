@@ -1,3 +1,5 @@
+import axios from 'axios'
+
 import { authenticatedAxios } from './authenticated.axios'
 import { logApiError } from './utils'
 import { DuplicateEntityError, ValidationError } from '@/errors'
@@ -24,11 +26,12 @@ export const tenantService = {
       const response = await api.post(`/tenants/${tenantId}/users`, request)
 
       return response.data.data.user
-    } catch (error: any) {
+    } catch (error: unknown) {
       logApiError('Error adding user to tenant', error)
 
       // Handle HTTP 409 Conflict (duplicate)
       if (
+        axios.isAxiosError(error) &&
         error.response?.status === 409 &&
         typeof error.response.data?.message === 'string'
       ) {
@@ -95,11 +98,12 @@ export const tenantService = {
       const response = await api.post(`/tenants`, requestBody)
 
       return response.data.data.tenant
-    } catch (error: any) {
+    } catch (error: unknown) {
       logApiError('Error creating tenant', error)
 
       // Handle HTTP 400 Bad Request (validation)
       if (
+        axios.isAxiosError(error) &&
         error.response?.status === 400 &&
         typeof error.response.data?.message === 'string'
       ) {
@@ -111,6 +115,7 @@ export const tenantService = {
 
       // Handle HTTP 409 Conflict (duplicate)
       if (
+        axios.isAxiosError(error) &&
         error.response?.status === 409 &&
         typeof error.response.data?.message === 'string'
       ) {
@@ -256,11 +261,12 @@ export const tenantService = {
       const response = await api.put(`/tenants/${id}`, requestBody)
 
       return response.data.data.tenant
-    } catch (error: any) {
+    } catch (error: unknown) {
       logApiError('Error updating tenant', error)
 
       // Handle HTTP 400 Bad Request (validation)
       if (
+        axios.isAxiosError(error) &&
         error.response?.status === 400 &&
         typeof error.response.data?.message === 'string'
       ) {
@@ -272,6 +278,7 @@ export const tenantService = {
 
       // Handle HTTP 409 Conflict (duplicate)
       if (
+        axios.isAxiosError(error) &&
         error.response?.status === 409 &&
         typeof error.response.data?.message === 'string'
       ) {

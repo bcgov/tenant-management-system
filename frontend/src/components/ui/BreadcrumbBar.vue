@@ -12,7 +12,7 @@ defineProps<{
 
 <template>
   <v-breadcrumbs :items="items" color="primary">
-    <template v-slot:divider>
+    <template #divider>
       <v-icon icon="mdi-chevron-right"></v-icon>
     </template>
   </v-breadcrumbs>

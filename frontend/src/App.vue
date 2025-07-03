@@ -13,7 +13,7 @@ import AppNotifications from '@/components/layout/AppNotifications.vue'
     <!-- Router view for dynamic component rendering -->
     <v-main>
       <AppNavigation />
-      <v-container fluid class="mt-10 px-12">
+      <v-container class="mt-10 px-12" fluid>
         <router-view />
       </v-container>
     </v-main>
