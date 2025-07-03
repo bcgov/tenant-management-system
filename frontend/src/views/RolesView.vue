@@ -1,9 +1,11 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import BaseSecureView from '@/views/BaseSecureView.vue'
+</script>
 
 <template>
-  <BaseSecure>
+  <BaseSecureView>
     <div>
       <h1>My Roles</h1>
     </div>
-  </BaseSecure>
+  </BaseSecureView>
 </template>

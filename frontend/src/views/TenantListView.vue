@@ -11,6 +11,7 @@ import { DomainError, DuplicateEntityError } from '@/errors'
 import { Tenant } from '@/models'
 import { useAuthStore, useTenantStore } from '@/stores'
 import { logger } from '@/utils/logger'
+import BaseSecureView from '@/views/BaseSecureView.vue'
 
 // Router
 const router = useRouter()
@@ -78,7 +79,7 @@ const handleTenantSubmit = async ({
 </script>
 
 <template>
-  <BaseSecure>
+  <BaseSecureView>
     <!-- Remove the container spacing and let the parent decide that. -->
     <v-container class="ma-0 pa-0" fluid>
       <v-row>
@@ -100,5 +101,5 @@ const handleTenantSubmit = async ({
       @clear-duplicate-error="isDuplicateName = false"
       @submit="handleTenantSubmit"
     />
-  </BaseSecure>
+  </BaseSecureView>
 </template>
