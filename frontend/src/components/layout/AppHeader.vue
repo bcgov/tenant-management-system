@@ -1,43 +1,61 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import type { User } from '@/models'
 
-import { useAuthStore } from '@/stores'
+defineProps<{
+  user: User | null
+}>()
 
-const authStore = useAuthStore()
-const isLoggedIn = computed(() => authStore.isAuthenticated)
-const userInfo = computed(() => authStore.getUser)
+/**
+ * SonarQube rule S6598 triggers when there is a single emitter, and it suggests
+ * using function type syntax rather than call signature syntax. However, the
+ * Vue standard is to use call signature syntax. This intentional deviation from
+ * the SonarQube rule is to be compatible with Vue's recommendation.
+ *
+ * @see https://vuejs.org/guide/typescript/composition-api.html#typing-component-emits
+ */
+const emit = defineEmits<{
+  (event: 'logout'): void // NOSONAR: S6598
+}>()
 
-const handleLogout = () => {
-  authStore.logout()
+function handleLogout() {
+  emit('logout')
 }
 </script>
 
 <template>
   <v-app-bar class="px-4" elevation="1" app>
-    <v-toolbar-title>
+    <v-toolbar-title class="flex-grow-1 d-flex align-center">
       <img alt="Logo" class="logo" src="/BCID_H_RGB_pos.svg" />
-      Tenant Management System (TMS)
+      <span class="app-title">Tenant Management System (TMS)</span>
     </v-toolbar-title>
-    <v-spacer></v-spacer>
-    <template #append>
-      <div v-if="isLoggedIn">
-        <v-icon icon="mdi-account-outline" size="x-large"></v-icon>
-        <span>{{ userInfo?.displayName }}</span>
-        <v-btn @click="handleLogout">Logout</v-btn>
-      </div>
-    </template>
+
+    <div v-if="user" class="d-flex align-center user-info">
+      <v-icon icon="mdi-account-outline" size="large" />
+      <span class="text-no-wrap ms-1 me-4">{{ user.displayName }}</span>
+      <v-btn class="logout-btn" @click="handleLogout">
+        <v-icon class="me-1" icon="mdi-logout" size="x-large" />
+        Logout
+      </v-btn>
+    </div>
   </v-app-bar>
 </template>
 
 <style scoped>
-.logo {
-  vertical-align: middle;
-  height: 60px;
-  margin-right: 8px;
+.app-title {
+  font-weight: 500;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.v-toolbar-title {
-  display: flex;
-  align-items: center;
+.logo {
+  height: 60px;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+.user-info {
+  flex-shrink: 0;
 }
 </style>

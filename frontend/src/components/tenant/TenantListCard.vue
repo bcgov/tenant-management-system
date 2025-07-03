@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { useNotification } from '@/composables'
 import type { Tenant } from '@/models'
 
 const { tenant } = defineProps<{
@@ -20,47 +19,35 @@ const emit = defineEmits<{
   (event: 'click'): void // NOSONAR: S6598
 }>()
 
-const { addNotification } = useNotification()
-
-const firstOwner = computed(() => {
-  const owners = tenant.getOwners()
-  if (!owners.length) {
-    addNotification(
-      `Critical: Tenant "${tenant.name}" has no owners assigned`,
-      'error',
-    )
-
-    return null
-  }
-
-  return owners[0]
+const owner = computed(() => {
+  return tenant.getOwners()?.[0]
 })
 </script>
 
 <template>
-  <v-card class="hoverable bg-grey-lighten-4" @click="emit('click')">
+  <v-card class="hoverable" color="surface-light-gray" @click="emit('click')">
     <v-card-title>
       <span class="card-link">
         {{ tenant.name }}
       </span>
     </v-card-title>
     <v-card-subtitle>{{ tenant.ministryName }}</v-card-subtitle>
-    <v-card-text v-if="firstOwner">
-      <p>Tenant Owner: {{ firstOwner.displayName }}</p>
-      <p>{{ firstOwner.email }}</p>
+    <v-card-text v-if="owner">
+      <p>Tenant Owner: {{ owner.displayName }}</p>
+      <p>{{ owner.email }}</p>
     </v-card-text>
   </v-card>
 </template>
 
 <style scoped>
 .card-link {
-  color: #1a73e8;
-  text-decoration: underline;
+  color: rgb(var(--v-theme-typography-link-color)) !important;
   cursor: pointer;
+  text-decoration: underline;
   transition: color 0.2s ease;
 }
 
 .card-link:hover {
-  color: #1558b0;
+  color: rgb(var(--v-theme-typography-link-color-hover)) !important;
 }
 </style>

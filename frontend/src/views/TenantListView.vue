@@ -3,14 +3,15 @@ import { storeToRefs } from 'pinia'
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
-import CreateTenantDialog from '@/components/CreateTenantDialog.vue'
-import TenantList from '@/components/TenantList.vue'
+import TenantCreateDialog from '@/components/tenant/TenantCreateDialog.vue'
+import TenantList from '@/components/tenant/TenantList.vue'
 import FloatingActionButton from '@/components/ui/FloatingActionButton.vue'
 import { useNotification } from '@/composables'
 import { DomainError, DuplicateEntityError } from '@/errors'
 import { Tenant } from '@/models'
 import { useAuthStore, useTenantStore } from '@/stores'
 import { logger } from '@/utils/logger'
+import BaseSecureView from '@/views/BaseSecureView.vue'
 
 // Router
 const router = useRouter()
@@ -78,7 +79,7 @@ const handleTenantSubmit = async ({
 </script>
 
 <template>
-  <BaseSecure>
+  <BaseSecureView>
     <!-- Remove the container spacing and let the parent decide that. -->
     <v-container class="ma-0 pa-0" fluid>
       <v-row>
@@ -94,11 +95,11 @@ const handleTenantSubmit = async ({
       <TenantList :tenants="tenants" @select="handleCardClick" />
     </v-container>
 
-    <CreateTenantDialog
+    <TenantCreateDialog
       v-model="dialogVisible"
       :is-duplicate-name="isDuplicateName"
       @clear-duplicate-error="isDuplicateName = false"
       @submit="handleTenantSubmit"
     />
-  </BaseSecure>
+  </BaseSecureView>
 </template>

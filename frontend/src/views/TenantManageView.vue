@@ -11,6 +11,7 @@ import { DomainError, DuplicateEntityError } from '@/errors'
 import { Tenant, User } from '@/models'
 import { useRoleStore, useTenantStore, useUserStore } from '@/stores'
 import { logger } from '@/utils/logger'
+import BaseSecureView from '@/views/BaseSecureView.vue'
 
 const route = useRoute()
 
@@ -138,7 +139,7 @@ async function handleUpdateTenant(updatedTenant: Partial<Tenant>) {
 </script>
 
 <template>
-  <BaseSecure>
+  <BaseSecureView>
     <v-container class="px-4" fluid>
       <BreadcrumbBar :items="breadcrumbs" class="mb-6" />
 
@@ -190,5 +191,5 @@ async function handleUpdateTenant(updatedTenant: Partial<Tenant>) {
         </v-window>
       </v-card>
     </v-container>
-  </BaseSecure>
+  </BaseSecureView>
 </template>
