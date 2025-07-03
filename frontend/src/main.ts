@@ -1,3 +1,4 @@
+import '@/assets/styles/global.css'
 import '@mdi/font/css/materialdesignicons.css'
 
 import { createPinia } from 'pinia'

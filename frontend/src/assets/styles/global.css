@@ -1,0 +1,9 @@
+a {
+  color: rgb(var(--v-theme-primary));
+  text-decoration: none;
+}
+
+a:hover {
+  color: rgb(var(--v-theme-primary-hover));
+  text-decoration: underline;
+}
