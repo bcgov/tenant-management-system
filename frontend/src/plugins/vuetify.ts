@@ -33,7 +33,9 @@ const bcgovLight: ThemeDefinition = {
     warning: tokens.supportBorderColorWarning,
 
     // Custom colours.
+    'surface-input-disabled': tokens.surfaceColorFormsDisabled,
     'surface-light-gray': tokens.surfaceColorBackgroundLightGray,
+    'typography-input-disabled': tokens.typographyColorDisabled,
     'typography-link-color': tokens.typographyColorLink,
     'typography-link-color-hover': tokens.surfaceColorBorderActive,
   },

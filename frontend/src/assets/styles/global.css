@@ -7,3 +7,11 @@ a:hover {
   color: rgb(var(--v-theme-primary-hover));
   text-decoration: underline;
 }
+
+.v-input.v-input--disabled .v-field__input {
+  color: rgb(var(--v-theme-typography-input-disabled)) !important;
+}
+
+.v-input.v-input--disabled .v-input__control {
+  background-color: rgb(var(--v-theme-surface-input-disabled)) !important;
+}
