@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 
 const route = useRoute()
+
 const isRolesRoute = computed(() => route.path.startsWith('/roles'))
 const isTenantRoute = computed(() => route.path.startsWith('/tenant'))
 </script>

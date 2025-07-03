@@ -84,11 +84,7 @@ const handleSubmit = () => {
 </script>
 
 <template>
-  <v-dialog
-    v-model="dialogVisible"
-    aria-label="Create New Tenant Dialog"
-    max-width="600px"
-  >
+  <v-dialog v-model="dialogVisible" max-width="600px">
     <v-card class="pa-6">
       <v-card-title>Create New Tenant</v-card-title>
       <v-card-subtitle>
