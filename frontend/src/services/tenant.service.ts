@@ -1,7 +1,5 @@
-import axios from 'axios'
-
 import { authenticatedAxios } from './authenticated.axios'
-import { logApiError } from './utils'
+import { isDuplicateEntityError, isValidationError, logApiError } from './utils'
 import { DuplicateEntityError, ValidationError } from '@/errors'
 import { User } from '@/models'
 
@@ -30,11 +28,7 @@ export const tenantService = {
       logApiError('Error adding user to tenant', error)
 
       // Handle HTTP 409 Conflict (duplicate)
-      if (
-        axios.isAxiosError(error) &&
-        error.response?.status === 409 &&
-        typeof error.response.data?.message === 'string'
-      ) {
+      if (isDuplicateEntityError(error)) {
         throw new DuplicateEntityError(error.response.data.message)
       }
 
@@ -102,11 +96,7 @@ export const tenantService = {
       logApiError('Error creating tenant', error)
 
       // Handle HTTP 400 Bad Request (validation)
-      if (
-        axios.isAxiosError(error) &&
-        error.response?.status === 400 &&
-        typeof error.response.data?.message === 'string'
-      ) {
+      if (isValidationError(error)) {
         const messageArray = error.response.data.details.body.map(
           (item: { message: string }) => item.message,
         )
@@ -114,11 +104,7 @@ export const tenantService = {
       }
 
       // Handle HTTP 409 Conflict (duplicate)
-      if (
-        axios.isAxiosError(error) &&
-        error.response?.status === 409 &&
-        typeof error.response.data?.message === 'string'
-      ) {
+      if (isDuplicateEntityError(error)) {
         throw new DuplicateEntityError(error.response.data.message)
       }
 
@@ -230,6 +216,7 @@ export const tenantService = {
       await api.delete(`/tenants/${tenantId}/users/${userId}/roles/${roleId}`)
     } catch (error) {
       logApiError('Error removing user role from tenant', error)
+
       throw error
     }
   },
@@ -265,11 +252,7 @@ export const tenantService = {
       logApiError('Error updating tenant', error)
 
       // Handle HTTP 400 Bad Request (validation)
-      if (
-        axios.isAxiosError(error) &&
-        error.response?.status === 400 &&
-        typeof error.response.data?.message === 'string'
-      ) {
+      if (isValidationError(error)) {
         const messageArray = error.response.data.details.body.map(
           (item: { message: string }) => item.message,
         )
@@ -277,11 +260,7 @@ export const tenantService = {
       }
 
       // Handle HTTP 409 Conflict (duplicate)
-      if (
-        axios.isAxiosError(error) &&
-        error.response?.status === 409 &&
-        typeof error.response.data?.message === 'string'
-      ) {
+      if (isDuplicateEntityError(error)) {
         throw new DuplicateEntityError(error.response.data.message)
       }
 

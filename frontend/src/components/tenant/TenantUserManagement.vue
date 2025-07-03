@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { computed, ref } from 'vue'
 
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
 import FloatingActionButton from '@/components/ui/FloatingActionButton.vue'
+import SimpleDialog from '@/components/ui/SimpleDialog.vue'
 import UserSearch from '@/components/user/UserSearch.vue'
-import DialogBox from '@/components/ui/DialogBox.vue'
 import type { Role, Tenant, User } from '@/models'
 import { ROLES } from '@/utils/constants'
 
@@ -29,9 +29,7 @@ const selectedRoles = ref<Role[]>([])
 
 const roles = computed(() => props.possibleRoles ?? [])
 
-// Dialog state
-const showInfoDialog = ref(false)
-const showConfirmDialog = ref(false)
+// Shared dialog state
 const pendingUser = ref<User | null>(null)
 const pendingRole = ref<Role | null>(null)
 
@@ -41,6 +39,7 @@ const infoDialog = ref({
   message: '',
   buttons: [{ text: 'OK', action: 'ok', type: 'primary' as const }],
 })
+const showInfoDialog = ref(false)
 
 // Confirmation dialog state
 const confirmDialog = ref({
@@ -51,6 +50,7 @@ const confirmDialog = ref({
     { text: 'Remove', action: 'remove', type: 'primary' as const },
   ],
 })
+const showConfirmDialog = ref(false)
 
 function toggleSearch() {
   showSearch.value = !showSearch.value
@@ -93,7 +93,6 @@ function handleCancel() {
   toggleSearch()
 }
 
-// Helper function to show info dialog
 function showInfo(message: string) {
   infoDialog.value.message = message
   showInfoDialog.value = true
@@ -124,7 +123,6 @@ function onRemoveRole(user: User, role: Role) {
     return
   }
 
-  // Set up pending removal and open confirm dialog
   pendingUser.value = user
   pendingRole.value = role
   showConfirmDialog.value = true
@@ -138,12 +136,12 @@ function confirmRemoveRole() {
     })
   }
 
-  // Clear state
   pendingUser.value = null
   pendingRole.value = null
 }
 
 // Dialog event handlers
+
 function handleInfoClose() {
   // Dialog auto-closes, no additional cleanup needed
 }
@@ -153,7 +151,6 @@ function handleConfirmRemove() {
 }
 
 function handleConfirmCancel() {
-  // Clear pending state
   pendingUser.value = null
   pendingRole.value = null
 }
@@ -278,7 +275,7 @@ function handleConfirmCancel() {
     </v-expand-transition>
 
     <!-- Info dialog for single-button notifications -->
-    <DialogBox
+    <SimpleDialog
       v-model="showInfoDialog"
       :buttons="infoDialog.buttons"
       :message="infoDialog.message"
@@ -287,7 +284,7 @@ function handleConfirmCancel() {
     />
 
     <!-- Confirmation dialog for yes/no decisions -->
-    <DialogBox
+    <SimpleDialog
       v-model="showConfirmDialog"
       :buttons="confirmDialog.buttons"
       :message="confirmDialog.message"
