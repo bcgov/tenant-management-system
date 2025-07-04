@@ -266,5 +266,25 @@ export default {
             tenantId: Joi.string().guid().required(),
             groupId: Joi.string().guid().required()
         }).options({abortEarly:false,convert:false})
+    },
+
+    updateSharedServiceRolesForGroup: {
+        params: Joi.object({
+            tenantId: Joi.string().guid().required(),
+            groupId: Joi.string().guid().required()
+        }),
+        body: Joi.object({
+            sharedServices: Joi.array().items(
+                Joi.object({
+                    id: Joi.string().guid().required(),
+                    sharedServiceRoles: Joi.array().items(
+                        Joi.object({
+                            id: Joi.string().guid().required(),
+                            isSet: Joi.boolean().required()
+                        })
+                    ).required()
+                })
+            ).required()
+        }).options({abortEarly:false,convert:false})
     }
 }

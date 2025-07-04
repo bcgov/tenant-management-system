@@ -77,4 +77,14 @@ export class TMService {
             }   
         }       
     }
+
+    public async updateSharedServiceRolesForGroup(req: Request) {
+        const sharedServices = await this.tmRepository.updateSharedServiceRolesForGroup(req)
+        
+        return {
+            data: { 
+                sharedServices: sharedServices
+            }   
+        }       
+    }
 } 

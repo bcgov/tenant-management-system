@@ -490,4 +490,99 @@ export class TMRepository {
 
         return sharedServices;
     }
+
+    public async updateSharedServiceRolesForGroup(req: Request) {
+        const tenantId = req.params.tenantId;
+        const groupId = req.params.groupId;
+        const { sharedServices } = req.body;
+        const ssoUserId = req.decodedJwt?.idir_user_guid || 'system';
+
+        await this.manager.transaction(async(transactionEntityManager) => {
+
+            const group: any = await transactionEntityManager
+                .createQueryBuilder('Group', 'group')
+                .where('group.id = :groupId', { groupId })
+                .andWhere('group.tenant.id = :tenantId', { tenantId })
+                .getOne();
+
+            if (!group) {
+                throw new NotFoundError(`Group not found or does not belong to tenant: ${groupId}`);
+            }
+
+            for (const sharedService of sharedServices) {
+                const { id: sharedServiceId, sharedServiceRoles } = sharedService;
+
+                const tenantSharedService = await transactionEntityManager
+                    .createQueryBuilder('TenantSharedService', 'tss')
+                    .leftJoinAndSelect('tss.sharedService', 'ss')
+                    .where('tss.tenant.id = :tenantId', { tenantId })
+                    .andWhere('tss.sharedService.id = :sharedServiceId', { sharedServiceId })
+                    .andWhere('tss.isDeleted = :isDeleted', { isDeleted: false })
+                    .getOne();
+
+                if (!tenantSharedService) {
+                    throw new NotFoundError(`Shared service not found or not associated with tenant: ${sharedServiceId}`);
+                }
+
+                for (const role of sharedServiceRoles) {
+                    const { id: sharedServiceRoleId, isSet } = role;
+
+                    const sharedServiceRole = await transactionEntityManager
+                        .createQueryBuilder('SharedServiceRole', 'ssr')
+                        .where('ssr.id = :id', { id: sharedServiceRoleId })
+                        .andWhere('ssr.sharedService.id = :sharedServiceId', { sharedServiceId })
+                        .andWhere('ssr.isDeleted = :isDeleted', { isDeleted: false })
+                        .getOne();
+
+                    if (!sharedServiceRole) {
+                        throw new NotFoundError(`Shared service role not found: ${sharedServiceRoleId}`);
+                    }
+
+                    const existingAssignment = await transactionEntityManager
+                        .createQueryBuilder('GroupSharedServiceRole', 'gssr')
+                        .where('gssr.group.id = :groupId', { groupId })
+                        .andWhere('gssr.sharedServiceRole.id = :sharedServiceRoleId', { sharedServiceRoleId })
+                        .getOne();
+
+                    if (isSet) {
+                        if (!existingAssignment) {
+
+                            const newAssignment = new GroupSharedServiceRole();
+                            newAssignment.group = { id: groupId } as any;
+                            newAssignment.sharedServiceRole = { id: sharedServiceRoleId } as any;
+                            newAssignment.isDeleted = false;
+                            newAssignment.createdBy = ssoUserId;
+                            newAssignment.updatedBy = ssoUserId;
+                            await transactionEntityManager.save(newAssignment);
+                        } else if (existingAssignment.isDeleted) {
+
+                            await transactionEntityManager
+                                .createQueryBuilder()
+                                .update('GroupSharedServiceRole')
+                                .set({
+                                    isDeleted: false,
+                                    updatedBy: ssoUserId
+                                })
+                                .where('id = :id', { id: existingAssignment.id })
+                                .execute();
+                        }
+                    } else {
+                        if (existingAssignment && !existingAssignment.isDeleted) {
+                            await transactionEntityManager
+                                .createQueryBuilder()
+                                .update('GroupSharedServiceRole')
+                                .set({
+                                    isDeleted: true,
+                                    updatedBy: ssoUserId
+                                })
+                                .where('id = :id', { id: existingAssignment.id })
+                                .execute();
+                        }
+                    }
+                }
+            }
+        });
+
+        return await this.getSharedServiceRolesForGroup(req)
+    }
 } 
