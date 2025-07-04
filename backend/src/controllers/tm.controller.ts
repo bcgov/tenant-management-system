@@ -133,4 +133,23 @@ export class TMController {
             }
         }
     }
+
+    public async updateSharedServiceRolesForGroup(req: Request, res: Response) {
+        try {
+            const sharedServiceRolesResponse = await this.tmService.updateSharedServiceRolesForGroup(req)
+            res.status(200).send(sharedServiceRolesResponse)
+        } 
+        catch(error) {
+            logger.error(error)
+            if (error instanceof NotFoundError) {
+                this.errorHandler.generalError(res, "Error occurred updating shared service roles for group", error.message, error.statusCode, "Not Found")
+            }
+            else if (error instanceof ConflictError) {
+                this.errorHandler.generalError(res, "Error occurred updating shared service roles for group", error.message, error.statusCode, "Conflict")
+            }
+            else {
+                this.errorHandler.generalError(res, "Error occurred updating shared service roles for group", error.message, 500, "Internal Server Error")
+            }
+        }
+    }
 } 
