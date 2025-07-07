@@ -57,6 +57,7 @@ async function handleAddUser(user: User) {
   try {
     if (tenant.value) {
       await tenantStore.addTenantUser(tenant.value, user)
+      searchResults.value = []
       addNotification('User added successfully')
     }
   } catch (error) {
@@ -72,6 +73,10 @@ async function handleAddUser(user: User) {
 
     searchResults.value = []
   }
+}
+
+async function handleClearSearch() {
+  searchResults.value = []
 }
 
 async function handleRemoveRole({
@@ -93,7 +98,7 @@ async function handleRemoveRole({
 
     // Refresh local tenant data to reflect role removal
     tenant.value = await tenantStore.fetchTenant(tenant.value.id)
-  } catch (error) {
+  } catch {
     addNotification('Failed to remove user role', 'error')
   }
 }
@@ -102,7 +107,7 @@ async function handleUserSearch(query: Record<string, string>) {
   loadingSearch.value = true
   try {
     searchResults.value = await userStore.searchIdirUsers(query)
-  } catch (error) {
+  } catch {
     addNotification('User search failed', 'error')
     searchResults.value = []
   } finally {
@@ -171,6 +176,7 @@ async function handleUpdateTenant(updatedTenant: Partial<Tenant>) {
               :tenant="tenant"
               @add="handleAddUser"
               @cancel="searchResults = []"
+              @clear-search="handleClearSearch"
               @remove-role="handleRemoveRole"
               @search="handleUserSearch"
             />
