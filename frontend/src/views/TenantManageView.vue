@@ -10,7 +10,6 @@ import { useNotification } from '@/composables'
 import { DomainError, DuplicateEntityError } from '@/errors'
 import { Tenant, User } from '@/models'
 import { useRoleStore, useTenantStore, useUserStore } from '@/stores'
-import { logger } from '@/utils/logger'
 import BaseSecureView from '@/views/BaseSecureView.vue'
 
 const route = useRoute()
@@ -61,7 +60,6 @@ async function handleAddUser(user: User) {
       addNotification('User added successfully')
     }
   } catch (error) {
-    logger.error('Failed to add user', error)
     if (error instanceof DuplicateEntityError) {
       addNotification(
         `Cannot add user "${user.ssoUser.displayName}": already a user in ` +
@@ -96,8 +94,6 @@ async function handleRemoveRole({
     // Refresh local tenant data to reflect role removal
     tenant.value = await tenantStore.fetchTenant(tenant.value.id)
   } catch (error) {
-    logger.error('Failed to remove user role', error)
-
     addNotification('Failed to remove user role', 'error')
   }
 }
@@ -107,7 +103,6 @@ async function handleUserSearch(query: Record<string, string>) {
   try {
     searchResults.value = await userStore.searchIdirUsers(query)
   } catch (error) {
-    logger.error('User search failed', error)
     addNotification('User search failed', 'error')
     searchResults.value = []
   } finally {
@@ -133,7 +128,6 @@ async function handleUpdateTenant(updatedTenant: Partial<Tenant>) {
     } else {
       // Otherwise display a generic error message.
       addNotification('Failed to update the tenant', 'error')
-      logger.error('Failed to update the tenant', error)
     }
   }
 }
