@@ -72,7 +72,7 @@ defineExpose({ reset })
 
   <v-row v-if="results.length || loading">
     <v-col cols="12">
-      <h2 class="my-6">Search Results</h2>
+      <h4 class="my-6">Search Results</h4>
 
       <v-data-table
         v-model="selectedUser"

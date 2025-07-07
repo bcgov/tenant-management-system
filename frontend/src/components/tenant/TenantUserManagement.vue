@@ -215,9 +215,9 @@ function handleConfirmCancel() {
       <div v-if="showSearch">
         <v-divider class="my-12" />
 
-        <h2 class="mb-4">Add a user to this Tenant</h2>
+        <h4 class="mb-4">Add a user to this Tenant</h4>
 
-        <p class="text-subtitle-1 mb-2 mt-8">
+        <p class="mb-2 mt-8">
           1. Search for a user based on the selection criteria below:
         </p>
 
@@ -232,9 +232,7 @@ function handleConfirmCancel() {
 
           <v-row v-if="selectedUser" class="mt-4">
             <v-col cols="12">
-              <p class="text-subtitle-1 mb-2">
-                2. Assign role(s) to this user:
-              </p>
+              <p class="mb-2">2. Assign role(s) to this user:</p>
 
               <v-checkbox
                 v-for="role in roles"

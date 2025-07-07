@@ -43,14 +43,18 @@ const createdDate = computed(() => {
       </v-col>
       <v-col class="d-flex align-center justify-end" cols="12" sm="6">
         <div class="me-4">
-          Date Created:
-          <span class="text-no-wrap">
-            <strong>{{ createdDate }}</strong>
-          </span>
+          <p>
+            Date Created:
+            <span class="text-no-wrap">
+              <strong>{{ createdDate }}</strong>
+            </span>
+          </p>
         </div>
         <div class="me-4">
-          Created By:
-          <strong>{{ tenant?.createdBy }}</strong>
+          <p>
+            Created By:
+            <strong>{{ tenant?.createdBy }}</strong>
+          </p>
         </div>
         <v-btn
           rounded="lg"
