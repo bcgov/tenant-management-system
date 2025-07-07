@@ -34,6 +34,7 @@ const bcgovLight: ThemeDefinition = {
 
     // Custom colours.
     'surface-input-disabled': tokens.surfaceColorFormsDisabled,
+    'surface-light-blue': tokens.surfaceColorBackgroundLightBlue,
     'surface-light-gray': tokens.surfaceColorBackgroundLightGray,
     'typography-input-disabled': tokens.typographyColorDisabled,
     'typography-link-color': tokens.typographyColorLink,

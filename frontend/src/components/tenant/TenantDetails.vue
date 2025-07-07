@@ -116,7 +116,7 @@ function toggleEdit() {
 </script>
 
 <template>
-  <div v-if="tenant" class="bg-grey-lighten-5">
+  <div v-if="tenant" class="bg-surface-light-gray">
     <v-row class="pa-4" no-gutters>
       <!-- Form content -->
       <v-col cols="12" lg="10">
