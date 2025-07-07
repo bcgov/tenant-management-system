@@ -16,7 +16,7 @@ export class User {
     lastName: string,
     displayName: string,
     email: string | undefined,
-    roles: Role[],
+    roles: Role[] = [], // Default to empty array
   ) {
     this.id = id
     this.displayName = displayName
@@ -24,7 +24,7 @@ export class User {
     this.firstName = firstName
     this.lastName = lastName
     this.userName = userName
-    this.roles = roles
+    this.roles = Array.isArray(roles) ? roles : []
   }
 
   static fromApiData(apiData: {
@@ -36,8 +36,12 @@ export class User {
       lastName: string
       userName: string
     }
-    roles: []
+    roles?: any[]
   }): User {
+    const roles = Array.isArray(apiData.roles)
+      ? apiData.roles.map(Role.fromApiData)
+      : []
+
     return new User(
       apiData.id,
       apiData.ssoUser.userName,
@@ -45,7 +49,7 @@ export class User {
       apiData.ssoUser.lastName,
       apiData.ssoUser.displayName,
       apiData.ssoUser.email,
-      apiData.roles.map(Role.fromApiData),
+      roles,
     )
   }
 

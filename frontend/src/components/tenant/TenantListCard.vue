@@ -20,7 +20,7 @@ const emit = defineEmits<{
 }>()
 
 const owner = computed(() => {
-  return tenant.getOwners()?.[0]
+  return tenant.getFirstOwner()
 })
 </script>
 

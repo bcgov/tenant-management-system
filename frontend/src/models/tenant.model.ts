@@ -68,7 +68,7 @@ export class Tenant {
     this.id = id
     this.name = name
     this.ministryName = ministryName
-    this.users = users
+    this.users = Array.isArray(users) ? users : []
   }
 
   /**
@@ -97,7 +97,9 @@ export class Tenant {
     ministryName: string
     users: any[]
   }): Tenant {
-    const users = apiData.users?.map(User.fromApiData)
+    const users = Array.isArray(apiData.users)
+      ? apiData.users.map(User.fromApiData)
+      : []
 
     return new Tenant(
       apiData.createdBy,
@@ -111,24 +113,23 @@ export class Tenant {
   }
 
   /**
-   * Gets all users with the TENANT_OWNER role for this tenant.
+   * Returns the first user with the TENANT_OWNER role for this tenant.
    *
-   * @returns An array of Users who are owners. Returns empty array if:
-   *   - users property is not an array
-   *   - no users have the TENANT_OWNER role
-   *   - users don't have a roles array
+   * @returns The first User who is an owner, or undefined if no owners exist.
+   */
+  getFirstOwner(): User | undefined {
+    return this.getOwners()[0]
+  }
+
+  /**
+   * Returns all users with the TENANT_OWNER role for this tenant.
+   *
+   * @returns An array of Users who are owners. Returns an empty array if no
+   *   users have the TENANT_OWNER role.
    */
   getOwners(): User[] {
-    if (!Array.isArray(this.users)) {
-      return []
-    }
-
-    // TODO - the must be a better way of doing this; matching on string name is
-    // not ideal.
-    return this.users.filter(
-      (user) =>
-        Array.isArray(user.roles) &&
-        user.roles.some((role) => role.name === ROLES.TENANT_OWNER.value),
+    return this.users.filter((user) =>
+      user.roles.some((role) => role.name === ROLES.TENANT_OWNER.value),
     )
   }
 }
