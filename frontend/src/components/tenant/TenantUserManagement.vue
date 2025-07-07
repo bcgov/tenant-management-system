@@ -18,7 +18,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (event: 'add', user: User): void
-  (event: 'cancel'): void
+  (event: 'cancel' | 'clear-search'): void
   (event: 'remove-role', payload: { userId: string; roleId: string }): void
   (event: 'search', query: Record<string, string>): void
 }>()
@@ -62,6 +62,10 @@ function toggleSearch() {
 
 function onUserSelected(user: User) {
   selectedUser.value = user
+}
+
+function onClearSearch() {
+  emit('clear-search')
 }
 
 function onSearch(query: Record<string, string>) {
@@ -166,9 +170,14 @@ function handleConfirmCancel() {
             class: 'text-body-1 font-weight-bold bg-surface-light',
           }"
           :headers="[
-            { title: 'Name', key: 'displayName', align: 'start' },
-            { title: 'TMS Roles', key: 'roles', align: 'start' },
-            { title: 'Email', key: 'email', align: 'start' },
+            { title: 'Name', key: 'ssoUser.displayName', align: 'start' },
+            {
+              title: 'TMS Roles',
+              key: 'roles',
+              align: 'start',
+              sortable: false,
+            },
+            { title: 'Email', key: 'ssoUser.email', align: 'start' },
           ]"
           :items="tenant?.users || []"
           :sort-by="[{ key: 'displayName', order: 'asc' }]"
@@ -226,6 +235,7 @@ function handleConfirmCancel() {
             :loading="loadingSearch"
             :results="searchResults"
             :tenant-id="tenant.id"
+            @clear-search="onClearSearch"
             @search="onSearch"
             @select="onUserSelected"
           />

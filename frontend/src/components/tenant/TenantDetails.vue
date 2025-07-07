@@ -4,7 +4,6 @@ import { VForm } from 'vuetify/components'
 
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
-import { useNotification } from '@/composables'
 import type { Tenant } from '@/models'
 import { MINISTRIES } from '@/utils/constants'
 
@@ -72,19 +71,8 @@ watch(
   },
 )
 
-const { addNotification } = useNotification()
-
 const owner = computed(() => {
-  if (!props.tenant?.users?.length) {
-    addNotification(
-      `Critical: Tenant "${props.tenant?.name}" has no users assigned`,
-      'error',
-    )
-
-    return null
-  }
-
-  return props.tenant.users[0] // TODO - this isn't right.
+  return props.tenant?.getFirstOwner()
 })
 
 async function handleSubmit() {
@@ -163,7 +151,7 @@ function toggleEdit() {
           <v-row>
             <v-col cols="12" md="6">
               <v-text-field
-                :model-value="owner?.userName ?? 'No owner assigned'"
+                :model-value="owner?.ssoUser.userName ?? 'No owner assigned'"
                 label="Tenant Owner"
                 disabled
               />

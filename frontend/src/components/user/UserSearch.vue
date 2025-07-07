@@ -11,6 +11,7 @@ defineProps<{
 }>()
 
 const emit = defineEmits<{
+  (event: 'clear-search'): void
   (event: 'select', user: User): void
   (event: 'search', query: Record<string, string>): void
 }>()
@@ -25,6 +26,10 @@ const SEARCH_OPTIONS = [
   { title: 'Last Name', value: 'lastName' },
   { title: 'Email', value: 'email' },
 ] as const
+
+watch([searchOption, searchText], () => {
+  emit('clear-search')
+})
 
 // Emit when a user is selected
 watch(selectedUser, (selection) => {
@@ -80,12 +85,13 @@ defineExpose({ reset })
           class: 'text-body-1 font-weight-bold bg-surface-light',
         }"
         :headers="[
-          { title: 'First Name', key: 'firstName', align: 'start' },
-          { title: 'Last Name', key: 'lastName', align: 'start' },
-          { title: 'Email', key: 'email', align: 'start' },
+          { title: 'First Name', key: 'ssoUser.firstName', align: 'start' },
+          { title: 'Last Name', key: 'ssoUser.lastName', align: 'start' },
+          { title: 'Email', key: 'ssoUser.email', align: 'start' },
         ]"
         :items="results"
         :loading="loading"
+        :sort-by="[{ key: `ssoUser.${searchOption}`, order: 'asc' }]"
         select-strategy="single"
         return-object
         show-select

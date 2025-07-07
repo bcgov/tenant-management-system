@@ -10,7 +10,6 @@ import { useNotification } from '@/composables'
 import { DomainError, DuplicateEntityError } from '@/errors'
 import { Tenant } from '@/models'
 import { useAuthStore, useTenantStore } from '@/stores'
-import { logger } from '@/utils/logger'
 import BaseSecureView from '@/views/BaseSecureView.vue'
 
 // Router
@@ -42,9 +41,8 @@ const closeDialog = () => {
 onMounted(async () => {
   try {
     await tenantStore.fetchTenants(authStore.user?.id || '')
-  } catch (error) {
+  } catch {
     addNotification('Failed to fetch tenants', 'error')
-    logger.error('Failed to fetch tenants', error)
   }
 })
 
@@ -72,7 +70,6 @@ const handleTenantSubmit = async ({
     } else {
       // Otherwise display a generic error message.
       addNotification('Failed to create the new tenant', 'error')
-      logger.error('Failed to create the new tenant', error)
     }
   }
 }

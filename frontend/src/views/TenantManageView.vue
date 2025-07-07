@@ -10,7 +10,6 @@ import { useNotification } from '@/composables'
 import { DomainError, DuplicateEntityError } from '@/errors'
 import { Tenant, User } from '@/models'
 import { useRoleStore, useTenantStore, useUserStore } from '@/stores'
-import { logger } from '@/utils/logger'
 import BaseSecureView from '@/views/BaseSecureView.vue'
 
 const route = useRoute()
@@ -58,13 +57,14 @@ async function handleAddUser(user: User) {
   try {
     if (tenant.value) {
       await tenantStore.addTenantUser(tenant.value, user)
+      searchResults.value = []
       addNotification('User added successfully')
     }
   } catch (error) {
-    logger.error('Failed to add user', error)
     if (error instanceof DuplicateEntityError) {
       addNotification(
-        `Cannot add user "${user.displayName}": already a user in this tenant`,
+        `Cannot add user "${user.ssoUser.displayName}": already a user in ` +
+          `this tenant`,
         'error',
       )
     } else {
@@ -73,6 +73,10 @@ async function handleAddUser(user: User) {
 
     searchResults.value = []
   }
+}
+
+async function handleClearSearch() {
+  searchResults.value = []
 }
 
 async function handleRemoveRole({
@@ -94,9 +98,7 @@ async function handleRemoveRole({
 
     // Refresh local tenant data to reflect role removal
     tenant.value = await tenantStore.fetchTenant(tenant.value.id)
-  } catch (error) {
-    logger.error('Failed to remove user role', error)
-
+  } catch {
     addNotification('Failed to remove user role', 'error')
   }
 }
@@ -105,8 +107,7 @@ async function handleUserSearch(query: Record<string, string>) {
   loadingSearch.value = true
   try {
     searchResults.value = await userStore.searchIdirUsers(query)
-  } catch (error) {
-    logger.error('User search failed', error)
+  } catch {
     addNotification('User search failed', 'error')
     searchResults.value = []
   } finally {
@@ -131,8 +132,7 @@ async function handleUpdateTenant(updatedTenant: Partial<Tenant>) {
       addNotification(error.userMessage, 'error')
     } else {
       // Otherwise display a generic error message.
-      addNotification('Failed to udpate the tenant', 'error')
-      logger.error('Failed to update the tenant', error)
+      addNotification('Failed to update the tenant', 'error')
     }
   }
 }
@@ -176,6 +176,7 @@ async function handleUpdateTenant(updatedTenant: Partial<Tenant>) {
               :tenant="tenant"
               @add="handleAddUser"
               @cancel="searchResults = []"
+              @clear-search="handleClearSearch"
               @remove-role="handleRemoveRole"
               @search="handleUserSearch"
             />
