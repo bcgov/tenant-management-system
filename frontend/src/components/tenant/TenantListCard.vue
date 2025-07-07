@@ -35,8 +35,8 @@ const owner = computed(() => {
       <p>{{ tenant.ministryName }}</p>
     </v-card-subtitle>
     <v-card-text v-if="owner">
-      <p class="p-small">Tenant Owner: {{ owner.displayName }}</p>
-      <p class="p-small">{{ owner.email }}</p>
+      <p class="p-small">Tenant Owner: {{ owner.ssoUser.displayName }}</p>
+      <p class="p-small">{{ owner.ssoUser.email }}</p>
     </v-card-text>
   </v-card>
 </template>

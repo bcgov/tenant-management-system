@@ -80,9 +80,9 @@ defineExpose({ reset })
           class: 'text-body-1 font-weight-bold bg-surface-light',
         }"
         :headers="[
-          { title: 'First Name', key: 'firstName', align: 'start' },
-          { title: 'Last Name', key: 'lastName', align: 'start' },
-          { title: 'Email', key: 'email', align: 'start' },
+          { title: 'First Name', key: 'ssoUser.firstName', align: 'start' },
+          { title: 'Last Name', key: 'ssoUser.lastName', align: 'start' },
+          { title: 'Email', key: 'ssoUser.email', align: 'start' },
         ]"
         :items="results"
         :loading="loading"

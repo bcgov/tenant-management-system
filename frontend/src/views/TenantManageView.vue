@@ -64,7 +64,8 @@ async function handleAddUser(user: User) {
     logger.error('Failed to add user', error)
     if (error instanceof DuplicateEntityError) {
       addNotification(
-        `Cannot add user "${user.displayName}": already a user in this tenant`,
+        `Cannot add user "${user.ssoUser.displayName}": already a user in ` +
+          `this tenant`,
         'error',
       )
     } else {
@@ -131,7 +132,7 @@ async function handleUpdateTenant(updatedTenant: Partial<Tenant>) {
       addNotification(error.userMessage, 'error')
     } else {
       // Otherwise display a generic error message.
-      addNotification('Failed to udpate the tenant', 'error')
+      addNotification('Failed to update the tenant', 'error')
       logger.error('Failed to update the tenant', error)
     }
   }

@@ -27,7 +27,7 @@ const formValid = ref(false)
 const ministryName = ref('')
 const name = ref('')
 const authStore = useAuthStore()
-const username = computed(() => authStore.user?.displayName || '')
+const username = computed(() => authStore.user?.ssoUser.displayName || '')
 
 // Clear the state when the dialog is opened. This is for the case that the
 // user opens the dialog, enters data, cancels, and opens it again - the form

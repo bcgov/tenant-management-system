@@ -4,6 +4,7 @@ import { defineStore } from 'pinia'
 import { User } from '@/models'
 import { config, configLoaded } from '@/services/config.service'
 import { logger } from '@/utils/logger'
+import { SsoUser } from '@/models/ssouser.model'
 
 let refreshTimer: number | undefined
 
@@ -39,6 +40,7 @@ export const useAuthStore = defineStore('auth', {
 
     /**
      * The Keycloak instance used for authentication.
+     * TODO: This never should have been allowed to be null. Fix it.
      */
     keycloak: null as Keycloak | null,
 
@@ -114,6 +116,7 @@ export const useAuthStore = defineStore('auth', {
           throw new Error('Configuration not loaded')
         }
 
+        // TODO - not sure why this was committed, but it needs to be fixed.
         if (!this.keycloak) {
           this.keycloak = new Keycloak({
             clientId: config.oidc.clientId,
@@ -199,15 +202,16 @@ export const useAuthStore = defineStore('auth', {
         return null
       }
 
-      return new User(
+      const ssoUser = new SsoUser(
         parsed.idir_user_guid,
         parsed.idir_username,
         parsed.given_name,
         parsed.family_name,
         parsed.display_name,
         parsed.email,
-        [], // No roles from the JWT - those need to come from the database.
       )
+
+      return new User(parsed.idir_user_guid, ssoUser, [])
     },
 
     /**

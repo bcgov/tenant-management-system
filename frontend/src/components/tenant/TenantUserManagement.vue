@@ -166,9 +166,9 @@ function handleConfirmCancel() {
             class: 'text-body-1 font-weight-bold bg-surface-light',
           }"
           :headers="[
-            { title: 'Name', key: 'displayName', align: 'start' },
+            { title: 'Name', key: 'ssoUser.displayName', align: 'start' },
             { title: 'TMS Roles', key: 'roles', align: 'start' },
-            { title: 'Email', key: 'email', align: 'start' },
+            { title: 'Email', key: 'ssoUser.email', align: 'start' },
           ]"
           :items="tenant?.users || []"
           :sort-by="[{ key: 'displayName', order: 'asc' }]"
