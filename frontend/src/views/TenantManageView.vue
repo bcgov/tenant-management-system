@@ -158,6 +158,8 @@ async function handleUpdateTenant(updatedTenant: Partial<Tenant>) {
       <!-- Inlined Tabs -->
       <v-card class="mt-6" elevation="0">
         <v-tabs v-model="tab" :disabled="isEditing" :mandatory="false">
+          <!-- The v-tabs component insists on always having an active tab. Use
+           an invisible Tab 0 to make v-tabs happy. -->
           <v-tab :value="0" class="pa-0 ma-0" style="min-width: 0px" />
           <v-tab :value="1">User Management</v-tab>
           <v-tab :value="2">Available Services</v-tab>

@@ -1,4 +1,4 @@
-import * as tokens from '@bcgov/design-tokens/js'
+import * as tokens from '@bcgov/design-tokens/js-prefixed'
 import { createVuetify, type ThemeDefinition } from 'vuetify'
 import * as components from 'vuetify/components'
 import * as directives from 'vuetify/directives'
@@ -11,33 +11,34 @@ const bcgovLight: ThemeDefinition = {
     // Set both the background and surface to the default white background from
     // the design tokens. Vuetify uses 'background' for the app-level background
     // and 'surface' for container-level elements like cards.
-    background: tokens.surfaceColorBackgroundWhite,
-    surface: tokens.surfaceColorBackgroundWhite,
-    'on-surface': tokens.typographyColorPrimary,
+    background: tokens.bcdsSurfaceColorBackgroundWhite,
+    surface: tokens.bcdsSurfaceColorBackgroundWhite,
+    'on-surface': tokens.bcdsTypographyColorPrimary,
 
     // Colours for primary button.
-    primary: tokens.themePrimaryBlue,
-    'primary-hover': tokens.surfaceColorPrimaryButtonHover,
+    primary: tokens.bcdsThemePrimaryBlue,
+    'primary-hover': tokens.bcdsSurfaceColorPrimaryButtonHover,
 
     // Colours for secondary button - note that these are overridden because the
     // BCGov design system conflicts with Vuetify's secondary button styles.
-    secondary: tokens.surfaceColorSecondaryDefault,
-    'on-secondary': tokens.typographyColorSecondary,
-    'secondary-disabled': tokens.surfaceColorSecondaryButtonDisabled,
-    'secondary-hover': tokens.surfaceColorSecondaryButtonHover,
+    secondary: tokens.bcdsSurfaceColorSecondaryDefault,
+    'on-secondary': tokens.bcdsTypographyColorSecondary,
+    'secondary-disabled': tokens.bcdsSurfaceColorSecondaryButtonDisabled,
+    'secondary-hover': tokens.bcdsSurfaceColorSecondaryButtonHover,
 
     // Colours for application notifications.
-    error: tokens.supportBorderColorDanger,
-    info: tokens.supportBorderColorInfo,
-    success: tokens.supportBorderColorSuccess,
-    warning: tokens.supportBorderColorWarning,
+    error: tokens.bcdsSupportBorderColorDanger,
+    info: tokens.bcdsSupportBorderColorInfo,
+    success: tokens.bcdsSupportBorderColorSuccess,
+    warning: tokens.bcdsSupportBorderColorWarning,
 
     // Custom colours.
-    'surface-input-disabled': tokens.surfaceColorFormsDisabled,
-    'surface-light-gray': tokens.surfaceColorBackgroundLightGray,
-    'typography-input-disabled': tokens.typographyColorDisabled,
-    'typography-link-color': tokens.typographyColorLink,
-    'typography-link-color-hover': tokens.surfaceColorBorderActive,
+    'surface-input-disabled': tokens.bcdsSurfaceColorFormsDisabled,
+    'surface-light-blue': tokens.bcdsSurfaceColorBackgroundLightBlue,
+    'surface-light-gray': tokens.bcdsSurfaceColorBackgroundLightGray,
+    'typography-input-disabled': tokens.bcdsTypographyColorDisabled,
+    'typography-link-color': tokens.bcdsTypographyColorLink,
+    'typography-link-color-hover': tokens.bcdsSurfaceColorBorderActive,
   },
 
   dark: false,
@@ -67,7 +68,7 @@ const vuetify = createVuetify({
   // Use BC Sans for everything by default.
   defaults: {
     global: {
-      style: `font-family: ${tokens.typographyFontFamiliesBcSans} !important`,
+      style: `font-family: ${tokens.bcdsTypographyFontFamiliesBcSans} !important`,
     },
   },
 })

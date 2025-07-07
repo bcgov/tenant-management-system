@@ -36,21 +36,25 @@ const createdDate = computed(() => {
 </script>
 
 <template>
-  <v-sheet class="bg-blue-lighten-5">
+  <v-sheet color="surface-light-blue">
     <v-row align="center" class="pa-4" no-gutters>
       <v-col cols="12" sm="6">
-        <h1>Tenant Details</h1>
+        <h2>Tenant Details</h2>
       </v-col>
       <v-col class="d-flex align-center justify-end" cols="12" sm="6">
         <div class="me-4">
-          Date Created:
-          <span class="text-no-wrap">
-            <strong>{{ createdDate }}</strong>
-          </span>
+          <p>
+            Date Created:
+            <span class="text-no-wrap">
+              <strong>{{ createdDate }}</strong>
+            </span>
+          </p>
         </div>
         <div class="me-4">
-          Created By:
-          <strong>{{ tenant?.createdBy }}</strong>
+          <p>
+            Created By:
+            <strong>{{ tenant?.createdBy }}</strong>
+          </p>
         </div>
         <v-btn
           rounded="lg"

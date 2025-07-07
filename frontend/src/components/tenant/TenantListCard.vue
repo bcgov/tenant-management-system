@@ -28,13 +28,15 @@ const owner = computed(() => {
   <v-card class="hoverable" color="surface-light-gray" @click="emit('click')">
     <v-card-title>
       <span class="card-link">
-        {{ tenant.name }}
+        <h6>{{ tenant.name }}</h6>
       </span>
     </v-card-title>
-    <v-card-subtitle>{{ tenant.ministryName }}</v-card-subtitle>
+    <v-card-subtitle>
+      <p>{{ tenant.ministryName }}</p>
+    </v-card-subtitle>
     <v-card-text v-if="owner">
-      <p>Tenant Owner: {{ owner.displayName }}</p>
-      <p>{{ owner.email }}</p>
+      <p class="p-small">Tenant Owner: {{ owner.displayName }}</p>
+      <p class="p-small">{{ owner.email }}</p>
     </v-card-text>
   </v-card>
 </template>
