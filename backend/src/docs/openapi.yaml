@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
-  title: Tenancy Management System API
-  description: API for managing tenants in the Tenancy Management System
+  title: Tenant Management System API
+  description: API for managing tenants in the Tenant Management System
   version: 1.0.0
 servers:
   - url: http://localhost:4144
