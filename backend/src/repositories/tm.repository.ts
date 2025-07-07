@@ -480,8 +480,8 @@ export class TMRepository {
                 name: ssr.name,
                 description: ssr.description,
                 enabled: raw.enabled === 'true' || raw.enabled === true,
-                createdDateTime: raw.assignedAt ? new Date(raw.assignedAt).toISOString().split('T')[0] : null,
-                createdBy: raw.assignedBy || null
+                createdDateTime: ssr.createdDateTime,
+                createdBy: ssr.createdBy
             });
         });
 
