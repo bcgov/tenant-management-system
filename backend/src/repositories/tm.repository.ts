@@ -442,7 +442,7 @@ export class TMRepository {
             .leftJoin('TenantSharedService', 'tss', 'ss.id = tss.sharedService.id')
             .leftJoin('GroupSharedServiceRole', 'gssr', 
                 'ssr.id = gssr.sharedServiceRole.id AND gssr.group.id = :groupId AND gssr.isDeleted = :gssrDeleted')
-            .addSelect('CASE WHEN gssr.id IS NOT NULL THEN true ELSE false END', 'isSet')
+            .addSelect('CASE WHEN gssr.id IS NOT NULL THEN true ELSE false END', 'enabled')
             .addSelect('gssr.createdDateTime', 'assignedAt')
             .addSelect('gssr.createdBy', 'assignedBy')
             .where('tss.tenant.id = :tenantId', { tenantId })
@@ -479,8 +479,8 @@ export class TMRepository {
                 id: ssr.id,
                 name: ssr.name,
                 description: ssr.description,
-                isSet: raw.isSet === 'true' || raw.isSet === true,
-                createdDateTime: raw.assignedAt ? new Date(raw.assignedAt) : null,
+                enabled: raw.enabled === 'true' || raw.enabled === true,
+                createdDateTime: raw.assignedAt ? new Date(raw.assignedAt).toISOString().split('T')[0] : null,
                 createdBy: raw.assignedBy || null
             });
         });
@@ -525,7 +525,7 @@ export class TMRepository {
                 }
 
                 for (const role of sharedServiceRoles) {
-                    const { id: sharedServiceRoleId, isSet } = role;
+                    const { id: sharedServiceRoleId, enabled } = role;
 
                     const sharedServiceRole = await transactionEntityManager
                         .createQueryBuilder('SharedServiceRole', 'ssr')
@@ -544,7 +544,7 @@ export class TMRepository {
                         .andWhere('gssr.sharedServiceRole.id = :sharedServiceRoleId', { sharedServiceRoleId })
                         .getOne();
 
-                    if (isSet) {
+                    if (enabled) {
                         if (!existingAssignment) {
 
                             const newAssignment = new GroupSharedServiceRole();

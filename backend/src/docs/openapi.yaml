@@ -1772,7 +1772,7 @@ paths:
                                   description:
                                     type: string
                                     example: "Administrative role for the service"
-                                  isSet:
+                                  enabled:
                                     type: boolean
                                     example: true
                                   createdDateTime:
@@ -1845,34 +1845,39 @@ paths:
                 - sharedServices
               properties:
                 sharedServices:
-                  type: object
-                  additionalProperties:
+                  type: array
+                  items:
                     type: object
                     required:
+                      - id
                       - sharedServiceRoles
                     properties:
+                      id:
+                        type: string
+                        format: uuid
+                        example: "c6c23ac7-f0bf-4025-bcf5-416dd397b4ee"
                       sharedServiceRoles:
                         type: array
                         items:
                           type: object
                           required:
                             - id
-                            - isSet
+                            - enabled
                           properties:
                             id:
                               type: string
                               format: uuid
-                              example: "c6c23ac7-f0bf-4025-bcf5-416dd397b4ee"
-                            isSet:
+                              example: "5deaa72d-417e-4508-b4d8-3e3e4cf6572a"
+                            enabled:
                               type: boolean
                               example: false
                   example:
                     - id: "c6c23ac7-f0bf-4025-bcf5-416dd397b4ee"
                       sharedServiceRoles:
                         - id: "5deaa72d-417e-4508-b4d8-3e3e4cf6572a"
-                          isSet: false
+                          enabled: false
                         - id: "7ec4f5aa-b5d6-4668-a450-09b3f18e6622"
-                          isSet: true
+                          enabled: true
       responses:
         '200':
           description: Shared service roles for the group successfully updated
@@ -1885,8 +1890,8 @@ paths:
                     type: object
                     properties:
                       sharedServices:
-                        type: object
-                        additionalProperties:
+                        type: array
+                        items:
                           type: object
                           properties:
                             id:
@@ -1928,7 +1933,7 @@ paths:
                                   description:
                                     type: string
                                     example: "Administrative role for the service"
-                                  isSet:
+                                  enabled:
                                     type: boolean
                                     example: true
                                   createdDateTime:
