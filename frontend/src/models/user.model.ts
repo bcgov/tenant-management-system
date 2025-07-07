@@ -15,7 +15,7 @@ export class User {
   static fromApiData(apiData: {
     id: string
     ssoUser: SsoUser
-    roles?: any[]
+    roles?: Role[]
   }): User {
     const roles = Array.isArray(apiData.roles)
       ? apiData.roles.map(Role.fromApiData)

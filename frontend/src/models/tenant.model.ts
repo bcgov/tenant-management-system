@@ -95,7 +95,7 @@ export class Tenant {
     id: string
     name: string
     ministryName: string
-    users: any[]
+    users: User[]
   }): Tenant {
     const users = Array.isArray(apiData.users)
       ? apiData.users.map(User.fromApiData)
