@@ -33,7 +33,9 @@ paths:
   /v1/tenants:
     post:
       summary: Create a new tenant
-      description: Creates a new tenant in the system
+      description: Creates a new tenant in the system. Requires JWT authentication.
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -109,7 +111,9 @@ paths:
   /v1/tenants/{tenantId}/users:
     post:
       summary: Add a user to a tenant
-      description: Adds a new user to an existing tenant
+      description: Adds a new user to an existing tenant. Requires JWT authentication and TENANT_OWNER or USER_ADMIN role.
+      security:
+        - bearerAuth: []
       parameters:
         - name: tenantId
           in: path
@@ -191,7 +195,9 @@ paths:
 
     get:
       summary: Get users for a tenant
-      description: Retrieves all users associated with a tenant
+      description: Retrieves all users associated with a tenant. Requires JWT authentication and tenant access.
+      security:
+        - bearerAuth: []
       parameters:
         - name: tenantId
           in: path
@@ -249,7 +255,9 @@ paths:
   /v1/users/{ssoUserId}/tenants:
     get:
       summary: Get tenants for a user
-      description: Retrieves all tenants associated with a specific user
+      description: Retrieves all tenants associated with a specific user. Requires JWT authentication.
+      security:
+        - bearerAuth: []
       parameters:
         - name: ssoUserId
           in: path
@@ -307,7 +315,9 @@ paths:
   /v1/tenants/{tenantId}/users/{tenantUserId}/roles:
     post:
       summary: Assign roles to a user in a tenant
-      description: Assigns one or more roles to a user within a tenant
+      description: Assigns one or more roles to a user within a tenant. Requires JWT authentication and TENANT_OWNER or USER_ADMIN role.
+      security:
+        - bearerAuth: []
       parameters:
         - name: tenantId
           in: path
@@ -453,7 +463,9 @@ paths:
   /v1/tenants/{tenantId}:
     get:
       summary: Get tenant details
-      description: Retrieves details of a specific tenant
+      description: Retrieves details of a specific tenant. Requires JWT authentication and tenant access.
+      security:
+        - bearerAuth: []
       parameters:
         - name: tenantId
           in: path
@@ -515,7 +527,9 @@ paths:
 
     put:
       summary: Update tenant details
-      description: Updates the details of an existing tenant
+      description: Updates the details of an existing tenant. Requires JWT authentication and TENANT_OWNER role.
+      security:
+        - bearerAuth: []
       parameters:
         - name: tenantId
           in: path
@@ -592,7 +606,9 @@ paths:
   /v1/roles:
     get:
       summary: Get all available roles
-      description: Retrieves a list of all available roles in the system
+      description: Retrieves a list of all available roles in the system. Requires JWT authentication.
+      security:
+        - bearerAuth: []
       responses:
         '200':
           description: Roles retrieved successfully
@@ -637,7 +653,7 @@ paths:
   /v1/tenant-requests:
     post:
       summary: Create a new tenant request
-      description: Creates a new request for a tenant with the specified details
+      description: Creates a new request for a tenant with the specified details. Requires JWT authentication.
       security:
         - bearerAuth: []
       requestBody:
@@ -723,7 +739,7 @@ paths:
     get:
       summary: Get all tenant requests
       description: |
-        Retrieves a list of all tenant requests. Only users with the TMS.OPERATIONS_ADMIN role can access this endpoint.
+        Retrieves a list of all tenant requests. Requires JWT authentication and TMS.OPERATIONS_ADMIN role.
         Results are ordered by request date (most recent first).
       security:
         - bearerAuth: []
@@ -812,7 +828,7 @@ paths:
       summary: Update the status of a tenant request
       description: |
         Updates the status of a tenant request. If approved, creates a new tenant.
-        Only users with the TMS.OPERATIONS_ADMIN role can perform this action.
+        Requires JWT authentication and TMS.OPERATIONS_ADMIN role.
       security:
         - bearerAuth: []
       parameters:
@@ -977,7 +993,7 @@ paths:
   /v1/shared-services:
     post:
       summary: Create a new shared service
-      description: Creates a new shared service with roles. Only operations administrators can create shared services.
+      description: Creates a new shared service with roles. Requires JWT authentication and TMS.OPERATIONS_ADMIN role.
       security:
         - bearerAuth: []
       requestBody:
@@ -1068,7 +1084,7 @@ paths:
                 $ref: '#/components/schemas/InternalServerErrorResponse'
     get:
       summary: Get all active shared services
-      description: Retrieves all shared services that are currently active. Returns shared services with their associated roles.
+      description: Retrieves all shared services that are currently active. Returns shared services with their associated roles. Requires JWT authentication.
       security:
         - bearerAuth: []
       responses:
@@ -1102,7 +1118,7 @@ paths:
   /v1/tenants/{tenantId}/shared-services:
     post:
       summary: Associate a shared service to a tenant
-      description: Associates an existing shared service with a tenant. Only tenant owners can perform this operation.
+      description: Associates an existing shared service with a tenant. Requires JWT authentication and TENANT_OWNER role.
       security:
         - bearerAuth: []
       parameters:
@@ -1167,7 +1183,7 @@ paths:
                 $ref: '#/components/schemas/InternalServerErrorResponse'
     get:
       summary: Get shared services associated with a tenant
-      description: Retrieves all shared services that are associated with a specific tenant. Returns shared services with their associated roles.
+      description: Retrieves all shared services that are associated with a specific tenant. Returns shared services with their associated roles. Requires JWT authentication and tenant access.
       security:
         - bearerAuth: []
       parameters:
@@ -1227,7 +1243,7 @@ paths:
   /v1/tenants/{tenantId}/groups:
     post:
       summary: Create a new group in a tenant
-      description: Creates a new group within a tenant. Only tenant owners and user admins can create groups.
+      description: Creates a new group within a tenant. Requires JWT authentication and TENANT_OWNER or USER_ADMIN role.
       security:
         - bearerAuth: []
       parameters:
@@ -1313,7 +1329,7 @@ paths:
 
     get:
       summary: Get all groups for a tenant
-      description: Retrieves all groups associated with a tenant
+      description: Retrieves all groups associated with a tenant. Requires JWT authentication and tenant access.
       security:
         - bearerAuth: []
       parameters:
@@ -1373,7 +1389,7 @@ paths:
   /v1/tenants/{tenantId}/groups/{groupId}:
     get:
       summary: Get a specific group in a tenant
-      description: Retrieves details of a specific group within a tenant
+      description: Retrieves details of a specific group within a tenant. Requires JWT authentication and tenant access.
       security:
         - bearerAuth: []
       parameters:
@@ -1451,7 +1467,7 @@ paths:
 
     put:
       summary: Update a group in a tenant
-      description: Updates an existing group within a tenant. Only tenant owners and user admins can update groups.
+      description: Updates an existing group within a tenant. Requires JWT authentication and TENANT_OWNER or USER_ADMIN role.
       security:
         - bearerAuth: []
       parameters:
@@ -1539,7 +1555,7 @@ paths:
   /v1/tenants/{tenantId}/groups/{groupId}/users:
     post:
       summary: Add a user to a group
-      description: Adds a user to an existing group within a tenant. Only tenant owners and user admins can add users to groups.
+      description: Adds a user to an existing group within a tenant. Requires JWT authentication and TENANT_OWNER or USER_ADMIN role.
       security:
         - bearerAuth: []
       parameters:
@@ -1621,7 +1637,7 @@ paths:
   /v1/tenants/{tenantId}/groups/{groupId}/users/{groupUserId}:
     delete:
       summary: Remove a user from a group
-      description: Removes a user from an existing group within a tenant. Only tenant owners and user admins can remove users from groups.
+      description: Removes a user from an existing group within a tenant. Requires JWT authentication and TENANT_OWNER or USER_ADMIN role.
       security:
         - bearerAuth: []
       parameters:
@@ -1681,9 +1697,9 @@ paths:
                 $ref: '#/components/schemas/InternalServerErrorResponse'
 
   /v1/tenants/{tenantId}/groups/{groupId}/shared-services/shared-service-roles:
-    put:
-      summary: Update shared service roles for a group
-      description: Bulk assign or unassign shared service roles to a group. Handles new assignments, soft deletes, and restoration of soft-deleted assignments.
+    get:
+      summary: Get shared service roles for a group
+      description: Retrieves all shared service roles for a specific group, including assignment status. Requires JWT authentication and tenant access.
       security:
         - bearerAuth: []
       parameters:
@@ -1701,47 +1717,9 @@ paths:
             type: string
             format: uuid
           description: The unique identifier of the group
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - sharedServices
-              properties:
-                sharedServices:
-                  type: object
-                  additionalProperties:
-                    type: object
-                    required:
-                      - sharedServiceRoles
-                    properties:
-                      sharedServiceRoles:
-                        type: array
-                        items:
-                          type: object
-                          required:
-                            - id
-                            - isSet
-                          properties:
-                            id:
-                              type: string
-                              format: uuid
-                              example: "c6c23ac7-f0bf-4025-bcf5-416dd397b4ee"
-                            isSet:
-                              type: boolean
-                              example: false
-                  example:
-                    - id: "c6c23ac7-f0bf-4025-bcf5-416dd397b4ee"
-                      sharedServiceRoles:
-                        - id: "5deaa72d-417e-4508-b4d8-3e3e4cf6572a"
-                          isSet: false
-                        - id: "7ec4f5aa-b5d6-4668-a450-09b3f18e6622"
-                          isSet: true
       responses:
         '200':
-          description: Shared service roles for the group successfully updated
+          description: Shared service roles for the group successfully retrieved
           content:
             application/json:
               schema:
@@ -1751,8 +1729,8 @@ paths:
                     type: object
                     properties:
                       sharedServices:
-                        type: object
-                        additionalProperties:
+                        type: array
+                        items:
                           type: object
                           properties:
                             id:
@@ -1794,7 +1772,168 @@ paths:
                                   description:
                                     type: string
                                     example: "Administrative role for the service"
-                                  isSet:
+                                  enabled:
+                                    type: boolean
+                                    example: true
+                                  createdDateTime:
+                                    type: string
+                                    format: date-time
+                                    nullable: true
+                                    example: "2024-01-15T10:30:00Z"
+                                  createdBy:
+                                    type: string
+                                    nullable: true
+                                    example: "user123"
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        '403':
+          description: Forbidden - User does not have access to the tenant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        '404':
+          description: Tenant or group not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+
+    put:
+      summary: Update shared service roles for a group
+      description: Bulk assign or unassign shared service roles to a group. Handles new assignments, soft deletes, and restoration of soft-deleted assignments. Requires JWT authentication and TENANT_OWNER or USER_ADMIN role.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: tenantId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The unique identifier of the tenant
+        - name: groupId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The unique identifier of the group
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - sharedServices
+              properties:
+                sharedServices:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - id
+                      - sharedServiceRoles
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                        example: "c6c23ac7-f0bf-4025-bcf5-416dd397b4ee"
+                      sharedServiceRoles:
+                        type: array
+                        items:
+                          type: object
+                          required:
+                            - id
+                            - enabled
+                          properties:
+                            id:
+                              type: string
+                              format: uuid
+                              example: "5deaa72d-417e-4508-b4d8-3e3e4cf6572a"
+                            enabled:
+                              type: boolean
+                              example: false
+                  example:
+                    - id: "c6c23ac7-f0bf-4025-bcf5-416dd397b4ee"
+                      sharedServiceRoles:
+                        - id: "5deaa72d-417e-4508-b4d8-3e3e4cf6572a"
+                          enabled: false
+                        - id: "7ec4f5aa-b5d6-4668-a450-09b3f18e6622"
+                          enabled: true
+      responses:
+        '200':
+          description: Shared service roles for the group successfully updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      sharedServices:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              format: uuid
+                              example: "456e7890-e89b-12d3-a456-426614174001"
+                            name:
+                              type: string
+                              example: "Email Service"
+                            description:
+                              type: string
+                              example: "Email service for tenant communications"
+                            createdDateTime:
+                              type: string
+                              format: date-time
+                              example: "2024-01-10T09:00:00Z"
+                            updatedDateTime:
+                              type: string
+                              format: date-time
+                              example: "2024-01-15T14:30:00Z"
+                            createdBy:
+                              type: string
+                              example: "admin123"
+                            updatedBy:
+                              type: string
+                              example: "admin123"
+                            sharedServiceRoles:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  id:
+                                    type: string
+                                    format: uuid
+                                    example: "123e4567-e89b-12d3-a456-426614174000"
+                                  name:
+                                    type: string
+                                    example: "Admin Role"
+                                  description:
+                                    type: string
+                                    example: "Administrative role for the service"
+                                  enabled:
                                     type: boolean
                                     example: true
                                   createdDateTime:

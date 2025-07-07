@@ -280,7 +280,7 @@ export default {
                     sharedServiceRoles: Joi.array().items(
                         Joi.object({
                             id: Joi.string().guid().required(),
-                            isSet: Joi.boolean().required()
+                            enabled: Joi.boolean().required()
                         })
                     ).required()
                 })
