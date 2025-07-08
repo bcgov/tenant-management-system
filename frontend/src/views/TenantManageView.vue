@@ -6,9 +6,10 @@ import TenantDetails from '@/components/tenant/TenantDetails.vue'
 import TenantHeader from '@/components/tenant/TenantHeader.vue'
 import TenantUserManagement from '@/components/tenant/TenantUserManagement.vue'
 import BreadcrumbBar from '@/components/ui/BreadcrumbBar.vue'
+import LoadingWrapper from '@/components/ui/LoadingWrapper.vue'
 import { useNotification } from '@/composables'
 import { DomainError, DuplicateEntityError } from '@/errors'
-import { Tenant, User } from '@/models'
+import { Tenant, type TenantEditFields, User } from '@/models'
 import { useRoleStore, useTenantStore, useUserStore } from '@/stores'
 import BaseSecureView from '@/views/BaseSecureView.vue'
 
@@ -23,18 +24,31 @@ const { addNotification } = useNotification()
 // Component Data
 
 const isDuplicateName = ref(false)
+const isLoading = ref(true)
 const roles = computed(() => roleStore.roles)
 const searchResults = ref<User[]>([])
-const tenant = ref<Tenant | undefined>()
+
+// Use the tenantReference for the data in the store, which is loaded when the
+// component is mounted. TypeScript can't track the Vue lifecycle timing, so it
+// doesn't know that this is populated before handlers run. The computed wrapper
+// avoids doing null checks everywhere.
+const tenantReference = ref<Tenant>()
+const tenant = computed(() => {
+  if (!tenantReference.value) {
+    throw new Error('Tenant not loaded')
+  }
+
+  return tenantReference.value
+})
 
 // Component State
 
 const breadcrumbs = computed(() => [
   { title: 'Tenants', disabled: false, href: '/tenants' },
   {
-    title: tenant.value?.name || '',
+    title: tenant.value.name,
     disabled: false,
-    href: `/tenants/${tenant.value?.id}`,
+    href: `/tenants/${tenant.value.id}`,
   },
 ])
 
@@ -47,19 +61,24 @@ const loadingSearch = ref(false)
 // Component Lifecycle
 
 onMounted(async () => {
+  // Load the tenant that is being managed.
+  tenantReference.value = await tenantStore.fetchTenant(
+    route.params.id as string,
+  )
+
+  // Load the possible roles, used when adding a user to the tenant.
   await roleStore.fetchRoles()
-  tenant.value = await tenantStore.fetchTenant(route.params.id as string)
+
+  isLoading.value = false
 })
 
 // Subcomponent Event Handlers
 
 async function handleAddUser(user: User) {
   try {
-    if (tenant.value) {
-      await tenantStore.addTenantUser(tenant.value, user)
-      searchResults.value = []
-      addNotification('User added successfully')
-    }
+    await tenantStore.addTenantUser(tenant.value, user)
+    searchResults.value = []
+    addNotification('User added successfully')
   } catch (error) {
     if (error instanceof DuplicateEntityError) {
       addNotification(
@@ -86,18 +105,12 @@ async function handleRemoveRole({
   userId: string
   roleId: string
 }) {
-  if (!tenant.value) {
-    addNotification('No tenant selected', 'error')
-
-    return
-  }
-
   try {
     await tenantStore.removeTenantUserRole(tenant.value, userId, roleId)
     addNotification('The role was successfully removed from the user.')
 
     // Refresh local tenant data to reflect role removal
-    tenant.value = await tenantStore.fetchTenant(tenant.value.id)
+    tenantReference.value = await tenantStore.fetchTenant(tenant.value.id)
   } catch {
     addNotification('Failed to remove user role', 'error')
   }
@@ -115,12 +128,13 @@ async function handleUserSearch(query: Record<string, string>) {
   }
 }
 
-async function handleUpdateTenant(updatedTenant: Partial<Tenant>) {
+async function handleUpdateTenant(updatedTenant: TenantEditFields) {
   try {
-    tenant.value = await tenantStore.updateTenant({
-      ...tenant.value,
-      ...updatedTenant,
-    })
+    tenant.value.description = updatedTenant.description
+    tenant.value.ministryName = updatedTenant.ministryName
+    tenant.value.name = updatedTenant.name
+
+    tenantReference.value = await tenantStore.updateTenant(tenant.value)
     isEditing.value = false
   } catch (error) {
     if (error instanceof DuplicateEntityError) {
@@ -140,7 +154,7 @@ async function handleUpdateTenant(updatedTenant: Partial<Tenant>) {
 
 <template>
   <BaseSecureView>
-    <v-container class="px-4" fluid>
+    <LoadingWrapper :loading="isLoading" loading-message="Loading tenant...">
       <BreadcrumbBar :items="breadcrumbs" class="mb-6" />
 
       <TenantHeader v-model:show-detail="showDetail" :tenant="tenant" />
@@ -193,6 +207,6 @@ async function handleUpdateTenant(updatedTenant: Partial<Tenant>) {
           </v-window-item>
         </v-window>
       </v-card>
-    </v-container>
+    </LoadingWrapper>
   </BaseSecureView>
 </template>

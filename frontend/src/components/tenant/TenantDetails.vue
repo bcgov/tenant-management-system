@@ -4,7 +4,7 @@ import { VForm } from 'vuetify/components'
 
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
-import type { Tenant } from '@/models'
+import type { Tenant, TenantEditFields } from '@/models'
 import { MINISTRIES } from '@/utils/constants'
 
 const props = defineProps<{
@@ -16,13 +16,13 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (event: 'clear-duplicate-error'): void
-  (event: 'update', tenant: Partial<Tenant>): void
+  (event: 'update', tenantDetails: TenantEditFields): void
   (event: 'update:deleteDialog' | 'update:isEditing', value: boolean): void
 }>()
 
 // Form state
 const form = ref<InstanceType<typeof VForm> | null>(null)
-const formData = ref<Partial<Tenant>>({
+const formData = ref<TenantEditFields>({
   description: '',
   ministryName: '',
   name: '',
