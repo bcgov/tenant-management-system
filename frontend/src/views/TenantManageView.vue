@@ -11,6 +11,7 @@ import { useNotification } from '@/composables'
 import { DomainError, DuplicateEntityError } from '@/errors'
 import { type TenantEditFields, User } from '@/models'
 import { useRoleStore, useTenantStore, useUserStore } from '@/stores'
+import { type IdirSearchType, IDIR_SEARCH_TYPE } from '@/utils/constants'
 import BaseSecureView from '@/views/BaseSecureView.vue'
 
 const route = useRoute()
@@ -41,10 +42,9 @@ const breadcrumbs = computed(() => [
 const showDetail = ref(true)
 const deleteDialogVisible = ref(false)
 const isEditing = ref(false)
+const isLoading = ref(true)
 const tab = ref<number>(0)
 const loadingSearch = ref(false)
-
-const isLoading = computed(() => tenantStore.loading)
 
 // Deal with the case that someone could manually try to send in multiple route
 // parameters for the tenant ID.
@@ -69,6 +69,8 @@ onMounted(async () => {
 
   // Load the possible roles, used when adding a user to the tenant.
   await roleStore.fetchRoles()
+
+  isLoading.value = false
 })
 
 // Subcomponent Event Handlers
@@ -106,10 +108,22 @@ async function handleRemoveRole(userId: string, roleId: string) {
   }
 }
 
-async function handleUserSearch(query: Record<string, string>) {
+async function handleUserSearch(
+  searchType: IdirSearchType,
+  searchText: string,
+) {
   loadingSearch.value = true
+
   try {
-    searchResults.value = await userStore.searchIdirUsers(query)
+    if (searchType === IDIR_SEARCH_TYPE.FIRST_NAME.value) {
+      searchResults.value = await userStore.searchIdirFirstName(searchText)
+    } else if (searchType === IDIR_SEARCH_TYPE.LAST_NAME.value) {
+      searchResults.value = await userStore.searchIdirLastName(searchText)
+    } else if (searchType === IDIR_SEARCH_TYPE.EMAIL.value) {
+      searchResults.value = await userStore.searchIdirEmail(searchText)
+    } else {
+      throw new Error('Invalid search type')
+    }
   } catch {
     addNotification('User search failed', 'error')
     searchResults.value = []

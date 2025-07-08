@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { ref, watch, onBeforeUnmount } from 'vue'
+import { onBeforeUnmount, ref, watch } from 'vue'
 
 const props = defineProps<{
+  delay?: number // milliseconds to wait before showing spinner
   loading: boolean
   loadingMessage?: string
-  delay?: number // milliseconds to wait before showing spinner
 }>()
 
 const showSpinner = ref(false)
@@ -39,8 +39,8 @@ onBeforeUnmount(() => {
 
 <template>
   <v-container>
-    <v-row v-if="loading && showSpinner" justify="center" align="center">
-      <v-col cols="auto" class="text-center">
+    <v-row v-if="loading && showSpinner" align="center" justify="center">
+      <v-col class="text-center" cols="auto">
         <v-progress-circular indeterminate />
         <div v-if="loadingMessage" class="mt-2">
           {{ loadingMessage }}

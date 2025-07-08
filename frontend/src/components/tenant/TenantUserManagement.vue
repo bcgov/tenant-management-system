@@ -7,7 +7,7 @@ import FloatingActionButton from '@/components/ui/FloatingActionButton.vue'
 import SimpleDialog from '@/components/ui/SimpleDialog.vue'
 import UserSearch from '@/components/user/UserSearch.vue'
 import type { Role, Tenant, User } from '@/models'
-import { ROLES } from '@/utils/constants'
+import { type IdirSearchType, ROLES } from '@/utils/constants'
 
 const props = defineProps<{
   loadingSearch: boolean
@@ -20,7 +20,7 @@ const emit = defineEmits<{
   (event: 'add', user: User): void
   (event: 'cancel' | 'clear-search'): void
   (event: 'remove-role', userId: string, roleId: string): void
-  (event: 'search', query: Record<string, string>): void
+  (event: 'search', searchType: IdirSearchType, searchText: string): void
 }>()
 
 const showSearch = ref(false)
@@ -68,8 +68,8 @@ function onClearSearch() {
   emit('clear-search')
 }
 
-function onSearch(query: Record<string, string>) {
-  emit('search', query)
+function onSearch(searchType: IdirSearchType, searchText: string) {
+  emit('search', searchType, searchText)
 }
 
 function toggleRole(role: Role, checked: boolean) {
