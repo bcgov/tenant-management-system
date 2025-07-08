@@ -24,7 +24,6 @@ const { addNotification } = useNotification()
 // Component Data
 
 const isDuplicateName = ref(false)
-const isLoading = ref(true)
 const roles = computed(() => roleStore.roles)
 const searchResults = ref<User[]>([])
 
@@ -44,6 +43,8 @@ const deleteDialogVisible = ref(false)
 const isEditing = ref(false)
 const tab = ref<number>(0)
 const loadingSearch = ref(false)
+
+const isLoading = computed(() => tenantStore.loading)
 
 // Deal with the case that someone could manually try to send in multiple route
 // parameters for the tenant ID.
@@ -68,8 +69,6 @@ onMounted(async () => {
 
   // Load the possible roles, used when adding a user to the tenant.
   await roleStore.fetchRoles()
-
-  isLoading.value = false
 })
 
 // Subcomponent Event Handlers
