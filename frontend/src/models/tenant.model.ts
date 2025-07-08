@@ -2,6 +2,15 @@ import { User } from '@/models/user.model'
 import { ROLES } from '@/utils/constants'
 
 /**
+ * Utility type that represents the subset of Tenant properties used in the form
+ * that edits these fields.
+ */
+export type TenantDetails = Pick<
+  Tenant,
+  'description' | 'ministryName' | 'name'
+>
+
+/**
  * Represents a tenant in the system.
  */
 export class Tenant {
