@@ -31,7 +31,7 @@ function handleLogout() {
 
     <div v-if="user" class="d-flex align-center user-info">
       <v-icon icon="mdi-account-outline" size="large" />
-      <span class="text-no-wrap ms-1 me-4">{{ user.displayName }}</span>
+      <span class="text-no-wrap ms-1 me-4">{{ user.ssoUser.displayName }}</span>
       <v-btn class="logout-btn" @click="handleLogout">
         <v-icon class="me-1" icon="mdi-logout" size="x-large" />
         Logout

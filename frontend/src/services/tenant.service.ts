@@ -8,18 +8,19 @@ const api = authenticatedAxios()
 export const tenantService = {
   async addUser(tenantId: string, user: User) {
     try {
-      const request: { user: any; roles?: string[] } = { user }
-
-      // Extract array of role IDs from user.roles
-      if (user.roles && user.roles.length > 0) {
-        request.roles = user.roles.map((r) => r.id)
+      // It's a little tricky that the format of the user here is unlike
+      // anywhere else, so we need to construct the request body.
+      const request = {
+        roles: user.roles.map((r) => r.id),
+        user: {
+          displayName: user.ssoUser.displayName,
+          email: user.ssoUser.email,
+          firstName: user.ssoUser.firstName,
+          lastName: user.ssoUser.lastName,
+          ssoUserId: user.ssoUser.ssoUserId,
+          userName: user.ssoUser.userName,
+        },
       }
-
-      // TODO: this is temporary until some decisions are made about how close
-      // the mapping to the API should be.
-      request.user.ssoUserId = user.id
-      delete request.user.id
-      delete request.user.roles
 
       const response = await api.post(`/tenants/${tenantId}/users`, request)
 
@@ -80,12 +81,12 @@ export const tenantService = {
         ministryName,
         name,
         user: {
-          displayName: user.displayName,
-          email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          ssoUserId: user.id,
-          userName: user.userName,
+          displayName: user.ssoUser.displayName,
+          email: user.ssoUser.email,
+          firstName: user.ssoUser.firstName,
+          lastName: user.ssoUser.lastName,
+          ssoUserId: user.ssoUser.ssoUserId,
+          userName: user.ssoUser.userName,
         },
       }
 

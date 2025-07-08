@@ -1,56 +1,30 @@
 import { Role } from '@/models/role.model'
+import { SsoUser } from '@/models/ssouser.model'
 
 export class User {
-  displayName: string
-  email?: string
-  firstName: string
   id: string
-  lastName: string
   roles: Role[]
-  userName?: string
+  ssoUser: SsoUser
 
-  constructor(
-    id: string,
-    userName: string | undefined,
-    firstName: string,
-    lastName: string,
-    displayName: string,
-    email: string | undefined,
-    roles: Role[],
-  ) {
+  constructor(id: string, ssoUser: SsoUser, roles: Role[] = []) {
     this.id = id
-    this.displayName = displayName
-    this.email = email
-    this.firstName = firstName
-    this.lastName = lastName
-    this.userName = userName
-    this.roles = roles
+    this.roles = Array.isArray(roles) ? roles : []
+    this.ssoUser = ssoUser
   }
 
   static fromApiData(apiData: {
     id: string
-    ssoUser: {
-      displayName: string
-      email: string
-      firstName: string
-      lastName: string
-      userName: string
-    }
-    roles: []
+    ssoUser: SsoUser
+    roles?: Role[]
   }): User {
-    return new User(
-      apiData.id,
-      apiData.ssoUser.userName,
-      apiData.ssoUser.firstName,
-      apiData.ssoUser.lastName,
-      apiData.ssoUser.displayName,
-      apiData.ssoUser.email,
-      apiData.roles.map(Role.fromApiData),
-    )
+    const roles = Array.isArray(apiData.roles)
+      ? apiData.roles.map(Role.fromApiData)
+      : []
+    const ssoUser = SsoUser.fromApiData(apiData.ssoUser)
+
+    return new User(apiData.id, ssoUser, roles)
   }
 
-  // TODO: this abuses the id field - it should be the user id, not the sso id.
-  // Figure out a cleaner way to handle this.
   static fromSearchData(searchData: {
     email: string
     firstName: string
@@ -60,7 +34,7 @@ export class User {
     }
   }): User {
     // The SSO API doesn't always return the expected fields - try to be lenient
-    // but if the username is undefined then it will cause issues.
+    // but note that if the username is undefined then it will cause issues.
     const attributes = searchData.attributes
     const userId =
       attributes.idir_user_guid?.[0] ?? attributes.idir_userid?.[0] ?? ''
@@ -68,14 +42,19 @@ export class User {
     const displayName =
       attributes.display_name?.[0] ?? attributes.displayName?.[0] ?? ''
 
-    return new User(
+    const ssoUser = new SsoUser(
       userId,
       username,
       searchData.firstName,
       searchData.lastName,
       displayName,
       searchData.email,
-      [], // Roles are not provided in search results,
+    )
+
+    return new User(
+      userId,
+      ssoUser,
+      [], // Roles are not provided in search results
     )
   }
 }
