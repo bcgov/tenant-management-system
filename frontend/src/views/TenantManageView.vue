@@ -9,7 +9,7 @@ import BreadcrumbBar from '@/components/ui/BreadcrumbBar.vue'
 import LoadingWrapper from '@/components/ui/LoadingWrapper.vue'
 import { useNotification } from '@/composables'
 import { DomainError, DuplicateEntityError } from '@/errors'
-import { Tenant, type TenantEditFields, User } from '@/models'
+import { type TenantEditFields, User } from '@/models'
 import { useRoleStore, useTenantStore, useUserStore } from '@/stores'
 import BaseSecureView from '@/views/BaseSecureView.vue'
 
@@ -28,19 +28,6 @@ const isLoading = ref(true)
 const roles = computed(() => roleStore.roles)
 const searchResults = ref<User[]>([])
 
-// Use the tenantReference for the data in the store, which is loaded when the
-// component is mounted. TypeScript can't track the Vue lifecycle timing, so it
-// doesn't know that this is populated before handlers run. The computed wrapper
-// avoids doing null checks everywhere.
-const tenantReference = ref<Tenant>()
-const tenant = computed(() => {
-  if (!tenantReference.value) {
-    throw new Error('Tenant not loaded')
-  }
-
-  return tenantReference.value
-})
-
 // Component State
 
 const breadcrumbs = computed(() => [
@@ -58,13 +45,26 @@ const isEditing = ref(false)
 const tab = ref<number>(0)
 const loadingSearch = ref(false)
 
+// Deal with the case that someone could manually try to send in multiple route
+// parameters for the tenant ID.
+const routeTenantId = computed(() =>
+  Array.isArray(route.params.id) ? route.params.id[0] : route.params.id,
+)
+
+const tenant = computed(() => {
+  const found = tenantStore.getTenant(routeTenantId.value)
+  if (!found) {
+    throw new Error('Tenant not loaded')
+  }
+
+  return found
+})
+
 // Component Lifecycle
 
 onMounted(async () => {
-  // Load the tenant that is being managed.
-  tenantReference.value = await tenantStore.fetchTenant(
-    route.params.id as string,
-  )
+  // Fetch the tenant that is being managed.
+  await tenantStore.fetchTenant(routeTenantId.value)
 
   // Load the possible roles, used when adding a user to the tenant.
   await roleStore.fetchRoles()
@@ -98,19 +98,10 @@ async function handleClearSearch() {
   searchResults.value = []
 }
 
-async function handleRemoveRole({
-  userId,
-  roleId,
-}: {
-  userId: string
-  roleId: string
-}) {
+async function handleRemoveRole(userId: string, roleId: string) {
   try {
     await tenantStore.removeTenantUserRole(tenant.value, userId, roleId)
     addNotification('The role was successfully removed from the user.')
-
-    // Refresh local tenant data to reflect role removal
-    tenantReference.value = await tenantStore.fetchTenant(tenant.value.id)
   } catch {
     addNotification('Failed to remove user role', 'error')
   }
@@ -134,7 +125,7 @@ async function handleUpdateTenant(updatedTenant: TenantEditFields) {
     tenant.value.ministryName = updatedTenant.ministryName
     tenant.value.name = updatedTenant.name
 
-    tenantReference.value = await tenantStore.updateTenant(tenant.value)
+    await tenantStore.updateTenant(tenant.value)
     isEditing.value = false
   } catch (error) {
     if (error instanceof DuplicateEntityError) {

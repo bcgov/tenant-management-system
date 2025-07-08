@@ -19,7 +19,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (event: 'add', user: User): void
   (event: 'cancel' | 'clear-search'): void
-  (event: 'remove-role', payload: { userId: string; roleId: string }): void
+  (event: 'remove-role', userId: string, roleId: string): void
   (event: 'search', query: Record<string, string>): void
 }>()
 
@@ -134,10 +134,7 @@ function onRemoveRole(user: User, role: Role) {
 
 function confirmRemoveRole() {
   if (pendingUser.value && pendingRole.value) {
-    emit('remove-role', {
-      userId: pendingUser.value.id,
-      roleId: pendingRole.value.id,
-    })
+    emit('remove-role', pendingUser.value.id, pendingRole.value.id)
   }
 
   pendingUser.value = null

@@ -64,6 +64,10 @@ export const useTenantStore = defineStore('tenant', () => {
     }
   }
 
+  function getTenant(tenantId: string): Tenant | undefined {
+    return tenants.value.find((t) => t.id === tenantId)
+  }
+
   const removeTenantUserRole = async (
     tenant: Tenant,
     userId: string,
@@ -104,6 +108,7 @@ export const useTenantStore = defineStore('tenant', () => {
     addTenantUser,
     fetchTenant,
     fetchTenants,
+    getTenant,
     removeTenantUserRole,
     updateTenant,
   }
