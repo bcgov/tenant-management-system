@@ -7,6 +7,7 @@ import logger from '../common/logger'
 import { TenantRequest } from '../entities/TenantRequest'
 import { Tenant } from '../entities/Tenant'
 import { BadRequestError } from '../errors/BadRequestError'
+import { UnauthorizedError } from '../errors/UnauthorizedError'
 
 export class TMSService {
 
@@ -239,6 +240,19 @@ export class TMSService {
                 sharedServices
             }
         }
+    }
+
+    public async getUserGroupsWithSharedServices(req: Request) {
+        const audience = req.decodedJwt?.aud || req.decodedJwt?.audience;
+        if (!audience) {
+            throw new UnauthorizedError('Missing audience in JWT token');
+        }
+
+        const result = await this.tmsRepository.getUserGroupsWithSharedServices(req, audience);
+        
+        return {
+            data: result
+        };
     }
     
     private async getToken() {
