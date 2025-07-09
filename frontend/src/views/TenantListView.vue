@@ -5,10 +5,11 @@ import { useRouter } from 'vue-router'
 
 import TenantCreateDialog from '@/components/tenant/TenantCreateDialog.vue'
 import TenantList from '@/components/tenant/TenantList.vue'
-import FloatingActionButton from '@/components/ui/FloatingActionButton.vue'
+import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
+import LoadingWrapper from '@/components/ui/LoadingWrapper.vue'
 import { useNotification } from '@/composables'
 import { DomainError, DuplicateEntityError } from '@/errors'
-import { Tenant } from '@/models'
+import { Tenant, type TenantEditFields } from '@/models'
 import { useAuthStore, useTenantStore } from '@/stores'
 import BaseSecureView from '@/views/BaseSecureView.vue'
 
@@ -24,7 +25,7 @@ const { addNotification } = useNotification()
 // Stores
 const authStore = useAuthStore()
 const tenantStore = useTenantStore()
-const { tenants } = storeToRefs(tenantStore)
+const { loading, tenants } = storeToRefs(tenantStore)
 
 // Special dialog validation for uniqueness of the name.
 const isDuplicateName = ref(false)
@@ -47,16 +48,15 @@ onMounted(async () => {
 })
 
 // Submit handler
-const handleTenantSubmit = async ({
-  name,
-  ministryName,
-}: {
-  name: string
-  ministryName: string
-}) => {
+const handleTenantSubmit = async (tenantDetails: TenantEditFields) => {
   try {
-    await tenantStore.addTenant(name, ministryName, authStore.authenticatedUser)
-    addNotification('New tenant created successfully', 'success')
+    await tenantStore.requestTenant(tenantDetails, authStore.authenticatedUser)
+    addNotification(
+      'Your request for a new tenant has been sent to the Tenant Management ' +
+        "System administrator. You'll be notified of the outcome within 48 " +
+        'hours.',
+      'success',
+    )
     isDuplicateName.value = false
     closeDialog()
   } catch (error: unknown) {
@@ -79,20 +79,15 @@ const handleTenantSubmit = async ({
 
 <template>
   <BaseSecureView>
-    <!-- Remove the container spacing and let the parent decide that. -->
-    <v-container class="ma-0 pa-0" fluid>
-      <v-row>
+    <LoadingWrapper :loading="loading" loading-message="Loading tenants...">
+      <v-row class="mb-8">
         <v-col cols="12">
-          <FloatingActionButton
-            icon="mdi-plus-box"
-            text="Create New Tenant"
-            @click="openDialog"
-          />
+          <ButtonPrimary text="Request New Tenant" @click="openDialog" />
         </v-col>
       </v-row>
 
       <TenantList :tenants="tenants" @select="handleCardClick" />
-    </v-container>
+    </LoadingWrapper>
 
     <TenantCreateDialog
       v-model="dialogVisible"

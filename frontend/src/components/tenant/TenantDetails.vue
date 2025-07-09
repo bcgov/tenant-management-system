@@ -165,7 +165,7 @@ function toggleEdit() {
                 v-model="formData.description"
                 :rules="[rules.required, rules.maxLength(500)]"
                 counter="500"
-                label="Tenant Description"
+                label="Description of Tenant"
                 rows="1"
                 auto-grow
                 required
