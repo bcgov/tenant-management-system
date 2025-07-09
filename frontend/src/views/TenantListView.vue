@@ -9,7 +9,7 @@ import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import LoadingWrapper from '@/components/ui/LoadingWrapper.vue'
 import { useNotification } from '@/composables'
 import { DomainError, DuplicateEntityError } from '@/errors'
-import { Tenant } from '@/models'
+import { Tenant, type TenantEditFields } from '@/models'
 import { useAuthStore, useTenantStore } from '@/stores'
 import BaseSecureView from '@/views/BaseSecureView.vue'
 
@@ -48,16 +48,15 @@ onMounted(async () => {
 })
 
 // Submit handler
-const handleTenantSubmit = async ({
-  name,
-  ministryName,
-}: {
-  name: string
-  ministryName: string
-}) => {
+const handleTenantSubmit = async (tenantDetails: TenantEditFields) => {
   try {
-    await tenantStore.addTenant(name, ministryName, authStore.authenticatedUser)
-    addNotification('New tenant created successfully', 'success')
+    await tenantStore.requestTenant(tenantDetails, authStore.authenticatedUser)
+    addNotification(
+      'Your request for a new tenant has been sent to the Tenant Management ' +
+        "System administrator. You'll be notified of the outcome within 48 " +
+        'hours.',
+      'success',
+    )
     isDuplicateName.value = false
     closeDialog()
   } catch (error: unknown) {

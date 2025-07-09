@@ -1,7 +1,7 @@
 import { authenticatedAxios } from './authenticated.axios'
 import { isDuplicateEntityError, isValidationError, logApiError } from './utils'
 import { DuplicateEntityError, ValidationError } from '@/errors'
-import { User } from '@/models'
+import { type TenantEditFields, User } from '@/models'
 
 const api = authenticatedAxios()
 
@@ -218,6 +218,51 @@ export const tenantService = {
     } catch (error) {
       logApiError('Error removing user role from tenant', error)
 
+      throw error
+    }
+  },
+
+  /**
+   * Requests a new tenant with the specified details and user.
+   *
+   * @param {string} tenantDetails - The details of the tenant to request.
+   * @param {string} user - The user that is requesting the tenant.
+   * @throws Will throw an error if the API request fails.
+   */
+  async requestTenant(tenantDetails: TenantEditFields, user: User) {
+    try {
+      const requestBody = {
+        description: tenantDetails.description,
+        ministryName: tenantDetails.ministryName,
+        name: tenantDetails.name,
+        user: {
+          displayName: user.ssoUser.displayName,
+          email: user.ssoUser.email,
+          firstName: user.ssoUser.firstName,
+          lastName: user.ssoUser.lastName,
+          ssoUserId: user.ssoUser.ssoUserId,
+          userName: user.ssoUser.userName,
+        },
+      }
+
+      await api.post(`/tenant-requests`, requestBody)
+    } catch (error: unknown) {
+      logApiError('Error creating tenant', error)
+
+      // Handle HTTP 400 Bad Request (validation)
+      if (isValidationError(error)) {
+        const messageArray = error.response.data.details.body.map(
+          (item: { message: string }) => item.message,
+        )
+        throw new ValidationError(messageArray)
+      }
+
+      // Handle HTTP 409 Conflict (duplicate)
+      if (isDuplicateEntityError(error)) {
+        throw new DuplicateEntityError(error.response.data.message)
+      }
+
+      // Re-throw all other errors
       throw error
     }
   },
