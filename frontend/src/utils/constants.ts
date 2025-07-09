@@ -1,4 +1,15 @@
-// List of ministries
+// List of search types for IDIR users.
+export const IDIR_SEARCH_TYPE = Object.freeze({
+  EMAIL: { title: 'Email', value: 'email' },
+  FIRST_NAME: { title: 'First Name', value: 'firstName' },
+  LAST_NAME: { title: 'Last Name', value: 'lastName' },
+})
+
+// Type definition for IDIR search types: email, firstName, lastName.
+export type IdirSearchType =
+  (typeof IDIR_SEARCH_TYPE)[keyof typeof IDIR_SEARCH_TYPE]['value']
+
+// The ministries and organizations that a tenant can belong to.
 export const MINISTRIES = Object.freeze([
   'Agriculture and Food',
   'Attorney General',

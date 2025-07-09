@@ -3,31 +3,40 @@ import { ref, watch } from 'vue'
 
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import type { User } from '@/models'
+import { type IdirSearchType, IDIR_SEARCH_TYPE } from '@/utils/constants'
 
 defineProps<{
-  tenantId: string
   loading?: boolean
   results: User[]
+  tenantId: string
 }>()
 
 const emit = defineEmits<{
   (event: 'clear-search'): void
+  (event: 'search', searchType: IdirSearchType, searchText: string): void
   (event: 'select', user: User): void
-  (event: 'search', query: Record<string, string>): void
 }>()
 
 // Local UI state
-const searchOption = ref<'firstName' | 'lastName' | 'email'>('firstName')
 const searchText = ref('')
+const searchType = ref<IdirSearchType>(IDIR_SEARCH_TYPE.FIRST_NAME.value)
 const selectedUser = ref<User[]>([])
 
-const SEARCH_OPTIONS = [
-  { title: 'First Name', value: 'firstName' },
-  { title: 'Last Name', value: 'lastName' },
-  { title: 'Email', value: 'email' },
-] as const
+// Redfine the list of search types so that they're in the order wanted by the
+// component.
+const SEARCH_TYPES = [
+  {
+    title: IDIR_SEARCH_TYPE.FIRST_NAME.title,
+    value: IDIR_SEARCH_TYPE.FIRST_NAME.value,
+  },
+  {
+    title: IDIR_SEARCH_TYPE.LAST_NAME.title,
+    value: IDIR_SEARCH_TYPE.LAST_NAME.value,
+  },
+  { title: IDIR_SEARCH_TYPE.EMAIL.title, value: IDIR_SEARCH_TYPE.EMAIL.value },
+]
 
-watch([searchOption, searchText], () => {
+watch([searchText, searchType], () => {
   emit('clear-search')
 })
 
@@ -39,25 +48,18 @@ watch(selectedUser, (selection) => {
 })
 
 function search() {
-  if (searchOption.value && searchText.value) {
-    emit('search', { [searchOption.value]: searchText.value })
+  if (searchText.value && searchType.value) {
+    emit('search', searchType.value, searchText.value)
   }
 }
-
-function reset() {
-  searchText.value = ''
-  selectedUser.value = []
-  searchOption.value = 'firstName'
-}
-defineExpose({ reset })
 </script>
 
 <template>
   <v-row>
     <v-col md="2">
       <v-select
-        v-model="searchOption"
-        :items="SEARCH_OPTIONS"
+        v-model="searchType"
+        :items="SEARCH_TYPES"
         label="Search by"
         hide-details
       />
@@ -91,7 +93,7 @@ defineExpose({ reset })
         ]"
         :items="results"
         :loading="loading"
-        :sort-by="[{ key: `ssoUser.${searchOption}`, order: 'asc' }]"
+        :sort-by="[{ key: `ssoUser.${searchType}`, order: 'asc' }]"
         select-strategy="single"
         return-object
         show-select
