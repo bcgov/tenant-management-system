@@ -40,7 +40,7 @@ const closeDialog = () => {
 // Fetch tenants on load
 onMounted(async () => {
   try {
-    await tenantStore.fetchTenants(authStore.user?.id || '')
+    await tenantStore.fetchTenants(authStore.authenticatedUser.id)
   } catch {
     addNotification('Failed to fetch tenants', 'error')
   }
@@ -65,7 +65,9 @@ const handleTenantSubmit = async ({
       // duplicated validation error.
       isDuplicateName.value = true
     } else if (error instanceof DomainError && error.userMessage) {
-      // For any other API Domain Error, display the user message.
+      // For any other API Domain Error, display the user message that comes
+      // from the API. This should not happen but is useful if there are
+      // business rules in the API that are not implemented in the UI.
       addNotification(error.userMessage, 'error')
     } else {
       // Otherwise display a generic error message.

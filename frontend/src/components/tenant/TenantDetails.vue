@@ -4,30 +4,41 @@ import { VForm } from 'vuetify/components'
 
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
-import type { Tenant } from '@/models'
-import { MINISTRIES } from '@/utils/constants'
+import type { Tenant, TenantEditFields } from '@/models'
+import { MINISTRIES, ROLES } from '@/utils/constants'
+import { currentUserHasRole } from '@/utils/permissions'
 
 const props = defineProps<{
-  deleteDialog: boolean
   isDuplicateName: boolean
   isEditing: boolean
-  tenant?: Tenant
+  tenant: Tenant
 }>()
 
 const emit = defineEmits<{
   (event: 'clear-duplicate-error'): void
-  (event: 'update', tenant: Partial<Tenant>): void
-  (event: 'update:deleteDialog' | 'update:isEditing', value: boolean): void
+  (event: 'update', tenantDetails: TenantEditFields): void
+  (event: 'update:isEditing', value: boolean): void
 }>()
 
+// Permissions
+
+const isTenantOwner = computed(() => {
+  return currentUserHasRole(props.tenant, ROLES.TENANT_OWNER.value)
+})
+
 // Form state
+
 const form = ref<InstanceType<typeof VForm> | null>(null)
-const formData = ref<Partial<Tenant>>({
+const formData = ref<TenantEditFields>({
   description: '',
   ministryName: '',
   name: '',
 })
 const isFormValid = ref(false)
+
+const owner = computed(() => {
+  return props.tenant?.getFirstOwner()
+})
 
 // Reset form when tenant changes
 watch(
@@ -43,16 +54,6 @@ watch(
   },
   { immediate: true },
 )
-
-// Validation
-const rules = {
-  maxLength: (max: number) => (value: string) =>
-    !value || value.length <= max || `Must be ${max} characters or less`,
-  notDuplicated: () =>
-    !props.isDuplicateName ||
-    'Name must be unique for this ministry/organization',
-  required: (value: string) => !!value || 'Required',
-}
 
 // When parent sets the duplicated name flag, force re-validation so that the
 // message is displayed.
@@ -71,15 +72,14 @@ watch(
   },
 )
 
-const owner = computed(() => {
-  return props.tenant?.getFirstOwner()
-})
-
-async function handleSubmit() {
-  const result = await form.value?.validate()
-  if (result?.valid) {
-    emit('update', formData.value)
-  }
+// Validation
+const rules = {
+  maxLength: (max: number) => (value: string) =>
+    !value || value.length <= max || `Must be ${max} characters or less`,
+  notDuplicated: () =>
+    !props.isDuplicateName ||
+    'Name must be unique for this ministry/organization',
+  required: (value: string) => !!value || 'Required',
 }
 
 function handleCancel() {
@@ -94,8 +94,11 @@ function handleCancel() {
   emit('update:isEditing', false)
 }
 
-function openDeleteDialog() {
-  emit('update:deleteDialog', true)
+async function handleSubmit() {
+  const result = await form.value?.validate()
+  if (result?.valid) {
+    emit('update', formData.value)
+  }
 }
 
 function toggleEdit() {
@@ -194,7 +197,7 @@ function toggleEdit() {
       </v-col>
 
       <!-- Menu on right side -->
-      <v-col class="d-flex justify-end" cols="12" lg="2">
+      <v-col v-if="isTenantOwner" class="d-flex justify-end" cols="12" lg="2">
         <v-btn
           v-if="isEditing"
           rounded="lg"
@@ -221,9 +224,6 @@ function toggleEdit() {
           <v-list>
             <v-list-item @click="toggleEdit">
               <v-list-item-title>Edit Tenant</v-list-item-title>
-            </v-list-item>
-            <v-list-item @click="openDeleteDialog">
-              <v-list-item-title>Delete Tenant</v-list-item-title>
             </v-list-item>
           </v-list>
         </v-menu>

@@ -6,10 +6,12 @@ import TenantDetails from '@/components/tenant/TenantDetails.vue'
 import TenantHeader from '@/components/tenant/TenantHeader.vue'
 import TenantUserManagement from '@/components/tenant/TenantUserManagement.vue'
 import BreadcrumbBar from '@/components/ui/BreadcrumbBar.vue'
+import LoadingWrapper from '@/components/ui/LoadingWrapper.vue'
 import { useNotification } from '@/composables'
 import { DomainError, DuplicateEntityError } from '@/errors'
-import { Tenant, User } from '@/models'
+import { type TenantEditFields, User } from '@/models'
 import { useRoleStore, useTenantStore, useUserStore } from '@/stores'
+import { type IdirSearchType, IDIR_SEARCH_TYPE } from '@/utils/constants'
 import BaseSecureView from '@/views/BaseSecureView.vue'
 
 const route = useRoute()
@@ -25,41 +27,58 @@ const { addNotification } = useNotification()
 const isDuplicateName = ref(false)
 const roles = computed(() => roleStore.roles)
 const searchResults = ref<User[]>([])
-const tenant = ref<Tenant | undefined>()
 
 // Component State
 
 const breadcrumbs = computed(() => [
   { title: 'Tenants', disabled: false, href: '/tenants' },
   {
-    title: tenant.value?.name || '',
+    title: tenant.value.name,
     disabled: false,
-    href: `/tenants/${tenant.value?.id}`,
+    href: `/tenants/${tenant.value.id}`,
   },
 ])
 
 const showDetail = ref(true)
-const deleteDialogVisible = ref(false)
 const isEditing = ref(false)
+const isLoading = ref(true)
 const tab = ref<number>(0)
 const loadingSearch = ref(false)
+
+// Deal with the case that someone could manually try to send in multiple route
+// parameters for the tenant ID.
+const routeTenantId = computed(() =>
+  Array.isArray(route.params.id) ? route.params.id[0] : route.params.id,
+)
+
+const tenant = computed(() => {
+  const found = tenantStore.getTenant(routeTenantId.value)
+  if (!found) {
+    throw new Error('Tenant not loaded')
+  }
+
+  return found
+})
 
 // Component Lifecycle
 
 onMounted(async () => {
+  // Fetch the tenant that is being managed.
+  await tenantStore.fetchTenant(routeTenantId.value)
+
+  // Load the possible roles, used when adding a user to the tenant.
   await roleStore.fetchRoles()
-  tenant.value = await tenantStore.fetchTenant(route.params.id as string)
+
+  isLoading.value = false
 })
 
 // Subcomponent Event Handlers
 
 async function handleAddUser(user: User) {
   try {
-    if (tenant.value) {
-      await tenantStore.addTenantUser(tenant.value, user)
-      searchResults.value = []
-      addNotification('User added successfully')
-    }
+    await tenantStore.addTenantUser(tenant.value, user)
+    searchResults.value = []
+    addNotification('User added successfully')
   } catch (error) {
     if (error instanceof DuplicateEntityError) {
       addNotification(
@@ -79,34 +98,31 @@ async function handleClearSearch() {
   searchResults.value = []
 }
 
-async function handleRemoveRole({
-  userId,
-  roleId,
-}: {
-  userId: string
-  roleId: string
-}) {
-  if (!tenant.value) {
-    addNotification('No tenant selected', 'error')
-
-    return
-  }
-
+async function handleRemoveRole(userId: string, roleId: string) {
   try {
     await tenantStore.removeTenantUserRole(tenant.value, userId, roleId)
     addNotification('The role was successfully removed from the user.')
-
-    // Refresh local tenant data to reflect role removal
-    tenant.value = await tenantStore.fetchTenant(tenant.value.id)
   } catch {
     addNotification('Failed to remove user role', 'error')
   }
 }
 
-async function handleUserSearch(query: Record<string, string>) {
+async function handleUserSearch(
+  searchType: IdirSearchType,
+  searchText: string,
+) {
   loadingSearch.value = true
+
   try {
-    searchResults.value = await userStore.searchIdirUsers(query)
+    if (searchType === IDIR_SEARCH_TYPE.FIRST_NAME.value) {
+      searchResults.value = await userStore.searchIdirFirstName(searchText)
+    } else if (searchType === IDIR_SEARCH_TYPE.LAST_NAME.value) {
+      searchResults.value = await userStore.searchIdirLastName(searchText)
+    } else if (searchType === IDIR_SEARCH_TYPE.EMAIL.value) {
+      searchResults.value = await userStore.searchIdirEmail(searchText)
+    } else {
+      throw new Error('Invalid search type')
+    }
   } catch {
     addNotification('User search failed', 'error')
     searchResults.value = []
@@ -115,12 +131,13 @@ async function handleUserSearch(query: Record<string, string>) {
   }
 }
 
-async function handleUpdateTenant(updatedTenant: Partial<Tenant>) {
+async function handleUpdateTenant(updatedTenant: TenantEditFields) {
   try {
-    tenant.value = await tenantStore.updateTenant({
-      ...tenant.value,
-      ...updatedTenant,
-    })
+    tenant.value.description = updatedTenant.description
+    tenant.value.ministryName = updatedTenant.ministryName
+    tenant.value.name = updatedTenant.name
+
+    await tenantStore.updateTenant(tenant.value)
     isEditing.value = false
   } catch (error) {
     if (error instanceof DuplicateEntityError) {
@@ -128,7 +145,9 @@ async function handleUpdateTenant(updatedTenant: Partial<Tenant>) {
       // duplicated validation error.
       isDuplicateName.value = true
     } else if (error instanceof DomainError && error.userMessage) {
-      // For any other API Domain Error, display the user message.
+      // For any other API Domain Error, display the user message that comes
+      // from the API. This should not happen but is useful if there are
+      // business rules in the API that are not implemented in the UI.
       addNotification(error.userMessage, 'error')
     } else {
       // Otherwise display a generic error message.
@@ -140,14 +159,13 @@ async function handleUpdateTenant(updatedTenant: Partial<Tenant>) {
 
 <template>
   <BaseSecureView>
-    <v-container class="px-4" fluid>
+    <LoadingWrapper :loading="isLoading" loading-message="Loading tenant...">
       <BreadcrumbBar :items="breadcrumbs" class="mb-6" />
 
       <TenantHeader v-model:show-detail="showDetail" :tenant="tenant" />
 
       <TenantDetails
         v-if="showDetail"
-        v-model:delete-dialog="deleteDialogVisible"
         v-model:is-editing="isEditing"
         :is-duplicate-name="isDuplicateName"
         :tenant="tenant"
@@ -155,7 +173,6 @@ async function handleUpdateTenant(updatedTenant: Partial<Tenant>) {
         @update="handleUpdateTenant"
       />
 
-      <!-- Inlined Tabs -->
       <v-card class="mt-6" elevation="0">
         <v-tabs v-model="tab" :disabled="isEditing" :mandatory="false">
           <!-- The v-tabs component insists on always having an active tab. Use
@@ -193,6 +210,6 @@ async function handleUpdateTenant(updatedTenant: Partial<Tenant>) {
           </v-window-item>
         </v-window>
       </v-card>
-    </v-container>
+    </LoadingWrapper>
   </BaseSecureView>
 </template>

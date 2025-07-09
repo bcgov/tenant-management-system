@@ -7,21 +7,28 @@ import FloatingActionButton from '@/components/ui/FloatingActionButton.vue'
 import SimpleDialog from '@/components/ui/SimpleDialog.vue'
 import UserSearch from '@/components/user/UserSearch.vue'
 import type { Role, Tenant, User } from '@/models'
-import { ROLES } from '@/utils/constants'
+import { type IdirSearchType, ROLES } from '@/utils/constants'
+import { currentUserHasRole } from '@/utils/permissions'
 
 const props = defineProps<{
   loadingSearch: boolean
   possibleRoles?: Role[]
   searchResults: User[]
-  tenant?: Tenant
+  tenant: Tenant
 }>()
 
 const emit = defineEmits<{
   (event: 'add', user: User): void
   (event: 'cancel' | 'clear-search'): void
-  (event: 'remove-role', payload: { userId: string; roleId: string }): void
-  (event: 'search', query: Record<string, string>): void
+  (event: 'remove-role', userId: string, roleId: string): void
+  (event: 'search', searchType: IdirSearchType, searchText: string): void
 }>()
+
+// Permissions
+
+const isUserAdmin = computed(() => {
+  return currentUserHasRole(props.tenant, ROLES.USER_ADMIN.value)
+})
 
 const showSearch = ref(false)
 const selectedUser = ref<User | null>(null)
@@ -68,8 +75,8 @@ function onClearSearch() {
   emit('clear-search')
 }
 
-function onSearch(query: Record<string, string>) {
-  emit('search', query)
+function onSearch(searchType: IdirSearchType, searchText: string) {
+  emit('search', searchType, searchText)
 }
 
 function toggleRole(role: Role, checked: boolean) {
@@ -134,10 +141,7 @@ function onRemoveRole(user: User, role: Role) {
 
 function confirmRemoveRole() {
   if (pendingUser.value && pendingRole.value) {
-    emit('remove-role', {
-      userId: pendingUser.value.id,
-      roleId: pendingRole.value.id,
-    })
+    emit('remove-role', pendingUser.value.id, pendingRole.value.id)
   }
 
   pendingUser.value = null
@@ -198,6 +202,7 @@ function handleConfirmCancel() {
               >
                 {{ role.description }}
                 <v-icon
+                  v-if="isUserAdmin"
                   class="ml-1 cursor-pointer"
                   icon="mdi-close"
                   size="small"
@@ -210,7 +215,7 @@ function handleConfirmCancel() {
       </v-col>
     </v-row>
 
-    <v-row v-if="!showSearch" class="mt-4">
+    <v-row v-if="isUserAdmin && !showSearch" class="mt-4">
       <v-col class="d-flex justify-start" cols="12">
         <FloatingActionButton
           icon="mdi-plus-box"

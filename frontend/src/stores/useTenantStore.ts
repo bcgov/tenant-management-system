@@ -64,6 +64,10 @@ export const useTenantStore = defineStore('tenant', () => {
     }
   }
 
+  function getTenant(tenantId: string): Tenant | undefined {
+    return tenants.value.find((t) => t.id === tenantId)
+  }
+
   const removeTenantUserRole = async (
     tenant: Tenant,
     userId: string,
@@ -79,24 +83,19 @@ export const useTenantStore = defineStore('tenant', () => {
     user.roles = user.roles.filter((role) => role.id !== roleId)
   }
 
-  const updateTenant = async (tenant: Partial<Tenant>) => {
-    if (!tenant.id || !tenant.name || !tenant.ministryName) {
-      // TODO: kludgy; clean this argument up.
-      throw new Error('Missing required tenant fields for update')
-    }
-
+  const updateTenant = async (tenant: Tenant) => {
     const apiResponse = await tenantService.updateTenant(
       tenant.id,
       tenant.name,
       tenant.ministryName,
-      tenant.description ?? '',
+      tenant.description,
     )
 
     const updatedTenant = Tenant.fromApiData(apiResponse)
 
     // The API call only returns the updated tenant data, not the users. Copy
-    // them from the original tenant.
-    updatedTenant.users = tenant.users || []
+    // the users from the original tenant.
+    updatedTenant.users = tenant.users
 
     return upsertTenant(updatedTenant)
   }
@@ -109,6 +108,7 @@ export const useTenantStore = defineStore('tenant', () => {
     addTenantUser,
     fetchTenant,
     fetchTenants,
+    getTenant,
     removeTenantUserRole,
     updateTenant,
   }
