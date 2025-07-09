@@ -6,6 +6,7 @@ import { useRouter } from 'vue-router'
 import TenantCreateDialog from '@/components/tenant/TenantCreateDialog.vue'
 import TenantList from '@/components/tenant/TenantList.vue'
 import FloatingActionButton from '@/components/ui/FloatingActionButton.vue'
+import LoadingWrapper from '@/components/ui/LoadingWrapper.vue'
 import { useNotification } from '@/composables'
 import { DomainError, DuplicateEntityError } from '@/errors'
 import { Tenant } from '@/models'
@@ -24,7 +25,7 @@ const { addNotification } = useNotification()
 // Stores
 const authStore = useAuthStore()
 const tenantStore = useTenantStore()
-const { tenants } = storeToRefs(tenantStore)
+const { loading, tenants } = storeToRefs(tenantStore)
 
 // Special dialog validation for uniqueness of the name.
 const isDuplicateName = ref(false)
@@ -79,8 +80,7 @@ const handleTenantSubmit = async ({
 
 <template>
   <BaseSecureView>
-    <!-- Remove the container spacing and let the parent decide that. -->
-    <v-container class="ma-0 pa-0" fluid>
+    <LoadingWrapper :loading="loading" loading-message="Loading tenants...">
       <v-row>
         <v-col cols="12">
           <FloatingActionButton
@@ -92,7 +92,7 @@ const handleTenantSubmit = async ({
       </v-row>
 
       <TenantList :tenants="tenants" @select="handleCardClick" />
-    </v-container>
+    </LoadingWrapper>
 
     <TenantCreateDialog
       v-model="dialogVisible"
