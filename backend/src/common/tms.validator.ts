@@ -235,6 +235,7 @@ export default {
     createSharedService: {
         body: Joi.object({
             name: Joi.string().min(1).max(30).pattern(/^\S.*\S$/).required(),
+            clientIdentifier: Joi.string().min(1).max(55).pattern(/^\S.*\S$/).required(),
             description: Joi.string().min(1).max(500).optional(),
             isActive: Joi.boolean().optional(),
             roles: Joi.array().items(

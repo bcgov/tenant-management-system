@@ -1004,6 +1004,7 @@ paths:
               type: object
               required:
                 - name
+                - clientIdentifier
                 - roles
               properties:
                 name:
@@ -1012,6 +1013,12 @@ paths:
                   maxLength: 30
                   pattern: '^\S.*\S$'
                   example: "Email Service"
+                clientIdentifier:
+                  type: string
+                  minLength: 1
+                  maxLength: 55
+                  pattern: '^\S.*\S$'
+                  example: "email-service-client"
                 description:
                   type: string
                   maxLength: 500
@@ -1740,6 +1747,9 @@ paths:
                             name:
                               type: string
                               example: "Email Service"
+                            clientIdentifier:
+                              type: string
+                              example: "email-service-client"
                             description:
                               type: string
                               example: "Email service for tenant communications"
@@ -1901,6 +1911,9 @@ paths:
                             name:
                               type: string
                               example: "Email Service"
+                            clientIdentifier:
+                              type: string
+                              example: "email-service-client"
                             description:
                               type: string
                               example: "Email service for tenant communications"
@@ -2440,6 +2453,11 @@ components:
           minLength: 1
           maxLength: 30
           example: "Email Service"
+        clientIdentifier:
+          type: string
+          minLength: 1
+          maxLength: 55
+          example: "email-service-client"
         description:
           type: string
           maxLength: 500
@@ -2494,6 +2512,11 @@ components:
           minLength: 1
           maxLength: 30
           example: "Email Service"
+        clientIdentifier:
+          type: string
+          minLength: 1
+          maxLength: 55
+          example: "email-service-client"
         description:
           type: string
           maxLength: 500
