@@ -1,19 +1,19 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from 'vue'
+import { nextTick, ref, watch } from 'vue'
 import { VForm } from 'vuetify/components'
 
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
-import { useAuthStore } from '@/stores'
+import type { TenantEditFields } from '@/models'
 import { MINISTRIES } from '@/utils/constants'
 
 const props = defineProps<{
-  isDuplicateName?: boolean
+  isDuplicateName: boolean
 }>()
 
 const emit = defineEmits<{
-  (event: 'submit', payload: { name: string; ministryName: string }): void
   (event: 'clear-duplicate-error'): void
+  (event: 'submit', tenantDetails: TenantEditFields): void
 }>()
 
 // Auto-bound v-model from parent
@@ -22,12 +22,13 @@ const dialogVisible = defineModel<boolean>()
 const closeDialog = () => (dialogVisible.value = false)
 
 // Form state
-const formRef = ref<InstanceType<typeof VForm>>()
-const formValid = ref(false)
-const ministryName = ref('')
-const name = ref('')
-const authStore = useAuthStore()
-const username = computed(() => authStore.user?.ssoUser.displayName || '')
+const form = ref<InstanceType<typeof VForm>>()
+const formData = ref<TenantEditFields>({
+  description: '',
+  ministryName: '',
+  name: '',
+})
+const isFormValid = ref(false)
 
 // Clear the state when the dialog is opened. This is for the case that the
 // user opens the dialog, enters data, cancels, and opens it again - the form
@@ -36,14 +37,17 @@ watch(
   () => dialogVisible.value,
   async (newVal) => {
     if (newVal) {
-      ministryName.value = ''
-      name.value = ''
-      formValid.value = false
+      formData.value = {
+        description: '',
+        ministryName: '',
+        name: '',
+      }
+      isFormValid.value = false
 
       // Trigger validation when dialog is shown, so that the user knows which
       // fields are required.
       await nextTick()
-      formRef.value?.validate()
+      form.value?.validate()
     }
   },
 )
@@ -54,13 +58,16 @@ watch(
   () => props.isDuplicateName,
   async () => {
     await nextTick()
-    formRef.value?.validate()
+    await form.value?.validate()
   },
 )
 
-watch([ministryName, name], () => {
-  emit('clear-duplicate-error')
-})
+watch(
+  () => [formData.value.name, formData.value.ministryName],
+  () => {
+    emit('clear-duplicate-error')
+  },
+)
 
 // Validation
 const rules = {
@@ -73,35 +80,26 @@ const rules = {
 }
 
 const handleSubmit = () => {
-  if (formValid.value) {
-    emit('submit', {
-      name: name.value,
-      ministryName: ministryName.value,
-    })
+  if (isFormValid.value) {
+    emit('submit', formData.value)
     // Let parent decide when to close the dialog
   }
 }
 </script>
 
 <template>
-  <v-dialog v-model="dialogVisible" max-width="600px">
+  <v-dialog v-model="dialogVisible" max-width="800px">
     <v-card class="pa-6">
-      <v-card-title>Create New Tenant</v-card-title>
+      <v-card-title>Request New Tenant</v-card-title>
       <v-card-subtitle>
         <a href="#">Learn more about Multi-Tenancy</a>
       </v-card-subtitle>
       <v-card-text>
-        <v-form ref="formRef" v-model="formValid">
-          <v-text-field
-            v-model="username"
-            label="Tenant Owner"
-            disabled
-            readonly
-          />
+        <v-form ref="form" v-model="isFormValid">
           <v-row>
             <v-col cols="12" md="6">
               <v-text-field
-                v-model="name"
+                v-model="formData.name"
                 :maxlength="30"
                 :rules="[
                   rules.required,
@@ -114,7 +112,7 @@ const handleSubmit = () => {
             </v-col>
             <v-col cols="12" md="6">
               <v-select
-                v-model="ministryName"
+                v-model="formData.ministryName"
                 :items="MINISTRIES"
                 :rules="[rules.required]"
                 label="Ministry/Organization"
@@ -123,13 +121,26 @@ const handleSubmit = () => {
               />
             </v-col>
           </v-row>
+          <v-row>
+            <v-col cols="12" md="6">
+              <v-textarea
+                v-model="formData.description"
+                :rules="[rules.required, rules.maxLength(500)]"
+                counter="500"
+                label="Description of Tenant"
+                rows="1"
+                auto-grow
+                required
+              ></v-textarea>
+            </v-col>
+          </v-row>
         </v-form>
       </v-card-text>
-      <v-card-actions class="d-flex justify-start">
+      <v-card-actions class="d-flex justify-end">
         <ButtonSecondary class="me-4" text="Cancel" @click="closeDialog" />
         <ButtonPrimary
-          :disabled="!formValid"
-          text="Finish"
+          :disabled="!isFormValid"
+          text="Submit Request"
           @click="handleSubmit"
         />
       </v-card-actions>
