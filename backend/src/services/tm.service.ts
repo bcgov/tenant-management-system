@@ -3,6 +3,7 @@ import { TMRepository } from '../repositories/tm.repository'
 import { TMSRepository } from '../repositories/tms.repository'
 import { connection } from '../common/db.connection'
 import logger from '../common/logger'
+import { UnauthorizedError } from '../errors/UnauthorizedError'
 
 export class TMService {
 
@@ -86,5 +87,18 @@ export class TMService {
                 sharedServices: sharedServices
             }   
         }       
+    }
+
+    public async getUserGroupsWithSharedServices(req: Request) {
+        const audience = req.decodedJwt?.aud || req.decodedJwt?.audience;
+        if (!audience) {
+            throw new UnauthorizedError('Missing audience in JWT token');
+        }
+
+        const result = await this.tmRepository.getUserGroupsWithSharedServices(req, audience);
+        
+        return {
+            data: result
+        };
     }
 } 

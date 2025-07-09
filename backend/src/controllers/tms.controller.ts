@@ -328,19 +328,5 @@ export class TMSController {
         }
     }
 
-    public async getUserGroupsWithSharedServices(req: Request, res: Response) {
-        try {
-            const result = await this.tmsService.getUserGroupsWithSharedServices(req)
-            res.status(200).send(result)
-        } catch(error) {
-            logger.error(error)
-            if (error instanceof NotFoundError) {
-                this.errorHandler.generalError(res, "Error occurred getting user groups with shared services", error.message, error.statusCode, "Not Found")
-            } else if (error instanceof UnauthorizedError) {
-                this.errorHandler.generalError(res, "Error occurred getting user groups with shared services", error.message, error.statusCode, "Unauthorized")
-            } else {
-                this.errorHandler.generalError(res, "Error occurred getting user groups with shared services", error.message, 500, "Internal Server Error")
-            }
-        }
-    }
+
 }

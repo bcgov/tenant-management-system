@@ -242,18 +242,7 @@ export class TMSService {
         }
     }
 
-    public async getUserGroupsWithSharedServices(req: Request) {
-        const audience = req.decodedJwt?.aud || req.decodedJwt?.audience;
-        if (!audience) {
-            throw new UnauthorizedError('Missing audience in JWT token');
-        }
 
-        const result = await this.tmsRepository.getUserGroupsWithSharedServices(req, audience);
-        
-        return {
-            data: result
-        };
-    }
     
     private async getToken() {
         try {

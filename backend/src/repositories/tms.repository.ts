@@ -941,79 +941,7 @@ export class TMSRepository {
             );
     }
 
-    public async getUserGroupsWithSharedServices(req: Request, audience: string) {
-        const tenantId = req.params.tenantId;
-        const ssoUserId = req.params.ssoUserId;
 
-        const tenantUser = await this.getTenantUserBySsoId(ssoUserId, tenantId);
-        if (!tenantUser) {
-            throw new NotFoundError(`Tenant user not found: ${ssoUserId}`);
-        }
-
-        const result = await this.manager
-            .createQueryBuilder('GroupUser', 'gu')
-            .leftJoinAndSelect('gu.group', 'group')
-            .leftJoin('GroupSharedServiceRole', 'gssr', 
-                'group.id = gssr.group.id AND gssr.isDeleted = :gssrDeleted')
-            .leftJoin('SharedServiceRole', 'ssr', 
-                'gssr.sharedServiceRole.id = ssr.id AND ssr.isDeleted = :ssrDeleted')
-            .leftJoin('SharedService', 'ss', 
-                'ssr.sharedService.id = ss.id AND ss.isActive = :ssActive AND ss.clientIdentifier = :audience')
-            .leftJoin('TenantSharedService', 'tss', 
-                'ss.id = tss.sharedService.id AND tss.tenant.id = :tenantId AND tss.isDeleted = :tssDeleted')
-            .where('gu.tenantUser.id = :tenantUserId', { tenantUserId: tenantUser.id })
-            .andWhere('gu.isDeleted = :guDeleted', { guDeleted: false })
-            .setParameter('gssrDeleted', false)
-            .setParameter('ssrDeleted', false)
-            .setParameter('ssActive', true)
-            .setParameter('audience', audience)
-            .setParameter('tssDeleted', false)
-            .orderBy('group.name', 'ASC')
-            .addOrderBy('ss.name', 'ASC')
-            .addOrderBy('ssr.name', 'ASC')
-            .getRawAndEntities();
-
-        const groupsMap = new Map();
-
-        result.entities.forEach((gu, index) => {
-            const raw = result.raw[index];
-            const groupId = gu.group.id;
-            
-            if (!groupsMap.has(groupId)) {
-                groupsMap.set(groupId, {
-                    name: gu.group.name,
-                    sharedServices: []
-                });
-            }
-
-            const group = groupsMap.get(groupId);
-            
-            if (raw.ss_id) {
-                const sharedServiceId = raw.ss_id;
-                let sharedService = group.sharedServices.find(ss => ss.name === raw.ss_name);
-                
-                if (!sharedService) {
-                    sharedService = {
-                        name: raw.ss_name,
-                        roles: []
-                    };
-                    group.sharedServices.push(sharedService);
-                }
-
-                if (raw.ssr_id) {
-                    sharedService.roles.push({
-                        name: raw.ssr_name,
-                        enabled: true
-                    });
-                }
-            }
-        });
-
-        const groups = Array.from(groupsMap.values());
-        groups.sort((a, b) => a.name.localeCompare(b.name));
-
-        return { groups };
-    }
 
 }
 
