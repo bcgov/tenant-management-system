@@ -465,6 +465,7 @@ export class TMRepository {
                 sharedServicesMap.set(sharedServiceId, {
                     id: ssr.sharedService.id,
                     name: ssr.sharedService.name,
+                    clientIdentifier: ssr.sharedService.clientIdentifier,
                     description: ssr.sharedService.description,
                     createdDateTime: ssr.sharedService.createdDateTime,
                     updatedDateTime: ssr.sharedService.updatedDateTime,

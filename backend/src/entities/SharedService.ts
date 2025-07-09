@@ -10,6 +10,9 @@ export class SharedService {
     @Column({ type: 'varchar', length: 30, name: 'name', unique: true })
     name: string;
     
+    @Column({ type: 'varchar', length: 55, name: 'client_identifier', unique: true })
+    clientIdentifier: string;
+    
     @Column({ type: 'varchar', length: 500, name: 'description', nullable: true })
     description: string;
     
