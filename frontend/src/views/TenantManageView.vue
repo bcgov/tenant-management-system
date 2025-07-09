@@ -40,7 +40,6 @@ const breadcrumbs = computed(() => [
 ])
 
 const showDetail = ref(true)
-const deleteDialogVisible = ref(false)
 const isEditing = ref(false)
 const isLoading = ref(true)
 const tab = ref<number>(0)
@@ -146,7 +145,9 @@ async function handleUpdateTenant(updatedTenant: TenantEditFields) {
       // duplicated validation error.
       isDuplicateName.value = true
     } else if (error instanceof DomainError && error.userMessage) {
-      // For any other API Domain Error, display the user message.
+      // For any other API Domain Error, display the user message that comes
+      // from the API. This should not happen but is useful if there are
+      // business rules in the API that are not implemented in the UI.
       addNotification(error.userMessage, 'error')
     } else {
       // Otherwise display a generic error message.
@@ -165,7 +166,6 @@ async function handleUpdateTenant(updatedTenant: TenantEditFields) {
 
       <TenantDetails
         v-if="showDetail"
-        v-model:delete-dialog="deleteDialogVisible"
         v-model:is-editing="isEditing"
         :is-duplicate-name="isDuplicateName"
         :tenant="tenant"
@@ -173,7 +173,6 @@ async function handleUpdateTenant(updatedTenant: TenantEditFields) {
         @update="handleUpdateTenant"
       />
 
-      <!-- Inlined Tabs -->
       <v-card class="mt-6" elevation="0">
         <v-tabs v-model="tab" :disabled="isEditing" :mandatory="false">
           <!-- The v-tabs component insists on always having an active tab. Use

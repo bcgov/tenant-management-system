@@ -81,6 +81,16 @@ export class Tenant {
   }
 
   /**
+   * Finds a user in the tenant's users array by their SSO User ID.
+   *
+   * @param ssoUserId - The SSO User ID of the user to find
+   * @returns The User if found, or undefined if not found
+   */
+  findUser(ssoUserId: string): User | undefined {
+    return this.users.find((user) => user.ssoUser.ssoUserId === ssoUserId)
+  }
+
+  /**
    * Creates a Tenant instance from API response data.
    *
    * Note: The API returns 'createdDateTime' which is mapped to the
@@ -140,5 +150,20 @@ export class Tenant {
     return this.users.filter((user) =>
       user.roles.some((role) => role.name === ROLES.TENANT_OWNER.value),
     )
+  }
+
+  /**
+   * Checks if a user has a specific role within this tenant.
+   *
+   * @param user - The user to check
+   * @param roleName - The name of the role to check for
+   * @returns True if the user exists and has the role, false otherwise
+   */
+  userHasRole(user: User, roleName: string): boolean {
+    const tenantUser = this.findUser(user.ssoUser.ssoUserId)
+
+    return tenantUser
+      ? tenantUser.roles.some((role) => role.name === roleName)
+      : false
   }
 }
