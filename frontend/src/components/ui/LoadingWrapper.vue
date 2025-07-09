@@ -14,12 +14,10 @@ watch(
   () => props.loading,
   (isLoading) => {
     if (isLoading) {
-      // Start the delay timer
       timeoutId = window.setTimeout(() => {
         showSpinner.value = true
-      }, props.delay ?? 300) // default 300ms
+      }, props.delay ?? 300)
     } else {
-      // Loading finished, hide spinner and clear timeout
       showSpinner.value = false
       if (timeoutId) {
         clearTimeout(timeoutId)
