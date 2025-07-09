@@ -5,7 +5,7 @@ import { useRouter } from 'vue-router'
 
 import TenantCreateDialog from '@/components/tenant/TenantCreateDialog.vue'
 import TenantList from '@/components/tenant/TenantList.vue'
-import FloatingActionButton from '@/components/ui/FloatingActionButton.vue'
+import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import LoadingWrapper from '@/components/ui/LoadingWrapper.vue'
 import { useNotification } from '@/composables'
 import { DomainError, DuplicateEntityError } from '@/errors'
@@ -81,13 +81,9 @@ const handleTenantSubmit = async ({
 <template>
   <BaseSecureView>
     <LoadingWrapper :loading="loading" loading-message="Loading tenants...">
-      <v-row>
+      <v-row class="mb-8">
         <v-col cols="12">
-          <FloatingActionButton
-            icon="mdi-plus-box"
-            text="Create New Tenant"
-            @click="openDialog"
-          />
+          <ButtonPrimary text="Request New Tenant" @click="openDialog" />
         </v-col>
       </v-row>
 
