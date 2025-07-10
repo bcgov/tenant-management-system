@@ -77,6 +77,8 @@ function onUserSelected(user: User) {
 }
 
 function onClearSearch() {
+  selectedUser.value = null
+  selectedRoles.value = []
   emit('clear-search')
 }
 
