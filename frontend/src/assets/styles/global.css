@@ -33,10 +33,6 @@ p {
   font: var(--bcds-typography-regular-small-body);
 }
 
-.v-input.v-input--disabled .v-field__input {
-  color: rgb(var(--v-theme-typography-input-disabled)) !important;
-}
-
 .v-input.v-input--disabled .v-input__control {
   background-color: rgb(var(--v-theme-surface-input-disabled)) !important;
 }
