@@ -20,7 +20,7 @@ const roleStore = useRoleStore()
 const tenantStore = useTenantStore()
 const userStore = useUserStore()
 
-const { addNotification } = useNotification()
+const { notification } = useNotification()
 
 // Component Data
 
@@ -78,16 +78,15 @@ async function handleAddUser(user: User) {
   try {
     await tenantStore.addTenantUser(tenant.value, user)
     searchResults.value = []
-    addNotification('User added successfully')
+    notification.success('User added successfully')
   } catch (error) {
     if (error instanceof DuplicateEntityError) {
-      addNotification(
+      notification.error(
         `Cannot add user "${user.ssoUser.displayName}": already a user in ` +
           `this tenant`,
-        'error',
       )
     } else {
-      addNotification('Failed to add user', 'error')
+      notification.error('Failed to add user')
     }
 
     searchResults.value = []
@@ -101,9 +100,9 @@ async function handleClearSearch() {
 async function handleRemoveRole(userId: string, roleId: string) {
   try {
     await tenantStore.removeTenantUserRole(tenant.value, userId, roleId)
-    addNotification('The role was successfully removed from the user.')
+    notification.success('The role was successfully removed from the user')
   } catch {
-    addNotification('Failed to remove user role', 'error')
+    notification.error('Failed to remove user role')
   }
 }
 
@@ -124,7 +123,7 @@ async function handleUserSearch(
       throw new Error('Invalid search type')
     }
   } catch {
-    addNotification('User search failed', 'error')
+    notification.error('User search failed')
     searchResults.value = []
   } finally {
     loadingSearch.value = false
@@ -148,10 +147,10 @@ async function handleUpdateTenant(updatedTenant: TenantEditFields) {
       // For any other API Domain Error, display the user message that comes
       // from the API. This should not happen but is useful if there are
       // business rules in the API that are not implemented in the UI.
-      addNotification(error.userMessage, 'error')
+      notification.error(error.userMessage)
     } else {
       // Otherwise display a generic error message.
-      addNotification('Failed to update the tenant', 'error')
+      notification.error('Failed to update the tenant')
     }
   }
 }

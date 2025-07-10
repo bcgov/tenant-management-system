@@ -1,2 +1,2 @@
 export type { Notification } from './Notification'
-export type { NotificationType } from './NotificationType'
+export { NotificationType } from './NotificationType'
