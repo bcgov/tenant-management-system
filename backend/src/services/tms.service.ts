@@ -7,6 +7,7 @@ import logger from '../common/logger'
 import { TenantRequest } from '../entities/TenantRequest'
 import { Tenant } from '../entities/Tenant'
 import { BadRequestError } from '../errors/BadRequestError'
+import { UnauthorizedError } from '../errors/UnauthorizedError'
 
 export class TMSService {
 
@@ -240,6 +241,8 @@ export class TMSService {
             }
         }
     }
+
+
     
     private async getToken() {
         try {

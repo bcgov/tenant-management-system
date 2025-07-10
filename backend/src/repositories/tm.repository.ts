@@ -586,4 +586,71 @@ export class TMRepository {
 
         return await this.getSharedServiceRolesForGroup(req)
     }
+
+    public async getUserGroupsWithSharedServiceRoles(req: Request, audience: string) {
+        const tenantId = req.params.tenantId;
+        const ssoUserId = req.params.ssoUserId;
+
+        const tenantUser = await this.tmsRepository.getTenantUserBySsoId(ssoUserId, tenantId);
+        if (!tenantUser) {
+            throw new NotFoundError(`Tenant user not found: ${ssoUserId}`);
+        }
+
+        const result = await this.manager
+            .createQueryBuilder('GroupUser', 'gu')
+            .leftJoinAndSelect('gu.group', 'group')
+            .leftJoinAndSelect('group.sharedServiceRoles', 'gssr')
+            .leftJoinAndSelect('gssr.sharedServiceRole', 'ssr')
+            .leftJoinAndSelect('ssr.sharedService', 'ss')
+            .leftJoin('TenantSharedService', 'tss', 'ss.id = tss.sharedService.id')
+            .where('gu.tenantUser.id = :tenantUserId', { tenantUserId: tenantUser.id })
+            .andWhere('gu.isDeleted = :guDeleted', { guDeleted: false })
+            .andWhere('gssr.isDeleted = :gssrDeleted', { gssrDeleted: false })
+            .andWhere('ssr.isDeleted = :ssrDeleted', { ssrDeleted: false })
+            .andWhere('ss.isActive = :ssActive', { ssActive: true })
+            .andWhere('ss.clientIdentifier = :audience', { audience })
+            .andWhere('tss.tenant.id = :tenantId', { tenantId })
+            .andWhere('tss.isDeleted = :tssDeleted', { tssDeleted: false })
+            .orderBy('group.name', 'ASC')
+            .addOrderBy('ss.name', 'ASC')
+            .addOrderBy('ssr.name', 'ASC')
+            .getMany();
+
+        const groupsMap = new Map();
+
+        result.forEach(gu => {
+            const groupId = gu.group.id;
+            if (!groupsMap.has(groupId)) {
+                groupsMap.set(groupId, {
+                    id: gu.group.id,
+                    name: gu.group.name,
+                    sharedServiceRoles: []
+                });
+            }
+            const group = groupsMap.get(groupId);
+            
+            if (gu.group.sharedServiceRoles) {
+                gu.group.sharedServiceRoles.forEach(gssr => {
+                    if (
+                        gssr.sharedServiceRole &&
+                        gssr.sharedServiceRole.sharedService &&
+                        gssr.sharedServiceRole.sharedService.isActive &&
+                        gssr.sharedServiceRole.sharedService.clientIdentifier === audience &&
+                        !gssr.isDeleted &&
+                        !gssr.sharedServiceRole.isDeleted
+                    ) {
+                        group.sharedServiceRoles.push({
+                            name: gssr.sharedServiceRole.name,
+                            enabled: true
+                        });
+                    }
+                });
+            }
+        });
+
+        const groups = Array.from(groupsMap.values());
+        groups.sort((a, b) => a.name.localeCompare(b.name));
+
+        return { groups };
+    }
 } 

@@ -28,4 +28,5 @@ export class RoutesConstants {
     public static GET_SHARED_SERVICES_FOR_TENANT = '/v1/tenants/:tenantId/shared-services'
     public static GET_SHARED_SERVICE_ROLES_FOR_GROUP = '/v1/tenants/:tenantId/groups/:groupId/shared-services/shared-service-roles'
     public static UPDATE_SHARED_SERVICE_ROLES_FOR_GROUP = '/v1/tenants/:tenantId/groups/:groupId/shared-services/shared-service-roles'
+    public static GET_USER_GROUPS_WITH_SHARED_SERVICE_ROLES = '/v1/tenants/:tenantId/users/:ssoUserId/groups/shared-service-roles'
 }

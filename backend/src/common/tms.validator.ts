@@ -287,5 +287,12 @@ export default {
                 })
             ).required()
         }).options({abortEarly:false,convert:false})
+    },
+
+    getUserGroupsWithSharedServiceRoles: {
+        params: Joi.object({
+            tenantId: Joi.string().guid().required(),
+            ssoUserId: Joi.string().required()
+        }).options({abortEarly:false,convert:false})
     }
 }

@@ -3,6 +3,7 @@ import { TMService } from '../services/tm.service'
 import { ErrorHandler } from '../common/error.handler'
 import { NotFoundError } from '../errors/NotFoundError'
 import { ConflictError } from '../errors/ConflictError'
+import { UnauthorizedError } from '../errors/UnauthorizedError'
 import logger from '../common/logger'
 
 export class TMController {
@@ -149,6 +150,22 @@ export class TMController {
             }
             else {
                 this.errorHandler.generalError(res, "Error occurred updating shared service roles for group", error.message, 500, "Internal Server Error")
+            }
+        }
+    }
+
+    public async getUserGroupsWithSharedServiceRoles(req: Request, res: Response) {
+        try {
+            const result = await this.tmService.getUserGroupsWithSharedServiceRoles(req)
+            res.status(200).send(result)
+        } catch(error) {
+            logger.error(error)
+            if (error instanceof NotFoundError) {
+                this.errorHandler.generalError(res, "Error occurred getting user groups with shared services", error.message, error.statusCode, "Not Found")
+            } else if (error instanceof UnauthorizedError) {
+                this.errorHandler.generalError(res, "Error occurred getting user groups with shared services", error.message, error.statusCode, "Unauthorized")
+            } else {
+                this.errorHandler.generalError(res, "Error occurred getting user groups with shared services", error.message, 500, "Internal Server Error")
             }
         }
     }
