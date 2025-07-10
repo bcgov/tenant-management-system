@@ -289,7 +289,7 @@ export default {
         }).options({abortEarly:false,convert:false})
     },
 
-    getUserGroupsWithSharedServices: {
+    getUserGroupsWithSharedServiceRoles: {
         params: Joi.object({
             tenantId: Joi.string().guid().required(),
             ssoUserId: Joi.string().required()

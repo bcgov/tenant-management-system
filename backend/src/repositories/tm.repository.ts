@@ -587,7 +587,7 @@ export class TMRepository {
         return await this.getSharedServiceRolesForGroup(req)
     }
 
-    public async getUserGroupsWithSharedServices(req: Request, audience: string) {
+    public async getUserGroupsWithSharedServiceRoles(req: Request, audience: string) {
         const tenantId = req.params.tenantId;
         const ssoUserId = req.params.ssoUserId;
 
@@ -599,59 +599,52 @@ export class TMRepository {
         const result = await this.manager
             .createQueryBuilder('GroupUser', 'gu')
             .leftJoinAndSelect('gu.group', 'group')
-            .leftJoin('GroupSharedServiceRole', 'gssr', 
-                'group.id = gssr.group.id AND gssr.isDeleted = :gssrDeleted')
-            .leftJoin('SharedServiceRole', 'ssr', 
-                'gssr.sharedServiceRole.id = ssr.id AND ssr.isDeleted = :ssrDeleted')
-            .leftJoin('SharedService', 'ss', 
-                'ssr.sharedService.id = ss.id AND ss.isActive = :ssActive AND ss.clientIdentifier = :audience')
-            .leftJoin('TenantSharedService', 'tss', 
-                'ss.id = tss.sharedService.id AND tss.tenant.id = :tenantId AND tss.isDeleted = :tssDeleted')
+            .leftJoinAndSelect('group.sharedServiceRoles', 'gssr')
+            .leftJoinAndSelect('gssr.sharedServiceRole', 'ssr')
+            .leftJoinAndSelect('ssr.sharedService', 'ss')
+            .leftJoin('TenantSharedService', 'tss', 'ss.id = tss.sharedService.id')
             .where('gu.tenantUser.id = :tenantUserId', { tenantUserId: tenantUser.id })
             .andWhere('gu.isDeleted = :guDeleted', { guDeleted: false })
-            .setParameter('gssrDeleted', false)
-            .setParameter('ssrDeleted', false)
-            .setParameter('ssActive', true)
-            .setParameter('audience', audience)
-            .setParameter('tssDeleted', false)
+            .andWhere('gssr.isDeleted = :gssrDeleted', { gssrDeleted: false })
+            .andWhere('ssr.isDeleted = :ssrDeleted', { ssrDeleted: false })
+            .andWhere('ss.isActive = :ssActive', { ssActive: true })
+            .andWhere('ss.clientIdentifier = :audience', { audience })
+            .andWhere('tss.tenant.id = :tenantId', { tenantId })
+            .andWhere('tss.isDeleted = :tssDeleted', { tssDeleted: false })
             .orderBy('group.name', 'ASC')
             .addOrderBy('ss.name', 'ASC')
             .addOrderBy('ssr.name', 'ASC')
-            .getRawAndEntities();
+            .getMany();
 
         const groupsMap = new Map();
 
-        result.entities.forEach((gu, index) => {
-            const raw = result.raw[index];
+        result.forEach(gu => {
             const groupId = gu.group.id;
-            
             if (!groupsMap.has(groupId)) {
                 groupsMap.set(groupId, {
+                    id: gu.group.id,
                     name: gu.group.name,
-                    sharedServices: []
+                    sharedServiceRoles: []
                 });
             }
-
             const group = groupsMap.get(groupId);
             
-            if (raw.ss_id) {
-                const sharedServiceId = raw.ss_id;
-                let sharedService = group.sharedServices.find(ss => ss.name === raw.ss_name);
-                
-                if (!sharedService) {
-                    sharedService = {
-                        name: raw.ss_name,
-                        roles: []
-                    };
-                    group.sharedServices.push(sharedService);
-                }
-
-                if (raw.ssr_id) {
-                    sharedService.roles.push({
-                        name: raw.ssr_name,
-                        enabled: true
-                    });
-                }
+            if (gu.group.sharedServiceRoles) {
+                gu.group.sharedServiceRoles.forEach(gssr => {
+                    if (
+                        gssr.sharedServiceRole &&
+                        gssr.sharedServiceRole.sharedService &&
+                        gssr.sharedServiceRole.sharedService.isActive &&
+                        gssr.sharedServiceRole.sharedService.clientIdentifier === audience &&
+                        !gssr.isDeleted &&
+                        !gssr.sharedServiceRole.isDeleted
+                    ) {
+                        group.sharedServiceRoles.push({
+                            name: gssr.sharedServiceRole.name,
+                            enabled: true
+                        });
+                    }
+                });
             }
         });
 

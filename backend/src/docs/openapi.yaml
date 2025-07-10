@@ -1989,6 +1989,67 @@ paths:
               schema:
                 $ref: '#/components/schemas/InternalServerErrorResponse'
 
+  /v1/tenants/{tenantId}/users/{ssoUserId}/groups/shared-service-roles:
+    get:
+      summary: Get user groups with shared service roles
+      description: Retrieves all groups that a user belongs to, along with their enabled shared service roles that match the JWT audience. Only returns groups that have at least one enabled shared service role matching the client identifier in the JWT token. Requires JWT authentication.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: tenantId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The unique identifier of the tenant
+        - name: ssoUserId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The SSO user identifier
+      responses:
+        '200':
+          description: User groups with shared service roles successfully retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/UserGroupsWithSharedServices'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestResponse'
+        '401':
+          description: Unauthorized - Missing or invalid JWT audience
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        '403':
+          description: Forbidden - User does not have access to the tenant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        '404':
+          description: Tenant user not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+
 components:
   schemas:
     BasicUser:

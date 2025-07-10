@@ -49,7 +49,7 @@ export class Routes {
         app.route(RoutesConstants.UPDATE_SHARED_SERVICE_ROLES_FOR_GROUP).put(checkJwt, validate(validator.updateSharedServiceRolesForGroup,{},{}), checkTenantAccess([TMSConstants.TENANT_OWNER, TMSConstants.USER_ADMIN]),(req:Request,res:Response) => this.tmController.updateSharedServiceRolesForGroup(req,res))
         app.route(RoutesConstants.ASSOCIATE_SHARED_SERVICE_TO_TENANT).post(checkJwt, validate(validator.associateSharedServiceToTenant,{},{}), checkTenantAccess([TMSConstants.TENANT_OWNER]),(req:Request,res:Response) => this.tmsController.associateSharedServiceToTenant(req,res))
         app.route(RoutesConstants.GET_SHARED_SERVICES_FOR_TENANT).get(checkJwt, validate(validator.getSharedServicesForTenant,{},{}), checkTenantAccess([]),(req:Request,res:Response) => this.tmsController.getSharedServicesForTenant(req,res))
-        app.route(RoutesConstants.GET_USER_GROUPS_WITH_SHARED_SERVICES).get(checkJwt, validate(validator.getUserGroupsWithSharedServices,{},{}), checkTenantAccess([]),(req:Request,res:Response) => this.tmController.getUserGroupsWithSharedServices(req,res))
+        app.route(RoutesConstants.GET_USER_GROUPS_WITH_SHARED_SERVICE_ROLES).get(checkJwt, validate(validator.getUserGroupsWithSharedServiceRoles,{},{}), checkTenantAccess([]),(req:Request,res:Response) => this.tmController.getUserGroupsWithSharedServiceRoles(req,res))
 
         app.use(function (error: Error, req: any, res: Response<any, Record<string, any>>, next: any) {
             if (error instanceof ValidationError) {

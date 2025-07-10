@@ -154,9 +154,9 @@ export class TMController {
         }
     }
 
-    public async getUserGroupsWithSharedServices(req: Request, res: Response) {
+    public async getUserGroupsWithSharedServiceRoles(req: Request, res: Response) {
         try {
-            const result = await this.tmService.getUserGroupsWithSharedServices(req)
+            const result = await this.tmService.getUserGroupsWithSharedServiceRoles(req)
             res.status(200).send(result)
         } catch(error) {
             logger.error(error)

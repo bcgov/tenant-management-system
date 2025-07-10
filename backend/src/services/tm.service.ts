@@ -89,13 +89,13 @@ export class TMService {
         }       
     }
 
-    public async getUserGroupsWithSharedServices(req: Request) {
+    public async getUserGroupsWithSharedServiceRoles(req: Request) {
         const audience = req.decodedJwt?.aud || req.decodedJwt?.audience;
         if (!audience) {
             throw new UnauthorizedError('Missing audience in JWT token');
         }
 
-        const result = await this.tmRepository.getUserGroupsWithSharedServices(req, audience);
+        const result = await this.tmRepository.getUserGroupsWithSharedServiceRoles(req, audience);
         
         return {
             data: result
