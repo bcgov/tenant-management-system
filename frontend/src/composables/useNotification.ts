@@ -1,15 +1,19 @@
 import { v4 as uuidv4 } from 'uuid'
-import { computed, reactive } from 'vue'
+import { reactive } from 'vue'
 
-import type { Notification, NotificationType } from '@/types'
+import { type Notification, NotificationType } from '@/types'
 
 const state = reactive<{ notifications: Notification[] }>({
   notifications: [],
 })
 
-function addNotification(message: string, type: NotificationType = 'success') {
+function addNotification(
+  title: string,
+  message: string,
+  type: NotificationType = NotificationType.SUCCESS,
+) {
   const id = uuidv4()
-  const notification: Notification = { id, message, type }
+  const notification: Notification = { id, title, message, type }
   state.notifications.push(notification)
 
   setTimeout(() => {
@@ -24,10 +28,28 @@ function removeNotification(id: string) {
   }
 }
 
+export const notification = {
+  get items() {
+    return state.notifications
+  },
+
+  remove: removeNotification,
+
+  success: (message: string, title: string = 'Success') =>
+    addNotification(title, message, NotificationType.SUCCESS),
+
+  error: (message: string, title: string = 'Error') =>
+    addNotification(title, message, NotificationType.ERROR),
+
+  warning: (message: string, title: string = 'Warning') =>
+    addNotification(title, message, NotificationType.WARNING),
+
+  info: (message: string, title: string = 'Info') =>
+    addNotification(title, message, NotificationType.INFO),
+}
+
 export function useNotification() {
   return {
-    notifications: computed(() => state.notifications),
-    addNotification,
-    removeNotification,
+    notification,
   }
 }

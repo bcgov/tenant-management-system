@@ -1,24 +1,25 @@
 <script setup lang="ts">
 import { useNotification } from '@/composables'
 
-const { notifications, removeNotification } = useNotification()
+const { notification } = useNotification()
 </script>
 
 <template>
   <transition-group class="notification-wrapper" name="fade" tag="div">
-    <div v-if="notifications.length" class="notification-wrapper">
+    <div v-if="notification.items.length" class="notification-wrapper">
       <div
-        v-for="notification in notifications"
-        :key="notification.id"
+        v-for="notificationItem in notification.items"
+        :key="notificationItem.id"
         class="notification-container"
       >
         <v-alert
-          :type="notification.type"
+          :title="notificationItem.title"
+          :type="notificationItem.type"
           role="alert"
           closable
-          @click="removeNotification(notification.id)"
+          @click="notification.remove(notificationItem.id)"
         >
-          {{ notification.message }}
+          {{ notificationItem.message }}
         </v-alert>
       </div>
     </div>
