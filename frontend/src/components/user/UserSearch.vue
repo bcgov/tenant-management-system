@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import type { User } from '@/models'
@@ -47,10 +47,13 @@ watch(selectedUser, (selection) => {
   }
 })
 
+// The SSO API will return a 400 if the search text is less than 2 characters.
+const isSearchEnabled = computed(() => {
+  return searchText.value && searchText.value.length >= 2
+})
+
 function search() {
-  if (searchText.value && searchType.value) {
-    emit('search', searchType.value, searchText.value)
-  }
+  emit('search', searchType.value, searchText.value)
 }
 </script>
 
@@ -73,7 +76,11 @@ function search() {
       />
     </v-col>
     <v-col class="d-flex align-center" md="2">
-      <ButtonPrimary :disabled="!searchText" text="Search" @click="search" />
+      <ButtonPrimary
+        :disabled="!isSearchEnabled"
+        text="Search"
+        @click="search"
+      />
     </v-col>
   </v-row>
 
