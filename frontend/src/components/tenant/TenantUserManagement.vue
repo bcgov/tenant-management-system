@@ -27,7 +27,12 @@ const emit = defineEmits<{
 // Permissions
 
 const isUserAdmin = computed(() => {
-  return currentUserHasRole(props.tenant, ROLES.USER_ADMIN.value)
+  // A tenant owner, by default, is also a user admin - even if they don't have
+  // the USER_ADMIN role.
+  return (
+    currentUserHasRole(props.tenant, ROLES.TENANT_OWNER.value) ||
+    currentUserHasRole(props.tenant, ROLES.USER_ADMIN.value)
+  )
 })
 
 const showSearch = ref(false)
