@@ -13,7 +13,7 @@ import { currentUserHasRole } from '@/utils/permissions'
 const props = defineProps<{
   loadingSearch: boolean
   possibleRoles?: Role[]
-  searchResults: User[]
+  searchResults: User[] | null
   tenant: Tenant
 }>()
 
@@ -187,6 +187,7 @@ function handleConfirmButtonClick(action: string) {
           :items="tenant?.users || []"
           :sort-by="[{ key: 'displayName', order: 'asc' }]"
           item-value="id"
+          striped="even"
           fixed-header
           hover
         >
@@ -239,8 +240,7 @@ function handleConfirmButtonClick(action: string) {
         <template v-if="tenant?.id">
           <UserSearch
             :loading="loadingSearch"
-            :results="searchResults"
-            :tenant-id="tenant.id"
+            :search-results="searchResults"
             @clear-search="onClearSearch"
             @search="onSearch"
             @select="onUserSelected"

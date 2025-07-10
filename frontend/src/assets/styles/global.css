@@ -1,3 +1,8 @@
+* {
+  font-family:
+    var(--bcds-typography-font-families-bc-sans), sans-serif !important;
+}
+
 a {
   color: rgb(var(--v-theme-primary));
   text-decoration: none;
