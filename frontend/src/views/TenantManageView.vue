@@ -9,7 +9,7 @@ import BreadcrumbBar from '@/components/ui/BreadcrumbBar.vue'
 import LoadingWrapper from '@/components/ui/LoadingWrapper.vue'
 import { useNotification } from '@/composables'
 import { DomainError, DuplicateEntityError } from '@/errors'
-import { type TenantEditFields, User } from '@/models'
+import { type TenantDetailFields, User } from '@/models'
 import { useRoleStore, useTenantStore, useUserStore } from '@/stores'
 import { type IdirSearchType, IDIR_SEARCH_TYPE } from '@/utils/constants'
 import BaseSecureView from '@/views/BaseSecureView.vue'
@@ -136,7 +136,7 @@ async function handleUserSearch(
   }
 }
 
-async function handleUpdateTenant(updatedTenant: TenantEditFields) {
+async function handleUpdateTenant(updatedTenant: TenantDetailFields) {
   try {
     tenant.value.description = updatedTenant.description
     tenant.value.ministryName = updatedTenant.ministryName
