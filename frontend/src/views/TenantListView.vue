@@ -3,7 +3,7 @@ import { storeToRefs } from 'pinia'
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
-import TenantCreateDialog from '@/components/tenant/TenantCreateDialog.vue'
+import TenantRequestDialog from '@/components/tenant/TenantRequestDialog.vue'
 import TenantList from '@/components/tenant/TenantList.vue'
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import LoadingWrapper from '@/components/ui/LoadingWrapper.vue'
@@ -89,7 +89,7 @@ const handleTenantSubmit = async (tenantDetails: TenantDetailFields) => {
       <TenantList :tenants="tenants" @select="handleCardClick" />
     </LoadingWrapper>
 
-    <TenantCreateDialog
+    <TenantRequestDialog
       v-model="dialogVisible"
       :is-duplicate-name="isDuplicateName"
       @clear-duplicate-error="isDuplicateName = false"
