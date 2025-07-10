@@ -39,11 +39,12 @@ const breadcrumbs = computed(() => [
   },
 ])
 
-const showDetail = ref(true)
 const isEditing = ref(false)
 const isLoading = ref(true)
+const isLoadingSearch = ref(false)
+
+const showDetail = ref(true)
 const tab = ref<number>(0)
-const loadingSearch = ref(false)
 
 // Deal with the case that someone could manually try to send in multiple route
 // parameters for the tenant ID.
@@ -63,13 +64,17 @@ const tenant = computed(() => {
 // Component Lifecycle
 
 onMounted(async () => {
-  // Fetch the tenant that is being managed.
-  await tenantStore.fetchTenant(routeTenantId.value)
+  try {
+    // Fetch the tenant that is being managed.
+    await tenantStore.fetchTenant(routeTenantId.value)
 
-  // Load the possible roles, used when adding a user to the tenant.
-  await roleStore.fetchRoles()
-
-  isLoading.value = false
+    // Load the possible roles, used when adding a user to the tenant.
+    await roleStore.fetchRoles()
+  } catch {
+    notification.error('Failed to load tenant data')
+  } finally {
+    isLoading.value = false
+  }
 })
 
 // Subcomponent Event Handlers
@@ -115,7 +120,7 @@ async function handleUserSearch(
   searchType: IdirSearchType,
   searchText: string,
 ) {
-  loadingSearch.value = true
+  isLoadingSearch.value = true
 
   try {
     if (searchType === IDIR_SEARCH_TYPE.FIRST_NAME.value) {
@@ -131,17 +136,13 @@ async function handleUserSearch(
     notification.error('User search failed')
     searchResults.value = null
   } finally {
-    loadingSearch.value = false
+    isLoadingSearch.value = false
   }
 }
 
 async function handleUpdateTenant(updatedTenant: TenantDetailFields) {
   try {
-    tenant.value.description = updatedTenant.description
-    tenant.value.ministryName = updatedTenant.ministryName
-    tenant.value.name = updatedTenant.name
-
-    await tenantStore.updateTenant(tenant.value)
+    await tenantStore.updateTenantDetails(tenant.value.id, updatedTenant)
     isEditing.value = false
   } catch (error) {
     if (error instanceof DuplicateEntityError) {
@@ -191,7 +192,7 @@ async function handleUpdateTenant(updatedTenant: TenantDetailFields) {
 
           <v-window-item :value="1">
             <TenantUserManagement
-              :loading-search="loadingSearch"
+              :loading-search="isLoadingSearch"
               :possible-roles="roles"
               :search-results="searchResults"
               :tenant="tenant"
