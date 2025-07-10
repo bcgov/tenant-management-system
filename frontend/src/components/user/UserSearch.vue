@@ -101,6 +101,7 @@ function search() {
         :loading="loading"
         :sort-by="[{ key: `ssoUser.${searchType}`, order: 'asc' }]"
         select-strategy="single"
+        striped="even"
         return-object
         show-select
       >
