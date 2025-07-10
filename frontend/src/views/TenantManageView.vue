@@ -26,7 +26,7 @@ const { notification } = useNotification()
 
 const isDuplicateName = ref(false)
 const roles = computed(() => roleStore.roles)
-const searchResults = ref<User[]>([])
+const searchResults = ref<User[] | null>(null)
 
 // Component State
 
@@ -77,7 +77,7 @@ onMounted(async () => {
 async function handleAddUser(user: User) {
   try {
     await tenantStore.addTenantUser(tenant.value, user)
-    searchResults.value = []
+    searchResults.value = null
     notification.success(
       'New user successfully added to this tenant',
       'User Added',
@@ -88,16 +88,15 @@ async function handleAddUser(user: User) {
         `Cannot add user "${user.ssoUser.displayName}": already a user in ` +
           `this tenant`,
       )
+      searchResults.value = null
     } else {
       notification.error('Failed to add user')
     }
-
-    searchResults.value = []
   }
 }
 
 async function handleClearSearch() {
-  searchResults.value = []
+  searchResults.value = null
 }
 
 async function handleRemoveRole(userId: string, roleId: string) {
@@ -130,7 +129,7 @@ async function handleUserSearch(
     }
   } catch {
     notification.error('User search failed')
-    searchResults.value = []
+    searchResults.value = null
   } finally {
     loadingSearch.value = false
   }
@@ -197,7 +196,7 @@ async function handleUpdateTenant(updatedTenant: TenantDetailFields) {
               :search-results="searchResults"
               :tenant="tenant"
               @add="handleAddUser"
-              @cancel="searchResults = []"
+              @cancel="searchResults = null"
               @clear-search="handleClearSearch"
               @remove-role="handleRemoveRole"
               @search="handleUserSearch"

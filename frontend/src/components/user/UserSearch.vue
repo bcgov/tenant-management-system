@@ -7,8 +7,7 @@ import { type IdirSearchType, IDIR_SEARCH_TYPE } from '@/utils/constants'
 
 defineProps<{
   loading?: boolean
-  results: User[]
-  tenantId: string
+  searchResults: User[] | null
 }>()
 
 const emit = defineEmits<{
@@ -84,7 +83,7 @@ function search() {
     </v-col>
   </v-row>
 
-  <v-row v-if="results.length || loading">
+  <v-row v-if="searchResults !== null || loading">
     <v-col cols="12">
       <h4 class="my-6">Search Results</h4>
 
@@ -98,7 +97,7 @@ function search() {
           { title: 'Last Name', key: 'ssoUser.lastName', align: 'start' },
           { title: 'Email', key: 'ssoUser.email', align: 'start' },
         ]"
-        :items="results"
+        :items="searchResults || []"
         :loading="loading"
         :sort-by="[{ key: `ssoUser.${searchType}`, order: 'asc' }]"
         select-strategy="single"
@@ -106,7 +105,7 @@ function search() {
         show-select
       >
         <template #no-data>
-          <v-alert type="info">Search for users to add</v-alert>
+          <v-alert type="info">No matching users found</v-alert>
         </template>
       </v-data-table>
     </v-col>

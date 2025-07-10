@@ -13,7 +13,7 @@ import { currentUserHasRole } from '@/utils/permissions'
 const props = defineProps<{
   loadingSearch: boolean
   possibleRoles?: Role[]
-  searchResults: User[]
+  searchResults: User[] | null
   tenant: Tenant
 }>()
 
@@ -239,7 +239,7 @@ function handleConfirmButtonClick(action: string) {
         <template v-if="tenant?.id">
           <UserSearch
             :loading="loadingSearch"
-            :results="searchResults"
+            :searchResults="searchResults"
             :tenant-id="tenant.id"
             @clear-search="onClearSearch"
             @search="onSearch"
