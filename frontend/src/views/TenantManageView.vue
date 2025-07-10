@@ -142,11 +142,7 @@ async function handleUserSearch(
 
 async function handleUpdateTenant(updatedTenant: TenantDetailFields) {
   try {
-    tenant.value.description = updatedTenant.description
-    tenant.value.ministryName = updatedTenant.ministryName
-    tenant.value.name = updatedTenant.name
-
-    await tenantStore.updateTenant(tenant.value)
+    await tenantStore.updateTenantDetails(tenant.value.id, updatedTenant)
     isEditing.value = false
   } catch (error) {
     if (error instanceof DuplicateEntityError) {

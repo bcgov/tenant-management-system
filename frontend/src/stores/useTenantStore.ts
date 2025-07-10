@@ -90,21 +90,29 @@ export const useTenantStore = defineStore('tenant', () => {
     await tenantService.requestTenant(tenantDetails, user)
   }
 
-  const updateTenant = async (tenant: Tenant) => {
+  const updateTenantDetails = async (
+    id: string,
+    tenantDetails: TenantDetailFields,
+  ) => {
+    // Grab the existing tenant from the store, to confirm the ID and for use
+    // later.
+    const tenant = getTenant(id)
+    if (!tenant) {
+      throw new Error(`Tenant with ID ${id} not found`)
+    }
+
     const apiResponse = await tenantService.updateTenant(
-      tenant.id,
-      tenant.name,
-      tenant.ministryName,
-      tenant.description,
+      id,
+      tenantDetails.name,
+      tenantDetails.ministryName,
+      tenantDetails.description,
     )
 
     const updatedTenant = Tenant.fromApiData(apiResponse)
 
-    // The API call only returns the updated tenant data, not the users. Copy
-    // the users from the original tenant.
-    updatedTenant.users = tenant.users
-
-    return upsertTenant(updatedTenant)
+    tenant.name = updatedTenant.name
+    tenant.ministryName = updatedTenant.ministryName
+    tenant.description = updatedTenant.description
   }
 
   return {
@@ -118,6 +126,6 @@ export const useTenantStore = defineStore('tenant', () => {
     getTenant,
     removeTenantUserRole,
     requestTenant,
-    updateTenant,
+    updateTenantDetails,
   }
 })
