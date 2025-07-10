@@ -9,7 +9,7 @@ import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import LoadingWrapper from '@/components/ui/LoadingWrapper.vue'
 import { useNotification } from '@/composables'
 import { DomainError, DuplicateEntityError } from '@/errors'
-import { Tenant, type TenantEditFields } from '@/models'
+import { Tenant, type TenantDetailFields } from '@/models'
 import { useAuthStore, useTenantStore } from '@/stores'
 import BaseSecureView from '@/views/BaseSecureView.vue'
 
@@ -48,7 +48,7 @@ onMounted(async () => {
 })
 
 // Submit handler
-const handleTenantSubmit = async (tenantDetails: TenantEditFields) => {
+const handleTenantSubmit = async (tenantDetails: TenantDetailFields) => {
   try {
     await tenantStore.requestTenant(tenantDetails, authStore.authenticatedUser)
     notification.success(

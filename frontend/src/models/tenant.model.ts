@@ -5,7 +5,7 @@ import { ROLES } from '@/utils/constants'
  * Utility type that represents the subset of Tenant properties used in the form
  * that edits these fields.
  */
-export type TenantEditFields = Pick<
+export type TenantDetailFields = Pick<
   Tenant,
   'description' | 'ministryName' | 'name'
 >
