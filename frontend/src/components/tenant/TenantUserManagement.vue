@@ -27,7 +27,12 @@ const emit = defineEmits<{
 // Permissions
 
 const isUserAdmin = computed(() => {
-  return currentUserHasRole(props.tenant, ROLES.USER_ADMIN.value)
+  // A tenant owner, by default, is also a user admin - even if they don't have
+  // the USER_ADMIN role.
+  return (
+    currentUserHasRole(props.tenant, ROLES.TENANT_OWNER.value) ||
+    currentUserHasRole(props.tenant, ROLES.USER_ADMIN.value)
+  )
 })
 
 const showSearch = ref(false)
@@ -148,19 +153,15 @@ function confirmRemoveRole() {
   pendingRole.value = null
 }
 
-// Dialog event handlers
+// Dialog event handler
 
-function handleInfoClose() {
-  // Dialog auto-closes, no additional cleanup needed
-}
-
-function handleConfirmRemove() {
-  confirmRemoveRole()
-}
-
-function handleConfirmCancel() {
-  pendingUser.value = null
-  pendingRole.value = null
+function handleConfirmButtonClick(action: string) {
+  if (action === 'cancel') {
+    pendingUser.value = null
+    pendingRole.value = null
+  } else if (action === 'remove') {
+    confirmRemoveRole()
+  }
 }
 </script>
 
@@ -293,7 +294,6 @@ function handleConfirmCancel() {
       :buttons="infoDialog.buttons"
       :message="infoDialog.message"
       :title="infoDialog.title"
-      @ok="handleInfoClose"
     />
 
     <!-- Confirmation dialog for yes/no decisions -->
@@ -302,8 +302,7 @@ function handleConfirmCancel() {
       :buttons="confirmDialog.buttons"
       :message="confirmDialog.message"
       :title="confirmDialog.title"
-      @cancel="handleConfirmCancel"
-      @remove="handleConfirmRemove"
+      @button-click="handleConfirmButtonClick"
     />
   </v-container>
 </template>

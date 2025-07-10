@@ -78,7 +78,10 @@ async function handleAddUser(user: User) {
   try {
     await tenantStore.addTenantUser(tenant.value, user)
     searchResults.value = []
-    notification.success('User added successfully')
+    notification.success(
+      'New user successfully added to this tenant',
+      'User Added',
+    )
   } catch (error) {
     if (error instanceof DuplicateEntityError) {
       notification.error(
@@ -100,7 +103,10 @@ async function handleClearSearch() {
 async function handleRemoveRole(userId: string, roleId: string) {
   try {
     await tenantStore.removeTenantUserRole(tenant.value, userId, roleId)
-    notification.success('The role was successfully removed from the user')
+    notification.success(
+      'The role was successfully removed from the user',
+      'Role Removed',
+    )
   } catch {
     notification.error('Failed to remove user role')
   }

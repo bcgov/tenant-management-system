@@ -15,11 +15,11 @@ defineProps<{
 
 const emit = defineEmits<{
   (e: 'update:modelValue', value: boolean): void
-  (e: string): void
+  (e: 'buttonClick', action: string): void
 }>()
 
 function onButtonClick(action: string) {
-  emit(action) // emits the action name as the event
+  emit('buttonClick', action)
   emit('update:modelValue', false)
 }
 </script>

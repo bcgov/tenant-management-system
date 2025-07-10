@@ -4,7 +4,7 @@ import { VForm } from 'vuetify/components'
 
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
-import type { Tenant, TenantEditFields } from '@/models'
+import type { Tenant, TenantDetailFields } from '@/models'
 import { MINISTRIES, ROLES } from '@/utils/constants'
 import { currentUserHasRole } from '@/utils/permissions'
 
@@ -16,7 +16,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (event: 'clear-duplicate-error'): void
-  (event: 'update', tenantDetails: TenantEditFields): void
+  (event: 'update', tenantDetails: TenantDetailFields): void
   (event: 'update:isEditing', value: boolean): void
 }>()
 
@@ -29,7 +29,7 @@ const isTenantOwner = computed(() => {
 // Form state
 
 const form = ref<InstanceType<typeof VForm> | null>(null)
-const formData = ref<TenantEditFields>({
+const formData = ref<TenantDetailFields>({
   description: '',
   ministryName: '',
   name: '',

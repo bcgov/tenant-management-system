@@ -1,7 +1,7 @@
 import { authenticatedAxios } from './authenticated.axios'
 import { isDuplicateEntityError, isValidationError, logApiError } from './utils'
 import { DuplicateEntityError, ValidationError } from '@/errors'
-import { type TenantEditFields, User } from '@/models'
+import { type TenantDetailFields, User } from '@/models'
 
 const api = authenticatedAxios()
 
@@ -70,7 +70,7 @@ export const tenantService = {
    * @param {string} name - The name of the tenant to create.
    * @param {string} ministryName - The name of the ministry associated with the
    *   tenant.
-   * @param {string} user - The user that is creating the tenant.
+   * @param {User} user - The user that is creating the tenant.
    * @returns {Promise<object>} A promise that resolves to the newly created
    *   tenant-like object.
    * @throws Will throw an error if the API request fails.
@@ -225,11 +225,12 @@ export const tenantService = {
   /**
    * Requests a new tenant with the specified details and user.
    *
-   * @param {string} tenantDetails - The details of the tenant to request.
-   * @param {string} user - The user that is requesting the tenant.
+   * @param {TenantDetailFields} tenantDetails - The details of the tenant to
+   *   request.
+   * @param {User} user - The user that is requesting the tenant.
    * @throws Will throw an error if the API request fails.
    */
-  async requestTenant(tenantDetails: TenantEditFields, user: User) {
+  async requestTenant(tenantDetails: TenantDetailFields, user: User) {
     try {
       const requestBody = {
         description: tenantDetails.description,

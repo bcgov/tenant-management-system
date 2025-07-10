@@ -3,13 +3,13 @@ import { storeToRefs } from 'pinia'
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
-import TenantCreateDialog from '@/components/tenant/TenantCreateDialog.vue'
+import TenantRequestDialog from '@/components/tenant/TenantRequestDialog.vue'
 import TenantList from '@/components/tenant/TenantList.vue'
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import LoadingWrapper from '@/components/ui/LoadingWrapper.vue'
 import { useNotification } from '@/composables'
 import { DomainError, DuplicateEntityError } from '@/errors'
-import { Tenant, type TenantEditFields } from '@/models'
+import { Tenant, type TenantDetailFields } from '@/models'
 import { useAuthStore, useTenantStore } from '@/stores'
 import BaseSecureView from '@/views/BaseSecureView.vue'
 
@@ -48,7 +48,7 @@ onMounted(async () => {
 })
 
 // Submit handler
-const handleTenantSubmit = async (tenantDetails: TenantEditFields) => {
+const handleTenantSubmit = async (tenantDetails: TenantDetailFields) => {
   try {
     await tenantStore.requestTenant(tenantDetails, authStore.authenticatedUser)
     notification.success(
@@ -89,7 +89,7 @@ const handleTenantSubmit = async (tenantDetails: TenantEditFields) => {
       <TenantList :tenants="tenants" @select="handleCardClick" />
     </LoadingWrapper>
 
-    <TenantCreateDialog
+    <TenantRequestDialog
       v-model="dialogVisible"
       :is-duplicate-name="isDuplicateName"
       @clear-duplicate-error="isDuplicateName = false"
