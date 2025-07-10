@@ -9,7 +9,7 @@ import BreadcrumbBar from '@/components/ui/BreadcrumbBar.vue'
 import LoadingWrapper from '@/components/ui/LoadingWrapper.vue'
 import { useNotification } from '@/composables'
 import { DomainError, DuplicateEntityError } from '@/errors'
-import { type TenantEditFields, User } from '@/models'
+import { type TenantDetailFields, User } from '@/models'
 import { useRoleStore, useTenantStore, useUserStore } from '@/stores'
 import { type IdirSearchType, IDIR_SEARCH_TYPE } from '@/utils/constants'
 import BaseSecureView from '@/views/BaseSecureView.vue'
@@ -20,13 +20,13 @@ const roleStore = useRoleStore()
 const tenantStore = useTenantStore()
 const userStore = useUserStore()
 
-const { addNotification } = useNotification()
+const { notification } = useNotification()
 
 // Component Data
 
 const isDuplicateName = ref(false)
 const roles = computed(() => roleStore.roles)
-const searchResults = ref<User[]>([])
+const searchResults = ref<User[] | null>(null)
 
 // Component State
 
@@ -77,33 +77,37 @@ onMounted(async () => {
 async function handleAddUser(user: User) {
   try {
     await tenantStore.addTenantUser(tenant.value, user)
-    searchResults.value = []
-    addNotification('User added successfully')
+    searchResults.value = null
+    notification.success(
+      'New user successfully added to this tenant',
+      'User Added',
+    )
   } catch (error) {
     if (error instanceof DuplicateEntityError) {
-      addNotification(
+      notification.error(
         `Cannot add user "${user.ssoUser.displayName}": already a user in ` +
           `this tenant`,
-        'error',
       )
+      searchResults.value = null
     } else {
-      addNotification('Failed to add user', 'error')
+      notification.error('Failed to add user')
     }
-
-    searchResults.value = []
   }
 }
 
 async function handleClearSearch() {
-  searchResults.value = []
+  searchResults.value = null
 }
 
 async function handleRemoveRole(userId: string, roleId: string) {
   try {
     await tenantStore.removeTenantUserRole(tenant.value, userId, roleId)
-    addNotification('The role was successfully removed from the user.')
+    notification.success(
+      'The role was successfully removed from the user',
+      'Role Removed',
+    )
   } catch {
-    addNotification('Failed to remove user role', 'error')
+    notification.error('Failed to remove user role')
   }
 }
 
@@ -124,14 +128,14 @@ async function handleUserSearch(
       throw new Error('Invalid search type')
     }
   } catch {
-    addNotification('User search failed', 'error')
-    searchResults.value = []
+    notification.error('User search failed')
+    searchResults.value = null
   } finally {
     loadingSearch.value = false
   }
 }
 
-async function handleUpdateTenant(updatedTenant: TenantEditFields) {
+async function handleUpdateTenant(updatedTenant: TenantDetailFields) {
   try {
     tenant.value.description = updatedTenant.description
     tenant.value.ministryName = updatedTenant.ministryName
@@ -148,10 +152,10 @@ async function handleUpdateTenant(updatedTenant: TenantEditFields) {
       // For any other API Domain Error, display the user message that comes
       // from the API. This should not happen but is useful if there are
       // business rules in the API that are not implemented in the UI.
-      addNotification(error.userMessage, 'error')
+      notification.error(error.userMessage)
     } else {
       // Otherwise display a generic error message.
-      addNotification('Failed to update the tenant', 'error')
+      notification.error('Failed to update the tenant')
     }
   }
 }
@@ -192,7 +196,7 @@ async function handleUpdateTenant(updatedTenant: TenantEditFields) {
               :search-results="searchResults"
               :tenant="tenant"
               @add="handleAddUser"
-              @cancel="searchResults = []"
+              @cancel="searchResults = null"
               @clear-search="handleClearSearch"
               @remove-role="handleRemoveRole"
               @search="handleUserSearch"

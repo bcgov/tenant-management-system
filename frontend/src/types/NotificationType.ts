@@ -1,6 +1,6 @@
-export type NotificationType =
-  | 'error'
-  | 'success'
-  | 'warning'
-  | 'info'
-  | undefined
+export enum NotificationType {
+  ERROR = 'error',
+  SUCCESS = 'success',
+  WARNING = 'warning',
+  INFO = 'info',
+}

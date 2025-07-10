@@ -64,13 +64,6 @@ const vuetify = createVuetify({
       bcgovLight,
     },
   },
-
-  // Use BC Sans for everything by default.
-  defaults: {
-    global: {
-      style: `font-family: ${tokens.bcdsTypographyFontFamiliesBcSans} !important`,
-    },
-  },
 })
 
 export default vuetify

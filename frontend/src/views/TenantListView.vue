@@ -3,13 +3,13 @@ import { storeToRefs } from 'pinia'
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
-import TenantCreateDialog from '@/components/tenant/TenantCreateDialog.vue'
+import TenantRequestDialog from '@/components/tenant/TenantRequestDialog.vue'
 import TenantList from '@/components/tenant/TenantList.vue'
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import LoadingWrapper from '@/components/ui/LoadingWrapper.vue'
 import { useNotification } from '@/composables'
 import { DomainError, DuplicateEntityError } from '@/errors'
-import { Tenant, type TenantEditFields } from '@/models'
+import { Tenant, type TenantDetailFields } from '@/models'
 import { useAuthStore, useTenantStore } from '@/stores'
 import BaseSecureView from '@/views/BaseSecureView.vue'
 
@@ -20,7 +20,7 @@ const handleCardClick = (id: Tenant['id']) => {
 }
 
 // User notification creation
-const { addNotification } = useNotification()
+const { notification } = useNotification()
 
 // Stores
 const authStore = useAuthStore()
@@ -43,19 +43,19 @@ onMounted(async () => {
   try {
     await tenantStore.fetchTenants(authStore.authenticatedUser.id)
   } catch {
-    addNotification('Failed to fetch tenants', 'error')
+    notification.error('Failed to fetch tenants')
   }
 })
 
 // Submit handler
-const handleTenantSubmit = async (tenantDetails: TenantEditFields) => {
+const handleTenantSubmit = async (tenantDetails: TenantDetailFields) => {
   try {
     await tenantStore.requestTenant(tenantDetails, authStore.authenticatedUser)
-    addNotification(
+    notification.success(
       'Your request for a new tenant has been sent to the Tenant Management ' +
         "System administrator. You'll be notified of the outcome within 48 " +
         'hours.',
-      'success',
+      'Request successully submitted',
     )
     isDuplicateName.value = false
     closeDialog()
@@ -68,10 +68,10 @@ const handleTenantSubmit = async (tenantDetails: TenantEditFields) => {
       // For any other API Domain Error, display the user message that comes
       // from the API. This should not happen but is useful if there are
       // business rules in the API that are not implemented in the UI.
-      addNotification(error.userMessage, 'error')
+      notification.error(error.userMessage)
     } else {
       // Otherwise display a generic error message.
-      addNotification('Failed to create the new tenant', 'error')
+      notification.error('Failed to create the new tenant')
     }
   }
 }
@@ -89,7 +89,7 @@ const handleTenantSubmit = async (tenantDetails: TenantEditFields) => {
       <TenantList :tenants="tenants" @select="handleCardClick" />
     </LoadingWrapper>
 
-    <TenantCreateDialog
+    <TenantRequestDialog
       v-model="dialogVisible"
       :is-duplicate-name="isDuplicateName"
       @clear-duplicate-error="isDuplicateName = false"

@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
-import { Tenant, type TenantEditFields, User } from '@/models'
+import { Tenant, type TenantDetailFields, User } from '@/models'
 import { tenantService } from '@/services'
 
 export const useTenantStore = defineStore('tenant', () => {
@@ -83,7 +83,10 @@ export const useTenantStore = defineStore('tenant', () => {
     user.roles = user.roles.filter((role) => role.id !== roleId)
   }
 
-  const requestTenant = async (tenantDetails: TenantEditFields, user: User) => {
+  const requestTenant = async (
+    tenantDetails: TenantDetailFields,
+    user: User,
+  ) => {
     await tenantService.requestTenant(tenantDetails, user)
   }
 
