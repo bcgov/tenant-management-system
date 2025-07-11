@@ -187,7 +187,7 @@ function handleConfirmButtonClick(action: string) {
             { title: 'Email', key: 'ssoUser.email', align: 'start' },
           ]"
           :items="tenant?.users || []"
-          :sort-by="[{ key: 'displayName', order: 'asc' }]"
+          :sort-by="[{ key: 'ssoUser.displayName' }]"
           item-value="id"
           striped="even"
           fixed-header
