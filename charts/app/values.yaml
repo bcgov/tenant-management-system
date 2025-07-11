@@ -45,7 +45,7 @@ backend:
     #-- enable or disable autoscaling.
     enabled: true
     #-- the minimum number of replicas.
-    minReplicas: 1
+    minReplicas: 2
     #-- the maximum number of replicas.
     maxReplicas: 3
     #-- the target cpu utilization percentage, is from request cpu and NOT LIMIT CPU.
@@ -95,7 +95,7 @@ frontend:
     #-- enable or disable autoscaling.
     enabled: true
     #-- the minimum number of replicas.
-    minReplicas: 1
+    minReplicas: 2
     #-- the maximum number of replicas.
     maxReplicas: 3
     #-- the target cpu utilization percentage, is from request cpu and NOT LIMIT CPU.
