@@ -51,6 +51,10 @@ const isSearchEnabled = computed(() => {
   return searchText.value && searchText.value.length >= 2
 })
 
+// Sort the results by the search type, so that it is updated whenever the user
+// changes the search type.
+const defaultSort = computed(() => [{ key: `ssoUser.${searchType.value}` }])
+
 function search() {
   emit('search', searchType.value, searchText.value)
 }
@@ -99,7 +103,7 @@ function search() {
         ]"
         :items="searchResults || []"
         :loading="loading"
-        :sort-by="[{ key: `ssoUser.${searchType}`, order: 'asc' }]"
+        :sort-by="defaultSort"
         select-strategy="single"
         striped="even"
         return-object
