@@ -31,7 +31,7 @@ const createJwtMiddleware = (options: CheckJwtOptions = {}) => {
       jwksUri: process.env.JWKS_URI,
       handleSigningKeyError: (err, cb) => {
         logger.error('Error:', { error: err.message, stack: err.stack });
-        cb(new UnauthorizedError('Error ocurred during authentication'));
+        cb(new UnauthorizedError('Error occurred during authentication'));
       }
     }),
     issuer: process.env.ISSUER,
@@ -45,7 +45,7 @@ const createJwtMiddleware = (options: CheckJwtOptions = {}) => {
         logger.info('Token found:')
         return token;
       }
-      throw new UnauthorizedError('Error ocurred during authentication');
+      throw new UnauthorizedError('Error occurred during authentication');
     }
   }).unless({ path: [RoutesConstants.HEALTH] });
 };
@@ -56,7 +56,6 @@ export const checkJwt = (options: CheckJwtOptions = {}) => {
   return (req: Request, res: Response, next: NextFunction) => {
     middleware(req, res, (err) => {
       if (err) {
-        // Handle JWT errors directly here with proper formatting
         logger.error('JWT Validation Error:', { 
           error: err.message,
           code: err.code,
@@ -95,7 +94,7 @@ export const extractOidcSub = (req: Request, res: Response, next: NextFunction) 
   if (req.decodedJwt) {
     logger.info('Authenticated request', { 
       sub: req.decodedJwt.sub,
-      token: req.headers.authorization?.split(' ')[1]?.substring(0, 20) + '...',
+   //   token: req.headers.authorization?.split(' ')[1]?.substring(0, 20) + '...',
       decodedJwt: req.decodedJwt
     });
     next();
@@ -107,25 +106,15 @@ export const extractOidcSub = (req: Request, res: Response, next: NextFunction) 
 
 export const jwtErrorHandler = (err: any, req: Request, res: Response, next: NextFunction) => {
   if (err.name === 'UnauthorizedError') {
-    logger.error('JWT Validation Error:', { 
+    logger.error('JWT Validation Error (fallback):', { 
       error: err.message,
       code: err.code,
       inner: err.inner?.message,
     });
     
-    // Provide specific error messages based on the error code
-    let message = 'Error occurred during authentication';
-    if (err.code === 'invalid_audience') {
-      message = 'Invalid audience for TMS access';
-    } else if (err.code === 'invalid_token') {
-      message = 'Invalid or expired token';
-    } else if (err.code === 'invalid_signature') {
-      message = 'Invalid token signature';
-    }
-    
     return res.status(401).json({ 
       error: 'Unauthorized',
-      message,
+      message: 'Error occurred during authentication',
       statusCode: 401
     });
   }
