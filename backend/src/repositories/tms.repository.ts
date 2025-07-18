@@ -941,6 +941,21 @@ export class TMSRepository {
             );
     }
 
+    public async checkIfTenantHasSharedServiceAccess(tenantId: string, clientIdentifier: string, transactionEntityManager?: EntityManager) {
+        transactionEntityManager = transactionEntityManager ? transactionEntityManager : this.manager;
+        const hasAccess = await transactionEntityManager
+            .createQueryBuilder()
+            .from(Tenant, "t")
+            .innerJoin("t.sharedServices", "tss")
+            .innerJoin("tss.sharedService", "ss")
+            .where("t.id = :tenantId", { tenantId })
+            .andWhere("ss.clientIdentifier = :clientIdentifier", { clientIdentifier })
+            .andWhere("ss.isActive = :isActive", { isActive: true })
+            .andWhere("tss.isDeleted = :isDeleted", { isDeleted: false })
+            .getExists();
+        return hasAccess
+    }
+
 
 
 }
