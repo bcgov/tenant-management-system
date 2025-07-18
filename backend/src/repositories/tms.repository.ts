@@ -543,11 +543,27 @@ export class TMSRepository {
         return tenantExists
     }
 
-    public async getTenantsForUser(ssoUserId:string, expand?: string[]) {
+    public async getTenantsForUser(req: Request) {
+        const ssoUserId:string = req.params.ssoUserId
+        const expand:string[] = typeof req.query.expand === "string" ? req.query.expand.split(",") : []
+        const TMS_AUDIENCE:string = process.env.TMS_AUDIENCE
+        const jwtAudience:string = req.decodedJwt?.aud || req.decodedJwt?.audience || TMS_AUDIENCE
+        
         const tenantQuery = this.manager.createQueryBuilder(Tenant, "t")
             .innerJoin("t.users", "tu")
             .innerJoin("tu.ssoUser", "su")
-            .where("su.ssoUserId = :ssoUserId", { ssoUserId });
+            .leftJoin("TenantSharedService", "tss", "t.id = tss.tenant_id")
+            .leftJoin("SharedService", "ss", "tss.shared_service_id = ss.id")
+            .where("su.ssoUserId = :ssoUserId", { ssoUserId })
+            .andWhere(
+                ":jwtAudience = :tmsAudience OR (:jwtAudience != :tmsAudience AND ss.client_identifier = :jwtAudience AND tss.is_deleted = :tssDeleted AND ss.is_active = :ssActive)",
+                { 
+                    jwtAudience, 
+                    tmsAudience: TMS_AUDIENCE, 
+                    tssDeleted: false,
+                    ssActive: true
+                }
+            );
 
         if (expand?.includes("tenantUserRoles")) {
             tenantQuery.leftJoinAndSelect("t.users", "user")
@@ -557,8 +573,8 @@ export class TMSRepository {
                 .andWhere("tenantUserRole.isDeleted = :isDeleted", { isDeleted: false });
         }
 
-        const tenants = await tenantQuery.getMany();
-        return tenants;
+        const tenants:Tenant[] = await tenantQuery.getMany()
+        return tenants
     }
 
     public async getUsersForTenant(tenantId:string) {
