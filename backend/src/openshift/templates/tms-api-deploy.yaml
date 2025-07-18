@@ -69,9 +69,9 @@ parameters:
     value: "info"
   - name: LOGS_VOLUME_CAPACITY
     value: "128Mi"
-  - name: ALLOWED_AUDIENCES
+  - name: TMS_AUDIENCE
     required: true
-    value: "tenant-management-system-6014,tenant-manager-poc-5908"
+    value: "tenant-management-system-6014"
   - name: JWKS_URI
     required: true
     value: "https://dev.loginproxy.gov.bc.ca/auth/realms/standard/protocol/openid-connect/certs"
@@ -174,8 +174,8 @@ objects:
                     secretKeyRef:
                       name: ${APP_NAME}-secret
                       key: BCGOV_SSO_API_CLIENT_SECRET
-                - name: ALLOWED_AUDIENCES
-                  value: ${ALLOWED_AUDIENCES}
+                - name: TMS_AUDIENCE
+                  value: ${TMS_AUDIENCE}
                 - name: JWKS_URI
                   value: ${JWKS_URI}
                 - name: ISSUER

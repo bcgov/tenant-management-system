@@ -35,7 +35,7 @@ backend:
     bcGovSsoClientId: "client-id"  # Default value, override during deployment
     bcgovSsoClientSecret: "secret"  # Default value, override during deployment
     logLevel: "info"
-    allowedAudiences: "tenant-management-system-6014,tenant-manager-poc-5908"
+    tmsAudience: "tenant-management-system-6014"
     jwksUri: "https://dev.loginproxy.gov.bc.ca/auth/realms/standard/protocol/openid-connect/certs"
     issuer: "https://dev.loginproxy.gov.bc.ca/auth/realms/standard"
   #-- the deployment strategy, can be "Recreate" or "RollingUpdate"
