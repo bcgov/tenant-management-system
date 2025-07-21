@@ -79,6 +79,11 @@ describe('Tenant Management API', () => {
       (req, res) => tmController.getSharedServiceRolesForGroup(req, res)
     )
 
+    app.put('/v1/tenants/:tenantId/groups/:groupId/shared-services/shared-service-roles',
+      validate(validator.updateSharedServiceRolesForGroup, {}, {}),
+      (req, res) => tmController.updateSharedServiceRolesForGroup(req, res)
+    )
+
     app.use((err: any, req: any, res: any, next: any) => {
       if (err.name === 'ValidationError') {
         return res.status(err.statusCode).json(err)
@@ -262,8 +267,8 @@ describe('Tenant Management API', () => {
 
     it('should return 400 when validation fails', async () => {
       const invalidData = {
-        name: '', // Empty name
-        description: 'A'.repeat(501) // Too long description
+        name: '',
+        description: 'A'.repeat(501)
       }
 
       const response = await request(app)
@@ -452,8 +457,8 @@ describe('Tenant Management API', () => {
 
     it('should return 400 when validation fails', async () => {
       const invalidData = {
-        name: '', // Empty name
-        description: 'A'.repeat(501) // Too long description
+        name: '',
+        description: 'A'.repeat(501)
       }
 
       const response = await request(app)
@@ -558,7 +563,6 @@ describe('Tenant Management API', () => {
           lastName: 'Smith',
           displayName: 'Jane Smith',
           ssoUserId: 'F45AFBBD68C51D6F956BA3A1DE1878A2'
-          // No email or userName
         }
       }
 
@@ -671,14 +675,13 @@ describe('Tenant Management API', () => {
       const invalidGroupId = 'invalid-uuid'
       const invalidData = {
         user: {
-          firstName: '', // Empty firstName
+          firstName: '',
           lastName: 'Doe',
           displayName: 'John Doe',
           ssoUserId: 'F45AFBBD68C51D6F956BA3A1DE1878A1'
         }
       }
 
-      // Test invalid tenant ID
       const response1 = await request(app)
         .post(`/v1/tenants/${invalidTenantId}/groups/${groupId}/users`)
         .send(validUserData)
@@ -686,7 +689,6 @@ describe('Tenant Management API', () => {
       expect(response1.status).toBe(400)
       expect(response1.body.message).toBe("Validation Failed")
 
-      // Test invalid group ID
       const response2 = await request(app)
         .post(`/v1/tenants/${tenantId}/groups/${invalidGroupId}/users`)
         .send(validUserData)
@@ -694,7 +696,6 @@ describe('Tenant Management API', () => {
       expect(response2.status).toBe(400)
       expect(response2.body.message).toBe("Validation Failed")
 
-      // Test invalid body data
       const response3 = await request(app)
         .post(`/v1/tenants/${tenantId}/groups/${groupId}/users`)
         .send(invalidData)
@@ -794,21 +795,18 @@ describe('Tenant Management API', () => {
       const invalidGroupId = 'invalid-uuid'
       const invalidGroupUserId = 'invalid-uuid'
 
-      // Test invalid tenant ID
       const response1 = await request(app)
         .delete(`/v1/tenants/${invalidTenantId}/groups/${groupId}/users/${groupUserId}`)
 
       expect(response1.status).toBe(400)
       expect(response1.body.message).toBe("Validation Failed")
 
-      // Test invalid group ID
       const response2 = await request(app)
         .delete(`/v1/tenants/${tenantId}/groups/${invalidGroupId}/users/${groupUserId}`)
 
       expect(response2.status).toBe(400)
       expect(response2.body.message).toBe("Validation Failed")
 
-      // Test invalid group user ID
       const response3 = await request(app)
         .delete(`/v1/tenants/${tenantId}/groups/${groupId}/users/${invalidGroupUserId}`)
 
@@ -963,21 +961,18 @@ describe('Tenant Management API', () => {
       const invalidGroupId = 'invalid-uuid'
       const invalidExpand = 'invalid-expand'
 
-      // Test invalid tenant ID
       const response1 = await request(app)
         .get(`/v1/tenants/${invalidTenantId}/groups/${groupId}`)
 
       expect(response1.status).toBe(400)
       expect(response1.body.message).toBe("Validation Failed")
 
-      // Test invalid group ID
       const response2 = await request(app)
         .get(`/v1/tenants/${tenantId}/groups/${invalidGroupId}`)
 
       expect(response2.status).toBe(400)
       expect(response2.body.message).toBe("Validation Failed")
 
-      // Test invalid expand parameter
       const response3 = await request(app)
         .get(`/v1/tenants/${tenantId}/groups/${groupId}`)
         .query({ expand: invalidExpand })
@@ -1327,19 +1322,358 @@ describe('Tenant Management API', () => {
       const invalidTenantId = 'invalid-uuid'
       const invalidGroupId = 'invalid-uuid'
 
-      // Test invalid tenant ID
       const response1 = await request(app)
         .get(`/v1/tenants/${invalidTenantId}/groups/${groupId}/shared-services/shared-service-roles`)
 
       expect(response1.status).toBe(400)
       expect(response1.body.message).toBe("Validation Failed")
 
-      // Test invalid group ID
       const response2 = await request(app)
         .get(`/v1/tenants/${tenantId}/groups/${invalidGroupId}/shared-services/shared-service-roles`)
 
       expect(response2.status).toBe(400)
       expect(response2.body.message).toBe("Validation Failed")
+    })
+  })
+
+  describe('PUT /v1/tenants/:tenantId/groups/:groupId/shared-services/shared-service-roles', () => {
+    const tenantId = '123e4567-e89b-12d3-a456-426614174000'
+    const groupId = '123e4567-e89b-12d3-a456-426614174001'
+
+    it('should update shared service roles for a group successfully', async () => {
+      const updateData = {
+        sharedServices: [
+          {
+            id: '123e4567-e89b-12d3-a456-426614174002',
+            sharedServiceRoles: [
+              {
+                id: '123e4567-e89b-12d3-a456-426614174003',
+                enabled: true
+              },
+              {
+                id: '123e4567-e89b-12d3-a456-426614174004',
+                enabled: false
+              }
+            ]
+          },
+          {
+            id: '123e4567-e89b-12d3-a456-426614174005',
+            sharedServiceRoles: [
+              {
+                id: '123e4567-e89b-12d3-a456-426614174006',
+                enabled: true
+              }
+            ]
+          }
+        ]
+      }
+
+      const mockUpdatedSharedServices = [
+        {
+          id: '123e4567-e89b-12d3-a456-426614174002',
+          name: 'Test Service 1',
+          clientIdentifier: 'test-service-1',
+          description: 'Test Service 1 Description',
+          isActive: true,
+          roles: [
+            {
+              id: '123e4567-e89b-12d3-a456-426614174003',
+              name: 'Admin Role',
+              description: 'Administrator role',
+              enabled: true
+            },
+            {
+              id: '123e4567-e89b-12d3-a456-426614174004',
+              name: 'User Role',
+              description: 'User role',
+              enabled: false
+            }
+          ]
+        },
+        {
+          id: '123e4567-e89b-12d3-a456-426614174005',
+          name: 'Test Service 2',
+          clientIdentifier: 'test-service-2',
+          description: 'Test Service 2 Description',
+          isActive: true,
+          roles: [
+            {
+              id: '123e4567-e89b-12d3-a456-426614174006',
+              name: 'Viewer Role',
+              description: 'Viewer role',
+              enabled: true
+            }
+          ]
+        }
+      ]
+
+      mockTMRepository.updateSharedServiceRolesForGroup.mockResolvedValue(mockUpdatedSharedServices as any)
+
+      const response = await request(app)
+        .put(`/v1/tenants/${tenantId}/groups/${groupId}/shared-services/shared-service-roles`)
+        .send(updateData)
+
+      expect(response.status).toBe(200)
+      expect(response.body).toMatchObject({
+        data: {
+          sharedServices: [
+            {
+              id: '123e4567-e89b-12d3-a456-426614174002',
+              name: 'Test Service 1',
+              roles: [
+                {
+                  id: '123e4567-e89b-12d3-a456-426614174003',
+                  name: 'Admin Role',
+                  enabled: true
+                },
+                {
+                  id: '123e4567-e89b-12d3-a456-426614174004',
+                  name: 'User Role',
+                  enabled: false
+                }
+              ]
+            },
+            {
+              id: '123e4567-e89b-12d3-a456-426614174005',
+              name: 'Test Service 2',
+              roles: [
+                {
+                  id: '123e4567-e89b-12d3-a456-426614174006',
+                  name: 'Viewer Role',
+                  enabled: true
+                }
+              ]
+            }
+          ]
+        }
+      })
+
+      expect(mockTMRepository.updateSharedServiceRolesForGroup).toHaveBeenCalledWith(
+        expect.objectContaining({
+          params: { tenantId, groupId },
+          body: updateData
+        })
+      )
+    })
+
+    it('should update single shared service role successfully', async () => {
+      const updateData = {
+        sharedServices: [
+          {
+            id: '123e4567-e89b-12d3-a456-426614174002',
+            sharedServiceRoles: [
+              {
+                id: '123e4567-e89b-12d3-a456-426614174003',
+                enabled: false
+              }
+            ]
+          }
+        ]
+      }
+
+      const mockUpdatedSharedServices = [
+        {
+          id: '123e4567-e89b-12d3-a456-426614174002',
+          name: 'Test Service 1',
+          clientIdentifier: 'test-service-1',
+          description: 'Test Service 1 Description',
+          isActive: true,
+          roles: [
+            {
+              id: '123e4567-e89b-12d3-a456-426614174003',
+              name: 'Admin Role',
+              description: 'Administrator role',
+              enabled: false
+            }
+          ]
+        }
+      ]
+
+      mockTMRepository.updateSharedServiceRolesForGroup.mockResolvedValue(mockUpdatedSharedServices as any)
+
+      const response = await request(app)
+        .put(`/v1/tenants/${tenantId}/groups/${groupId}/shared-services/shared-service-roles`)
+        .send(updateData)
+
+      expect(response.status).toBe(200)
+      expect(response.body).toMatchObject({
+        data: {
+          sharedServices: [
+            {
+              id: '123e4567-e89b-12d3-a456-426614174002',
+              roles: [
+                {
+                  id: '123e4567-e89b-12d3-a456-426614174003',
+                  enabled: false
+                }
+              ]
+            }
+          ]
+        }
+      })
+    })
+
+    it('should fail when group does not exist', async () => {
+      const updateData = {
+        sharedServices: [
+          {
+            id: '123e4567-e89b-12d3-a456-426614174002',
+            sharedServiceRoles: [
+              {
+                id: '123e4567-e89b-12d3-a456-426614174003',
+                enabled: true
+              }
+            ]
+          }
+        ]
+      }
+
+      const errorMessage = `Group not found: ${groupId}`
+      mockTMRepository.updateSharedServiceRolesForGroup.mockRejectedValue(new NotFoundError(errorMessage))
+
+      const response = await request(app)
+        .put(`/v1/tenants/${tenantId}/groups/${groupId}/shared-services/shared-service-roles`)
+        .send(updateData)
+
+      expect(response.status).toBe(404)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Not Found',
+        httpResponseCode: 404,
+        message: errorMessage,
+        name: 'Error occurred updating shared service roles for group'
+      })
+    })
+
+    it('should fail when shared service does not exist', async () => {
+      const updateData = {
+        sharedServices: [
+          {
+            id: '123e4567-e89b-12d3-a456-426614174999',
+            sharedServiceRoles: [
+              {
+                id: '123e4567-e89b-12d3-a456-426614174003',
+                enabled: true
+              }
+            ]
+          }
+        ]
+      }
+
+      const errorMessage = `Shared service not found: 123e4567-e89b-12d3-a456-426614174999`
+      mockTMRepository.updateSharedServiceRolesForGroup.mockRejectedValue(new NotFoundError(errorMessage))
+
+      const response = await request(app)
+        .put(`/v1/tenants/${tenantId}/groups/${groupId}/shared-services/shared-service-roles`)
+        .send(updateData)
+
+      expect(response.status).toBe(404)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Not Found',
+        httpResponseCode: 404,
+        message: errorMessage,
+        name: 'Error occurred updating shared service roles for group'
+      })
+    })
+
+    it('should fail when shared service role does not exist', async () => {
+      const updateData = {
+        sharedServices: [
+          {
+            id: '123e4567-e89b-12d3-a456-426614174002',
+            sharedServiceRoles: [
+              {
+                id: '123e4567-e89b-12d3-a456-426614174999',
+                enabled: true
+              }
+            ]
+          }
+        ]
+      }
+
+      const errorMessage = `Shared service role not found: 123e4567-e89b-12d3-a456-426614174999`
+      mockTMRepository.updateSharedServiceRolesForGroup.mockRejectedValue(new NotFoundError(errorMessage))
+
+      const response = await request(app)
+        .put(`/v1/tenants/${tenantId}/groups/${groupId}/shared-services/shared-service-roles`)
+        .send(updateData)
+
+      expect(response.status).toBe(404)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Not Found',
+        httpResponseCode: 404,
+        message: errorMessage,
+        name: 'Error occurred updating shared service roles for group'
+      })
+    })
+
+    it('should return 500 when database error occurs', async () => {
+      const updateData = {
+        sharedServices: [
+          {
+            id: '123e4567-e89b-12d3-a456-426614174002',
+            sharedServiceRoles: [
+              {
+                id: '123e4567-e89b-12d3-a456-426614174003',
+                enabled: true
+              }
+            ]
+          }
+        ]
+      }
+
+      const errorMessage = 'Database connection failed'
+      mockTMRepository.updateSharedServiceRolesForGroup.mockRejectedValue(new Error(errorMessage))
+
+      const response = await request(app)
+        .put(`/v1/tenants/${tenantId}/groups/${groupId}/shared-services/shared-service-roles`)
+        .send(updateData)
+
+      expect(response.status).toBe(500)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Internal Server Error',
+        httpResponseCode: 500,
+        message: errorMessage,
+        name: 'Error occurred updating shared service roles for group'
+      })
+    })
+
+    it('should return 400 when validation fails', async () => {
+      const invalidTenantId = 'invalid-uuid'
+      const invalidGroupId = 'invalid-uuid'
+      const invalidUpdateData = {
+        sharedServices: [
+          {
+            id: 'invalid-uuid',
+            sharedServiceRoles: [
+              {
+                id: 'invalid-uuid',
+                enabled: 'not-boolean'
+              }
+            ]
+          }
+        ]
+      }
+
+      const response1 = await request(app)
+        .put(`/v1/tenants/${invalidTenantId}/groups/${groupId}/shared-services/shared-service-roles`)
+        .send({ sharedServices: [] })
+
+      expect(response1.status).toBe(400)
+      expect(response1.body.message).toBe("Validation Failed")
+
+      const response2 = await request(app)
+        .put(`/v1/tenants/${tenantId}/groups/${invalidGroupId}/shared-services/shared-service-roles`)
+        .send({ sharedServices: [] })
+
+      expect(response2.status).toBe(400)
+      expect(response2.body.message).toBe("Validation Failed")
+
+      const response3 = await request(app)
+        .put(`/v1/tenants/${tenantId}/groups/${groupId}/shared-services/shared-service-roles`)
+        .send(invalidUpdateData)
+
+      expect(response3.status).toBe(400)
+      expect(response3.body.message).toBe("Validation Failed")
     })
   })
 }) 
