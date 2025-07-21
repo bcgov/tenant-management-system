@@ -59,6 +59,16 @@ describe('Tenant Management API', () => {
       (req, res) => tmController.addGroupUser(req, res)
     )
 
+    app.delete('/v1/tenants/:tenantId/groups/:groupId/users/:groupUserId',
+      validate(validator.removeGroupUser, {}, {}),
+      (req, res) => tmController.removeGroupUser(req, res)
+    )
+
+    app.get('/v1/tenants/:tenantId/groups/:groupId',
+      validate(validator.getGroup, {}, {}),
+      (req, res) => tmController.getGroup(req, res)
+    )
+
     app.use((err: any, req: any, res: any, next: any) => {
       if (err.name === 'ValidationError') {
         return res.status(err.statusCode).json(err)
@@ -678,6 +688,289 @@ describe('Tenant Management API', () => {
       const response3 = await request(app)
         .post(`/v1/tenants/${tenantId}/groups/${groupId}/users`)
         .send(invalidData)
+
+      expect(response3.status).toBe(400)
+      expect(response3.body.message).toBe("Validation Failed")
+    })
+  })
+
+  describe('DELETE /v1/tenants/:tenantId/groups/:groupId/users/:groupUserId', () => {
+    const tenantId = '123e4567-e89b-12d3-a456-426614174000'
+    const groupId = '123e4567-e89b-12d3-a456-426614174001'
+    const groupUserId = '123e4567-e89b-12d3-a456-426614174002'
+
+    it('should remove a user from a group successfully', async () => {
+      mockTMRepository.removeGroupUser.mockResolvedValue(undefined)
+
+      const response = await request(app)
+        .delete(`/v1/tenants/${tenantId}/groups/${groupId}/users/${groupUserId}`)
+
+      expect(response.status).toBe(204)
+      expect(response.body).toEqual({})
+
+      expect(mockTMRepository.removeGroupUser).toHaveBeenCalledWith(
+        expect.objectContaining({
+          params: { tenantId, groupId, groupUserId }
+        })
+      )
+    })
+
+    it('should fail when group does not exist', async () => {
+      const errorMessage = `Group not found: ${groupId}`
+      mockTMRepository.removeGroupUser.mockRejectedValue(new NotFoundError(errorMessage))
+
+      const response = await request(app)
+        .delete(`/v1/tenants/${tenantId}/groups/${groupId}/users/${groupUserId}`)
+
+      expect(response.status).toBe(404)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Not Found',
+        httpResponseCode: 404,
+        message: errorMessage,
+        name: 'Error occurred removing user from group'
+      })
+    })
+
+    it('should fail when group user does not exist', async () => {
+      const errorMessage = `Group user not found: ${groupUserId}`
+      mockTMRepository.removeGroupUser.mockRejectedValue(new NotFoundError(errorMessage))
+
+      const response = await request(app)
+        .delete(`/v1/tenants/${tenantId}/groups/${groupId}/users/${groupUserId}`)
+
+      expect(response.status).toBe(404)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Not Found',
+        httpResponseCode: 404,
+        message: errorMessage,
+        name: 'Error occurred removing user from group'
+      })
+    })
+
+    it('should fail when user is not in the group', async () => {
+      const errorMessage = `User is not a member of this group`
+      mockTMRepository.removeGroupUser.mockRejectedValue(new ConflictError(errorMessage))
+
+      const response = await request(app)
+        .delete(`/v1/tenants/${tenantId}/groups/${groupId}/users/${groupUserId}`)
+
+      expect(response.status).toBe(409)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Conflict',
+        httpResponseCode: 409,
+        message: errorMessage,
+        name: 'Error occurred removing user from group'
+      })
+    })
+
+    it('should return 500 when database error occurs', async () => {
+      const errorMessage = 'Database connection failed'
+      mockTMRepository.removeGroupUser.mockRejectedValue(new Error(errorMessage))
+
+      const response = await request(app)
+        .delete(`/v1/tenants/${tenantId}/groups/${groupId}/users/${groupUserId}`)
+
+      expect(response.status).toBe(500)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Internal Server Error',
+        httpResponseCode: 500,
+        message: errorMessage,
+        name: 'Error occurred removing user from group'
+      })
+    })
+
+    it('should return 400 when validation fails', async () => {
+      const invalidTenantId = 'invalid-uuid'
+      const invalidGroupId = 'invalid-uuid'
+      const invalidGroupUserId = 'invalid-uuid'
+
+      // Test invalid tenant ID
+      const response1 = await request(app)
+        .delete(`/v1/tenants/${invalidTenantId}/groups/${groupId}/users/${groupUserId}`)
+
+      expect(response1.status).toBe(400)
+      expect(response1.body.message).toBe("Validation Failed")
+
+      // Test invalid group ID
+      const response2 = await request(app)
+        .delete(`/v1/tenants/${tenantId}/groups/${invalidGroupId}/users/${groupUserId}`)
+
+      expect(response2.status).toBe(400)
+      expect(response2.body.message).toBe("Validation Failed")
+
+      // Test invalid group user ID
+      const response3 = await request(app)
+        .delete(`/v1/tenants/${tenantId}/groups/${groupId}/users/${invalidGroupUserId}`)
+
+      expect(response3.status).toBe(400)
+      expect(response3.body.message).toBe("Validation Failed")
+    })
+  })
+
+  describe('GET /v1/tenants/:tenantId/groups/:groupId', () => {
+    const tenantId = '123e4567-e89b-12d3-a456-426614174000'
+    const groupId = '123e4567-e89b-12d3-a456-426614174001'
+
+    it('should get a group successfully', async () => {
+      const mockGroup = {
+        id: groupId,
+        name: 'Test Group',
+        description: 'Test Group Description',
+        tenant: { id: tenantId },
+        users: [],
+        sharedServiceRoles: [],
+        createdBy: 'test-user',
+        updatedBy: 'test-user',
+        createdDateTime: new Date(),
+        updatedDateTime: new Date()
+      }
+
+      mockTMRepository.getGroup.mockResolvedValue(mockGroup as any)
+
+      const response = await request(app)
+        .get(`/v1/tenants/${tenantId}/groups/${groupId}`)
+
+      expect(response.status).toBe(200)
+      expect(response.body).toMatchObject({
+        data: {
+          group: {
+            id: groupId,
+            name: mockGroup.name,
+            description: mockGroup.description,
+            tenant: { id: tenantId }
+          }
+        }
+      })
+
+      expect(mockTMRepository.getGroup).toHaveBeenCalledWith(
+        expect.objectContaining({
+          params: { tenantId, groupId }
+        })
+      )
+    })
+
+    it('should get a group with expanded users successfully', async () => {
+      const mockGroupWithUsers = {
+        id: groupId,
+        name: 'Test Group',
+        description: 'Test Group Description',
+        tenant: { id: tenantId },
+        users: [{
+          id: '123e4567-e89b-12d3-a456-426614174002',
+          group: { id: groupId },
+          tenantUser: {
+            id: '123e4567-e89b-12d3-a456-426614174003',
+            firstName: 'John',
+            lastName: 'Doe',
+            displayName: 'John Doe',
+            ssoUserId: 'F45AFBBD68C51D6F956BA3A1DE1878A1',
+            email: 'john.doe@gov.bc.ca'
+          },
+          isDeleted: false,
+          createdBy: 'test-user',
+          updatedBy: 'test-user'
+        }],
+        sharedServiceRoles: [],
+        createdBy: 'test-user',
+        updatedBy: 'test-user'
+      }
+
+      mockTMRepository.getGroup.mockResolvedValue(mockGroupWithUsers as any)
+
+      const response = await request(app)
+        .get(`/v1/tenants/${tenantId}/groups/${groupId}`)
+        .query({ expand: 'groupUsers' })
+
+      expect(response.status).toBe(200)
+      expect(response.body).toMatchObject({
+        data: {
+          group: {
+            id: groupId,
+            name: mockGroupWithUsers.name,
+            users: [
+              {
+                id: '123e4567-e89b-12d3-a456-426614174002',
+                group: { id: groupId },
+                tenantUser: {
+                  id: '123e4567-e89b-12d3-a456-426614174003',
+                  firstName: 'John',
+                  lastName: 'Doe',
+                  displayName: 'John Doe',
+                  ssoUserId: 'F45AFBBD68C51D6F956BA3A1DE1878A1',
+                  email: 'john.doe@gov.bc.ca'
+                },
+                isDeleted: false,
+                createdBy: 'test-user',
+                updatedBy: 'test-user'
+              }
+            ]
+          }
+        }
+      })
+
+      expect(mockTMRepository.getGroup).toHaveBeenCalledWith(
+        expect.objectContaining({
+          params: { tenantId, groupId },
+          query: { expand: 'groupUsers' }
+        })
+      )
+    })
+
+    it('should fail when group does not exist', async () => {
+      const errorMessage = `Group not found: ${groupId}`
+      mockTMRepository.getGroup.mockRejectedValue(new NotFoundError(errorMessage))
+
+      const response = await request(app)
+        .get(`/v1/tenants/${tenantId}/groups/${groupId}`)
+
+      expect(response.status).toBe(404)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Not Found',
+        httpResponseCode: 404,
+        message: errorMessage,
+        name: 'Error occurred getting a group'
+      })
+    })
+
+    it('should return 500 when database error occurs', async () => {
+      const errorMessage = 'Database connection failed'
+      mockTMRepository.getGroup.mockRejectedValue(new Error(errorMessage))
+
+      const response = await request(app)
+        .get(`/v1/tenants/${tenantId}/groups/${groupId}`)
+
+      expect(response.status).toBe(500)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Internal Server Error',
+        httpResponseCode: 500,
+        message: errorMessage,
+        name: 'Error occurred getting a group'
+      })
+    })
+
+    it('should return 400 when validation fails', async () => {
+      const invalidTenantId = 'invalid-uuid'
+      const invalidGroupId = 'invalid-uuid'
+      const invalidExpand = 'invalid-expand'
+
+      // Test invalid tenant ID
+      const response1 = await request(app)
+        .get(`/v1/tenants/${invalidTenantId}/groups/${groupId}`)
+
+      expect(response1.status).toBe(400)
+      expect(response1.body.message).toBe("Validation Failed")
+
+      // Test invalid group ID
+      const response2 = await request(app)
+        .get(`/v1/tenants/${tenantId}/groups/${invalidGroupId}`)
+
+      expect(response2.status).toBe(400)
+      expect(response2.body.message).toBe("Validation Failed")
+
+      // Test invalid expand parameter
+      const response3 = await request(app)
+        .get(`/v1/tenants/${tenantId}/groups/${groupId}`)
+        .query({ expand: invalidExpand })
 
       expect(response3.status).toBe(400)
       expect(response3.body.message).toBe("Validation Failed")
