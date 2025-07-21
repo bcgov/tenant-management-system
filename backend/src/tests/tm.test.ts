@@ -49,6 +49,11 @@ describe('Tenant Management API', () => {
       (req, res) => tmController.createGroup(req, res)
     )
 
+    app.put('/v1/tenants/:tenantId/groups/:groupId',
+      validate(validator.updateGroup, {}, {}),
+      (req, res) => tmController.updateGroup(req, res)
+    )
+
     app.use((err: any, req: any, res: any, next: any) => {
       if (err.name === 'ValidationError') {
         return res.status(err.statusCode).json(err)
@@ -250,6 +255,207 @@ describe('Tenant Management API', () => {
       const response = await request(app)
         .post(`/v1/tenants/${invalidTenantId}/groups`)
         .send(validGroupData)
+
+      expect(response.status).toBe(400)
+      expect(response.body.message).toBe("Validation Failed")
+    })
+  })
+
+  describe('PUT /v1/tenants/:tenantId/groups/:groupId', () => {
+    const tenantId = '123e4567-e89b-12d3-a456-426614174000'
+    const groupId = '123e4567-e89b-12d3-a456-426614174001'
+    const validUpdateData = {
+      name: 'Updated Group Name',
+      description: 'Updated Group Description'
+    }
+
+    it('should update a group successfully', async () => {
+      const mockUpdatedGroup = {
+        id: groupId,
+        name: validUpdateData.name,
+        description: validUpdateData.description,
+        tenant: { id: tenantId },
+        users: [],
+        createdBy: 'test-user',
+        updatedBy: 'test-user',
+        createdDateTime: new Date(),
+        updatedDateTime: new Date()
+      }
+
+      mockTMRepository.updateGroup.mockResolvedValue(mockUpdatedGroup as any)
+
+      const response = await request(app)
+        .put(`/v1/tenants/${tenantId}/groups/${groupId}`)
+        .send(validUpdateData)
+
+      expect(response.status).toBe(200)
+      expect(response.body).toMatchObject({
+        data: {
+          group: {
+            id: groupId,
+            name: validUpdateData.name,
+            description: validUpdateData.description,
+            tenant: { id: tenantId }
+          }
+        }
+      })
+
+      expect(mockTMRepository.updateGroup).toHaveBeenCalledWith(
+        expect.objectContaining({
+          params: { tenantId, groupId },
+          body: validUpdateData
+        })
+      )
+    })
+
+    it('should update only group name successfully', async () => {
+      const updateNameOnly = {
+        name: 'New Group Name Only'
+      }
+
+      const mockUpdatedGroup = {
+        id: groupId,
+        name: updateNameOnly.name,
+        description: 'Original Description',
+        tenant: { id: tenantId },
+        users: [],
+        createdBy: 'test-user',
+        updatedBy: 'test-user'
+      }
+
+      mockTMRepository.updateGroup.mockResolvedValue(mockUpdatedGroup as any)
+
+      const response = await request(app)
+        .put(`/v1/tenants/${tenantId}/groups/${groupId}`)
+        .send(updateNameOnly)
+
+      expect(response.status).toBe(200)
+      expect(response.body).toMatchObject({
+        data: {
+          group: {
+            id: groupId,
+            name: updateNameOnly.name,
+            description: 'Original Description'
+          }
+        }
+      })
+    })
+
+    it('should update only group description successfully', async () => {
+      const updateDescriptionOnly = {
+        description: 'New Description Only'
+      }
+
+      const mockUpdatedGroup = {
+        id: groupId,
+        name: 'Original Name',
+        description: updateDescriptionOnly.description,
+        tenant: { id: tenantId },
+        users: [],
+        createdBy: 'test-user',
+        updatedBy: 'test-user'
+      }
+
+      mockTMRepository.updateGroup.mockResolvedValue(mockUpdatedGroup as any)
+
+      const response = await request(app)
+        .put(`/v1/tenants/${tenantId}/groups/${groupId}`)
+        .send(updateDescriptionOnly)
+
+      expect(response.status).toBe(200)
+      expect(response.body).toMatchObject({
+        data: {
+          group: {
+            id: groupId,
+            name: 'Original Name',
+            description: updateDescriptionOnly.description
+          }
+        }
+      })
+    })
+
+    it('should fail when group does not exist', async () => {
+      const errorMessage = `Group not found: ${groupId}`
+      mockTMRepository.updateGroup.mockRejectedValue(new NotFoundError(errorMessage))
+
+      const response = await request(app)
+        .put(`/v1/tenants/${tenantId}/groups/${groupId}`)
+        .send(validUpdateData)
+
+      expect(response.status).toBe(404)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Not Found',
+        httpResponseCode: 404,
+        message: errorMessage,
+        name: 'Error occurred updating group'
+      })
+    })
+
+    it('should fail when group name already exists in tenant', async () => {
+      const errorMessage = `A group with name '${validUpdateData.name}' already exists in this tenant`
+      mockTMRepository.updateGroup.mockRejectedValue(new ConflictError(errorMessage))
+
+      const response = await request(app)
+        .put(`/v1/tenants/${tenantId}/groups/${groupId}`)
+        .send(validUpdateData)
+
+      expect(response.status).toBe(409)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Conflict',
+        httpResponseCode: 409,
+        message: errorMessage,
+        name: 'Error occurred updating group'
+      })
+    })
+
+    it('should return 500 when database error occurs', async () => {
+      const errorMessage = 'Database connection failed'
+      mockTMRepository.updateGroup.mockRejectedValue(new Error(errorMessage))
+
+      const response = await request(app)
+        .put(`/v1/tenants/${tenantId}/groups/${groupId}`)
+        .send(validUpdateData)
+
+      expect(response.status).toBe(500)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Internal Server Error',
+        httpResponseCode: 500,
+        message: errorMessage,
+        name: 'Error occurred updating group'
+      })
+    })
+
+    it('should return 400 when validation fails', async () => {
+      const invalidData = {
+        name: '', // Empty name
+        description: 'A'.repeat(501) // Too long description
+      }
+
+      const response = await request(app)
+        .put(`/v1/tenants/${tenantId}/groups/${groupId}`)
+        .send(invalidData)
+
+      expect(response.status).toBe(400)
+      expect(response.body.message).toBe("Validation Failed")
+    })
+
+    it('should return 400 when tenant ID is invalid UUID', async () => {
+      const invalidTenantId = 'invalid-uuid'
+
+      const response = await request(app)
+        .put(`/v1/tenants/${invalidTenantId}/groups/${groupId}`)
+        .send(validUpdateData)
+
+      expect(response.status).toBe(400)
+      expect(response.body.message).toBe("Validation Failed")
+    })
+
+    it('should return 400 when group ID is invalid UUID', async () => {
+      const invalidGroupId = 'invalid-uuid'
+
+      const response = await request(app)
+        .put(`/v1/tenants/${tenantId}/groups/${invalidGroupId}`)
+        .send(validUpdateData)
 
       expect(response.status).toBe(400)
       expect(response.body.message).toBe("Validation Failed")
