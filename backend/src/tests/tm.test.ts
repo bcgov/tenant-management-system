@@ -69,6 +69,11 @@ describe('Tenant Management API', () => {
       (req, res) => tmController.getGroup(req, res)
     )
 
+    app.get('/v1/tenants/:tenantId/groups',
+      validate(validator.getTenantGroups, {}, {}),
+      (req, res) => tmController.getTenantGroups(req, res)
+    )
+
     app.use((err: any, req: any, res: any, next: any) => {
       if (err.name === 'ValidationError') {
         return res.status(err.statusCode).json(err)
@@ -974,6 +979,163 @@ describe('Tenant Management API', () => {
 
       expect(response3.status).toBe(400)
       expect(response3.body.message).toBe("Validation Failed")
+    })
+  })
+
+  describe('GET /v1/tenants/:tenantId/groups', () => {
+    const tenantId = '123e4567-e89b-12d3-a456-426614174000'
+
+    it('should get all groups for a tenant successfully', async () => {
+      const mockGroups = [
+        {
+          id: '123e4567-e89b-12d3-a456-426614174001',
+          name: 'Admin Group',
+          description: 'Administrators group',
+          tenant: { id: tenantId },
+          users: [],
+          sharedServiceRoles: [],
+          createdBy: 'test-user',
+          updatedBy: 'test-user',
+          createdDateTime: new Date(),
+          updatedDateTime: new Date()
+        },
+        {
+          id: '123e4567-e89b-12d3-a456-426614174002',
+          name: 'User Group',
+          description: 'Regular users group',
+          tenant: { id: tenantId },
+          users: [],
+          sharedServiceRoles: [],
+          createdBy: 'test-user',
+          updatedBy: 'test-user',
+          createdDateTime: new Date(),
+          updatedDateTime: new Date()
+        }
+      ]
+
+      mockTMRepository.getTenantGroups.mockResolvedValue(mockGroups as any)
+
+      const response = await request(app)
+        .get(`/v1/tenants/${tenantId}/groups`)
+
+      expect(response.status).toBe(200)
+      expect(response.body).toMatchObject({
+        data: {
+          groups: [
+            {
+              id: '123e4567-e89b-12d3-a456-426614174001',
+              name: 'Admin Group',
+              description: 'Administrators group',
+              tenant: { id: tenantId }
+            },
+            {
+              id: '123e4567-e89b-12d3-a456-426614174002',
+              name: 'User Group',
+              description: 'Regular users group',
+              tenant: { id: tenantId }
+            }
+          ]
+        }
+      })
+
+      expect(mockTMRepository.getTenantGroups).toHaveBeenCalledWith(
+        expect.objectContaining({
+          params: { tenantId }
+        })
+      )
+    })
+
+    it('should return empty array when tenant has no groups', async () => {
+      const mockEmptyGroups = []
+
+      mockTMRepository.getTenantGroups.mockResolvedValue(mockEmptyGroups)
+
+      const response = await request(app)
+        .get(`/v1/tenants/${tenantId}/groups`)
+
+      expect(response.status).toBe(200)
+      expect(response.body).toMatchObject({
+        data: {
+          groups: []
+        }
+      })
+    })
+
+    it('should return groups sorted alphabetically by name', async () => {
+      const mockGroups = [
+        {
+          id: '123e4567-e89b-12d3-a456-426614174002',
+          name: 'User Group',
+          description: 'Regular users group',
+          tenant: { id: tenantId },
+          users: [],
+          sharedServiceRoles: [],
+          createdBy: 'test-user',
+          updatedBy: 'test-user'
+        },
+        {
+          id: '123e4567-e89b-12d3-a456-426614174001',
+          name: 'Admin Group',
+          description: 'Administrators group',
+          tenant: { id: tenantId },
+          users: [],
+          sharedServiceRoles: [],
+          createdBy: 'test-user',
+          updatedBy: 'test-user'
+        }
+      ]
+
+      mockTMRepository.getTenantGroups.mockResolvedValue(mockGroups as any)
+
+      const response = await request(app)
+        .get(`/v1/tenants/${tenantId}/groups`)
+
+      expect(response.status).toBe(200)
+      expect(response.body.data.groups).toHaveLength(2)
+      expect(response.body.data.groups[0].name).toBe('User Group')
+      expect(response.body.data.groups[1].name).toBe('Admin Group')
+    })
+
+    it('should fail when tenant does not exist', async () => {
+      const errorMessage = `Tenant not found: ${tenantId}`
+      mockTMRepository.getTenantGroups.mockRejectedValue(new NotFoundError(errorMessage))
+
+      const response = await request(app)
+        .get(`/v1/tenants/${tenantId}/groups`)
+
+      expect(response.status).toBe(404)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Not Found',
+        httpResponseCode: 404,
+        message: errorMessage,
+        name: 'Error occurred getting tenant groups'
+      })
+    })
+
+    it('should return 500 when database error occurs', async () => {
+      const errorMessage = 'Database connection failed'
+      mockTMRepository.getTenantGroups.mockRejectedValue(new Error(errorMessage))
+
+      const response = await request(app)
+        .get(`/v1/tenants/${tenantId}/groups`)
+
+      expect(response.status).toBe(500)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Internal Server Error',
+        httpResponseCode: 500,
+        message: errorMessage,
+        name: 'Error occurred getting tenant groups'
+      })
+    })
+
+    it('should return 400 when validation fails', async () => {
+      const invalidTenantId = 'invalid-uuid'
+
+      const response = await request(app)
+        .get(`/v1/tenants/${invalidTenantId}/groups`)
+
+      expect(response.status).toBe(400)
+      expect(response.body.message).toBe("Validation Failed")
     })
   })
 }) 
