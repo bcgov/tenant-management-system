@@ -2577,4 +2577,162 @@ describe('Tenant API', () => {
       })
     })
   })
+
+  describe('POST /v1/tenants/:tenantId/shared-services', () => {
+    const tenantId = '123e4567-e89b-12d3-a456-426614174000'
+    const sharedServiceId = '123e4567-e89b-12d3-a456-426614174001'
+    const validRequestData = {
+      sharedServiceId: sharedServiceId
+    }
+
+    beforeEach(() => {
+      app.post('/v1/tenants/:tenantId/shared-services',
+        validate(validator.associateSharedServiceToTenant, {}, {}),
+        (req, res) => tmsController.associateSharedServiceToTenant(req, res)
+      )
+
+      app.use((err: any, req: any, res: any, next: any) => {
+        if (err.name === 'ValidationError') {
+          return res.status(err.statusCode).json(err)
+        }
+        next(err)
+      })
+    })
+
+    it('should associate shared service to tenant successfully', async () => {
+      mockTMSRepository.associateSharedServiceToTenant.mockResolvedValue(undefined)
+
+      const response = await request(app)
+        .post(`/v1/tenants/${tenantId}/shared-services`)
+        .send(validRequestData)
+
+      expect(response.status).toBe(201)
+      expect(response.body).toEqual({})
+
+      expect(mockTMSRepository.associateSharedServiceToTenant).toHaveBeenCalledWith(
+        expect.objectContaining({
+          params: { tenantId },
+          body: validRequestData
+        })
+      )
+    })
+
+    it('should fail when tenant not found', async () => {
+      mockTMSRepository.associateSharedServiceToTenant.mockRejectedValue(
+        new NotFoundError('Tenant not found: 123e4567-e89b-12d3-a456-426614174999')
+      )
+
+      const response = await request(app)
+        .post('/v1/tenants/123e4567-e89b-12d3-a456-426614174999/shared-services')
+        .send(validRequestData)
+
+      expect(response.status).toBe(404)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Not Found',
+        httpResponseCode: 404,
+        message: 'Tenant not found: 123e4567-e89b-12d3-a456-426614174999',
+        name: 'Error occurred associating shared service to tenant'
+      })
+    })
+
+    it('should fail when shared service not found', async () => {
+      mockTMSRepository.associateSharedServiceToTenant.mockRejectedValue(
+        new NotFoundError('Shared service not found: 123e4567-e89b-12d3-a456-426614174999')
+      )
+
+      const response = await request(app)
+        .post(`/v1/tenants/${tenantId}/shared-services`)
+        .send({
+          sharedServiceId: '123e4567-e89b-12d3-a456-426614174999'
+        })
+
+      expect(response.status).toBe(404)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Not Found',
+        httpResponseCode: 404,
+        message: 'Shared service not found: 123e4567-e89b-12d3-a456-426614174999',
+        name: 'Error occurred associating shared service to tenant'
+      })
+    })
+
+    it('should fail when shared service is inactive', async () => {
+      mockTMSRepository.associateSharedServiceToTenant.mockRejectedValue(
+        new ConflictError("Cannot associate inactive shared service 'Inactive Service' to tenant")
+      )
+
+      const response = await request(app)
+        .post(`/v1/tenants/${tenantId}/shared-services`)
+        .send(validRequestData)
+
+      expect(response.status).toBe(409)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Conflict',
+        httpResponseCode: 409,
+        message: "Cannot associate inactive shared service 'Inactive Service' to tenant",
+        name: 'Error occurred associating shared service to tenant'
+      })
+    })
+
+    it('should fail when shared service already associated', async () => {
+      mockTMSRepository.associateSharedServiceToTenant.mockRejectedValue(
+        new ConflictError("Shared service 'Test Service' is already associated with this tenant")
+      )
+
+      const response = await request(app)
+        .post(`/v1/tenants/${tenantId}/shared-services`)
+        .send(validRequestData)
+
+      expect(response.status).toBe(409)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Conflict',
+        httpResponseCode: 409,
+        message: "Shared service 'Test Service' is already associated with this tenant",
+        name: 'Error occurred associating shared service to tenant'
+      })
+    })
+
+    it('should return 400 when tenant ID is invalid', async () => {
+      const response = await request(app)
+        .post('/v1/tenants/invalid-tenant-id/shared-services')
+        .send(validRequestData)
+
+      expect(response.status).toBe(400)
+    })
+
+    it('should return 400 when shared service ID is missing', async () => {
+      const response = await request(app)
+        .post(`/v1/tenants/${tenantId}/shared-services`)
+        .send({})
+
+      expect(response.status).toBe(400)
+    })
+
+    it('should return 400 when shared service ID is invalid', async () => {
+      const response = await request(app)
+        .post(`/v1/tenants/${tenantId}/shared-services`)
+        .send({
+          sharedServiceId: 'invalid-shared-service-id'
+        })
+
+      expect(response.status).toBe(400)
+    })
+
+    it('should return 500 when database error occurs', async () => {
+      mockTMSRepository.associateSharedServiceToTenant.mockRejectedValue(
+        new Error('Database error')
+      )
+
+      const response = await request(app)
+        .post(`/v1/tenants/${tenantId}/shared-services`)
+        .send(validRequestData)
+
+      expect(response.status).toBe(500)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Internal Server Error',
+        httpResponseCode: 500,
+        message: 'Database error',
+        name: 'Error occurred associating shared service to tenant'
+      })
+    })
+  })
 }) 
