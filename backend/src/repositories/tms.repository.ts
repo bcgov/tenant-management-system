@@ -1009,10 +1009,9 @@ export class TMSRepository {
         transactionEntityManager = transactionEntityManager ? transactionEntityManager : this.manager;
         const hasAccess = await transactionEntityManager
             .createQueryBuilder()
-            .from(Tenant, "t")
-            .innerJoin("t.sharedServices", "tss")
+            .from(TenantSharedService, "tss")
             .innerJoin("tss.sharedService", "ss")
-            .where("t.id = :tenantId", { tenantId })
+            .where("tss.tenant.id = :tenantId", { tenantId })
             .andWhere("ss.clientIdentifier = :clientIdentifier", { clientIdentifier })
             .andWhere("ss.isActive = :isActive", { isActive: true })
             .andWhere("tss.isDeleted = :isDeleted", { isDeleted: false })

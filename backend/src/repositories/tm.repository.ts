@@ -131,17 +131,39 @@ export class TMRepository {
 
     public async getTenantGroups(req: Request) {
         const tenantId: string = req.params.tenantId
+        const ssoUserId: string = req.decodedJwt?.idir_user_guid
+        const TMS_AUDIENCE: string = process.env.TMS_AUDIENCE
+        const jwtAudience: string = req.decodedJwt?.aud || req.decodedJwt?.audience || TMS_AUDIENCE
 
         if (!await this.tmsRepository.checkIfTenantExists(tenantId)) {
             throw new NotFoundError(`Tenant not found: ${tenantId}`)
         }
 
-        const groups: any[] = await this.manager
+        const groupsQuery = this.manager
             .createQueryBuilder(Group, 'group')
+            .leftJoin('group.tenant', 'tenant')
+            .leftJoin('TenantSharedService', 'tss', 'tenant.id = tss.tenant_id')
+            .leftJoin('SharedService', 'ss', 'tss.shared_service_id = ss.id')
             .where('group.tenant.id = :tenantId', { tenantId })
-            .getMany();
+            .andWhere(
+                ':jwtAudience = :tmsAudience OR (:jwtAudience != :tmsAudience AND ss.client_identifier = :jwtAudience AND tss.is_deleted = :tssDeleted AND ss.is_active = :ssActive)',
+                { 
+                    jwtAudience, 
+                    tmsAudience: TMS_AUDIENCE, 
+                    tssDeleted: false,
+                    ssActive: true
+                }
+            );
 
-        return groups;
+        if (jwtAudience === TMS_AUDIENCE && ssoUserId) {
+            groupsQuery
+                .innerJoin('tenant.users', 'tu')
+                .innerJoin('tu.ssoUser', 'su')
+                .andWhere('su.ssoUserId = :ssoUserId', { ssoUserId });
+        }
+
+        const groups: any[] = await groupsQuery.getMany()
+        return groups
     }
 
     public async getGroupById(groupId: string) {
