@@ -84,6 +84,25 @@ describe('Tenant Management API', () => {
       (req, res) => tmController.updateSharedServiceRolesForGroup(req, res)
     )
 
+    app.get('/v1/tenants/:tenantId/users/:ssoUserId/groups/shared-service-roles',
+      validate(validator.getUserGroupsWithSharedServiceRoles, {}, {}),
+      (req, res, next) => {
+        // Mock JWT middleware for testing
+        req.decodedJwt = {
+          aud: 'test-service-client',
+          audience: 'test-service-client',
+          idir_user_guid: 'F45AFBBD68C51D6F956BA3A1DE1878A2'
+        }
+        req.isSharedServiceAccess = true
+        next()
+      },
+      (req, res, next) => {
+        // Mock tenant access middleware for testing
+        next()
+      },
+      (req, res) => tmController.getUserGroupsWithSharedServiceRoles(req, res)
+    )
+
     app.use((err: any, req: any, res: any, next: any) => {
       if (err.name === 'ValidationError') {
         return res.status(err.statusCode).json(err)
@@ -1674,6 +1693,287 @@ describe('Tenant Management API', () => {
 
       expect(response3.status).toBe(400)
       expect(response3.body.message).toBe("Validation Failed")
+    })
+  })
+
+  describe('GET /v1/tenants/:tenantId/users/:ssoUserId/groups/shared-service-roles', () => {
+    const tenantId = '123e4567-e89b-12d3-a456-426614174000'
+    const ssoUserId = 'F45AFBBD68C51D6F956BA3A1DE1878A2'
+
+    it('should return user groups with shared service roles successfully', async () => {
+      const mockUserGroups = [
+        {
+          id: '123e4567-e89b-12d3-a456-426614174001',
+          name: 'Admin Group',
+          description: 'Administrator group',
+          sharedServiceRoles: [
+            {
+              id: '123e4567-e89b-12d3-a456-426614174002',
+              enabled: true,
+              sharedService: {
+                id: '123e4567-e89b-12d3-a456-426614174003',
+                name: 'Test Service 1',
+                clientIdentifier: 'test-service-1',
+                description: 'Test Service 1 Description',
+                isActive: true
+              },
+              sharedServiceRole: {
+                id: '123e4567-e89b-12d3-a456-426614174004',
+                name: 'Admin Role',
+                description: 'Administrator role'
+              }
+            },
+            {
+              id: '123e4567-e89b-12d3-a456-426614174005',
+              enabled: false,
+              sharedService: {
+                id: '123e4567-e89b-12d3-a456-426614174006',
+                name: 'Test Service 2',
+                clientIdentifier: 'test-service-2',
+                description: 'Test Service 2 Description',
+                isActive: true
+              },
+              sharedServiceRole: {
+                id: '123e4567-e89b-12d3-a456-426614174007',
+                name: 'User Role',
+                description: 'User role'
+              }
+            }
+          ]
+        },
+        {
+          id: '123e4567-e89b-12d3-a456-426614174008',
+          name: 'User Group',
+          description: 'Regular user group',
+          sharedServiceRoles: [
+            {
+              id: '123e4567-e89b-12d3-a456-426614174009',
+              enabled: true,
+              sharedService: {
+                id: '123e4567-e89b-12d3-a456-426614174003',
+                name: 'Test Service 1',
+                clientIdentifier: 'test-service-1',
+                description: 'Test Service 1 Description',
+                isActive: true
+              },
+              sharedServiceRole: {
+                id: '123e4567-e89b-12d3-a456-426614174010',
+                name: 'Viewer Role',
+                description: 'Viewer role'
+              }
+            }
+          ]
+        }
+      ]
+
+      mockTMRepository.getUserGroupsWithSharedServiceRoles.mockResolvedValue(mockUserGroups as any)
+
+      const response = await request(app)
+        .get(`/v1/tenants/${tenantId}/users/${ssoUserId}/groups/shared-service-roles`)
+
+      expect(response.status).toBe(200)
+      expect(response.body).toMatchObject({
+        data: [
+          {
+            id: '123e4567-e89b-12d3-a456-426614174001',
+            name: 'Admin Group',
+            description: 'Administrator group',
+            sharedServiceRoles: [
+              {
+                id: '123e4567-e89b-12d3-a456-426614174002',
+                enabled: true,
+                sharedService: {
+                  id: '123e4567-e89b-12d3-a456-426614174003',
+                  name: 'Test Service 1',
+                  clientIdentifier: 'test-service-1',
+                  isActive: true
+                },
+                sharedServiceRole: {
+                  id: '123e4567-e89b-12d3-a456-426614174004',
+                  name: 'Admin Role'
+                }
+              },
+              {
+                id: '123e4567-e89b-12d3-a456-426614174005',
+                enabled: false,
+                sharedService: {
+                  id: '123e4567-e89b-12d3-a456-426614174006',
+                  name: 'Test Service 2',
+                  clientIdentifier: 'test-service-2',
+                  isActive: true
+                },
+                sharedServiceRole: {
+                  id: '123e4567-e89b-12d3-a456-426614174007',
+                  name: 'User Role'
+                }
+              }
+            ]
+          },
+          {
+            id: '123e4567-e89b-12d3-a456-426614174008',
+            name: 'User Group',
+            description: 'Regular user group',
+            sharedServiceRoles: [
+              {
+                id: '123e4567-e89b-12d3-a456-426614174009',
+                enabled: true,
+                sharedService: {
+                  id: '123e4567-e89b-12d3-a456-426614174003',
+                  name: 'Test Service 1',
+                  clientIdentifier: 'test-service-1',
+                  isActive: true
+                },
+                sharedServiceRole: {
+                  id: '123e4567-e89b-12d3-a456-426614174010',
+                  name: 'Viewer Role'
+                }
+              }
+            ]
+          }
+        ]
+      })
+
+      expect(mockTMRepository.getUserGroupsWithSharedServiceRoles).toHaveBeenCalledWith(
+        expect.objectContaining({
+          params: { tenantId, ssoUserId }
+        }),
+        'test-service-client'
+      )
+    })
+
+    it('should return empty array when user has no groups', async () => {
+      mockTMRepository.getUserGroupsWithSharedServiceRoles.mockResolvedValue([] as any)
+
+      const response = await request(app)
+        .get(`/v1/tenants/${tenantId}/users/${ssoUserId}/groups/shared-service-roles`)
+
+      expect(response.status).toBe(200)
+      expect(response.body).toMatchObject({
+        data: []
+      })
+    })
+
+    it('should return groups with no shared service roles', async () => {
+      const mockUserGroups = [
+        {
+          id: '123e4567-e89b-12d3-a456-426614174001',
+          name: 'Admin Group',
+          description: 'Administrator group',
+          sharedServiceRoles: []
+        },
+        {
+          id: '123e4567-e89b-12d3-a456-426614174008',
+          name: 'User Group',
+          description: 'Regular user group',
+          sharedServiceRoles: []
+        }
+      ]
+
+      mockTMRepository.getUserGroupsWithSharedServiceRoles.mockResolvedValue(mockUserGroups as any)
+
+      const response = await request(app)
+        .get(`/v1/tenants/${tenantId}/users/${ssoUserId}/groups/shared-service-roles`)
+
+      expect(response.status).toBe(200)
+      expect(response.body).toMatchObject({
+        data: [
+          {
+            id: '123e4567-e89b-12d3-a456-426614174001',
+            name: 'Admin Group',
+            sharedServiceRoles: []
+          },
+          {
+            id: '123e4567-e89b-12d3-a456-426614174008',
+            name: 'User Group',
+            sharedServiceRoles: []
+          }
+        ]
+      })
+    })
+
+    it('should return groups sorted alphabetically by name', async () => {
+      const mockUserGroups = [
+        {
+          id: '123e4567-e89b-12d3-a456-426614174008',
+          name: 'User Group',
+          description: 'Regular user group',
+          sharedServiceRoles: []
+        },
+        {
+          id: '123e4567-e89b-12d3-a456-426614174001',
+          name: 'Admin Group',
+          description: 'Administrator group',
+          sharedServiceRoles: []
+        }
+      ]
+
+      mockTMRepository.getUserGroupsWithSharedServiceRoles.mockResolvedValue(mockUserGroups as any)
+
+      const response = await request(app)
+        .get(`/v1/tenants/${tenantId}/users/${ssoUserId}/groups/shared-service-roles`)
+
+      expect(response.status).toBe(200)
+      expect(response.body.data).toHaveLength(2)
+      expect(response.body.data[0].name).toBe('User Group')
+      expect(response.body.data[1].name).toBe('Admin Group')
+    })
+
+    it('should fail when tenant does not exist', async () => {
+      const errorMessage = `Tenant not found: ${tenantId}`
+      mockTMRepository.getUserGroupsWithSharedServiceRoles.mockRejectedValue(new NotFoundError(errorMessage))
+
+      const response = await request(app)
+        .get(`/v1/tenants/${tenantId}/users/${ssoUserId}/groups/shared-service-roles`)
+
+      expect(response.status).toBe(404)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Not Found',
+        httpResponseCode: 404,
+        message: errorMessage,
+        name: 'Error occurred getting user groups with shared services'
+      })
+    })
+
+    it('should fail when user does not exist in tenant', async () => {
+      const errorMessage = `User not found in tenant: ${ssoUserId}`
+      mockTMRepository.getUserGroupsWithSharedServiceRoles.mockRejectedValue(new NotFoundError(errorMessage))
+
+      const response = await request(app)
+        .get(`/v1/tenants/${tenantId}/users/${ssoUserId}/groups/shared-service-roles`)
+
+      expect(response.status).toBe(404)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Not Found',
+        httpResponseCode: 404,
+        message: errorMessage,
+        name: 'Error occurred getting user groups with shared services'
+      })
+    })
+
+    it('should return 500 when database error occurs', async () => {
+      const errorMessage = 'Database connection failed'
+      mockTMRepository.getUserGroupsWithSharedServiceRoles.mockRejectedValue(new Error(errorMessage))
+
+      const response = await request(app)
+        .get(`/v1/tenants/${tenantId}/users/${ssoUserId}/groups/shared-service-roles`)
+
+      expect(response.status).toBe(500)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Internal Server Error',
+        httpResponseCode: 500,
+        message: errorMessage,
+        name: 'Error occurred getting user groups with shared services'
+      })
+    })
+
+    it('should return 400 when validation fails', async () => {
+      const invalidTenantId = 'invalid-uuid'
+
+      const response = await request(app)
+        .get(`/v1/tenants/${invalidTenantId}/users/${ssoUserId}/groups/shared-service-roles`)
+
+      expect(response.status).toBe(400)
+      expect(response.body.message).toBe("Validation Failed")
     })
   })
 }) 
