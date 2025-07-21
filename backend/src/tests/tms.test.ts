@@ -2735,4 +2735,218 @@ describe('Tenant API', () => {
       })
     })
   })
+
+  describe('GET /v1/tenants/:tenantId/shared-services', () => {
+    const tenantId = '123e4567-e89b-12d3-a456-426614174000'
+
+    beforeEach(() => {
+      app.get('/v1/tenants/:tenantId/shared-services',
+        validate(validator.getSharedServicesForTenant, {}, {}),
+        (req, res) => tmsController.getSharedServicesForTenant(req, res)
+      )
+
+      app.use((err: any, req: any, res: any, next: any) => {
+        if (err.name === 'ValidationError') {
+          return res.status(err.statusCode).json(err)
+        }
+        next(err)
+      })
+    })
+
+    it('should get shared services for tenant successfully', async () => {
+      const mockSharedServices: any = [
+        {
+          id: '123e4567-e89b-12d3-a456-426614174001',
+          name: 'Service A',
+          clientIdentifier: 'service-a',
+          description: 'First shared service for tenant',
+          isActive: true,
+          roles: [
+            {
+              id: '123e4567-e89b-12d3-a456-426614174002',
+              name: 'Admin Role',
+              description: 'Administrator role for service A',
+              isDeleted: false
+            },
+            {
+              id: '123e4567-e89b-12d3-a456-426614174003',
+              name: 'User Role',
+              description: 'Standard user role for service A',
+              isDeleted: false
+            }
+          ],
+          createdDateTime: new Date(),
+          updatedDateTime: new Date(),
+          createdBy: '123e4567e89b12d3a456426614174001',
+          updatedBy: '123e4567e89b12d3a456426614174001'
+        },
+        {
+          id: '123e4567-e89b-12d3-a456-426614174004',
+          name: 'Service B',
+          clientIdentifier: 'service-b',
+          description: 'Second shared service for tenant',
+          isActive: true,
+          roles: [
+            {
+              id: '123e4567-e89b-12d3-a456-426614174005',
+              name: 'Basic Role',
+              description: 'Basic access role for service B',
+              isDeleted: false
+            }
+          ],
+          createdDateTime: new Date(),
+          updatedDateTime: new Date(),
+          createdBy: '123e4567e89b12d3a456426614174001',
+          updatedBy: '123e4567e89b12d3a456426614174001'
+        }
+      ]
+
+      mockTMSRepository.getSharedServicesForTenant.mockResolvedValue(mockSharedServices)
+
+      const response = await request(app)
+        .get(`/v1/tenants/${tenantId}/shared-services`)
+
+      expect(response.status).toBe(200)
+      expect(response.body).toMatchObject({
+        data: {
+          sharedServices: [
+            {
+              id: mockSharedServices[0].id,
+              name: mockSharedServices[0].name,
+              clientIdentifier: mockSharedServices[0].clientIdentifier,
+              description: mockSharedServices[0].description,
+              isActive: mockSharedServices[0].isActive,
+              roles: expect.arrayContaining([
+                expect.objectContaining({
+                  name: 'Admin Role',
+                  description: 'Administrator role for service A'
+                }),
+                expect.objectContaining({
+                  name: 'User Role',
+                  description: 'Standard user role for service A'
+                })
+              ])
+            },
+            {
+              id: mockSharedServices[1].id,
+              name: mockSharedServices[1].name,
+              clientIdentifier: mockSharedServices[1].clientIdentifier,
+              description: mockSharedServices[1].description,
+              isActive: mockSharedServices[1].isActive,
+              roles: expect.arrayContaining([
+                expect.objectContaining({
+                  name: 'Basic Role',
+                  description: 'Basic access role for service B'
+                })
+              ])
+            }
+          ]
+        }
+      })
+
+      expect(mockTMSRepository.getSharedServicesForTenant).toHaveBeenCalledWith(tenantId)
+    })
+
+    it('should return empty array when tenant has no shared services', async () => {
+      mockTMSRepository.getSharedServicesForTenant.mockResolvedValue([])
+
+      const response = await request(app)
+        .get(`/v1/tenants/${tenantId}/shared-services`)
+
+      expect(response.status).toBe(200)
+      expect(response.body).toMatchObject({
+        data: {
+          sharedServices: []
+        }
+      })
+
+      expect(mockTMSRepository.getSharedServicesForTenant).toHaveBeenCalledWith(tenantId)
+    })
+
+    it('should return shared services sorted alphabetically by name', async () => {
+      const mockSharedServices: any = [
+        {
+          id: '123e4567-e89b-12d3-a456-426614174000',
+          name: 'Alpha Service',
+          clientIdentifier: 'alpha-service',
+          isActive: true,
+          roles: []
+        },
+        {
+          id: '123e4567-e89b-12d3-a456-426614174001',
+          name: 'Zebra Service',
+          clientIdentifier: 'zebra-service',
+          isActive: true,
+          roles: []
+        }
+      ]
+
+      mockTMSRepository.getSharedServicesForTenant.mockResolvedValue(mockSharedServices)
+
+      const response = await request(app)
+        .get(`/v1/tenants/${tenantId}/shared-services`)
+
+      expect(response.status).toBe(200)
+      expect(response.body.data.sharedServices).toHaveLength(2)
+      expect(response.body.data.sharedServices[0].name).toBe('Alpha Service')
+      expect(response.body.data.sharedServices[1].name).toBe('Zebra Service')
+    })
+
+    it('should exclude deleted roles from shared services', async () => {
+      const mockSharedServices: any = [
+        {
+          id: '123e4567-e89b-12d3-a456-426614174000',
+          name: 'Test Service',
+          clientIdentifier: 'test-service',
+          isActive: true,
+          roles: [
+            {
+              id: '123e4567-e89b-12d3-a456-426614174001',
+              name: 'Active Role',
+              description: 'This role is active',
+              isDeleted: false
+            }
+            // Note: Deleted roles are filtered out at the repository level
+          ],
+          createdDateTime: new Date(),
+          updatedDateTime: new Date(),
+          createdBy: '123e4567e89b12d3a456426614174001',
+          updatedBy: '123e4567e89b12d3a456426614174001'
+        }
+      ]
+
+      mockTMSRepository.getSharedServicesForTenant.mockResolvedValue(mockSharedServices)
+
+      const response = await request(app)
+        .get(`/v1/tenants/${tenantId}/shared-services`)
+
+      expect(response.status).toBe(200)
+      expect(response.body.data.sharedServices[0].roles).toHaveLength(1)
+      expect(response.body.data.sharedServices[0].roles[0].isDeleted).toBe(false)
+    })
+
+    it('should return 400 when tenant ID is invalid', async () => {
+      const response = await request(app)
+        .get('/v1/tenants/invalid-tenant-id/shared-services')
+
+      expect(response.status).toBe(400)
+    })
+
+    it('should return 500 when database error occurs', async () => {
+      mockTMSRepository.getSharedServicesForTenant.mockRejectedValue(
+        new Error('Database error')
+      )
+
+      const response = await request(app)
+        .get(`/v1/tenants/${tenantId}/shared-services`)
+
+      expect(response.status).toBe(500)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Internal Server Error',
+        httpResponseCode: 500,
+        message: 'Database error',
+        name: 'Error occurred getting shared services for tenant'
+      })
+    })
+  })
 }) 
