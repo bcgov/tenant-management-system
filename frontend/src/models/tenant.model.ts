@@ -27,7 +27,7 @@ export class Tenant {
   createdDate: string
 
   /**
-   * Optional description of the tenant.
+   * Description of the tenant.
    */
   description: string
 
@@ -55,8 +55,9 @@ export class Tenant {
    * Creates a new Tenant instance.
    *
    * @param createdBy - The username of who created the tenant
-   * @param createdDate - ISO8601 date string (YYYY-MM-DD) when tenant was created
-   * @param description - Optional description of the tenant
+   * @param createdDate - ISO8601 date string (YYYY-MM-DD) when tenant was
+   *   created
+   * @param description - Description of the tenant
    * @param id - Unique identifier for the tenant
    * @param name - Display name of the tenant
    * @param ministryName - Associated ministry or organization name
@@ -100,7 +101,7 @@ export class Tenant {
    * @param apiData.createdBy - The username of who created the tenant
    * @param apiData.createdDateTime - ISO8601 date string (YYYY-MM-DD) when
    *     tenant was created
-   * @param apiData.description - Optional description of the tenant
+   * @param apiData.description - Description of the tenant
    * @param apiData.id - Unique identifier for the tenant
    * @param apiData.name - Display name of the tenant
    * @param apiData.ministryName - Associated ministry or organization name
