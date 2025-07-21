@@ -1899,4 +1899,231 @@ describe('Tenant API', () => {
       expect(mockTMSRepository.getTenantRequests).toHaveBeenCalledWith(undefined)
     })
   })
+
+  describe('POST /v1/shared-services', () => {
+    const validSharedServiceData = {
+      name: 'Test Shared Service',
+      clientIdentifier: 'test-service-client',
+      description: 'Test Description',
+      isActive: true,
+      roles: [
+        {
+          name: 'Admin Role',
+          description: 'Administrator role for the shared service'
+        },
+        {
+          name: 'User Role',
+          description: 'Standard user role for the shared service'
+        }
+      ]
+    }
+
+    beforeEach(() => {
+      app.post('/v1/shared-services',
+        validate(validator.createSharedService, {}, {}),
+        (req, res) => tmsController.createSharedService(req, res)
+      )
+
+      app.use((err: any, req: any, res: any, next: any) => {
+        if (err.name === 'ValidationError') {
+          return res.status(err.statusCode).json(err)
+        }
+        next(err)
+      })
+    })
+
+    it('should create a shared service successfully', async () => {
+      const mockSharedService = {
+        id: '123e4567-e89b-12d3-a456-426614174000',
+        name: validSharedServiceData.name,
+        clientIdentifier: validSharedServiceData.clientIdentifier,
+        description: validSharedServiceData.description,
+        isActive: validSharedServiceData.isActive,
+        sharedServiceRoles: [
+          {
+            id: '123e4567-e89b-12d3-a456-426614174001',
+            name: 'Admin Role',
+            description: 'Administrator role for the shared service',
+            isDeleted: false
+          },
+          {
+            id: '123e4567-e89b-12d3-a456-426614174002',
+            name: 'User Role',
+            description: 'Standard user role for the shared service',
+            isDeleted: false
+          }
+        ],
+        createdDateTime: new Date(),
+        updatedDateTime: new Date(),
+        createdBy: '123e4567e89b12d3a456426614174001',
+        updatedBy: '123e4567e89b12d3a456426614174001'
+      }
+
+      mockTMSRepository.saveSharedService.mockResolvedValue(mockSharedService)
+
+      const response = await request(app)
+        .post('/v1/shared-services')
+        .send(validSharedServiceData)
+
+      expect(response.status).toBe(201)
+      expect(response.body).toMatchObject({
+        data: {
+          sharedService: {
+            id: mockSharedService.id,
+            name: mockSharedService.name,
+            clientIdentifier: mockSharedService.clientIdentifier,
+            description: mockSharedService.description,
+            isActive: mockSharedService.isActive,
+            sharedServiceRoles: expect.arrayContaining([
+              expect.objectContaining({
+                name: 'Admin Role',
+                description: 'Administrator role for the shared service'
+              }),
+              expect.objectContaining({
+                name: 'User Role',
+                description: 'Standard user role for the shared service'
+              })
+            ])
+          }
+        }
+      })
+
+      expect(mockTMSRepository.saveSharedService).toHaveBeenCalledWith(
+        expect.objectContaining({
+          body: validSharedServiceData
+        })
+      )
+    })
+
+    it('should create shared service with minimal required fields', async () => {
+      const minimalData = {
+        name: 'Minimal Service',
+        clientIdentifier: 'minimal-service',
+        roles: [
+          {
+            name: 'Basic Role'
+          }
+        ]
+      }
+
+      const mockSharedService = {
+        id: '123e4567-e89b-12d3-a456-426614174000',
+        name: minimalData.name,
+        clientIdentifier: minimalData.clientIdentifier,
+        description: null,
+        isActive: true,
+        sharedServiceRoles: [
+          {
+            id: '123e4567-e89b-12d3-a456-426614174001',
+            name: 'Basic Role',
+            description: null,
+            isDeleted: false
+          }
+        ],
+        createdDateTime: new Date(),
+        updatedDateTime: new Date(),
+        createdBy: '123e4567e89b12d3a456426614174001',
+        updatedBy: '123e4567e89b12d3a456426614174001'
+      }
+
+      mockTMSRepository.saveSharedService.mockResolvedValue(mockSharedService)
+
+      const response = await request(app)
+        .post('/v1/shared-services')
+        .send(minimalData)
+
+      expect(response.status).toBe(201)
+      expect(response.body).toMatchObject({
+        data: {
+          sharedService: {
+            id: mockSharedService.id,
+            name: mockSharedService.name,
+            clientIdentifier: mockSharedService.clientIdentifier,
+            description: mockSharedService.description,
+            isActive: mockSharedService.isActive
+          }
+        }
+      })
+    })
+
+    it('should fail when shared service name already exists', async () => {
+      const errorMessage = `A shared service with name '${validSharedServiceData.name}' already exists`
+      mockTMSRepository.saveSharedService.mockRejectedValue(new ConflictError(errorMessage))
+
+      const response = await request(app)
+        .post('/v1/shared-services')
+        .send(validSharedServiceData)
+
+      expect(response.status).toBe(409)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Conflict',
+        httpResponseCode: 409,
+        message: errorMessage,
+        name: 'Error occurred creating shared service'
+      })
+    })
+
+    it('should fail when client identifier already exists', async () => {
+      const errorMessage = `A shared service with client identifier '${validSharedServiceData.clientIdentifier}' already exists`
+      mockTMSRepository.saveSharedService.mockRejectedValue(new ConflictError(errorMessage))
+
+      const response = await request(app)
+        .post('/v1/shared-services')
+        .send(validSharedServiceData)
+
+      expect(response.status).toBe(409)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Conflict',
+        httpResponseCode: 409,
+        message: errorMessage,
+        name: 'Error occurred creating shared service'
+      })
+    })
+
+    it('should return 400 when required fields are missing', async () => {
+      const invalidData = {
+        description: 'Missing required fields'
+      }
+
+      const response = await request(app)
+        .post('/v1/shared-services')
+        .send(invalidData)
+
+      expect(response.status).toBe(400)
+      expect(response.body.message).toBe("Validation Failed")
+    })
+
+    it('should return 400 when roles array is empty', async () => {
+      const invalidData = {
+        name: validSharedServiceData.name,
+        clientIdentifier: validSharedServiceData.clientIdentifier,
+        roles: []
+      }
+
+      const response = await request(app)
+        .post('/v1/shared-services')
+        .send(invalidData)
+
+      expect(response.status).toBe(400)
+      expect(response.body.message).toBe("Validation Failed")
+    })
+
+    it('should return 500 when database error occurs', async () => {
+      mockTMSRepository.saveSharedService.mockRejectedValue(
+        new Error('Database error')
+      )
+
+      const response = await request(app)
+        .post('/v1/shared-services')
+        .send(validSharedServiceData)
+
+      expect(response.status).toBe(500)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Internal Server Error',
+        httpResponseCode: 500,
+        message: 'Database error',
+        name: 'Error occurred creating shared service'
+      })
+    })
+  })
 }) 
