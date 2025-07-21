@@ -405,8 +405,10 @@ describe('Tenant API', () => {
       })
 
       expect(mockTMSRepository.getTenantsForUser).toHaveBeenCalledWith(
-        ssoUserId,
-        ['tenantUserRoles']
+        expect.objectContaining({
+          params: { ssoUserId },
+          query: { expand: 'tenantUserRoles' }
+        })
       )
     })
 
@@ -426,8 +428,10 @@ describe('Tenant API', () => {
       })
 
       expect(mockTMSRepository.getTenantsForUser).toHaveBeenCalledWith(
-        invalidSsoUserId,
-        ['tenantUserRoles']
+        expect.objectContaining({
+          params: { ssoUserId: invalidSsoUserId },
+          query: { expand: 'tenantUserRoles' }
+        })
       )
     })
 

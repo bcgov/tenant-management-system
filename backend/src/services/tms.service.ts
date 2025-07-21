@@ -48,9 +48,9 @@ export class TMSService {
     }
 
     public async getTenantsForUser(req:Request) {
-        const expand = typeof req.query.expand === "string" ? req.query.expand.split(",") : []
-        const tenants = await this.tmsRepository.getTenantsForUser(req.params.ssoUserId, expand)
+        const tenants = await this.tmsRepository.getTenantsForUser(req)
         
+        const expand = typeof req.query.expand === "string" ? req.query.expand.split(",") : []
         if (expand.includes("tenantUserRoles") && tenants) {
             const transformedTenants = tenants.map(tenant => {
                 if (tenant.users) {
@@ -217,6 +217,15 @@ export class TMSService {
                 sharedService: savedSharedService
             }
         }
+    }
+
+    public async addSharedServiceRoles(req: Request) {
+        const updatedSharedService = await this.tmsRepository.addSharedServiceRoles(req);
+        return {
+            data: {
+                sharedService: updatedSharedService
+            }
+        };
     }
 
     public async associateSharedServiceToTenant(req: Request) {

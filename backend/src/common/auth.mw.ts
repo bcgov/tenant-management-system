@@ -14,6 +14,7 @@ declare global {
       decodedJwt?: {
         [key: string]: any;
       };
+      isSharedServiceAccess?: boolean;
     }
   }
 }
@@ -69,7 +70,9 @@ export const checkJwt = (options: CheckJwtOptions = {}) => {
         });
       }
       
-      if (!options.sharedServiceAccess && req.decodedJwt) {
+      if (options.sharedServiceAccess) {
+        req.isSharedServiceAccess = true;
+      } else if (req.decodedJwt) {
         const provider = req.decodedJwt.idp || req.decodedJwt.identity_provider
         if (provider !== TMSConstants.IDIR_PROVIDER && provider !== TMSConstants.AZURE_IDIR_PROVIDER) {
           logger.error('Invalid provider - cannot access TMS with this provider', { 

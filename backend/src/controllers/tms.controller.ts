@@ -292,6 +292,22 @@ export class TMSController {
         }
     }
 
+    public async addSharedServiceRoles(req: Request, res: Response) {
+        try {
+            const result = await this.tmsService.addSharedServiceRoles(req);
+            res.status(201).send(result);
+        } catch (error) {
+            logger.error(error);
+            if (error instanceof ConflictError) {
+                this.errorHandler.generalError(res, "Error occurred adding shared service roles", error.message, error.statusCode, "Conflict");
+            } else if (error instanceof NotFoundError) {
+                this.errorHandler.generalError(res, "Error occurred adding shared service roles", error.message, error.statusCode, "Not Found");
+            } else {
+                this.errorHandler.generalError(res, "Error occurred adding shared service roles", error.message, 500, "Internal Server Error");
+            }
+        }
+    }
+
     public async associateSharedServiceToTenant(req: Request, res: Response) {
         try {
             await this.tmsService.associateSharedServiceToTenant(req)

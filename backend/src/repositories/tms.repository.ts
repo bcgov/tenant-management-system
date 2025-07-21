@@ -543,11 +543,27 @@ export class TMSRepository {
         return tenantExists
     }
 
-    public async getTenantsForUser(ssoUserId:string, expand?: string[]) {
+    public async getTenantsForUser(req: Request) {
+        const ssoUserId:string = req.params.ssoUserId
+        const expand:string[] = typeof req.query.expand === "string" ? req.query.expand.split(",") : []
+        const TMS_AUDIENCE:string = process.env.TMS_AUDIENCE
+        const jwtAudience:string = req.decodedJwt?.aud || req.decodedJwt?.audience || TMS_AUDIENCE
+        
         const tenantQuery = this.manager.createQueryBuilder(Tenant, "t")
             .innerJoin("t.users", "tu")
             .innerJoin("tu.ssoUser", "su")
-            .where("su.ssoUserId = :ssoUserId", { ssoUserId });
+            .leftJoin("TenantSharedService", "tss", "t.id = tss.tenant_id")
+            .leftJoin("SharedService", "ss", "tss.shared_service_id = ss.id")
+            .where("su.ssoUserId = :ssoUserId", { ssoUserId })
+            .andWhere(
+                ":jwtAudience = :tmsAudience OR (:jwtAudience != :tmsAudience AND ss.client_identifier = :jwtAudience AND tss.is_deleted = :tssDeleted AND ss.is_active = :ssActive)",
+                { 
+                    jwtAudience, 
+                    tmsAudience: TMS_AUDIENCE, 
+                    tssDeleted: false,
+                    ssActive: true
+                }
+            );
 
         if (expand?.includes("tenantUserRoles")) {
             tenantQuery.leftJoinAndSelect("t.users", "user")
@@ -557,8 +573,8 @@ export class TMSRepository {
                 .andWhere("tenantUserRole.isDeleted = :isDeleted", { isDeleted: false });
         }
 
-        const tenants = await tenantQuery.getMany();
-        return tenants;
+        const tenants:Tenant[] = await tenantQuery.getMany()
+        return tenants
     }
 
     public async getUsersForTenant(tenantId:string) {
@@ -840,6 +856,54 @@ export class TMSRepository {
             .getOne();
     }
 
+    public async addSharedServiceRoles(req: Request) {
+        const sharedServiceId:string = req.params.sharedServiceId
+        const { roles } = req.body
+        const ssoUserId:string = req.decodedJwt?.idir_user_guid || 'system'
+        
+        await this.manager.transaction(async(transactionEntityManager) => {
+
+            const sharedService:SharedService = await transactionEntityManager
+                .createQueryBuilder(SharedService, 'ss')
+                .where('ss.id = :id', { id: sharedServiceId })
+                .andWhere('ss.isActive = :isActive', { isActive: true })
+                .getOne();
+                
+            if (!sharedService) {
+                throw new NotFoundError(`Active shared service not found: ${sharedServiceId}`)
+            }
+            
+            for (const role of roles) {
+                const existingRole:SharedServiceRole = await transactionEntityManager
+                    .createQueryBuilder(SharedServiceRole, 'ssr')
+                    .where('ssr.sharedService.id = :sharedServiceId', { sharedServiceId })
+                    .andWhere('ssr.name = :name', { name: role.name })
+                    .andWhere('ssr.isDeleted = :isDeleted', { isDeleted: false })
+                    .getOne();
+                    
+                if (existingRole) {
+                    throw new ConflictError(`Role '${role.name}' already exists for this shared service`);
+                }
+            }
+            
+            const sharedServiceRoles: SharedServiceRole[] = []
+            for (const role of roles) {
+                const sharedServiceRole:SharedServiceRole = new SharedServiceRole()
+                sharedServiceRole.name = role.name
+                sharedServiceRole.description = role.description
+                sharedServiceRole.sharedService = sharedService
+                sharedServiceRole.isDeleted = false
+                sharedServiceRole.createdBy = ssoUserId
+                sharedServiceRole.updatedBy = ssoUserId
+                sharedServiceRoles.push(sharedServiceRole)
+            }
+            
+            await transactionEntityManager.save(sharedServiceRoles)
+        });
+        
+        return await this.getSharedServiceWithRoles(sharedServiceId)
+    }
+
     public async checkIfSharedServiceNameExists(name: string, transactionEntityManager?: EntityManager) {
         transactionEntityManager = transactionEntityManager ? transactionEntityManager : this.manager
         const sharedServiceExists = await transactionEntityManager
@@ -939,6 +1003,21 @@ export class TMSRepository {
             .then(tenantSharedServices => 
                 tenantSharedServices.map(tss => tss.sharedService)
             );
+    }
+
+    public async checkIfTenantHasSharedServiceAccess(tenantId: string, clientIdentifier: string, transactionEntityManager?: EntityManager) {
+        transactionEntityManager = transactionEntityManager ? transactionEntityManager : this.manager;
+        const hasAccess = await transactionEntityManager
+            .createQueryBuilder()
+            .from(Tenant, "t")
+            .innerJoin("t.sharedServices", "tss")
+            .innerJoin("tss.sharedService", "ss")
+            .where("t.id = :tenantId", { tenantId })
+            .andWhere("ss.clientIdentifier = :clientIdentifier", { clientIdentifier })
+            .andWhere("ss.isActive = :isActive", { isActive: true })
+            .andWhere("tss.isDeleted = :isDeleted", { isDeleted: false })
+            .getExists();
+        return hasAccess
     }
 
 
