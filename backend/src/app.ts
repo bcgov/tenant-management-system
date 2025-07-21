@@ -39,8 +39,7 @@ export default class App {
     const swaggerDocument = YAML.load(path.join(__dirname, "docs", "openapi.yaml"))
     this.app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument))
 
-    this.app.use(checkJwt)
-    this.app.use(jwtErrorHandler)
+    this.app.use(jwtErrorHandler) 
     this.routes.routes(this.app)
   }
 
