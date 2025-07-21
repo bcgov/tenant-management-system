@@ -51,6 +51,8 @@ jobs:
       params: >-
         --set backend.deploymentStrategy=RollingUpdate
         --set frontend.deploymentStrategy=RollingUpdate
+        --set backend.imagePullPolicy=Always
+        --set frontend.imagePullPolicy=Always
         --set global.autoscaling=true
         --set frontend.pdb.enabled=true
         --set backend.pdb.enabled=true
@@ -85,6 +87,8 @@ jobs:
       params: >-
         --set backend.deploymentStrategy=RollingUpdate
         --set frontend.deploymentStrategy=RollingUpdate
+        --set backend.imagePullPolicy=Always
+        --set frontend.imagePullPolicy=Always
         --set global.autoscaling=true
         --set frontend.pdb.enabled=true
         --set backend.pdb.enabled=true

@@ -40,6 +40,8 @@ jobs:
       tag: pr-${{ github.event.pull_request.number }}
       db_user: app-${{ github.event.number }}
       params: --set global.secrets.persist=false
+              --set backend.imagePullPolicy=Always
+              --set frontend.imagePullPolicy=Always
       triggers: ('backend/' 'frontend/' 'migrations/' 'charts/' 'github/')
       db_triggers: ('charts/crunchy/')
       deployment_url: https://${{ github.event.repository.name }}-pr-${{ github.event.pull_request.number }}-frontend.apps.silver.devops.gov.bc.ca

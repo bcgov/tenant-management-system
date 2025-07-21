@@ -9,6 +9,8 @@ global:
   #-- the tag of the image, it can be latest, 1.0.0 etc..., or the sha256 hash
   tag: ~
   #-- turn off autoscaling for the entire suite by setting this to false. default is true.
+  image:
+    pullPolicy: Always
   autoscaling: false
   #-- global secrets, can be accessed by sub-charts.
   secrets:
@@ -27,6 +29,7 @@ global:
 backend:
   #-- enable or disable backend
   enabled: true
+  pullPolicy: Always
   environment:
     port: "4144"
     allowedOrigins: "*"
@@ -82,6 +85,7 @@ backend:
 frontend:
   # -- enable or disable a component deployment.
   enabled: true
+  pullPolicy: Always
   environment:
     viteKeycloakClientId: tenant-management-system-6014
     viteKeycloakRealm: standard
