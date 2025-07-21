@@ -856,6 +856,54 @@ export class TMSRepository {
             .getOne();
     }
 
+    public async addSharedServiceRoles(req: Request) {
+        const sharedServiceId:string = req.params.sharedServiceId
+        const { roles } = req.body
+        const ssoUserId:string = req.decodedJwt?.idir_user_guid || 'system'
+        
+        await this.manager.transaction(async(transactionEntityManager) => {
+
+            const sharedService:SharedService = await transactionEntityManager
+                .createQueryBuilder(SharedService, 'ss')
+                .where('ss.id = :id', { id: sharedServiceId })
+                .andWhere('ss.isActive = :isActive', { isActive: true })
+                .getOne();
+                
+            if (!sharedService) {
+                throw new NotFoundError(`Active shared service not found: ${sharedServiceId}`)
+            }
+            
+            for (const role of roles) {
+                const existingRole:SharedServiceRole = await transactionEntityManager
+                    .createQueryBuilder(SharedServiceRole, 'ssr')
+                    .where('ssr.sharedService.id = :sharedServiceId', { sharedServiceId })
+                    .andWhere('ssr.name = :name', { name: role.name })
+                    .andWhere('ssr.isDeleted = :isDeleted', { isDeleted: false })
+                    .getOne();
+                    
+                if (existingRole) {
+                    throw new ConflictError(`Role '${role.name}' already exists for this shared service`);
+                }
+            }
+            
+            const sharedServiceRoles: SharedServiceRole[] = []
+            for (const role of roles) {
+                const sharedServiceRole:SharedServiceRole = new SharedServiceRole()
+                sharedServiceRole.name = role.name
+                sharedServiceRole.description = role.description
+                sharedServiceRole.sharedService = sharedService
+                sharedServiceRole.isDeleted = false
+                sharedServiceRole.createdBy = ssoUserId
+                sharedServiceRole.updatedBy = ssoUserId
+                sharedServiceRoles.push(sharedServiceRole)
+            }
+            
+            await transactionEntityManager.save(sharedServiceRoles)
+        });
+        
+        return await this.getSharedServiceWithRoles(sharedServiceId)
+    }
+
     public async checkIfSharedServiceNameExists(name: string, transactionEntityManager?: EntityManager) {
         transactionEntityManager = transactionEntityManager ? transactionEntityManager : this.manager
         const sharedServiceExists = await transactionEntityManager

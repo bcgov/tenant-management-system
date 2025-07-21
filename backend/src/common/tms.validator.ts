@@ -294,5 +294,19 @@ export default {
             tenantId: Joi.string().guid().required(),
             ssoUserId: Joi.string().required()
         }).options({abortEarly:false,convert:false})
+    },
+
+    addSharedServiceRoles: {
+        params: Joi.object({
+            sharedServiceId: Joi.string().guid().required()
+        }),
+        body: Joi.object({
+            roles: Joi.array().items(
+                Joi.object().keys({
+                    name: Joi.string().min(1).max(30).pattern(/^\S.*\S$/).required(),
+                    description: Joi.string().min(1).max(255).optional()
+                })
+            ).min(1).max(10).required()
+        }).options({abortEarly:false,convert:false})
     }
 }

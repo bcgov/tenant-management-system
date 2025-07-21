@@ -219,6 +219,15 @@ export class TMSService {
         }
     }
 
+    public async addSharedServiceRoles(req: Request) {
+        const updatedSharedService = await this.tmsRepository.addSharedServiceRoles(req);
+        return {
+            data: {
+                sharedService: updatedSharedService
+            }
+        };
+    }
+
     public async associateSharedServiceToTenant(req: Request) {
         await this.tmsRepository.associateSharedServiceToTenant(req)
     }

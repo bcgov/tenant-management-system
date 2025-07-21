@@ -23,6 +23,7 @@ export class RoutesConstants {
     public static GET_GROUP = '/v1/tenants/:tenantId/groups/:groupId'
     public static GET_TENANT_GROUPS = '/v1/tenants/:tenantId/groups'
     public static CREATE_SHARED_SERVICE = '/v1/shared-services'
+    public static ADD_SHARED_SERVICE_ROLES = '/v1/shared-services/:sharedServiceId/shared-service-roles'
     public static GET_ALL_ACTIVE_SHARED_SERVICES = '/v1/shared-services'
     public static ASSOCIATE_SHARED_SERVICE_TO_TENANT = '/v1/tenants/:tenantId/shared-services'
     public static GET_SHARED_SERVICES_FOR_TENANT = '/v1/tenants/:tenantId/shared-services'

@@ -44,6 +44,7 @@ export class Routes {
         app.route(RoutesConstants.GET_TENANT_GROUPS).get(checkJwt({ sharedServiceAccess: true }), validate(validator.getTenantGroups,{},{}), checkTenantAccess([]),(req:Request,res:Response) => this.tmController.getTenantGroups(req,res))
         
         app.route(RoutesConstants.CREATE_SHARED_SERVICE).post(checkJwt(), checkOperationsAdmin, validate(validator.createSharedService,{},{}),(req:Request,res:Response) => this.tmsController.createSharedService(req,res))
+        app.route(RoutesConstants.ADD_SHARED_SERVICE_ROLES).post(checkJwt(), validate(validator.addSharedServiceRoles,{},{}), checkOperationsAdmin,(req:Request,res:Response) => this.tmsController.addSharedServiceRoles(req,res))
         app.route(RoutesConstants.GET_ALL_ACTIVE_SHARED_SERVICES).get(checkJwt(), (req:Request,res:Response) => this.tmsController.getAllActiveSharedServices(req,res))
         app.route(RoutesConstants.GET_SHARED_SERVICE_ROLES_FOR_GROUP).get(checkJwt({ sharedServiceAccess: true }), validate(validator.getSharedServiceRolesForGroup,{},{}), checkTenantAccess([]),(req:Request,res:Response) => this.tmController.getSharedServiceRolesForGroup(req,res))
         app.route(RoutesConstants.UPDATE_SHARED_SERVICE_ROLES_FOR_GROUP).put(checkJwt(), validate(validator.updateSharedServiceRolesForGroup,{},{}), checkTenantAccess([TMSConstants.TENANT_OWNER, TMSConstants.USER_ADMIN]),(req:Request,res:Response) => this.tmController.updateSharedServiceRolesForGroup(req,res))
