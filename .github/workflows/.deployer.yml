@@ -1,372 +1,165 @@
-name: .Helm Deployer
+- name: Start deployment
+  uses: bobheadxi/deployments@v1.4.0
+  id: deployment
+  with:
+    step: start
+    token: ${{ secrets.GITHUB_TOKEN }}
+    env: ${{ inputs.environment }}
+    ref: ${{ github.ref }}
 
-on:
-  workflow_call:
-    inputs:
-      ### Required
-      # Only secrets!
+- name: Helm Deploy
+  id: deploy
+  uses: bcgov/action-oc-runner@10033668ef4374d9bb78149faa73e4ccda0e93dd # v1.2.3
+  with:
+    oc_namespace: ${{ secrets.oc_namespace }}
+    oc_token: ${{ secrets.oc_token }}
+    oc_server: ${{ vars.oc_server }}
+    triggers: ${{ inputs.triggers }}
+    ref: ${{ github.ref }}
+    commands: |
+      # Deploy
+      
+      # If directory provided, cd to it
+      [ -z "${{ inputs.directory }}" ] || cd ${{ inputs.directory }}
+      
+      # Helm package
+      sed -i 's/^name:.*/name: ${{ github.event.repository.name }}/' Chart.yaml
+      helm package -u . --app-version="tags-${{ steps.vars.outputs.tags }}_run-${{ github.run_number }}" --version=${{ steps.pr.outputs.pr || steps.vars.outputs.version }}
+      
+      echo "📦 Helm package created successfully"
+      ls -la *.tgz
+      
+      # Print the values.yaml file to see the values being used (if debug mode)
+      if [[ "${{ inputs.debug }}" == "true" ]]; then
+        echo "=== VALUES FILE CONTENT ==="
+        cat ${{ inputs.values }}
+        echo "=== END VALUES FILE ==="
+      fi
+      
+      # Helm upgrade/rollout
+      echo "🚀 Starting Helm deployment..."
+      helm upgrade \
+        --set-string global.repository=${{ github.repository }} \
+        --set-string global.tag="${{ steps.vars.outputs.tags }}" \
+        --set-string global.config.databaseUser="${{ inputs.db_user }}" \
+        --set-string global.config.nodeEnv=${{ (inputs.environment == 'prod' || inputs.environment == 'production') && 'production' || (inputs.environment == 'test' && 'test' || 'development') }} \
+        --set-string global.databaseAlias="${{ steps.deploy_crunchy.outputs.release }}-crunchy" \
+        ${{ inputs.params }} \
+        --install --wait ${{ inputs.atomic && '--atomic' || '' }} ${{ steps.vars.outputs.release }} \
+        --timeout ${{ inputs.timeout-minutes }}m \
+        --values ${{ inputs.values }} \
+        ./${{ github.event.repository.name }}-${{ steps.pr.outputs.pr || steps.vars.outputs.version }}.tgz
+      
+      echo "✅ Helm deployment completed"
+      
+      # Helm release history
+      helm history ${{ steps.vars.outputs.release }}
+      
+      # Completed pod cleanup
+      oc delete po --field-selector=status.phase==Succeeded || true
 
-      ### Typical / recommended
-      atomic:
-        description: Atomic deployment?  That means fail all or nothing
-        default: false
-        required: false
-        type: boolean
-      directory:
-        description: Chart directory
-        default:  'charts/app'
-        required: false
-        type: string
-      environment:
-        description: Environment name; omit for PRs
-        required: true
-        type: string
-      oc_server:
-        default: https://api.silver.devops.gov.bc.ca:6443
-        description: OpenShift server
-        required: false
-        type: string
-      params:
-        description: Extra parameters to pass to helm upgrade
-        required: false
-        type: string
-      tags:
-        description: Specify tags to deploy; defaults to PR number (replaces deprecated 'tag')
-        required: true
-        type: string
-      triggers:
-        description: Paths used to trigger a deployment; e.g. ('./backend/' './frontend/')
-        required: false
-        type: string
-      db_user:
-        description: The database user
-        required: false
-        default: 'app'
-        type: string
-      debug:
-        description: Debug mode
-        default: false
-        required: false
-        type: boolean
-      release_name:
-        required: true
-        type: string
-        description: "Release name (e.g., tenant-management-system-dev)"
+- name: Update secrets
+  uses: bcgov/action-oc-runner@10033668ef4374d9bb78149faa73e4ccda0e93dd # v1.2.3
+  with:
+    oc_namespace: ${{ secrets.oc_namespace }}
+    oc_token: ${{ secrets.oc_token }}
+    oc_server: ${{ vars.oc_server }}
+    commands: |
+      # Get release name
+      RELEASE="${{ steps.vars.outputs.release }}"
+      
+      echo "🔐 Updating secrets for release: $RELEASE"
+      
+      # Update secrets with real values
+      echo "Patching secret $RELEASE-backend"
+      
+      # Update client ID
+      CLIENT_ID=$(echo -n "${{ secrets.bcgov_sso_api_client_id }}" | base64 -w0)
+      oc patch secret $RELEASE-backend \
+        -p '{"data":{"BCGOV_SSO_API_CLIENT_ID":"'$CLIENT_ID'"}}'
+      
+      # Update client secret 
+      CLIENT_SECRET=$(echo -n "${{ secrets.bcgov_sso_api_client_secret }}" | base64 -w0)
+      oc patch secret $RELEASE-backend \
+        -p '{"data":{"BCGOV_SSO_API_CLIENT_SECRET":"'$CLIENT_SECRET'"}}'
+      
+      # Set appropriate login proxy URL based on environment
+      if [[ "${{ inputs.environment }}" == "prod" ]]; then
+        LOGIN_PROXY="loginproxy.gov.bc.ca"
+        ISSUER="https://loginproxy.gov.bc.ca/auth/realms/standard"
+        JWKS_URI="https://loginproxy.gov.bc.ca/auth/realms/standard/protocol/openid-connect/certs"
+      elif [[ "${{ inputs.environment }}" == "test" ]]; then
+        LOGIN_PROXY="test.loginproxy.gov.bc.ca"  
+        ISSUER="https://test.loginproxy.gov.bc.ca/auth/realms/standard"
+        JWKS_URI="https://test.loginproxy.gov.bc.ca/auth/realms/standard/protocol/openid-connect/certs"
+      else
+        # Default to dev environment
+        LOGIN_PROXY="dev.loginproxy.gov.bc.ca"
+        ISSUER="https://dev.loginproxy.gov.bc.ca/auth/realms/standard"
+        JWKS_URI="https://dev.loginproxy.gov.bc.ca/auth/realms/standard/protocol/openid-connect/certs"
+      fi
+      
+      # Update issuer
+      ISSUER_B64=$(echo -n "$ISSUER" | base64 -w0)
+      oc patch secret $RELEASE-backend \
+        -p '{"data":{"ISSUER":"'$ISSUER_B64'"}}'
+      
+      # Update jwks uri
+      JWKS_URI_B64=$(echo -n "$JWKS_URI" | base64 -w0)
+      oc patch secret $RELEASE-backend \
+        -p '{"data":{"JWKS_URI":"'$JWKS_URI_B64'"}}'
+      
+      # Check if deployment exists first
+      if oc get deployment/$RELEASE-backend &>/dev/null; then
+        echo "🔄 Restarting deployment $RELEASE-backend"
+        oc rollout restart deployment/$RELEASE-backend
+        echo "⏳ Waiting for backend deployment to complete..."
+        oc rollout status deployment/$RELEASE-backend --timeout=300s
+      else
+        echo "⚠️ Warning: Deployment $RELEASE-backend not found"
+      fi
+      
+      # Update frontend ConfigMap
+      echo "📝 Patching ConfigMap $RELEASE-frontend-config"
+      
+      # Create a new default.json content with real values
+      CONFIG_JSON=$(cat <<EOF
+      {
+        "api": {
+          "baseUrl": "/api/v1"
+        },
+        "oidc": {
+          "clientId": "${{ secrets.vite_keycloak_client_id }}",
+          "realm": "standard",
+          "serverUrl": "https://$LOGIN_PROXY/auth",
+          "logoutUrl": "https://$LOGIN_PROXY/auth/realms/standard/protocol/openid-connect/logout"
+        }
+      }
+EOF
+      )
+      
+      # Create a temporary file with the JSON content
+      echo "$CONFIG_JSON" > default.json
+      
+      # Force delete and recreate the ConfigMap
+      oc delete configmap $RELEASE-frontend-config --ignore-not-found
+      oc create configmap $RELEASE-frontend-config --from-file=default.json
+      
+      # Clean up the temporary file
+      rm default.json
+      
+      # Replace the pod instead of restarting to ensure ConfigMap is refreshed
+      oc delete pods -l app.kubernetes.io/instance=$RELEASE-frontend
+      echo "⏳ Waiting for frontend deployment to complete..."
+      oc rollout status deployment/$RELEASE-frontend --timeout=300s
 
-      ### Usually a bad idea / not recommended
-      timeout-minutes:
-        description: 'Timeout minutes'
-        default: 10
-        required: false
-        type: number
-      values:
-        description: 'Values file'
-        default: 'values.yaml'
-        required: false
-        type: string
-      deployment_url:
-        description: 'Deployment URL; used for environments'
-        required: true
-        type: string
-      db_triggers:
-        description: Paths used to trigger a database deployment; e.g. ('charts/crunchy/')
-        required: false
-        type: string
-
-    outputs:
-      tags:
-        description: 'Which tags were used for deployment?'
-        value: ${{ jobs.deploy.outputs.tags }}
-      triggered:
-        description: 'Has a deployment has been triggered?'
-        value: ${{ jobs.deploy.outputs.triggered }}
-
-    secrets:
-      oc_namespace:
-        description: OpenShift namespace
-        required: true
-      oc_token:
-        description: OpenShift token
-        required: true
-      bcgov_sso_api_client_id:
-        required: true
-      bcgov_sso_api_client_secret:
-        required: true
-      vite_keycloak_client_id:
-        required: true
-
-permissions:
-  contents: read
-  deployments: write
-
-jobs:
-  deploy:
-    name: Stack
-    environment:
-      name: ${{ inputs.environment }}
-      url: ${{ inputs.deployment_url }}
-    runs-on: ubuntu-24.04
-    outputs:
-      tags: ${{ inputs.tags || steps.pr.outputs.pr }}
-      triggered: ${{ steps.deploy.outputs.triggered }}
-    steps:
-      # Check if image exists before deploying
-      - name: Verify Docker Images Exist
-        run: |
-          # Extract tags from inputs
-          TAGS="${{ inputs.tags }}"
-          REPO_NAME="${{ github.event.repository.name }}"
-          
-          echo "Checking if images exist for tags: $TAGS"
-          
-          # Check each required image
-          for component in backend frontend migrations; do
-            IMAGE="ghcr.io/${{ github.repository }}/${component}:${TAGS}"
-            echo "Checking image: $IMAGE"
-            
-            # Use docker manifest to check if image exists
-            if ! docker manifest inspect "$IMAGE" >/dev/null 2>&1; then
-              echo "❌ Image $IMAGE does not exist!"
-              
-              # For PR builds, suggest the correct tag format
-              if [[ "$TAGS" =~ ^pr-[0-9]+$ ]]; then
-                echo "💡 Make sure the build job completed successfully and created images with tags: $TAGS"
-              fi
-              exit 1
-            else
-              echo "✅ Image $IMAGE exists"
-            fi
-          done
-
-      - uses: bcgov/action-crunchy@v1.2.2
-        name: Deploy Crunchy
-        id: deploy_crunchy
-        with:
-          oc_namespace: ${{ secrets.OC_NAMESPACE }}
-          oc_token: ${{ secrets.OC_TOKEN }}
-          environment: ${{ inputs.environment }}
-          values_file: ${{ inputs.environment == '' && 'charts/crunchy/values-pr.yml' || 'charts/crunchy/values.yml' }}
-          triggers: ${{ inputs.db_triggers }}
-
-      # Variables
-      - if: inputs.tags == ''
-        id: pr
-        uses: bcgov/action-get-pr@21f9351425cd55a98e869ee28919a512aa30647d # v0.0.1
-
-      - id: vars
-        run: |
-          # Vars: tags and release
-
-          # Tags defaults to PR number, but can be overridden by inputs.tags
-          tags=${{ inputs.tags || steps.pr.outputs.pr }}
-
-          # Release name includes run numbers to ensure uniqueness
-          release=${{ inputs.release_name }}
-          
-          # version, to support helm packaging for non-pr based releases (workflow_dispatch). default to 1.0.0+github run number
-          version=1.0.0+${{ github.run_number }}
-          
-          # Check if this is a PR deployment
-          if [[ "$tags" =~ ^pr-[0-9]+$ ]]; then
-            echo "📋 PR Deployment detected"
-            echo "Environment: ${{ inputs.environment }}"
-            echo "Release will be: $release"
-          fi
-          
-          # Summary
-          echo "tags=${tags}"
-          echo "release=${release}"
-          echo "version=${version}"
-
-          # Output
-          echo "tags=${tags}" >> $GITHUB_OUTPUT
-          echo "release=${release}" >> $GITHUB_OUTPUT
-          echo "version=${version}" >> $GITHUB_OUTPUT
-
-      - name: Stop pre-existing deployments on PRs (status = pending-upgrade)
-        if: github.event_name == 'pull_request'
-        uses: bcgov/action-oc-runner@10033668ef4374d9bb78149faa73e4ccda0e93dd # v1.2.3
-        with:
-          oc_namespace: ${{ secrets.oc_namespace }}
-          oc_token: ${{ secrets.oc_token }}
-          oc_server: ${{ vars.oc_server }}
-          triggers: ${{ inputs.triggers }}
-          commands: |
-            # Interrupt any previous deployments (PR only)
-            PREVIOUS=$(helm status ${{ steps.vars.outputs.release }} -o json | jq .info.status || true)
-            if [[ ${PREVIOUS} =~ pending ]]; then
-              echo "Rollback triggered"
-              helm rollback ${{ steps.vars.outputs.release }} || \
-                helm uninstall ${{ steps.vars.outputs.release }}
-            fi
-
-      - uses: actions/checkout@v4
-      - name: Debug Values File
-        if: inputs.debug == 'true'
-        run: ls -l charts/crunchy/values.yml
-
-      - name: Start deployment
-        uses: bobheadxi/deployments@v1.4.0
-        id: deployment
-        with:
-          step: start
-          token: ${{ github.token }}
-          env: ${{ inputs.environment || 'dev' }}
-          desc: "Starting deployment for tags ${{ steps.vars.outputs.tags }}..."
-
-      - name: Helm Deploy
-        id: deploy
-        uses: bcgov/action-oc-runner@10033668ef4374d9bb78149faa73e4ccda0e93dd # v1.2.3
-        with:
-          oc_namespace: ${{ secrets.oc_namespace }}
-          oc_token: ${{ secrets.oc_token }}
-          oc_server: ${{ vars.oc_server }}
-          triggers: ${{ inputs.triggers }}
-          ref: ${{ github.ref }}
-          commands: |
-            # Deploy
-
-            # If directory provided, cd to it
-            [ -z "${{ inputs.directory }}" ]|| cd ${{ inputs.directory }}
-
-            # Helm package
-            sed -i 's/^name:.*/name: ${{ github.event.repository.name }}/' Chart.yaml
-            helm package -u . --app-version="tags-${{ steps.vars.outputs.tags }}_run-${{ github.run_number }}" --version=${{ steps.pr.outputs.pr || steps.vars.outputs.version }}
-            
-            echo "📦 Helm package created successfully"
-            ls -la *.tgz
-            
-            # Print the values.yaml file to see the values being used (if debug mode)
-            if [[ "${{ inputs.debug }}" == "true" ]]; then
-              echo "=== VALUES FILE CONTENT ==="
-              cat ${{ inputs.values }}
-              echo "=== END VALUES FILE ==="
-            fi
-            
-            # Helm upgrade/rollout
-            echo "🚀 Starting Helm deployment..."
-            helm upgrade \
-              --set-string global.repository=${{ github.repository }} \
-              --set-string global.tag="${{ steps.vars.outputs.tags }}" \
-              --set-string global.config.databaseUser="${{ inputs.db_user }}" \
-              --set-string global.config.nodeEnv=${{ (inputs.environment == 'prod' || inputs.environment == 'production') && 'production' || (inputs.environment == 'test' && 'test' || 'development') }} \
-              --set-string global.databaseAlias="${{ steps.deploy_crunchy.outputs.release }}-crunchy" \
-              ${{ inputs.params }} \
-              --install --wait ${{ inputs.atomic && '--atomic' || '' }} ${{ steps.vars.outputs.release }} \
-              --timeout ${{ inputs.timeout-minutes }}m \
-              --values ${{ inputs.values }} \
-              ./${{ github.event.repository.name }}-${{ steps.pr.outputs.pr || steps.vars.outputs.version }}.tgz
-
-            echo "✅ Helm deployment completed"
-            
-            # Helm release history
-            helm history ${{ steps.vars.outputs.release }}
-
-            # Completed pod cleanup
-            oc delete po --field-selector=status.phase==Succeeded || true
-
-      - name: Update secrets
-        uses: bcgov/action-oc-runner@10033668ef4374d9bb78149faa73e4ccda0e93dd # v1.2.3
-        with:
-          oc_namespace: ${{ secrets.oc_namespace }}
-          oc_token: ${{ secrets.oc_token }}
-          oc_server: ${{ vars.oc_server }}
-          commands: |
-            # Get release name
-            RELEASE="${{ steps.vars.outputs.release }}"
-            
-            echo "🔐 Updating secrets for release: $RELEASE"
-            
-            # Update secrets with real values
-            echo "Patching secret $RELEASE-backend"
-            
-            # Update client ID
-            CLIENT_ID=$(echo -n "${{ secrets.bcgov_sso_api_client_id }}" | base64 -w0)
-            oc patch secret $RELEASE-backend \
-              -p '{"data":{"BCGOV_SSO_API_CLIENT_ID":"'$CLIENT_ID'"}}'
-            
-            # Update client secret 
-            CLIENT_SECRET=$(echo -n "${{ secrets.bcgov_sso_api_client_secret }}" | base64 -w0)
-            oc patch secret $RELEASE-backend \
-              -p '{"data":{"BCGOV_SSO_API_CLIENT_SECRET":"'$CLIENT_SECRET'"}}'
-            
-            # Set appropriate login proxy URL based on environment
-            if [[ "${{ inputs.environment }}" == "prod" ]]; then
-              LOGIN_PROXY="loginproxy.gov.bc.ca"
-              ISSUER="https://loginproxy.gov.bc.ca/auth/realms/standard"
-              JWKS_URI="https://loginproxy.gov.bc.ca/auth/realms/standard/protocol/openid-connect/certs"
-            elif [[ "${{ inputs.environment }}" == "test" ]]; then
-              LOGIN_PROXY="test.loginproxy.gov.bc.ca"  
-              ISSUER="https://test.loginproxy.gov.bc.ca/auth/realms/standard"
-              JWKS_URI="https://test.loginproxy.gov.bc.ca/auth/realms/standard/protocol/openid-connect/certs"
-            else
-              # Default to dev environment
-              LOGIN_PROXY="dev.loginproxy.gov.bc.ca"
-              ISSUER="https://dev.loginproxy.gov.bc.ca/auth/realms/standard"
-              JWKS_URI="https://dev.loginproxy.gov.bc.ca/auth/realms/standard/protocol/openid-connect/certs"
-            fi
-
-            # Update issuer
-            ISSUER_B64=$(echo -n "$ISSUER" | base64 -w0)
-            oc patch secret $RELEASE-backend \
-              -p '{"data":{"ISSUER":"'$ISSUER_B64'"}}'
-            
-            # Update jwks uri
-            JWKS_URI_B64=$(echo -n "$JWKS_URI" | base64 -w0)
-            oc patch secret $RELEASE-backend \
-              -p '{"data":{"JWKS_URI":"'$JWKS_URI_B64'"}}'
-            
-            # Check if deployment exists first
-            if oc get deployment/$RELEASE-backend &>/dev/null; then
-              echo "🔄 Restarting deployment $RELEASE-backend"
-              oc rollout restart deployment/$RELEASE-backend
-              echo "⏳ Waiting for backend deployment to complete..."
-              oc rollout status deployment/$RELEASE-backend --timeout=300s
-            else
-              echo "⚠️ Warning: Deployment $RELEASE-backend not found"
-            fi
-
-            # Update frontend ConfigMap
-            echo "📝 Patching ConfigMap $RELEASE-frontend-config"
-
-            # Create a new default.json content with real values
-            CONFIG_JSON=$(cat <<EOF
-            {
-              "api": {
-                "baseUrl": "/api/v1"
-              },
-              "oidc": {
-                "clientId": "${{ secrets.vite_keycloak_client_id }}",
-                "realm": "standard",
-                "serverUrl": "https://$LOGIN_PROXY/auth",
-                "logoutUrl": "https://$LOGIN_PROXY/auth/realms/standard/protocol/openid-connect/logout"
-              }
-            }
-            EOF
-            )
-
-            # Create a temporary file with the JSON content
-            echo "$CONFIG_JSON" > default.json
-
-            # Force delete and recreate the ConfigMap
-            oc delete configmap $RELEASE-frontend-config --ignore-not-found
-            oc create configmap $RELEASE-frontend-config --from-file=default.json
-            
-            # Clean up the temporary file
-            rm default.json
-
-            # Replace the pod instead of restarting to ensure ConfigMap is refreshed
-            oc delete pods -l app.kubernetes.io/instance=$RELEASE-frontend
-            echo "⏳ Waiting for frontend deployment to complete..."
-            oc rollout status deployment/$RELEASE-frontend --timeout=300s
-
-      - name: Update deployment status
-        uses: bobheadxi/deployments@v1.4.0
-        if: always()
-        with:
-          step: finish
-          token: ${{ github.token }}
-          status: ${{ job.status }}
-          env: ${{ inputs.environment || 'dev' }}
-          deployment_id: ${{ steps.deployment.outputs.deployment_id }}
-          env_url: ${{ inputs.deployment_url }}
+- name: Update deployment status
+  uses: bobheadxi/deployments@v1.4.0
+  if: always()
+  with:
+    step: finish
+    token: ${{ secrets.GITHUB_TOKEN }}
+    status: ${{ job.status }}
+    env: ${{ inputs.environment }}
+    deployment_id: ${{ steps.deployment.outputs.deployment_id }}
+    env_url: ${{ inputs.deployment_url }}
