@@ -1,7 +1,7 @@
 name: PR Validate
 
 on:
-  pull_request:
+  pull_request_target:  # Changed from pull_request to pull_request_target
     types: [edited, opened, synchronize, reopened, ready_for_review]
 
 concurrency:
@@ -13,28 +13,108 @@ permissions:
   pull-requests: write
 
 jobs:
+  security-check:
+    name: Security Check
+    runs-on: ubuntu-24.04
+    outputs:
+      safe-to-run: ${{ steps.security-check.outputs.safe-to-run }}
+    steps:
+      - name: Check if PR is safe to run
+        id: security-check
+        run: |
+          # Check if PR is from a fork
+          if [ "${{ github.event.pull_request.head.repo.full_name }}" != "${{ github.repository }}" ]; then
+            echo "PR is from fork: ${{ github.event.pull_request.head.repo.full_name }}"
+            
+            # Additional security checks for forks
+            # Check if author is a collaborator, member, or owner
+            author="${{ github.event.pull_request.user.login }}"
+            echo "Checking permissions for user: $author"
+            
+            # Use GitHub API to check user permissions
+            response=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+              "https://api.github.com/repos/${{ github.repository }}/collaborators/$author/permission")
+            
+            permission=$(echo "$response" | jq -r '.permission // "none"')
+            echo "User permission level: $permission"
+            
+            # Allow if user has write, admin permissions, or is a maintainer
+            if [[ "$permission" == "admin" || "$permission" == "write" || "$permission" == "maintain" ]]; then
+              echo "✅ Fork PR from trusted collaborator - safe to run"
+              echo "safe-to-run=true" >> $GITHUB_OUTPUT
+            else
+              echo "⚠️  Fork PR from external contributor - requires manual approval"
+              echo "safe-to-run=false" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "✅ PR from same repository - safe to run"
+            echo "safe-to-run=true" >> $GITHUB_OUTPUT
+          fi
+
   validate:
     name: Validate PR
-    if: ${{ !github.event.pull_request.draft }}
+    needs: security-check
+    if: ${{ !github.event.pull_request.draft && needs.security-check.outputs.safe-to-run == 'true' }}
     uses: bcgov/quickstart-openshift-helpers/.github/workflows/.pr-validate.yml@v0.9.0
     with:
       markdown_links: |
         - [Frontend](https://${{ github.event.repository.name }}-pr-${{ github.event.number }}-frontend.apps.silver.devops.gov.bc.ca)
+      # Pass PR information for security context
+      pr-number: ${{ github.event.number }}
+      pr-sha: ${{ github.event.pull_request.head.sha }}
+    secrets: inherit
 
   results:
     name: Validate Results
     if: always()
-    needs: [validate]
+    needs: [security-check, validate]
     runs-on: ubuntu-24.04
     steps:
       - name: Print success message
+        if: ${{ needs.validate.result == 'success' }}
         run: echo "✅ Validation job completed!"
 
-      # Optional: Post comment only if PR comes from same repo (not a fork)
-      - name: Post PR comment
-        if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+      - name: Print security block message
+        if: ${{ needs.security-check.outputs.safe-to-run == 'false' }}
+        run: |
+          echo "⚠️  PR from external fork blocked for security reasons"
+          echo "A maintainer must review and manually trigger workflows if safe"
+
+      - name: Post success comment
+        if: ${{ needs.validate.result == 'success' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh pr comment ${{ github.event.number }} --body "✅ Validation job completed!"
+          gh pr comment ${{ github.event.number }} --body "✅ Validation job completed successfully!"
 
+      - name: Post failure comment
+        if: ${{ needs.validate.result == 'failure' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr comment ${{ github.event.number }} --body "❌ Validation job failed. Please check the workflow logs for details."
+
+      - name: Post security block comment
+        if: ${{ needs.security-check.outputs.safe-to-run == 'false' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr comment ${{ github.event.number }} --body "⚠️ **Security Notice**: This PR is from an external fork and requires manual review by a maintainer before workflows can run.
+          
+          **For Maintainers**: If this PR is safe to run, you can:
+          1. Review the code changes carefully
+          2. Re-run the failed workflow manually
+          3. Or add the contributor as a collaborator if they'll be contributing regularly
+          
+          This security measure helps protect against malicious code execution in workflows."
+
+      # Safe checkout for security analysis (optional)
+      - name: Safe checkout for analysis
+        if: ${{ needs.security-check.outputs.safe-to-run == 'true' }}
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          # Use a limited token scope
+          token: ${{ github.token }}
+          # Only fetch the specific commit, not full history
+          fetch-depth: 1
