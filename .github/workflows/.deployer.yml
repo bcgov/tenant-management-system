@@ -110,6 +110,34 @@ jobs:
       tag: ${{ inputs.tag || steps.pr.outputs.pr }}
       triggered: ${{ steps.deploy.outputs.triggered }}
     steps:
+      # Check if image exists before deploying
+      - name: Verify Docker Images Exist
+        run: |
+          # Extract tag from inputs
+          TAG="${{ inputs.tag }}"
+          REPO_NAME="${{ github.event.repository.name }}"
+          
+          echo "Checking if images exist for tag: $TAG"
+          
+          # Check each required image
+          for component in backend frontend migrations; do
+            IMAGE="ghcr.io/${{ github.repository }}/${component}:${TAG}"
+            echo "Checking image: $IMAGE"
+            
+            # Use docker manifest to check if image exists
+            if ! docker manifest inspect "$IMAGE" >/dev/null 2>&1; then
+              echo "❌ Image $IMAGE does not exist!"
+              
+              # For PR builds, suggest the correct tag format
+              if [[ "$TAG" =~ ^pr-[0-9]+$ ]]; then
+                echo "💡 Make sure the build job completed successfully and created images with tag: $TAG"
+              fi
+              exit 1
+            else
+              echo "✅ Image $IMAGE exists"
+            fi
+          done
+
       - uses: bcgov/action-crunchy@v1.2.2
         name: Deploy Crunchy
         id: deploy_crunchy
@@ -133,12 +161,19 @@ jobs:
           tag=${{ inputs.tag || steps.pr.outputs.pr }}
 
           # Release name includes run numbers to ensure uniqueness
-          release=${{ github.event.repository.name }}-${{ inputs.environment || steps.pr.outputs.pr || inputs.tag }}
+          release=${{ inputs.release_name }}
           
           # version, to support helm packaging for non-pr based releases (workflow_dispatch). default to 1.0.0+github run number
           version=1.0.0+${{ github.run_number }}
           
-            # Summary
+          # Check if this is a PR deployment
+          if [[ "$tag" =~ ^pr-[0-9]+$ ]]; then
+            echo "📋 PR Deployment detected"
+            echo "Environment: ${{ inputs.environment }}"
+            echo "Release will be: $release"
+          fi
+          
+          # Summary
           echo "tag=${tag}"
           echo "release=${release}"
           echo "version=${version}"
@@ -177,7 +212,7 @@ jobs:
           step: start
           token: ${{ github.token }}
           env: ${{ inputs.environment || 'dev' }}
-          desc: "Starting deployment..."
+          desc: "Starting deployment for tag ${{ steps.vars.outputs.tag }}..."
 
       - name: Helm Deploy
         id: deploy
@@ -197,8 +232,19 @@ jobs:
             # Helm package
             sed -i 's/^name:.*/name: ${{ github.event.repository.name }}/' Chart.yaml
             helm package -u . --app-version="tag-${{ steps.vars.outputs.tag }}_run-${{ github.run_number }}" --version=${{ steps.pr.outputs.pr || steps.vars.outputs.version }}
-            # print the values.yaml file to see the values being used
+            
+            echo "📦 Helm package created successfully"
+            ls -la *.tgz
+            
+            # Print the values.yaml file to see the values being used (if debug mode)
+            if [[ "${{ inputs.debug }}" == "true" ]]; then
+              echo "=== VALUES FILE CONTENT ==="
+              cat ${{ inputs.values }}
+              echo "=== END VALUES FILE ==="
+            fi
+            
             # Helm upgrade/rollout
+            echo "🚀 Starting Helm deployment..."
             helm upgrade \
               --set-string global.repository=${{ github.repository }} \
               --set-string global.tag="${{ steps.vars.outputs.tag }}" \
@@ -211,6 +257,8 @@ jobs:
               --values ${{ inputs.values }} \
               ./${{ github.event.repository.name }}-${{ steps.pr.outputs.pr || steps.vars.outputs.version }}.tgz
 
+            echo "✅ Helm deployment completed"
+            
             # Helm release history
             helm history ${{ steps.vars.outputs.release }}
 
@@ -225,7 +273,9 @@ jobs:
           oc_server: ${{ vars.oc_server }}
           commands: |
             # Get release name
-            RELEASE="${{ inputs.release_name }}"
+            RELEASE="${{ steps.vars.outputs.release }}"
+            
+            echo "🔐 Updating secrets for release: $RELEASE"
             
             # Update secrets with real values
             echo "Patching secret $RELEASE-backend"
@@ -250,6 +300,7 @@ jobs:
               ISSUER="https://test.loginproxy.gov.bc.ca/auth/realms/standard"
               JWKS_URI="https://test.loginproxy.gov.bc.ca/auth/realms/standard/protocol/openid-connect/certs"
             else
+              # Default to dev environment
               LOGIN_PROXY="dev.loginproxy.gov.bc.ca"
               ISSUER="https://dev.loginproxy.gov.bc.ca/auth/realms/standard"
               JWKS_URI="https://dev.loginproxy.gov.bc.ca/auth/realms/standard/protocol/openid-connect/certs"
@@ -267,16 +318,16 @@ jobs:
             
             # Check if deployment exists first
             if oc get deployment/$RELEASE-backend &>/dev/null; then
-              echo "Restarting deployment $RELEASE-backend"
+              echo "🔄 Restarting deployment $RELEASE-backend"
               oc rollout restart deployment/$RELEASE-backend
-              echo "Waiting for backend deployment to complete..."
+              echo "⏳ Waiting for backend deployment to complete..."
               oc rollout status deployment/$RELEASE-backend --timeout=300s
             else
-              echo "Warning: Deployment $RELEASE-backend not found"
+              echo "⚠️ Warning: Deployment $RELEASE-backend not found"
             fi
 
             # Update frontend ConfigMap
-            echo "Patching ConfigMap $RELEASE-frontend-config"
+            echo "📝 Patching ConfigMap $RELEASE-frontend-config"
 
             # Create a new default.json content with real values
             CONFIG_JSON=$(cat <<EOF
@@ -306,7 +357,7 @@ jobs:
 
             # Replace the pod instead of restarting to ensure ConfigMap is refreshed
             oc delete pods -l app.kubernetes.io/instance=$RELEASE-frontend
-            echo "Waiting for frontend deployment to complete..."
+            echo "⏳ Waiting for frontend deployment to complete..."
             oc rollout status deployment/$RELEASE-frontend --timeout=300s
 
       - name: Update deployment status

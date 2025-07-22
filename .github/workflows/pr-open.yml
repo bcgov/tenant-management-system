@@ -12,6 +12,7 @@ permissions:
   contents: read
   deployments: write
   pull-requests: write
+  packages: write  # Added for image operations
 
 jobs:
   # https://github.com/bcgov/action-builder-ghcr
@@ -37,7 +38,7 @@ jobs:
       vite_keycloak_client_id: ${{ secrets.VITE_KEYCLOAK_CLIENT_ID }}
     with:
       release_name: ${{ github.event.repository.name }}-pr-${{ github.event.number }}
-      environment: pr-${{ github.event.number }}
+      environment: dev  # Changed from pr-${{ github.event.number }} to dev
       db_user: app-pr-${{ github.event.number }}
       tag: pr-${{ github.event.pull_request.number }}
       params: >-
@@ -51,6 +52,7 @@ jobs:
         --set backend.resources.limits.memory=512Mi
         --set frontend.resources.requests.memory=128Mi
         --set frontend.resources.limits.memory=256Mi
+        --set global.namespace.suffix=-pr-${{ github.event.number }}
       triggers: ('backend/' 'frontend/' 'migrations/' 'charts/' '.github/')
       db_triggers: ('charts/crunchy/')
       deployment_url: https://${{ github.event.repository.name }}-pr-${{ github.event.pull_request.number }}-frontend.apps.silver.devops.gov.bc.ca
@@ -75,3 +77,25 @@ jobs:
       - if: contains(needs.*.result, 'failure')||contains(needs.*.result, 'canceled')
         run: echo "At least one job has failed." && exit 1
       - run: echo "Success!"
+
+  # Comment on PR with deployment URL
+  comment:
+    name: Comment on PR
+    needs: [deploys]
+    if: always() && needs.deploys.result == 'success'
+    runs-on: ubuntu-24.04
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Comment PR
+        uses: thollander/actions-comment-pull-request@v2
+        with:
+          message: |
+            ## 🚀 PR Environment Deployed!
+            
+            **Environment:** `dev`
+            **Frontend URL:** https://${{ github.event.repository.name }}-pr-${{ github.event.pull_request.number }}-frontend.apps.silver.devops.gov.bc.ca
+            **Tag:** `pr-${{ github.event.pull_request.number }}`
+            
+            The application has been deployed to the dev environment with PR-specific resources.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
