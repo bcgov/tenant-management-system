@@ -36,11 +36,10 @@ jobs:
       bcgov_sso_api_client_secret: ${{ secrets.BCGOV_SSO_API_CLIENT_SECRET }}
       vite_keycloak_client_id: ${{ secrets.VITE_KEYCLOAK_CLIENT_ID }}
     with:
-      release_name: ${{ github.event.repository.name }}-pr-${{ github.event.number}}
-      # Removed tags parameter - not defined in .deployer.yml workflow
+      release_name: ${{ github.event.repository.name }}-pr-${{ github.event.number }}
       db_user: app-${{ github.event.number }}
-      params: --set global.tag=pr-${{ github.event.pull_request.number }}
-              --set global.secrets.persist=false
+      tag: pr-${{ github.event.pull_request.number }}  # Explicitly pass the PR tag
+      params: --set global.secrets.persist=false
               --set backend.imagePullPolicy=Always
               --set frontend.imagePullPolicy=Always
       triggers: ('backend/' 'frontend/' 'migrations/' 'charts/' 'github/')
