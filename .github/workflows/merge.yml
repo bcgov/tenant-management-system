@@ -125,9 +125,16 @@ jobs:
         package: [migrations, backend, frontend]
     timeout-minutes: 1
     steps:
-      - uses: shrink/actions-docker-registry-tag@f04afd0559f66b288586792eb150f45136a927fa
+      - name: Debug promotion info
+        run: |
+          echo "Promoting ${{ inputs.tags }} to latest for package ${{ matrix.package }}"
+          echo "Source tag (target): ${{ inputs.tags }}"
+          echo "Destination tag (tags): latest"
+
+      - name: Promote to latest
+        uses: shrink/actions-docker-registry-tag@f04afd0559f66b288586792eb150f45136a927fa
         with:
           registry: ghcr.io
           repository: ${{ github.repository }}/${{ matrix.package }}
-          target: ${{ inputs.tags }}  # Source: the tag we built (e.g., pr-144)
+          target: ${{ inputs.tags }}  # Source: the tag we built (e.g., v1.2.3)
           tags: latest  # Destination: promote to latest
