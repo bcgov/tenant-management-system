@@ -87,7 +87,7 @@ backend:
 frontend:
   # -- enable or disable a component deployment.
   repository: ghcr.io/bcgov/tenant-management-system/frontend
-  tags: { { .Values.global.tags | default "latest" } }
+  tags: { { .Values.global.tag | default "latest" } }
   enabled: true
   pullPolicy: Always
   environment:
