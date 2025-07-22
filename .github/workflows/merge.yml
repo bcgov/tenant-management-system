@@ -48,6 +48,7 @@ jobs:
       release_name: ${{ github.event.repository.name }}-test
       environment: test
       db_user: app
+      tag: ${{ inputs.tags || 'latest' }}  # Use the same tag that was built
       params: >-
         --set backend.deploymentStrategy=RollingUpdate
         --set frontend.deploymentStrategy=RollingUpdate
@@ -56,7 +57,6 @@ jobs:
         --set global.autoscaling=true
         --set frontend.pdb.enabled=true
         --set backend.pdb.enabled=true
-      tags: ${{ inputs.tags || 'latest' }}
       deployment_url: https://${{ github.event.repository.name }}-test-frontend.apps.silver.devops.gov.bc.ca
 
   test_security_scan:
@@ -70,9 +70,24 @@ jobs:
       fail_on_high: true
       scan_type: full
 
+  # Manual approval step before production deployment
+  approve-prod:
+    name: Approve Production Deployment
+    needs: [builds, test_security_scan]  # Wait for security scan to pass
+    runs-on: ubuntu-24.04
+    environment:
+      name: PROD
+    steps:
+      - name: Manual Approval Required
+        run: |
+          echo "Manual approval required for production deployment"
+          echo "Test environment: https://${{ github.event.repository.name }}-test-frontend.apps.silver.devops.gov.bc.ca"
+          echo "Security scan completed successfully"
+          echo "Ready for production deployment"
+
   deploy-prod:
     name: Deploy (PROD)
-    needs: [builds]
+    needs: [approve-prod]  # Wait for manual approval
     uses: ./.github/workflows/.deployer.yml
     secrets:
       oc_namespace: ${{ secrets.OC_NAMESPACE }}
@@ -84,6 +99,7 @@ jobs:
       release_name: ${{ github.event.repository.name }}-prod
       environment: prod
       db_user: app
+      tag: ${{ inputs.tags || 'latest' }}  # Use the same tag that was built
       params: >-
         --set backend.deploymentStrategy=RollingUpdate
         --set frontend.deploymentStrategy=RollingUpdate
@@ -92,12 +108,14 @@ jobs:
         --set global.autoscaling=true
         --set frontend.pdb.enabled=true
         --set backend.pdb.enabled=true
-      tags: ${{ inputs.tags || 'latest' }}
       deployment_url: https://${{ github.event.repository.name }}-prod-frontend.apps.silver.devops.gov.bc.ca
 
+  # Only promote to 'latest' if we actually built with 'latest' tag
   promote:
-    name: Promote Images
+    name: Promote Images to Latest
     needs: [deploy-prod]
+    # Only run if we built with a non-latest tag and want to promote it to latest
+    if: ${{ inputs.tags && inputs.tags != 'latest' }}
     runs-on: ubuntu-24.04
     permissions:
       packages: write
@@ -110,5 +128,5 @@ jobs:
         with:
           registry: ghcr.io
           repository: ${{ github.repository }}/${{ matrix.package }}
-          target: ${{ needs.deploy-prod.outputs.tag}}
+          target: ${{ inputs.tags }}  # Promote the tag we actually built
           tags: latest
