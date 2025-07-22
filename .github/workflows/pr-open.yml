@@ -39,7 +39,8 @@ jobs:
       release_name: ${{ github.event.repository.name }}-pr-${{ github.event.number}}
       # Removed tags parameter - not defined in .deployer.yml workflow
       db_user: app-${{ github.event.number }}
-      params: --set global.secrets.persist=false
+      params: --set global.tag=pr-${{ github.event.pull_request.number }}
+              --set global.secrets.persist=false
               --set backend.imagePullPolicy=Always
               --set frontend.imagePullPolicy=Always
       triggers: ('backend/' 'frontend/' 'migrations/' 'charts/' 'github/')
