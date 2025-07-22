@@ -30,12 +30,12 @@ on:
         description: Extra parameters to pass to helm upgrade
         required: false
         type: string
-      tag:
-        description: Specify a tag to deploy; defaults to PR number
+      tags:
+        description: Specify tags to deploy; defaults to PR number (replaces deprecated 'tag')
         required: false
         type: string
       triggers:
-        description: Paths used to trigger a deployment; e.g. ('./backend/' './frontend/)
+        description: Paths used to trigger a deployment; e.g. ('./backend/' './frontend/')
         required: false
         type: string
       db_user:
@@ -74,9 +74,9 @@ on:
         type: string
 
     outputs:
-      tag:
-        description: 'Which tag was used for deployment?'
-        value: ${{ jobs.deploy.outputs.tag }}
+      tags:
+        description: 'Which tags were used for deployment?'
+        value: ${{ jobs.deploy.outputs.tags }}
       triggered:
         description: 'Has a deployment has been triggered?'
         value: ${{ jobs.deploy.outputs.triggered }}
@@ -107,21 +107,21 @@ jobs:
       url: ${{ inputs.deployment_url }}
     runs-on: ubuntu-24.04
     outputs:
-      tag: ${{ inputs.tag || steps.pr.outputs.pr }}
+      tags: ${{ inputs.tags || steps.pr.outputs.pr }}
       triggered: ${{ steps.deploy.outputs.triggered }}
     steps:
       # Check if image exists before deploying
       - name: Verify Docker Images Exist
         run: |
-          # Extract tag from inputs
-          TAG="${{ inputs.tag }}"
+          # Extract tags from inputs
+          TAGS="${{ inputs.tags }}"
           REPO_NAME="${{ github.event.repository.name }}"
           
-          echo "Checking if images exist for tag: $TAG"
+          echo "Checking if images exist for tags: $TAGS"
           
           # Check each required image
           for component in backend frontend migrations; do
-            IMAGE="ghcr.io/${{ github.repository }}/${component}:${TAG}"
+            IMAGE="ghcr.io/${{ github.repository }}/${component}:${TAGS}"
             echo "Checking image: $IMAGE"
             
             # Use docker manifest to check if image exists
@@ -129,8 +129,8 @@ jobs:
               echo "❌ Image $IMAGE does not exist!"
               
               # For PR builds, suggest the correct tag format
-              if [[ "$TAG" =~ ^pr-[0-9]+$ ]]; then
-                echo "💡 Make sure the build job completed successfully and created images with tag: $TAG"
+              if [[ "$TAGS" =~ ^pr-[0-9]+$ ]]; then
+                echo "💡 Make sure the build job completed successfully and created images with tags: $TAGS"
               fi
               exit 1
             else
@@ -149,16 +149,16 @@ jobs:
           triggers: ${{ inputs.db_triggers }}
 
       # Variables
-      - if: inputs.tag  == ''
+      - if: inputs.tags == ''
         id: pr
         uses: bcgov/action-get-pr@21f9351425cd55a98e869ee28919a512aa30647d # v0.0.1
 
       - id: vars
         run: |
-          # Vars: tag and release
+          # Vars: tags and release
 
-          # Tag defaults to PR number, but can be overridden by inputs.tag
-          tag=${{ inputs.tag || steps.pr.outputs.pr }}
+          # Tags defaults to PR number, but can be overridden by inputs.tags
+          tags=${{ inputs.tags || steps.pr.outputs.pr }}
 
           # Release name includes run numbers to ensure uniqueness
           release=${{ inputs.release_name }}
@@ -167,19 +167,19 @@ jobs:
           version=1.0.0+${{ github.run_number }}
           
           # Check if this is a PR deployment
-          if [[ "$tag" =~ ^pr-[0-9]+$ ]]; then
+          if [[ "$tags" =~ ^pr-[0-9]+$ ]]; then
             echo "📋 PR Deployment detected"
             echo "Environment: ${{ inputs.environment }}"
             echo "Release will be: $release"
           fi
           
           # Summary
-          echo "tag=${tag}"
+          echo "tags=${tags}"
           echo "release=${release}"
           echo "version=${version}"
 
           # Output
-          echo "tag=${tag}" >> $GITHUB_OUTPUT
+          echo "tags=${tags}" >> $GITHUB_OUTPUT
           echo "release=${release}" >> $GITHUB_OUTPUT
           echo "version=${version}" >> $GITHUB_OUTPUT
 
@@ -212,7 +212,7 @@ jobs:
           step: start
           token: ${{ github.token }}
           env: ${{ inputs.environment || 'dev' }}
-          desc: "Starting deployment for tag ${{ steps.vars.outputs.tag }}..."
+          desc: "Starting deployment for tags ${{ steps.vars.outputs.tags }}..."
 
       - name: Helm Deploy
         id: deploy
@@ -231,7 +231,7 @@ jobs:
 
             # Helm package
             sed -i 's/^name:.*/name: ${{ github.event.repository.name }}/' Chart.yaml
-            helm package -u . --app-version="tag-${{ steps.vars.outputs.tag }}_run-${{ github.run_number }}" --version=${{ steps.pr.outputs.pr || steps.vars.outputs.version }}
+            helm package -u . --app-version="tags-${{ steps.vars.outputs.tags }}_run-${{ github.run_number }}" --version=${{ steps.pr.outputs.pr || steps.vars.outputs.version }}
             
             echo "📦 Helm package created successfully"
             ls -la *.tgz
@@ -247,7 +247,7 @@ jobs:
             echo "🚀 Starting Helm deployment..."
             helm upgrade \
               --set-string global.repository=${{ github.repository }} \
-              --set-string global.tag="${{ steps.vars.outputs.tag }}" \
+              --set-string global.tag="${{ steps.vars.outputs.tags }}" \
               --set-string global.config.databaseUser="${{ inputs.db_user }}" \
               --set-string global.config.nodeEnv=${{ (inputs.environment == 'prod' || inputs.environment == 'production') && 'production' || (inputs.environment == 'test' && 'test' || 'development') }} \
               --set-string global.databaseAlias="${{ steps.deploy_crunchy.outputs.release }}-crunchy" \

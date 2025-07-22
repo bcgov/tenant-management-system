@@ -48,7 +48,7 @@ jobs:
       release_name: ${{ github.event.repository.name }}-test
       environment: test
       db_user: app
-      tag: ${{ inputs.tags || 'latest' }}  # Use the same tag that was built
+      tags: ${{ inputs.tags || 'latest' }}  # Use tags instead of deprecated tag
       params: >-
         --set backend.deploymentStrategy=RollingUpdate
         --set frontend.deploymentStrategy=RollingUpdate
@@ -99,7 +99,7 @@ jobs:
       release_name: ${{ github.event.repository.name }}-prod
       environment: prod
       db_user: app
-      tag: ${{ inputs.tags || 'latest' }}  # Use the same tag that was built
+      tags: ${{ inputs.tags || 'latest' }}  # Use tags instead of deprecated tag
       params: >-
         --set backend.deploymentStrategy=RollingUpdate
         --set frontend.deploymentStrategy=RollingUpdate

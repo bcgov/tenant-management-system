@@ -40,7 +40,7 @@ jobs:
       release_name: ${{ github.event.repository.name }}-pr-${{ github.event.number }}
       environment: dev  # Changed from pr-${{ github.event.number }} to dev
       db_user: app-pr-${{ github.event.number }}
-      tag: pr-${{ github.event.pull_request.number }}
+      tags: pr-${{ github.event.pull_request.number }}
       params: >-
         --set global.secrets.persist=false
         --set backend.imagePullPolicy=Always
