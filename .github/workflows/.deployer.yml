@@ -135,7 +135,7 @@
           "logoutUrl": "https://$LOGIN_PROXY/auth/realms/standard/protocol/openid-connect/logout"
         }
       }
-EOF
+      EOF
       )
       
       # Create a temporary file with the JSON content
