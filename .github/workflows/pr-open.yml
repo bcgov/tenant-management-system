@@ -50,9 +50,9 @@ jobs:
         --set frontend.resources.requests.memory=128Mi
         --set frontend.resources.limits.memory=256Mi
         --set global.namespace.suffix=-pr-${{ github.event.number }}
-      triggers: ['backend/', 'frontend/', 'migrations/', 'charts/', '.github/']
-      db_triggers: ['charts/crunchy/']
-      deployment_url: https://${{ github.event.repository.name }}-pr-${{ github.event.pull_request.number }}-frontend.apps.silver.devops.gov.bc.ca
+      triggers: "backend/,frontend/,migrations/,charts/,.github/"
+      db_triggers: "charts/crunchy/"
+      deployment_url: https://${{ github.event.repository.name }}-pr-${{ github.event.number }}-frontend.apps.silver.devops.gov.bc.ca
 
   security_scan:
     name: ZAP Security Scan (PR-${{ github.event.number }})
