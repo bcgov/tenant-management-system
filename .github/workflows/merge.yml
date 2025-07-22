@@ -23,6 +23,7 @@ concurrency:
 permissions:
   contents: read
   deployments: write
+  id-token: write
 
 jobs:
   builds:
