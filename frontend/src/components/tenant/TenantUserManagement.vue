@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 
+import GroupContainer from '@/components/container/GroupContainer.vue'
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
 import FloatingActionButton from '@/components/ui/FloatingActionButton.vue'
@@ -171,7 +172,7 @@ function handleConfirmButtonClick(action: string) {
   <v-container class="px-0" fluid>
     <v-row>
       <v-col cols="12">
-        <h2 class="mb-6 mt-12">Tenant Users</h2>
+        <h4 class="mb-6 mt-12">Tenant Users</h4>
         <v-data-table
           :header-props="{
             class: 'text-body-1 font-weight-bold bg-surface-light',
@@ -306,5 +307,9 @@ function handleConfirmButtonClick(action: string) {
       :title="confirmDialog.title"
       @button-click="handleConfirmButtonClick"
     />
+
+    <v-divider class="my-12" />
+
+    <GroupContainer :tenant="tenant" />
   </v-container>
 </template>

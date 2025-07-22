@@ -101,6 +101,7 @@ export const tenantService = {
         const messageArray = error.response.data.details.body.map(
           (item: { message: string }) => item.message,
         )
+
         throw new ValidationError(messageArray)
       }
 
@@ -255,6 +256,7 @@ export const tenantService = {
         const messageArray = error.response.data.details.body.map(
           (item: { message: string }) => item.message,
         )
+
         throw new ValidationError(messageArray)
       }
 
@@ -303,6 +305,7 @@ export const tenantService = {
         const messageArray = error.response.data.details.body.map(
           (item: { message: string }) => item.message,
         )
+
         throw new ValidationError(messageArray)
       }
 
