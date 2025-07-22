@@ -9,8 +9,7 @@ on:
         type: number
         default: 50
       tags:
-        description: "Comma-separated tags to use for built images (e.g. 'latest,prod')"
-        required: false
+        description: "Tag to use for built images"
         type: string
         default: latest
 
@@ -20,14 +19,15 @@ permissions:
 jobs:
   build:
     name: Build Images
+    permissions:
+      packages: write
     runs-on: ubuntu-24.04
     strategy:
       matrix:
         package: [backend, frontend, migrations]
     timeout-minutes: 10
     steps:
-      - name: Build and push image
-        uses: bcgov/action-builder-ghcr@8489f0ddc8342896e2b57e476620ae2c774ef070
+      - uses: bcgov/action-builder-ghcr@fd17bc1cbb16a60514e0df3966d42dff9fc232bc # v4.0.0
         with:
           keep_versions: ${{ inputs.keep_versions }}
           package: ${{ matrix.package }}

@@ -1,25 +1,18 @@
-#!/usr/bin/env bash
-set -euxo pipefail
+#!/bin/bash
+set -ex
 
-# Optional: normalize this script’s line endings if dos2unix is available
-if command -v dos2unix &> /dev/null; then
-  dos2unix "$0"
-fi
+REPOSITORY_ROOT=$(pwd)
 
-# Root of your repo inside the container
-REPOSITORY_ROOT="$(pwd)"
-
-echo "==> Installing backend dependencies"
-cd "$REPOSITORY_ROOT/backend"
+# Do a clean installation of the backend dependencies.
+cd $REPOSITORY_ROOT/backend
 rm -rf node_modules
 npm ci
 
-echo "==> Running database migrations (ensure the DB is up!)"
-# Uncomment once your database container/service is running:
-# npx typeorm-ts-node-commonjs migration:run \
-#   -d ./src/common/db.connection.ts
+# Run the backend database migrations.
+# TODO: will need to start the DB before doing this.
+#npx typeorm-ts-node-commonjs migration:run -d ./src/common/db.connection.ts
 
-echo "==> Installing frontend dependencies"
-cd "$REPOSITORY_ROOT/frontend"
+# Do a clean installation of the frontend dependencies.
+cd $REPOSITORY_ROOT/frontend
 rm -rf node_modules
 npm ci

@@ -32,7 +32,6 @@ jobs:
       packages: write
     with:
       tags: ${{ inputs.tags || 'latest' }}
-      keep_versions: 10
   
   # Make deploy-test depend on builds
   deploy-test:
@@ -49,15 +48,13 @@ jobs:
       release_name: ${{ github.event.repository.name }}-test
       environment: test
       db_user: app
-      tags: ${{ inputs.tags || 'latest' }}  # Use tags instead of deprecated tag
       params: >-
         --set backend.deploymentStrategy=RollingUpdate
         --set frontend.deploymentStrategy=RollingUpdate
-        --set backend.imagePullPolicy=Always
-        --set frontend.imagePullPolicy=Always
         --set global.autoscaling=true
         --set frontend.pdb.enabled=true
         --set backend.pdb.enabled=true
+      tag: ${{ inputs.tags || 'latest' }}
       deployment_url: https://${{ github.event.repository.name }}-test-frontend.apps.silver.devops.gov.bc.ca
 
   test_security_scan:
@@ -71,24 +68,9 @@ jobs:
       fail_on_high: true
       scan_type: full
 
-  # Manual approval step before production deployment
-  approve-prod:
-    name: Approve Production Deployment
-    needs: [builds, test_security_scan]  # Wait for security scan to pass
-    runs-on: ubuntu-24.04
-    environment:
-      name: PROD
-    steps:
-      - name: Manual Approval Required
-        run: |
-          echo "Manual approval required for production deployment"
-          echo "Test environment: https://${{ github.event.repository.name }}-test-frontend.apps.silver.devops.gov.bc.ca"
-          echo "Security scan completed successfully"
-          echo "Ready for production deployment"
-
   deploy-prod:
     name: Deploy (PROD)
-    needs: [approve-prod]  # Wait for manual approval
+    needs: [builds]
     uses: ./.github/workflows/.deployer.yml
     secrets:
       oc_namespace: ${{ secrets.OC_NAMESPACE }}
@@ -100,13 +82,29 @@ jobs:
       release_name: ${{ github.event.repository.name }}-prod
       environment: prod
       db_user: app
-      tags: ${{ inputs.tags || 'latest' }}  # Use tags instead of deprecated tag
       params: >-
         --set backend.deploymentStrategy=RollingUpdate
         --set frontend.deploymentStrategy=RollingUpdate
-        --set backend.imagePullPolicy=Always
-        --set frontend.imagePullPolicy=Always
         --set global.autoscaling=true
         --set frontend.pdb.enabled=true
         --set backend.pdb.enabled=true
+      tag: ${{ inputs.tags || 'latest' }}
       deployment_url: https://${{ github.event.repository.name }}-prod-frontend.apps.silver.devops.gov.bc.ca
+
+  promote:
+    name: Promote Images
+    needs: [deploy-prod]
+    runs-on: ubuntu-24.04
+    permissions:
+      packages: write
+    strategy:
+      matrix:
+        package: [migrations, backend, frontend]
+    timeout-minutes: 1
+    steps:
+      - uses: shrink/actions-docker-registry-tag@f04afd0559f66b288586792eb150f45136a927fa # v4
+        with:
+          registry: ghcr.io
+          repository: ${{ github.repository }}/${{ matrix.package }}
+          target: ${{ needs.deploy-prod.outputs.tag}}
+          tags: latest
