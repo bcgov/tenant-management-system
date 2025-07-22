@@ -94,20 +94,20 @@
       fi
 
       echo "📝 Patching ConfigMap $RELEASE-frontend-config"
-      CONFIG_JSON=$(cat <<EOF
-{
-  "api": {
-    "baseUrl": "/api/v1"
-  },
-  "oidc": {
-    "clientId": "${{ secrets.vite_keycloak_client_id }}",
-    "realm": "standard",
-    "serverUrl": "https://$LOGIN_PROXY/auth",
-    "logoutUrl": "https://$LOGIN_PROXY/auth/realms/standard/protocol/openid-connect/logout"
-  }
-}
-EOF
-)
+     CONFIG_JSON=$(cat <<EOF
+      {
+       "api": {
+       "baseUrl": "/api/v1"
+      },
+      "oidc": {
+      "clientId": "${{ secrets.vite_keycloak_client_id }}",
+      "realm": "standard",
+      "serverUrl": "https://$LOGIN_PROXY/auth",
+      "logoutUrl": "https://$LOGIN_PROXY/auth/realms/standard/protocol/openid-connect/logout"
+        }
+       }
+       EOF
+       )
       echo "$CONFIG_JSON" > default.json
       oc delete configmap "$RELEASE-frontend-config" --ignore-not-found
       oc create configmap "$RELEASE-frontend-config" --from-file=default.json
