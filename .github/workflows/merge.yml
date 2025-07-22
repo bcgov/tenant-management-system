@@ -110,31 +110,29 @@ jobs:
         --set backend.pdb.enabled=true
       deployment_url: https://${{ github.event.repository.name }}-prod-frontend.apps.silver.devops.gov.bc.ca
 
-  # Only promote to 'latest' if we actually built with a non-latest tag
-  promote:
-    name: Promote Images to Latest
-    needs: [deploy-prod]
-    # Only run if we built with a non-latest tag and want to promote it to latest
-    # Don't promote PR tags (they start with 'pr-')
-    if: ${{ inputs.tags && inputs.tags != 'latest' && !startsWith(inputs.tags, 'pr-') }}
-    runs-on: ubuntu-24.04
-    permissions:
-      packages: write
-    strategy:
-      matrix:
-        package: [migrations, backend, frontend]
-    timeout-minutes: 1
-    steps:
-      - name: Debug promotion info
-        run: |
-          echo "Promoting ${{ inputs.tags }} to latest for package ${{ matrix.package }}"
-          echo "Source tag (target): ${{ inputs.tags }}"
-          echo "Destination tag (tags): latest"
-
-      - name: Promote to latest
-        uses: shrink/actions-docker-registry-tag@f04afd0559f66b288586792eb150f45136a927fa
-        with:
-          registry: ghcr.io
-          repository: ${{ github.repository }}/${{ matrix.package }}
-          target: ${{ inputs.tags }}  # Source: the tag we built (e.g., v1.2.3)
-          tags: latest  # Destination: promote to latest
+  # Commented out promote job - causing issues with PR tags
+  # promote:
+  #   name: Promote Images to Latest
+  #   needs: [deploy-prod]
+  #   if: ${{ inputs.tags && inputs.tags != 'latest' && !startsWith(inputs.tags, 'pr-') }}
+  #   runs-on: ubuntu-24.04
+  #   permissions:
+  #     packages: write
+  #   strategy:
+  #     matrix:
+  #       package: [migrations, backend, frontend]
+  #   timeout-minutes: 1
+  #   steps:
+  #     - name: Debug promotion info
+  #       run: |
+  #         echo "Promoting ${{ inputs.tags }} to latest for package ${{ matrix.package }}"
+  #         echo "Source tag (target): ${{ inputs.tags }}"
+  #         echo "Destination tag (tags): latest"
+  #
+  #     - name: Promote to latest
+  #       uses: shrink/actions-docker-registry-tag@f04afd0559f66b288586792eb150f45136a927fa
+  #       with:
+  #         registry: ghcr.io
+  #         repository: ${{ github.repository }}/${{ matrix.package }}
+  #         target: ${{ inputs.tags }}  # Source: the tag we built (e.g., v1.2.3)
+  #         tags: latest  # Destination: promote to latest
