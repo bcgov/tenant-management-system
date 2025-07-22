@@ -12,6 +12,7 @@ permissions:
   deployments: write
   pull-requests: write
   packages: write
+  id-token: write
 
 jobs:
   builds:
@@ -19,6 +20,7 @@ jobs:
     uses: ./.github/workflows/.build-images.yml
     permissions:
       packages: write
+      id-token: write
     with:
       tags: pr-${{ github.event.pull_request.number }}
       keep_versions: 5
