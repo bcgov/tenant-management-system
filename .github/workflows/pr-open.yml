@@ -37,7 +37,7 @@ jobs:
       vite_keycloak_client_id: ${{ secrets.VITE_KEYCLOAK_CLIENT_ID }}
     with:
       release_name: ${{ github.event.repository.name }}-pr-${{ github.event.number}}
-      tag: pr-${{ github.event.pull_request.number }}
+      tags: pr-${{ github.event.pull_request.number }}
       db_user: app-${{ github.event.number }}
       params: --set global.secrets.persist=false
               --set backend.imagePullPolicy=Always
