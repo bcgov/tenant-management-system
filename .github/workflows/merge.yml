@@ -56,7 +56,7 @@ jobs:
         --set global.autoscaling=true
         --set frontend.pdb.enabled=true
         --set backend.pdb.enabled=true
-      tag: ${{ inputs.tags || 'latest' }}
+      tags: ${{ inputs.tags || 'latest' }}
       deployment_url: https://${{ github.event.repository.name }}-test-frontend.apps.silver.devops.gov.bc.ca
 
   test_security_scan:
@@ -92,7 +92,7 @@ jobs:
         --set global.autoscaling=true
         --set frontend.pdb.enabled=true
         --set backend.pdb.enabled=true
-      tag: ${{ inputs.tags || 'latest' }}
+      tags: ${{ inputs.tags || 'latest' }}
       deployment_url: https://${{ github.event.repository.name }}-prod-frontend.apps.silver.devops.gov.bc.ca
 
   promote:
