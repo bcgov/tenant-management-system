@@ -24,9 +24,9 @@ jobs:
       tags: pr-${{ github.event.pull_request.number }}
       keep_versions: 5  # Keep fewer versions for PR builds
 
-  # https://github.com/bcgov/quickstart-openshift-helpers
+  # Deploy each PR to its own environment
   deploys:
-    name: Deploys (${{ github.event.number }})
+    name: Deploy PR-${{ github.event.number }} Environment
     needs: [builds]
     uses: ./.github/workflows/.deployer.yml
     secrets:
@@ -37,19 +37,28 @@ jobs:
       vite_keycloak_client_id: ${{ secrets.VITE_KEYCLOAK_CLIENT_ID }}
     with:
       release_name: ${{ github.event.repository.name }}-pr-${{ github.event.number }}
-      db_user: app-${{ github.event.number }}
-      tag: pr-${{ github.event.pull_request.number }}  # Explicitly pass the PR tag
-      params: --set global.secrets.persist=false
-              --set backend.imagePullPolicy=Always
-              --set frontend.imagePullPolicy=Always
-      triggers: ('backend/' 'frontend/' 'migrations/' 'charts/' 'github/')
+      environment: pr-${{ github.event.number }}
+      db_user: app-pr-${{ github.event.number }}
+      tag: pr-${{ github.event.pull_request.number }}
+      params: >-
+        --set global.secrets.persist=false
+        --set backend.imagePullPolicy=Always
+        --set frontend.imagePullPolicy=Always
+        --set backend.deploymentStrategy=Recreate
+        --set frontend.deploymentStrategy=Recreate
+        --set global.debug=true
+        --set backend.resources.requests.memory=256Mi
+        --set backend.resources.limits.memory=512Mi
+        --set frontend.resources.requests.memory=128Mi
+        --set frontend.resources.limits.memory=256Mi
+      triggers: ('backend/' 'frontend/' 'migrations/' 'charts/' '.github/')
       db_triggers: ('charts/crunchy/')
       deployment_url: https://${{ github.event.repository.name }}-pr-${{ github.event.pull_request.number }}-frontend.apps.silver.devops.gov.bc.ca
 
   security_scan:
     permissions:
       contents: read
-    name: ZAP Security Scan (PR ${{ github.event.number }})
+    name: ZAP Security Scan (PR-${{ github.event.number }})
     needs: [deploys]
     uses: ./.github/workflows/.zap-scan.yml
     with:
