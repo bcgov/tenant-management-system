@@ -40,7 +40,7 @@ jobs:
       release_name: ${{ github.event.repository.name }}-pr-${{ github.event.number }}
       environment: dev  # Changed from pr-${{ github.event.number }} to dev
       db_user: app-pr-${{ github.event.number }}
-      tags: pr-${{ github.event.pull_request.number }}
+      tags: pr-${{ github.event.pull_request.number }}  # Use tags instead of deprecated tag
       params: >-
         --set global.secrets.persist=false
         --set backend.imagePullPolicy=Always
@@ -95,7 +95,7 @@ jobs:
             
             **Environment:** `dev`
             **Frontend URL:** https://${{ github.event.repository.name }}-pr-${{ github.event.pull_request.number }}-frontend.apps.silver.devops.gov.bc.ca
-            **Tag:** `pr-${{ github.event.pull_request.number }}`
+            **Tags:** `pr-${{ github.event.pull_request.number }}`
             
             The application has been deployed to the dev environment with PR-specific resources.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

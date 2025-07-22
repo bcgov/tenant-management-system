@@ -19,7 +19,7 @@ on:
         type: string
       environment:
         description: Environment name; omit for PRs
-        required: false
+        required: true
         type: string
       oc_server:
         default: https://api.silver.devops.gov.bc.ca:6443
@@ -32,7 +32,7 @@ on:
         type: string
       tags:
         description: Specify tags to deploy; defaults to PR number (replaces deprecated 'tag')
-        required: false
+        required: true
         type: string
       triggers:
         description: Paths used to trigger a deployment; e.g. ('./backend/' './frontend/')
