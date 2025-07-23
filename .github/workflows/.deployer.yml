@@ -30,7 +30,7 @@ on:
         description: Extra parameters to pass to helm upgrade
         required: false
         type: string
-      tag:
+      tags:
         description: Specify a tag to deploy; defaults to PR number
         required: false
         type: string

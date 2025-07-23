@@ -4,7 +4,6 @@ on:
   pull_request:
 
 concurrency:
-  # Cancel in progress for PR open and close
   group: ${{ github.event.number }}
   cancel-in-progress: true
 
@@ -12,21 +11,22 @@ permissions:
   contents: read
   deployments: write
   pull-requests: write
+  packages: write
+  id-token: write
 
 jobs:
-  # https://github.com/bcgov/action-builder-ghcr
   builds:
     name: Builds
     uses: ./.github/workflows/.build-images.yml
     permissions:
       packages: write
+      id-token: write
     with:
       tags: pr-${{ github.event.pull_request.number }}
-      keep_versions: 5  # Keep fewer versions for PR builds
+      keep_versions: 5
 
-  # https://github.com/bcgov/quickstart-openshift-helpers
   deploys:
-    name: Deploys (${{ github.event.number }})
+    name: Deploy PR-${{ github.event.number }} Environment
     needs: [builds]
     uses: ./.github/workflows/.deployer.yml
     secrets:
@@ -36,18 +36,30 @@ jobs:
       bcgov_sso_api_client_secret: ${{ secrets.BCGOV_SSO_API_CLIENT_SECRET }}
       vite_keycloak_client_id: ${{ secrets.VITE_KEYCLOAK_CLIENT_ID }}
     with:
-      release_name: ${{ github.event.repository.name }}-pr-${{ github.event.number}}
-      tag: pr-${{ github.event.pull_request.number }}
-      db_user: app-${{ github.event.number }}
-      params: --set global.secrets.persist=false
-      triggers: ('backend/' 'frontend/' 'migrations/' 'charts/' 'github/')
-      db_triggers: ('charts/crunchy/')
-      deployment_url: https://${{ github.event.repository.name }}-pr-${{ github.event.pull_request.number }}-frontend.apps.silver.devops.gov.bc.ca
+      release_name: ${{ github.event.repository.name }}-pr-${{ github.event.number }}
+      environment: dev
+      db_user: app-pr-${{ github.event.number }}
+      tags: pr-${{ github.event.pull_request.number }}
+      params: >-
+        --set global.secrets.persist=false
+        --set backend.imagePullPolicy=Always
+        --set frontend.imagePullPolicy=Always
+        --set backend.deploymentStrategy=Recreate
+        --set frontend.deploymentStrategy=Recreate
+        --set global.debug=true
+        --set backend.resources.requests.memory=256Mi
+        --set backend.resources.limits.memory=512Mi
+        --set frontend.resources.requests.memory=128Mi
+        --set frontend.resources.limits.memory=256Mi
+        --set global.namespace.suffix=-pr-${{ github.event.number }}
+      triggers: "backend/,frontend/,migrations/,charts/,.github/"
+      db_triggers: "charts/crunchy/"
+      deployment_url: https://${{ github.event.repository.name }}-pr-${{ github.event.number }}-frontend.apps.silver.devops.gov.bc.ca
 
   security_scan:
+    name: ZAP Security Scan (PR-${{ github.event.number }})
     permissions:
       contents: read
-    name: ZAP Security Scan (PR ${{ github.event.number }})
     needs: [deploys]
     uses: ./.github/workflows/.zap-scan.yml
     with:
@@ -61,6 +73,27 @@ jobs:
     if: always()
     runs-on: ubuntu-24.04
     steps:
-      - if: contains(needs.*.result, 'failure')||contains(needs.*.result, 'canceled')
+      - if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
         run: echo "At least one job has failed." && exit 1
       - run: echo "Success!"
+
+  comment:
+    name: Comment on PR
+    needs: [deploys]
+    if: always() && needs.deploys.result == 'success'
+    runs-on: ubuntu-24.04
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Comment PR
+        uses: thollander/actions-comment-pull-request@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          message: |
+            ## 🚀 PR Environment Deployed!
+
+            **Environment:** `dev`  
+            **Frontend URL:** https://${{ github.event.repository.name }}-pr-${{ github.event.pull_request.number }}-frontend.apps.silver.devops.gov.bc.ca  
+            **Tags:** `pr-${{ github.event.pull_request.number }}`
+
+            The application has been deployed to the dev environment with PR-specific resources.
