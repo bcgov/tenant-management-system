@@ -2,7 +2,7 @@ name: Merge
 
 on:
   push:
-    branches: [main]
+    branches: [main, deployment-fix]  # Add your test branch here
     paths-ignore:
       - '*.md'
       - '.github/**'
@@ -17,7 +17,7 @@ on:
 
 concurrency:
   # Do not interrupt previous workflows
-  group: ${{ github.workflow }}
+  group: ${{ github.workflow }}-${{ github.ref }}  # Add ref to allow parallel testing
   cancel-in-progress: false
 
 permissions:
@@ -34,7 +34,7 @@ jobs:
       packages: write
       id-token: write  # Explicitly grant id-token permission to this job
     with:
-      tags: ${{ inputs.tags || 'latest' }}
+      tags: ${{ github.ref_name == 'main' && (inputs.tags || 'latest') || format('test-{0}', github.ref_name) }}
       keep_versions: 10
   
   # Make deploy-test depend on builds
@@ -49,10 +49,10 @@ jobs:
       bcgov_sso_api_client_secret: ${{ secrets.BCGOV_SSO_API_CLIENT_SECRET }}
       vite_keycloak_client_id: ${{ secrets.VITE_KEYCLOAK_CLIENT_ID }}
     with:
-      release_name: ${{ github.event.repository.name }}-test
+      release_name: ${{ github.event.repository.name }}-${{ github.ref_name == 'main' && 'test' || format('test-{0}', github.ref_name) }}
       environment: test
       db_user: app
-      tags: ${{ inputs.tags || 'latest' }}  # Use tags instead of deprecated tag
+      tags: ${{ github.ref_name == 'main' && (inputs.tags || 'latest') || format('test-{0}', github.ref_name) }}
       params: >-
         --set backend.deploymentStrategy=RollingUpdate
         --set frontend.deploymentStrategy=RollingUpdate
@@ -61,13 +61,15 @@ jobs:
         --set global.autoscaling=true
         --set frontend.pdb.enabled=true
         --set backend.pdb.enabled=true
-      deployment_url: https://${{ github.event.repository.name }}-test-frontend.apps.silver.devops.gov.bc.ca
+      deployment_url: https://${{ github.event.repository.name }}-${{ github.ref_name == 'main' && 'test' || format('test-{0}', github.ref_name) }}-frontend.apps.silver.devops.gov.bc.ca
 
+  # Only run security scan and prod deployment for main branch
   test_security_scan:
     permissions:
       contents: read
     name: ZAP Security Scan (TEST)
     needs: [deploy-test]
+    if: github.ref_name == 'main'  # Only for main branch
     uses: ./.github/workflows/.zap-scan.yml
     with:
       target_url: https://${{ github.event.repository.name }}-test-frontend.apps.silver.devops.gov.bc.ca
@@ -78,6 +80,7 @@ jobs:
   approve-prod:
     name: Approve Production Deployment
     needs: [builds, test_security_scan]  # Wait for security scan to pass
+    if: github.ref_name == 'main'  # Only for main branch
     runs-on: ubuntu-24.04
     environment:
       name: PROD
@@ -92,6 +95,7 @@ jobs:
   deploy-prod:
     name: Deploy (PROD)
     needs: [approve-prod]  # Wait for manual approval
+    if: github.ref_name == 'main'  # Only for main branch
     uses: ./.github/workflows/.deployer.yml
     secrets:
       oc_namespace: ${{ secrets.OC_NAMESPACE }}

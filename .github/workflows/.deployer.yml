@@ -190,11 +190,11 @@ jobs:
             spec:
               image: registry.developers.crunchydata.com/crunchydata/crunchy-postgres:ubi8-15.8-1
               postgresVersion: 15
-              
+            
               instances:
                 - name: instance1
                   replicas: 1
-                  
+            
                   resources:
                     requests:
                       cpu: "250m"
@@ -202,7 +202,7 @@ jobs:
                     limits:
                       cpu: "1000m"
                       memory: "1Gi"
-                  
+            
                   dataVolumeClaimSpec:
                     accessModes:
                       - "ReadWriteOnce"
@@ -217,31 +217,33 @@ jobs:
                     - app
                   options: "SUPERUSER"
 
-              # Minimal backup configuration - no external repos
+              # Fixed backup configuration with required repos
               backups:
                 pgbackrest:
                   image: registry.developers.crunchydata.com/crunchydata/crunchy-pgbackrest:ubi8-2.47-4
+            
+                  # This is the missing required section
+                  repos:
+                    - name: repo1
+                      volume:
+                        volumeClaimSpec:
+                          accessModes:
+                            - "ReadWriteOnce"
+                          resources:
+                            requests:
+                              storage: $STORAGE_SIZE
+                          storageClassName: "netapp-file-standard"
+            
+                  # Global backup settings
                   global:
-                    repo1-retention-full: "1"
-                  configuration:
-                    - secret:
-                        name: $DB_CLUSTER_NAME-pgbackrest-secret
+                    repo1-retention-full: "3"
+                    repo1-retention-diff: "1"
+            
+                  # Manual backup options
                   manual:
                     repoName: repo1
                     options:
                       - --type=full
-            EOF
-            
-            # Create the required pgbackrest secret
-            cat <<EOF | oc apply -f -
-            apiVersion: v1
-            kind: Secret
-            metadata:
-              name: $DB_CLUSTER_NAME-pgbackrest-secret
-            type: Opaque
-            data:
-              # Empty secret for minimal configuration
-              dummy: $(echo -n "dummy" | base64)
             EOF
             
             echo "PostgreSQL cluster created, waiting for initialization..."
