@@ -177,8 +177,8 @@ jobs:
               STORAGE_SIZE="2Gi"     # Database gets 2Gi
               BACKUP_SIZE="1Gi"      # Backup gets 1Gi (total = 3Gi, leaves 2Gi free)
             fi
-            
-            echo "Using storage size: $STORAGE_SIZE, backup size: ${BACKUP_SIZE:-$STORAGE_SIZE}"
+          
+            echo "Using storage size: $STORAGE_SIZE, backup size: $BACKUP_SIZE"
             echo "Optimized for full stack deployment (frontend + backend + database)"
             
             # Create PostgreSQL cluster with reduced storage for full stack
@@ -235,7 +235,7 @@ jobs:
                             - "ReadWriteOnce"
                           resources:
                             requests:
-                              storage: \${BACKUP_SIZE:-$STORAGE_SIZE}
+                              storage: $BACKUP_SIZE
                           storageClassName: "netapp-file-standard"
 
                   # Minimal backup settings to save space
