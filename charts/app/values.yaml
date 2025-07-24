@@ -35,6 +35,11 @@ backend:
   environment:
     port: "4144"
     allowedOrigins: "*"
+    postgresHost: "{{ .Values.global.databaseAlias }}-pgbouncer"
+    postgresPort: "5432"
+    postgresUser: "{{ .Values.global.config.databaseUser | default 'app' }}"
+    postgresDatabase: "{{ .Values.global.config.dbName | default 'app' }}"
+    # Password comes from secret
     bcgovSsoApiUrl: "https://api.loginproxy.gov.bc.ca/api/v1/dev/idir/users"
     bcgovTokenUrl: "https://loginproxy.gov.bc.ca/auth/realms/standard/protocol/openid-connect/token"
     bcGovSsoClientId: "client-id"  # Default value, override during deployment
