@@ -317,28 +317,54 @@ jobs:
             oc get pvc ${DB_CLUSTER_NAME}-data || echo "PVC not found"
             exit 1
 
-      # Variables
+      # Variables - Simplified tag logic
       - if: inputs.tag  == ''
         id: pr
-        uses: bcgov/action-get-pr@21f9351425cd55a98e869ee28919a512aa30647d # v0.0.1
+        continue-on-error: true  # Don't fail if PR detection fails
+        uses: bcgov/action-get-pr@21f9351425cd55a98e869ee28919a512aa30647d
 
       - id: vars
         run: |
-          # Vars: tag and release
-
-          # Tag defaults to PR number, but can be overridden by inputs.tag
-          tag=${{ inputs.tag || steps.pr.outputs.pr }}
-
-          # Release name includes run numbers to ensure uniqueness
-          release=${{ github.event.repository.name }}-${{ inputs.environment || steps.pr.outputs.pr || inputs.tag }}
+          # Simplified tag and release logic
           
-          # version, to support helm packaging for non-pr based releases (workflow_dispatch). default to 1.0.0+github run number
+          # Tag logic: latest for main/deployment-fix, PR number for actual PRs
+          if [ -n "${{ inputs.tag }}" ]; then
+            # Use explicit tag if provided
+            tag="${{ inputs.tag }}"
+          elif [ "${{ github.ref_name }}" == "main" ] || [ "${{ github.ref_name }}" == "deployment-fix" ]; then
+            # Use 'latest' for main and deployment-fix branches
+            tag="latest"
+          elif [ -n "${{ steps.pr.outputs.pr }}" ] && [ "${{ steps.pr.outputs.pr }}" != "null" ] && [ "${{ steps.pr.outputs.pr }}" != "" ]; then
+            # Use PR number for actual PR environments
+            tag="${{ steps.pr.outputs.pr }}"
+          else
+            # Final fallback
+            tag="latest"
+          fi
+
+          # Release name logic
+          if [ -n "${{ inputs.environment }}" ]; then
+            # For test/prod environments, use environment in name
+            release="${{ github.event.repository.name }}-${{ inputs.environment }}"
+          elif [ "${{ github.ref_name }}" == "deployment-fix" ]; then
+            # Special handling for deployment-fix branch
+            release="${{ github.event.repository.name }}-test-deployment-fix"
+          elif [ -n "${{ steps.pr.outputs.pr }}" ] && [ "${{ steps.pr.outputs.pr }}" != "null" ] && [ "${{ steps.pr.outputs.pr }}" != "" ]; then
+            # For actual PRs, use PR number
+            release="${{ github.event.repository.name }}-${{ steps.pr.outputs.pr }}"
+          else
+            # Default fallback
+            release="${{ github.event.repository.name }}-test"
+          fi
+          
+          # Version for helm packaging
           version=1.0.0+${{ github.run_number }}
           
-            # Summary
-          echo "tag=${tag}"
-          echo "release=${release}"
-          echo "version=${version}"
+          # Summary
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Tag: ${tag}"
+          echo "Release: ${release}"
+          echo "Version: ${version}"
 
           # Output
           echo "tag=${tag}" >> $GITHUB_OUTPUT
