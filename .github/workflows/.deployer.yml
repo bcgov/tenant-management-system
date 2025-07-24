@@ -110,15 +110,214 @@ jobs:
       tag: ${{ inputs.tag || steps.pr.outputs.pr }}
       triggered: ${{ steps.deploy.outputs.triggered }}
     steps:
-      - uses: bcgov/action-crunchy@v1.2.2
-        name: Deploy Crunchy
+      - name: Deploy Crunchy Database
         id: deploy_crunchy
+        uses: bcgov/action-oc-runner@10033668ef4374d9bb78149faa73e4ccda0e93dd
         with:
-          oc_namespace: ${{ secrets.OC_NAMESPACE }}
-          oc_token: ${{ secrets.OC_TOKEN }}
-          environment: ${{ inputs.environment }}
-          values_file: ${{ inputs.environment == '' && 'charts/crunchy/values-pr.yml' || 'charts/crunchy/values.yml' }}
+          oc_namespace: ${{ secrets.oc_namespace }}
+          oc_token: ${{ secrets.oc_token }}
+          oc_server: ${{ vars.oc_server }}
           triggers: ${{ inputs.db_triggers }}
+          commands: |
+            # Set database cluster name with proper fallback
+            RELEASE_NAME="${{ steps.vars.outputs.release }}"
+            if [[ -z "$RELEASE_NAME" ]]; then
+              RELEASE_NAME="${{ github.event.repository.name }}-${{ inputs.environment || 'dev' }}"
+            fi
+            DB_CLUSTER_NAME="${RELEASE_NAME}-crunchy"
+            echo "Release name: $RELEASE_NAME"
+            echo "Database cluster name: $DB_CLUSTER_NAME"
+            
+            # Clean up any existing problematic cluster
+            if oc get postgrescluster $DB_CLUSTER_NAME &>/dev/null; then
+              echo "Found existing PostgreSQL cluster $DB_CLUSTER_NAME"
+              
+              # Check for PVC issues in events
+              PVC_ISSUES=$(oc get events --field-selector involvedObject.name=$DB_CLUSTER_NAME-repo-host-0 2>/dev/null | grep -i "persistentvolumeclaim.*not found" || echo "")
+              
+              if [[ -n "$PVC_ISSUES" ]]; then
+                echo "⚠️ Found PVC issues. Cleaning up and recreating..."
+                
+                # Delete the problematic cluster
+                oc delete postgrescluster $DB_CLUSTER_NAME --ignore-not-found=true
+                
+                # Wait for cleanup
+                echo "Waiting for cleanup..."
+                sleep 30
+                
+                # Clean up any stuck resources
+                oc delete pvc -l postgres-operator.crunchydata.com/cluster=$DB_CLUSTER_NAME --ignore-not-found=true
+                oc delete pods -l postgres-operator.crunchydata.com/cluster=$DB_CLUSTER_NAME --ignore-not-found=true
+                
+                # Wait for complete cleanup
+                sleep 10
+              else
+                # Check if it's healthy
+                STATUS=$(oc get postgrescluster $DB_CLUSTER_NAME -o jsonpath='{.status.state}' 2>/dev/null || echo "Unknown")
+                echo "Current status: $STATUS"
+                
+                if [[ "$STATUS" == "Initialized" ]]; then
+                  echo "✅ Database cluster is healthy and ready"
+                  echo "release=$DB_CLUSTER_NAME" >> $GITHUB_OUTPUT
+                  exit 0
+                fi
+              fi
+            fi
+            
+            # Create PostgreSQL cluster without complex backups
+            echo "Creating simplified PostgreSQL cluster $DB_CLUSTER_NAME..."
+            
+            # Set environment-specific values
+            if [[ "${{ inputs.environment }}" == "" ]]; then
+              # PR environment
+              STORAGE_SIZE="2Gi"
+            else
+              # Test/Prod environment  
+              STORAGE_SIZE="5Gi"
+            fi
+            
+            echo "Using storage size: $STORAGE_SIZE"
+            
+            # Create minimal PostgreSQL cluster without backup repos
+            cat <<EOF | oc apply -f -
+            apiVersion: postgres-operator.crunchydata.com/v1beta1
+            kind: PostgresCluster
+            metadata:
+              name: $DB_CLUSTER_NAME
+              labels:
+                app.kubernetes.io/name: postgres
+                app.kubernetes.io/instance: $RELEASE_NAME
+            spec:
+              image: registry.developers.crunchydata.com/crunchydata/crunchy-postgres:ubi8-15.8-1
+              postgresVersion: 15
+              
+              instances:
+                - name: instance1
+                  replicas: 1
+                  
+                  resources:
+                    requests:
+                      cpu: "250m"
+                      memory: "512Mi"
+                    limits:
+                      cpu: "1000m"
+                      memory: "1Gi"
+                  
+                  dataVolumeClaimSpec:
+                    accessModes:
+                      - "ReadWriteOnce"
+                    resources:
+                      requests:
+                        storage: $STORAGE_SIZE
+                    storageClassName: "netapp-file-standard"
+
+              users:
+                - name: ${{ inputs.db_user }}
+                  databases:
+                    - app
+                  options: "SUPERUSER"
+
+              # Minimal backup configuration - no external repos
+              backups:
+                pgbackrest:
+                  image: registry.developers.crunchydata.com/crunchydata/crunchy-pgbackrest:ubi8-2.47-4
+                  global:
+                    repo1-retention-full: "1"
+                  configuration:
+                    - secret:
+                        name: $DB_CLUSTER_NAME-pgbackrest-secret
+                  manual:
+                    repoName: repo1
+                    options:
+                      - --type=full
+            EOF
+            
+            # Create the required pgbackrest secret
+            cat <<EOF | oc apply -f -
+            apiVersion: v1
+            kind: Secret
+            metadata:
+              name: $DB_CLUSTER_NAME-pgbackrest-secret
+            type: Opaque
+            data:
+              # Empty secret for minimal configuration
+              dummy: $(echo -n "dummy" | base64)
+            EOF
+            
+            echo "PostgreSQL cluster created, waiting for initialization..."
+            
+            # Wait for PostgreSQL cluster to be ready with better error handling
+            echo "Waiting for PostgreSQL cluster to be ready..."
+            for i in {1..30}; do
+              # Check if cluster still exists
+              if ! oc get postgrescluster $DB_CLUSTER_NAME &>/dev/null; then
+                echo "❌ PostgreSQL cluster was deleted or failed to create"
+                exit 1
+              fi
+              
+              STATUS=$(oc get postgrescluster $DB_CLUSTER_NAME -o jsonpath='{.status.state}' 2>/dev/null || echo "NoStatus")
+              
+              if [[ "$STATUS" == "Initialized" ]]; then
+                echo "✅ PostgreSQL cluster is ready!"
+                
+                # Verify database user exists
+                USER_SECRET="${DB_CLUSTER_NAME}-pguser-${{ inputs.db_user }}"
+                if oc get secret $USER_SECRET &>/dev/null; then
+                  echo "✅ Database user secret exists: $USER_SECRET"
+                  
+                  # Show connection details
+                  echo "Database connection details:"
+                  echo "Host: ${DB_CLUSTER_NAME}-pgbouncer"
+                  echo "Port: 5432"
+                  echo "Database: app"
+                  echo "User: ${{ inputs.db_user }}"
+                  
+                else
+                  echo "⚠️ Database user secret not found: $USER_SECRET"
+                  echo "Available postgres secrets:"
+                  oc get secrets | grep $DB_CLUSTER_NAME | head -5
+                fi
+                
+                # Set output for the main deployment
+                echo "release=$DB_CLUSTER_NAME" >> $GITHUB_OUTPUT
+                exit 0
+                
+              elif [[ "$STATUS" == "NoStatus" || "$STATUS" == "" ]]; then
+                echo "Attempt $i/30: No status yet, checking pods..."
+                
+                # Check for specific pod issues
+                PODS=$(oc get pods -l postgres-operator.crunchydata.com/cluster=$DB_CLUSTER_NAME --no-headers 2>/dev/null)
+                if [[ -n "$PODS" ]]; then
+                  echo "$PODS"
+                else
+                  echo "No pods found yet"
+                fi
+                
+              else
+                echo "Attempt $i/30: Status is '$STATUS', waiting 20 seconds..."
+              fi
+              
+              # Check for PVC errors at regular intervals
+              if [[ $((i % 5)) -eq 0 ]]; then
+                echo "Checking for PVC issues:"
+                PVC_ERRORS=$(oc get events --field-selector reason=FailedScheduling 2>/dev/null | grep -i "persistentvolumeclaim.*not found" | tail -3 || echo "No PVC errors found")
+                echo "$PVC_ERRORS"
+              fi
+              
+              sleep 20
+            done
+            
+            # If we get here, timeout occurred
+            echo "❌ Timeout waiting for PostgreSQL cluster to be ready"
+            echo "Final status check:"
+            oc get postgrescluster $DB_CLUSTER_NAME -o yaml | grep -A 20 "status:" || echo "No status available"
+            echo ""
+            echo "Pod status:"
+            oc get pods -l postgres-operator.crunchydata.com/cluster=$DB_CLUSTER_NAME
+            echo ""
+            echo "Recent events:"
+            oc get events --sort-by='.lastTimestamp' | grep $DB_CLUSTER_NAME | tail -5
+            exit 1
 
       # Variables
       - if: inputs.tag  == ''
@@ -227,6 +426,16 @@ jobs:
             # Get release name
             RELEASE="${{ inputs.release_name }}"
             
+            # Check if backend secret exists, create if it doesn't
+            if ! oc get secret $RELEASE-backend &> /dev/null; then
+              echo "Creating missing backend secret $RELEASE-backend"
+              oc create secret generic $RELEASE-backend \
+                --from-literal=BCGOV_SSO_API_CLIENT_ID="placeholder" \
+                --from-literal=BCGOV_SSO_API_CLIENT_SECRET="placeholder" \
+                --from-literal=ISSUER="placeholder" \
+                --from-literal=JWKS_URI="placeholder"
+            fi
+            
             # Update secrets with real values
             echo "Patching secret $RELEASE-backend"
             
@@ -275,6 +484,12 @@ jobs:
               echo "Warning: Deployment $RELEASE-backend not found"
             fi
 
+            # Check if frontend ConfigMap exists, create if it doesn't
+            if ! oc get configmap $RELEASE-frontend-config &> /dev/null; then
+              echo "Creating missing frontend ConfigMap $RELEASE-frontend-config"
+              oc create configmap $RELEASE-frontend-config --from-literal=placeholder=placeholder
+            fi
+
             # Update frontend ConfigMap
             echo "Patching ConfigMap $RELEASE-frontend-config"
 
@@ -305,13 +520,17 @@ jobs:
             rm default.json
 
             # Replace the pod instead of restarting to ensure ConfigMap is refreshed
-            oc delete pods -l app.kubernetes.io/instance=$RELEASE-frontend
-            echo "Waiting for frontend deployment to complete..."
-            oc rollout status deployment/$RELEASE-frontend --timeout=300s
+            if oc get deployment/$RELEASE-frontend &>/dev/null; then
+              oc delete pods -l app.kubernetes.io/instance=$RELEASE-frontend
+              echo "Waiting for frontend deployment to complete..."
+              oc rollout status deployment/$RELEASE-frontend --timeout=300s
+            else
+              echo "Warning: Deployment $RELEASE-frontend not found"
+            fi
 
       - name: Update deployment status
         uses: bobheadxi/deployments@v1.4.0
-        if: always()
+        if: always() && steps.deployment.outputs.deployment_id
         with:
           step: finish
           token: ${{ github.token }}
@@ -319,3 +538,11 @@ jobs:
           env: ${{ inputs.environment || 'dev' }}
           deployment_id: ${{ steps.deployment.outputs.deployment_id }}
           env_url: ${{ inputs.deployment_url }}
+
+      - name: Log deployment status (fallback)
+        if: always() && !steps.deployment.outputs.deployment_id
+        run: |
+          echo "⚠️ Deployment tracking was not initialized properly"
+          echo "Job status: ${{ job.status }}"
+          echo "Environment: ${{ inputs.environment || 'dev' }}"
+          echo "URL: ${{ inputs.deployment_url }}"

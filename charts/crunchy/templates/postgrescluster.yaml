@@ -1,0 +1,62 @@
+apiVersion: postgres-operator.crunchydata.com/v1beta1
+kind: PostgresCluster
+metadata:
+  name: {{ include "crunchy.fullname" . }}-crunchy
+  labels:
+    {{- include "crunchy.labels" . | nindent 4 }}
+spec:
+  image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+
+  postgresVersion: {{ .Values.postgresql.version }}
+
+  instances:
+    - name: instance1
+      replicas: {{ .Values.cluster.instances }}
+
+      resources:
+        requests:
+          cpu: {{ .Values.resources.requests.cpu }}
+          memory: {{ .Values.resources.requests.memory }}
+        limits:
+          cpu: {{ .Values.resources.limits.cpu }}
+          memory: {{ .Values.resources.limits.memory }}
+
+      dataVolumeClaimSpec:
+        accessModes:
+          - "ReadWriteOnce"
+        resources:
+          requests:
+            storage: {{ .Values.storage.size }}
+        storageClassName: {{ .Values.storage.storageClass }}
+
+  users:
+    - name: {{ .Values.database.user }}
+      databases:
+        - {{ .Values.database.name }}
+      options: "SUPERUSER"
+
+  backups:
+    pgbackrest:
+      {{- if .Values.pgBackRest.enabled }}
+      global:
+        repo1-retention-full: {{ .Values.pgBackRest.retention.full | quote }}
+        repo1-retention-diff: {{ .Values.pgBackRest.retention.differential | quote }}
+      repos:
+        - name: repo1
+          volume:
+            volumeClaimSpec:
+              accessModes:
+                - "ReadWriteOnce"
+              resources:
+                requests:
+                  storage: {{ .Values.storage.size }}
+              storageClassName: {{ .Values.storage.storageClass }}
+      {{- end }}
+
+  {{- if .Values.postgresql.parameters }}
+  patroni:
+    dynamicConfiguration:
+      postgresql:
+        parameters:
+          {{- toYaml .Values.postgresql.parameters | nindent 10 }}
+  {{- end }}
