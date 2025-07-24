@@ -331,7 +331,7 @@ jobs:
 
       - name: Update deployment status
         uses: bobheadxi/deployments@v1.4.0
-        if: always()
+        if: always() && steps.deployment.outputs.deployment_id
         with:
           step: finish
           token: ${{ github.token }}
@@ -339,3 +339,11 @@ jobs:
           env: ${{ inputs.environment || 'dev' }}
           deployment_id: ${{ steps.deployment.outputs.deployment_id }}
           env_url: ${{ inputs.deployment_url }}
+
+      - name: Log deployment status (fallback)
+        if: always() && !steps.deployment.outputs.deployment_id
+        run: |
+          echo "⚠️ Deployment tracking was not initialized properly"
+          echo "Job status: ${{ job.status }}"
+          echo "Environment: ${{ inputs.environment || 'dev' }}"
+          echo "URL: ${{ inputs.deployment_url }}"
