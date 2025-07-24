@@ -167,18 +167,21 @@ jobs:
             # Create PostgreSQL cluster without complex backups
             echo "Creating simplified PostgreSQL cluster $DB_CLUSTER_NAME..."
             
-            # Set environment-specific values
+# Set environment-specific values optimized for full stack
             if [[ "${{ inputs.environment }}" == "" ]]; then
-              # PR environment
-              STORAGE_SIZE="2Gi"
+              # PR environment - minimal resources
+              STORAGE_SIZE="1Gi"     # Small for PRs
+              BACKUP_SIZE="500Mi"    # Even smaller backup
             else
-              # Test/Prod environment  
-              STORAGE_SIZE="5Gi"
+              # Test/Prod environment - optimized for 5Gi quota with frontend/backend
+              STORAGE_SIZE="2Gi"     # Database gets 2Gi
+              BACKUP_SIZE="1Gi"      # Backup gets 1Gi (total = 3Gi, leaves 2Gi free)
             fi
             
-            echo "Using storage size: $STORAGE_SIZE"
+            echo "Using storage size: $STORAGE_SIZE, backup size: ${BACKUP_SIZE:-$STORAGE_SIZE}"
+            echo "Optimized for full stack deployment (frontend + backend + database)"
             
-            # Create minimal PostgreSQL cluster without backup repos
+            # Create PostgreSQL cluster with reduced storage for full stack
             cat <<EOF | oc apply -f -
             apiVersion: postgres-operator.crunchydata.com/v1beta1
             kind: PostgresCluster
@@ -190,19 +193,20 @@ jobs:
             spec:
               image: registry.developers.crunchydata.com/crunchydata/crunchy-postgres:ubi8-15.8-1
               postgresVersion: 15
-            
+
               instances:
                 - name: instance1
                   replicas: 1
-            
+
+                  # Reduced resources for database to leave room for apps
                   resources:
                     requests:
-                      cpu: "250m"
-                      memory: "512Mi"
+                      cpu: "150m"      # Reduced from 250m
+                      memory: "256Mi"  # Reduced from 512Mi
                     limits:
-                      cpu: "1000m"
-                      memory: "1Gi"
-            
+                      cpu: "500m"     # Reduced from 1000m
+                      memory: "512Mi"  # Reduced from 1Gi
+
                   dataVolumeClaimSpec:
                     accessModes:
                       - "ReadWriteOnce"
@@ -217,12 +221,12 @@ jobs:
                     - app
                   options: "SUPERUSER"
 
-              # Fixed backup configuration with required repos
+              # Minimal backup configuration
               backups:
                 pgbackrest:
                   image: registry.developers.crunchydata.com/crunchydata/crunchy-pgbackrest:ubi8-2.47-4
-            
-                  # This is the missing required section
+
+                  # Required repos section with minimal backup storage
                   repos:
                     - name: repo1
                       volume:
@@ -231,14 +235,14 @@ jobs:
                             - "ReadWriteOnce"
                           resources:
                             requests:
-                              storage: $STORAGE_SIZE
+                              storage: \${BACKUP_SIZE:-$STORAGE_SIZE}
                           storageClassName: "netapp-file-standard"
-            
-                  # Global backup settings
+
+                  # Minimal backup settings to save space
                   global:
-                    repo1-retention-full: "3"
-                    repo1-retention-diff: "1"
-            
+                    repo1-retention-full: "1"    # Keep only 1 full backup
+                    repo1-retention-diff: "0"    # No differential backups
+
                   # Manual backup options
                   manual:
                     repoName: repo1
