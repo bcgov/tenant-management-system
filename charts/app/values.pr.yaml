@@ -1,0 +1,69 @@
+# PR-specific values for the main application chart
+global:
+  registry: ghcr.io
+  domain: apps.silver.devops.gov.bc.ca
+  autoscaling: false
+  secrets:
+    persist: false  # Don't persist secrets for PRs
+  config:
+    nodeEnv: development
+    databaseUser: app
+    dbName: app
+  debug: true
+
+backend:
+  enabled: true
+  replicaCount: 1
+  deploymentStrategy: Recreate  # Faster for PRs
+  imagePullPolicy: Always
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+  autoscaling:
+    enabled: false
+
+  pdb:
+    enabled: false  # Disable for PRs
+
+  service:
+    type: ClusterIP
+    port: 80
+    targetPort: 3000
+
+frontend:
+  enabled: true
+  replicaCount: 1
+  deploymentStrategy: Recreate  # Faster for PRs
+  imagePullPolicy: Always
+
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+  autoscaling:
+    enabled: false
+
+  pdb:
+    enabled: false  # Disable for PRs
+
+  service:
+    type: ClusterIP
+    ports:
+      - port: 80
+        targetPort: 3000
+        name: http
+
+  ingress:
+    enabled: true
+    annotations:
+      route.openshift.io/termination: "edge"

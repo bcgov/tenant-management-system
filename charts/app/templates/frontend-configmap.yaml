@@ -1,0 +1,25 @@
+{{- if .Values.frontend.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-frontend-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "frontend.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-5"
+data:
+  default.json: |
+    {
+      "api": {
+        "baseUrl": "/api/v1"
+      },
+      "oidc": {
+        "clientId": "placeholder",
+        "realm": "standard",
+        "serverUrl": "https://dev.loginproxy.gov.bc.ca/auth",
+        "logoutUrl": "https://dev.loginproxy.gov.bc.ca/auth/realms/standard/protocol/openid-connect/logout"
+      }
+    }
+  {{- end }}
