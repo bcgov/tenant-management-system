@@ -1,76 +1,86 @@
 # PR-specific values for crunchy postgresql
 # Inherits from values.yml and overrides for PR environments
 
-crunchy:
-  # PostgreSQL cluster configuration for PRs
-  cluster:
-    name: crunchy-postgres-pr
-    instances: 1  # Single instance for PR environments
+# Use Crunchy operator (since it's available in your cluster)
+useCrunchyOperator: true
 
-  # PostgreSQL configuration optimized for development
-  postgresql:
-    version: "15"
-    parameters:
-      max_connections: "50"  # Reduced for PR environments
-      shared_buffers: "128MB"
-      effective_cache_size: "512MB"
-      maintenance_work_mem: "32MB"
-      checkpoint_completion_target: "0.9"
-      wal_buffers: "8MB"
-      default_statistics_target: "100"
-      random_page_cost: "1.1"
-      effective_io_concurrency: "200"
+# Image configuration
+image:
+  repository: registry.developers.crunchydata.com/crunchydata/crunchy-postgres
+  tag: "ubi8-15.5-1"
 
-  # Database and user configuration for PRs
-  database:
-    name: app
-    user: app  # This will be overridden by the deployer to include PR number
+# Cluster configuration for PRs
+cluster:
+  name: crunchy-postgres-pr
+  instances: 1  # Single instance for PR environments
 
-  # Reduced resources for PR environments
-  resources:
-    requests:
-      cpu: "50m"
-      memory: "128Mi"
-    limits:
-      cpu: "250m"
-      memory: "256Mi"
+# PostgreSQL configuration optimized for development
+postgresql:
+  version: 15
+  parameters:
+    max_connections: "50"  # Reduced for PR environments
+    shared_buffers: "128MB"
+    effective_cache_size: "512MB"
+    maintenance_work_mem: "32MB"
+    checkpoint_completion_target: "0.9"
+    wal_buffers: "8MB"
+    default_statistics_target: "100"
+    random_page_cost: "1.1"
+    effective_io_concurrency: "200"
 
-  # Smaller storage for PR environments
-  storage:
-    size: "2Gi"
-    storageClass: "netapp-file-standard"
+# Database and user configuration for PRs
+database:
+  name: app
+  user: app  # This will be overridden by the deployer to include PR number
 
-  # Simplified backup configuration for PRs
-  pgBackRest:
+# Reduced resources for PR environments
+resources:
+  requests:
+    cpu: "50m"
+    memory: "128Mi"
+  limits:
+    cpu: "250m"
+    memory: "256Mi"
+
+# Smaller storage for PR environments
+storage:
+  size: "2Gi"
+  storageClass: "netapp-file-standard"
+
+# Simplified backup configuration for PRs
+pgBackRest:
+  enabled: true
+  retention:
+    full: "3"  # Reduced retention for PRs
+    differential: "1"
+
+  # S3 backup disabled for PRs
+  s3:
+    enabled: false
+    bucket: ""
+    endpoint: ""
+    region: ""
+
+  # Local backup only for PRs
+  local:
     enabled: true
-    retention:
-      full: "3"  # Reduced retention for PRs
-      differential: "1"
+    retention: "3-full"
 
-    # S3 backup disabled for PRs
-    s3:
-      enabled: false
-      bucket: ""
-      endpoint: ""
-      region: ""
+# Monitoring disabled for PRs
+monitoring:
+  enabled: false
+  image:
+    repository: registry.developers.crunchydata.com/crunchydata/crunchy-postgres-exporter
+    tag: "ubi8-5.5.0-0"
 
-    # Local backup only for PRs
-    local:
-      enabled: true
-      retention: "3-full"
-
-  # Monitoring disabled for PRs
-  monitoring:
+# Security configuration
+security:
+  tls:
     enabled: false
 
-  # Security configuration
-  security:
-    tls:
-      enabled: false
-
-  # HA disabled for PRs
-  ha:
-    enabled: false
+# HA disabled for PRs
+ha:
+  enabled: false
 
 # Global configuration for PR environments
 global:

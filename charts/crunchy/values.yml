@@ -1,74 +1,85 @@
 # Default values for crunchy postgresql
-crunchy:
-  # PostgreSQL cluster configuration
-  cluster:
-    name: crunchy-postgres
-    instances: 1
 
-  # PostgreSQL version and configuration
-  postgresql:
-    version: "15"
-    parameters:
-      max_connections: "200"
-      shared_buffers: "256MB"
-      effective_cache_size: "1GB"
-      maintenance_work_mem: "64MB"
-      checkpoint_completion_target: "0.9"
-      wal_buffers: "16MB"
-      default_statistics_target: "100"
-      random_page_cost: "1.1"
-      effective_io_concurrency: "200"
+# Use Crunchy operator (since it's available in your cluster)
+useCrunchyOperator: true
 
-  # Database and user configuration
-  database:
-    name: app
-    user: app
+# Image configuration
+image:
+  repository: registry.developers.crunchydata.com/crunchydata/crunchy-postgres
+  tag: "ubi8-15.5-1"
 
-  # Resource configuration
-  resources:
-    requests:
-      cpu: "100m"
-      memory: "256Mi"
-    limits:
-      cpu: "500m"
-      memory: "512Mi"
+# Cluster configuration
+cluster:
+  name: crunchy-postgres
+  instances: 1
 
-  # Storage configuration
-  storage:
-    size: "5Gi"
-    storageClass: "netapp-file-standard"
+# PostgreSQL version and configuration
+postgresql:
+  version: 15
+  parameters:
+    max_connections: "200"
+    shared_buffers: "256MB"
+    effective_cache_size: "1GB"
+    maintenance_work_mem: "64MB"
+    checkpoint_completion_target: "0.9"
+    wal_buffers: "16MB"
+    default_statistics_target: "100"
+    random_page_cost: "1.1"
+    effective_io_concurrency: "200"
 
-  # Backup configuration with pgBackRest
-  pgBackRest:
+# Database and user configuration
+database:
+  name: app
+  user: app
+
+# Resource configuration
+resources:
+  requests:
+    cpu: "100m"
+    memory: "256Mi"
+  limits:
+    cpu: "500m"
+    memory: "512Mi"
+
+# Storage configuration
+storage:
+  size: "5Gi"
+  storageClass: "netapp-file-standard"
+
+# Backup configuration with pgBackRest
+pgBackRest:
+  enabled: true
+  retention:
+    full: "7"
+    differential: "3"
+
+  # S3 backup configuration (disabled by default)
+  s3:
+    enabled: false
+    bucket: ""
+    endpoint: ""
+    region: ""
+
+  # Local backup configuration
+  local:
     enabled: true
-    retention:
-      full: "7"
-      differential: "3"
+    retention: "7-full"
 
-    # S3 backup configuration (disabled by default)
-    s3:
-      enabled: false
-      bucket: ""
-      endpoint: ""
-      region: ""
+# Monitoring configuration
+monitoring:
+  enabled: false
+  image:
+    repository: registry.developers.crunchydata.com/crunchydata/crunchy-postgres-exporter
+    tag: "ubi8-5.5.0-0"
 
-    # Local backup configuration
-    local:
-      enabled: true
-      retention: "7-full"
-
-  # Monitoring configuration
-  monitoring:
+# Security configuration
+security:
+  tls:
     enabled: false
 
-  # Security configuration
-  security:
-    tls:
-      enabled: false
-
-  # High availability configuration
-  ha:
-    enabled: false
+# High availability configuration
+ha:
+  enabled: false
 
 # Global configuration that can be overridden
 global:
