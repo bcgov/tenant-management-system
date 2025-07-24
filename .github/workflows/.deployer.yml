@@ -128,59 +128,58 @@ jobs:
             echo "Release name: $RELEASE_NAME"
             echo "Database cluster name: $DB_CLUSTER_NAME"
             
-            # Check if PostgreSQL cluster already exists
+            # Clean up any existing problematic cluster
             if oc get postgrescluster $DB_CLUSTER_NAME &>/dev/null; then
-              echo "PostgreSQL cluster $DB_CLUSTER_NAME already exists"
+              echo "Found existing PostgreSQL cluster $DB_CLUSTER_NAME"
               
-              # Check if it's healthy
-              STATUS=$(oc get postgrescluster $DB_CLUSTER_NAME -o jsonpath='{.status.state}' 2>/dev/null || echo "Unknown")
-              echo "Current status: $STATUS"
+              # Check for PVC issues in events
+              PVC_ISSUES=$(oc get events --field-selector involvedObject.name=$DB_CLUSTER_NAME-repo-host-0 2>/dev/null | grep -i "persistentvolumeclaim.*not found" || echo "")
               
-              # Check for pod issues
-              echo "Checking pod status:"
-              oc get pods -l postgres-operator.crunchydata.com/cluster=$DB_CLUSTER_NAME
-              
-              # Look for ImagePullBackOff or other issues
-              POD_ISSUES=$(oc get pods -l postgres-operator.crunchydata.com/cluster=$DB_CLUSTER_NAME -o jsonpath='{.items[*].status.containerStatuses[*].state.waiting.reason}' 2>/dev/null || echo "")
-              
-              if [[ "$POD_ISSUES" == *"ImagePullBackOff"* ]]; then
-                echo "⚠️ Found ImagePullBackOff errors. Deleting and recreating cluster..."
+              if [[ -n "$PVC_ISSUES" ]]; then
+                echo "⚠️ Found PVC issues. Cleaning up and recreating..."
+                
+                # Delete the problematic cluster
                 oc delete postgrescluster $DB_CLUSTER_NAME --ignore-not-found=true
                 
                 # Wait for cleanup
                 echo "Waiting for cleanup..."
                 sleep 30
                 
-                # Remove any stuck PVCs
+                # Clean up any stuck resources
                 oc delete pvc -l postgres-operator.crunchydata.com/cluster=$DB_CLUSTER_NAME --ignore-not-found=true
+                oc delete pods -l postgres-operator.crunchydata.com/cluster=$DB_CLUSTER_NAME --ignore-not-found=true
                 
-              elif [[ "$STATUS" == "Initialized" ]]; then
-                echo "✅ Database cluster is healthy and ready"
-                echo "release=$DB_CLUSTER_NAME" >> $GITHUB_OUTPUT
-                exit 0
+                # Wait for complete cleanup
+                sleep 10
               else
-                echo "⚠️ Database cluster exists but status is: $STATUS"
-                echo "Will continue to wait..."
+                # Check if it's healthy
+                STATUS=$(oc get postgrescluster $DB_CLUSTER_NAME -o jsonpath='{.status.state}' 2>/dev/null || echo "Unknown")
+                echo "Current status: $STATUS"
+                
+                if [[ "$STATUS" == "Initialized" ]]; then
+                  echo "✅ Database cluster is healthy and ready"
+                  echo "release=$DB_CLUSTER_NAME" >> $GITHUB_OUTPUT
+                  exit 0
+                fi
               fi
             fi
             
-            # Create or recreate PostgreSQL cluster
-            if ! oc get postgrescluster $DB_CLUSTER_NAME &>/dev/null; then
-              echo "Creating PostgreSQL cluster $DB_CLUSTER_NAME..."
-              
-              # Set environment-specific values
-              if [[ "${{ inputs.environment }}" == "" ]]; then
-                # PR environment
-                STORAGE_SIZE="2Gi"
-              else
-                # Test/Prod environment  
-                STORAGE_SIZE="5Gi"
-              fi
-              
-              echo "Using storage size: $STORAGE_SIZE"
-              
-              # Create simplified PostgreSQL cluster (without complex backups)
-              cat <<EOF | oc apply -f -
+            # Create PostgreSQL cluster without complex backups
+            echo "Creating simplified PostgreSQL cluster $DB_CLUSTER_NAME..."
+            
+            # Set environment-specific values
+            if [[ "${{ inputs.environment }}" == "" ]]; then
+              # PR environment
+              STORAGE_SIZE="2Gi"
+            else
+              # Test/Prod environment  
+              STORAGE_SIZE="5Gi"
+            fi
+            
+            echo "Using storage size: $STORAGE_SIZE"
+            
+            # Create minimal PostgreSQL cluster without backup repos
+            cat <<EOF | oc apply -f -
             apiVersion: postgres-operator.crunchydata.com/v1beta1
             kind: PostgresCluster
             metadata:
@@ -218,27 +217,34 @@ jobs:
                     - app
                   options: "SUPERUSER"
 
-              # Simplified backup configuration
+              # Minimal backup configuration - no external repos
               backups:
                 pgbackrest:
                   image: registry.developers.crunchydata.com/crunchydata/crunchy-pgbackrest:ubi8-2.47-4
                   global:
-                    repo1-retention-full: "3"
-                    repo1-retention-diff: "1"
-                  repos:
-                    - name: repo1
-                      volume:
-                        volumeClaimSpec:
-                          accessModes:
-                            - "ReadWriteOnce"
-                          resources:
-                            requests:
-                              storage: "1Gi"
-                          storageClassName: "netapp-file-standard"
+                    repo1-retention-full: "1"
+                  configuration:
+                    - secret:
+                        name: $DB_CLUSTER_NAME-pgbackrest-secret
+                  manual:
+                    repoName: repo1
+                    options:
+                      - --type=full
             EOF
-              
-              echo "PostgreSQL cluster created, waiting for initialization..."
-            fi
+            
+            # Create the required pgbackrest secret
+            cat <<EOF | oc apply -f -
+            apiVersion: v1
+            kind: Secret
+            metadata:
+              name: $DB_CLUSTER_NAME-pgbackrest-secret
+            type: Opaque
+            data:
+              # Empty secret for minimal configuration
+              dummy: $(echo -n "dummy" | base64)
+            EOF
+            
+            echo "PostgreSQL cluster created, waiting for initialization..."
             
             # Wait for PostgreSQL cluster to be ready with better error handling
             echo "Waiting for PostgreSQL cluster to be ready..."
@@ -258,10 +264,18 @@ jobs:
                 USER_SECRET="${DB_CLUSTER_NAME}-pguser-${{ inputs.db_user }}"
                 if oc get secret $USER_SECRET &>/dev/null; then
                   echo "✅ Database user secret exists: $USER_SECRET"
+                  
+                  # Show connection details
+                  echo "Database connection details:"
+                  echo "Host: ${DB_CLUSTER_NAME}-pgbouncer"
+                  echo "Port: 5432"
+                  echo "Database: app"
+                  echo "User: ${{ inputs.db_user }}"
+                  
                 else
                   echo "⚠️ Database user secret not found: $USER_SECRET"
                   echo "Available postgres secrets:"
-                  oc get secrets | grep postgres | head -5
+                  oc get secrets | grep $DB_CLUSTER_NAME | head -5
                 fi
                 
                 # Set output for the main deployment
@@ -272,25 +286,22 @@ jobs:
                 echo "Attempt $i/30: No status yet, checking pods..."
                 
                 # Check for specific pod issues
-                oc get pods -l postgres-operator.crunchydata.com/cluster=$DB_CLUSTER_NAME --no-headers 2>/dev/null | while read pod rest; do
-                  if [[ -n "$pod" ]]; then
-                    echo "Pod $pod: $rest"
-                  fi
-                done
+                PODS=$(oc get pods -l postgres-operator.crunchydata.com/cluster=$DB_CLUSTER_NAME --no-headers 2>/dev/null)
+                if [[ -n "$PODS" ]]; then
+                  echo "$PODS"
+                else
+                  echo "No pods found yet"
+                fi
                 
               else
                 echo "Attempt $i/30: Status is '$STATUS', waiting 20 seconds..."
               fi
               
-              # Check for pod errors at regular intervals
+              # Check for PVC errors at regular intervals
               if [[ $((i % 5)) -eq 0 ]]; then
-                echo "Pod status check:"
-                POD_ERRORS=$(oc get pods -l postgres-operator.crunchydata.com/cluster=$DB_CLUSTER_NAME -o jsonpath='{range .items[*]}{.metadata.name}: {.status.phase} - {.status.containerStatuses[*].state.waiting.reason}{"\n"}{end}' 2>/dev/null || echo "No pods found")
-                echo "$POD_ERRORS"
-                
-                if [[ "$POD_ERRORS" == *"ImagePullBackOff"* ]]; then
-                  echo "❌ Still having image pull issues, this may not resolve automatically"
-                fi
+                echo "Checking for PVC issues:"
+                PVC_ERRORS=$(oc get events --field-selector reason=FailedScheduling 2>/dev/null | grep -i "persistentvolumeclaim.*not found" | tail -3 || echo "No PVC errors found")
+                echo "$PVC_ERRORS"
               fi
               
               sleep 20
@@ -299,13 +310,13 @@ jobs:
             # If we get here, timeout occurred
             echo "❌ Timeout waiting for PostgreSQL cluster to be ready"
             echo "Final status check:"
-            oc get postgrescluster $DB_CLUSTER_NAME -o yaml | head -50
+            oc get postgrescluster $DB_CLUSTER_NAME -o yaml | grep -A 20 "status:" || echo "No status available"
             echo ""
             echo "Pod status:"
             oc get pods -l postgres-operator.crunchydata.com/cluster=$DB_CLUSTER_NAME
             echo ""
-            echo "Pod events:"
-            oc get events --field-selector involvedObject.name=$DB_CLUSTER_NAME --sort-by='.lastTimestamp' | tail -10
+            echo "Recent events:"
+            oc get events --sort-by='.lastTimestamp' | grep $DB_CLUSTER_NAME | tail -5
             exit 1
 
       # Variables
