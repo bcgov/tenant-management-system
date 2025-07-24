@@ -24,6 +24,7 @@ permissions:
   contents: read
   deployments: write
   id-token: write
+  packages: write  # Added this permission
 
 jobs:
   builds:
@@ -31,6 +32,7 @@ jobs:
     uses: ./.github/workflows/.build-images.yml
     permissions:
       packages: write
+      id-token: write  # Explicitly grant id-token permission to this job
     with:
       tags: ${{ inputs.tags || 'latest' }}
       keep_versions: 10
