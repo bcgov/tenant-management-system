@@ -61,7 +61,7 @@ jobs:
         --set global.autoscaling=true
         --set frontend.pdb.enabled=true
         --set backend.pdb.enabled=true
-      deployment_url: https://${{ github.event.repository.name }}-${{ github.ref_name == 'main' && 'test' || format('test-{0}', github.ref_name) }}-frontend.apps.silver.devops.gov.bc.ca
+      deployment_url: https://${{ github.event.repository.name }}-test-frontend.apps.silver.devops.gov.bc.ca
 
   # Only run security scan and prod deployment for main branch
   test_security_scan:
