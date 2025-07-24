@@ -136,40 +136,50 @@ jobs:
               STATUS=$(oc get postgrescluster $DB_CLUSTER_NAME -o jsonpath='{.status.state}' 2>/dev/null || echo "Unknown")
               echo "Current status: $STATUS"
               
-              if [[ "$STATUS" == "Initialized" ]]; then
+              # Check for pod issues
+              echo "Checking pod status:"
+              oc get pods -l postgres-operator.crunchydata.com/cluster=$DB_CLUSTER_NAME
+              
+              # Look for ImagePullBackOff or other issues
+              POD_ISSUES=$(oc get pods -l postgres-operator.crunchydata.com/cluster=$DB_CLUSTER_NAME -o jsonpath='{.items[*].status.containerStatuses[*].state.waiting.reason}' 2>/dev/null || echo "")
+              
+              if [[ "$POD_ISSUES" == *"ImagePullBackOff"* ]]; then
+                echo "⚠️ Found ImagePullBackOff errors. Deleting and recreating cluster..."
+                oc delete postgrescluster $DB_CLUSTER_NAME --ignore-not-found=true
+                
+                # Wait for cleanup
+                echo "Waiting for cleanup..."
+                sleep 30
+                
+                # Remove any stuck PVCs
+                oc delete pvc -l postgres-operator.crunchydata.com/cluster=$DB_CLUSTER_NAME --ignore-not-found=true
+                
+              elif [[ "$STATUS" == "Initialized" ]]; then
                 echo "✅ Database cluster is healthy and ready"
                 echo "release=$DB_CLUSTER_NAME" >> $GITHUB_OUTPUT
                 exit 0
-              elif [[ "$STATUS" == "Initializing" ]]; then
-                echo "⏳ Database cluster is still initializing, waiting..."
               else
                 echo "⚠️ Database cluster exists but status is: $STATUS"
-                echo "Checking pods for more details..."
-                oc get pods -l postgres-operator.crunchydata.com/cluster=$DB_CLUSTER_NAME
-                
-                # Decide whether to recreate or wait
-                echo "Attempting to wait for current cluster to become ready..."
+                echo "Will continue to wait..."
               fi
-            else
-              echo "PostgreSQL cluster $DB_CLUSTER_NAME does not exist, creating it..."
+            fi
+            
+            # Create or recreate PostgreSQL cluster
+            if ! oc get postgrescluster $DB_CLUSTER_NAME &>/dev/null; then
+              echo "Creating PostgreSQL cluster $DB_CLUSTER_NAME..."
               
               # Set environment-specific values
               if [[ "${{ inputs.environment }}" == "" ]]; then
                 # PR environment
                 STORAGE_SIZE="2Gi"
-                RETENTION_FULL="3"
-                RETENTION_DIFF="1"
               else
-                # Test/Prod environment
+                # Test/Prod environment  
                 STORAGE_SIZE="5Gi"
-                RETENTION_FULL="7"
-                RETENTION_DIFF="3"
               fi
               
               echo "Using storage size: $STORAGE_SIZE"
-              echo "Using retention - full: $RETENTION_FULL, diff: $RETENTION_DIFF"
               
-              # Create PostgreSQL cluster
+              # Create simplified PostgreSQL cluster (without complex backups)
               cat <<EOF | oc apply -f -
             apiVersion: postgres-operator.crunchydata.com/v1beta1
             kind: PostgresCluster
@@ -179,7 +189,7 @@ jobs:
                 app.kubernetes.io/name: postgres
                 app.kubernetes.io/instance: $RELEASE_NAME
             spec:
-              image: registry.developers.crunchydata.com/crunchydata/crunchy-postgres:ubi8-15.5-1
+              image: registry.developers.crunchydata.com/crunchydata/crunchy-postgres:ubi8-15.8-1
               postgresVersion: 15
               
               instances:
@@ -188,11 +198,11 @@ jobs:
                   
                   resources:
                     requests:
-                      cpu: "100m"
-                      memory: "256Mi"
-                    limits:
-                      cpu: "500m"
+                      cpu: "250m"
                       memory: "512Mi"
+                    limits:
+                      cpu: "1000m"
+                      memory: "1Gi"
                   
                   dataVolumeClaimSpec:
                     accessModes:
@@ -208,11 +218,13 @@ jobs:
                     - app
                   options: "SUPERUSER"
 
+              # Simplified backup configuration
               backups:
                 pgbackrest:
+                  image: registry.developers.crunchydata.com/crunchydata/crunchy-pgbackrest:ubi8-2.47-4
                   global:
-                    repo1-retention-full: "$RETENTION_FULL"
-                    repo1-retention-diff: "$RETENTION_DIFF"
+                    repo1-retention-full: "3"
+                    repo1-retention-diff: "1"
                   repos:
                     - name: repo1
                       volume:
@@ -221,17 +233,23 @@ jobs:
                             - "ReadWriteOnce"
                           resources:
                             requests:
-                              storage: $STORAGE_SIZE
+                              storage: "1Gi"
                           storageClassName: "netapp-file-standard"
             EOF
               
               echo "PostgreSQL cluster created, waiting for initialization..."
             fi
             
-            # Wait for PostgreSQL cluster to be ready (both new and existing)
+            # Wait for PostgreSQL cluster to be ready with better error handling
             echo "Waiting for PostgreSQL cluster to be ready..."
-            for i in {1..60}; do
-              STATUS=$(oc get postgrescluster $DB_CLUSTER_NAME -o jsonpath='{.status.state}' 2>/dev/null || echo "NotFound")
+            for i in {1..30}; do
+              # Check if cluster still exists
+              if ! oc get postgrescluster $DB_CLUSTER_NAME &>/dev/null; then
+                echo "❌ PostgreSQL cluster was deleted or failed to create"
+                exit 1
+              fi
+              
+              STATUS=$(oc get postgrescluster $DB_CLUSTER_NAME -o jsonpath='{.status.state}' 2>/dev/null || echo "NoStatus")
               
               if [[ "$STATUS" == "Initialized" ]]; then
                 echo "✅ PostgreSQL cluster is ready!"
@@ -242,35 +260,52 @@ jobs:
                   echo "✅ Database user secret exists: $USER_SECRET"
                 else
                   echo "⚠️ Database user secret not found: $USER_SECRET"
-                  echo "Available secrets:"
-                  oc get secrets | grep $DB_CLUSTER_NAME | head -5
+                  echo "Available postgres secrets:"
+                  oc get secrets | grep postgres | head -5
                 fi
                 
                 # Set output for the main deployment
                 echo "release=$DB_CLUSTER_NAME" >> $GITHUB_OUTPUT
                 exit 0
                 
-              elif [[ "$STATUS" == "NotFound" ]]; then
-                echo "❌ PostgreSQL cluster not found"
-                exit 1
+              elif [[ "$STATUS" == "NoStatus" || "$STATUS" == "" ]]; then
+                echo "Attempt $i/30: No status yet, checking pods..."
+                
+                # Check for specific pod issues
+                oc get pods -l postgres-operator.crunchydata.com/cluster=$DB_CLUSTER_NAME --no-headers 2>/dev/null | while read pod rest; do
+                  if [[ -n "$pod" ]]; then
+                    echo "Pod $pod: $rest"
+                  fi
+                done
                 
               else
-                echo "Attempt $i/60: Status is '$STATUS', waiting 10 seconds..."
-                if [[ $i -eq 30 ]]; then
-                  echo "Half-way through wait time, checking pods:"
-                  oc get pods -l postgres-operator.crunchydata.com/cluster=$DB_CLUSTER_NAME
+                echo "Attempt $i/30: Status is '$STATUS', waiting 20 seconds..."
+              fi
+              
+              # Check for pod errors at regular intervals
+              if [[ $((i % 5)) -eq 0 ]]; then
+                echo "Pod status check:"
+                POD_ERRORS=$(oc get pods -l postgres-operator.crunchydata.com/cluster=$DB_CLUSTER_NAME -o jsonpath='{range .items[*]}{.metadata.name}: {.status.phase} - {.status.containerStatuses[*].state.waiting.reason}{"\n"}{end}' 2>/dev/null || echo "No pods found")
+                echo "$POD_ERRORS"
+                
+                if [[ "$POD_ERRORS" == *"ImagePullBackOff"* ]]; then
+                  echo "❌ Still having image pull issues, this may not resolve automatically"
                 fi
               fi
               
-              sleep 10
+              sleep 20
             done
             
             # If we get here, timeout occurred
             echo "❌ Timeout waiting for PostgreSQL cluster to be ready"
             echo "Final status check:"
-            oc get postgrescluster $DB_CLUSTER_NAME -o yaml
+            oc get postgrescluster $DB_CLUSTER_NAME -o yaml | head -50
+            echo ""
             echo "Pod status:"
             oc get pods -l postgres-operator.crunchydata.com/cluster=$DB_CLUSTER_NAME
+            echo ""
+            echo "Pod events:"
+            oc get events --field-selector involvedObject.name=$DB_CLUSTER_NAME --sort-by='.lastTimestamp' | tail -10
             exit 1
 
       # Variables
