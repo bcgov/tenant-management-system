@@ -191,7 +191,7 @@ jobs:
                 app.kubernetes.io/name: postgres
                 app.kubernetes.io/instance: $RELEASE_NAME
             spec:
-              image: registry.developers.crunchydata.com/crunchydata/crunchy-postgres:ubi8-15.8-1
+              image: registry.developers.crunchydata.com/crunchydata/crunchy-postgres:ubi8-15.3-2512
               postgresVersion: 15
 
               instances:
@@ -224,7 +224,7 @@ jobs:
               # Minimal backup configuration
               backups:
                 pgbackrest:
-                  image: registry.developers.crunchydata.com/crunchydata/crunchy-pgbackrest:ubi8-2.47-4
+                  image: registry.developers.crunchydata.com/crunchydata/crunchy-pgbackrest:ubi8-2.45-2512
 
                   # Required repos section with minimal backup storage
                   repos:
