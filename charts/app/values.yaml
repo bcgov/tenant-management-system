@@ -143,7 +143,7 @@ frontend:
 
 bitnami-pg:
   enabled: false
-  
+
 # Crunchy database configuration
 crunchy:
   enabled: true
