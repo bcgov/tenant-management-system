@@ -1,3 +1,4 @@
+# Values for PR environment Crunchy PostgreSQL
 global:
   config:
     dbName: app
@@ -5,19 +6,87 @@ global:
 crunchy:
   enabled: true
   instances:
-    replicas: 1  # Single replica for PRs
+    name: db
+    replicas: 1  # Single replica for PR environment
+    metadata:
+      annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: '9187'
     dataVolumeClaimSpec:
-      storage: 5Gi  # Keep current size
-      walStorage: 2Gi
+      storage: 3Gi
+      storageClassName: netapp-block-standard
+      walStorage: 1Gi
+
     requests:
-      cpu: 100m
-      memory: 256Mi
+      cpu: 100m  # Increased from 50m
+      memory: 256Mi  # Increased from 128Mi
+    replicaCertCopy:
+      requests:
+        cpu: 1m
+        memory: 32Mi
 
   pgBackRest:
-    enabled: false  # Keep disabled for PR environments to save resources
+    enabled: false  # Disabled for PR to save resources
+    backupPath: /backups/dev/cluster/version
+    clusterCounter: 1
+    retentionFullType: count
+    s3:
+      enabled: false
+    pvc:
+      retention: 1
+      retentionFullType: count
+      fullBackupSchedule: 0 8 * * *
+      incrementalBackupSchedule: 0 0-7,9-23 * * *
+      volume:
+        accessModes: "ReadWriteOnce"
+        storage: 100Mi
+        storageClassName: netapp-file-backup
+    config:
+      requests:
+        cpu: 5m
+        memory: 32Mi
+    repoHost:
+      requests:
+        cpu: 20m
+        memory: 128Mi
+    sidecars:
+      requests:
+        cpu: 5m
+        memory: 16Mi
+    jobs:
+      requests:
+        cpu: 20m
+        memory: 128Mi
+
+  patroni:
+    postgresql:
+      pg_hba:
+        - "host all all 0.0.0.0/0 md5"
+        - "host all all ::1/128 md5"
+      parameters:
+        shared_buffers: 64MB  # Increased from 16MB
+        wal_buffers: "2MB"    # Increased from 64kB
+        min_wal_size: 32MB
+        max_wal_size: 64MB
+        max_slot_wal_keep_size: 128MB
+        work_mem: 4MB         # Increased from 2MB
+        log_min_duration_statement: 1000ms
+        effective_io_concurrency: 20
 
   proxy:
     enabled: true
     pgBouncer:
+      image: # Default Crunchy image
       replicas: 1
-      maxConnections: 25
+      requests:
+        cpu: 10m
+        memory: 64Mi
+      maxConnections: 25  # Increased from 10
+
+  pgmonitor:
+    enabled: false
+    exporter:
+      image: # Default Crunchy image
+      requests:
+        cpu: 10m
+        memory: 32Mi
