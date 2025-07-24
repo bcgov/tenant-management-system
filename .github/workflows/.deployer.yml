@@ -342,13 +342,13 @@ jobs:
             tag="latest"
           fi
 
-          # Release name logic
+          # Release name logic - FIXED for deployment-fix to use 'test'
           if [ -n "${{ inputs.environment }}" ]; then
             # For test/prod environments, use environment in name
             release="${{ github.event.repository.name }}-${{ inputs.environment }}"
           elif [ "${{ github.ref_name }}" == "deployment-fix" ]; then
-            # Special handling for deployment-fix branch
-            release="${{ github.event.repository.name }}-test-deployment-fix"
+            # Use 'test' for deployment-fix branch (same as main)
+            release="${{ github.event.repository.name }}-test"
           elif [ -n "${{ steps.pr.outputs.pr }}" ] && [ "${{ steps.pr.outputs.pr }}" != "null" ] && [ "${{ steps.pr.outputs.pr }}" != "" ]; then
             # For actual PRs, use PR number
             release="${{ github.event.repository.name }}-${{ steps.pr.outputs.pr }}"
