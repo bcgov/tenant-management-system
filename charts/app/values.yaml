@@ -29,7 +29,7 @@ global:
 backend:
   #-- enable or disable backend
   repository: ghcr.io/bcgov/tenant-management-system/backend
-  tag: { { .Values.global.tag | default "latest" } }
+  tag: "{{ .Values.global.tag | default \"latest\" }}"
   enabled: true
   pullPolicy: Always
   environment:
@@ -92,7 +92,7 @@ backend:
 frontend:
   # -- enable or disable a component deployment.
   repository: ghcr.io/bcgov/tenant-management-system/frontend
-  tags: { { .Values.global.tag | default "latest" } }
+  tags: "{{ .Values.global.tag | default \"latest\" }}"
   enabled: true
   pullPolicy: Always
   environment:
