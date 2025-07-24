@@ -167,7 +167,7 @@ jobs:
             # Create PostgreSQL cluster without complex backups
             echo "Creating simplified PostgreSQL cluster $DB_CLUSTER_NAME..."
             
-# Set environment-specific values optimized for full stack
+            # Set environment-specific values optimized for full stack
             if [[ "${{ inputs.environment }}" == "" ]]; then
               # PR environment - minimal resources
               STORAGE_SIZE="1Gi"     # Small for PRs
