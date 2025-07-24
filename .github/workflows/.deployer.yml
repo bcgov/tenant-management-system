@@ -124,205 +124,197 @@ jobs:
             if [[ -z "$RELEASE_NAME" ]]; then
               RELEASE_NAME="${{ github.event.repository.name }}-${{ inputs.environment || 'dev' }}"
             fi
-            DB_CLUSTER_NAME="${RELEASE_NAME}-crunchy"
+            DB_CLUSTER_NAME="${RELEASE_NAME}-postgres"
             echo "Release name: $RELEASE_NAME"
             echo "Database cluster name: $DB_CLUSTER_NAME"
             
-            # Clean up any existing problematic cluster
-            if oc get postgrescluster $DB_CLUSTER_NAME &>/dev/null; then
-              echo "Found existing PostgreSQL cluster $DB_CLUSTER_NAME"
-              
-              # Check for PVC issues in events
-              PVC_ISSUES=$(oc get events --field-selector involvedObject.name=$DB_CLUSTER_NAME-repo-host-0 2>/dev/null | grep -i "persistentvolumeclaim.*not found" || echo "")
-              
-              if [[ -n "$PVC_ISSUES" ]]; then
-                echo "⚠️ Found PVC issues. Cleaning up and recreating..."
-                
-                # Delete the problematic cluster
-                oc delete postgrescluster $DB_CLUSTER_NAME --ignore-not-found=true
-                
-                # Wait for cleanup
-                echo "Waiting for cleanup..."
-                sleep 30
-                
-                # Clean up any stuck resources
-                oc delete pvc -l postgres-operator.crunchydata.com/cluster=$DB_CLUSTER_NAME --ignore-not-found=true
-                oc delete pods -l postgres-operator.crunchydata.com/cluster=$DB_CLUSTER_NAME --ignore-not-found=true
-                
-                # Wait for complete cleanup
-                sleep 10
-              else
-                # Check if it's healthy
-                STATUS=$(oc get postgrescluster $DB_CLUSTER_NAME -o jsonpath='{.status.state}' 2>/dev/null || echo "Unknown")
-                echo "Current status: $STATUS"
-                
-                if [[ "$STATUS" == "Initialized" ]]; then
-                  echo "✅ Database cluster is healthy and ready"
-                  echo "release=$DB_CLUSTER_NAME" >> $GITHUB_OUTPUT
-                  exit 0
-                fi
-              fi
-            fi
+            # Clean up any existing Crunchy clusters that are failing
+            oc delete postgrescluster --all --ignore-not-found=true
+            echo "Cleaned up any existing failed PostgreSQL clusters"
             
-            # Create PostgreSQL cluster without complex backups
-            echo "Creating simplified PostgreSQL cluster $DB_CLUSTER_NAME..."
-            
-            # Set environment-specific values optimized for full stack
+            # Set storage size based on environment
             if [[ "${{ inputs.environment }}" == "" ]]; then
-              # PR environment - minimal resources
-              STORAGE_SIZE="1Gi"     # Small for PRs
-              BACKUP_SIZE="500Mi"    # Even smaller backup
+              STORAGE_SIZE="1Gi"
             else
-              # Test/Prod environment - optimized for 5Gi quota with frontend/backend
-              STORAGE_SIZE="2Gi"     # Database gets 2Gi
-              BACKUP_SIZE="1Gi"      # Backup gets 1Gi (total = 3Gi, leaves 2Gi free)
+              STORAGE_SIZE="3Gi"  # Use 3Gi out of 5Gi quota
             fi
-          
-            echo "Using storage size: $STORAGE_SIZE, backup size: $BACKUP_SIZE"
-            echo "Optimized for full stack deployment (frontend + backend + database)"
             
-            # Create PostgreSQL cluster with reduced storage for full stack
+            echo "Using simple PostgreSQL deployment with storage size: $STORAGE_SIZE"
+            
+            # Generate a random password for PostgreSQL
+            DB_PASSWORD=$(openssl rand -base64 32)
+            
+            # Create simple PostgreSQL deployment that actually works
             cat <<EOF | oc apply -f -
-            apiVersion: postgres-operator.crunchydata.com/v1beta1
-            kind: PostgresCluster
+            # PostgreSQL Secret
+            apiVersion: v1
+            kind: Secret
             metadata:
-              name: $DB_CLUSTER_NAME
+              name: ${DB_CLUSTER_NAME}-pguser-${{ inputs.db_user }}
+              labels:
+                app.kubernetes.io/name: postgres
+                app.kubernetes.io/instance: $RELEASE_NAME
+            type: Opaque
+            data:
+              password: $(echo -n "$DB_PASSWORD" | base64 -w0)
+              username: $(echo -n "${{ inputs.db_user }}" | base64 -w0)
+              dbname: $(echo -n "app" | base64 -w0)
+              host: $(echo -n "${DB_CLUSTER_NAME}-pgbouncer" | base64 -w0)
+              port: $(echo -n "5432" | base64 -w0)
+            ---
+            # PostgreSQL PVC
+            apiVersion: v1
+            kind: PersistentVolumeClaim
+            metadata:
+              name: ${DB_CLUSTER_NAME}-data
               labels:
                 app.kubernetes.io/name: postgres
                 app.kubernetes.io/instance: $RELEASE_NAME
             spec:
-              image: registry.developers.crunchydata.com/crunchydata/crunchy-postgres:ubi8-15.3-2512
-              postgresVersion: 15
-
-              instances:
-                - name: instance1
-                  replicas: 1
-
-                  # Reduced resources for database to leave room for apps
-                  resources:
-                    requests:
-                      cpu: "150m"      # Reduced from 250m
-                      memory: "256Mi"  # Reduced from 512Mi
-                    limits:
-                      cpu: "500m"     # Reduced from 1000m
-                      memory: "512Mi"  # Reduced from 1Gi
-
-                  dataVolumeClaimSpec:
-                    accessModes:
-                      - "ReadWriteOnce"
+              accessModes:
+                - ReadWriteOnce
+              resources:
+                requests:
+                  storage: $STORAGE_SIZE
+              storageClassName: netapp-file-standard
+            ---
+            # PostgreSQL Deployment
+            apiVersion: apps/v1
+            kind: Deployment
+            metadata:
+              name: ${DB_CLUSTER_NAME}
+              labels:
+                app.kubernetes.io/name: postgres
+                app.kubernetes.io/instance: $RELEASE_NAME
+            spec:
+              replicas: 1
+              selector:
+                matchLabels:
+                  app: ${DB_CLUSTER_NAME}
+              template:
+                metadata:
+                  labels:
+                    app: ${DB_CLUSTER_NAME}
+                    app.kubernetes.io/name: postgres
+                    app.kubernetes.io/instance: $RELEASE_NAME
+                spec:
+                  containers:
+                  - name: postgres
+                    image: postgres:15
+                    env:
+                    - name: POSTGRES_DB
+                      value: "app"
+                    - name: POSTGRES_USER
+                      value: "${{ inputs.db_user }}"
+                    - name: POSTGRES_PASSWORD
+                      value: "$DB_PASSWORD"
+                    - name: PGDATA
+                      value: /var/lib/postgresql/data/pgdata
+                    ports:
+                    - containerPort: 5432
+                      name: postgres
+                    volumeMounts:
+                    - name: postgres-data
+                      mountPath: /var/lib/postgresql/data
                     resources:
                       requests:
-                        storage: $STORAGE_SIZE
-                    storageClassName: "netapp-file-standard"
-
-              users:
-                - name: ${{ inputs.db_user }}
-                  databases:
-                    - app
-                  options: "SUPERUSER"
-
-              # Minimal backup configuration
-              backups:
-                pgbackrest:
-                  image: registry.developers.crunchydata.com/crunchydata/crunchy-pgbackrest:ubi8-2.45-2512
-
-                  # Required repos section with minimal backup storage
-                  repos:
-                    - name: repo1
-                      volume:
-                        volumeClaimSpec:
-                          accessModes:
-                            - "ReadWriteOnce"
-                          resources:
-                            requests:
-                              storage: $BACKUP_SIZE
-                          storageClassName: "netapp-file-standard"
-
-                  # Minimal backup settings to save space
-                  global:
-                    repo1-retention-full: "1"    # Keep only 1 full backup
-                    repo1-retention-diff: "0"    # No differential backups
-
-                  # Manual backup options
-                  manual:
-                    repoName: repo1
-                    options:
-                      - --type=full
+                        cpu: "100m"
+                        memory: "256Mi"
+                      limits:
+                        cpu: "300m"
+                        memory: "512Mi"
+                    readinessProbe:
+                      exec:
+                        command:
+                          - /bin/sh
+                          - -c
+                          - pg_isready -U ${{ inputs.db_user }} -d app
+                      initialDelaySeconds: 15
+                      periodSeconds: 5
+                    livenessProbe:
+                      exec:
+                        command:
+                          - /bin/sh
+                          - -c
+                          - pg_isready -U ${{ inputs.db_user }} -d app
+                      initialDelaySeconds: 45
+                      periodSeconds: 10
+                  volumes:
+                  - name: postgres-data
+                    persistentVolumeClaim:
+                      claimName: ${DB_CLUSTER_NAME}-data
+            ---
+            # PostgreSQL Service (with pgbouncer name for compatibility)
+            apiVersion: v1
+            kind: Service
+            metadata:
+              name: ${DB_CLUSTER_NAME}-pgbouncer
+              labels:
+                app.kubernetes.io/name: postgres
+                app.kubernetes.io/instance: $RELEASE_NAME
+            spec:
+              selector:
+                app: ${DB_CLUSTER_NAME}
+              ports:
+              - port: 5432
+                targetPort: 5432
+                name: postgres
+              type: ClusterIP
             EOF
             
-            echo "PostgreSQL cluster created, waiting for initialization..."
+            echo "Simple PostgreSQL deployment created, waiting for initialization..."
             
-            # Wait for PostgreSQL cluster to be ready with better error handling
-            echo "Waiting for PostgreSQL cluster to be ready..."
+            # Wait for PostgreSQL to be ready
+            echo "Waiting for PostgreSQL to be ready..."
             for i in {1..30}; do
-              # Check if cluster still exists
-              if ! oc get postgrescluster $DB_CLUSTER_NAME &>/dev/null; then
-                echo "❌ PostgreSQL cluster was deleted or failed to create"
-                exit 1
-              fi
-              
-              STATUS=$(oc get postgrescluster $DB_CLUSTER_NAME -o jsonpath='{.status.state}' 2>/dev/null || echo "NoStatus")
-              
-              if [[ "$STATUS" == "Initialized" ]]; then
-                echo "✅ PostgreSQL cluster is ready!"
-                
-                # Verify database user exists
-                USER_SECRET="${DB_CLUSTER_NAME}-pguser-${{ inputs.db_user }}"
-                if oc get secret $USER_SECRET &>/dev/null; then
-                  echo "✅ Database user secret exists: $USER_SECRET"
-                  
-                  # Show connection details
-                  echo "Database connection details:"
-                  echo "Host: ${DB_CLUSTER_NAME}-pgbouncer"
-                  echo "Port: 5432"
-                  echo "Database: app"
-                  echo "User: ${{ inputs.db_user }}"
-                  
+              if oc get deployment ${DB_CLUSTER_NAME} &>/dev/null; then
+                READY=$(oc get deployment ${DB_CLUSTER_NAME} -o jsonpath='{.status.readyReplicas}' 2>/dev/null || echo "0")
+            
+                if [[ "$READY" == "1" ]]; then
+                  echo "✅ PostgreSQL is ready!"
+            
+                  # Verify database connection
+                  POD_NAME=$(oc get pods -l app=${DB_CLUSTER_NAME} -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
+                  if [[ -n "$POD_NAME" ]]; then
+                    echo "✅ Database pod is running: $POD_NAME"
+                    echo "Database connection details:"
+                    echo "Host: ${DB_CLUSTER_NAME}-pgbouncer"
+                    echo "Port: 5432"
+                    echo "Database: app"
+                    echo "User: ${{ inputs.db_user }}"
+                    echo "Secret: ${DB_CLUSTER_NAME}-pguser-${{ inputs.db_user }}"
+                  fi
+            
+                  # Set output for the main deployment - use the simple cluster name
+                  echo "release=${RELEASE_NAME}-postgres" >> $GITHUB_OUTPUT
+                  exit 0
+            
                 else
-                  echo "⚠️ Database user secret not found: $USER_SECRET"
-                  echo "Available postgres secrets:"
-                  oc get secrets | grep $DB_CLUSTER_NAME | head -5
+                  echo "Attempt $i/30: PostgreSQL not ready yet (ready replicas: $READY)"
                 fi
-                
-                # Set output for the main deployment
-                echo "release=$DB_CLUSTER_NAME" >> $GITHUB_OUTPUT
-                exit 0
-                
-              elif [[ "$STATUS" == "NoStatus" || "$STATUS" == "" ]]; then
-                echo "Attempt $i/30: No status yet, checking pods..."
-                
-                # Check for specific pod issues
-                PODS=$(oc get pods -l postgres-operator.crunchydata.com/cluster=$DB_CLUSTER_NAME --no-headers 2>/dev/null)
-                if [[ -n "$PODS" ]]; then
-                  echo "$PODS"
-                else
-                  echo "No pods found yet"
-                fi
-                
               else
-                echo "Attempt $i/30: Status is '$STATUS', waiting 20 seconds..."
+                echo "Attempt $i/30: Deployment not found yet"
               fi
-              
-              # Check for PVC errors at regular intervals
+            
+              # Show pod status for debugging
               if [[ $((i % 5)) -eq 0 ]]; then
-                echo "Checking for PVC issues:"
-                PVC_ERRORS=$(oc get events --field-selector reason=FailedScheduling 2>/dev/null | grep -i "persistentvolumeclaim.*not found" | tail -3 || echo "No PVC errors found")
-                echo "$PVC_ERRORS"
+                echo "Pod status:"
+                oc get pods -l app=${DB_CLUSTER_NAME} 2>/dev/null || echo "No pods found"
+                echo "PVC status:"
+                oc get pvc ${DB_CLUSTER_NAME}-data 2>/dev/null || echo "PVC not found"
               fi
-              
-              sleep 20
+            
+              sleep 10
             done
             
             # If we get here, timeout occurred
-            echo "❌ Timeout waiting for PostgreSQL cluster to be ready"
-            echo "Final status check:"
-            oc get postgrescluster $DB_CLUSTER_NAME -o yaml | grep -A 20 "status:" || echo "No status available"
-            echo ""
+            echo "❌ Timeout waiting for PostgreSQL to be ready"
+            echo "Final deployment status:"
+            oc get deployment ${DB_CLUSTER_NAME} || echo "Deployment not found"
             echo "Pod status:"
-            oc get pods -l postgres-operator.crunchydata.com/cluster=$DB_CLUSTER_NAME
-            echo ""
-            echo "Recent events:"
-            oc get events --sort-by='.lastTimestamp' | grep $DB_CLUSTER_NAME | tail -5
+            oc get pods -l app=${DB_CLUSTER_NAME} || echo "No pods found"
+            echo "PVC status:"
+            oc get pvc ${DB_CLUSTER_NAME}-data || echo "PVC not found"
             exit 1
 
       # Variables
@@ -409,7 +401,7 @@ jobs:
               --set-string global.tag="${{ steps.vars.outputs.tag }}" \
               --set-string global.config.databaseUser="${{ inputs.db_user }}" \
               --set-string global.config.nodeEnv=${{ (inputs.environment == 'prod' || inputs.environment == 'production') && 'production' || (inputs.environment == 'test' && 'test' || 'development') }} \
-              --set-string global.databaseAlias="${{ steps.deploy_crunchy.outputs.release }}-crunchy" \
+              --set-string global.databaseAlias="${{ steps.deploy_crunchy.outputs.release }}" \
               ${{ inputs.params }} \
               --install --wait ${{ inputs.atomic && '--atomic' || '' }} ${{ steps.vars.outputs.release }} \
               --timeout ${{ inputs.timeout-minutes }}m \
