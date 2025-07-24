@@ -52,6 +52,10 @@ paths:
                   type: string
                   minLength: 1
                   maxLength: 30
+                  pattern: '^\S.*\S$'
+                  description: |
+                    Name must be 1-30 characters, cannot start or end with whitespace.
+                    Pattern ensures no leading/trailing whitespace.
                   example: "Roads initiative"
                 ministryName:
                   type: string
@@ -64,6 +68,17 @@ paths:
                   example: "My Tenant Description"
                 user:
                   $ref: '#/components/schemas/BasicUser'
+              example:
+                name: "Roads Initiative"
+                ministryName: "Ministry of Transportation"
+                description: "Tenant for managing road infrastructure projects"
+                user:
+                  firstName: "John"
+                  lastName: "Smith"
+                  displayName: "Smith, John: MOT: EX"
+                  userName: "JSMITH1"
+                  ssoUserId: "fd33f1cef7ca4b19a71104d4ecf7066b"
+                  email: "john.smith@gov.bc.ca"
       responses:
         '201':
           description: Tenant successfully created
@@ -77,6 +92,35 @@ paths:
                     properties:
                       tenant:
                         $ref: '#/components/schemas/TenantWithUsers'
+              example:
+                data:
+                  tenant:
+                    id: "f98cbbfb-b96c-4a40-a10b-c2a7e795022c"
+                    name: "Roads Initiative"
+                    ministryName: "Ministry of Transportation"
+                    description: "Tenant for managing road infrastructure projects"
+                    createdDateTime: "2024-03-21T10:00:00Z"
+                    updatedDateTime: "2024-03-21T10:00:00Z"
+                    users:
+                      - id: "fd33f1cef7ca4b19a71104d4ecf7066b"
+                        createdDateTime: "2024-03-21T10:00:00Z"
+                        updatedDateTime: "2024-03-21T10:00:00Z"
+                        ssoUser:
+                          id: "fd33f1cef7ca4b19a71104d4ecf7066b"
+                          ssoUserId: "fd33f1cef7ca4b19a71104d4ecf7066b"
+                          firstName: "John"
+                          lastName: "Smith"
+                          displayName: "Smith, John: MOT: EX"
+                          userName: "JSMITH1"
+                          email: "john.smith@gov.bc.ca"
+                          createdDateTime: "2024-03-21T10:00:00Z"
+                          updatedDateTime: "2024-03-21T10:00:00Z"
+                        roles:
+                          - id: "14c6bb48-54e2-4ce0-9bbd-af4982fff13b"
+                            name: "TMS.TENANT_OWNER"
+                            description: "Tenant Owner Role"
+                            createdDateTime: "2024-03-21T10:00:00Z"
+                            updatedDateTime: "2024-03-21T10:00:00Z"
         '400':
           description: Invalid input
           content:
@@ -271,7 +315,9 @@ paths:
           schema:
             type: string
             enum: [tenantUserRoles]
-          description: Comma-separated list of relations to expand. Currently supports 'tenantUserRoles' to include user and role information.
+          description: |
+            Comma-separated list of relations to expand. Currently supports:
+            - tenantUserRoles: Include user and role information for tenants
       responses:
         '200':
           description: List of tenants for the user
@@ -829,6 +875,13 @@ paths:
       description: |
         Updates the status of a tenant request. If approved, creates a new tenant.
         Requires JWT authentication and TMS.OPERATIONS_ADMIN role.
+        
+        **Business Rules:**
+        - Only NEW requests can be updated
+        - When status is APPROVED, a new tenant is automatically created with the requesting user as TENANT_OWNER
+        - When status is REJECTED, rejectionReason is required
+        - Requires TMS.OPERATIONS_ADMIN role
+        - Cannot update requests that are already APPROVED or REJECTED
       security:
         - bearerAuth: []
       parameters:
@@ -1012,6 +1065,9 @@ paths:
                   minLength: 1
                   maxLength: 30
                   pattern: '^\S.*\S$'
+                  description: |
+                    Name must be 1-30 characters, cannot start or end with whitespace.
+                    Pattern ensures no leading/trailing whitespace.
                   example: "Email Service"
                 clientIdentifier:
                   type: string
@@ -1420,7 +1476,9 @@ paths:
           schema:
             type: string
             enum: [groupUsers]
-          description: Comma-separated list of relations to expand. Currently supports 'groupUsers' to include user information.
+          description: |
+            Comma-separated list of relations to expand. Currently supports:
+            - groupUsers: Include user information for groups
       responses:
         '200':
           description: Group details retrieved successfully
@@ -1989,6 +2047,163 @@ paths:
               schema:
                 $ref: '#/components/schemas/InternalServerErrorResponse'
 
+  /v1/shared-services/{sharedServiceId}/shared-service-roles:
+    post:
+      summary: Add roles to a shared service
+      description: Adds one or more roles to an existing shared service. Requires JWT authentication and TMS.OPERATIONS_ADMIN role.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: sharedServiceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The unique identifier of the shared service
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - roles
+              properties:
+                roles:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - name
+                    properties:
+                      name:
+                        type: string
+                        minLength: 1
+                        maxLength: 30
+                        pattern: '^\S.*\S$'
+                        example: "New Admin Role"
+                      description:
+                        type: string
+                        maxLength: 255
+                        example: "New administrator role for the shared service"
+                  minItems: 1
+                  maxItems: 10
+                  example:
+                    - name: "New Admin Role"
+                      description: "New administrator role for the shared service"
+                    - name: "New User Role"
+                      description: "New standard user role for the shared service"
+      responses:
+        '201':
+          description: Roles successfully added to shared service
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      sharedService:
+                        $ref: '#/components/schemas/SharedServiceWithRoles'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        '403':
+          description: Forbidden - User does not have the required TMS.OPERATIONS_ADMIN role
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        '404':
+          description: Shared service not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+        '409':
+          description: Conflict - Role with same name already exists for this shared service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConflictErrorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+
+  /v1/tenants/{tenantId}/ssousers/{ssoUserId}/roles:
+    get:
+      summary: Get roles for an SSO user in a tenant
+      description: Retrieves all roles assigned to a specific SSO user within a tenant. Requires JWT authentication and shared service access.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: tenantId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The unique identifier of the tenant
+        - name: ssoUserId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The SSO user identifier
+      responses:
+        '200':
+          description: Roles for the SSO user successfully retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      roles:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Role'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        '404':
+          description: Tenant or SSO user not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+
   /v1/tenants/{tenantId}/users/{ssoUserId}/groups/shared-service-roles:
     get:
       summary: Get user groups with shared service roles
@@ -2058,7 +2273,6 @@ components:
         - firstName
         - lastName
         - displayName
-        - userName
         - ssoUserId
       properties:
         firstName:
@@ -2079,11 +2293,12 @@ components:
         userName:
           type: string
           minLength: 1
-          maxLength: 50
+          maxLength: 15
           example: "JSMITH1"
         ssoUserId:
           type: string
-          format: uuid
+          minLength: 1
+          maxLength: 32
           example: "fd33f1cef7ca4b19a71104d4ecf7066b"
         email:
           type: string
@@ -2219,32 +2434,16 @@ components:
       properties:
         name:
           type: string
-          example: "ValidationError"
+          example: "Error occurred during tenant creation"
         message:
           type: string
-          example: "ValidationFailed"
-        statusCode:
+          example: "Validation failed: name is required"
+        httpResponseCode:
           type: integer
           example: 400
-        error:
+        errorMessage:
           type: string
           example: "Bad Request"
-        body:
-          type: array
-          items:
-            type: object
-            properties:
-              message:
-                type: string
-                example: "\"name\" is required"
-              path:
-                type: array
-                items:
-                  type: string
-                example: ["name"]
-              type:
-                type: string
-                example: "any.required"
 
     UnauthorizedErrorResponse:
       type: object
@@ -2255,23 +2454,26 @@ components:
         message:
           type: string
           example: "Error occurred during authentication"
-        statusCode:
+        httpResponseCode:
           type: integer
           example: 401
+        errorMessage:
+          type: string
+          example: "Unauthorized"
 
     ForbiddenErrorResponse:
       type: object
       properties:
         name:
           type: string
-          example: "ForbiddenError"
+          example: "Authorization Failure"
         message:
           type: string
           example: "Access denied: User does not have required roles for tenant"
-        statusCode:
+        httpResponseCode:
           type: integer
           example: 403
-        error:
+        errorMessage:
           type: string
           example: "Forbidden"
 
@@ -2280,14 +2482,14 @@ components:
       properties:
         name:
           type: string
-          example: "Tenant Not Found"
+          example: "Error occurred getting a tenant"
         message:
           type: string
           example: "Tenant Not Found: 21eb86-9cf5-40a3-9a0d-81b551f50a2f"
-        statusCode:
+        httpResponseCode:
           type: integer
           example: 404
-        error:
+        errorMessage:
           type: string
           example: "Not Found"
 
@@ -2300,10 +2502,10 @@ components:
         message:
           type: string
           example: "User is already added to this tenant: 8821eb86-9cf5-40a3-9a0d-81b551f50a2f"
-        statusCode:
+        httpResponseCode:
           type: integer
           example: 409
-        error:
+        errorMessage:
           type: string
           example: "Conflict"
 
@@ -2316,10 +2518,10 @@ components:
         message:
           type: string
           example: "This is an error message"
-        statusCode:
+        httpResponseCode:
           type: integer
           example: 500
-        error:
+        errorMessage:
           type: string
           example: "Internal Server Error"
 
@@ -2636,9 +2838,37 @@ components:
           type: string
           example: "user123"
 
+    UserGroupsWithSharedServices:
+      type: object
+      properties:
+        groups:
+          type: array
+          items:
+            $ref: '#/components/schemas/GroupWithSharedServices'
+
+    GroupWithSharedServices:
+      allOf:
+        - $ref: '#/components/schemas/Group'
+        - type: object
+          properties:
+            sharedServiceRoles:
+              type: array
+              items:
+                $ref: '#/components/schemas/SharedServiceRole'
+
   securitySchemes:
     bearerAuth:
       type: http
       scheme: bearer
       bearerFormat: JWT
-      description: JWT token for authentication
+      description: |
+        JWT token for authentication. 
+        
+        **TMS Endpoints**: Requires TMS_AUDIENCE and IDIR/Azure IDIR identity provider.
+        **Shared Service Endpoints**: Requires matching client_identifier in JWT audience.
+        
+        The JWT must be obtained from the configured OIDC provider and contain:
+        - Valid signature verified against JWKS
+        - Valid issuer and audience claims
+        - Required identity provider (idir or azure_idir for TMS access)
+        - Required roles for authorization (e.g., TMS.OPERATIONS_ADMIN, TENANT_OWNER)
