@@ -1,34 +1,79 @@
-global:
-  config:
-    dbName: app  # Change from 'test' comment to actual value
-    databaseUser: app  # Make sure this is set
-
+# Default values for crunchy postgresql
 crunchy:
-  enabled: true
-  postgresVersion: 17
-  postGISVersion: 3.4
+  # PostgreSQL cluster configuration
+  cluster:
+    name: crunchy-postgres
+    instances: 1
 
-  instances:
-    name: db
-    replicas: 3
-    dataVolumeClaimSpec:
-      storage: 2Gi  # Increase from 800Mi
-      walStorage: 1Gi  # Increase from 300Mi
+  # PostgreSQL version and configuration
+  postgresql:
+    version: "15"
+    parameters:
+      max_connections: "200"
+      shared_buffers: "256MB"
+      effective_cache_size: "1GB"
+      maintenance_work_mem: "64MB"
+      checkpoint_completion_target: "0.9"
+      wal_buffers: "16MB"
+      default_statistics_target: "100"
+      random_page_cost: "1.1"
+      effective_io_concurrency: "200"
+
+  # Database and user configuration
+  database:
+    name: app
+    user: app
+
+  # Resource configuration
+  resources:
     requests:
-      cpu: 100m  # Increase from 50m
-      memory: 256Mi  # Increase from 128Mi
+      cpu: "100m"
+      memory: "256Mi"
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
 
+  # Storage configuration
+  storage:
+    size: "5Gi"
+    storageClass: "netapp-file-standard"
+
+  # Backup configuration with pgBackRest
   pgBackRest:
-    enabled: true  # Enable backups
-    pvc:
-      retention: 7
-      fullBackupSchedule: "0 2 * * *"
-      incrementalBackupSchedule: "0 6,12,18 * * *"
-      volume:
-        storage: 500Mi
-
-  proxy:
     enabled: true
-    pgBouncer:
-      replicas: 2
-      maxConnections: 50  # Increase from 10
+    retention:
+      full: "7"
+      differential: "3"
+
+    # S3 backup configuration (disabled by default)
+    s3:
+      enabled: false
+      bucket: ""
+      endpoint: ""
+      region: ""
+
+    # Local backup configuration
+    local:
+      enabled: true
+      retention: "7-full"
+
+  # Monitoring configuration
+  monitoring:
+    enabled: false
+
+  # Security configuration
+  security:
+    tls:
+      enabled: false
+
+  # High availability configuration
+  ha:
+    enabled: false
+
+# Global configuration that can be overridden
+global:
+  # Environment-specific settings
+  environment: development
+
+  # Storage class override
+  storageClass: "netapp-file-standard"

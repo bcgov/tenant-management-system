@@ -1,92 +1,85 @@
-# Values for PR environment Crunchy PostgreSQL
-global:
-  config:
-    dbName: app
+# PR-specific values for crunchy postgresql
+# Inherits from values.yml and overrides for PR environments
 
 crunchy:
-  enabled: true
-  instances:
-    name: db
-    replicas: 1  # Single replica for PR environment
-    metadata:
-      annotations:
-        prometheus.io/scrape: 'true'
-        prometheus.io/port: '9187'
-    dataVolumeClaimSpec:
-      storage: 3Gi
-      storageClassName: netapp-block-standard
-      walStorage: 1Gi
+  # PostgreSQL cluster configuration for PRs
+  cluster:
+    name: crunchy-postgres-pr
+    instances: 1  # Single instance for PR environments
 
+  # PostgreSQL configuration optimized for development
+  postgresql:
+    version: "15"
+    parameters:
+      max_connections: "50"  # Reduced for PR environments
+      shared_buffers: "128MB"
+      effective_cache_size: "512MB"
+      maintenance_work_mem: "32MB"
+      checkpoint_completion_target: "0.9"
+      wal_buffers: "8MB"
+      default_statistics_target: "100"
+      random_page_cost: "1.1"
+      effective_io_concurrency: "200"
+
+  # Database and user configuration for PRs
+  database:
+    name: app
+    user: app  # This will be overridden by the deployer to include PR number
+
+  # Reduced resources for PR environments
+  resources:
     requests:
-      cpu: 100m  # Increased from 50m
-      memory: 256Mi  # Increased from 128Mi
-    replicaCertCopy:
-      requests:
-        cpu: 1m
-        memory: 32Mi
+      cpu: "50m"
+      memory: "128Mi"
+    limits:
+      cpu: "250m"
+      memory: "256Mi"
 
+  # Smaller storage for PR environments
+  storage:
+    size: "2Gi"
+    storageClass: "netapp-file-standard"
+
+  # Simplified backup configuration for PRs
   pgBackRest:
-    enabled: false  # Disabled for PR to save resources
-    backupPath: /backups/dev/cluster/version
-    clusterCounter: 1
-    retentionFullType: count
+    enabled: true
+    retention:
+      full: "3"  # Reduced retention for PRs
+      differential: "1"
+
+    # S3 backup disabled for PRs
     s3:
       enabled: false
-    pvc:
-      retention: 1
-      retentionFullType: count
-      fullBackupSchedule: 0 8 * * *
-      incrementalBackupSchedule: 0 0-7,9-23 * * *
-      volume:
-        accessModes: "ReadWriteOnce"
-        storage: 100Mi
-        storageClassName: netapp-file-backup
-    config:
-      requests:
-        cpu: 5m
-        memory: 32Mi
-    repoHost:
-      requests:
-        cpu: 20m
-        memory: 128Mi
-    sidecars:
-      requests:
-        cpu: 5m
-        memory: 16Mi
-    jobs:
-      requests:
-        cpu: 20m
-        memory: 128Mi
+      bucket: ""
+      endpoint: ""
+      region: ""
 
-  patroni:
-    postgresql:
-      pg_hba:
-        - "host all all 0.0.0.0/0 md5"
-        - "host all all ::1/128 md5"
-      parameters:
-        shared_buffers: 64MB  # Increased from 16MB
-        wal_buffers: "2MB"    # Increased from 64kB
-        min_wal_size: 32MB
-        max_wal_size: 64MB
-        max_slot_wal_keep_size: 128MB
-        work_mem: 4MB         # Increased from 2MB
-        log_min_duration_statement: 1000ms
-        effective_io_concurrency: 20
+    # Local backup only for PRs
+    local:
+      enabled: true
+      retention: "3-full"
 
-  proxy:
-    enabled: true
-    pgBouncer:
-      image: # Default Crunchy image
-      replicas: 1
-      requests:
-        cpu: 10m
-        memory: 64Mi
-      maxConnections: 25  # Increased from 10
-
-  pgmonitor:
+  # Monitoring disabled for PRs
+  monitoring:
     enabled: false
-    exporter:
-      image: # Default Crunchy image
-      requests:
-        cpu: 10m
-        memory: 32Mi
+
+  # Security configuration
+  security:
+    tls:
+      enabled: false
+
+  # HA disabled for PRs
+  ha:
+    enabled: false
+
+# Global configuration for PR environments
+global:
+  # Environment-specific settings
+  environment: development
+
+  # Storage class override
+  storageClass: "netapp-file-standard"
+
+  # PR-specific namespace suffix (will be set by deployer)
+  namespace:
+    suffix: ""

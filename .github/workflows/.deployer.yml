@@ -119,6 +119,9 @@ jobs:
           environment: ${{ inputs.environment }}
           values_file: ${{ inputs.environment == '' && 'charts/crunchy/values-pr.yml' || 'charts/crunchy/values.yml' }}
           triggers: ${{ inputs.db_triggers }}
+          database_name: app
+          database_user: ${{ inputs.db_user }}
+          storage_class: netapp-file-standard
 
       # Variables
       - if: inputs.tag  == ''
