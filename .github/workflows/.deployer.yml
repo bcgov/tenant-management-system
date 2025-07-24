@@ -227,6 +227,16 @@ jobs:
             # Get release name
             RELEASE="${{ inputs.release_name }}"
             
+            # Check if backend secret exists, create if it doesn't
+            if ! oc get secret $RELEASE-backend &> /dev/null; then
+              echo "Creating missing backend secret $RELEASE-backend"
+              oc create secret generic $RELEASE-backend \
+                --from-literal=BCGOV_SSO_API_CLIENT_ID="placeholder" \
+                --from-literal=BCGOV_SSO_API_CLIENT_SECRET="placeholder" \
+                --from-literal=ISSUER="placeholder" \
+                --from-literal=JWKS_URI="placeholder"
+            fi
+            
             # Update secrets with real values
             echo "Patching secret $RELEASE-backend"
             
@@ -275,6 +285,12 @@ jobs:
               echo "Warning: Deployment $RELEASE-backend not found"
             fi
 
+            # Check if frontend ConfigMap exists, create if it doesn't
+            if ! oc get configmap $RELEASE-frontend-config &> /dev/null; then
+              echo "Creating missing frontend ConfigMap $RELEASE-frontend-config"
+              oc create configmap $RELEASE-frontend-config --from-literal=placeholder=placeholder
+            fi
+
             # Update frontend ConfigMap
             echo "Patching ConfigMap $RELEASE-frontend-config"
 
@@ -305,9 +321,13 @@ jobs:
             rm default.json
 
             # Replace the pod instead of restarting to ensure ConfigMap is refreshed
-            oc delete pods -l app.kubernetes.io/instance=$RELEASE-frontend
-            echo "Waiting for frontend deployment to complete..."
-            oc rollout status deployment/$RELEASE-frontend --timeout=300s
+            if oc get deployment/$RELEASE-frontend &>/dev/null; then
+              oc delete pods -l app.kubernetes.io/instance=$RELEASE-frontend
+              echo "Waiting for frontend deployment to complete..."
+              oc rollout status deployment/$RELEASE-frontend --timeout=300s
+            else
+              echo "Warning: Deployment $RELEASE-frontend not found"
+            fi
 
       - name: Update deployment status
         uses: bobheadxi/deployments@v1.4.0
