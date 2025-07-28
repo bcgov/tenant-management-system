@@ -7,7 +7,7 @@ import GroupList from '@/components/group/GroupList.vue'
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import { useNotification } from '@/composables'
 import { DomainError, DuplicateEntityError } from '@/errors'
-import { type GroupDetailFields, Tenant } from '@/models'
+import { Group, type GroupDetailFields, Tenant } from '@/models'
 import { useGroupStore } from '@/stores'
 import { ROLES } from '@/utils/constants'
 import { currentUserHasRole } from '@/utils/permissions'
@@ -61,12 +61,21 @@ onMounted(async () => {
 // Subcomponent Event Handlers
 
 const handleGroupCreate = async (
-  group: GroupDetailFields,
+  groupDetails: GroupDetailFields,
   addUser: boolean,
 ) => {
   try {
-    await groupStore.addGroup(props.tenant.id, group.name, group.description)
+    const group: Group = await groupStore.addGroup(
+      props.tenant.id,
+      groupDetails.name,
+      groupDetails.description,
+    )
     if (addUser) {
+      await groupStore.addUserToGroup(
+        props.tenant.id,
+        group.id,
+        props.tenant.currentUser.id,
+      )
       console.log('todo')
     }
 
