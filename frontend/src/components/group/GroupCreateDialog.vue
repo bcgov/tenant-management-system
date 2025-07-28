@@ -74,7 +74,7 @@ const rules = {
     !value || value.length <= max || `Must be ${max} characters or less`,
   notDuplicated: () =>
     !props.isDuplicateName ||
-    'This name is already in use. Please choose a unique group name. ',
+    'This name is already in use. Please choose a unique group name.',
   required: (value: string) => !!value || 'Required',
 }
 
