@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
-import { Group } from '@/models'
+import { Group, User } from '@/models'
 import { groupService } from '@/services'
 
 export const useGroupStore = defineStore('group', () => {
@@ -38,6 +38,20 @@ export const useGroupStore = defineStore('group', () => {
     return upsertGroup(group)
   }
 
+  const addUserToGroup = async (
+    tenantId: string,
+    groupId: string,
+    user: User,
+  ) => {
+    const apiResponse = await groupService.addUserToGroup(
+      tenantId,
+      groupId,
+      user,
+    )
+
+    return apiResponse
+  }
+
   const fetchGroups = async (tenantId: string) => {
     loading.value = true
     try {
@@ -53,6 +67,7 @@ export const useGroupStore = defineStore('group', () => {
     groups,
 
     addGroup,
+    addUserToGroup,
     fetchGroups,
   }
 })
