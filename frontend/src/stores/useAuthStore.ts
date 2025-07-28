@@ -1,10 +1,10 @@
 import Keycloak from 'keycloak-js'
 import { defineStore } from 'pinia'
 
-import { User } from '@/models'
+import { SsoUser, User } from '@/models'
 import { config, configLoaded } from '@/services/config.service'
 import { logger } from '@/utils/logger'
-import { SsoUser } from '@/models/ssouser.model'
+import { ROLES } from '@/utils/constants'
 
 let refreshTimer: number | undefined
 
@@ -103,6 +103,22 @@ export const useAuthStore = defineStore('auth', {
      * @returns `true` if the user is authenticated, `false` otherwise
      */
     isAuthenticated: (state) => state.authenticated,
+
+    /**
+     * Checks if the current user has operations admin privileges.
+     *
+     * @param state - The state for this store
+     * @returns `true` if user is an operations admin, `false` otherwise
+     */
+    isOperationsAdmin: (state): boolean => {
+      if (!state.authenticated || !state.keycloak?.tokenParsed) {
+        return false
+      }
+
+      const clientRoles = state.keycloak.tokenParsed.client_roles || []
+
+      return clientRoles.includes(ROLES.OPERATIONS_ADMIN.value)
+    },
   },
 
   actions: {

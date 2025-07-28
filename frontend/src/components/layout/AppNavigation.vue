@@ -4,7 +4,7 @@ import { useRoute } from 'vue-router'
 
 const route = useRoute()
 
-const isRolesRoute = computed(() => route.path.startsWith('/roles'))
+const isSettingsRoute = computed(() => route.path.startsWith('/settings'))
 const isTenantRoute = computed(() => route.path.startsWith('/tenant'))
 </script>
 
@@ -20,12 +20,12 @@ const isTenantRoute = computed(() => route.path.startsWith('/tenant'))
         Tenants
       </v-btn>
       <v-btn
-        :active="isRolesRoute"
+        :active="isSettingsRoute"
         exact-active-class=""
-        to="/roles"
+        to="/settings"
         variant="text"
       >
-        My Roles
+        Settings
       </v-btn>
     </div>
   </v-toolbar>
