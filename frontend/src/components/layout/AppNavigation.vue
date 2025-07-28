@@ -2,10 +2,14 @@
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 
+import { currentUserIsOperationsAdmin } from '@/utils/permissions'
+
 const route = useRoute()
 
 const isSettingsRoute = computed(() => route.path.startsWith('/settings'))
 const isTenantRoute = computed(() => route.path.startsWith('/tenant'))
+
+const isOperationsAdmin = computed(() => currentUserIsOperationsAdmin())
 </script>
 
 <template>
@@ -20,6 +24,7 @@ const isTenantRoute = computed(() => route.path.startsWith('/tenant'))
         Tenants
       </v-btn>
       <v-btn
+        v-if="isOperationsAdmin"
         :active="isSettingsRoute"
         exact-active-class=""
         to="/settings"
