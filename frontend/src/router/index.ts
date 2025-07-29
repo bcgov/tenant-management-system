@@ -1,12 +1,12 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
-import RolesView from '@/views/RolesView.vue'
+import SettingsContainer from '@/components/container/SettingsContainer.vue'
 import TenantListView from '@/views/TenantListView.vue'
 import TenantManageView from '@/views/TenantManageView.vue'
 
 const routes = [
   { path: '/', redirect: '/tenants' },
-  { path: '/roles', component: RolesView },
+  { path: '/settings', component: SettingsContainer },
   { path: '/tenants', component: TenantListView },
   { path: '/tenants/:id', component: TenantManageView, props: true },
 ]
