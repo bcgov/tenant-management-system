@@ -673,6 +673,11 @@ export class TMSRepository {
             }
         })
 
+        if (tenantRequestResponse && (tenantRequestResponse as any).createdBy && (tenantRequestResponse as any).createdBy !== 'system') {
+            const creator: any = await this.manager.findOne('SSOUser', { where: { ssoUserId: (tenantRequestResponse as any).createdBy } });
+            (tenantRequestResponse as any).createdBy = creator?.displayName || (tenantRequestResponse as any).createdBy
+        }
+
         return tenantRequestResponse
     }
 

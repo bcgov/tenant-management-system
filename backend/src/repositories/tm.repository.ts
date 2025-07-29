@@ -76,7 +76,12 @@ export class TMRepository {
             }
         });
 
-        return groupResponse;
+        if (groupResponse && (groupResponse as any).createdBy && (groupResponse as any).createdBy !== 'system') {
+            const creator: any = await this.manager.findOne('SSOUser', { where: { ssoUserId: (groupResponse as any).createdBy } });
+            (groupResponse as any).createdBy = creator?.displayName || (groupResponse as any).createdBy
+        }
+
+        return groupResponse
     }
 
     public async checkIfGroupNameExistsInTenant(name: string, tenantId: string, transactionEntityManager?: EntityManager, excludeGroupId?: string) {
