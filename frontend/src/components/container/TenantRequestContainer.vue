@@ -3,8 +3,10 @@ import { computed, onMounted, ref, type Ref } from 'vue'
 
 import TenantRequestDisplay from '@/components/tenantrequest/TenantRequestDisplay.vue'
 import { useNotification } from '@/composables'
+import { DomainError, DuplicateEntityError } from '@/errors'
 import type { TenantRequest } from '@/models'
 import { useTenantRequestStore } from '@/stores'
+import { TENANT_REQUEST_STATUS } from '@/utils/constants'
 
 const { notification } = useNotification()
 const tenantRequestStore = useTenantRequestStore()
@@ -28,9 +30,10 @@ const getStatusColor = (status: string) => {
   switch (status.toLowerCase()) {
     case 'approved':
       return 'success'
-    case 'denied':
-      return 'error'
     case 'new':
+      return 'info'
+    case 'rejected':
+      return 'error'
     default:
       return 'info'
   }
@@ -43,6 +46,55 @@ const handleRowClick = (_event: Event, { item }: { item: TenantRequest }) => {
 const handleBackToList = () => {
   selectedTenantRequest.value = null
 }
+
+const handleApproved = async () => {
+  if (!selectedTenantRequest.value) {
+    return
+  }
+
+  try {
+    await tenantRequestStore.updateTenantRequestStatus(
+      selectedTenantRequest.value.id,
+      TENANT_REQUEST_STATUS.APPROVED.value,
+    )
+    notification.success('Tenant Request has been successfully updated')
+    handleBackToList()
+  } catch (error) {
+    if (error instanceof DuplicateEntityError) {
+      // If the API says that this name exists already, then show the name
+      // duplicated validation error.
+      notification.error(
+        'Tenant Request cannot be approved because the name already exists',
+      )
+    } else if (error instanceof DomainError && error.userMessage) {
+      // For any other API Domain Error, display the user message that comes
+      // from the API. This should not happen but is useful if there are
+      // business rules in the API that are not implemented in the UI.
+      notification.error(error.userMessage)
+    } else {
+      // Otherwise display a generic error message.
+      notification.error('Failed to update Tenant Request')
+    }
+  }
+}
+
+const handleRejected = async (notes: string) => {
+  if (!selectedTenantRequest.value) {
+    return
+  }
+
+  try {
+    await tenantRequestStore.updateTenantRequestStatus(
+      selectedTenantRequest.value.id,
+      TENANT_REQUEST_STATUS.REJECTED.value,
+      notes,
+    )
+    notification.success('Tenant Request has been successfully updated')
+    handleBackToList()
+  } catch {
+    notification.error('Failed to update Tenant Request')
+  }
+}
 </script>
 
 <template>
@@ -50,7 +102,9 @@ const handleBackToList = () => {
     <template v-if="selectedTenantRequest">
       <TenantRequestDisplay
         :tenant-request="selectedTenantRequest"
+        @approved="handleApproved"
         @back="handleBackToList"
+        @rejected="handleRejected"
       />
     </template>
 

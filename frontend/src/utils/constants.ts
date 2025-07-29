@@ -59,3 +59,10 @@ export const ROLES = Object.freeze({
   TENANT_OWNER: { title: 'Tenant Owner', value: 'TMS.TENANT_OWNER' },
   USER_ADMIN: { title: 'User Admin', value: 'TMS.USER_ADMIN' },
 })
+
+// List of Tenant Request statuses
+export const TENANT_REQUEST_STATUS = Object.freeze({
+  APPROVED: { title: 'Approved', value: 'APPROVED' },
+  NEW: { title: 'New', value: 'NEW' },
+  REJECTED: { title: 'Rejected', value: 'REJECTED' },
+})

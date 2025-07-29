@@ -8,6 +8,13 @@ export const useTenantRequestStore = defineStore('tenantRequest', () => {
   const loading = ref(false)
   const tenantRequests = ref<TenantRequest[]>([])
 
+  const createTenantRequest = async (
+    tenantRequestDetails: TenantRequestDetailFields,
+    user: User,
+  ) => {
+    await tenantRequestService.createTenantRequest(tenantRequestDetails, user)
+  }
+
   const fetchTenantRequests = async () => {
     loading.value = true
     try {
@@ -18,11 +25,27 @@ export const useTenantRequestStore = defineStore('tenantRequest', () => {
     }
   }
 
-  const createTenantRequest = async (
-    tenantRequestDetails: TenantRequestDetailFields,
-    user: User,
+  const updateTenantRequestStatus = async (
+    tenantRequestId: string,
+    status: string,
+    rejectionReason?: string,
   ) => {
-    await tenantRequestService.createTenantRequest(tenantRequestDetails, user)
+    await tenantRequestService.updateTenantRequestStatus(
+      tenantRequestId,
+      status,
+      rejectionReason,
+    )
+
+    const tenantRequest = tenantRequests.value.find(
+      (request) => request.id === tenantRequestId,
+    )
+
+    if (tenantRequest) {
+      tenantRequest.status = status
+      if (rejectionReason) {
+        tenantRequest.rejectionReason = rejectionReason
+      }
+    }
   }
 
   return {
@@ -31,5 +54,6 @@ export const useTenantRequestStore = defineStore('tenantRequest', () => {
 
     createTenantRequest,
     fetchTenantRequests,
+    updateTenantRequestStatus,
   }
 })
