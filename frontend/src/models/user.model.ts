@@ -1,5 +1,4 @@
-import { Role } from '@/models/role.model'
-import { SsoUser } from '@/models/ssouser.model'
+import { Role, SsoUser } from '@/models'
 
 export class User {
   id: string

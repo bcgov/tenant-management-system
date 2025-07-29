@@ -7,14 +7,16 @@ import GroupList from '@/components/group/GroupList.vue'
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import { useNotification } from '@/composables'
 import { DomainError, DuplicateEntityError } from '@/errors'
-import { type GroupDetailFields, Tenant } from '@/models'
-import { useGroupStore } from '@/stores'
+import { Group, type GroupDetailFields, Tenant } from '@/models'
+import { useAuthStore, useGroupStore } from '@/stores'
 import { ROLES } from '@/utils/constants'
 import { currentUserHasRole } from '@/utils/permissions'
 
 const props = defineProps<{
   tenant: Tenant
 }>()
+
+const authStore = useAuthStore()
 
 const isUserAdmin = computed(() => {
   // A tenant owner, by default, is also a user admin - even if they don't have
@@ -61,17 +63,20 @@ onMounted(async () => {
 // Subcomponent Event Handlers
 
 const handleGroupCreate = async (
-  group: GroupDetailFields,
+  groupDetails: GroupDetailFields,
   addUser: boolean,
 ) => {
-  try {
-    await groupStore.addGroup(props.tenant.id, group.name, group.description)
-    if (addUser) {
-      console.log('todo')
-    }
+  let group: Group
 
-    notification.success('Group Created Successfully')
+  try {
+    group = await groupStore.addGroup(
+      props.tenant.id,
+      groupDetails.name,
+      groupDetails.description,
+    )
+
     isDuplicateName.value = false
+    notification.success('Group Created Successfully')
     closeDialog()
   } catch (error: unknown) {
     if (error instanceof DuplicateEntityError) {
@@ -86,6 +91,34 @@ const handleGroupCreate = async (
     } else {
       // Otherwise display a generic error message.
       notification.error('Failed to create the new group')
+    }
+
+    return
+  }
+
+  // It would be nice if two try/catch blocks weren't needed, but it's good to
+  // give clear feedback if adding the user fails. Since the group creation
+  // cannot be rolled back, failing to add the user means that the group has no
+  // users, but the user add can be attempted later.
+  if (addUser) {
+    try {
+      await groupStore.addUserToGroup(
+        props.tenant.id,
+        group.id,
+        authStore.authenticatedUser,
+      )
+
+      notification.success('User added to Group Successfully')
+    } catch (error: unknown) {
+      if (error instanceof DomainError && error.userMessage) {
+        // For any other API Domain Error, display the user message that comes
+        // from the API. This should not happen but is useful if there are
+        // business rules in the API that are not implemented in the UI.
+        notification.error(error.userMessage)
+      } else {
+        // Otherwise display a generic error message.
+        notification.error('Failed to add the user to the new group')
+      }
     }
   }
 }

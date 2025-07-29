@@ -1,10 +1,61 @@
 import { authenticatedAxios } from './authenticated.axios'
-import { isDuplicateEntityError, isValidationError, logApiError } from './utils'
 import { DuplicateEntityError, ValidationError } from '@/errors'
+import { User } from '@/models'
+import { isDuplicateEntityError, isValidationError, logApiError } from './utils'
 
 const api = authenticatedAxios()
 
 export const groupService = {
+  /**
+   * Adds a user to an existing group within a tenant.
+   *
+   * @param {string} tenantId - The ID of the tenant.
+   * @param {string} groupId - The ID of the group to add the user to.
+   * @param {User} user - The user to add to the group.
+   * @returns {Promise<object>} A promise that resolves to the response data.
+   * @throws Will throw an error if the API request fails.
+   */
+  async addUserToGroup(tenantId: string, groupId: string, user: User) {
+    try {
+      const requestBody = {
+        user: {
+          displayName: user.ssoUser.displayName,
+          email: user.ssoUser.email,
+          firstName: user.ssoUser.firstName,
+          lastName: user.ssoUser.lastName,
+          ssoUserId: user.ssoUser.ssoUserId,
+          userName: user.ssoUser.userName,
+        },
+      }
+
+      const response = await api.post(
+        `/tenants/${tenantId}/groups/${groupId}/users`,
+        requestBody,
+      )
+
+      return response.data
+    } catch (error: unknown) {
+      logApiError('Error adding user to group', error)
+
+      // Handle HTTP 400 Bad Request (validation)
+      if (isValidationError(error)) {
+        const messageArray = error.response.data.details.body.map(
+          (item: { message: string }) => item.message,
+        )
+
+        throw new ValidationError(messageArray)
+      }
+
+      // Handle HTTP 409 Conflict (duplicate)
+      if (isDuplicateEntityError(error)) {
+        throw new DuplicateEntityError(error.response.data.message)
+      }
+
+      // Re-throw all other errors
+      throw error
+    }
+  },
+
   /**
    * Creates a new group with the specified name and description.
    *
