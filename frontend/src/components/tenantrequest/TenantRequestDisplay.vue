@@ -1,47 +1,78 @@
 <script setup lang="ts">
-import { nextTick, ref, watch } from 'vue'
-import { VForm } from 'vuetify/components'
-
-import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
-import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
 import type { TenantRequest } from '@/models'
-import { MINISTRIES } from '@/utils/constants'
 
-const props = defineProps<{
+defineProps<{
   tenantRequest: TenantRequest
 }>()
+
+const emit = defineEmits<{
+  back: []
+}>()
+
+const handleBack = () => {
+  emit('back')
+}
 </script>
 
 <template>
   <v-container class="pa-6">
-    <h4>Tenant Request: {{ tenantRequest.name }}</h4>
+    <h4 class="mb-12">Tenant Request: {{ tenantRequest.name }}</h4>
 
     <v-row>
-      <v-col cols="12" md="6">
+      <v-col cols="4">
         <v-text-field
-          v-model="tenantRequest.name"
-          label="Name of Tenant"
-          required
+          :model-value="tenantRequest.createdBy"
+          label="User Name (IDIR)"
+          disabled
         />
       </v-col>
-      <v-col cols="12" md="6">
-        <v-select
-          v-model="tenantRequest.ministryName"
+      <v-col cols="5">
+        <v-text-field
+          :model-value="tenantRequest.ministryName"
           label="Ministry/Organization"
-          placeholder="Select an option..."
-          required
+          disabled
+        />
+      </v-col>
+      <v-col cols="3">
+        <v-text-field
+          :model-value="tenantRequest.createdDate"
+          label="Date of Request (YYYY-MM-DD)"
+          disabled
         />
       </v-col>
     </v-row>
     <v-row>
-      <v-col cols="12" md="6">
+      <v-col cols="4">
+        <v-text-field
+          :model-value="tenantRequest.name"
+          label="Requested Tenant Name"
+          disabled
+        />
+      </v-col>
+      <v-col cols="8">
         <v-textarea
-          v-model="tenantRequest.description"
+          :model-value="tenantRequest.description"
           label="Description of Tenant"
           rows="1"
           auto-grow
-          required
+          disabled
         ></v-textarea>
+      </v-col>
+    </v-row>
+
+    <v-row class="mt-6">
+      <v-col cols="12">
+        <v-divider class="mb-4" />
+        <div class="d-flex justify-start">
+          <v-btn
+            color="primary"
+            prepend-icon="mdi-arrow-left"
+            variant="text"
+            @click="handleBack"
+          >
+            Back to All Requests
+          </v-btn>
+        </div>
       </v-col>
     </v-row>
   </v-container>
