@@ -60,24 +60,6 @@ spec:
           envFrom:
             - secretRef:
                 name: {{.Release.Name}}-backend
-          env:
-            - name: POSTGRES_HOST
-              value: {{ .Values.global.databaseAlias }}-pgbouncer
-            - name: POSTGRES_PORT
-              value: "5432"
-            - name: POSTGRES_USER
-              value: {{ .Values.global.config.databaseUser | default "app" }}
-            - name: POSTGRES_DATABASE
-              value: {{ .Values.global.config.dbName | default "app" }}
-            - name: POSTGRES_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.global.databaseAlias }}-pguser-{{ .Values.global.config.databaseUser | default "app" }}
-                  key: password
-            - name: LOG_LEVEL
-              value: "info"
-            - name: NODE_ENV
-              value: {{ .Values.global.config.nodeEnv | quote }}
           ports:
             - name: http
               containerPort: {{ .Values.backend.service.targetPort }}
@@ -128,5 +110,4 @@ spec:
                     values:
                       - {{ .Release.Name }}
               topologyKey: "kubernetes.io/hostname"
-
 {{- end }}
