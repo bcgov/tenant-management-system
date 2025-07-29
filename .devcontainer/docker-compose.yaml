@@ -6,8 +6,16 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    command: sleep infinity
-    # container_name: tms_devcontainer
+    # Use socat in the devcontainer container so that the IDE "Ports" has a
+    # process it can use to show that the database is running.
+    command: >
+      bash -c "
+        apt-get update && apt-get install -y socat &&
+        socat TCP-LISTEN:5432,fork,reuseaddr TCP:postgres:5432 &
+        sleep infinity
+      "
+    depends_on:
+      - postgres
     networks:
       - tms-net
     volumes:
@@ -22,8 +30,6 @@ services:
     image: postgres:15.12-bookworm
     networks:
       - tms-net
-    ports:
-      - "5432:5432"
     restart: unless-stopped
     volumes:
       - postgres_data:/var/lib/postgresql/data
