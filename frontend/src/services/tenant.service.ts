@@ -1,7 +1,7 @@
 import { authenticatedAxios } from './authenticated.axios'
 import { isDuplicateEntityError, isValidationError, logApiError } from './utils'
 import { DuplicateEntityError, ValidationError } from '@/errors'
-import { type TenantDetailFields, User } from '@/models'
+import { User } from '@/models'
 
 const api = authenticatedAxios()
 
