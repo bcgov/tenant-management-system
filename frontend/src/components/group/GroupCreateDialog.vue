@@ -75,11 +75,24 @@ const rules = {
   notDuplicated: () =>
     !props.isDuplicateName ||
     'This name is already in use. Please choose a unique group name.',
-  required: (value: string) => !!value || 'Required',
+  required: (value: string) => {
+    if (!value) {
+      return 'Required'
+    }
+
+    if (!value.trim()) {
+      return 'Cannot be only spaces'
+    }
+
+    return true
+  },
 }
 
 const handleSubmit = () => {
   if (isFormValid.value) {
+    formData.value.name = formData.value.name.trim()
+    formData.value.description = formData.value.description.trim()
+
     emit('submit', formData.value, addUser.value)
     // Let parent decide when to close the dialog
   }
