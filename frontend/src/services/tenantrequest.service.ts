@@ -74,4 +74,53 @@ export const tenantRequestService = {
       throw error
     }
   },
+
+  /**
+   * Updates the status of a tenant request.
+   *
+   * @param {string} requestId - The ID of the tenant request to update.
+   * @param {string} status - The new status (APPROVED, REJECTED, etc.).
+   * @param {string} [rejectionReason] - Optional rejection reason (required for
+   *   REJECTED status).
+   * @throws Will throw an error if the API request fails.
+   */
+  async updateTenantRequestStatus(
+    requestId: string,
+    status: string,
+    rejectionReason?: string,
+  ) {
+    try {
+      const requestBody: {
+        status: string
+        rejectionReason?: string
+      } = {
+        status,
+      }
+
+      if (rejectionReason) {
+        requestBody.rejectionReason = rejectionReason
+      }
+
+      await api.patch(`/tenant-requests/${requestId}/status`, requestBody)
+    } catch (error: unknown) {
+      logApiError('Error updating tenant request status', error)
+
+      // Handle HTTP 400 Bad Request (validation)
+      if (isValidationError(error)) {
+        const messageArray = error.response.data.details.body.map(
+          (item: { message: string }) => item.message,
+        )
+
+        throw new ValidationError(messageArray)
+      }
+
+      // Handle HTTP 409 Conflict (duplicate)
+      if (isDuplicateEntityError(error)) {
+        throw new DuplicateEntityError(error.response.data.message)
+      }
+
+      // Re-throw all other errors
+      throw error
+    }
+  },
 }

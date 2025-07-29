@@ -44,6 +44,11 @@ export class TenantRequest {
   ministryName: string
 
   /**
+   * The reason that a request with status REJECTED was rejected.
+   */
+  rejectionReason: string
+
+  /**
    * Status of the tenant request: APPROVED, NEW, or REJECTED.
    */
   status: string
@@ -75,6 +80,7 @@ export class TenantRequest {
     this.id = id
     this.name = name
     this.ministryName = ministryName
+    this.rejectionReason = ''
     this.status = status
   }
 
@@ -92,6 +98,8 @@ export class TenantRequest {
    * @param apiData.id - Unique identifier for the tenant request
    * @param apiData.name - Display name of the tenant request
    * @param apiData.ministryName - Associated ministry or organization name
+   * @param apiData.rejectionReason - The reason that a request with status
+   *   REJECTED was rejected.
    * @param apiData.status - Status of the tenant request
    * @returns A new Tenant Request instance
    */
@@ -102,9 +110,10 @@ export class TenantRequest {
     id: string
     name: string
     ministryName: string
+    rejectionReason?: string
     status: string
   }): TenantRequest {
-    return new TenantRequest(
+    const tenantRequest = new TenantRequest(
       apiData.createdBy,
       apiData.createdDateTime,
       apiData.description,
@@ -113,5 +122,9 @@ export class TenantRequest {
       apiData.ministryName,
       apiData.status,
     )
+
+    tenantRequest.rejectionReason = apiData.rejectionReason || ''
+
+    return tenantRequest
   }
 }
