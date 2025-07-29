@@ -17,12 +17,10 @@ function handleDialogAction(action: string) {
 </script>
 
 <template>
-  <!-- Show content if ops admin -->
   <div v-if="isOperationsAdmin">
     <slot></slot>
   </div>
 
-  <!-- Show SimpleDialog if not ops admin -->
   <SimpleDialog
     v-else
     :model-value="true"
