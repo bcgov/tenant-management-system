@@ -52,6 +52,7 @@ jobs:
       release_name: ${{ github.event.repository.name }}-test
       environment: test
       db_user: app
+      preserve_database: true  # ✅ PRESERVE TEST DATABASE
       tags: ${{ github.ref_name == 'main' && (inputs.tags || 'latest') || format('test-{0}', github.ref_name) }}
       params: >-
         --set backend.deploymentStrategy=RollingUpdate
