@@ -1,14 +1,43 @@
 <script setup lang="ts">
+import { ref } from 'vue'
+
 import BaseAdminContainer from '@/components/container/BaseAdminContainer.vue'
+import TenantRequestContainer from '@/components/container/TenantRequestContainer.vue'
 import BaseSecureView from '@/views/BaseSecureView.vue'
+
+const tab = ref<number>(0)
 </script>
 
 <template>
   <BaseSecureView>
     <BaseAdminContainer>
-      <div>
-        <h1>Settings</h1>
-      </div>
+      <v-card elevation="0">
+        <v-tabs v-model="tab" :mandatory="false">
+          <!-- The v-tabs component insists on always having an active tab. Use
+           an invisible Tab 0 to make v-tabs happy. -->
+          <v-tab :value="0" class="pa-0 ma-0" style="min-width: 0px" />
+          <v-tab :value="1">Tenant Requests</v-tab>
+          <v-tab :value="2">Shared Services</v-tab>
+        </v-tabs>
+
+        <v-window v-model="tab">
+          <v-window-item :value="0" />
+
+          <v-window-item :value="1">
+            <TenantRequestContainer />
+          </v-window-item>
+
+          <v-window-item :value="2">
+            <v-container fluid>
+              <v-row>
+                <v-col cols="12">
+                  <p>Content for Shared Services tab</p>
+                </v-col>
+              </v-row>
+            </v-container>
+          </v-window-item>
+        </v-window>
+      </v-card>
     </BaseAdminContainer>
   </BaseSecureView>
 </template>

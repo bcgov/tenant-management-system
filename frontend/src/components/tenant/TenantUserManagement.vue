@@ -195,7 +195,7 @@ function handleConfirmButtonClick(action: string) {
           hover
         >
           <template #no-data>
-            <v-alert type="info">You have no users in this tenant.</v-alert>
+            <v-alert type="info">You have no users in this tenant</v-alert>
           </template>
           <template #[`item.roles`]="{ item }">
             <div class="d-flex flex-wrap" style="gap: 8px; margin-block: 4px">

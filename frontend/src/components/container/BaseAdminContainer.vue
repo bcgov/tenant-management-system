@@ -23,10 +23,10 @@ function handleDialogAction(action: string) {
 
   <SimpleDialog
     v-else
-    :model-value="true"
-    title="You are not authorized to view this page"
-    message="Click 'OK' to return to the TMS home page."
     :buttons="[{ text: 'OK', action: 'ok', type: 'primary' }]"
+    :model-value="true"
+    message="Click 'OK' to return to the TMS home page."
+    title="You are not authorized to view this page"
     @button-click="handleDialogAction"
   />
 </template>

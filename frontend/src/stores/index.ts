@@ -1,5 +1,6 @@
 export { useAuthStore } from './useAuthStore'
 export { useGroupStore } from './useGroupStore'
 export { useRoleStore } from './useRoleStore'
+export { useTenantRequestStore } from './useTenantRequestStore'
 export { useTenantStore } from './useTenantStore'
 export { useUserStore } from './useUserStore'
