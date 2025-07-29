@@ -79,7 +79,17 @@ const rules = {
   notDuplicated: () =>
     !props.isDuplicateName ||
     'Name must be unique for this ministry/organization',
-  required: (value: string) => !!value || 'Required',
+  required: (value: string) => {
+    if (!value) {
+      return 'Required'
+    }
+
+    if (!value.trim()) {
+      return 'Cannot be only spaces'
+    }
+
+    return true
+  },
 }
 
 function handleCancel() {
@@ -97,6 +107,10 @@ function handleCancel() {
 async function handleSubmit() {
   const result = await form.value?.validate()
   if (result?.valid) {
+    formData.value.name = formData.value.name.trim()
+    formData.value.ministryName = formData.value.ministryName.trim()
+    formData.value.description = formData.value.description.trim()
+
     emit('update', formData.value)
   }
 }

@@ -1,4 +1,4 @@
-import { User } from '@/models/user.model'
+import { User } from '@/models'
 
 /**
  * Utility type that represents the subset of Group properties used in the form
