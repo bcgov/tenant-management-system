@@ -83,13 +83,6 @@ export const useTenantStore = defineStore('tenant', () => {
     user.roles = user.roles.filter((role) => role.id !== roleId)
   }
 
-  const requestTenant = async (
-    tenantDetails: TenantDetailFields,
-    user: User,
-  ) => {
-    await tenantService.requestTenant(tenantDetails, user)
-  }
-
   const updateTenantDetails = async (
     id: string,
     tenantDetails: TenantDetailFields,
@@ -125,7 +118,6 @@ export const useTenantStore = defineStore('tenant', () => {
     fetchTenants,
     getTenant,
     removeTenantUserRole,
-    requestTenant,
     updateTenantDetails,
   }
 })

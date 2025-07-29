@@ -9,8 +9,8 @@ import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import LoadingWrapper from '@/components/ui/LoadingWrapper.vue'
 import { useNotification } from '@/composables'
 import { DomainError, DuplicateEntityError } from '@/errors'
-import { Tenant, type TenantDetailFields } from '@/models'
-import { useAuthStore, useTenantStore } from '@/stores'
+import { Tenant, type TenantRequestDetailFields } from '@/models'
+import { useAuthStore, useTenantRequestStore, useTenantStore } from '@/stores'
 import BaseSecureView from '@/views/BaseSecureView.vue'
 
 // Router
@@ -24,6 +24,7 @@ const { notification } = useNotification()
 
 // Stores
 const authStore = useAuthStore()
+const tenantRequestStore = useTenantRequestStore()
 const tenantStore = useTenantStore()
 const { loading, tenants } = storeToRefs(tenantStore)
 
@@ -48,9 +49,14 @@ onMounted(async () => {
 })
 
 // Submit handler
-const handleTenantSubmit = async (tenantDetails: TenantDetailFields) => {
+const handleTenantSubmit = async (
+  tenantRequestDetails: TenantRequestDetailFields,
+) => {
   try {
-    await tenantStore.requestTenant(tenantDetails, authStore.authenticatedUser)
+    await tenantRequestStore.createTenantRequest(
+      tenantRequestDetails,
+      authStore.authenticatedUser,
+    )
     notification.success(
       'Your request for a new tenant has been sent to the Tenant Management ' +
         "System administrator. You'll be notified of the outcome within 48 " +
