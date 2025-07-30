@@ -2,6 +2,8 @@
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
 
+// --- Component Interface -----------------------------------------------------
+
 defineProps<{
   modelValue: boolean
   title?: string
@@ -18,7 +20,9 @@ const emit = defineEmits<{
   (e: 'buttonClick', action: string): void
 }>()
 
-function onButtonClick(action: string) {
+// --- Component Methods -------------------------------------------------------
+
+function handleButtonClick(action: string) {
   emit('buttonClick', action)
   emit('update:modelValue', false)
 }
@@ -42,7 +46,7 @@ function onButtonClick(action: string) {
           v-for="btn in buttons"
           :key="btn.action"
           :text="btn.text"
-          @click="onButtonClick(btn.action)"
+          @click="handleButtonClick(btn.action)"
         />
       </v-card-actions>
     </v-card>

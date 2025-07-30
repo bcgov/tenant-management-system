@@ -5,30 +5,28 @@ import { useRoute } from 'vue-router'
 import LoginContainer from '@/components/auth/LoginContainer.vue'
 import TenantDetails from '@/components/tenant/TenantDetails.vue'
 import TenantHeader from '@/components/tenant/TenantHeader.vue'
-import TenantUserManagement from '@/components/tenant/TenantUserManagement.vue'
 import BreadcrumbBar from '@/components/ui/BreadcrumbBar.vue'
 import LoadingWrapper from '@/components/ui/LoadingWrapper.vue'
+import UserManagementContainer from '@/components/user/UserManagementContainer.vue'
 import { useNotification } from '@/composables'
 import { DomainError, DuplicateEntityError } from '@/errors'
-import { type TenantDetailFields, User } from '@/models'
-import { useRoleStore, useTenantStore, useUserStore } from '@/stores'
-import { type IdirSearchType, IDIR_SEARCH_TYPE } from '@/utils/constants'
+import { type TenantDetailFields } from '@/models'
+import { useTenantStore } from '@/stores'
 
+// --- Store and Composable Setup ----------------------------------------------
+
+const notification = useNotification()
 const route = useRoute()
-
-const roleStore = useRoleStore()
 const tenantStore = useTenantStore()
-const userStore = useUserStore()
 
-const { notification } = useNotification()
-
-// Component Data
+// --- Component State ---------------------------------------------------------
 
 const isDuplicateName = ref(false)
-const roles = computed(() => roleStore.roles)
-const searchResults = ref<User[] | null>(null)
+const isEditing = ref(false)
+const showDetail = ref(true)
+const tab = ref<number>(0)
 
-// Component State
+// --- Computed Values ---------------------------------------------------------
 
 const breadcrumbs = computed(() => [
   { title: 'Tenants', disabled: false, href: '/tenants' },
@@ -39,19 +37,13 @@ const breadcrumbs = computed(() => [
   },
 ])
 
-const isEditing = ref(false)
-const isLoading = ref(true)
-const isLoadingSearch = ref(false)
-
-const showDetail = ref(true)
-const tab = ref<number>(0)
-
-// Deal with the case that someone could manually try to send in multiple route
-// parameters for the tenant ID.
 const routeTenantId = computed(() =>
   Array.isArray(route.params.id) ? route.params.id[0] : route.params.id,
 )
 
+// Note: this is a complicated way of not having to declare the type of `tenant`
+// as `Tenant | null`: it's fetched into the store by the onMount function, and
+// then retrieved here.
 const tenant = computed(() => {
   const found = tenantStore.getTenant(routeTenantId.value)
   if (!found) {
@@ -61,84 +53,7 @@ const tenant = computed(() => {
   return found
 })
 
-// Component Lifecycle
-
-onMounted(async () => {
-  try {
-    // Fetch the tenant that is being managed.
-    await tenantStore.fetchTenant(routeTenantId.value)
-
-    // Load the possible roles, used when adding a user to the tenant.
-    await roleStore.fetchRoles()
-  } catch {
-    notification.error('Failed to load tenant data')
-  } finally {
-    isLoading.value = false
-  }
-})
-
-// Subcomponent Event Handlers
-
-async function handleAddUser(user: User) {
-  try {
-    await tenantStore.addTenantUser(tenant.value, user)
-    searchResults.value = null
-    notification.success(
-      'New user successfully added to this tenant',
-      'User Added',
-    )
-  } catch (error) {
-    if (error instanceof DuplicateEntityError) {
-      notification.error(
-        `Cannot add user "${user.ssoUser.displayName}": already a user in ` +
-          `this tenant`,
-      )
-      searchResults.value = null
-    } else {
-      notification.error('Failed to add user')
-    }
-  }
-}
-
-async function handleClearSearch() {
-  searchResults.value = null
-}
-
-async function handleRemoveRole(userId: string, roleId: string) {
-  try {
-    await tenantStore.removeTenantUserRole(tenant.value, userId, roleId)
-    notification.success(
-      'The role was successfully removed from the user',
-      'Role Removed',
-    )
-  } catch {
-    notification.error('Failed to remove user role')
-  }
-}
-
-async function handleUserSearch(
-  searchType: IdirSearchType,
-  searchText: string,
-) {
-  isLoadingSearch.value = true
-
-  try {
-    if (searchType === IDIR_SEARCH_TYPE.FIRST_NAME.value) {
-      searchResults.value = await userStore.searchIdirFirstName(searchText)
-    } else if (searchType === IDIR_SEARCH_TYPE.LAST_NAME.value) {
-      searchResults.value = await userStore.searchIdirLastName(searchText)
-    } else if (searchType === IDIR_SEARCH_TYPE.EMAIL.value) {
-      searchResults.value = await userStore.searchIdirEmail(searchText)
-    } else {
-      throw new Error('Invalid search type')
-    }
-  } catch {
-    notification.error('User search failed')
-    searchResults.value = null
-  } finally {
-    isLoadingSearch.value = false
-  }
-}
+// --- Component Methods -------------------------------------------------------
 
 async function handleUpdateTenant(updatedTenant: TenantDetailFields) {
   try {
@@ -160,11 +75,24 @@ async function handleUpdateTenant(updatedTenant: TenantDetailFields) {
     }
   }
 }
+
+// --- Component Lifecycle -----------------------------------------------------
+
+onMounted(async () => {
+  try {
+    await tenantStore.fetchTenant(routeTenantId.value)
+  } catch {
+    notification.error('Failed to load tenant data')
+  }
+})
 </script>
 
 <template>
   <LoginContainer>
-    <LoadingWrapper :loading="isLoading" loading-message="Loading tenant...">
+    <LoadingWrapper
+      :loading="tenantStore.loading"
+      loading-message="Loading tenant..."
+    >
       <BreadcrumbBar :items="breadcrumbs" class="mb-6" />
 
       <TenantHeader v-model:show-detail="showDetail" :tenant="tenant" />
@@ -191,17 +119,7 @@ async function handleUpdateTenant(updatedTenant: TenantDetailFields) {
           <v-window-item :value="0" />
 
           <v-window-item :value="1">
-            <TenantUserManagement
-              :loading-search="isLoadingSearch"
-              :possible-roles="roles"
-              :search-results="searchResults"
-              :tenant="tenant"
-              @add="handleAddUser"
-              @cancel="searchResults = null"
-              @clear-search="handleClearSearch"
-              @remove-role="handleRemoveRole"
-              @search="handleUserSearch"
-            />
+            <UserManagementContainer :tenant="tenant" />
           </v-window-item>
 
           <v-window-item :value="2">

@@ -1,5 +1,7 @@
 <script setup lang="ts">
-const props = defineProps<{
+// --- Component Interface -----------------------------------------------------
+
+defineProps<{
   disabled?: boolean
   icon: string
   text: string
@@ -20,15 +22,15 @@ const emit = defineEmits<{
 
 <template>
   <v-btn
-    :disabled="props.disabled"
-    :prepend-icon="props.icon"
+    :disabled="disabled"
+    :prepend-icon="icon"
     class="tms-floating-action-button py-2 px-4"
     color="primary"
     size="large"
     variant="text"
     @click="emit('click')"
   >
-    {{ props.text }}
+    {{ text }}
   </v-btn>
 </template>
 

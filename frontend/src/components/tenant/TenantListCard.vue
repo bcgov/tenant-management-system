@@ -3,6 +3,8 @@ import { computed } from 'vue'
 
 import type { Tenant } from '@/models'
 
+// --- Component Interface -----------------------------------------------------
+
 const { tenant } = defineProps<{
   tenant: Tenant
 }>()
@@ -18,6 +20,8 @@ const { tenant } = defineProps<{
 const emit = defineEmits<{
   (event: 'click'): void // NOSONAR: S6598
 }>()
+
+// --- Computed Values ---------------------------------------------------------
 
 const owner = computed(() => {
   return tenant.getFirstOwner()

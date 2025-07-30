@@ -8,43 +8,33 @@ import type { TenantRequest } from '@/models'
 import { useTenantRequestStore } from '@/stores'
 import { TENANT_REQUEST_STATUS } from '@/utils/constants'
 
-const { notification } = useNotification()
+// --- Store and Composable Setup ----------------------------------------------
+
+const notification = useNotification()
 const tenantRequestStore = useTenantRequestStore()
+
+// --- Component State ---------------------------------------------------------
 
 const search = ref('')
 const selectedTenantRequest: Ref<TenantRequest | null> = ref(null)
 
+// --- Computed Values ---------------------------------------------------------
+
 const tenantRequests = computed(() => tenantRequestStore.tenantRequests)
 
-// Component Lifecycle
-
-onMounted(async () => {
-  try {
-    await tenantRequestStore.fetchTenantRequests()
-  } catch {
-    notification.error('Failed to load tenant request data')
-  }
-})
+// --- Component Methods -------------------------------------------------------
 
 const getStatusColor = (status: string) => {
-  switch (status.toLowerCase()) {
-    case 'approved':
+  switch (status) {
+    case TENANT_REQUEST_STATUS.APPROVED.value:
       return 'success'
-    case 'new':
+    case TENANT_REQUEST_STATUS.NEW.value:
       return 'info'
-    case 'rejected':
+    case TENANT_REQUEST_STATUS.REJECTED.value:
       return 'error'
     default:
-      return 'info'
+      return 'warning'
   }
-}
-
-const handleRowClick = (_event: Event, { item }: { item: TenantRequest }) => {
-  selectedTenantRequest.value = item
-}
-
-const handleBackToList = () => {
-  selectedTenantRequest.value = null
 }
 
 const handleApproved = async () => {
@@ -78,6 +68,10 @@ const handleApproved = async () => {
   }
 }
 
+const handleBackToList = () => {
+  selectedTenantRequest.value = null
+}
+
 const handleRejected = async (notes: string) => {
   if (!selectedTenantRequest.value) {
     return
@@ -95,6 +89,20 @@ const handleRejected = async (notes: string) => {
     notification.error('Failed to update Tenant Request')
   }
 }
+
+const handleRowClick = (_event: Event, { item }: { item: TenantRequest }) => {
+  selectedTenantRequest.value = item
+}
+
+// --- Component Lifecycle -----------------------------------------------------
+
+onMounted(async () => {
+  try {
+    await tenantRequestStore.fetchTenantRequests()
+  } catch {
+    notification.error('Failed to load tenant request data')
+  }
+})
 </script>
 
 <template>

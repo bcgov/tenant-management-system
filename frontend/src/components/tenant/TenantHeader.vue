@@ -3,6 +3,8 @@ import { computed, ref } from 'vue'
 
 import type { Tenant } from '@/models'
 
+// --- Component Interface -----------------------------------------------------
+
 const props = defineProps<{
   tenant?: Tenant
 }>()
@@ -19,12 +21,11 @@ const emit = defineEmits<{
   (event: 'update:showDetail', value: boolean): void // NOSONAR: S6598
 }>()
 
+// --- Component State ---------------------------------------------------------
+
 const showDetail = ref(true)
 
-function toggleDetail() {
-  showDetail.value = !showDetail.value
-  emit('update:showDetail', showDetail.value)
-}
+// --- Computed Values ---------------------------------------------------------
 
 const createdDate = computed(() => {
   if (!props.tenant?.createdDate) {
@@ -33,6 +34,13 @@ const createdDate = computed(() => {
 
   return props.tenant.createdDate
 })
+
+// --- Component Methods -------------------------------------------------------
+
+function toggleDetail() {
+  showDetail.value = !showDetail.value
+  emit('update:showDetail', showDetail.value)
+}
 </script>
 
 <template>

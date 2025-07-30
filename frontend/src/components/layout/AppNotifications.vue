@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { useNotification } from '@/composables'
 
-const { notification } = useNotification()
+// --- Store and Composable Setup ----------------------------------------------
+
+const notification = useNotification()
 </script>
 
 <template>

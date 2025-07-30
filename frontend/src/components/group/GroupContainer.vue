@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { storeToRefs } from 'pinia'
 import { computed, onMounted, ref } from 'vue'
 
 import GroupCreateDialog from '@/components/group/GroupCreateDialog.vue'
@@ -12,11 +11,24 @@ import { useAuthStore, useGroupStore } from '@/stores'
 import { ROLES } from '@/utils/constants'
 import { currentUserHasRole } from '@/utils/permissions'
 
+// --- Component Interface -----------------------------------------------------
+
 const props = defineProps<{
   tenant: Tenant
 }>()
 
+// --- Store and Composable Setup ----------------------------------------------
+
 const authStore = useAuthStore()
+const groupStore = useGroupStore()
+const notification = useNotification()
+
+// --- Component State ---------------------------------------------------------
+
+const dialogVisible = ref(false)
+const isDuplicateName = ref(false)
+
+// --- Computed Values ---------------------------------------------------------
 
 const isUserAdmin = computed(() => {
   // A tenant owner, by default, is also a user admin - even if they don't have
@@ -27,40 +39,14 @@ const isUserAdmin = computed(() => {
   )
 })
 
-const groupStore = useGroupStore()
+// --- Component Methods -------------------------------------------------------
 
-const { notification } = useNotification()
-
-// Component Data
-
-const isDuplicateName = ref(false)
-
-// Component State
-
-const isLoading = ref(true)
-const { groups } = storeToRefs(groupStore)
-
-const dialogVisible = ref(false)
-const openDialog = () => (dialogVisible.value = true)
-const closeDialog = () => {
+const dialogClose = () => {
   dialogVisible.value = false
   isDuplicateName.value = false
 }
 
-// Component Lifecycle
-
-onMounted(async () => {
-  try {
-    // Fetch the tenant that is being managed.
-    await groupStore.fetchGroups(props.tenant.id)
-  } catch {
-    notification.error('Failed to load tenant groups')
-  } finally {
-    isLoading.value = false
-  }
-})
-
-// Subcomponent Event Handlers
+const dialogOpen = () => (dialogVisible.value = true)
 
 const handleGroupCreate = async (
   groupDetails: GroupDetailFields,
@@ -77,7 +63,7 @@ const handleGroupCreate = async (
 
     isDuplicateName.value = false
     notification.success('Group Created Successfully')
-    closeDialog()
+    dialogClose()
   } catch (error: unknown) {
     if (error instanceof DuplicateEntityError) {
       // If the API says that this name exists already, then show the name
@@ -122,6 +108,16 @@ const handleGroupCreate = async (
     }
   }
 }
+
+// --- Component Lifecycle -----------------------------------------------------
+
+onMounted(async () => {
+  try {
+    await groupStore.fetchGroups(props.tenant.id)
+  } catch {
+    notification.error('Failed to load tenant groups')
+  }
+})
 </script>
 
 <template>
@@ -131,11 +127,11 @@ const handleGroupCreate = async (
     v-if="isUserAdmin"
     class="mb-12"
     text="Create a Group"
-    @click="openDialog"
+    @click="dialogOpen"
   />
 
   <GroupList
-    v-if="!isLoading && groups.length > 0"
+    v-if="!groupStore.loading && groupStore.groups.length > 0"
     :groups="groupStore.groups"
     :is-admin="isUserAdmin"
   />

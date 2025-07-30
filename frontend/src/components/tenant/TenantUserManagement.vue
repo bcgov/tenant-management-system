@@ -11,6 +11,8 @@ import type { Role, Tenant, User } from '@/models'
 import { type IdirSearchType, ROLES } from '@/utils/constants'
 import { currentUserHasRole } from '@/utils/permissions'
 
+// --- Component Interface -----------------------------------------------------
+
 const props = defineProps<{
   loadingSearch: boolean
   possibleRoles?: Role[]
@@ -25,7 +27,30 @@ const emit = defineEmits<{
   (event: 'search', searchType: IdirSearchType, searchText: string): void
 }>()
 
-// Permissions
+// --- Component State ---------------------------------------------------------
+
+const confirmDialog = ref({
+  title: 'Confirm Role Removal',
+  message: 'Are you sure you want to remove this role from the user?',
+  buttons: [
+    { text: 'Cancel', action: 'cancel', type: 'secondary' as const },
+    { text: 'Remove', action: 'remove', type: 'primary' as const },
+  ],
+})
+const confirmDialogVisible = ref(false)
+const infoDialog = ref({
+  title: 'Action Blocked',
+  message: '',
+  buttons: [{ text: 'OK', action: 'ok', type: 'primary' as const }],
+})
+const infoDialogVisible = ref(false)
+const pendingRole = ref<Role | null>(null)
+const pendingUser = ref<User | null>(null)
+const selectedRoles = ref<Role[]>([])
+const selectedUser = ref<User | null>(null)
+const showSearch = ref(false)
+
+// --- Computed Values ---------------------------------------------------------
 
 const isUserAdmin = computed(() => {
   // A tenant owner, by default, is also a user admin - even if they don't have
@@ -36,55 +61,17 @@ const isUserAdmin = computed(() => {
   )
 })
 
-const showSearch = ref(false)
-const selectedUser = ref<User | null>(null)
-const selectedRoles = ref<Role[]>([])
-
 const roles = computed(() => props.possibleRoles ?? [])
 
-// Shared dialog state
-const pendingUser = ref<User | null>(null)
-const pendingRole = ref<Role | null>(null)
+// --- Component Methods -------------------------------------------------------
 
-// Info dialog state
-const infoDialog = ref({
-  title: 'Action Blocked',
-  message: '',
-  buttons: [{ text: 'OK', action: 'ok', type: 'primary' as const }],
-})
-const showInfoDialog = ref(false)
-
-// Confirmation dialog state
-const confirmDialog = ref({
-  title: 'Confirm Role Removal',
-  message: 'Are you sure you want to remove this role from the user?',
-  buttons: [
-    { text: 'Cancel', action: 'cancel', type: 'secondary' as const },
-    { text: 'Remove', action: 'remove', type: 'primary' as const },
-  ],
-})
-const showConfirmDialog = ref(false)
-
-function toggleSearch() {
-  showSearch.value = !showSearch.value
-  if (!showSearch.value) {
-    selectedUser.value = null
-    selectedRoles.value = []
+function confirmRemoveRole() {
+  if (pendingUser.value && pendingRole.value) {
+    emit('remove-role', pendingUser.value.id, pendingRole.value.id)
   }
-}
 
-function onUserSelected(user: User) {
-  selectedUser.value = user
-}
-
-function onClearSearch() {
-  selectedUser.value = null
-  selectedRoles.value = []
-  emit('clear-search')
-}
-
-function onSearch(searchType: IdirSearchType, searchText: string) {
-  emit('search', searchType, searchText)
+  pendingUser.value = null
+  pendingRole.value = null
 }
 
 function toggleRole(role: Role, checked: boolean) {
@@ -94,6 +81,14 @@ function toggleRole(role: Role, checked: boolean) {
     }
   } else {
     selectedRoles.value = selectedRoles.value.filter((r) => r.id !== role.id)
+  }
+}
+
+function toggleSearch() {
+  showSearch.value = !showSearch.value
+  if (!showSearch.value) {
+    selectedUser.value = null
+    selectedRoles.value = []
   }
 }
 
@@ -112,12 +107,22 @@ function handleCancel() {
   toggleSearch()
 }
 
-function showInfo(message: string) {
-  infoDialog.value.message = message
-  showInfoDialog.value = true
+function handleClearSearch() {
+  selectedUser.value = null
+  selectedRoles.value = []
+  emit('clear-search')
 }
 
-function onRemoveRole(user: User, role: Role) {
+function handleConfirmButtonClick(action: string) {
+  if (action === 'cancel') {
+    pendingUser.value = null
+    pendingRole.value = null
+  } else if (action === 'remove') {
+    confirmRemoveRole()
+  }
+}
+
+function handleRemoveRole(user: User, role: Role) {
   if (!props.tenant) {
     return
   }
@@ -144,27 +149,20 @@ function onRemoveRole(user: User, role: Role) {
 
   pendingUser.value = user
   pendingRole.value = role
-  showConfirmDialog.value = true
+  confirmDialogVisible.value = true
 }
 
-function confirmRemoveRole() {
-  if (pendingUser.value && pendingRole.value) {
-    emit('remove-role', pendingUser.value.id, pendingRole.value.id)
-  }
-
-  pendingUser.value = null
-  pendingRole.value = null
+function handleSearch(searchType: IdirSearchType, searchText: string) {
+  emit('search', searchType, searchText)
 }
 
-// Dialog event handler
+function handleUserSelected(user: User) {
+  selectedUser.value = user
+}
 
-function handleConfirmButtonClick(action: string) {
-  if (action === 'cancel') {
-    pendingUser.value = null
-    pendingRole.value = null
-  } else if (action === 'remove') {
-    confirmRemoveRole()
-  }
+function showInfo(message: string) {
+  infoDialog.value.message = message
+  infoDialogVisible.value = true
 }
 </script>
 
@@ -211,7 +209,7 @@ function handleConfirmButtonClick(action: string) {
                   class="ml-1 cursor-pointer"
                   icon="mdi-close"
                   size="small"
-                  @click.stop="onRemoveRole(item, role)"
+                  @click.stop="handleRemoveRole(item, role)"
                 />
               </v-chip>
             </div>
@@ -244,9 +242,9 @@ function handleConfirmButtonClick(action: string) {
           <UserSearch
             :loading="loadingSearch"
             :search-results="searchResults"
-            @clear-search="onClearSearch"
-            @search="onSearch"
-            @select="onUserSelected"
+            @clear-search="handleClearSearch"
+            @search="handleSearch"
+            @select="handleUserSelected"
           />
 
           <v-row v-if="selectedUser" class="mt-4">
@@ -293,7 +291,7 @@ function handleConfirmButtonClick(action: string) {
 
     <!-- Info dialog for single-button notifications -->
     <SimpleDialog
-      v-model="showInfoDialog"
+      v-model="infoDialogVisible"
       :buttons="infoDialog.buttons"
       :message="infoDialog.message"
       :title="infoDialog.title"
@@ -301,7 +299,7 @@ function handleConfirmButtonClick(action: string) {
 
     <!-- Confirmation dialog for yes/no decisions -->
     <SimpleDialog
-      v-model="showConfirmDialog"
+      v-model="confirmDialogVisible"
       :buttons="confirmDialog.buttons"
       :message="confirmDialog.message"
       :title="confirmDialog.title"

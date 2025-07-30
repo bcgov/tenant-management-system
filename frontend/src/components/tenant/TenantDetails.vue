@@ -8,6 +8,8 @@ import type { Tenant, TenantDetailFields } from '@/models'
 import { MINISTRIES, ROLES } from '@/utils/constants'
 import { currentUserHasRole } from '@/utils/permissions'
 
+// --- Component Interface -----------------------------------------------------
+
 const props = defineProps<{
   isDuplicateName: boolean
   isEditing: boolean
@@ -20,13 +22,7 @@ const emit = defineEmits<{
   (event: 'update:isEditing', value: boolean): void
 }>()
 
-// Permissions
-
-const isTenantOwner = computed(() => {
-  return currentUserHasRole(props.tenant, ROLES.TENANT_OWNER.value)
-})
-
-// Form state
+// --- Component State ---------------------------------------------------------
 
 const form = ref<InstanceType<typeof VForm> | null>(null)
 const formData = ref<TenantDetailFields>({
@@ -36,11 +32,18 @@ const formData = ref<TenantDetailFields>({
 })
 const isFormValid = ref(false)
 
-const owner = computed(() => {
-  return props.tenant?.getFirstOwner()
-})
+// --- Watchers and Effects ----------------------------------------------------
 
-// Reset form when tenant changes
+// When parent sets the duplicated name flag, force re-validation so that the
+// message is displayed.
+watch(
+  () => props.isDuplicateName,
+  async () => {
+    await nextTick()
+    await form.value?.validate()
+  },
+)
+
 watch(
   () => props.tenant,
   (newTenant) => {
@@ -55,16 +58,6 @@ watch(
   { immediate: true },
 )
 
-// When parent sets the duplicated name flag, force re-validation so that the
-// message is displayed.
-watch(
-  () => props.isDuplicateName,
-  async () => {
-    await nextTick()
-    await form.value?.validate()
-  },
-)
-
 watch(
   () => [formData.value.name, formData.value.ministryName],
   () => {
@@ -72,25 +65,17 @@ watch(
   },
 )
 
-// Validation
-const rules = {
-  maxLength: (max: number) => (value: string) =>
-    !value || value.length <= max || `Must be ${max} characters or less`,
-  notDuplicated: () =>
-    !props.isDuplicateName ||
-    'Name must be unique for this ministry/organization',
-  required: (value: string) => {
-    if (!value) {
-      return 'Required'
-    }
+// --- Computed Values ---------------------------------------------------------
 
-    if (!value.trim()) {
-      return 'Cannot be only spaces'
-    }
+const isTenantOwner = computed(() => {
+  return currentUserHasRole(props.tenant, ROLES.TENANT_OWNER.value)
+})
 
-    return true
-  },
-}
+const owner = computed(() => {
+  return props.tenant?.getFirstOwner()
+})
+
+// --- Component Methods -------------------------------------------------------
 
 function handleCancel() {
   // Reset form data to original tenant values
@@ -113,6 +98,25 @@ async function handleSubmit() {
 
     emit('update', formData.value)
   }
+}
+
+const rules = {
+  maxLength: (max: number) => (value: string) =>
+    !value || value.length <= max || `Must be ${max} characters or less`,
+  notDuplicated: () =>
+    !props.isDuplicateName ||
+    'Name must be unique for this ministry/organization',
+  required: (value: string) => {
+    if (!value) {
+      return 'Required'
+    }
+
+    if (!value.trim()) {
+      return 'Cannot be only spaces'
+    }
+
+    return true
+  },
 }
 
 function toggleEdit() {
