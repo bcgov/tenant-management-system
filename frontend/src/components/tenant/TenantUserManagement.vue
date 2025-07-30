@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 
-import GroupContainer from '@/components/group/GroupContainer.vue'
+import GroupListContainer from '@/components/group/GroupListContainer.vue'
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
 import FloatingActionButton from '@/components/ui/FloatingActionButton.vue'
@@ -308,6 +308,6 @@ function showInfo(message: string) {
 
     <v-divider class="my-12" />
 
-    <GroupContainer :tenant="tenant" />
+    <GroupListContainer :tenant="tenant" />
   </v-container>
 </template>

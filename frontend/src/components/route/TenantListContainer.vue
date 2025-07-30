@@ -88,7 +88,7 @@ onMounted(async () => {
 <template>
   <LoginContainer>
     <LoadingWrapper
-      :loading="tenantStore.loading"
+      :loading="!tenantStore.tenants"
       loading-message="Loading tenants..."
     >
       <v-row class="mb-8">

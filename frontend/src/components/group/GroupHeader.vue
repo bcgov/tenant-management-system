@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
-import type { Tenant } from '@/models'
+import type { Group } from '@/models'
 
 // --- Component Interface -----------------------------------------------------
 
 defineProps<{
-  tenant: Tenant
+  group: Group
 }>()
 
 /**
@@ -37,21 +37,21 @@ function toggleDetail() {
   <v-sheet color="surface-light-blue">
     <v-row align="center" class="pa-4" no-gutters>
       <v-col cols="8">
-        <h2>Tenant Details</h2>
+        <h2>Group Details</h2>
       </v-col>
       <v-col class="d-flex align-center justify-end" cols="4">
         <div class="me-4">
           <p>
             Date Created:
             <span class="text-no-wrap">
-              <strong>{{ tenant.createdDate }}</strong>
+              <strong>{{ group.createdDate }}</strong>
             </span>
           </p>
         </div>
         <div class="me-4">
           <p>
             Created By:
-            <strong>{{ tenant.createdBy }}</strong>
+            <strong>{{ group.createdBy }}</strong>
           </p>
         </div>
         <v-btn

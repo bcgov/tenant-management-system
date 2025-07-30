@@ -71,7 +71,7 @@ function handleSearch() {
 
 <template>
   <v-row>
-    <v-col md="2">
+    <v-col cols="2">
       <v-select
         v-model="searchType"
         :items="SEARCH_TYPES"
@@ -79,15 +79,15 @@ function handleSearch() {
         hide-details
       />
     </v-col>
-    <v-col md="4">
+    <v-col cols="4">
       <v-text-field
         v-model="searchText"
         label="Search text"
         hide-details
-        @keyup.enter="search"
+        @keyup.enter="handleSearch"
       />
     </v-col>
-    <v-col class="d-flex align-center" md="2">
+    <v-col class="d-flex align-center" cols="2">
       <ButtonPrimary
         :disabled="!isSearchEnabled"
         text="Search"

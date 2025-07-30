@@ -38,19 +38,13 @@ const breadcrumbs = computed(() => [
 ])
 
 const routeTenantId = computed(() =>
-  Array.isArray(route.params.id) ? route.params.id[0] : route.params.id,
+  Array.isArray(route.params.tenantId)
+    ? route.params.tenantId[0]
+    : route.params.tenantId,
 )
 
-// Note: this is a complicated way of not having to declare the type of `tenant`
-// as `Tenant | null`: it's fetched into the store by the onMount function, and
-// then retrieved here.
 const tenant = computed(() => {
-  const found = tenantStore.getTenant(routeTenantId.value)
-  if (!found) {
-    throw new Error('Tenant not loaded')
-  }
-
-  return found
+  return tenantStore.getTenant(routeTenantId.value) || null
 })
 
 // --- Component Methods -------------------------------------------------------
@@ -82,17 +76,14 @@ onMounted(async () => {
   try {
     await tenantStore.fetchTenant(routeTenantId.value)
   } catch {
-    notification.error('Failed to load tenant data')
+    notification.error('Failed to load tenant')
   }
 })
 </script>
 
 <template>
   <LoginContainer>
-    <LoadingWrapper
-      :loading="tenantStore.loading"
-      loading-message="Loading tenant..."
-    >
+    <LoadingWrapper :loading="!tenant" loading-message="Loading tenant...">
       <BreadcrumbBar :items="breadcrumbs" class="mb-6" />
 
       <TenantHeader v-model:show-detail="showDetail" :tenant="tenant" />
