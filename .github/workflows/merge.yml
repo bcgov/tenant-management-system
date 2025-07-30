@@ -2,7 +2,7 @@ name: Merge
 
 on:
   push:
-    branches: [main, deployment-fix]  # Add your test branch here
+    branches: [main, deployment-fix]
     paths-ignore:
       - '*.md'
       - '.github/**'
@@ -16,15 +16,15 @@ on:
         default: latest
 
 concurrency:
-  # Do not interrupt previous workflows
-  group: ${{ github.workflow }}-${{ github.ref }}  # Add ref to allow parallel testing
-  cancel-in-progress: false
+  # Cancel previous workflows when new merge happens
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true  # ✅ FIXED: This should be true to cancel previous runs
 
 permissions:
   contents: read
   deployments: write
   id-token: write
-  packages: write  # Added this permission
+  packages: write
 
 jobs:
   builds:
@@ -32,15 +32,16 @@ jobs:
     uses: ./.github/workflows/.build-images.yml
     permissions:
       packages: write
-      id-token: write  # Explicitly grant id-token permission to this job
+      id-token: write
     with:
       tags: ${{ github.ref_name == 'main' && (inputs.tags || 'latest') || format('test-{0}', github.ref_name) }}
       keep_versions: 10
   
-  # Make deploy-test depend on builds
+  # Auto-deploy to TEST (merge auto-deploys here)
   deploy-test:
     name: Deploy (TEST)
     needs: [builds]
+    if: github.ref_name == 'main'
     uses: ./.github/workflows/.deployer.yml
     secrets:
       oc_namespace: ${{ secrets.OC_NAMESPACE }}
@@ -52,7 +53,7 @@ jobs:
       release_name: ${{ github.event.repository.name }}-test
       environment: test
       db_user: app
-      preserve_database: true  # ✅ PRESERVE TEST DATABASE
+      preserve_database: true
       tags: ${{ github.ref_name == 'main' && (inputs.tags || 'latest') || format('test-{0}', github.ref_name) }}
       params: >-
         --set backend.deploymentStrategy=RollingUpdate
@@ -64,29 +65,29 @@ jobs:
         --set backend.pdb.enabled=true
       deployment_url: https://${{ github.event.repository.name }}-test-frontend.apps.silver.devops.gov.bc.ca
 
-  # Only run security scan and prod deployment for main branch
+  # Security scan after TEST deployment
   test_security_scan:
     permissions:
       contents: read
     name: ZAP Security Scan (TEST)
     needs: [deploy-test]
-    if: github.ref_name == 'main'  # Only for main branch
+    if: github.ref_name == 'main'
     uses: ./.github/workflows/.zap-scan.yml
     with:
       target_url: https://${{ github.event.repository.name }}-test-frontend.apps.silver.devops.gov.bc.ca
       fail_on_high: true
       scan_type: full
 
-  # Manual approval step before production deployment
+  # Manual approval gate for PROD deployment
   approve-prod:
     name: Approve Production Deployment
-    needs: [builds, test_security_scan]  # Wait for security scan to pass
-    if: github.ref_name == 'main'  # Only for main branch
+    needs: [test_security_scan]
+    if: github.ref_name == 'main'
     runs-on: ubuntu-24.04
     environment:
       name: PROD
     steps:
-      - name: Manual Approval Required
+      - name: Manual Approval Required for PROD
         run: |
           echo "Manual approval required for production deployment"
           echo "Test environment: https://${{ github.event.repository.name }}-test-frontend.apps.silver.devops.gov.bc.ca"
@@ -95,8 +96,8 @@ jobs:
 
   deploy-prod:
     name: Deploy (PROD)
-    needs: [approve-prod]  # Wait for manual approval
-    if: github.ref_name == 'main'  # Only for main branch
+    needs: [approve-prod]
+    if: github.ref_name == 'main'
     uses: ./.github/workflows/.deployer.yml
     secrets:
       oc_namespace: ${{ secrets.OC_NAMESPACE }}
@@ -108,7 +109,8 @@ jobs:
       release_name: ${{ github.event.repository.name }}-prod
       environment: prod
       db_user: app
-      tags: ${{ inputs.tags || 'latest' }}  # Use tags instead of deprecated tag
+      preserve_database: true
+      tags: ${{ inputs.tags || 'latest' }}
       params: >-
         --set backend.deploymentStrategy=RollingUpdate
         --set frontend.deploymentStrategy=RollingUpdate
