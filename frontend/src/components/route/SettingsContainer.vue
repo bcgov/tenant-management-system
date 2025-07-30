@@ -1,16 +1,16 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
-import BaseAdminContainer from '@/components/container/BaseAdminContainer.vue'
-import TenantRequestContainer from '@/components/container/TenantRequestContainer.vue'
-import BaseSecureView from '@/views/BaseSecureView.vue'
+import AdministratorContainer from '@/components/auth/AdministratorContainer.vue'
+import LoginContainer from '@/components/auth/LoginContainer.vue'
+import TenantRequestContainer from '@/components/tenantrequest/TenantRequestContainer.vue'
 
 const tab = ref<number>(0)
 </script>
 
 <template>
-  <BaseSecureView>
-    <BaseAdminContainer>
+  <LoginContainer>
+    <AdministratorContainer>
       <v-card elevation="0">
         <v-tabs v-model="tab" :mandatory="false">
           <!-- The v-tabs component insists on always having an active tab. Use
@@ -38,6 +38,6 @@ const tab = ref<number>(0)
           </v-window-item>
         </v-window>
       </v-card>
-    </BaseAdminContainer>
-  </BaseSecureView>
+    </AdministratorContainer>
+  </LoginContainer>
 </template>

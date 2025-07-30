@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 
+import LoginContainer from '@/components/auth/LoginContainer.vue'
 import TenantDetails from '@/components/tenant/TenantDetails.vue'
 import TenantHeader from '@/components/tenant/TenantHeader.vue'
 import TenantUserManagement from '@/components/tenant/TenantUserManagement.vue'
@@ -12,7 +13,6 @@ import { DomainError, DuplicateEntityError } from '@/errors'
 import { type TenantDetailFields, User } from '@/models'
 import { useRoleStore, useTenantStore, useUserStore } from '@/stores'
 import { type IdirSearchType, IDIR_SEARCH_TYPE } from '@/utils/constants'
-import BaseSecureView from '@/views/BaseSecureView.vue'
 
 const route = useRoute()
 
@@ -163,7 +163,7 @@ async function handleUpdateTenant(updatedTenant: TenantDetailFields) {
 </script>
 
 <template>
-  <BaseSecureView>
+  <LoginContainer>
     <LoadingWrapper :loading="isLoading" loading-message="Loading tenant...">
       <BreadcrumbBar :items="breadcrumbs" class="mb-6" />
 
@@ -216,5 +216,5 @@ async function handleUpdateTenant(updatedTenant: TenantDetailFields) {
         </v-window>
       </v-card>
     </LoadingWrapper>
-  </BaseSecureView>
+  </LoginContainer>
 </template>
