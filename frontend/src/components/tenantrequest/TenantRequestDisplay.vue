@@ -6,6 +6,8 @@ import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
 import type { TenantRequest } from '@/models'
 import { TENANT_REQUEST_STATUS } from '@/utils/constants'
 
+// --- Component Interface -----------------------------------------------------
+
 const props = defineProps<{
   tenantRequest: TenantRequest
 }>()
@@ -16,8 +18,10 @@ const emit = defineEmits<{
   rejected: [notes: string]
 }>()
 
-const selectedStatus = ref(props.tenantRequest.status)
+// --- Component State ---------------------------------------------------------
+
 const rejectionNotes = ref('')
+const selectedStatus = ref(props.tenantRequest.status)
 
 // Copy these here so that the order can be controlled.
 const statusOptions = [
@@ -25,6 +29,8 @@ const statusOptions = [
   TENANT_REQUEST_STATUS.APPROVED,
   TENANT_REQUEST_STATUS.REJECTED,
 ]
+
+// --- Computed Values ---------------------------------------------------------
 
 const isFormValid = computed(() => {
   if (selectedStatus.value === TENANT_REQUEST_STATUS.APPROVED.value) {
@@ -41,6 +47,8 @@ const isFormValid = computed(() => {
 const showNotesField = computed(() => {
   return selectedStatus.value === TENANT_REQUEST_STATUS.REJECTED.value
 })
+
+// --- Component Methods -------------------------------------------------------
 
 const handleBack = () => {
   emit('back')
