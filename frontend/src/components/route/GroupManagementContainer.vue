@@ -76,6 +76,7 @@ async function handleUpdateGroup(updatedGroup: GroupDetailFields) {
       updatedGroup,
     )
     isEditing.value = false
+    notification.success('Group Details Successfully Updated')
   } catch (error) {
     if (error instanceof DuplicateEntityError) {
       // If the API says that this name exists already, then show the name
