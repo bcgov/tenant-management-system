@@ -25,7 +25,9 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      postgres-operator.crunchydata.com/cluster: {{ .Values.global.databaseAlias}}
+      # ✅ FIXED: Use proper database pod selector
+      app: postgres
+      instance: {{ .Values.global.databaseAlias | default .Release.Name }}
   ingress:
     - ports:
         - protocol: TCP
@@ -33,10 +35,35 @@ spec:
       from:
         - podSelector:
             matchLabels:
-              app.kubernetes.io/name: {{ template  "backend.name"}}
+              app.kubernetes.io/name: {{ template "backend.name" . }}
               app.kubernetes.io/instance: {{ .Release.Name }}
   policyTypes:
     - Ingress
+---
+# ✅ NEW: Additional network policy for Crunchy PostgreSQL if using Crunchy operator
+{{- if .Values.crunchy.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ .Release.Name }}-allow-backend-to-crunchy-db
+  labels: {{- include "selectorLabels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      # Crunchy PostgreSQL pod labels
+      postgres-operator.crunchydata.com/cluster: {{ .Values.global.databaseAlias | default .Release.Name }}
+  ingress:
+    - ports:
+        - protocol: TCP
+          port: 5432
+      from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: {{ template "backend.name" . }}
+              app.kubernetes.io/instance: {{ .Release.Name }}
+  policyTypes:
+    - Ingress
+{{- end }}
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -46,7 +73,7 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app.kubernetes.io/name: {{ template  "backend.name"}}
+      app.kubernetes.io/name: {{ template "backend.name" . }}
       app.kubernetes.io/instance: {{ .Release.Name }}
   ingress:
     - ports:
@@ -55,7 +82,77 @@ spec:
       from:
         - podSelector:
             matchLabels:
-              app.kubernetes.io/name: {{ template  "frontend.name"}}
+              app.kubernetes.io/name: {{ template "frontend.name" . }}
               app.kubernetes.io/instance: {{ .Release.Name }}
   policyTypes:
     - Ingress
+---
+# ✅ NEW: Allow backend to connect to pgbouncer service
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ .Release.Name }}-allow-backend-to-pgbouncer
+  labels: {{- include "selectorLabels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      # This matches the service selector for pgbouncer
+      app: postgres
+      instance: {{ .Values.global.databaseAlias | default .Release.Name }}
+  ingress:
+    - ports:
+        - protocol: TCP
+          port: 5432
+      from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: {{ template "backend.name" . }}
+              app.kubernetes.io/instance: {{ .Release.Name }}
+  policyTypes:
+    - Ingress
+---
+# ✅ NEW: Egress policy for backend to allow database connections
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ .Release.Name }}-backend-egress-to-db
+  labels: {{- include "selectorLabels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: {{ template "backend.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  egress:
+    # Allow backend to connect to database
+    - ports:
+        - protocol: TCP
+          port: 5432
+      to:
+        - podSelector:
+            matchLabels:
+              app: postgres
+              instance: {{ .Values.global.databaseAlias | default .Release.Name }}
+    # Allow backend to connect to Crunchy database if enabled
+    {{- if .Values.crunchy.enabled }}
+    - ports:
+        - protocol: TCP
+          port: 5432
+      to:
+        - podSelector:
+            matchLabels:
+              postgres-operator.crunchydata.com/cluster: {{ .Values.global.databaseAlias | default .Release.Name }}
+    {{- end }}
+    # Allow DNS resolution
+    - ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # Allow backend to make external API calls (for SSO, etc.)
+    - ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+  policyTypes:
+    - Egress
