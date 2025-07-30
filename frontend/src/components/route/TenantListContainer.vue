@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 
 import LoginContainer from '@/components/auth/LoginContainer.vue'
 import TenantList from '@/components/tenant/TenantList.vue'
-import TenantRequestDialog from '@/components/tenant/TenantRequestDialog.vue'
+import TenantRequestDialog from '@/components/tenantrequest/TenantRequestDialog.vue'
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import LoadingWrapper from '@/components/ui/LoadingWrapper.vue'
 import { useNotification } from '@/composables'
