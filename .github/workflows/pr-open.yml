@@ -22,6 +22,7 @@ jobs:
     permissions:
       packages: write
       id-token: write
+      attestations: write
     with:
       tags: pr-${{ github.event.pull_request.number }}
       keep_versions: 5
