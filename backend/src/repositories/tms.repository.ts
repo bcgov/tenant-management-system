@@ -422,6 +422,8 @@ export class TMSRepository {
         return creator;
     }
 
+
+
     public async getTenant(req:Request) {
         const tenantId:string = req.params.tenantId
         const expand: string[] = typeof req.query.expand === "string" ? req.query.expand.split(",") : []
@@ -673,6 +675,11 @@ export class TMSRepository {
             }
         })
 
+        if (tenantRequestResponse && (tenantRequestResponse as any).createdBy && (tenantRequestResponse as any).createdBy !== 'system') {
+            const creator: any = await this.manager.findOne('SSOUser', { where: { ssoUserId: (tenantRequestResponse as any).createdBy } });
+            (tenantRequestResponse as any).createdBy = creator?.displayName || (tenantRequestResponse as any).createdBy
+        }
+
         return tenantRequestResponse
     }
 
@@ -770,10 +777,20 @@ export class TMSRepository {
             .orderBy('tenantRequest.requestedAt', 'DESC');
 
         if (status) {
-            queryBuilder.where('tenantRequest.status = :status', { status });
+            queryBuilder.where('tenantRequest.status = :status', { status })
         }
 
-        return await queryBuilder.getMany();
+        const tenantRequests:TenantRequest[] = await queryBuilder.getMany()
+
+        tenantRequests.forEach(request => {
+            if (request.requestedBy && request.requestedBy.displayName) {
+                request.createdBy = request.requestedBy.displayName
+            } else {
+                request.createdBy = 'system'
+            }
+        });
+
+        return tenantRequests
     }
 
 
