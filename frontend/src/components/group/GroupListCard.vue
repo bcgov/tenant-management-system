@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { Group } from '@/models'
 
+// --- Component Interface -----------------------------------------------------
+
 const { group } = defineProps<{
   isAdmin: boolean
   group: Group

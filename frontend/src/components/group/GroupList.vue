@@ -2,6 +2,8 @@
 import GroupListCard from '@/components/group/GroupListCard.vue'
 import type { Group } from '@/models'
 
+// --- Component Interface -----------------------------------------------------
+
 defineProps<{
   groups: Group[]
   isAdmin: boolean
@@ -18,6 +20,8 @@ defineProps<{
 const emit = defineEmits<{
   (event: 'select', id: Group['id']): void // NOSONAR: S6598
 }>()
+
+// --- Component Methods -------------------------------------------------------
 
 function handleClick(id: Group['id']) {
   emit('select', id)
