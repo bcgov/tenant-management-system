@@ -3,6 +3,7 @@ import { GroupUser } from '../entities/GroupUser'
 import { TenantUser } from '../entities/TenantUser'
 import { Tenant } from '../entities/Tenant'
 import { EntityManager } from 'typeorm'
+import { In } from 'typeorm'
 import { Request } from 'express'
 import { NotFoundError } from '../errors/NotFoundError'
 import { ConflictError } from '../errors/ConflictError'
@@ -12,6 +13,7 @@ import { TMSConstants } from '../common/tms.constants'
 import { SharedServiceRole } from '../entities/SharedServiceRole'
 import { TenantSharedService } from '../entities/TenantSharedService'
 import { GroupSharedServiceRole } from '../entities/GroupSharedServiceRole'
+import { SSOUser } from '../entities/SSOUser'
 
 export class TMRepository {
 
@@ -167,7 +169,24 @@ export class TMRepository {
                 .andWhere('su.ssoUserId = :ssoUserId', { ssoUserId });
         }
 
-        const groups: any[] = await groupsQuery.getMany()
+        const groups: Group[] = await groupsQuery.getMany()
+
+        const uniqueCreatedByIds: string[] = [...new Set(groups.map(group => group.createdBy).filter(id => id && id !== 'system'))]
+        
+        if (uniqueCreatedByIds.length > 0) {
+            const creators = await this.manager.find(SSOUser, { 
+                where: { ssoUserId: In(uniqueCreatedByIds) }
+            })
+            
+            const creatorMap = new Map(creators.map(creator => [creator.ssoUserId, creator.displayName]))
+            
+            groups.forEach(group => {
+                if (group.createdBy && group.createdBy !== 'system') {
+                    group.createdBy = creatorMap.get(group.createdBy) || 'system'
+                }
+            })
+        }
+
         return groups
     }
 
