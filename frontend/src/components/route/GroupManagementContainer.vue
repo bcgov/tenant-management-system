@@ -3,18 +3,18 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 
 import LoginContainer from '@/components/auth/LoginContainer.vue'
-import TenantDetails from '@/components/tenant/TenantDetails.vue'
-import TenantHeader from '@/components/tenant/TenantHeader.vue'
+import GroupDetails from '@/components/group/GroupDetails.vue'
+import GroupHeader from '@/components/group/GroupHeader.vue'
 import BreadcrumbBar from '@/components/ui/BreadcrumbBar.vue'
 import LoadingWrapper from '@/components/ui/LoadingWrapper.vue'
-import UserManagementContainer from '@/components/user/UserManagementContainer.vue'
 import { useNotification } from '@/composables'
 import { DomainError, DuplicateEntityError } from '@/errors'
-import { type TenantDetailFields } from '@/models'
-import { useTenantStore } from '@/stores'
+import { type GroupDetailFields } from '@/models'
+import { useGroupStore, useTenantStore } from '@/stores'
 
 // --- Store and Composable Setup ----------------------------------------------
 
+const groupStore = useGroupStore()
 const notification = useNotification()
 const route = useRoute()
 const tenantStore = useTenantStore()
@@ -24,7 +24,6 @@ const tenantStore = useTenantStore()
 const isDuplicateName = ref(false)
 const isEditing = ref(false)
 const showDetail = ref(true)
-const tab = ref<number>(0)
 
 // --- Computed Values ---------------------------------------------------------
 
@@ -33,31 +32,49 @@ const breadcrumbs = computed(() => [
   {
     title: tenant.value.name,
     disabled: false,
-    href: `/tenants/${tenant.value.id}`,
+    href: `/tenants/${routeTenantId.value}`,
+  },
+  {
+    title: 'User Management',
+    disabled: false,
+    href: `/tenants/${routeTenantId.value}`,
+  },
+  {
+    title: 'Group Details',
+    disabled: false,
+    href: `/groups/${routeGroupId.value}`,
   },
 ])
 
-const routeTenantId = computed(() =>
-  Array.isArray(route.params.id) ? route.params.id[0] : route.params.id,
+const routeGroupId = computed(() =>
+  Array.isArray(route.params.groupId)
+    ? route.params.groupId[0]
+    : route.params.groupId,
 )
 
-// Note: this is a complicated way of not having to declare the type of `tenant`
-// as `Tenant | null`: it's fetched into the store by the onMount function, and
-// then retrieved here.
-const tenant = computed(() => {
-  const found = tenantStore.getTenant(routeTenantId.value)
-  if (!found) {
-    throw new Error('Tenant not loaded')
-  }
+const routeTenantId = computed(() =>
+  Array.isArray(route.params.tenantId)
+    ? route.params.tenantId[0]
+    : route.params.tenantId,
+)
 
-  return found
+const group = computed(() => {
+  return groupStore.getGroup(routeGroupId.value) || null
+})
+
+const tenant = computed(() => {
+  return tenantStore.getTenant(routeTenantId.value) || null
 })
 
 // --- Component Methods -------------------------------------------------------
 
-async function handleUpdateTenant(updatedTenant: TenantDetailFields) {
+async function handleUpdateGroup(updatedGroup: GroupDetailFields) {
   try {
-    await tenantStore.updateTenantDetails(tenant.value.id, updatedTenant)
+    await groupStore.updateGroupDetails(
+      tenant.value.id,
+      group.value.id,
+      updatedGroup,
+    )
     isEditing.value = false
   } catch (error) {
     if (error instanceof DuplicateEntityError) {
@@ -71,7 +88,7 @@ async function handleUpdateTenant(updatedTenant: TenantDetailFields) {
       notification.error(error.userMessage)
     } else {
       // Otherwise display a generic error message.
-      notification.error('Failed to update the tenant')
+      notification.error('Failed to update the group')
     }
   }
 }
@@ -80,9 +97,10 @@ async function handleUpdateTenant(updatedTenant: TenantDetailFields) {
 
 onMounted(async () => {
   try {
+    await groupStore.fetchGroup(routeTenantId.value, routeGroupId.value)
     await tenantStore.fetchTenant(routeTenantId.value)
   } catch {
-    notification.error('Failed to load tenant data')
+    notification.error('Failed to load group')
   }
 })
 </script>
@@ -90,49 +108,22 @@ onMounted(async () => {
 <template>
   <LoginContainer>
     <LoadingWrapper
-      :loading="tenantStore.loading"
-      loading-message="Loading tenant..."
+      :loading="!group || !tenant"
+      loading-message="Loading group..."
     >
       <BreadcrumbBar :items="breadcrumbs" class="mb-6" />
 
-      <TenantHeader v-model:show-detail="showDetail" :tenant="tenant" />
+      <GroupHeader v-model:show-detail="showDetail" :group="group" />
 
-      <TenantDetails
+      <GroupDetails
         v-if="showDetail"
         v-model:is-editing="isEditing"
+        :group="group"
         :is-duplicate-name="isDuplicateName"
         :tenant="tenant"
         @clear-duplicate-error="isDuplicateName = false"
-        @update="handleUpdateTenant"
+        @update="handleUpdateGroup"
       />
-
-      <v-card class="mt-6" elevation="0">
-        <v-tabs v-model="tab" :disabled="isEditing" :mandatory="false">
-          <!-- The v-tabs component insists on always having an active tab. Use
-           an invisible Tab 0 to make v-tabs happy. -->
-          <v-tab :value="0" class="pa-0 ma-0" style="min-width: 0px" />
-          <v-tab :value="1">User Management</v-tab>
-          <v-tab :value="2">Available Services</v-tab>
-        </v-tabs>
-
-        <v-window v-model="tab">
-          <v-window-item :value="0" />
-
-          <v-window-item :value="1">
-            <UserManagementContainer :tenant="tenant" />
-          </v-window-item>
-
-          <v-window-item :value="2">
-            <v-container fluid>
-              <v-row>
-                <v-col cols="12">
-                  <p>Content for Available Services tab</p>
-                </v-col>
-              </v-row>
-            </v-container>
-          </v-window-item>
-        </v-window>
-      </v-card>
     </LoadingWrapper>
   </LoginContainer>
 </template>

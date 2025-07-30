@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 
 import GroupCreateDialog from '@/components/group/GroupCreateDialog.vue'
 import GroupList from '@/components/group/GroupList.vue'
@@ -22,6 +23,7 @@ const props = defineProps<{
 const authStore = useAuthStore()
 const groupStore = useGroupStore()
 const notification = useNotification()
+const router = useRouter()
 
 // --- Component State ---------------------------------------------------------
 
@@ -47,6 +49,10 @@ const dialogClose = () => {
 }
 
 const dialogOpen = () => (dialogVisible.value = true)
+
+const handleCardClick = (id: Group['id']) => {
+  router.push(`/tenants/${props.tenant.id}/groups/${id}`)
+}
 
 const handleGroupCreate = async (
   groupDetails: GroupDetailFields,
@@ -134,6 +140,7 @@ onMounted(async () => {
     v-if="!groupStore.loading && groupStore.groups.length > 0"
     :groups="groupStore.groups"
     :is-admin="isUserAdmin"
+    @select="handleCardClick"
   />
   <v-container v-else>
     <p class="text-center">

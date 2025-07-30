@@ -114,7 +114,7 @@ const rules = {
       <v-card-text>
         <v-form ref="form" v-model="isFormValid">
           <v-row>
-            <v-col cols="12">
+            <v-col>
               <v-text-field
                 v-model="formData.name"
                 :maxlength="30"
@@ -129,7 +129,7 @@ const rules = {
             </v-col>
           </v-row>
           <v-row>
-            <v-col cols="12">
+            <v-col>
               <v-textarea
                 v-model="formData.description"
                 :rules="[rules.required, rules.maxLength(500)]"
@@ -142,7 +142,7 @@ const rules = {
             </v-col>
           </v-row>
           <v-row>
-            <v-col cols="12">
+            <v-col>
               <v-checkbox
                 v-model="addUser"
                 label="Add me as a user to this group"
