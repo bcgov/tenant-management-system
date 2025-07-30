@@ -1,5 +1,7 @@
 <script setup lang="ts">
-const props = defineProps<{
+// --- Component Interface -----------------------------------------------------
+
+defineProps<{
   disabled?: boolean
   text: string
 }>()
@@ -19,13 +21,13 @@ const emit = defineEmits<{
 
 <template>
   <v-btn
-    :disabled="props.disabled"
+    :disabled="disabled"
     class="tms-button-primary"
     color="primary"
     variant="flat"
     @click="emit('click')"
   >
-    {{ props.text }}
+    {{ text }}
   </v-btn>
 </template>
 

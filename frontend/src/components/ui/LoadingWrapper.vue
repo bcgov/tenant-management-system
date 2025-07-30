@@ -1,14 +1,20 @@
 <script setup lang="ts">
 import { onBeforeUnmount, ref, watch } from 'vue'
 
+// --- Component Interface -----------------------------------------------------
+
 const props = defineProps<{
   delay?: number // milliseconds to wait before showing spinner
   loading: boolean
   loadingMessage?: string
 }>()
 
+// --- Component State ---------------------------------------------------------
+
 const showSpinner = ref(false)
 let timeoutId: number | null = null
+
+// --- Watchers and Effects ----------------------------------------------------
 
 watch(
   () => props.loading,
@@ -27,6 +33,8 @@ watch(
   },
   { immediate: true },
 )
+
+// --- Component Lifecycle -----------------------------------------------------
 
 onBeforeUnmount(() => {
   if (timeoutId) {
