@@ -1,14 +1,14 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
-import SettingsContainer from '@/components/container/SettingsContainer.vue'
-import TenantListView from '@/views/TenantListView.vue'
-import TenantManageView from '@/views/TenantManageView.vue'
+import SettingsContainer from '@/components/route/SettingsContainer.vue'
+import TenantListContainer from '@/components/route/TenantListContainer.vue'
+import TenantManageContainer from '@/components/route/TenantManageContainer.vue'
 
 const routes = [
   { path: '/', redirect: '/tenants' },
   { path: '/settings', component: SettingsContainer },
-  { path: '/tenants', component: TenantListView },
-  { path: '/tenants/:id', component: TenantManageView, props: true },
+  { path: '/tenants', component: TenantListContainer },
+  { path: '/tenants/:id', component: TenantManageContainer, props: true },
 ]
 
 const router = createRouter({

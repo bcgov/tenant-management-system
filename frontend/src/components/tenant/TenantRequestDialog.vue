@@ -4,7 +4,7 @@ import { VForm } from 'vuetify/components'
 
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
-import type { TenantDetailFields } from '@/models'
+import type { TenantRequestDetailFields } from '@/models'
 import { MINISTRIES } from '@/utils/constants'
 
 const props = defineProps<{
@@ -13,17 +13,17 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (event: 'clear-duplicate-error'): void
-  (event: 'submit', tenantDetails: TenantDetailFields): void
+  (event: 'submit', tenantRequestDetails: TenantRequestDetailFields): void
 }>()
 
-// Auto-bound v-model from parent
 const dialogVisible = defineModel<boolean>()
 
 const closeDialog = () => (dialogVisible.value = false)
 
 // Form state
+
 const form = ref<InstanceType<typeof VForm>>()
-const formData = ref<TenantDetailFields>({
+const formData = ref<TenantRequestDetailFields>({
   description: '',
   ministryName: '',
   name: '',

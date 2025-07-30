@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 
-import GroupContainer from '@/components/container/GroupContainer.vue'
+import GroupContainer from '@/components/group/GroupContainer.vue'
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
 import FloatingActionButton from '@/components/ui/FloatingActionButton.vue'
@@ -195,7 +195,7 @@ function handleConfirmButtonClick(action: string) {
           hover
         >
           <template #no-data>
-            <v-alert type="info">You have no users in this tenant.</v-alert>
+            <v-alert type="info">You have no users in this tenant</v-alert>
           </template>
           <template #[`item.roles`]="{ item }">
             <div class="d-flex flex-wrap" style="gap: 8px; margin-block: 4px">
