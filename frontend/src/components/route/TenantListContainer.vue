@@ -3,15 +3,15 @@ import { storeToRefs } from 'pinia'
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
-import TenantRequestDialog from '@/components/tenant/TenantRequestDialog.vue'
+import LoginContainer from '@/components/auth/LoginContainer.vue'
 import TenantList from '@/components/tenant/TenantList.vue'
+import TenantRequestDialog from '@/components/tenant/TenantRequestDialog.vue'
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import LoadingWrapper from '@/components/ui/LoadingWrapper.vue'
 import { useNotification } from '@/composables'
 import { DomainError, DuplicateEntityError } from '@/errors'
 import { Tenant, type TenantRequestDetailFields } from '@/models'
 import { useAuthStore, useTenantRequestStore, useTenantStore } from '@/stores'
-import BaseSecureView from '@/views/BaseSecureView.vue'
 
 // Router
 const router = useRouter()
@@ -84,7 +84,7 @@ const handleTenantSubmit = async (
 </script>
 
 <template>
-  <BaseSecureView>
+  <LoginContainer>
     <LoadingWrapper :loading="loading" loading-message="Loading tenants...">
       <v-row class="mb-8">
         <v-col cols="12">
@@ -101,5 +101,5 @@ const handleTenantSubmit = async (
       @clear-duplicate-error="isDuplicateName = false"
       @submit="handleTenantSubmit"
     />
-  </BaseSecureView>
+  </LoginContainer>
 </template>

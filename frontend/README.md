@@ -3,8 +3,12 @@
 The Tenant Management System frontend has:
 
 - Authentication provided by Keycloak
-- Vue.js 3 composition components in a View ("smart") and Presentation ("dumb")
-  pattern
+- Vue.js 3 composition components in a Container ("smart") and Presentation
+  ("dumb") pattern
+- Container components are either high-level route Containers, or may be
+  domain-specific Containers within a route (an example is the non-route group
+  management Container that is used within the tenant management route
+  Container)
 - Styling provided by a Vuetify theme that uses the [BC Gov Design Tokens](https://www.npmjs.com/package/@bcgov/design-tokens)
 - Application state provided by Pinia stores
 - API calls provided by services
@@ -15,8 +19,8 @@ To keep the application simple and testable, it is important that:
   stores or services
 - The Presentation components send data by emitting events - they never call the
   stores or services
-- The View components call the stores to fetch or create data - they never call
-  the services
+- The Container components call the stores to fetch or create data - they never
+  call the services
 - The stores call the services, which make the API calls
 
 ## Configuration
