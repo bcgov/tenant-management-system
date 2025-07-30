@@ -5,9 +5,15 @@ import { useRouter } from 'vue-router'
 import SimpleDialog from '@/components/ui/SimpleDialog.vue'
 import { currentUserIsOperationsAdmin } from '@/utils/permissions'
 
+// --- Store and Composable Setup ----------------------------------------------
+
 const router = useRouter()
 
+// --- Computed Values ---------------------------------------------------------
+
 const isOperationsAdmin = computed(() => currentUserIsOperationsAdmin())
+
+// --- Component Methods -------------------------------------------------------
 
 function handleDialogAction(action: string) {
   if (action === 'ok') {
