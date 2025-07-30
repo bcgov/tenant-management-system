@@ -25,6 +25,7 @@ permissions:
   deployments: write
   id-token: write
   packages: write
+  attestations: write
 
 jobs:
   builds:
@@ -33,6 +34,7 @@ jobs:
     permissions:
       packages: write
       id-token: write
+      attestations: write
     with:
       tags: ${{ github.ref_name == 'main' && (inputs.tags || 'latest') || format('test-{0}', github.ref_name) }}
       keep_versions: 10
