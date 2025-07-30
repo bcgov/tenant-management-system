@@ -17,6 +17,8 @@ on:
 permissions:
   packages: write
   id-token: write
+  attestations: write
+
 
 jobs:
   build:
