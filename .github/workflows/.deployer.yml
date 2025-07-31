@@ -166,7 +166,6 @@ jobs:
           oc_namespace: ${{ secrets.oc_namespace }}
           oc_token: ${{ secrets.oc_token }}
           oc_server: ${{ inputs.oc_server }}
-          triggers: ${{ inputs.db_triggers }}
           commands: |
             # Set database configuration
             RELEASE_NAME="${{ steps.vars.outputs.release }}"
