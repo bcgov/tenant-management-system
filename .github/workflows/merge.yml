@@ -65,8 +65,6 @@ jobs:
         --set global.autoscaling=true
         --set frontend.pdb.enabled=true
         --set backend.pdb.enabled=true
-        --set crunchy.enabled=false
-        --set bitnami-pg.enabled=false
       deployment_url: https://${{ github.event.repository.name }}-test-frontend.apps.silver.devops.gov.bc.ca
 
   # Security scan after TEST deployment
@@ -123,6 +121,4 @@ jobs:
         --set global.autoscaling=true
         --set frontend.pdb.enabled=true
         --set backend.pdb.enabled=true
-        --set crunchy.enabled=false
-        --set bitnami-pg.enabled=false
       deployment_url: https://${{ github.event.repository.name }}-prod-frontend.apps.silver.devops.gov.bc.ca
