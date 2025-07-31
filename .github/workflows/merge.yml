@@ -18,7 +18,7 @@ on:
 concurrency:
   # Cancel previous workflows when new merge happens
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true  # ✅ FIXED: This should be true to cancel previous runs
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -43,7 +43,7 @@ jobs:
   deploy-test:
     name: Deploy (TEST)
     needs: [builds]
-    if: github.ref_name == 'main' || github.ref_name == 'deployment-fix'  # Allow both branches
+    if: github.ref_name == 'main' || github.ref_name == 'deployment-fix'
     uses: ./.github/workflows/.deployer.yml
     secrets:
       oc_namespace: ${{ secrets.OC_NAMESPACE }}
@@ -58,16 +58,15 @@ jobs:
       preserve_database: true
       tags: ${{ github.ref_name == 'main' && (inputs.tags || 'latest') || format('test-{0}', github.ref_name) }}
       params: >-
-        params: >-
-          --set backend.deploymentStrategy=RollingUpdate
-          --set frontend.deploymentStrategy=RollingUpdate
-          --set backend.imagePullPolicy=Always
-          --set frontend.imagePullPolicy=Always
-          --set global.autoscaling=true
-          --set frontend.pdb.enabled=true
-          --set backend.pdb.enabled=true
-          --set crunchy.enabled=false
-          --set bitnami-pg.enabled=false
+        --set backend.deploymentStrategy=RollingUpdate
+        --set frontend.deploymentStrategy=RollingUpdate
+        --set backend.imagePullPolicy=Always
+        --set frontend.imagePullPolicy=Always
+        --set global.autoscaling=true
+        --set frontend.pdb.enabled=true
+        --set backend.pdb.enabled=true
+        --set crunchy.enabled=false
+        --set bitnami-pg.enabled=false
       deployment_url: https://${{ github.event.repository.name }}-test-frontend.apps.silver.devops.gov.bc.ca
 
   # Security scan after TEST deployment
@@ -117,14 +116,13 @@ jobs:
       preserve_database: true
       tags: ${{ inputs.tags || 'latest' }}
       params: >-
-        params: >-
-          --set backend.deploymentStrategy=RollingUpdate
-          --set frontend.deploymentStrategy=RollingUpdate
-          --set backend.imagePullPolicy=Always
-          --set frontend.imagePullPolicy=Always
-          --set global.autoscaling=true
-          --set frontend.pdb.enabled=true
-          --set backend.pdb.enabled=true
-          --set crunchy.enabled=false
-          --set bitnami-pg.enabled=false
+        --set backend.deploymentStrategy=RollingUpdate
+        --set frontend.deploymentStrategy=RollingUpdate
+        --set backend.imagePullPolicy=Always
+        --set frontend.imagePullPolicy=Always
+        --set global.autoscaling=true
+        --set frontend.pdb.enabled=true
+        --set backend.pdb.enabled=true
+        --set crunchy.enabled=false
+        --set bitnami-pg.enabled=false
       deployment_url: https://${{ github.event.repository.name }}-prod-frontend.apps.silver.devops.gov.bc.ca
