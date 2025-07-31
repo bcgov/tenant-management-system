@@ -545,7 +545,7 @@ jobs:
             helm history ${{ steps.vars.outputs.release }}
 
             # Clean up completed pods
-            oc delete po --field-selector=status.phase==Succeeded || true
+            # oc delete po --field-selector=status.phase==Succeeded || true
 
       - name: Update secrets
         uses: bcgov/action-oc-runner@10033668ef4374d9bb78149faa73e4ccda0e93dd
