@@ -5,6 +5,7 @@ import { useRoute } from 'vue-router'
 import LoginContainer from '@/components/auth/LoginContainer.vue'
 import GroupDetails from '@/components/group/GroupDetails.vue'
 import GroupHeader from '@/components/group/GroupHeader.vue'
+import UserManagementContainer from '@/components/group/UserManagementContainer.vue'
 import BreadcrumbBar from '@/components/ui/BreadcrumbBar.vue'
 import LoadingWrapper from '@/components/ui/LoadingWrapper.vue'
 import { useNotification } from '@/composables'
@@ -24,27 +25,35 @@ const tenantStore = useTenantStore()
 const isDuplicateName = ref(false)
 const isEditing = ref(false)
 const showDetail = ref(true)
+const tab = ref<number>(0)
 
 // --- Computed Values ---------------------------------------------------------
 
-const breadcrumbs = computed(() => [
-  { title: 'Tenants', disabled: false, href: '/tenants' },
-  {
-    title: tenant.value.name,
-    disabled: false,
-    href: `/tenants/${routeTenantId.value}`,
-  },
-  {
-    title: 'User Management',
-    disabled: false,
-    href: `/tenants/${routeTenantId.value}`,
-  },
-  {
-    title: 'Group Details',
-    disabled: false,
-    href: `/groups/${routeGroupId.value}`,
-  },
-])
+const breadcrumbs = computed(() => {
+  // Shouldn't happen as the template can't call this function when null.
+  if (!group.value || !tenant.value) {
+    return []
+  }
+
+  return [
+    { title: 'Tenants', disabled: false, href: '/tenants' },
+    {
+      title: tenant.value.name,
+      disabled: false,
+      href: `/tenants/${routeTenantId.value}`,
+    },
+    {
+      title: 'User Management',
+      disabled: false,
+      href: `/tenants/${routeTenantId.value}`,
+    },
+    {
+      title: 'Group Details',
+      disabled: false,
+      href: `/groups/${routeGroupId.value}`,
+    },
+  ]
+})
 
 const routeGroupId = computed(() =>
   Array.isArray(route.params.groupId)
@@ -69,6 +78,11 @@ const tenant = computed(() => {
 // --- Component Methods -------------------------------------------------------
 
 async function handleUpdateGroup(updatedGroup: GroupDetailFields) {
+  // Shouldn't happen as the template can't call this function when null.
+  if (!group.value || !tenant.value) {
+    return
+  }
+
   try {
     await groupStore.updateGroupDetails(
       tenant.value.id,
@@ -99,9 +113,14 @@ async function handleUpdateGroup(updatedGroup: GroupDetailFields) {
 onMounted(async () => {
   try {
     await groupStore.fetchGroup(routeTenantId.value, routeGroupId.value)
-    await tenantStore.fetchTenant(routeTenantId.value)
   } catch {
     notification.error('Failed to load group')
+  }
+
+  try {
+    await tenantStore.fetchTenant(routeTenantId.value)
+  } catch {
+    notification.error('Failed to load tenant')
   }
 })
 </script>
@@ -114,17 +133,45 @@ onMounted(async () => {
     >
       <BreadcrumbBar :items="breadcrumbs" class="mb-6" />
 
-      <GroupHeader v-model:show-detail="showDetail" :group="group" />
+      <GroupHeader v-model:show-detail="showDetail" :group="group!" />
 
       <GroupDetails
         v-if="showDetail"
         v-model:is-editing="isEditing"
-        :group="group"
+        :group="group!"
         :is-duplicate-name="isDuplicateName"
-        :tenant="tenant"
+        :tenant="tenant!"
         @clear-duplicate-error="isDuplicateName = false"
         @update="handleUpdateGroup"
       />
+
+      <v-card class="mt-6" elevation="0">
+        <v-tabs v-model="tab" :disabled="isEditing" :mandatory="false">
+          <!-- The v-tabs component insists on always having an active tab. Use
+           an invisible Tab 0 to make v-tabs happy. -->
+          <v-tab :value="0" class="pa-0 ma-0" style="min-width: 0px" />
+          <v-tab :value="1">Service Roles</v-tab>
+          <v-tab :value="2">Group Members</v-tab>
+        </v-tabs>
+
+        <v-window v-model="tab">
+          <v-window-item :value="0" />
+
+          <v-window-item :value="1">
+            <v-container fluid>
+              <v-row>
+                <v-col cols="12">
+                  <p>Content for Service Roles tab</p>
+                </v-col>
+              </v-row>
+            </v-container>
+          </v-window-item>
+
+          <v-window-item :value="2">
+            <UserManagementContainer :group="group!" :tenant="tenant!" />
+          </v-window-item>
+        </v-window>
+      </v-card>
     </LoadingWrapper>
   </LoginContainer>
 </template>

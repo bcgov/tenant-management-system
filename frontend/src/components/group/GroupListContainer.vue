@@ -94,7 +94,7 @@ const handleGroupCreate = async (
   // users, but the user add can be attempted later.
   if (addUser) {
     try {
-      await groupStore.addUserToGroup(
+      await groupStore.addGroupUser(
         props.tenant.id,
         group.id,
         authStore.authenticatedUser,
