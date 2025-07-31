@@ -27,7 +27,7 @@ on:
         required: false
         type: string
       params:
-        description: Extra parameters to pass to helm upgrade
+        description: Extra parameters to pass to w1 upgrade
         required: false
         type: string
       tags:
@@ -477,8 +477,7 @@ jobs:
             echo "  User: $DB_USER"
             echo "  Secret: ${RELEASE_NAME}-pguser-${DB_USER}"
 
-      - name: Stop pre-existing deployments on PRs (status = pending-upgrade)
-        if: github.event_name == 'pull_request'
+      - name: Clean up stuck deployments
         uses: bcgov/action-oc-runner@10033668ef4374d9bb78149faa73e4ccda0e93dd
         with:
           oc_namespace: ${{ secrets.oc_namespace }}
@@ -486,7 +485,7 @@ jobs:
           oc_server: ${{ vars.oc_server }}
           triggers: ${{ inputs.triggers }}
           commands: |
-            # Interrupt any previous deployments (PR only)
+            # Interrupt any previous deployments
             PREVIOUS=$(helm status ${{ steps.vars.outputs.release }} -o json | jq .info.status || true)
             if [[ ${PREVIOUS} =~ pending ]]; then
               echo "Rollback triggered"
@@ -528,6 +527,7 @@ jobs:
             
             # Helm upgrade/rollout with proper database configuration
             helm upgrade \
+              --history-max 10 \
               --set-string global.repository=${{ github.repository }} \
               --set-string global.tag="${{ steps.vars.outputs.tag }}" \
               --set-string global.config.databaseUser="${{ inputs.db_user }}" \
