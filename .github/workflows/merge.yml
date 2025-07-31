@@ -43,7 +43,7 @@ jobs:
   deploy-test:
     name: Deploy (TEST)
     needs: [builds]
-    if: github.ref_name == 'main'
+    if: github.ref_name == 'main' || github.ref_name == 'deployment-fix'  # Allow both branches
     uses: ./.github/workflows/.deployer.yml
     secrets:
       oc_namespace: ${{ secrets.OC_NAMESPACE }}
