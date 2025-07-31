@@ -165,8 +165,7 @@ jobs:
         with:
           oc_namespace: ${{ secrets.oc_namespace }}
           oc_token: ${{ secrets.oc_token }}
-          oc_server: ${{ vars.oc_server }}
-          triggers: ${{ inputs.db_triggers }}
+          oc_server: ${{ inputs.oc_server }}
           commands: |
             # Enable strict error handling and debugging
             set -euo pipefail
