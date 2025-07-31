@@ -486,11 +486,19 @@ jobs:
           triggers: ${{ inputs.triggers }}
           commands: |
             # Interrupt any previous deployments
-            PREVIOUS=$(helm status ${{ steps.vars.outputs.release }} -o json | jq .info.status || true)
-            if [[ ${PREVIOUS} =~ pending ]]; then
-              echo "Rollback triggered"
-              helm rollback ${{ steps.vars.outputs.release }} || \
-                helm uninstall ${{ steps.vars.outputs.release }}
+            # Check if helm release exists first to avoid errors
+            if helm list -q | grep -q "^${{ steps.vars.outputs.release }}$"; then
+              echo "Checking for stuck deployments..."
+              PREVIOUS=$(helm status ${{ steps.vars.outputs.release }} -o json 2>/dev/null | jq -r '.info.status // empty' || echo "")
+              if [[ "${PREVIOUS}" == "pending-upgrade" || "${PREVIOUS}" == "pending-install" ]]; then
+                echo "Rollback triggered for stuck deployment"
+                helm rollback ${{ steps.vars.outputs.release }} || \
+                  helm uninstall ${{ steps.vars.outputs.release }}
+              else
+                echo "No stuck deployment found, status: ${PREVIOUS}"
+              fi
+            else
+              echo "No existing helm release found, proceeding with fresh deployment"
             fi
 
       - uses: actions/checkout@v4
@@ -545,7 +553,7 @@ jobs:
             helm history ${{ steps.vars.outputs.release }}
 
             # Clean up completed pods
-            # oc delete po --field-selector=status.phase==Succeeded || true
+             oc delete po --field-selector=status.phase==Succeeded || true --ignore-not-found
 
       - name: Update secrets
         uses: bcgov/action-oc-runner@10033668ef4374d9bb78149faa73e4ccda0e93dd
