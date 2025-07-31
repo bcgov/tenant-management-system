@@ -112,7 +112,9 @@ export const groupService = {
    */
   async getGroup(tenantId: string, groupId: string) {
     try {
-      const response = await api.get(`/tenants/${tenantId}/groups/${groupId}`)
+      const response = await api.get(
+        `/tenants/${tenantId}/groups/${groupId}?expand=groupUsers`,
+      )
 
       return response.data.data.group
     } catch (error) {
