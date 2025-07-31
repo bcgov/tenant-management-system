@@ -485,21 +485,52 @@ jobs:
           oc_server: ${{ vars.oc_server }}
           triggers: ${{ inputs.triggers }}
           commands: |
-            # Interrupt any previous deployments
-            # Check if helm release exists first to avoid errors
-            if helm list -q | grep -q "^${{ steps.vars.outputs.release }}$"; then
-              echo "Checking for stuck deployments..."
-              PREVIOUS=$(helm status ${{ steps.vars.outputs.release }} -o json 2>/dev/null | jq -r '.info.status // empty' || echo "")
-              if [[ "${PREVIOUS}" == "pending-upgrade" || "${PREVIOUS}" == "pending-install" ]]; then
-                echo "Rollback triggered for stuck deployment"
-                helm rollback ${{ steps.vars.outputs.release }} || \
-                  helm uninstall ${{ steps.vars.outputs.release }}
+            # Comprehensive cleanup of stuck deployments
+            RELEASE="${{ steps.vars.outputs.release }}"
+            echo "Checking for stuck deployments for release: $RELEASE"
+            
+            # Check if helm release exists
+            if helm list -q | grep -q "^$RELEASE$"; then
+              echo "Release exists, checking status..."
+              
+              # Get current status
+              PREVIOUS=$(helm status $RELEASE -o json 2>/dev/null | jq -r '.info.status // empty' || echo "")
+              echo "Current status: ${PREVIOUS}"
+              
+              # Check for various stuck states
+              if [[ "${PREVIOUS}" == "pending-upgrade" || "${PREVIOUS}" == "pending-install" || "${PREVIOUS}" == "pending-rollback" ]]; then
+                echo "🔄 Stuck deployment detected (${PREVIOUS}), attempting rollback..."
+                helm rollback $RELEASE --timeout=60s || {
+                  echo "⚠️ Rollback failed, attempting uninstall..."
+                  helm uninstall $RELEASE --timeout=60s || {
+                    echo "⚠️ Uninstall failed, forcing cleanup..."
+                    # Force delete any stuck resources
+                    oc delete deployment,service,ingress,route,configmap,secret -l app.kubernetes.io/instance=$RELEASE --ignore-not-found=true --timeout=30s
+                    # Try uninstall again
+                    helm uninstall $RELEASE --timeout=60s || true
+                  }
+                }
+                
+                # Wait a moment for cleanup to complete
+                sleep 10
+                
+                # Verify cleanup
+                if helm list -q | grep -q "^$RELEASE$"; then
+                  echo "❌ Release still exists after cleanup attempt"
+                else
+                  echo "✅ Release successfully cleaned up"
+                fi
               else
-                echo "No stuck deployment found, status: ${PREVIOUS}"
+                echo "✅ No stuck deployment detected, status: ${PREVIOUS}"
               fi
             else
-              echo "No existing helm release found, proceeding with fresh deployment"
+              echo "ℹ️ No existing helm release found, proceeding with fresh deployment"
             fi
+            
+            # Additional cleanup: remove any orphaned resources
+            echo "Cleaning up any orphaned resources..."
+            oc delete pods --field-selector=status.phase==Succeeded --ignore-not-found=true --timeout=30s || true
+            oc delete pods --field-selector=status.phase==Failed --ignore-not-found=true --timeout=30s || true
 
       - uses: actions/checkout@v4
 
@@ -529,6 +560,22 @@ jobs:
             DATABASE_ALIAS="${{ steps.vars.outputs.release }}"
             echo "Setting database alias to: $DATABASE_ALIAS"
 
+            # Final check for stuck operations before deployment
+            RELEASE="${{ steps.vars.outputs.release }}"
+            echo "Performing final check for stuck operations..."
+            
+            if helm list -q | grep -q "^$RELEASE$"; then
+              STATUS=$(helm status $RELEASE -o json 2>/dev/null | jq -r '.info.status // empty' || echo "")
+              if [[ "${STATUS}" == "pending-upgrade" || "${STATUS}" == "pending-install" || "${STATUS}" == "pending-rollback" ]]; then
+                echo "🚨 Stuck operation detected (${STATUS}), forcing cleanup..."
+                # Force cleanup and wait
+                helm uninstall $RELEASE --timeout=60s || true
+                oc delete deployment,service,ingress,route,configmap,secret -l app.kubernetes.io/instance=$RELEASE --ignore-not-found=true --timeout=30s || true
+                sleep 15
+                echo "Cleanup completed, proceeding with deployment..."
+              fi
+            fi
+
             # Helm package
             sed -i 's/^name:.*/name: ${{ github.event.repository.name }}/' Chart.yaml
             helm package -u . --app-version="tag-${{ steps.vars.outputs.tag }}_run-${{ github.run_number }}" --version=${{ steps.pr.outputs.pr || steps.vars.outputs.version }}
@@ -553,7 +600,7 @@ jobs:
             helm history ${{ steps.vars.outputs.release }}
 
             # Clean up completed pods
-             oc delete po --field-selector=status.phase==Succeeded || true --ignore-not-found
+            oc delete po --field-selector=status.phase==Succeeded --ignore-not-found=true || true
 
       - name: Update secrets
         uses: bcgov/action-oc-runner@10033668ef4374d9bb78149faa73e4ccda0e93dd
