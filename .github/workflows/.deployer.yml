@@ -387,58 +387,6 @@ jobs:
             
             echo "🎉 DATABASE DEPLOYMENT COMPLETED SUCCESSFULLY!"
 
-      - name: Enhanced cleanup of test environment
-        uses: bcgov/action-oc-runner@10033668ef4374d9bb78149faa73e4ccda0e93dd
-        with:
-          oc_namespace: ${{ secrets.oc_namespace }}
-          oc_token: ${{ secrets.oc_token }}
-          oc_server: ${{ inputs.oc_server }}
-          triggers: ${{ inputs.triggers }}
-          commands: |
-            RELEASE="${{ steps.vars.outputs.release }}"
-            echo "Enhanced cleanup for release: $RELEASE"
-            
-            # Force cleanup if this is a test environment
-            if [[ "$RELEASE" == *"-test" ]]; then
-              echo "🧹 Performing enhanced test environment cleanup..."
-            
-              # Remove any existing helm release
-              if helm list -q | grep -q "^$RELEASE$"; then
-                echo "Removing existing Helm release..."
-                helm uninstall $RELEASE --timeout=300s || true
-                sleep 10
-              fi
-            
-              # Clean up all resources associated with this release
-              echo "Cleaning up all resources..."
-              oc delete all,pvc,secrets,configmaps,ingress,route -l app.kubernetes.io/instance=$RELEASE --ignore-not-found=true --timeout=60s || true
-              oc delete all,pvc,secrets,configmaps,ingress,route -l release=$RELEASE --ignore-not-found=true --timeout=60s || true
-            
-              # Clean up database resources specifically
-              echo "Cleaning up database resources..."
-              oc delete deployment,service,pvc,secrets -l app=postgres,instance=$RELEASE --ignore-not-found=true --timeout=60s || true
-            
-              # Clean up any stuck/failed pods
-              echo "Cleaning up stuck pods..."
-              oc delete pods --field-selector=status.phase=Failed --ignore-not-found=true --timeout=30s || true
-              oc delete pods --field-selector=status.phase=Succeeded --ignore-not-found=true --timeout=30s || true
-            
-              # Wait for cleanup to complete
-              echo "Waiting for cleanup to complete..."
-              sleep 20
-            
-              # Verify cleanup
-              if helm list -q | grep -q "^$RELEASE$"; then
-                echo "❌ Helm release still exists after cleanup"
-              else
-                echo "✅ Helm release successfully removed"
-              fi
-            
-              echo "✅ Enhanced cleanup completed"
-            else
-              echo "ℹ️ Skipping enhanced cleanup for non-test environment"
-            fi
-
       - name: Checkout code
         uses: actions/checkout@v4
 
