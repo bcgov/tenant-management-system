@@ -58,13 +58,16 @@ jobs:
       preserve_database: true
       tags: ${{ github.ref_name == 'main' && (inputs.tags || 'latest') || format('test-{0}', github.ref_name) }}
       params: >-
-        --set backend.deploymentStrategy=RollingUpdate
-        --set frontend.deploymentStrategy=RollingUpdate
-        --set backend.imagePullPolicy=Always
-        --set frontend.imagePullPolicy=Always
-        --set global.autoscaling=true
-        --set frontend.pdb.enabled=true
-        --set backend.pdb.enabled=true
+        params: >-
+          --set backend.deploymentStrategy=RollingUpdate
+          --set frontend.deploymentStrategy=RollingUpdate
+          --set backend.imagePullPolicy=Always
+          --set frontend.imagePullPolicy=Always
+          --set global.autoscaling=true
+          --set frontend.pdb.enabled=true
+          --set backend.pdb.enabled=true
+          --set crunchy.enabled=false
+          --set bitnami-pg.enabled=false
       deployment_url: https://${{ github.event.repository.name }}-test-frontend.apps.silver.devops.gov.bc.ca
 
   # Security scan after TEST deployment
@@ -114,11 +117,14 @@ jobs:
       preserve_database: true
       tags: ${{ inputs.tags || 'latest' }}
       params: >-
-        --set backend.deploymentStrategy=RollingUpdate
-        --set frontend.deploymentStrategy=RollingUpdate
-        --set backend.imagePullPolicy=Always
-        --set frontend.imagePullPolicy=Always
-        --set global.autoscaling=true
-        --set frontend.pdb.enabled=true
-        --set backend.pdb.enabled=true
+        params: >-
+          --set backend.deploymentStrategy=RollingUpdate
+          --set frontend.deploymentStrategy=RollingUpdate
+          --set backend.imagePullPolicy=Always
+          --set frontend.imagePullPolicy=Always
+          --set global.autoscaling=true
+          --set frontend.pdb.enabled=true
+          --set backend.pdb.enabled=true
+          --set crunchy.enabled=false
+          --set bitnami-pg.enabled=false
       deployment_url: https://${{ github.event.repository.name }}-prod-frontend.apps.silver.devops.gov.bc.ca
