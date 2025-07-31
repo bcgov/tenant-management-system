@@ -27,7 +27,7 @@ on:
         required: false
         type: string
       params:
-        description: Extra parameters to pass to w1 upgrade
+        description: Extra parameters to pass to helm upgrade
         required: false
         type: string
       tags:
@@ -115,13 +115,14 @@ jobs:
       tag: ${{ inputs.tag || steps.pr.outputs.pr }}
       triggered: ${{ steps.deploy.outputs.triggered }}
     steps:
-      # Variables - Simplified tag logic
-      - if: inputs.tag  == ''
+      - name: Get PR number
+        if: inputs.tag == ''
         id: pr
         continue-on-error: true  # Don't fail if PR detection fails
         uses: bcgov/action-get-pr@21f9351425cd55a98e869ee28919a512aa30647d
 
-      - id: vars
+      - name: Set variables
+        id: vars
         run: |
           # Simplified tag and release logic
           
@@ -164,7 +165,7 @@ jobs:
         with:
           oc_namespace: ${{ secrets.oc_namespace }}
           oc_token: ${{ secrets.oc_token }}
-          oc_server: ${{ vars.oc_server }}
+          oc_server: ${{ inputs.oc_server }}
           triggers: ${{ inputs.db_triggers }}
           commands: |
             # Set database configuration
@@ -478,59 +479,60 @@ jobs:
             echo "  Secret: ${RELEASE_NAME}-pguser-${DB_USER}"
 
       - name: Enhanced cleanup of test environment
-  uses: bcgov/action-oc-runner@10033668ef4374d9bb78149faa73e4ccda0e93dd
-  with:
-    oc_namespace: ${{ secrets.oc_namespace }}
-    oc_token: ${{ secrets.oc_token }}
-    oc_server: ${{ inputs.oc_server }}
-    triggers: ${{ inputs.triggers }}
-    commands: |
-      RELEASE="${{ steps.vars.outputs.release }}"
-      echo "Enhanced cleanup for release: $RELEASE"
-      
-      # Force cleanup if this is a test environment
-      if [[ "$RELEASE" == *"-test" ]]; then
-        echo "🧹 Performing enhanced test environment cleanup..."
-        
-        # Remove any existing helm release
-        if helm list -q | grep -q "^$RELEASE$"; then
-          echo "Removing existing Helm release..."
-          helm uninstall $RELEASE --timeout=300s || true
-          sleep 10
-        fi
-        
-        # Clean up all resources associated with this release
-        echo "Cleaning up all resources..."
-        oc delete all,pvc,secrets,configmaps,ingress,route -l app.kubernetes.io/instance=$RELEASE --ignore-not-found=true --timeout=60s || true
-        oc delete all,pvc,secrets,configmaps,ingress,route -l release=$RELEASE --ignore-not-found=true --timeout=60s || true
-        
-        # Clean up database resources specifically
-        echo "Cleaning up database resources..."
-        oc delete deployment,service,pvc,secrets -l app=postgres,instance=$RELEASE --ignore-not-found=true --timeout=60s || true
-        
-        # Clean up any stuck/failed pods
-        echo "Cleaning up stuck pods..."
-        oc delete pods --field-selector=status.phase=Failed --ignore-not-found=true --timeout=30s || true
-        oc delete pods --field-selector=status.phase=Succeeded --ignore-not-found=true --timeout=30s || true
-        
-        # Wait for cleanup to complete
-        echo "Waiting for cleanup to complete..."
-        sleep 20
-        
-        # Verify cleanup
-        if helm list -q | grep -q "^$RELEASE$"; then
-          echo "❌ Helm release still exists after cleanup"
-        else
-          echo "✅ Helm release successfully removed"
-        fi
-        
-        echo "✅ Enhanced cleanup completed"
-      else
-        echo "ℹ️ Skipping enhanced cleanup for non-test environment"
-      fi
-      
-      - uses: actions/checkout@v4
-      
+        uses: bcgov/action-oc-runner@10033668ef4374d9bb78149faa73e4ccda0e93dd
+        with:
+          oc_namespace: ${{ secrets.oc_namespace }}
+          oc_token: ${{ secrets.oc_token }}
+          oc_server: ${{ inputs.oc_server }}
+          triggers: ${{ inputs.triggers }}
+          commands: |
+            RELEASE="${{ steps.vars.outputs.release }}"
+            echo "Enhanced cleanup for release: $RELEASE"
+            
+            # Force cleanup if this is a test environment
+            if [[ "$RELEASE" == *"-test" ]]; then
+              echo "🧹 Performing enhanced test environment cleanup..."
+              
+              # Remove any existing helm release
+              if helm list -q | grep -q "^$RELEASE$"; then
+                echo "Removing existing Helm release..."
+                helm uninstall $RELEASE --timeout=300s || true
+                sleep 10
+              fi
+              
+              # Clean up all resources associated with this release
+              echo "Cleaning up all resources..."
+              oc delete all,pvc,secrets,configmaps,ingress,route -l app.kubernetes.io/instance=$RELEASE --ignore-not-found=true --timeout=60s || true
+              oc delete all,pvc,secrets,configmaps,ingress,route -l release=$RELEASE --ignore-not-found=true --timeout=60s || true
+              
+              # Clean up database resources specifically
+              echo "Cleaning up database resources..."
+              oc delete deployment,service,pvc,secrets -l app=postgres,instance=$RELEASE --ignore-not-found=true --timeout=60s || true
+              
+              # Clean up any stuck/failed pods
+              echo "Cleaning up stuck pods..."
+              oc delete pods --field-selector=status.phase=Failed --ignore-not-found=true --timeout=30s || true
+              oc delete pods --field-selector=status.phase=Succeeded --ignore-not-found=true --timeout=30s || true
+              
+              # Wait for cleanup to complete
+              echo "Waiting for cleanup to complete..."
+              sleep 20
+              
+              # Verify cleanup
+              if helm list -q | grep -q "^$RELEASE$"; then
+                echo "❌ Helm release still exists after cleanup"
+              else
+                echo "✅ Helm release successfully removed"
+              fi
+              
+              echo "✅ Enhanced cleanup completed"
+            else
+              echo "ℹ️ Skipping enhanced cleanup for non-test environment"
+            fi
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Start deployment
         uses: bobheadxi/deployments@v1.4.0
         id: deployment
@@ -572,7 +574,7 @@ jobs:
         with:
           oc_namespace: ${{ secrets.oc_namespace }}
           oc_token: ${{ secrets.oc_token }}
-          oc_server: ${{ vars.oc_server }}
+          oc_server: ${{ inputs.oc_server }}
           triggers: ${{ inputs.triggers }}
           ref: ${{ github.ref }}
           commands: |
@@ -704,7 +706,7 @@ jobs:
         with:
           oc_namespace: ${{ secrets.oc_namespace }}
           oc_token: ${{ secrets.oc_token }}
-          oc_server: ${{ vars.oc_server }}
+          oc_server: ${{ inputs.oc_server }}
           commands: |
             # Get release name
             RELEASE="${{ inputs.release_name }}"
