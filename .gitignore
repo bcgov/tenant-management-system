@@ -177,6 +177,7 @@ dist
 .vscode/*
 !.vscode/launch.json
 !.vscode/settings.json
+!.vscode/tasks.json
 
 # yarn v2
 .yarn/cache

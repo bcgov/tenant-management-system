@@ -5,9 +5,9 @@ import { useRoute } from 'vue-router'
 import LoginContainer from '@/components/auth/LoginContainer.vue'
 import TenantDetails from '@/components/tenant/TenantDetails.vue'
 import TenantHeader from '@/components/tenant/TenantHeader.vue'
+import UserManagementContainer from '@/components/tenant/UserManagementContainer.vue'
 import BreadcrumbBar from '@/components/ui/BreadcrumbBar.vue'
 import LoadingWrapper from '@/components/ui/LoadingWrapper.vue'
-import UserManagementContainer from '@/components/user/UserManagementContainer.vue'
 import { useNotification } from '@/composables'
 import { DomainError, DuplicateEntityError } from '@/errors'
 import { type TenantDetailFields } from '@/models'
@@ -28,14 +28,21 @@ const tab = ref<number>(0)
 
 // --- Computed Values ---------------------------------------------------------
 
-const breadcrumbs = computed(() => [
-  { title: 'Tenants', disabled: false, href: '/tenants' },
-  {
-    title: tenant.value.name,
-    disabled: false,
-    href: `/tenants/${tenant.value.id}`,
-  },
-])
+const breadcrumbs = computed(() => {
+  // Shouldn't happen as the template can't call this function when null.
+  if (!tenant.value) {
+    return []
+  }
+
+  return [
+    { title: 'Tenants', disabled: false, href: '/tenants' },
+    {
+      title: tenant.value.name,
+      disabled: false,
+      href: `/tenants/${routeTenantId.value}`,
+    },
+  ]
+})
 
 const routeTenantId = computed(() =>
   Array.isArray(route.params.tenantId)
@@ -50,6 +57,11 @@ const tenant = computed(() => {
 // --- Component Methods -------------------------------------------------------
 
 async function handleUpdateTenant(updatedTenant: TenantDetailFields) {
+  // Shouldn't happen as the template can't call this function when null.
+  if (!tenant.value) {
+    return
+  }
+
   try {
     await tenantStore.updateTenantDetails(tenant.value.id, updatedTenant)
     isEditing.value = false
@@ -86,13 +98,13 @@ onMounted(async () => {
     <LoadingWrapper :loading="!tenant" loading-message="Loading tenant...">
       <BreadcrumbBar :items="breadcrumbs" class="mb-6" />
 
-      <TenantHeader v-model:show-detail="showDetail" :tenant="tenant" />
+      <TenantHeader v-model:show-detail="showDetail" :tenant="tenant!" />
 
       <TenantDetails
         v-if="showDetail"
         v-model:is-editing="isEditing"
         :is-duplicate-name="isDuplicateName"
-        :tenant="tenant"
+        :tenant="tenant!"
         @clear-duplicate-error="isDuplicateName = false"
         @update="handleUpdateTenant"
       />
@@ -110,7 +122,7 @@ onMounted(async () => {
           <v-window-item :value="0" />
 
           <v-window-item :value="1">
-            <UserManagementContainer :tenant="tenant" />
+            <UserManagementContainer :tenant="tenant!" />
           </v-window-item>
 
           <v-window-item :value="2">
