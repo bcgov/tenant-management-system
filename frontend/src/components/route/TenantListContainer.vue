@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import { storeToRefs } from 'pinia'
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 import LoginContainer from '@/components/auth/LoginContainer.vue'
 import TenantList from '@/components/tenant/TenantList.vue'
-import TenantRequestDialog from '@/components/tenant/TenantRequestDialog.vue'
+import TenantRequestDialog from '@/components/tenantrequest/TenantRequestDialog.vue'
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import LoadingWrapper from '@/components/ui/LoadingWrapper.vue'
 import { useNotification } from '@/composables'
@@ -13,42 +12,35 @@ import { DomainError, DuplicateEntityError } from '@/errors'
 import { Tenant, type TenantRequestDetailFields } from '@/models'
 import { useAuthStore, useTenantRequestStore, useTenantStore } from '@/stores'
 
-// Router
-const router = useRouter()
-const handleCardClick = (id: Tenant['id']) => {
-  router.push(`/tenants/${id}`)
-}
+// --- Store and Composable Setup ----------------------------------------------
 
-// User notification creation
-const { notification } = useNotification()
-
-// Stores
 const authStore = useAuthStore()
+const notification = useNotification()
+const router = useRouter()
 const tenantRequestStore = useTenantRequestStore()
 const tenantStore = useTenantStore()
-const { loading, tenants } = storeToRefs(tenantStore)
+
+// --- Component State ---------------------------------------------------------
+
+// Dialog visibility state
+const dialogVisible = ref(false)
 
 // Special dialog validation for uniqueness of the name.
 const isDuplicateName = ref(false)
 
-// Dialog visibility state
-const dialogVisible = ref(false)
-const openDialog = () => (dialogVisible.value = true)
-const closeDialog = () => {
+// --- Component Methods -------------------------------------------------------
+
+const dialogClose = () => {
   dialogVisible.value = false
   isDuplicateName.value = false
 }
 
-// Fetch tenants on load
-onMounted(async () => {
-  try {
-    await tenantStore.fetchTenants(authStore.authenticatedUser.id)
-  } catch {
-    notification.error('Failed to fetch tenants')
-  }
-})
+const dialogOpen = () => (dialogVisible.value = true)
 
-// Submit handler
+const handleCardClick = (id: Tenant['id']) => {
+  router.push(`/tenants/${id}`)
+}
+
 const handleTenantSubmit = async (
   tenantRequestDetails: TenantRequestDetailFields,
 ) => {
@@ -64,7 +56,7 @@ const handleTenantSubmit = async (
       'Request successully submitted',
     )
     isDuplicateName.value = false
-    closeDialog()
+    dialogClose()
   } catch (error: unknown) {
     if (error instanceof DuplicateEntityError) {
       // If the API says that this name exists already, then show the name
@@ -81,18 +73,31 @@ const handleTenantSubmit = async (
     }
   }
 }
+
+// --- Component Lifecycle -----------------------------------------------------
+
+onMounted(async () => {
+  try {
+    await tenantStore.fetchTenants(authStore.authenticatedUser.id)
+  } catch {
+    notification.error('Failed to fetch tenants')
+  }
+})
 </script>
 
 <template>
   <LoginContainer>
-    <LoadingWrapper :loading="loading" loading-message="Loading tenants...">
+    <LoadingWrapper
+      :loading="!tenantStore.tenants"
+      loading-message="Loading tenants..."
+    >
       <v-row class="mb-8">
         <v-col cols="12">
-          <ButtonPrimary text="Request New Tenant" @click="openDialog" />
+          <ButtonPrimary text="Request New Tenant" @click="dialogOpen" />
         </v-col>
       </v-row>
 
-      <TenantList :tenants="tenants" @select="handleCardClick" />
+      <TenantList :tenants="tenantStore.tenants" @select="handleCardClick" />
     </LoadingWrapper>
 
     <TenantRequestDialog

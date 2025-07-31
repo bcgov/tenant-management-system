@@ -5,6 +5,8 @@ import AdministratorContainer from '@/components/auth/AdministratorContainer.vue
 import LoginContainer from '@/components/auth/LoginContainer.vue'
 import TenantRequestContainer from '@/components/tenantrequest/TenantRequestContainer.vue'
 
+// --- Component State ---------------------------------------------------------
+
 const tab = ref<number>(0)
 </script>
 

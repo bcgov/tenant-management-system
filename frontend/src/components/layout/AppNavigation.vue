@@ -4,19 +4,22 @@ import { useRoute } from 'vue-router'
 
 import { currentUserIsOperationsAdmin } from '@/utils/permissions'
 
+// --- Store and Composable Setup ----------------------------------------------
+
 const route = useRoute()
 
-const isSettingsRoute = computed(() => route.path.startsWith('/settings'))
-const isTenantRoute = computed(() => route.path.startsWith('/tenant'))
+// --- Computed Values ---------------------------------------------------------
 
 const isOperationsAdmin = computed(() => currentUserIsOperationsAdmin())
+const isRouteSettings = computed(() => route.path.startsWith('/settings'))
+const isRouteTenant = computed(() => route.path.startsWith('/tenant'))
 </script>
 
 <template>
   <v-toolbar class="px-12" color="surface-light-gray" elevation="0" flat>
     <div class="d-flex align-center" style="gap: 8px">
       <v-btn
-        :active="isTenantRoute"
+        :active="isRouteTenant"
         exact-active-class=""
         to="/tenants"
         variant="text"
@@ -25,7 +28,7 @@ const isOperationsAdmin = computed(() => currentUserIsOperationsAdmin())
       </v-btn>
       <v-btn
         v-if="isOperationsAdmin"
-        :active="isSettingsRoute"
+        :active="isRouteSettings"
         exact-active-class=""
         to="/settings"
         variant="text"

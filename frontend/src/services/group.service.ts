@@ -112,7 +112,7 @@ export const groupService = {
    */
   async getGroup(tenantId: string, groupId: string) {
     try {
-      const response = await api.get(`/tenants/${tenantId}/group/${groupId}`)
+      const response = await api.get(`/tenants/${tenantId}/groups/${groupId}`)
 
       return response.data.data.group
     } catch (error) {
@@ -138,6 +138,57 @@ export const groupService = {
     } catch (error) {
       logApiError('Error getting tenant groups', error)
 
+      throw error
+    }
+  },
+
+  /**
+   * Updates an existing group with the specified details.
+   *
+   * @param {string} tenantId - The ID of the tenant that the group belongs to.
+   * @param {string} groupId - The ID of the group to update.
+   * @param {string} name - The new name of the group.
+   * @param {string} description - The new description for the group.
+   * @returns {Promise<object>} A promise that resolves to the updated group
+   *   object.
+   * @throws Will throw an error if the API request fails.
+   */
+  async updateGroup(
+    tenantId: string,
+    groupId: string,
+    name: string,
+    description: string,
+  ) {
+    try {
+      const requestBody = {
+        description: description,
+        name: name,
+      }
+
+      const response = await api.put(
+        `/tenants/${tenantId}/groups/${groupId}`,
+        requestBody,
+      )
+
+      return response.data.data.group
+    } catch (error: unknown) {
+      logApiError('Error updating group', error)
+
+      // Handle HTTP 400 Bad Request (validation)
+      if (isValidationError(error)) {
+        const messageArray = error.response.data.details.body.map(
+          (item: { message: string }) => item.message,
+        )
+
+        throw new ValidationError(messageArray)
+      }
+
+      // Handle HTTP 409 Conflict (duplicate)
+      if (isDuplicateEntityError(error)) {
+        throw new DuplicateEntityError(error.response.data.message)
+      }
+
+      // Re-throw all other errors
       throw error
     }
   },

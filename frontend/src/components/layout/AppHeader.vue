@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { User } from '@/models'
 
+// --- Component Interface -----------------------------------------------------
+
 defineProps<{
   user: User | null
 }>()
@@ -16,6 +18,8 @@ defineProps<{
 const emit = defineEmits<{
   (event: 'logout'): void // NOSONAR: S6598
 }>()
+
+// --- Component Methods -------------------------------------------------------
 
 function handleLogout() {
   emit('logout')

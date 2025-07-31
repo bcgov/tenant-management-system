@@ -5,6 +5,8 @@ import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import type { User } from '@/models'
 import { type IdirSearchType, IDIR_SEARCH_TYPE } from '@/utils/constants'
 
+// --- Component Interface -----------------------------------------------------
+
 defineProps<{
   loading?: boolean
   searchResults: User[] | null
@@ -16,12 +18,9 @@ const emit = defineEmits<{
   (event: 'select', user: User): void
 }>()
 
-// Local UI state
-const searchText = ref('')
-const searchType = ref<IdirSearchType>(IDIR_SEARCH_TYPE.FIRST_NAME.value)
-const selectedUser = ref<User[]>([])
+// --- Component State ---------------------------------------------------------
 
-// Redfine the list of search types so that they're in the order wanted by the
+// Redefine the list of search types so that they're in the order wanted by the
 // component.
 const SEARCH_TYPES = [
   {
@@ -35,6 +34,12 @@ const SEARCH_TYPES = [
   { title: IDIR_SEARCH_TYPE.EMAIL.title, value: IDIR_SEARCH_TYPE.EMAIL.value },
 ]
 
+const searchText = ref('')
+const searchType = ref<IdirSearchType>(IDIR_SEARCH_TYPE.FIRST_NAME.value)
+const selectedUser = ref<User[]>([])
+
+// --- Watchers and Effects ----------------------------------------------------
+
 watch([searchText, searchType], () => {
   emit('clear-search')
 })
@@ -46,23 +51,27 @@ watch(selectedUser, (selection) => {
   }
 })
 
-// The SSO API will return a 400 if the search text is less than 2 characters.
-const isSearchEnabled = computed(() => {
-  return searchText.value && searchText.value.length >= 2
-})
+// --- Computed Values ---------------------------------------------------------
 
 // Sort the results by the search type, so that it is updated whenever the user
 // changes the search type.
 const defaultSort = computed(() => [{ key: `ssoUser.${searchType.value}` }])
 
-function search() {
+// The SSO API will return a 400 if the search text is less than 2 characters.
+const isSearchEnabled = computed(() => {
+  return searchText.value && searchText.value.length >= 2
+})
+
+// --- Component Methods -------------------------------------------------------
+
+function handleSearch() {
   emit('search', searchType.value, searchText.value)
 }
 </script>
 
 <template>
   <v-row>
-    <v-col md="2">
+    <v-col cols="2">
       <v-select
         v-model="searchType"
         :items="SEARCH_TYPES"
@@ -70,19 +79,19 @@ function search() {
         hide-details
       />
     </v-col>
-    <v-col md="4">
+    <v-col cols="4">
       <v-text-field
         v-model="searchText"
         label="Search text"
         hide-details
-        @keyup.enter="search"
+        @keyup.enter="handleSearch"
       />
     </v-col>
-    <v-col class="d-flex align-center" md="2">
+    <v-col class="d-flex align-center" cols="2">
       <ButtonPrimary
         :disabled="!isSearchEnabled"
         text="Search"
-        @click="search"
+        @click="handleSearch"
       />
     </v-col>
   </v-row>

@@ -7,6 +7,8 @@ import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
 import type { TenantRequestDetailFields } from '@/models'
 import { MINISTRIES } from '@/utils/constants'
 
+// --- Component Interface -----------------------------------------------------
+
 const props = defineProps<{
   isDuplicateName: boolean
 }>()
@@ -18,9 +20,7 @@ const emit = defineEmits<{
 
 const dialogVisible = defineModel<boolean>()
 
-const closeDialog = () => (dialogVisible.value = false)
-
-// Form state
+// --- Component State ---------------------------------------------------------
 
 const form = ref<InstanceType<typeof VForm>>()
 const formData = ref<TenantRequestDetailFields>({
@@ -29,6 +29,18 @@ const formData = ref<TenantRequestDetailFields>({
   name: '',
 })
 const isFormValid = ref(false)
+
+// --- Watchers and Effects ----------------------------------------------------
+
+// When parent sets the duplicated name flag, force re-validation so that the
+// message is displayed.
+watch(
+  () => props.isDuplicateName,
+  async () => {
+    await nextTick()
+    await form.value?.validate()
+  },
+)
 
 // Clear the state when the dialog is opened. This is for the case that the
 // user opens the dialog, enters data, cancels, and opens it again - the form
@@ -52,16 +64,6 @@ watch(
   },
 )
 
-// When parent sets the duplicated name flag, force re-validation so that the
-// message is displayed.
-watch(
-  () => props.isDuplicateName,
-  async () => {
-    await nextTick()
-    await form.value?.validate()
-  },
-)
-
 watch(
   () => [formData.value.name, formData.value.ministryName],
   () => {
@@ -69,7 +71,21 @@ watch(
   },
 )
 
-// Validation
+// --- Component Methods -------------------------------------------------------
+
+const dialogClose = () => (dialogVisible.value = false)
+
+const handleSubmit = () => {
+  if (isFormValid.value) {
+    formData.value.name = formData.value.name.trim()
+    formData.value.ministryName = formData.value.ministryName.trim()
+    formData.value.description = formData.value.description.trim()
+
+    emit('submit', formData.value)
+    // Let parent decide when to close the dialog
+  }
+}
+
 const rules = {
   maxLength: (max: number) => (value: string) =>
     !value || value.length <= max || `Must be ${max} characters or less`,
@@ -87,17 +103,6 @@ const rules = {
 
     return true
   },
-}
-
-const handleSubmit = () => {
-  if (isFormValid.value) {
-    formData.value.name = formData.value.name.trim()
-    formData.value.ministryName = formData.value.ministryName.trim()
-    formData.value.description = formData.value.description.trim()
-
-    emit('submit', formData.value)
-    // Let parent decide when to close the dialog
-  }
 }
 </script>
 
@@ -151,7 +156,7 @@ const handleSubmit = () => {
         </v-form>
       </v-card-text>
       <v-card-actions class="d-flex justify-end">
-        <ButtonSecondary class="me-4" text="Cancel" @click="closeDialog" />
+        <ButtonSecondary class="me-4" text="Cancel" @click="dialogClose" />
         <ButtonPrimary
           :disabled="!isFormValid"
           text="Submit Request"
