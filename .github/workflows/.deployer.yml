@@ -485,7 +485,7 @@ jobs:
           oc_server: ${{ vars.oc_server }}
           triggers: ${{ inputs.triggers }}
           commands: |
-            # Interrupt any previous deployments (PR only)
+            # Interrupt any previous deployments
             PREVIOUS=$(helm status ${{ steps.vars.outputs.release }} -o json | jq .info.status || true)
             if [[ ${PREVIOUS} =~ pending ]]; then
               echo "Rollback triggered"
@@ -527,6 +527,7 @@ jobs:
             
             # Helm upgrade/rollout with proper database configuration
             helm upgrade \
+              --history-max 10 \
               --set-string global.repository=${{ github.repository }} \
               --set-string global.tag="${{ steps.vars.outputs.tag }}" \
               --set-string global.config.databaseUser="${{ inputs.db_user }}" \
