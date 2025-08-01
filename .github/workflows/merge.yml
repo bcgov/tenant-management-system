@@ -16,9 +16,9 @@ on:
         default: latest
 
 concurrency:
-  # Cancel previous workflows when new merge happens
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # Prevent concurrent deployments to the same environment
+  group: merge-deployment-${{ github.ref }}
+  cancel-in-progress: false  # Don't cancel, let them queue instead
 
 permissions:
   contents: read
@@ -44,6 +44,10 @@ jobs:
     name: Deploy (TEST)
     needs: [builds]
     if: github.ref_name == 'main' || github.ref_name == 'deployment-fix'
+    # Add environment-specific concurrency to prevent overlapping TEST deployments
+    concurrency:
+      group: deploy-test-environment
+      cancel-in-progress: false
     uses: ./.github/workflows/.deployer.yml
     secrets:
       oc_namespace: ${{ secrets.OC_NAMESPACE }}
@@ -100,6 +104,10 @@ jobs:
     name: Deploy (PROD)
     needs: [approve-prod]
     if: github.ref_name == 'main'
+    # Add environment-specific concurrency to prevent overlapping PROD deployments
+    concurrency:
+      group: deploy-prod-environment
+      cancel-in-progress: false
     uses: ./.github/workflows/.deployer.yml
     secrets:
       oc_namespace: ${{ secrets.OC_NAMESPACE }}

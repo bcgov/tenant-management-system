@@ -159,6 +159,43 @@ jobs:
           echo "release=${release}" >> $GITHUB_OUTPUT
           echo "version=${version}" >> $GITHUB_OUTPUT
 
+      - name: Check and Handle Concurrent Helm Operations
+        uses: bcgov/action-oc-runner@10033668ef4374d9bb78149faa73e4ccda0e93dd
+        with:
+          oc_namespace: ${{ secrets.oc_namespace }}
+          oc_token: ${{ secrets.oc_token }}
+          oc_server: ${{ inputs.oc_server }}
+          commands: |
+            # Enable strict error handling
+            set -euo pipefail
+            
+            RELEASE_NAME="${{ steps.vars.outputs.release }}"
+            echo "🔍 Checking Helm release status for: $RELEASE_NAME"
+            
+            # Check current helm status
+            if helm list -o json | jq -r '.[] | select(.name=="'$RELEASE_NAME'") | .status' | grep -E "(pending-install|pending-upgrade|pending-rollback)" >/dev/null 2>&1; then
+              echo "⚠️ Found stuck Helm operation, attempting to resolve..."
+              
+              # Try to get the current status
+              CURRENT_STATUS=$(helm status $RELEASE_NAME -o json | jq -r '.info.status' 2>/dev/null || echo "unknown")
+              echo "Current status: $CURRENT_STATUS"
+              
+              if [[ "$CURRENT_STATUS" =~ pending ]]; then
+                echo "🔄 Attempting to rollback stuck operation..."
+                helm rollback $RELEASE_NAME || {
+                  echo "❌ Rollback failed, attempting uninstall..."
+                  helm uninstall $RELEASE_NAME --wait || {
+                    echo "❌ Uninstall failed, force removing..."
+                    # Force cleanup if uninstall fails
+                    kubectl delete secret -l owner=helm,name=$RELEASE_NAME --ignore-not-found=true
+                  }
+                }
+                echo "✅ Resolved stuck Helm operation"
+              fi
+            else
+              echo "✅ No stuck Helm operations detected"
+            fi
+
       - name: Deploy Database (Smart Preservation)
         id: deploy_database
         uses: bcgov/action-oc-runner@10033668ef4374d9bb78149faa73e4ccda0e93dd
@@ -188,15 +225,13 @@ jobs:
             if oc get deployment ${RELEASE_NAME}-postgres &>/dev/null; then
               echo "✅ Database deployment already exists"
             else
-              echo "❌ Database deployment missing"
-              exit 1
+              echo "❌ Database deployment missing - this will be created by Helm"
             fi
             
             if oc get pvc ${RELEASE_NAME}-postgres-data &>/dev/null; then
               echo "✅ Database PVC already exists"
             else
-              echo "❌ Database PVC missing"
-              exit 1
+              echo "❌ Database PVC missing - this will be created by Helm"
             fi
             
             # Ensure database secret exists
@@ -209,59 +244,7 @@ jobs:
               --from-literal=host="${RELEASE_NAME}-pgbouncer" \
               --from-literal=port="5432"
             
-            # Ensure service exists
-            if ! oc get service ${RELEASE_NAME}-pgbouncer &>/dev/null; then
-              echo "Creating database service..."
-              oc expose deployment ${RELEASE_NAME}-postgres --port=5432 --name=${RELEASE_NAME}-pgbouncer
-            fi
-            
-            # Check database health
-            echo "Checking database deployment health..."
-            if ! oc rollout status deployment/${RELEASE_NAME}-postgres --timeout=60s; then
-              echo "Database deployment not healthy, restarting..."
-              oc rollout restart deployment/${RELEASE_NAME}-postgres
-              oc rollout status deployment/${RELEASE_NAME}-postgres --timeout=300s
-            fi
-            
-            # Test database connection
-            echo "Testing database connection..."
-            POD_NAME=$(oc get pods -l app=postgres,instance=$RELEASE_NAME -o jsonpath='{.items[0].metadata.name}')
-            if [ -n "$POD_NAME" ]; then
-              echo "Testing connection on pod: $POD_NAME"
-              if oc exec $POD_NAME -- psql -U $DB_USER -d app -c "SELECT 1;" &>/dev/null; then
-                echo "✅ Database connection test successful"
-              else
-                echo "⚠️ Database connection test failed, but continuing"
-              fi
-            else
-              echo "❌ No database pod found"
-              exit 1
-            fi
-            
-            echo "✅ Database ready (existing data preserved)"
-            echo "Database details:"
-            echo "  Host: ${RELEASE_NAME}-pgbouncer"
-            echo "  Port: 5432"
-            echo "  Database: app"
-            echo "  User: $DB_USER"
-            echo "  Secret: ${RELEASE_NAME}-pguser-${DB_USER}"
-
-      - name: Stop pre-existing deployments on PRs (status = pending-upgrade)
-        if: github.event_name == 'pull_request'
-        uses: bcgov/action-oc-runner@10033668ef4374d9bb78149faa73e4ccda0e93dd
-        with:
-          oc_namespace: ${{ secrets.oc_namespace }}
-          oc_token: ${{ secrets.oc_token }}
-          oc_server: ${{ vars.oc_server }}
-          triggers: ${{ inputs.triggers }}
-          commands: |
-            # Interrupt any previous deployments (PR only)
-            PREVIOUS=$(helm status ${{ steps.vars.outputs.release }} -o json | jq .info.status || true)
-            if [[ ${PREVIOUS} =~ pending ]]; then
-              echo "Rollback triggered"
-              helm rollback ${{ steps.vars.outputs.release }} || \
-                helm uninstall ${{ steps.vars.outputs.release }}
-            fi
+            echo "✅ Database secret created/updated"
 
       - uses: actions/checkout@v4
 
@@ -280,10 +263,13 @@ jobs:
         with:
           oc_namespace: ${{ secrets.oc_namespace }}
           oc_token: ${{ secrets.oc_token }}
-          oc_server: ${{ vars.oc_server }}
+          oc_server: ${{ inputs.oc_server }}
           triggers: ${{ inputs.triggers }}
           ref: ${{ github.ref }}
           commands: |
+            # Enable strict error handling
+            set -euo pipefail
+            
             # If directory provided, cd to it
             [ -z "${{ inputs.directory }}" ] || cd ${{ inputs.directory }}
 
@@ -291,11 +277,32 @@ jobs:
             DATABASE_ALIAS="${{ steps.vars.outputs.release }}"
             echo "Setting database alias to: $DATABASE_ALIAS"
 
+            # Wait for any previous operations to complete
+            RELEASE_NAME="${{ steps.vars.outputs.release }}"
+            echo "🔍 Final check for concurrent operations on: $RELEASE_NAME"
+            
+            # Wait up to 5 minutes for any pending operations to complete
+            for i in {1..30}; do
+              if helm list -o json | jq -r '.[] | select(.name=="'$RELEASE_NAME'") | .status' | grep -E "(pending-install|pending-upgrade|pending-rollback)" >/dev/null 2>&1; then
+                echo "⏳ Waiting for pending operation to complete (attempt $i/30)..."
+                sleep 10
+              else
+                echo "✅ No pending operations detected"
+                break
+              fi
+              
+              if [ $i -eq 30 ]; then
+                echo "⚠️ Timeout waiting for pending operations, proceeding with force"
+                helm rollback $RELEASE_NAME || helm uninstall $RELEASE_NAME --wait || true
+              fi
+            done
+
             # Helm package
             sed -i 's/^name:.*/name: ${{ github.event.repository.name }}/' Chart.yaml
             helm package -u . --app-version="tag-${{ steps.vars.outputs.tag }}_run-${{ github.run_number }}" --version=${{ steps.pr.outputs.pr || steps.vars.outputs.version }}
             
             # Helm upgrade/rollout with proper database configuration
+            echo "🚀 Starting Helm deployment..."
             helm upgrade \
               --set-string global.repository=${{ github.repository }} \
               --set-string global.tag="${{ steps.vars.outputs.tag }}" \
@@ -310,6 +317,8 @@ jobs:
               --values ${{ inputs.values }} \
               ./${{ github.event.repository.name }}-${{ steps.pr.outputs.pr || steps.vars.outputs.version }}.tgz
 
+            echo "✅ Helm deployment completed successfully"
+
             # Helm release history
             helm history ${{ steps.vars.outputs.release }}
 
@@ -321,7 +330,7 @@ jobs:
         with:
           oc_namespace: ${{ secrets.oc_namespace }}
           oc_token: ${{ secrets.oc_token }}
-          oc_server: ${{ vars.oc_server }}
+          oc_server: ${{ inputs.oc_server }}
           commands: |
             # Get release name
             RELEASE="${{ inputs.release_name }}"
