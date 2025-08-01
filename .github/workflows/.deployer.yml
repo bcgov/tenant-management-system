@@ -14,7 +14,7 @@ on:
         type: boolean
       directory:
         description: Chart directory
-        default: 'charts/app'
+        default:  'charts/app'
         required: false
         type: string
       environment:
@@ -159,6 +159,43 @@ jobs:
           echo "release=${release}" >> $GITHUB_OUTPUT
           echo "version=${version}" >> $GITHUB_OUTPUT
 
+      - name: Check and Handle Concurrent Helm Operations
+        uses: bcgov/action-oc-runner@10033668ef4374d9bb78149faa73e4ccda0e93dd
+        with:
+          oc_namespace: ${{ secrets.oc_namespace }}
+          oc_token: ${{ secrets.oc_token }}
+          oc_server: ${{ inputs.oc_server }}
+          commands: |
+            # Enable strict error handling
+            set -euo pipefail
+            
+            RELEASE_NAME="${{ steps.vars.outputs.release }}"
+            echo "🔍 Checking Helm release status for: $RELEASE_NAME"
+            
+            # Check current helm status
+            if helm list -o json | jq -r '.[] | select(.name=="'$RELEASE_NAME'") | .status' | grep -E "(pending-install|pending-upgrade|pending-rollback)" >/dev/null 2>&1; then
+              echo "⚠️ Found stuck Helm operation, attempting to resolve..."
+              
+              # Try to get the current status
+              CURRENT_STATUS=$(helm status $RELEASE_NAME -o json | jq -r '.info.status' 2>/dev/null || echo "unknown")
+              echo "Current status: $CURRENT_STATUS"
+              
+              if [[ "$CURRENT_STATUS" =~ pending ]]; then
+                echo "🔄 Attempting to rollback stuck operation..."
+                helm rollback $RELEASE_NAME || {
+                  echo "❌ Rollback failed, attempting uninstall..."
+                  helm uninstall $RELEASE_NAME --wait || {
+                    echo "❌ Uninstall failed, force removing..."
+                    # Force cleanup if uninstall fails
+                    kubectl delete secret -l owner=helm,name=$RELEASE_NAME --ignore-not-found=true
+                  }
+                }
+                echo "✅ Resolved stuck Helm operation"
+              fi
+            else
+              echo "✅ No stuck Helm operations detected"
+            fi
+
       - name: Deploy Database (Smart Preservation)
         id: deploy_database
         uses: bcgov/action-oc-runner@10033668ef4374d9bb78149faa73e4ccda0e93dd
@@ -166,8 +203,12 @@ jobs:
           oc_namespace: ${{ secrets.oc_namespace }}
           oc_token: ${{ secrets.oc_token }}
           oc_server: ${{ inputs.oc_server }}
-          triggers: ${{ inputs.db_triggers }}
           commands: |
+            # Enable strict error handling
+            set -euo pipefail
+            
+            echo "🚀 DATABASE DEPLOYMENT STARTING..."
+            
             # Set database configuration
             RELEASE_NAME="${{ steps.vars.outputs.release }}"
             DB_USER="${{ inputs.db_user }}"
@@ -181,357 +222,31 @@ jobs:
             DB_PASSWORD=$(echo -n "${RELEASE_NAME}-${DB_USER}" | sha256sum | cut -d' ' -f1 | head -c32)
             
             # Check if database already exists
-            DB_EXISTS=false
-            DB_DEPLOYMENT_EXISTS=false
-            DB_PVC_EXISTS=false
-            
             if oc get deployment ${RELEASE_NAME}-postgres &>/dev/null; then
               echo "✅ Database deployment already exists"
-              DB_EXISTS=true
-              DB_DEPLOYMENT_EXISTS=true
+            else
+              echo "❌ Database deployment missing - this will be created by Helm"
             fi
             
             if oc get pvc ${RELEASE_NAME}-postgres-data &>/dev/null; then
               echo "✅ Database PVC already exists"
-              DB_EXISTS=true
-              DB_PVC_EXISTS=true
-            fi
-            
-            # Decision logic: preserve or recreate
-            if [ "$DB_EXISTS" = true ] && [ "$PRESERVE_DB" = true ]; then
-              echo "🔄 PRESERVING existing database and data"
-            
-              # Ensure database secret exists with correct values
-              echo "Creating/updating database secret..."
-              oc delete secret ${RELEASE_NAME}-pguser-${DB_USER} --ignore-not-found=true
-              oc create secret generic ${RELEASE_NAME}-pguser-${DB_USER} \
-                --from-literal=password="$DB_PASSWORD" \
-                --from-literal=username="$DB_USER" \
-                --from-literal=dbname="app" \
-                --from-literal=host="${RELEASE_NAME}-pgbouncer" \
-                --from-literal=port="5432"
-            
-              # Ensure database service exists
-              if ! oc get service ${RELEASE_NAME}-pgbouncer &>/dev/null; then
-                echo "Creating missing database service..."
-                cat <<EOF | oc apply -f -
-            apiVersion: v1
-            kind: Service
-            metadata:
-              name: ${RELEASE_NAME}-pgbouncer
-              labels:
-                app: postgres
-                instance: $RELEASE_NAME
-            spec:
-              selector:
-                app: postgres
-                instance: $RELEASE_NAME
-              ports:
-              - port: 5432
-                targetPort: 5432
-                name: postgres
-              type: ClusterIP
-            EOF
-              fi
-            
-              # Verify database deployment is healthy
-              if [ "$DB_DEPLOYMENT_EXISTS" = true ]; then
-                echo "Checking database deployment health..."
-                if ! oc rollout status deployment/${RELEASE_NAME}-postgres --timeout=60s &>/dev/null; then
-                  echo "Database deployment not healthy, restarting..."
-                  oc rollout restart deployment/${RELEASE_NAME}-postgres
-                  oc rollout status deployment/${RELEASE_NAME}-postgres --timeout=300s
-                fi
-              else
-                echo "⚠️ PVC exists but deployment missing, recreating deployment only..."
-                # Create deployment but use existing PVC
-                cat <<EOF | oc apply -f -
-            apiVersion: apps/v1
-            kind: Deployment
-            metadata:
-              name: ${RELEASE_NAME}-postgres
-              labels:
-                app: postgres
-                instance: $RELEASE_NAME
-            spec:
-              replicas: 1
-              selector:
-                matchLabels:
-                  app: postgres
-                  instance: $RELEASE_NAME
-              template:
-                metadata:
-                  labels:
-                    app: postgres
-                    instance: $RELEASE_NAME
-                spec:
-                  containers:
-                  - name: postgres
-                    image: postgres:15
-                    env:
-                    - name: POSTGRES_DB
-                      value: "app"
-                    - name: POSTGRES_USER
-                      value: "$DB_USER"
-                    - name: POSTGRES_PASSWORD
-                      value: "$DB_PASSWORD"
-                    - name: PGDATA
-                      value: /var/lib/postgresql/data/pgdata
-                    ports:
-                    - containerPort: 5432
-                      name: postgres
-                    volumeMounts:
-                    - name: postgres-data
-                      mountPath: /var/lib/postgresql/data
-                    resources:
-                      requests:
-                        cpu: "100m"
-                        memory: "256Mi"
-                      limits:
-                        cpu: "500m"
-                        memory: "512Mi"
-                    readinessProbe:
-                      exec:
-                        command:
-                          - /bin/sh
-                          - -c
-                          - pg_isready -U $DB_USER -d app
-                      initialDelaySeconds: 15
-                      periodSeconds: 5
-                      failureThreshold: 6
-                    livenessProbe:
-                      exec:
-                        command:
-                          - /bin/sh
-                          - -c
-                          - pg_isready -U $DB_USER -d app
-                      initialDelaySeconds: 45
-                      periodSeconds: 10
-                      failureThreshold: 6
-                  volumes:
-                  - name: postgres-data
-                    persistentVolumeClaim:
-                      claimName: ${RELEASE_NAME}-postgres-data
-            EOF
-                oc rollout status deployment/${RELEASE_NAME}-postgres --timeout=300s
-              fi
-            
             else
-              echo "🆕 CREATING new database (preserve_db=$PRESERVE_DB, exists=$DB_EXISTS)"
-            
-              # Clean up any existing resources if preserve_database is false
-              if [ "$PRESERVE_DB" = false ]; then
-                echo "Cleaning up existing database resources..."
-                oc delete deployment,service,pvc -l app=postgres,instance=$RELEASE_NAME --ignore-not-found=true
-                # Wait for resources to be deleted
-                sleep 10
-              fi
-            
-              echo "Creating database secret..."
-              oc delete secret ${RELEASE_NAME}-pguser-${DB_USER} --ignore-not-found=true
-              oc create secret generic ${RELEASE_NAME}-pguser-${DB_USER} \
-                --from-literal=password="$DB_PASSWORD" \
-                --from-literal=username="$DB_USER" \
-                --from-literal=dbname="app" \
-                --from-literal=host="${RELEASE_NAME}-pgbouncer" \
-                --from-literal=port="5432"
-            
-              echo "Deploying fresh PostgreSQL database..."
-            
-              # Deploy PostgreSQL database
-              cat <<EOF | oc apply -f -
-            # PostgreSQL PVC
-            apiVersion: v1
-            kind: PersistentVolumeClaim
-            metadata:
-              name: ${RELEASE_NAME}-postgres-data
-              labels:
-                app: postgres
-                instance: $RELEASE_NAME
-            spec:
-              accessModes:
-                - ReadWriteOnce
-              resources:
-                requests:
-                  storage: 3Gi
-              storageClassName: netapp-file-standard
-            ---
-            # PostgreSQL Deployment
-            apiVersion: apps/v1
-            kind: Deployment
-            metadata:
-              name: ${RELEASE_NAME}-postgres
-              labels:
-                app: postgres
-                instance: $RELEASE_NAME
-            spec:
-              replicas: 1
-              selector:
-                matchLabels:
-                  app: postgres
-                  instance: $RELEASE_NAME
-              template:
-                metadata:
-                  labels:
-                    app: postgres
-                    instance: $RELEASE_NAME
-                spec:
-                  containers:
-                  - name: postgres
-                    image: postgres:15
-                    env:
-                    - name: POSTGRES_DB
-                      value: "app"
-                    - name: POSTGRES_USER
-                      value: "$DB_USER"
-                    - name: POSTGRES_PASSWORD
-                      value: "$DB_PASSWORD"
-                    - name: PGDATA
-                      value: /var/lib/postgresql/data/pgdata
-                    ports:
-                    - containerPort: 5432
-                      name: postgres
-                    volumeMounts:
-                    - name: postgres-data
-                      mountPath: /var/lib/postgresql/data
-                    resources:
-                      requests:
-                        cpu: "100m"
-                        memory: "256Mi"
-                      limits:
-                        cpu: "500m"
-                        memory: "512Mi"
-                    readinessProbe:
-                      exec:
-                        command:
-                          - /bin/sh
-                          - -c
-                          - pg_isready -U $DB_USER -d app
-                      initialDelaySeconds: 15
-                      periodSeconds: 5
-                      failureThreshold: 6
-                    livenessProbe:
-                      exec:
-                        command:
-                          - /bin/sh
-                          - -c
-                          - pg_isready -U $DB_USER -d app
-                      initialDelaySeconds: 45
-                      periodSeconds: 10
-                      failureThreshold: 6
-                  volumes:
-                  - name: postgres-data
-                    persistentVolumeClaim:
-                      claimName: ${RELEASE_NAME}-postgres-data
-            ---
-            # PostgreSQL Service (with pgbouncer name for compatibility)
-            apiVersion: v1
-            kind: Service
-            metadata:
-              name: ${RELEASE_NAME}-pgbouncer
-              labels:
-                app: postgres
-                instance: $RELEASE_NAME
-            spec:
-              selector:
-                app: postgres
-                instance: $RELEASE_NAME
-              ports:
-              - port: 5432
-                targetPort: 5432
-                name: postgres
-              type: ClusterIP
-            EOF
-            
-              echo "Waiting for PostgreSQL to be ready..."
-              oc wait --for=condition=available --timeout=300s deployment/${RELEASE_NAME}-postgres
-              oc wait --for=condition=ready --timeout=180s pod -l app=postgres,instance=$RELEASE_NAME
+              echo "❌ Database PVC missing - this will be created by Helm"
             fi
             
-            # Test database connection
-            echo "Testing database connection..."
-            POD_NAME=$(oc get pods -l app=postgres,instance=$RELEASE_NAME -o jsonpath='{.items[0].metadata.name}')
-            if [ -n "$POD_NAME" ]; then
-              echo "Testing connection on pod: $POD_NAME"
-              # Simple connection test
-              oc exec $POD_NAME -- psql -U $DB_USER -d app -c "SELECT 1;" || {
-                echo "Database connection test failed"
-                oc logs $POD_NAME
-                exit 1
-              }
-              echo "✅ Database connection test successful"
-            else
-              echo "❌ No database pod found"
-              exit 1
-            fi
+            # Ensure database secret exists
+            echo "Creating/updating database secret..."
+            oc delete secret ${RELEASE_NAME}-pguser-${DB_USER} --ignore-not-found=true
+            oc create secret generic ${RELEASE_NAME}-pguser-${DB_USER} \
+              --from-literal=password="$DB_PASSWORD" \
+              --from-literal=username="$DB_USER" \
+              --from-literal=dbname="app" \
+              --from-literal=host="${RELEASE_NAME}-pgbouncer" \
+              --from-literal=port="5432"
             
-            if [ "$PRESERVE_DB" = true ] && [ "$DB_EXISTS" = true ]; then
-              echo "✅ Database ready (existing data preserved)"
-            else
-              echo "✅ Database ready (fresh installation)"
-            fi
-            
-            echo "Database details:"
-            echo "  Host: ${RELEASE_NAME}-pgbouncer"
-            echo "  Port: 5432"
-            echo "  Database: app"
-            echo "  User: $DB_USER"
-            echo "  Secret: ${RELEASE_NAME}-pguser-${DB_USER}"
+            echo "✅ Database secret created/updated"
 
-      - name: Enhanced cleanup of test environment
-        uses: bcgov/action-oc-runner@10033668ef4374d9bb78149faa73e4ccda0e93dd
-        with:
-          oc_namespace: ${{ secrets.oc_namespace }}
-          oc_token: ${{ secrets.oc_token }}
-          oc_server: ${{ inputs.oc_server }}
-          triggers: ${{ inputs.triggers }}
-          commands: |
-            RELEASE="${{ steps.vars.outputs.release }}"
-            echo "Enhanced cleanup for release: $RELEASE"
-            
-            # Force cleanup if this is a test environment
-            if [[ "$RELEASE" == *"-test" ]]; then
-              echo "🧹 Performing enhanced test environment cleanup..."
-            
-              # Remove any existing helm release
-              if helm list -q | grep -q "^$RELEASE$"; then
-                echo "Removing existing Helm release..."
-                helm uninstall $RELEASE --timeout=300s || true
-                sleep 10
-              fi
-            
-              # Clean up all resources associated with this release
-              echo "Cleaning up all resources..."
-              oc delete all,pvc,secrets,configmaps,ingress,route -l app.kubernetes.io/instance=$RELEASE --ignore-not-found=true --timeout=60s || true
-              oc delete all,pvc,secrets,configmaps,ingress,route -l release=$RELEASE --ignore-not-found=true --timeout=60s || true
-            
-              # Clean up database resources specifically
-              echo "Cleaning up database resources..."
-              oc delete deployment,service,pvc,secrets -l app=postgres,instance=$RELEASE --ignore-not-found=true --timeout=60s || true
-            
-              # Clean up any stuck/failed pods
-              echo "Cleaning up stuck pods..."
-              oc delete pods --field-selector=status.phase=Failed --ignore-not-found=true --timeout=30s || true
-              oc delete pods --field-selector=status.phase=Succeeded --ignore-not-found=true --timeout=30s || true
-            
-              # Wait for cleanup to complete
-              echo "Waiting for cleanup to complete..."
-              sleep 20
-            
-              # Verify cleanup
-              if helm list -q | grep -q "^$RELEASE$"; then
-                echo "❌ Helm release still exists after cleanup"
-              else
-                echo "✅ Helm release successfully removed"
-              fi
-            
-              echo "✅ Enhanced cleanup completed"
-            else
-              echo "ℹ️ Skipping enhanced cleanup for non-test environment"
-            fi
-
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Start deployment
         uses: bobheadxi/deployments@v1.4.0
@@ -541,56 +256,6 @@ jobs:
           token: ${{ github.token }}
           env: ${{ inputs.environment || 'dev' }}
           desc: "Starting deployment..."
-
-      - name: Verify OpenShift Authentication
-        uses: bcgov/action-oc-runner@10033668ef4374d9bb78149faa73e4ccda0e93dd
-        with:
-          oc_namespace: ${{ secrets.oc_namespace }}
-          oc_token: ${{ secrets.oc_token }}
-          oc_server: ${{ inputs.oc_server }}
-          commands: |
-            # Verify authentication
-            echo "Testing OpenShift authentication..."
-            oc whoami
-            oc project
-
-            # Test permissions
-            echo "Testing permissions..."
-            oc auth can-i create deployments || { echo "Missing deployment permissions"; exit 1; }
-            oc auth can-i create secrets || { echo "Missing secret permissions"; exit 1; }
-            oc auth can-i create services || { echo "Missing service permissions"; exit 1; }
-            oc auth can-i create pvc || { echo "Missing PVC permissions"; exit 1; }
-
-            # Test Helm access
-            echo "Testing Helm access..."
-            helm version --client
-            helm list || echo "No existing releases found"
-
-            echo "✅ Authentication and permissions verified"
-
-      - name: Validate Database Exists
-        uses: bcgov/action-oc-runner@10033668ef4374d9bb78149faa73e4ccda0e93dd
-        with:
-          oc_namespace: ${{ secrets.oc_namespace }}
-          oc_token: ${{ secrets.oc_token }}
-          oc_server: ${{ inputs.oc_server }}
-          commands: |
-            RELEASE_NAME="${{ steps.vars.outputs.release }}"
-            
-            # Check if database deployment exists
-            if ! oc get deployment ${RELEASE_NAME}-postgres &>/dev/null; then
-              echo "❌ Database deployment missing! This will cause connection failures."
-              echo "Database deployment step must have failed."
-              exit 1
-            fi
-            
-            # Check if database is ready
-            if ! oc rollout status deployment/${RELEASE_NAME}-postgres --timeout=60s; then
-              echo "❌ Database deployment not ready!"
-              exit 1
-            fi
-            
-            echo "✅ Database validation passed"
 
       - name: Helm Deploy
         id: deploy
@@ -602,6 +267,9 @@ jobs:
           triggers: ${{ inputs.triggers }}
           ref: ${{ github.ref }}
           commands: |
+            # Enable strict error handling
+            set -euo pipefail
+            
             # If directory provided, cd to it
             [ -z "${{ inputs.directory }}" ] || cd ${{ inputs.directory }}
 
@@ -609,118 +277,115 @@ jobs:
             DATABASE_ALIAS="${{ steps.vars.outputs.release }}"
             echo "Setting database alias to: $DATABASE_ALIAS"
 
-            # Final check for stuck operations before deployment
-            RELEASE="${{ steps.vars.outputs.release }}"
-            echo "Performing final check for stuck operations..."
-
-            # More comprehensive stuck operation detection and cleanup
-            if helm list -q | grep -q "^$RELEASE$"; then
-              STATUS=$(helm status $RELEASE -o json 2>/dev/null | jq -r '.info.status // empty' || echo "")
-              echo "Current release status: ${STATUS}"
-
-              if [[ "${STATUS}" == "pending-upgrade" || "${STATUS}" == "pending-install" || "${STATUS}" == "pending-rollback" ]]; then
-                echo "🚨 Stuck operation detected (${STATUS}), forcing cleanup..."
-
-                # Try rollback first
-                echo "Attempting rollback..."
-                helm rollback $RELEASE --timeout=60s || {
-                  echo "Rollback failed, attempting uninstall..."
-                  helm uninstall $RELEASE --timeout=60s || {
-                    echo "Uninstall failed, forcing resource cleanup..."
-                    # Force delete all resources associated with this release
-                    oc delete deployment,service,ingress,route,configmap,secret,pvc,pv -l app.kubernetes.io/instance=$RELEASE --ignore-not-found=true --timeout=30s || true
-                    oc delete deployment,service,ingress,route,configmap,secret,pvc,pv -l release=$RELEASE --ignore-not-found=true --timeout=30s || true
-                    # Try uninstall again
-                    helm uninstall $RELEASE --timeout=60s || true
-                  }
-                }
-
-                # Wait longer for cleanup to complete
-                echo "Waiting for cleanup to complete..."
-                sleep 30
-
-                # Verify cleanup and wait for any remaining operations to finish
-                for i in {1..10}; do
-                  if ! helm list -q | grep -q "^$RELEASE$"; then
-                    echo "✅ Release successfully cleaned up"
-                    break
-                  fi
-                  echo "Attempt $i/10: Release still exists, waiting..."
-                  sleep 10
-                done
-
-                # Final verification
-                if helm list -q | grep -q "^$RELEASE$"; then
-                  echo "❌ Release still exists after cleanup attempts, checking for stuck operations..."
-                  # Check if there are any stuck operations in the cluster
-                  oc get pods -l app.kubernetes.io/instance=$RELEASE --field-selector=status.phase!=Running,status.phase!=Succeeded,status.phase!=Failed -o name | xargs -r oc delete --timeout=30s || true
-                  sleep 10
-                fi
+            RELEASE_NAME="${{ steps.vars.outputs.release }}"
+            
+            # Function to check for stuck operations and resolve them
+            check_and_resolve_stuck_operations() {
+              local release_name="$1"
+              echo "🔍 Checking for stuck operations on: $release_name"
+              
+              # Get current status with better error handling
+              local current_status
+              if current_status=$(helm status "$release_name" -o json 2>/dev/null | jq -r '.info.status'); then
+                echo "Current Helm status: $current_status"
+                
+                case "$current_status" in
+                  "pending-install"|"pending-upgrade"|"pending-rollback")
+                    echo "⚠️ Found stuck operation: $current_status"
+                    echo "🔄 Attempting to resolve..."
+                    
+                    # Try rollback first
+                    if helm rollback "$release_name" 2>/dev/null; then
+                      echo "✅ Successfully rolled back stuck operation"
+                      sleep 5
+                      return 0
+                    fi
+                    
+                    # If rollback fails, try uninstall
+                    echo "⚠️ Rollback failed, attempting uninstall..."
+                    if helm uninstall "$release_name" --wait --timeout=300s 2>/dev/null; then
+                      echo "✅ Successfully uninstalled stuck release"
+                      sleep 5
+                      return 0
+                    fi
+                    
+                    # If uninstall fails, force cleanup
+                    echo "⚠️ Uninstall failed, forcing cleanup..."
+                    kubectl delete secret -l owner=helm,name="$release_name" --ignore-not-found=true
+                    kubectl delete configmap -l owner=helm,name="$release_name" --ignore-not-found=true
+                    sleep 5
+                    ;;
+                  "deployed"|"failed")
+                    echo "✅ Release is in stable state: $current_status"
+                    ;;
+                  *)
+                    echo "⚠️ Unknown status: $current_status"
+                    ;;
+                esac
               else
-                echo "✅ No stuck operation detected, status: ${STATUS}"
+                echo "ℹ️ Release does not exist yet or status check failed"
               fi
-            else
-              echo "ℹ️ No existing helm release found, proceeding with fresh deployment"
-            fi
+              
+              return 0
+            }
+            
+            # Function to perform helm upgrade with retry logic
+            perform_helm_upgrade() {
+              local release_name="$1"
+              local max_attempts=5
+              local attempt=1
+              
+              while [ $attempt -le $max_attempts ]; do
+                echo "🚀 Helm deployment attempt $attempt/$max_attempts..."
+                
+                # Check for stuck operations before each attempt
+                check_and_resolve_stuck_operations "$release_name"
+                
+                # Attempt the upgrade
+                if helm upgrade \
+                  --set-string global.repository=${{ github.repository }} \
+                  --set-string global.tag="${{ steps.vars.outputs.tag }}" \
+                  --set-string global.config.databaseUser="${{ inputs.db_user }}" \
+                  --set-string global.config.nodeEnv=${{ (inputs.environment == 'prod' || inputs.environment == 'production') && 'production' || (inputs.environment == 'test' && 'test' || 'development') }} \
+                  --set-string global.databaseAlias="$DATABASE_ALIAS" \
+                  --set-string global.secrets.enabled=true \
+                  --set-string global.preserveDatabase="${{ inputs.preserve_database }}" \
+                  ${{ inputs.params }} \
+                  --install --wait ${{ inputs.atomic && '--atomic' || '' }} "$release_name" \
+                  --timeout ${{ inputs.timeout-minutes }}m \
+                  --values ${{ inputs.values }} \
+                  ./${{ github.event.repository.name }}-${{ steps.pr.outputs.pr || steps.vars.outputs.version }}.tgz; then
+                  
+                  echo "✅ Helm deployment completed successfully on attempt $attempt"
+                  return 0
+                else
+                  local exit_code=$?
+                  echo "❌ Helm deployment failed on attempt $attempt (exit code: $exit_code)"
+                  
+                  if [ $attempt -eq $max_attempts ]; then
+                    echo "💥 All attempts failed, giving up"
+                    return $exit_code
+                  fi
+                  
+                  echo "⏳ Waiting 30 seconds before retry..."
+                  sleep 30
+                  attempt=$((attempt + 1))
+                fi
+              done
+            }
 
-            # Additional cleanup: remove any orphaned resources and wait for cluster to stabilize
-            echo "Cleaning up any orphaned resources..."
-            oc delete pods --field-selector=status.phase==Succeeded --ignore-not-found=true --timeout=30s || true
-            oc delete pods --field-selector=status.phase==Failed --ignore-not-found=true --timeout=30s || true
-
-            # Wait a moment for cluster to stabilize
-            echo "Waiting for cluster to stabilize..."
-            sleep 10
+            # Initial check and cleanup
+            check_and_resolve_stuck_operations "$RELEASE_NAME"
 
             # Helm package
             sed -i 's/^name:.*/name: ${{ github.event.repository.name }}/' Chart.yaml
             helm package -u . --app-version="tag-${{ steps.vars.outputs.tag }}_run-${{ github.run_number }}" --version=${{ steps.pr.outputs.pr || steps.vars.outputs.version }}
-
-            # Helm upgrade/rollout with proper database configuration and retry logic
-            for attempt in {1..3}; do
-              echo "Helm upgrade attempt $attempt/3..."
-
-              if helm upgrade \
-                --history-max 10 \
-                --set-string global.repository=${{ github.repository }} \
-                --set-string global.tag="${{ steps.vars.outputs.tag }}" \
-                --set-string global.config.databaseUser="${{ inputs.db_user }}" \
-                --set-string global.config.nodeEnv=${{ (inputs.environment == 'prod' || inputs.environment == 'production') && 'production' || (inputs.environment == 'test' && 'test' || 'development') }} \
-                --set-string global.databaseAlias="$DATABASE_ALIAS" \
-                --set-string global.secrets.enabled=true \
-                --set-string global.preserveDatabase="${{ inputs.preserve_database }}" \
-                ${{ inputs.params }} \
-                --install --wait ${{ inputs.atomic && '--atomic' || '' }} ${{ steps.vars.outputs.release }} \
-                --timeout ${{ inputs.timeout-minutes }}m \
-                --values ${{ inputs.values }} \
-                ./${{ github.event.repository.name }}-${{ steps.pr.outputs.pr || steps.vars.outputs.version }}.tgz; then
-                echo "✅ Helm upgrade successful on attempt $attempt"
-                break
-              else
-                echo "❌ Helm upgrade failed on attempt $attempt"
-                if [ $attempt -lt 3 ]; then
-                  echo "Waiting before retry..."
-                  sleep 30
-
-                  # Check if there's a stuck operation and clean it up
-                  if helm list -q | grep -q "^${{ steps.vars.outputs.release }}$"; then
-                    STATUS=$(helm status ${{ steps.vars.outputs.release }} -o json 2>/dev/null | jq -r '.info.status // empty' || echo "")
-                    if [[ "${STATUS}" == "pending-upgrade" || "${STATUS}" == "pending-install" || "${STATUS}" == "pending-rollback" ]]; then
-                      echo "Cleaning up stuck operation before retry..."
-                      helm uninstall ${{ steps.vars.outputs.release }} --timeout=60s || true
-                      oc delete deployment,service,ingress,route,configmap,secret,pvc,pv -l app.kubernetes.io/instance=${{ steps.vars.outputs.release }} --ignore-not-found=true --timeout=30s || true
-                      sleep 20
-                    fi
-                  fi
-                else
-                  echo "❌ All Helm upgrade attempts failed"
-                  exit 1
-                fi
-              fi
-            done
+            
+            # Perform the deployment with retry logic
+            perform_helm_upgrade "$RELEASE_NAME"
 
             # Helm release history
-            helm history ${{ steps.vars.outputs.release }}
+            helm history "$RELEASE_NAME"
 
             # Clean up completed pods
             oc delete po --field-selector=status.phase==Succeeded --ignore-not-found=true || true
@@ -734,7 +399,7 @@ jobs:
           commands: |
             # Get release name
             RELEASE="${{ inputs.release_name }}"
-
+            
             # Wait for backend secret to exist (created by helm)
             echo "Waiting for backend secret to be created by helm..."
             for i in {1..30}; do
@@ -745,15 +410,15 @@ jobs:
               echo "Attempt $i/30: Backend secret not found yet, waiting..."
               sleep 2
             done
-
+            
             if ! oc get secret $RELEASE-backend &>/dev/null; then
               echo "❌ Backend secret was not created by helm"
               exit 1
             fi
-
+            
             # Update secrets with real values
             echo "Updating backend secret with real SSO values..."
-
+            
             # Set appropriate login proxy URL based on environment
             if [[ "${{ inputs.environment }}" == "prod" ]]; then
               LOGIN_PROXY="loginproxy.gov.bc.ca"
