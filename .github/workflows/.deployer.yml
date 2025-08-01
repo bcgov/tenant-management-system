@@ -277,50 +277,115 @@ jobs:
             DATABASE_ALIAS="${{ steps.vars.outputs.release }}"
             echo "Setting database alias to: $DATABASE_ALIAS"
 
-            # Wait for any previous operations to complete
             RELEASE_NAME="${{ steps.vars.outputs.release }}"
-            echo "🔍 Final check for concurrent operations on: $RELEASE_NAME"
             
-            # Wait up to 5 minutes for any pending operations to complete
-            for i in {1..30}; do
-              if helm list -o json | jq -r '.[] | select(.name=="'$RELEASE_NAME'") | .status' | grep -E "(pending-install|pending-upgrade|pending-rollback)" >/dev/null 2>&1; then
-                echo "⏳ Waiting for pending operation to complete (attempt $i/30)..."
-                sleep 10
+            # Function to check for stuck operations and resolve them
+            check_and_resolve_stuck_operations() {
+              local release_name="$1"
+              echo "🔍 Checking for stuck operations on: $release_name"
+              
+              # Get current status with better error handling
+              local current_status
+              if current_status=$(helm status "$release_name" -o json 2>/dev/null | jq -r '.info.status'); then
+                echo "Current Helm status: $current_status"
+                
+                case "$current_status" in
+                  "pending-install"|"pending-upgrade"|"pending-rollback")
+                    echo "⚠️ Found stuck operation: $current_status"
+                    echo "🔄 Attempting to resolve..."
+                    
+                    # Try rollback first
+                    if helm rollback "$release_name" 2>/dev/null; then
+                      echo "✅ Successfully rolled back stuck operation"
+                      sleep 5
+                      return 0
+                    fi
+                    
+                    # If rollback fails, try uninstall
+                    echo "⚠️ Rollback failed, attempting uninstall..."
+                    if helm uninstall "$release_name" --wait --timeout=300s 2>/dev/null; then
+                      echo "✅ Successfully uninstalled stuck release"
+                      sleep 5
+                      return 0
+                    fi
+                    
+                    # If uninstall fails, force cleanup
+                    echo "⚠️ Uninstall failed, forcing cleanup..."
+                    kubectl delete secret -l owner=helm,name="$release_name" --ignore-not-found=true
+                    kubectl delete configmap -l owner=helm,name="$release_name" --ignore-not-found=true
+                    sleep 5
+                    ;;
+                  "deployed"|"failed")
+                    echo "✅ Release is in stable state: $current_status"
+                    ;;
+                  *)
+                    echo "⚠️ Unknown status: $current_status"
+                    ;;
+                esac
               else
-                echo "✅ No pending operations detected"
-                break
+                echo "ℹ️ Release does not exist yet or status check failed"
               fi
               
-              if [ $i -eq 30 ]; then
-                echo "⚠️ Timeout waiting for pending operations, proceeding with force"
-                helm rollback $RELEASE_NAME || helm uninstall $RELEASE_NAME --wait || true
-              fi
-            done
+              return 0
+            }
+            
+            # Function to perform helm upgrade with retry logic
+            perform_helm_upgrade() {
+              local release_name="$1"
+              local max_attempts=5
+              local attempt=1
+              
+              while [ $attempt -le $max_attempts ]; do
+                echo "🚀 Helm deployment attempt $attempt/$max_attempts..."
+                
+                # Check for stuck operations before each attempt
+                check_and_resolve_stuck_operations "$release_name"
+                
+                # Attempt the upgrade
+                if helm upgrade \
+                  --set-string global.repository=${{ github.repository }} \
+                  --set-string global.tag="${{ steps.vars.outputs.tag }}" \
+                  --set-string global.config.databaseUser="${{ inputs.db_user }}" \
+                  --set-string global.config.nodeEnv=${{ (inputs.environment == 'prod' || inputs.environment == 'production') && 'production' || (inputs.environment == 'test' && 'test' || 'development') }} \
+                  --set-string global.databaseAlias="$DATABASE_ALIAS" \
+                  --set-string global.secrets.enabled=true \
+                  --set-string global.preserveDatabase="${{ inputs.preserve_database }}" \
+                  ${{ inputs.params }} \
+                  --install --wait ${{ inputs.atomic && '--atomic' || '' }} "$release_name" \
+                  --timeout ${{ inputs.timeout-minutes }}m \
+                  --values ${{ inputs.values }} \
+                  ./${{ github.event.repository.name }}-${{ steps.pr.outputs.pr || steps.vars.outputs.version }}.tgz; then
+                  
+                  echo "✅ Helm deployment completed successfully on attempt $attempt"
+                  return 0
+                else
+                  local exit_code=$?
+                  echo "❌ Helm deployment failed on attempt $attempt (exit code: $exit_code)"
+                  
+                  if [ $attempt -eq $max_attempts ]; then
+                    echo "💥 All attempts failed, giving up"
+                    return $exit_code
+                  fi
+                  
+                  echo "⏳ Waiting 30 seconds before retry..."
+                  sleep 30
+                  attempt=$((attempt + 1))
+                fi
+              done
+            }
+
+            # Initial check and cleanup
+            check_and_resolve_stuck_operations "$RELEASE_NAME"
 
             # Helm package
             sed -i 's/^name:.*/name: ${{ github.event.repository.name }}/' Chart.yaml
             helm package -u . --app-version="tag-${{ steps.vars.outputs.tag }}_run-${{ github.run_number }}" --version=${{ steps.pr.outputs.pr || steps.vars.outputs.version }}
             
-            # Helm upgrade/rollout with proper database configuration
-            echo "🚀 Starting Helm deployment..."
-            helm upgrade \
-              --set-string global.repository=${{ github.repository }} \
-              --set-string global.tag="${{ steps.vars.outputs.tag }}" \
-              --set-string global.config.databaseUser="${{ inputs.db_user }}" \
-              --set-string global.config.nodeEnv=${{ (inputs.environment == 'prod' || inputs.environment == 'production') && 'production' || (inputs.environment == 'test' && 'test' || 'development') }} \
-              --set-string global.databaseAlias="$DATABASE_ALIAS" \
-              --set-string global.secrets.enabled=true \
-              --set-string global.preserveDatabase="${{ inputs.preserve_database }}" \
-              ${{ inputs.params }} \
-              --install --wait ${{ inputs.atomic && '--atomic' || '' }} ${{ steps.vars.outputs.release }} \
-              --timeout ${{ inputs.timeout-minutes }}m \
-              --values ${{ inputs.values }} \
-              ./${{ github.event.repository.name }}-${{ steps.pr.outputs.pr || steps.vars.outputs.version }}.tgz
-
-            echo "✅ Helm deployment completed successfully"
+            # Perform the deployment with retry logic
+            perform_helm_upgrade "$RELEASE_NAME"
 
             # Helm release history
-            helm history ${{ steps.vars.outputs.release }}
+            helm history "$RELEASE_NAME"
 
             # Clean up completed pods
             oc delete po --field-selector=status.phase==Succeeded --ignore-not-found=true || true
