@@ -33,7 +33,7 @@ export const groupService = {
         requestBody,
       )
 
-      return response.data
+      return response.data.data.groupUser
     } catch (error: unknown) {
       logApiError('Error adding user to group', error)
 

@@ -44,7 +44,7 @@ async function handleAddUser(user: User) {
       )
       searchResults.value = null
     } else {
-      notification.error('Failed to add user')
+      notification.error('Failed to add user to group')
     }
   }
 }
