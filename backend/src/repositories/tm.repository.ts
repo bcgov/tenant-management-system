@@ -460,7 +460,14 @@ export class TMRepository {
                     updatedDateTime: groupUser.updatedDateTime,
                     createdBy: groupUser.createdBy,
                     updatedBy: groupUser.updatedBy,
-                    ssoUser: groupUser.tenantUser?.ssoUser
+                    user: {
+                        id: groupUser.tenantUser?.id,
+                        ssoUser: groupUser.tenantUser?.ssoUser,
+                        createdDateTime: groupUser.tenantUser?.createdDateTime,
+                        updatedDateTime: groupUser.tenantUser?.updatedDateTime,
+                        createdBy: groupUser.tenantUser?.createdBy,
+                        updatedBy: groupUser.tenantUser?.updatedBy
+                    }
                 }));
             group.users = transformedUsers;
         }
