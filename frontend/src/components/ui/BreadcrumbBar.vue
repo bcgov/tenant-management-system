@@ -1,9 +1,13 @@
 <script setup lang="ts">
+// --- Types & Interfaces ------------------------------------------------------
+
 interface Breadcrumb {
   disabled?: boolean
   href?: string
   title: string
 }
+
+// --- Component Interface -----------------------------------------------------
 
 defineProps<{
   items: Breadcrumb[]

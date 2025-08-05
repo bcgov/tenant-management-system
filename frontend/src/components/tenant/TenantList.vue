@@ -2,6 +2,8 @@
 import TenantListCard from '@/components/tenant/TenantListCard.vue'
 import type { Tenant } from '@/models'
 
+// --- Component Interface -----------------------------------------------------
+
 defineProps<{
   tenants: Tenant[]
 }>()
@@ -17,6 +19,8 @@ defineProps<{
 const emit = defineEmits<{
   (event: 'select', id: Tenant['id']): void // NOSONAR: S6598
 }>()
+
+// --- Component Methods -------------------------------------------------------
 
 function handleClick(id: Tenant['id']) {
   emit('select', id)

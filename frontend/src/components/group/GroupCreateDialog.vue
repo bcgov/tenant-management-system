@@ -6,6 +6,8 @@ import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
 import type { GroupDetailFields } from '@/models'
 
+// --- Component Interface -----------------------------------------------------
+
 const props = defineProps<{
   isDuplicateName: boolean
 }>()
@@ -15,12 +17,10 @@ const emit = defineEmits<{
   (event: 'submit', group: GroupDetailFields, addUser: boolean): void
 }>()
 
-// Auto-bound v-model from parent
 const dialogVisible = defineModel<boolean>()
 
-const closeDialog = () => (dialogVisible.value = false)
+// --- Component State ---------------------------------------------------------
 
-// Form state
 const form = ref<InstanceType<typeof VForm>>()
 const addUser = ref(false)
 const formData = ref<GroupDetailFields>({
@@ -28,6 +28,18 @@ const formData = ref<GroupDetailFields>({
   name: '',
 })
 const isFormValid = ref(false)
+
+// --- Watchers and Effects ----------------------------------------------------
+
+// When parent sets the duplicated name flag, force re-validation so that the
+// message is displayed.
+watch(
+  () => props.isDuplicateName,
+  async () => {
+    await nextTick()
+    await form.value?.validate()
+  },
+)
 
 // Clear the state when the dialog is opened. This is for the case that the
 // user opens the dialog, enters data, cancels, and opens it again - the form
@@ -51,16 +63,6 @@ watch(
   },
 )
 
-// When parent sets the duplicated name flag, force re-validation so that the
-// message is displayed.
-watch(
-  () => props.isDuplicateName,
-  async () => {
-    await nextTick()
-    await form.value?.validate()
-  },
-)
-
 watch(
   () => [formData.value.name],
   () => {
@@ -68,7 +70,20 @@ watch(
   },
 )
 
-// Validation
+// --- Component Methods -------------------------------------------------------
+
+const dialogClose = () => (dialogVisible.value = false)
+
+const handleSubmit = () => {
+  if (isFormValid.value) {
+    formData.value.name = formData.value.name.trim()
+    formData.value.description = formData.value.description.trim()
+
+    emit('submit', formData.value, addUser.value)
+    // Let parent decide when to close the dialog
+  }
+}
+
 const rules = {
   maxLength: (max: number) => (value: string) =>
     !value || value.length <= max || `Must be ${max} characters or less`,
@@ -87,16 +102,6 @@ const rules = {
     return true
   },
 }
-
-const handleSubmit = () => {
-  if (isFormValid.value) {
-    formData.value.name = formData.value.name.trim()
-    formData.value.description = formData.value.description.trim()
-
-    emit('submit', formData.value, addUser.value)
-    // Let parent decide when to close the dialog
-  }
-}
 </script>
 
 <template>
@@ -109,7 +114,7 @@ const handleSubmit = () => {
       <v-card-text>
         <v-form ref="form" v-model="isFormValid">
           <v-row>
-            <v-col cols="12">
+            <v-col>
               <v-text-field
                 v-model="formData.name"
                 :maxlength="30"
@@ -124,7 +129,7 @@ const handleSubmit = () => {
             </v-col>
           </v-row>
           <v-row>
-            <v-col cols="12">
+            <v-col>
               <v-textarea
                 v-model="formData.description"
                 :rules="[rules.required, rules.maxLength(500)]"
@@ -137,7 +142,7 @@ const handleSubmit = () => {
             </v-col>
           </v-row>
           <v-row>
-            <v-col cols="12">
+            <v-col>
               <v-checkbox
                 v-model="addUser"
                 label="Add me as a user to this group"
@@ -147,7 +152,7 @@ const handleSubmit = () => {
         </v-form>
       </v-card-text>
       <v-card-actions class="d-flex justify-end">
-        <ButtonSecondary class="me-4" text="Cancel" @click="closeDialog" />
+        <ButtonSecondary class="me-4" text="Cancel" @click="dialogClose" />
         <ButtonPrimary
           :disabled="!isFormValid"
           text="Submit"

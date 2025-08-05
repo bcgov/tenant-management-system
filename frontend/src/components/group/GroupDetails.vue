@@ -4,8 +4,8 @@ import { VForm } from 'vuetify/components'
 
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
-import type { Tenant, TenantDetailFields } from '@/models'
-import { MINISTRIES, ROLES } from '@/utils/constants'
+import type { Group, GroupDetailFields, Tenant } from '@/models'
+import { ROLES } from '@/utils/constants'
 import { currentUserHasRole } from '@/utils/permissions'
 
 // --- Component Interface -----------------------------------------------------
@@ -13,21 +13,21 @@ import { currentUserHasRole } from '@/utils/permissions'
 const props = defineProps<{
   isDuplicateName: boolean
   isEditing: boolean
+  group: Group
   tenant: Tenant
 }>()
 
 const emit = defineEmits<{
   (event: 'clear-duplicate-error'): void
-  (event: 'update', tenantDetails: TenantDetailFields): void
+  (event: 'update', groupDetails: GroupDetailFields): void
   (event: 'update:isEditing', value: boolean): void
 }>()
 
 // --- Component State ---------------------------------------------------------
 
 const form = ref<InstanceType<typeof VForm> | null>(null)
-const formData = ref<TenantDetailFields>({
+const formData = ref<GroupDetailFields>({
   description: '',
-  ministryName: '',
   name: '',
 })
 const isFormValid = ref(false)
@@ -45,13 +45,12 @@ watch(
 )
 
 watch(
-  () => props.tenant,
-  (newTenant) => {
-    if (newTenant) {
+  () => props.group,
+  (newGroup) => {
+    if (newGroup) {
       formData.value = {
-        description: newTenant.description,
-        ministryName: newTenant.ministryName,
-        name: newTenant.name,
+        description: newGroup.description,
+        name: newGroup.name,
       }
     }
   },
@@ -59,7 +58,7 @@ watch(
 )
 
 watch(
-  () => [formData.value.name, formData.value.ministryName],
+  () => formData.value.name,
   () => {
     emit('clear-duplicate-error')
   },
@@ -67,12 +66,13 @@ watch(
 
 // --- Computed Values ---------------------------------------------------------
 
-const isTenantOwner = computed(() => {
-  return currentUserHasRole(props.tenant, ROLES.TENANT_OWNER.value)
-})
-
-const owner = computed(() => {
-  return props.tenant?.getFirstOwner()
+const isUserAdmin = computed(() => {
+  // A tenant owner, by default, is also a user admin - even if they don't have
+  // the USER_ADMIN role.
+  return (
+    currentUserHasRole(props.tenant, ROLES.TENANT_OWNER.value) ||
+    currentUserHasRole(props.tenant, ROLES.USER_ADMIN.value)
+  )
 })
 
 // --- Component Methods -------------------------------------------------------
@@ -80,9 +80,8 @@ const owner = computed(() => {
 function handleCancel() {
   // Reset form data to original tenant values
   formData.value = {
-    description: props.tenant.description,
-    ministryName: props.tenant.ministryName,
-    name: props.tenant.name,
+    description: props.group.description,
+    name: props.group.name,
   }
 
   emit('update:isEditing', false)
@@ -92,7 +91,6 @@ async function handleSubmit() {
   const result = await form.value?.validate()
   if (result?.valid) {
     formData.value.name = formData.value.name.trim()
-    formData.value.ministryName = formData.value.ministryName.trim()
     formData.value.description = formData.value.description.trim()
 
     emit('update', formData.value)
@@ -102,9 +100,7 @@ async function handleSubmit() {
 const rules = {
   maxLength: (max: number) => (value: string) =>
     !value || value.length <= max || `Must be ${max} characters or less`,
-  notDuplicated: () =>
-    !props.isDuplicateName ||
-    'Name must be unique for this ministry/organization',
+  notDuplicated: () => !props.isDuplicateName || 'Name must be unique',
   required: (value: string) => {
     if (!value) {
       return 'Required'
@@ -129,7 +125,7 @@ function toggleEdit() {
     <v-col cols="10">
       <v-form ref="form" v-model="isFormValid" @submit.prevent="handleSubmit">
         <v-row>
-          <v-col cols="12" md="6">
+          <v-col cols="6">
             <v-text-field
               v-if="isEditing"
               v-model="formData.name"
@@ -138,58 +134,31 @@ function toggleEdit() {
                 rules.maxLength(30),
                 rules.notDuplicated,
               ]"
-              label="Tenant Name"
+              label="Group Name"
               required
             />
             <v-text-field
               v-else
-              :model-value="tenant.name"
-              label="Tenant Name"
+              :model-value="group.name"
+              label="Group Name"
               disabled
             />
           </v-col>
-          <v-col cols="10" md="6">
-            <v-select
-              v-if="isEditing"
-              v-model="formData.ministryName"
-              :items="MINISTRIES"
-              :rules="[(v) => !!v || 'Ministry is required']"
-              label="Ministry/Organization"
-              placeholder="Select an option..."
-              required
-            />
-            <v-text-field
-              v-else
-              :model-value="tenant.ministryName"
-              :rules="[rules.required, rules.notDuplicated]"
-              label="Ministry/Organization"
-              disabled
-            />
-          </v-col>
-        </v-row>
-        <v-row>
-          <v-col cols="12" md="6">
-            <v-text-field
-              :model-value="owner?.ssoUser.userName ?? 'No owner assigned'"
-              label="Tenant Owner"
-              disabled
-            />
-          </v-col>
-          <v-col cols="12" md="6">
+          <v-col cols="6">
             <v-textarea
               v-if="isEditing"
               v-model="formData.description"
               :rules="[rules.required, rules.maxLength(500)]"
               counter="500"
-              label="Tenant Description"
+              label="Group Description"
               rows="1"
               auto-grow
               required
             ></v-textarea>
             <v-textarea
               v-else
-              :model-value="tenant.description"
-              label="Tenant Description"
+              :model-value="group.description"
+              label="Group Description"
               rows="1"
               disabled
             ></v-textarea>
@@ -209,7 +178,7 @@ function toggleEdit() {
     </v-col>
 
     <!-- Menu on right side -->
-    <v-col v-if="isTenantOwner" class="d-flex justify-end" cols="2">
+    <v-col v-if="isUserAdmin" class="d-flex justify-end" cols="2">
       <v-btn
         v-if="isEditing"
         rounded="lg"
@@ -235,7 +204,7 @@ function toggleEdit() {
         </template>
         <v-list>
           <v-list-item @click="toggleEdit">
-            <v-list-item-title>Edit Tenant</v-list-item-title>
+            <v-list-item-title>Edit Group</v-list-item-title>
           </v-list-item>
         </v-list>
       </v-menu>

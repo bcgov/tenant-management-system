@@ -49,7 +49,5 @@ export const notification = {
 }
 
 export function useNotification() {
-  return {
-    notification,
-  }
+  return notification
 }

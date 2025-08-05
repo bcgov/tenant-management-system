@@ -16,15 +16,16 @@ on:
         default: latest
 
 concurrency:
-  # Cancel previous workflows when new merge happens
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true  # ✅ FIXED: This should be true to cancel previous runs
+  # Prevent concurrent deployments - use repository name to make it unique
+  group: merge-deployment-${{ github.repository }}-${{ github.ref }}
+  cancel-in-progress: false  # Don't cancel, let them queue instead
 
 permissions:
   contents: read
   deployments: write
   id-token: write
   packages: write
+  attestations: write
 
 jobs:
   builds:
@@ -33,6 +34,7 @@ jobs:
     permissions:
       packages: write
       id-token: write
+      attestations: write
     with:
       tags: ${{ github.ref_name == 'main' && (inputs.tags || 'latest') || format('test-{0}', github.ref_name) }}
       keep_versions: 10
@@ -41,7 +43,11 @@ jobs:
   deploy-test:
     name: Deploy (TEST)
     needs: [builds]
-    if: github.ref_name == 'main'
+    if: github.ref_name == 'main' || github.ref_name == 'deployment-fix'
+    # Add environment-specific concurrency to prevent overlapping TEST deployments
+    concurrency:
+      group: deploy-test-${{ github.repository }}
+      cancel-in-progress: false
     uses: ./.github/workflows/.deployer.yml
     secrets:
       oc_namespace: ${{ secrets.OC_NAMESPACE }}
@@ -98,6 +104,10 @@ jobs:
     name: Deploy (PROD)
     needs: [approve-prod]
     if: github.ref_name == 'main'
+    # Add environment-specific concurrency to prevent overlapping PROD deployments
+    concurrency:
+      group: deploy-prod-${{ github.repository }}
+      cancel-in-progress: false
     uses: ./.github/workflows/.deployer.yml
     secrets:
       oc_namespace: ${{ secrets.OC_NAMESPACE }}
