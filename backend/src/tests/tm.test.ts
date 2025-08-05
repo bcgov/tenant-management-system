@@ -884,18 +884,27 @@ describe('Tenant Management API', () => {
         tenant: { id: tenantId },
         users: [{
           id: '123e4567-e89b-12d3-a456-426614174002',
-          group: { id: groupId },
-          tenantUser: {
-            id: '123e4567-e89b-12d3-a456-426614174003',
-            firstName: 'John',
-            lastName: 'Doe',
-            displayName: 'John Doe',
-            ssoUserId: 'F45AFBBD68C51D6F956BA3A1DE1878A1',
-            email: 'john.doe@gov.bc.ca'
-          },
           isDeleted: false,
+          createdDateTime: new Date(),
+          updatedDateTime: new Date(),
           createdBy: 'test-user',
-          updatedBy: 'test-user'
+          updatedBy: 'test-user',
+          user: {
+            id: '123e4567-e89b-12d3-a456-426614174003',
+            ssoUser: {
+              id: '123e4567-e89b-12d3-a456-426614174004',
+              firstName: 'John',
+              lastName: 'Doe',
+              displayName: 'John Doe',
+              ssoUserId: 'F45AFBBD68C51D6F956BA3A1DE1878A1',
+              email: 'john.doe@gov.bc.ca',
+              userName: 'johndoe'
+            },
+            createdDateTime: new Date(),
+            updatedDateTime: new Date(),
+            createdBy: 'system',
+            updatedBy: 'system'
+          }
         }],
         sharedServiceRoles: [],
         createdBy: 'test-user',
@@ -917,18 +926,23 @@ describe('Tenant Management API', () => {
             users: [
               {
                 id: '123e4567-e89b-12d3-a456-426614174002',
-                group: { id: groupId },
-                tenantUser: {
-                  id: '123e4567-e89b-12d3-a456-426614174003',
-                  firstName: 'John',
-                  lastName: 'Doe',
-                  displayName: 'John Doe',
-                  ssoUserId: 'F45AFBBD68C51D6F956BA3A1DE1878A1',
-                  email: 'john.doe@gov.bc.ca'
-                },
                 isDeleted: false,
                 createdBy: 'test-user',
-                updatedBy: 'test-user'
+                updatedBy: 'test-user',
+                user: {
+                  id: '123e4567-e89b-12d3-a456-426614174003',
+                  ssoUser: {
+                    id: '123e4567-e89b-12d3-a456-426614174004',
+                    firstName: 'John',
+                    lastName: 'Doe',
+                    displayName: 'John Doe',
+                    ssoUserId: 'F45AFBBD68C51D6F956BA3A1DE1878A1',
+                    email: 'john.doe@gov.bc.ca',
+                    userName: 'johndoe'
+                  },
+                  createdBy: 'system',
+                  updatedBy: 'system'
+                }
               }
             ]
           }
