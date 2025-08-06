@@ -145,6 +145,32 @@ export const groupService = {
   },
 
   /**
+   * Removes a user from an existing group within a tenant.
+   *
+   * @param {string} tenantId - The ID of the tenant.
+   * @param {string} groupId - The ID of the group to remove the user from.
+   * @param {string} groupUserId - The ID of the group user to remove.
+   * @returns {Promise<void>} A promise that resolves when the user is
+   *   successfully removed.
+   * @throws Will throw an error if the API request fails.
+   */
+  async removeUserFromGroup(
+    tenantId: string,
+    groupId: string,
+    groupUserId: string,
+  ) {
+    try {
+      await api.delete(
+        `/tenants/${tenantId}/groups/${groupId}/users/${groupUserId}`,
+      )
+    } catch (error: unknown) {
+      logApiError('Error removing user from group', error)
+
+      throw error
+    }
+  },
+
+  /**
    * Updates an existing group with the specified details.
    *
    * @param {string} tenantId - The ID of the tenant that the group belongs to.

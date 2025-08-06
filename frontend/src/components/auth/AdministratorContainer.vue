@@ -29,7 +29,7 @@ function handleDialogAction(action: string) {
 
   <SimpleDialog
     v-else
-    :buttons="[{ text: 'OK', action: 'ok', type: 'primary' }]"
+    :buttons="[{ text: 'OK', action: 'ok', type: 'primary' as const }]"
     :model-value="true"
     message="Click 'OK' to return to the TMS home page."
     title="You are not authorized to view this page"

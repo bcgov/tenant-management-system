@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 
+import UserSearch from '@/components/group/UserSearch.vue'
 import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
 import FloatingActionButton from '@/components/ui/FloatingActionButton.vue'
-import UserSearch from '@/components/group/UserSearch.vue'
-import type { Group, Tenant, User } from '@/models'
+import SimpleDialog from '@/components/ui/SimpleDialog.vue'
+import type { Group, GroupUser, Tenant, User } from '@/models'
 import { type IdirSearchType, ROLES } from '@/utils/constants'
 import { currentUserHasRole } from '@/utils/permissions'
 
@@ -20,14 +21,30 @@ const props = defineProps<{
 const emit = defineEmits<{
   (event: 'add', user: User): void
   (event: 'cancel' | 'clear-search'): void
+  (event: 'delete', userId: string): void
   (event: 'search', searchType: IdirSearchType, searchText: string): void
 }>()
 
 // --- Component State ---------------------------------------------------------
 
+const groupUserToDelete = ref<GroupUser | null>(null)
+const showDeleteDialog = ref(false)
 const showSearch = ref(false)
 
 // --- Computed Values ---------------------------------------------------------
+
+const deleteDialogButtons = computed(() => [
+  {
+    text: 'Cancel',
+    action: 'cancel',
+    type: 'secondary' as const,
+  },
+  {
+    text: 'Confirm Removal',
+    action: 'confirm',
+    type: 'primary' as const,
+  },
+])
 
 const isUserAdmin = computed(() => {
   // A tenant owner, by default, is also a user admin - even if they don't have
@@ -52,6 +69,20 @@ function handleCancel() {
 
 function handleClearSearch() {
   emit('clear-search')
+}
+
+function handleDeleteClick(groupUser: GroupUser) {
+  showDeleteDialog.value = true
+  groupUserToDelete.value = groupUser
+}
+
+function handleDeleteDialogAction(action: string) {
+  if (action === 'confirm' && groupUserToDelete.value) {
+    emit('delete', groupUserToDelete.value.id)
+  }
+
+  showDeleteDialog.value = false
+  groupUserToDelete.value = null
 }
 
 function handleSearch(searchType: IdirSearchType, searchText: string) {
@@ -84,6 +115,12 @@ function toggleSearch() {
               align: 'start',
             },
             { title: 'Email', key: 'user.ssoUser.email', align: 'start' },
+            {
+              title: 'Actions',
+              key: 'actions',
+              align: 'center',
+              sortable: false,
+            },
           ]"
           :items="group.groupUsers"
           :sort-by="[{ key: 'user.ssoUser.firstName' }]"
@@ -92,6 +129,16 @@ function toggleSearch() {
           fixed-header
           hover
         >
+          <template #[`item.actions`]="{ item }">
+            <v-btn
+              v-if="isUserAdmin"
+              icon="mdi-delete-outline"
+              size="x-large"
+              variant="text"
+              @click="handleDeleteClick(item)"
+            />
+          </template>
+
           <template #no-data>
             <v-alert type="info">You have no users in this group</v-alert>
           </template>
@@ -134,5 +181,15 @@ function toggleSearch() {
         </v-row>
       </div>
     </v-expand-transition>
+
+    <SimpleDialog
+      v-model="showDeleteDialog"
+      :buttons="deleteDialogButtons"
+      message="This will only take them out of this group - it won't remove them
+        from the tenant. Removing membership from a group is permanent and
+        cannot be undone. Please confirm before proceeding."
+      title="You're about to permanently remove this user from this group"
+      @button-click="handleDeleteDialogAction"
+    />
   </v-container>
 </template>

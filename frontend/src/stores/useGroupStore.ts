@@ -87,6 +87,27 @@ export const useGroupStore = defineStore('group', () => {
     return groups.value.find((g) => g.id === groupId)
   }
 
+  const removeGroupUser = async (
+    tenantId: string,
+    groupId: string,
+    groupUserId: string,
+  ) => {
+    // Grab the existing group from the store, to confirm the ID and for use
+    // later.
+    const group = getGroup(groupId)
+    if (!group) {
+      throw new Error(`Group with ID ${groupId} not found`)
+    }
+
+    await groupService.removeUserFromGroup(tenantId, groupId, groupUserId)
+
+    // Update group users after removing
+    const userIndex = group.groupUsers.findIndex((gu) => gu.id === groupUserId)
+    if (userIndex !== -1) {
+      group.groupUsers.splice(userIndex, 1)
+    }
+  }
+
   const updateGroupDetails = async (
     tenantId: string,
     groupId: string,
@@ -121,6 +142,7 @@ export const useGroupStore = defineStore('group', () => {
     fetchGroup,
     fetchGroups,
     getGroup,
+    removeGroupUser,
     updateGroupDetails,
   }
 })
