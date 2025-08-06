@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 
 import ServiceManagement from '@/components/service/ServiceManagement.vue'
 import { useNotification } from '@/composables'
@@ -8,7 +8,7 @@ import { useServiceStore } from '@/stores'
 
 // --- Component Interface -----------------------------------------------------
 
-defineProps<{
+const props = defineProps<{
   tenant: Tenant
 }>()
 
@@ -19,8 +19,9 @@ const serviceStore = useServiceStore()
 
 // --- Component State ---------------------------------------------------------
 
+const allServices = ref<Service[]>([])
 const isLoading = ref(false)
-const services = ref<Service[]>([])
+const tenantServices = ref<Service[]>([])
 
 // --- Component Methods -------------------------------------------------------
 
@@ -28,7 +29,10 @@ async function loadServices() {
   isLoading.value = true
 
   try {
-    services.value = await serviceStore.fetchServices()
+    allServices.value = await serviceStore.fetchServices()
+    tenantServices.value = await serviceStore.fetchTenantServices(
+      props.tenant.id,
+    )
   } catch {
     notification.error('Failed to load services')
   } finally {
@@ -44,5 +48,9 @@ onMounted(() => {
 </script>
 
 <template>
-  <ServiceManagement :services="services" :tenant="tenant" />
+  <ServiceManagement
+    :all-services="allServices"
+    :tenant="tenant"
+    :tenant-services="tenantServices"
+  />
 </template>
