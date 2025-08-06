@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 
 import LoginContainer from '@/components/auth/LoginContainer.vue'
+import ServiceManagementContainer from '@/components/service/ServiceManagementContainer.vue'
 import TenantDetails from '@/components/tenant/TenantDetails.vue'
 import TenantHeader from '@/components/tenant/TenantHeader.vue'
 import UserManagementContainer from '@/components/tenant/UserManagementContainer.vue'
@@ -126,13 +127,7 @@ onMounted(async () => {
           </v-window-item>
 
           <v-window-item :value="2">
-            <v-container fluid>
-              <v-row>
-                <v-col cols="12">
-                  <p>Content for Available Services tab</p>
-                </v-col>
-              </v-row>
-            </v-container>
+            <ServiceManagementContainer :tenant="tenant!" />
           </v-window-item>
         </v-window>
       </v-card>
