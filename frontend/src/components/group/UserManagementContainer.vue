@@ -53,6 +53,22 @@ async function handleClearSearch() {
   searchResults.value = null
 }
 
+async function handleDeleteUser(groupUserId: string) {
+  try {
+    await groupStore.removeGroupUser(
+      props.tenant.id,
+      props.group.id,
+      groupUserId,
+    )
+    notification.success(
+      'User successfully removed from this group',
+      'User Removed',
+    )
+  } catch {
+    notification.error('Failed to remove user from group')
+  }
+}
+
 async function handleUserSearch(
   searchType: IdirSearchType,
   searchText: string,
@@ -87,6 +103,7 @@ async function handleUserSearch(
     @add="handleAddUser"
     @cancel="searchResults = null"
     @clear-search="handleClearSearch"
+    @delete="handleDeleteUser"
     @search="handleUserSearch"
   />
 </template>
