@@ -33,9 +33,8 @@ const selectedServiceId = ref('')
 // --- Computed Values ---------------------------------------------------------
 
 const availableServices = computed(() => {
-  const tenantServiceIds = props.tenantServices.map((service) => service.id)
   return props.allServices.filter(
-    (service) => !tenantServiceIds.includes(service.id),
+    (service) => !props.tenantServices.includes(service),
   )
 })
 
@@ -112,39 +111,41 @@ function handleAddService() {
       </v-col>
     </v-row>
 
-    <v-row v-if="isTenantAdmin">
-      <v-col cols="12">
-        <v-divider class="my-6" />
-        <h4 class="mb-4">Add an available shared service to this Tenant</h4>
-        <p>
-          To add an available shared service to this tenant, choose one from the
-          dropdown and click 'Add Service' to confirm.
-        </p>
-      </v-col>
-    </v-row>
+    <template v-if="isTenantAdmin">
+      <v-row class="mt-6">
+        <v-col cols="12">
+          <v-divider class="mb-12" />
+          <h4 class="my-4">Add an available shared service to this Tenant</h4>
+          <p>
+            To add an available shared service to this tenant, choose one from
+            the dropdown and click 'Add Service' to confirm.
+          </p>
+        </v-col>
+      </v-row>
 
-    <v-row v-if="isTenantAdmin">
-      <v-col cols="6">
-        <v-select
-          v-model="selectedServiceId"
-          :items="availableServices"
-          item-title="name"
-          item-value="id"
-          label="Select an option..."
-          variant="outlined"
-          clearable
-          hide-details
-        ></v-select>
-      </v-col>
-      <v-col class="d-flex align-center" cols="6">
-        <v-btn
-          :disabled="!selectedServiceId"
-          color="primary"
-          @click="handleAddService"
-        >
-          Add Service
-        </v-btn>
-      </v-col>
-    </v-row>
+      <v-row class="mt-10">
+        <v-col cols="6">
+          <v-select
+            v-model="selectedServiceId"
+            :items="availableServices"
+            class="my-0"
+            item-title="name"
+            item-value="id"
+            label="Select an option..."
+            variant="outlined"
+            hide-details
+          ></v-select>
+        </v-col>
+        <v-col class="d-flex align-center" cols="6">
+          <v-btn
+            :disabled="!selectedServiceId"
+            color="primary"
+            @click="handleAddService"
+          >
+            Add Service
+          </v-btn>
+        </v-col>
+      </v-row>
+    </template>
   </v-container>
 </template>

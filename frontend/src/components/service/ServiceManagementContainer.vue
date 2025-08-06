@@ -25,7 +25,29 @@ const tenantServices = ref<Service[]>([])
 
 // --- Component Methods -------------------------------------------------------
 
-async function loadServices() {
+async function handleAddService(serviceId: string) {
+  try {
+    await serviceStore.addServiceToTenant(props.tenant.id, serviceId)
+
+    // Find the added service and add it to tenantServices
+    const addedService = allServices.value.find(
+      (service) => service.id === serviceId,
+    )
+
+    if (addedService) {
+      tenantServices.value.push(addedService)
+    }
+
+    notification.success(
+      'An available shared service for this tenant was successfully added.',
+    )
+  } catch {
+    notification.error('Failed to add service to tenant')
+  }
+}
+// --- Lifecycle ---------------------------------------------------------------
+
+onMounted(async () => {
   isLoading.value = true
 
   try {
@@ -38,12 +60,6 @@ async function loadServices() {
   } finally {
     isLoading.value = false
   }
-}
-
-// --- Lifecycle ---------------------------------------------------------------
-
-onMounted(() => {
-  loadServices()
 })
 </script>
 
@@ -52,5 +68,6 @@ onMounted(() => {
     :all-services="allServices"
     :tenant="tenant"
     :tenant-services="tenantServices"
+    @add-service="handleAddService"
   />
 </template>
