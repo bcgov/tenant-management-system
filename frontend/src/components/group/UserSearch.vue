@@ -36,19 +36,11 @@ const SEARCH_TYPES = [
 
 const searchText = ref('')
 const searchType = ref<IdirSearchType>(IDIR_SEARCH_TYPE.FIRST_NAME.value)
-const selectedUser = ref<User[]>([])
 
 // --- Watchers and Effects ----------------------------------------------------
 
 watch([searchText, searchType], () => {
   emit('clear-search')
-})
-
-// Emit when a user is selected
-watch(selectedUser, (selection) => {
-  if (selection?.length) {
-    emit('select', selection[0])
-  }
 })
 
 // --- Computed Values ---------------------------------------------------------
@@ -66,6 +58,10 @@ const isSearchEnabled = computed(() => {
 
 function handleSearch() {
   emit('search', searchType.value, searchText.value)
+}
+
+function handleSelectUser(user: User) {
+  emit('select', user)
 }
 </script>
 
@@ -101,7 +97,6 @@ function handleSearch() {
       <h4 class="my-6">Search Results</h4>
 
       <v-data-table
-        v-model="selectedUser"
         :header-props="{
           class: 'text-body-1 font-weight-bold bg-surface-light',
         }"
@@ -109,15 +104,28 @@ function handleSearch() {
           { title: 'First Name', key: 'ssoUser.firstName', align: 'start' },
           { title: 'Last Name', key: 'ssoUser.lastName', align: 'start' },
           { title: 'Email', key: 'ssoUser.email', align: 'start' },
+          {
+            title: '',
+            key: 'actions',
+            sortable: false,
+            align: 'center',
+            width: '80px',
+          },
         ]"
         :items="searchResults || []"
         :loading="loading"
         :sort-by="defaultSort"
-        select-strategy="single"
         striped="even"
-        return-object
-        show-select
       >
+        <template #[`item.actions`]="{ item }">
+          <v-btn
+            color="primary"
+            icon="mdi-plus-box"
+            size="x-large"
+            variant="text"
+            @click="handleSelectUser(item)"
+          />
+        </template>
         <template #no-data>
           <v-alert type="info">No matching users found</v-alert>
         </template>

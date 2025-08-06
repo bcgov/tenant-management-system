@@ -1,4 +1,4 @@
-import { User } from '@/models'
+import { GroupUser } from '@/models'
 
 /**
  * Utility type that represents the subset of Group properties used in the form
@@ -38,9 +38,9 @@ export class Group {
   name: string
 
   /**
-   * Array of users associated with this group.
+   * Array of group users associated with this group.
    */
-  users: User[]
+  groupUsers: GroupUser[]
 
   /**
    * Creates a new Group instance.
@@ -51,7 +51,7 @@ export class Group {
    * @param description - Description of the group
    * @param id - Unique identifier for the group
    * @param name - Display name of the group
-   * @param users - Array of users associated with this group
+   * @param groupUsers - Array of group users associated with this group
    */
   constructor(
     createdBy: string,
@@ -59,14 +59,14 @@ export class Group {
     description: string,
     id: string,
     name: string,
-    users: User[],
+    groupUsers: GroupUser[],
   ) {
     this.createdBy = createdBy
     this.createdDate = createdDate
     this.description = description
     this.id = id
     this.name = name
-    this.users = Array.isArray(users) ? users : []
+    this.groupUsers = Array.isArray(groupUsers) ? groupUsers : []
   }
 
   /**
@@ -82,7 +82,7 @@ export class Group {
    * @param apiData.description - Description of the group
    * @param apiData.id - Unique identifier for the group
    * @param apiData.name - Display name of the group
-   * @param apiData.users - Array of raw user objects to be converted
+   * @param apiData.groupUsers - Array of raw group user objects to be converted
    * @returns A new Group instance
    */
   static fromApiData(apiData: {
@@ -91,10 +91,10 @@ export class Group {
     description: string
     id: string
     name: string
-    users: User[]
+    users: GroupUser[]
   }): Group {
-    const users = Array.isArray(apiData.users)
-      ? apiData.users.map(User.fromApiData)
+    const groupUsers = Array.isArray(apiData.users)
+      ? apiData.users.map(GroupUser.fromApiData)
       : []
 
     return new Group(
@@ -103,7 +103,7 @@ export class Group {
       apiData.description,
       apiData.id,
       apiData.name,
-      users,
+      groupUsers,
     )
   }
 }

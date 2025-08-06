@@ -33,7 +33,7 @@ export const groupService = {
         requestBody,
       )
 
-      return response.data
+      return response.data.data.groupUser
     } catch (error: unknown) {
       logApiError('Error adding user to group', error)
 
@@ -112,7 +112,9 @@ export const groupService = {
    */
   async getGroup(tenantId: string, groupId: string) {
     try {
-      const response = await api.get(`/tenants/${tenantId}/groups/${groupId}`)
+      const response = await api.get(
+        `/tenants/${tenantId}/groups/${groupId}?expand=groupUsers`,
+      )
 
       return response.data.data.group
     } catch (error) {
