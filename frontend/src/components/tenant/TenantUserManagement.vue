@@ -282,7 +282,9 @@ function showInfo(message: string) {
               :model-value="selectedRoles.some((r) => r.id === role.id)"
               class="my-0 py-0"
               hide-details
-              @update:model-value="(checked) => toggleRole(role, !!checked)"
+              @update:model-value="
+                (checked: boolean | null) => toggleRole(role, !!checked)
+              "
             />
           </v-col>
         </v-row>

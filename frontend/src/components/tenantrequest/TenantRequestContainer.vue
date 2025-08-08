@@ -7,6 +7,7 @@ import { DomainError, DuplicateEntityError } from '@/errors'
 import type { TenantRequest } from '@/models'
 import { useTenantRequestStore } from '@/stores'
 import { TENANT_REQUEST_STATUS } from '@/utils/constants'
+import { get } from 'http'
 
 // --- Store and Composable Setup ----------------------------------------------
 
@@ -23,6 +24,10 @@ const selectedTenantRequest: Ref<TenantRequest | null> = ref(null)
 const tenantRequests = computed(() => tenantRequestStore.tenantRequests)
 
 // --- Component Methods -------------------------------------------------------
+
+const getCellProps = ({ column }: { column: { key: string } }) => ({
+  class: column.key === 'status' ? 'text-right' : 'text-left',
+})
 
 const getStatusColor = (status: string) => {
   switch (status) {
@@ -143,11 +148,7 @@ onMounted(async () => {
       <v-row>
         <v-col cols="12">
           <v-data-table
-            :cell-props="
-              ({ column }) => ({
-                class: column.key === 'status' ? 'text-right' : 'text-left',
-              })
-            "
+            :cell-props="getCellProps"
             :header-props="{
               class: 'text-body-1 font-weight-bold bg-surface-light',
             }"
