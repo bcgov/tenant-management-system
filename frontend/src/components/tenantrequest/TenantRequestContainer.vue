@@ -7,7 +7,6 @@ import { DomainError, DuplicateEntityError } from '@/errors'
 import type { TenantRequest } from '@/models'
 import { useTenantRequestStore } from '@/stores'
 import { TENANT_REQUEST_STATUS } from '@/utils/constants'
-import { get } from 'http'
 
 // --- Store and Composable Setup ----------------------------------------------
 

@@ -1,4 +1,3 @@
-import { globalIgnores } from 'eslint/config'
 import {
   defineConfigWithVueTs,
   vueTsConfigs,
@@ -23,11 +22,13 @@ export default defineConfigWithVueTs(
     files: ['**/*.{ts,mts,tsx,vue}'],
   },
 
-  globalIgnores(['**/dist/**', '**/dist-ssr/**', '**/coverage/**']),
+  {
+    ignores: ['**/dist/**', '**/dist-ssr/**', '**/coverage/**'],
+  },
 
-  pluginVue.configs['flat/essential'],
-  pluginVue.configs['flat/strongly-recommended'],
-  pluginVue.configs['flat/recommended'],
+  ...(pluginVue.configs['flat/essential'] as any),
+  ...(pluginVue.configs['flat/strongly-recommended'] as any),
+  ...(pluginVue.configs['flat/recommended'] as any),
   vueTsConfigs.strict,
 
   {
@@ -117,5 +118,5 @@ export default defineConfigWithVueTs(
     ],
   },
 
-  skipFormatting,
+  skipFormatting as any,
 )
