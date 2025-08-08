@@ -82,7 +82,7 @@ export class Group {
    * @param apiData.description - Description of the group
    * @param apiData.id - Unique identifier for the group
    * @param apiData.name - Display name of the group
-   * @param apiData.groupUsers - Array of raw group user objects to be converted
+   * @param apiData.users - Array of raw group user objects to be converted
    * @returns A new Group instance
    */
   static fromApiData(apiData: {
