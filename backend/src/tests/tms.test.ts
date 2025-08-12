@@ -36,6 +36,27 @@ describe('Tenant API', () => {
     mockTMSRepository = TMSRepository.prototype as jest.Mocked<TMSRepository>
 
     app.post('/v1/tenants', 
+      (req, res, next) => {
+        req.decodedJwt = {
+          aud: 'test-service-client',
+          audience: 'test-service-client',
+          idir_user_guid: 'F45AFBBD68C51D6F956BA3A1DE1878A2',
+          client_roles: ['TMS.OPERATIONS_ADMIN']
+        }
+        next()
+      },
+      (req, res, next) => {
+        const roles = req.decodedJwt?.client_roles || []
+        if (!roles.includes('TMS.OPERATIONS_ADMIN')) {
+          return res.status(403).json({
+            errorMessage: 'Forbidden',
+            httpResponseCode: 403,
+            message: 'Access denied: User does not have required role',
+            name: 'User does not have access to this operation and / resource'
+          })
+        }
+        next()
+      },
       validate(validator.createTenant, {}, {}),
       (req, res) => tmsController.createTenant(req, res)
     )
@@ -176,6 +197,92 @@ describe('Tenant API', () => {
       expect(response.status).toBe(400)
       expect(response.body.message).toBe("Validation Failed")
       expect(response.body.details.body[0].message).toBe("\"ministryName\" is required")
+    })
+
+    it('should return 403 when user does not have operations admin role', async () => {
+      const appWithoutOpsAdmin = express()
+      appWithoutOpsAdmin.use(express.json())
+      
+      appWithoutOpsAdmin.post('/v1/tenants', 
+        (req, res, next) => {
+          req.decodedJwt = {
+            aud: 'test-service-client',
+            audience: 'test-service-client',
+            idir_user_guid: 'F45AFBBD68C51D6F956BA3A1DE1878A2',
+            client_roles: ['TMS.USER_ADMIN'] // Different role, not operations admin
+          }
+          next()
+        },
+        (req, res, next) => {
+          const roles = req.decodedJwt?.client_roles || []
+          if (!roles.includes('TMS.OPERATIONS_ADMIN')) {
+            return res.status(403).json({
+              errorMessage: 'Forbidden',
+              httpResponseCode: 403,
+              message: 'Access denied: User does not have required role',
+              name: 'User does not have access to this operation and / resource'
+            })
+          }
+          next()
+        },
+        validate(validator.createTenant, {}, {}),
+        (req, res) => tmsController.createTenant(req, res)
+      )
+
+      const response = await request(appWithoutOpsAdmin)
+        .post('/v1/tenants')
+        .send(validTenantData)
+
+      expect(response.status).toBe(403)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Forbidden',
+        httpResponseCode: 403,
+        message: 'Access denied: User does not have required role',
+        name: 'User does not have access to this operation and / resource'
+      })
+    })
+
+    it('should return 403 when user has no roles', async () => {
+      const appWithNoRoles = express()
+      appWithNoRoles.use(express.json())
+      
+      appWithNoRoles.post('/v1/tenants', 
+        (req, res, next) => {
+          req.decodedJwt = {
+            aud: 'test-service-client',
+            audience: 'test-service-client',
+            idir_user_guid: 'F45AFBBD68C51D6F956BA3A1DE1878A2',
+            client_roles: [] // No roles
+          }
+          next()
+        },
+        (req, res, next) => {
+          const roles = req.decodedJwt?.client_roles || []
+          if (!roles.includes('TMS.OPERATIONS_ADMIN')) {
+            return res.status(403).json({
+              errorMessage: 'Forbidden',
+              httpResponseCode: 403,
+              message: 'Access denied: User does not have required role',
+              name: 'User does not have access to this operation and / resource'
+            })
+          }
+          next()
+        },
+        validate(validator.createTenant, {}, {}),
+        (req, res) => tmsController.createTenant(req, res)
+      )
+
+      const response = await request(appWithNoRoles)
+        .post('/v1/tenants')
+        .send(validTenantData)
+
+      expect(response.status).toBe(403)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Forbidden',
+        httpResponseCode: 403,
+        message: 'Access denied: User does not have required role',
+        name: 'User does not have access to this operation and / resource'
+      })
     })
   })
 

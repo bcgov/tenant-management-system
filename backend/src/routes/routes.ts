@@ -19,7 +19,7 @@ export class Routes {
 
     public routes (app:any) {
         app.route(RoutesConstants.HEALTH).get((req:Request, res:Response) => this.tmsController.health(req, res))
-        app.route(RoutesConstants.CREATE_TENANTS).post(checkJwt(), validate(validator.createTenant,{},{}),(req:Request,res:Response) => this.tmsController.createTenant(req,res))
+        app.route(RoutesConstants.CREATE_TENANTS).post(checkJwt(),checkOperationsAdmin, validate(validator.createTenant,{},{}),(req:Request,res:Response) => this.tmsController.createTenant(req,res))
         app.route(RoutesConstants.ADD_TENANT_USERS).post(checkJwt(), validate(validator.addTenantUser,{},{}), checkTenantAccess([TMSConstants.TENANT_OWNER, TMSConstants.USER_ADMIN]),(req:Request,res:Response) => this.tmsController.addTenantUser(req,res))
         app.route(RoutesConstants.GET_USER_TENANTS).get(checkJwt({ sharedServiceAccess: true }),  validate(validator.getUserTenants,{},{}),(req:Request,res:Response) => this.tmsController.getTenantsForUser(req,res))
         app.route(RoutesConstants.GET_TENANT_USERS).get(checkJwt(),  validate(validator.getTenantUsers,{},{}), checkTenantAccess([]),(req:Request,res:Response) => this.tmsController.getUsersForTenant(req,res))
