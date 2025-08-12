@@ -64,6 +64,8 @@ export class TenantRequest {
    * @param name - Display name of the tenant request
    * @param ministryName - Associated ministry or organization name
    * @param status - Status of the tenant request
+   *
+   * Note: rejectionReason is initialized to an empty string by default.
    */
   constructor(
     createdBy: string,
@@ -87,9 +89,6 @@ export class TenantRequest {
   /**
    * Creates a Tenant Request instance from API response data.
    *
-   * Note: The API returns 'createdDateTime' which is mapped to the
-   * 'createdDate' property.
-   *
    * @param apiData - The raw tenant request data from the API
    * @param apiData.createdBy - The username of who created the tenant request
    * @param apiData.createdDateTime - ISO8601 date string (YYYY-MM-DD) when the
@@ -98,9 +97,10 @@ export class TenantRequest {
    * @param apiData.id - Unique identifier for the tenant request
    * @param apiData.name - Display name of the tenant request
    * @param apiData.ministryName - Associated ministry or organization name
-   * @param apiData.rejectionReason - The reason that a request with status
-   *   REJECTED was rejected.
-   * @param apiData.status - Status of the tenant request
+   * @param apiData.rejectionReason - Optional reason that a request with status
+   *   REJECTED was rejected
+   * @param apiData.status - Status of the tenant request (APPROVED, NEW, or
+   *   REJECTED)
    * @returns A new Tenant Request instance
    */
   static fromApiData(apiData: {

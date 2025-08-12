@@ -153,7 +153,7 @@ function toggleEdit() {
               v-if="isEditing"
               v-model="formData.ministryName"
               :items="MINISTRIES"
-              :rules="[(v) => !!v || 'Ministry is required']"
+              :rules="[(v: string) => !!v || 'Ministry is required']"
               label="Ministry/Organization"
               placeholder="Select an option..."
               required

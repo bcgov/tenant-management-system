@@ -4,12 +4,21 @@ import { ref } from 'vue'
 import { Group, type GroupDetailFields, GroupUser, User } from '@/models'
 import { groupService } from '@/services'
 
+/**
+ * Pinia store for managing groups and group users.
+ */
 export const useGroupStore = defineStore('group', () => {
   const loading = ref(false)
   const groups = ref<Group[]>([])
 
   // Private methods
 
+  /**
+   * Inserts or updates a group in the store.
+   *
+   * @param {Group} group - The group to insert or update.
+   * @returns {Group} The inserted or updated group.
+   */
   function upsertGroup(group: Group) {
     const index = groups.value.findIndex((g) => g.id === group.id)
     if (index !== -1) {
@@ -23,6 +32,14 @@ export const useGroupStore = defineStore('group', () => {
 
   // Exported Methods
 
+  /**
+   * Creates a new group and adds it to the store.
+   *
+   * @param {string} tenantId - The ID of the tenant.
+   * @param {string} name - The name of the group.
+   * @param {string} description - The description of the group.
+   * @returns {Promise<Group>} The created group.
+   */
   const addGroup = async (
     tenantId: string,
     name: string,
@@ -38,6 +55,15 @@ export const useGroupStore = defineStore('group', () => {
     return upsertGroup(group)
   }
 
+  /**
+   * Adds a user to a group.
+   *
+   * @param {string} tenantId - The ID of the tenant.
+   * @param {string} groupId - The ID of the group.
+   * @param {User} user - The user to add to the group.
+   * @throws {Error} If the group is not found in the store.
+   * @returns {Promise<void>}
+   */
   const addGroupUser = async (
     tenantId: string,
     groupId: string,
@@ -61,6 +87,13 @@ export const useGroupStore = defineStore('group', () => {
     group.groupUsers.push(addedUser)
   }
 
+  /**
+   * Fetches a single group from the API and updates the store.
+   *
+   * @param {string} tenantId - The ID of the tenant.
+   * @param {string} groupId - The ID of the group.
+   * @returns {Promise<Group>} The fetched group.
+   */
   const fetchGroup = async (tenantId: string, groupId: string) => {
     loading.value = true
     try {
@@ -73,6 +106,12 @@ export const useGroupStore = defineStore('group', () => {
     }
   }
 
+  /**
+   * Fetches all groups for a tenant from the API and updates the store.
+   *
+   * @param {string} tenantId - The ID of the tenant.
+   * @returns {Promise<void>}
+   */
   const fetchGroups = async (tenantId: string) => {
     loading.value = true
     try {
@@ -83,10 +122,25 @@ export const useGroupStore = defineStore('group', () => {
     }
   }
 
+  /**
+   * Retrieves a group by its ID from the store.
+   *
+   * @param {string} groupId - The ID of the group.
+   * @returns {Group|undefined} The group if found, otherwise undefined.
+   */
   function getGroup(groupId: string): Group | undefined {
     return groups.value.find((g) => g.id === groupId)
   }
 
+  /**
+   * Removes a user from a group.
+   *
+   * @param {string} tenantId - The ID of the tenant.
+   * @param {string} groupId - The ID of the group.
+   * @param {string} groupUserId - The ID of the user in the group.
+   * @throws {Error} If the group is not found in the store.
+   * @returns {Promise<void>}
+   */
   const removeGroupUser = async (
     tenantId: string,
     groupId: string,
@@ -108,6 +162,15 @@ export const useGroupStore = defineStore('group', () => {
     }
   }
 
+  /**
+   * Updates the details of a group.
+   *
+   * @param {string} tenantId - The ID of the tenant.
+   * @param {string} groupId - The ID of the group.
+   * @param {GroupDetailFields} groupDetails - The new group details.
+   * @throws {Error} If the group is not found in the store.
+   * @returns {Promise<void>}
+   */
   const updateGroupDetails = async (
     tenantId: string,
     groupId: string,
@@ -129,6 +192,7 @@ export const useGroupStore = defineStore('group', () => {
 
     const updatedGroup = Group.fromApiData(apiResponse)
 
+    // Update the group details in the store
     group.name = updatedGroup.name
     group.description = updatedGroup.description
   }
