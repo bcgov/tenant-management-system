@@ -14,10 +14,8 @@ cd "$REPOSITORY_ROOT/backend"
 rm -rf node_modules
 npm ci
 
-echo "==> Running database migrations (ensure the DB is up!)"
-# Uncomment once your database container/service is running:
-# npx typeorm-ts-node-commonjs migration:run \
-#   -d ./src/common/db.connection.ts
+echo "==> Running database migrations"
+npx typeorm-ts-node-commonjs migration:run -d ./src/common/db.connection.ts
 
 echo "==> Installing frontend dependencies"
 cd "$REPOSITORY_ROOT/frontend"
