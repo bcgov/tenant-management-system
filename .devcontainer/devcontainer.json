@@ -14,7 +14,8 @@
       "settings": {
         "database-client.telemetry.usesOnlineServices": false,
         "editor.defaultFormatter": "esbenp.prettier-vscode",
-        "editor.formatOnSave": true
+        "editor.formatOnSave": true,
+        "sonarlint.ls.javaHome": "/usr/lib/jvm/java-17-openjdk-amd64"
       }
     }
   },
@@ -29,7 +30,7 @@
   "forwardPorts": [
     4144, // TMS Backend
     5173, // TMS Frontend
-    5432  // Postgres Database
+    5432 // Postgres Database
   ],
 
   "name": "tenant-management-system",

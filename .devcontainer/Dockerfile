@@ -14,6 +14,7 @@ RUN apt-get update && \
         libnss3 \
         libxss1 \
         libxtst6 \
+        openjdk-17-jre-headless \
         vim \
         xauth \
         xvfb \
