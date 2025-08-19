@@ -19,3 +19,8 @@ RUN apt-get update && \
         xauth \
         xvfb \
     && apt-get clean
+
+# The GitHub tool Trivy sees a Dockerfile and wants a health check, even though
+# it isn't that useful for a devcontainer. Make Trivy happy.
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD node --version || exit 1
