@@ -5,7 +5,7 @@ FROM node:20.19.1-bookworm
 # https://docs.cypress.io/app/get-started/install-cypress#UbuntuDebian
 # and we set up k6 for performance testing
 RUN apt-get update && \
-    DEBIAN_FRONTEND=noninteractive apt-get install -y \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         libasound2 \
         libgbm-dev \
         libgtk-3-0 \
