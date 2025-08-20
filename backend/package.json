@@ -29,7 +29,6 @@
   "dependencies": {
     "@testcontainers/postgresql": "10.28.0",
     "@types/express-jwt": "^6.0.4",
-    "@types/joi": "^17.2.3",
     "@types/node-fetch": "^2.5.10",
     "class-transformer": "^0.5.1",
     "cls-rtracer": "^2.6.0",
