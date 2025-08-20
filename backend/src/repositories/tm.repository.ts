@@ -32,9 +32,10 @@ export class TMRepository {
                 const tenantId = req.params.tenantId;
                 const createdBy = req.body.user?.ssoUserId || req.decodedJwt?.idir_user_guid || 'system';
 
-                if (!await this.tmsRepository.checkIfTenantExists(tenantId, transactionEntityManager)) {
-                    throw new NotFoundError(`Tenant not found: ${tenantId}`)
-                }
+                // REDUNDANT: checkTenantAccess middleware already validates tenant exists and user has access
+                // if (!await this.tmsRepository.checkIfTenantExists(tenantId, transactionEntityManager)) {
+                //     throw new NotFoundError(`Tenant not found: ${tenantId}`)
+                // }
 
                 if (await this.checkIfGroupNameExistsInTenant(name, tenantId, transactionEntityManager)) {
                     throw new ConflictError(`A group with name '${name}' already exists in this tenant`)
@@ -142,9 +143,10 @@ export class TMRepository {
         const TMS_AUDIENCE: string = process.env.TMS_AUDIENCE
         const jwtAudience: string = req.decodedJwt?.aud || req.decodedJwt?.audience || TMS_AUDIENCE
 
-        if (!await this.tmsRepository.checkIfTenantExists(tenantId)) {
-            throw new NotFoundError(`Tenant not found: ${tenantId}`)
-        }
+        // REDUNDANT: checkTenantAccess middleware already validates tenant exists and user has access
+        // if (!await this.tmsRepository.checkIfTenantExists(tenantId)) {
+        //     throw new NotFoundError(`Tenant not found: ${tenantId}`)
+        // }
 
         const groupsQuery = this.manager
             .createQueryBuilder(Group, 'group')
@@ -240,9 +242,10 @@ export class TMRepository {
                 const { user } = req.body
                 const createdBy:string = req.decodedJwt?.idir_user_guid || 'system'
 
-                if (!await this.tmsRepository.checkIfTenantExists(tenantId, transactionEntityManager)) {
-                    throw new NotFoundError(`Tenant not found: ${tenantId}`)
-                }
+                // REDUNDANT: checkTenantAccess middleware already validates tenant exists and user has access
+                // if (!await this.tmsRepository.checkIfTenantExists(tenantId, transactionEntityManager)) {
+                //     throw new NotFoundError(`Tenant not found: ${tenantId}`)
+                // }
 
                 const group = await this.checkIfGroupExistsInTenant(groupId, tenantId, transactionEntityManager);
                 if (!group) {
@@ -328,9 +331,10 @@ export class TMRepository {
         let groupResponse: Group = null
         await this.manager.transaction(async(transactionEntityManager) => {
             try {
-                if (!await this.tmsRepository.checkIfTenantExists(tenantId, transactionEntityManager)) {
-                    throw new NotFoundError(`Tenant not found: ${tenantId}`)
-                }
+                // REDUNDANT: checkTenantAccess middleware already validates tenant exists and user has access
+                // if (!await this.tmsRepository.checkIfTenantExists(tenantId, transactionEntityManager)) {
+                //     throw new NotFoundError(`Tenant not found: ${tenantId}`)
+                // }
 
                 const existingGroup:Group = await this.checkIfGroupExistsInTenant(groupId, tenantId, transactionEntityManager)
                 if (!existingGroup) {
@@ -376,9 +380,10 @@ export class TMRepository {
 
         await this.manager.transaction(async(transactionEntityManager) => {
             try {
-                if (!await this.tmsRepository.checkIfTenantExists(tenantId, transactionEntityManager)) {
-                    throw new NotFoundError(`Tenant not found: ${tenantId}`)
-                }
+                // REDUNDANT: checkTenantAccess middleware already validates tenant exists and user has access
+                // if (!await this.tmsRepository.checkIfTenantExists(tenantId, transactionEntityManager)) {
+                //     throw new NotFoundError(`Tenant not found: ${tenantId}`)
+                // }
 
                 const group: Group = await this.checkIfGroupExistsInTenant(groupId, tenantId, transactionEntityManager)
                 if (!group) {
@@ -420,9 +425,10 @@ export class TMRepository {
         const tenantId: string = req.params.tenantId
         const expand: string[] = typeof req.query.expand === "string" ? req.query.expand.split(",") : []
 
-        if (!await this.tmsRepository.checkIfTenantExists(tenantId)) {
-            throw new NotFoundError(`Tenant not found: ${tenantId}`)
-        }
+        // REDUNDANT: checkTenantAccess middleware already validates tenant exists and user has access
+        // if (!await this.tmsRepository.checkIfTenantExists(tenantId)) {
+        //     throw new NotFoundError(`Tenant not found: ${tenantId}`)
+        // }
 
         const existingGroup: Group = await this.checkIfGroupExistsInTenant(groupId, tenantId)
         if (!existingGroup) {
