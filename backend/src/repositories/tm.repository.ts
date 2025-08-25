@@ -122,9 +122,11 @@ export class TMRepository {
         const existingGroupUser:GroupUser = await transactionEntityManager
             .createQueryBuilder(GroupUser, 'groupUser')
             .leftJoin('groupUser.group', 'group')
+            .leftJoin('groupUser.tenantUser', 'tenantUser')
             .where('groupUser.tenantUser.id = :tenantUserId', { tenantUserId })
             .andWhere('group.tenant.id = :tenantId', { tenantId })
             .andWhere('groupUser.isDeleted = :isDeleted', { isDeleted: false })
+            .andWhere('tenantUser.isDeleted = :isDeleted', { isDeleted: false })
             .getOne();
 
         return !!existingGroupUser;
@@ -133,7 +135,7 @@ export class TMRepository {
     public async checkIfTenantUserExists(tenantUserId: string, transactionEntityManager?: EntityManager) {
         transactionEntityManager = transactionEntityManager ? transactionEntityManager : this.manager;
         
-        const tenantUser = await transactionEntityManager.findOne(TenantUser, { where: { id: tenantUserId } });
+        const tenantUser = await transactionEntityManager.findOne(TenantUser, { where: { id: tenantUserId, isDeleted: false } });
         return !!tenantUser;
     }
 
@@ -168,7 +170,8 @@ export class TMRepository {
             groupsQuery
                 .innerJoin('tenant.users', 'tu')
                 .innerJoin('tu.ssoUser', 'su')
-                .andWhere('su.ssoUserId = :ssoUserId', { ssoUserId });
+                .andWhere('su.ssoUserId = :ssoUserId', { ssoUserId })
+                .andWhere('tu.isDeleted = :isDeleted', { isDeleted: false });
         }
 
         const groups: Group[] = await groupsQuery.getMany()
@@ -214,6 +217,7 @@ export class TMRepository {
             .leftJoinAndSelect('tenantUser.ssoUser', 'ssoUser')
             .where('groupUser.group.id = :groupId', { groupId })
             .andWhere('groupUser.isDeleted = :isDeleted', { isDeleted: false })
+            .andWhere('tenantUser.isDeleted = :isDeleted', { isDeleted: false })
             .getMany();
 
         return groupUsers;

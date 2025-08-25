@@ -96,6 +96,13 @@ export default {
         }).options({abortEarly:false,convert:false})
     },
 
+    removeTenantUser: {
+        params: Joi.object({
+            tenantId: Joi.string().guid().required(),
+            tenantUserId: Joi.string().guid().required()
+        }).options({abortEarly:false,convert:false})
+    },
+
     searchBCGOVSSOUsers: {
         query: Joi.object({
             firstName: Joi.string().min(2),

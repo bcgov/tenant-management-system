@@ -7,6 +7,8 @@ import { In } from 'typeorm'
 import { Request} from 'express'
 import { TMSConstants } from '../common/tms.constants'
 import { TenantUserRole } from '../entities/TenantUserRole'
+import { GroupUser } from '../entities/GroupUser'
+import { GroupSharedServiceRole } from '../entities/GroupSharedServiceRole'
 import { NotFoundError } from '../errors/NotFoundError'
 import { ConflictError } from '../errors/ConflictError'
 import logger from '../common/logger'
@@ -160,6 +162,7 @@ export class TMSRepository {
             const tenantId:string = req.params.tenantId
             const roles:string[] = req.body.roles
             const ssoUserId:string = req.body.user.ssoUserId
+            const updatedBy:string = req.decodedJwt?.idir_user_guid || 'system'
             
             // REDUNDANT: checkTenantAccess middleware already validates tenant exists and user has access
             // if(!await this.checkIfTenantExists(tenantId)) {  
@@ -169,23 +172,48 @@ export class TMSRepository {
             const tenant:Tenant = await this.getTenantIfUserDoesNotExistForTenant(ssoUserId,tenantId)
     
             if(!tenant) {
-                throw new ConflictError("User is already added to this tenant: "+tenantId)
-            }
+                // Check if user was previously soft-deleted and restore them
+                const softDeletedUser = await this.findSoftDeletedTenantUser(ssoUserId, tenantId, transactionEntityManager)
+                
+                if (softDeletedUser) {
+                    // Restore the soft-deleted user (start fresh with roles and groups)
+                    softDeletedUser.isDeleted = false
+                    softDeletedUser.updatedBy = updatedBy
+                    softDeletedUser.updatedDateTime = new Date()
+                    
+                    const restoredTenantUser:TenantUser = await transactionEntityManager.save(softDeletedUser)
+                    
+                    // Reload the restored user with all relationships to include ssoUser in response
+                    const restoredTenantUserWithRelations = await transactionEntityManager
+                        .createQueryBuilder(TenantUser, 'tu')
+                        .leftJoinAndSelect('tu.ssoUser', 'ssoUser')
+                        .where('tu.id = :tenantUserId', { tenantUserId: restoredTenantUser.id })
+                        .getOne()
+                    
+                    // Assign new roles (fresh start, no restoration of old roles)
+                    const roleAssignments = await this.assignUserRoles(tenantId, restoredTenantUser.id, req.body.roles, transactionEntityManager)
+                    
+                    delete restoredTenantUserWithRelations.tenant
+                    response = {savedTenantUser: restoredTenantUserWithRelations, roleAssignments}
+                } else {
+                    throw new ConflictError("User is already added to this tenant: "+tenantId)
+                }
+            } else {
+                // Create new user as before
+                const tenantUser:TenantUser = new TenantUser()
+                tenantUser.tenant = tenant
+                const user = req.body.user
+                const ssoUser:SSOUser = await this.setSSOUser(user.ssoUserId,user.firstName,user.lastName,user.displayName,
+                    user.userName,user.email)       
+                tenantUser.ssoUser = ssoUser
+        
+                const savedTenantUser:TenantUser = await transactionEntityManager.save(tenantUser)
     
-            const tenantUser:TenantUser = new TenantUser()
-            tenantUser.tenant = tenant
-            const user = req.body.user
-            const ssoUser:SSOUser = await this.setSSOUser(user.ssoUserId,user.firstName,user.lastName,user.displayName,
-                user.userName,user.email)       
-            tenantUser.ssoUser = ssoUser
-    
-            const savedTenantUser:TenantUser = await transactionEntityManager.save(tenantUser)
-
-            
-            const roleAssignments = await this.assignUserRoles(tenantId, savedTenantUser.id, req.body.roles, transactionEntityManager)
-                   
+                const roleAssignments = await this.assignUserRoles(tenantId, savedTenantUser.id, req.body.roles, transactionEntityManager)
+                       
                 delete savedTenantUser.tenant
                 response = {savedTenantUser,roleAssignments}
+            }
             
         }
         
@@ -244,6 +272,7 @@ export class TMSRepository {
             .leftJoinAndSelect("tenantUser.roles", "tenantUserRole")
             .leftJoinAndSelect("tenantUserRole.role", "role")
             .where("tenantUser.id = :tenantUserId", { tenantUserId })
+            .andWhere("tenantUser.isDeleted = :isDeleted", { isDeleted: false })
             .andWhere("tenantUserRole.is_deleted = :isDeleted", { isDeleted: false })
             .getOne();
         
@@ -261,32 +290,70 @@ export class TMSRepository {
             // }
 
             const existingRoles:Role[] = await this.getExistingRolesForUser(tenantUserId, transactionEntityManager);
-
             const existingRoleIds:string[] = existingRoles.map(role => role.id)
-            const newRoleIds:string[] = roleIds.filter(roleId => !existingRoleIds.includes(roleId))
             
-            if (newRoleIds.length === 0) {
+            // Check for soft-deleted role assignments that can be restored
+            const softDeletedRoleAssignments:TenantUserRole[] = await transactionEntityManager
+                .createQueryBuilder(TenantUserRole, "tur")
+                .leftJoinAndSelect("tur.role", "role")
+                .where("tur.tenantUser.id = :tenantUserId", { tenantUserId })
+                .andWhere("tur.isDeleted = :isDeleted", { isDeleted: true })
+                .andWhere("role.id IN (:...roleIds)", { roleIds })
+                .getMany();
+
+            const rolesToRestore:TenantUserRole[] = [];
+            const rolesToCreate:string[] = [];
+
+            // Separate roles that can be restored vs need new assignments
+            for (const roleId of roleIds) {
+                const softDeletedAssignment = softDeletedRoleAssignments.find(tur => tur.role.id === roleId);
+                if (softDeletedAssignment) {
+                    // Restore the soft-deleted assignment
+                    softDeletedAssignment.isDeleted = false;
+                    softDeletedAssignment.updatedBy = 'system';
+                    softDeletedAssignment.updatedDateTime = new Date();
+                    rolesToRestore.push(softDeletedAssignment);
+                } else if (!existingRoleIds.includes(roleId)) {
+                    // Create new assignment (role doesn't exist for this user)
+                    rolesToCreate.push(roleId);
+                }
+            }
+
+            const savedAssignments:TenantUserRole[] = [];
+
+            // Restore soft-deleted assignments
+            if (rolesToRestore.length > 0) {
+                const restoredAssignments = await transactionEntityManager.save(rolesToRestore);
+                savedAssignments.push(...restoredAssignments);
+            }
+
+            // Create new assignments for roles that don't exist
+            if (rolesToCreate.length > 0) {
+                const validRoles:Role[] = await transactionEntityManager
+                    .createQueryBuilder(Role, "role")
+                    .where("role.id IN (:...roleIds)", { roleIds: rolesToCreate })
+                    .getMany();
+
+                if (validRoles.length !== rolesToCreate.length) {
+                    throw new NotFoundError("Role(s) not found")
+                }
+
+                const tenantUser:TenantUser = await transactionEntityManager.findOne(TenantUser, { where: { id: tenantUserId, isDeleted: false } })
+                const newAssignments:TenantUserRole[] = validRoles.map(role => {
+                    const tenantUserRole:TenantUserRole = new TenantUserRole()
+                    tenantUserRole.tenantUser = tenantUser
+                    tenantUserRole.role = role
+                    return tenantUserRole
+                });
+
+                const createdAssignments = await transactionEntityManager.save(newAssignments);
+                savedAssignments.push(...createdAssignments);
+            }
+
+            if (savedAssignments.length === 0) {
                 throw new ConflictError("All roles are already assigned to the user")
             }
 
-            const validRoles:Role[] = await transactionEntityManager
-                .createQueryBuilder(Role, "role")
-                .where("role.id IN (:...roleIds)", { roleIds: newRoleIds })
-                .getMany();
-
-            if (validRoles.length !== newRoleIds.length) {
-                throw new NotFoundError("Role(s) not found")
-            }
-
-            const tenantUser:TenantUser = await transactionEntityManager.findOne(TenantUser, { where: { id: tenantUserId } })
-            const newAssignments:TenantUserRole[] = validRoles.map(role => {
-                const tenantUserRole:TenantUserRole = new TenantUserRole()
-                tenantUserRole.tenantUser = tenantUser
-                tenantUserRole.role = role
-                return tenantUserRole
-            });
-
-            const savedAssignments:TenantUserRole[] = await transactionEntityManager.save(newAssignments)
             return savedAssignments
 
         } catch (error) {
@@ -371,7 +438,8 @@ export class TMSRepository {
             .from(TenantUser, "tu")
             .innerJoin("tu.ssoUser", "su")
             .where("tu.tenant_id = :tenantId", { tenantId })
-            .andWhere("su.ssoUserId = :ssoUserId", { ssoUserId });
+            .andWhere("su.ssoUserId = :ssoUserId", { ssoUserId })
+            .andWhere("tu.isDeleted = :isDeleted", { isDeleted: false });
 
         if (requiredRoles && requiredRoles.length > 0) {
             query
@@ -394,6 +462,7 @@ export class TMSRepository {
             .leftJoinAndSelect("tur.role", "role")
             .where("tu.tenant_id = :tenantId", { tenantId })
             .andWhere("su.ssoUserId = :ssoUserId", { ssoUserId })
+            .andWhere("tu.isDeleted = :isDeleted", { isDeleted: false })
             .andWhere("tur.isDeleted = :isDeleted", { isDeleted: false });
 
         const tenantUser:TenantUser = await query.getOne()
@@ -440,7 +509,8 @@ export class TMSRepository {
             tenantQuery.leftJoinAndSelect("tenant.users", "user").leftJoinAndSelect("user.ssoUser", "ssoUser")
             tenantQuery.leftJoinAndSelect("user.roles", "tenantUserRole")
             tenantQuery.leftJoinAndSelect("tenantUserRole.role", "role")    
-            tenantQuery.andWhere("tenantUserRole.isDeleted = :isDeleted",{ isDeleted: false})                 
+            tenantQuery.andWhere("tenantUserRole.isDeleted = :isDeleted",{ isDeleted: false})
+            tenantQuery.andWhere("user.isDeleted = :isDeleted",{ isDeleted: false})                 
         }
         const tenant:Tenant = await tenantQuery.getOne();
         
@@ -475,6 +545,8 @@ export class TMSRepository {
             .innerJoin("tenantUser.ssoUser", "ssoUser")
             .where("tenant.id = :tenantId", { tenantId })
             .andWhere("ssoUser.ssoUserId = :ssoUserId", { ssoUserId })
+            .andWhere("tenantUser.isDeleted = :isDeleted", { isDeleted: false })
+            .andWhere("tenantUserRole.isDeleted = :isDeleted", { isDeleted: false })
             .getMany();
         return roles
     }
@@ -499,6 +571,7 @@ export class TMSRepository {
             .createQueryBuilder(TenantUser,"tu")
             .where("tu.id = :tenantUserId", { tenantUserId })
             .andWhere("tu.tenant_id = :tenantId", { tenantId })
+            .andWhere("tu.isDeleted = :isDeleted", { isDeleted: false })
             .getExists();
         return tenantUserExists
     }
@@ -510,6 +583,8 @@ export class TMSRepository {
             .innerJoin("TenantUserRole", "tur", "tur.role_id = role.id")
             .innerJoin("TenantUser", "tu", "tu.id = tur.tenant_user_id")
             .where("tu.id = :tenantUserId", { tenantUserId })
+            .andWhere("tu.isDeleted = :isDeleted", { isDeleted: false })
+            .andWhere("tur.isDeleted = :isDeleted", { isDeleted: false })
             .getMany();
         return roles
     }
@@ -524,7 +599,8 @@ export class TMSRepository {
             .leftJoinAndSelect("turoles.role","role")
             .where("tenant.id = :tenantId", { tenantId })
             .andWhere("tenantUser.id = :tenantUserId", { tenantUserId })
-          // .andWhere("turoles"
+            .andWhere("tenantUser.isDeleted = :isDeleted", { isDeleted: false })
+            .andWhere("turoles.isDeleted = :isDeleted", { isDeleted: false })
             .getOne();
         return tenant
     }
@@ -561,6 +637,7 @@ export class TMSRepository {
             .leftJoin("TenantSharedService", "tss", "t.id = tss.tenant_id")
             .leftJoin("SharedService", "ss", "tss.shared_service_id = ss.id")
             .where("su.ssoUserId = :ssoUserId", { ssoUserId })
+            .andWhere("tu.isDeleted = :isDeleted", { isDeleted: false })
             .andWhere(
                 ":jwtAudience = :tmsAudience OR (:jwtAudience != :tmsAudience AND ss.client_identifier = :jwtAudience AND tss.is_deleted = :tssDeleted AND ss.is_active = :ssActive)",
                 { 
@@ -588,6 +665,7 @@ export class TMSRepository {
             .createQueryBuilder(TenantUser, "tu")
             .innerJoinAndSelect("tu.ssoUser", "su", "tu.sso_id = su.id")            
             .where("tu.tenant_id = :tenantId", { tenantId })
+            .andWhere("tu.isDeleted = :isDeleted", { isDeleted: false })
             .getMany();       
         return users
     }
@@ -608,6 +686,20 @@ export class TMSRepository {
         })
         .getOne();
         return tenant
+    }
+
+    public async findSoftDeletedTenantUser(ssoUserId:string, tenantId:string, transactionEntityManager?: EntityManager) {
+        transactionEntityManager = transactionEntityManager ? transactionEntityManager : this.manager;
+        
+        const softDeletedUser = await transactionEntityManager
+            .createQueryBuilder(TenantUser, "tu")
+            .innerJoin("tu.ssoUser", "su")
+            .where("tu.tenant_id = :tenantId", { tenantId })
+            .andWhere("su.ssoUserId = :ssoUserId", { ssoUserId })
+            .andWhere("tu.isDeleted = :isDeleted", { isDeleted: true })
+            .getOne();
+            
+        return softDeletedUser;
     }
 
     public async findRoles(roleNames:string[],tenantId:string) {
@@ -806,6 +898,7 @@ export class TMSRepository {
             .leftJoinAndSelect('tenantUser.ssoUser', 'ssoUser')
             .where('tenantUser.tenant.id = :tenantId', { tenantId })
             .andWhere('ssoUser.ssoUserId = :ssoUserId', { ssoUserId })
+            .andWhere('tenantUser.isDeleted = :isDeleted', { isDeleted: false })
             .getOne();
 
         return tenantUser
@@ -1041,6 +1134,107 @@ export class TMSRepository {
         return hasAccess
     }
 
+    public async removeTenantUser(req: Request) {
+        const tenantId: string = req.params.tenantId
+        const tenantUserId: string = req.params.tenantUserId
+        const deletedBy: string = req.decodedJwt?.idir_user_guid || 'system'
+        
+        await this.manager.transaction(async(transactionEntityManager) => {
+            try {
+                const tenantUser: TenantUser = await transactionEntityManager
+                    .createQueryBuilder(TenantUser, 'tu')
+                    .leftJoinAndSelect('tu.roles', 'tur')
+                    .leftJoinAndSelect('tur.role', 'role')
+                    .where('tu.id = :tenantUserId', { tenantUserId })
+                    .andWhere('tu.tenant.id = :tenantId', { tenantId })
+                    .andWhere('tu.isDeleted = :isDeleted', { isDeleted: false })
+                    .getOne();
+
+                if (!tenantUser) {
+                    throw new NotFoundError(`Tenant user not found or already deleted: ${tenantUserId}`)
+                }
+
+                const tenantOwnerRoles = tenantUser.roles?.filter(tur => 
+                    tur.role.name === TMSConstants.TENANT_OWNER && !tur.isDeleted
+                ) || [];
+
+                if (tenantOwnerRoles.length > 0) {
+                    const otherTenantOwnersCount:number = await transactionEntityManager
+                        .createQueryBuilder(TenantUserRole, 'tur')
+                        .innerJoin('tur.tenantUser', 'tu')
+                        .innerJoin('tur.role', 'role')
+                        .where('tu.tenant.id = :tenantId', { tenantId })
+                        .andWhere('role.name = :roleName', { roleName: TMSConstants.TENANT_OWNER })
+                        .andWhere('tur.isDeleted = :isDeleted', { isDeleted: false })
+                        .andWhere('tu.isDeleted = :isDeleted', { isDeleted: false })
+                        .andWhere('tu.id != :tenantUserId', { tenantUserId })
+                        .getCount();
+
+                    if (otherTenantOwnersCount === 0) {
+                        throw new ConflictError('Cannot remove the last tenant owner. At least one tenant owner must remain.')
+                    }
+                }
+
+                await transactionEntityManager
+                    .createQueryBuilder()
+                    .update(TenantUserRole)
+                    .set({
+                        isDeleted: true,
+                        updatedBy: deletedBy
+                    })
+                    .where('tenantUser.id = :tenantUserId', { tenantUserId })
+                    .andWhere('isDeleted = :isDeleted', { isDeleted: false })
+                    .execute();
+
+                await transactionEntityManager
+                    .createQueryBuilder()
+                    .update('GroupUser')
+                    .set({
+                        isDeleted: true,
+                        updatedBy: deletedBy
+                    })
+                    .where('tenantUser.id = :tenantUserId', { tenantUserId })
+                    .andWhere('isDeleted = :isDeleted', { isDeleted: false })
+                    .execute();
+
+                const userGroups = await transactionEntityManager
+                    .createQueryBuilder('GroupUser', 'gu')
+                    .leftJoinAndSelect('gu.group', 'group')
+                    .where('gu.tenantUser.id = :tenantUserId', { tenantUserId })
+                    .andWhere('gu.isDeleted = :isDeleted', { isDeleted: false })
+                    .getMany();
+
+                const groupIds = userGroups.map(gu => gu.group.id)
+
+                if (groupIds.length > 0) {
+                    await transactionEntityManager
+                        .createQueryBuilder()
+                        .update('GroupSharedServiceRole')
+                        .set({
+                            isDeleted: true,
+                            updatedBy: deletedBy
+                        })
+                        .where('group.id IN (:...groupIds)', { groupIds })
+                        .andWhere('isDeleted = :isDeleted', { isDeleted: false })
+                        .execute();
+                }
+
+                await transactionEntityManager
+                    .createQueryBuilder()
+                    .update(TenantUser)
+                    .set({
+                        isDeleted: true,
+                        updatedBy: deletedBy
+                    })
+                    .where('id = :tenantUserId', { tenantUserId })
+                    .execute();
+
+            } catch (error) {
+                logger.error('Remove tenant user transaction failure - rolling back changes', error);
+                throw error
+            }
+        });
+    }
 
 
 }

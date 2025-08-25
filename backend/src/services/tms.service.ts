@@ -7,7 +7,6 @@ import logger from '../common/logger'
 import { TenantRequest } from '../entities/TenantRequest'
 import { Tenant } from '../entities/Tenant'
 import { BadRequestError } from '../errors/BadRequestError'
-import { UnauthorizedError } from '../errors/UnauthorizedError'
 
 export class TMSService {
 
@@ -251,8 +250,10 @@ export class TMSService {
         }
     }
 
+    public async removeTenantUser(req: Request) {
+        await this.tmsRepository.removeTenantUser(req)
+    }
 
-    
     private async getToken() {
         try {
             const response = await axios.post(
