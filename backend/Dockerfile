@@ -2,28 +2,14 @@ FROM --platform=linux/amd64 node:18-alpine
 
 WORKDIR /app/tms-api
 
-# Install build dependencies for native modules
-RUN apk add --no-cache \
-    python3 \
-    make \
-    g++ \
-    curl
+# Install build dependencies
+RUN apk add --no-cache python3 make g++ curl
 
-# Increase Node.js memory limit
-ENV NODE_OPTIONS="--max-old-space-size=4096"
-
-# Configure npm for reliability
-RUN npm config set registry https://registry.npmjs.org/ && \
-    npm config set fetch-retry-maxtimeout 600000 && \
-    npm config set fetch-retry-mintimeout 10000 && \
-    npm config set fetch-timeout 600000
-
-# Copy package files first for better Docker layer caching
+# Copy package files
 COPY package*.json ./
 
-# Clean install dependencies
-RUN npm cache clean --force && \
-    npm ci --only=production --no-audit --no-fund
+# Try simple npm install first
+RUN npm install
 
 # Copy application source code
 COPY . .
