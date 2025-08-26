@@ -33,7 +33,7 @@ export const groupService = {
         requestBody,
       )
 
-      return response.data
+      return response.data.data.groupUser
     } catch (error: unknown) {
       logApiError('Error adding user to group', error)
 
@@ -112,7 +112,9 @@ export const groupService = {
    */
   async getGroup(tenantId: string, groupId: string) {
     try {
-      const response = await api.get(`/tenants/${tenantId}/groups/${groupId}`)
+      const response = await api.get(
+        `/tenants/${tenantId}/groups/${groupId}?expand=groupUsers`,
+      )
 
       return response.data.data.group
     } catch (error) {
@@ -137,6 +139,32 @@ export const groupService = {
       return response.data.data.groups
     } catch (error) {
       logApiError('Error getting tenant groups', error)
+
+      throw error
+    }
+  },
+
+  /**
+   * Removes a user from an existing group within a tenant.
+   *
+   * @param {string} tenantId - The ID of the tenant.
+   * @param {string} groupId - The ID of the group to remove the user from.
+   * @param {string} groupUserId - The ID of the group user to remove.
+   * @returns {Promise<void>} A promise that resolves when the user is
+   *   successfully removed.
+   * @throws Will throw an error if the API request fails.
+   */
+  async removeUserFromGroup(
+    tenantId: string,
+    groupId: string,
+    groupUserId: string,
+  ) {
+    try {
+      await api.delete(
+        `/tenants/${tenantId}/groups/${groupId}/users/${groupUserId}`,
+      )
+    } catch (error: unknown) {
+      logApiError('Error removing user from group', error)
 
       throw error
     }

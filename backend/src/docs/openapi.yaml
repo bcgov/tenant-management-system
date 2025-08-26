@@ -2663,12 +2663,53 @@ components:
           example: "2024-03-21T10:00:00Z"
 
     GroupUserWithUser:
-      allOf:
-        - $ref: '#/components/schemas/GroupUser'
-        - type: object
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        isDeleted:
+          type: boolean
+          default: false
+          example: false
+        createdDateTime:
+          type: string
+          format: date-time
+          example: "2024-03-21T10:00:00Z"
+        updatedDateTime:
+          type: string
+          format: date-time
+          example: "2024-03-21T10:00:00Z"
+        createdBy:
+          type: string
+          example: "user123"
+        updatedBy:
+          type: string
+          example: "user123"
+        user:
+          type: object
           properties:
-            user:
-              $ref: '#/components/schemas/User'
+            id:
+              type: string
+              format: uuid
+              example: "123e4567-e89b-12d3-a456-426614174001"
+            ssoUser:
+              $ref: '#/components/schemas/SSOUser'
+            createdDateTime:
+              type: string
+              format: date-time
+              example: "2024-03-21T10:00:00Z"
+            updatedDateTime:
+              type: string
+              format: date-time
+              example: "2024-03-21T10:00:00Z"
+            createdBy:
+              type: string
+              example: "system"
+            updatedBy:
+              type: string
+              example: "system"
 
     GroupUser:
       type: object

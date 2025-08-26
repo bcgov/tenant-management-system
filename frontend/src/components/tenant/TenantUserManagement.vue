@@ -6,7 +6,7 @@ import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
 import FloatingActionButton from '@/components/ui/FloatingActionButton.vue'
 import SimpleDialog from '@/components/ui/SimpleDialog.vue'
-import UserSearch from '@/components/user/UserSearch.vue'
+import UserSearch from '@/components/tenant/UserSearch.vue'
 import type { Role, Tenant, User } from '@/models'
 import { type IdirSearchType, ROLES } from '@/utils/constants'
 import { currentUserHasRole } from '@/utils/permissions'
@@ -49,6 +49,7 @@ const pendingUser = ref<User | null>(null)
 const selectedRoles = ref<Role[]>([])
 const selectedUser = ref<User | null>(null)
 const showSearch = ref(false)
+const userSearch = ref('')
 
 // --- Computed Values ---------------------------------------------------------
 
@@ -171,6 +172,25 @@ function showInfo(message: string) {
     <v-row>
       <v-col cols="12">
         <h4 class="mb-6 mt-12">Tenant Users</h4>
+      </v-col>
+    </v-row>
+
+    <v-row>
+      <v-col cols="4">
+        <v-text-field
+          v-model="userSearch"
+          append-inner-icon="mdi-magnify"
+          label="Search"
+          variant="outlined"
+          clearable
+          hide-details
+          single-line
+        ></v-text-field>
+      </v-col>
+    </v-row>
+
+    <v-row>
+      <v-col cols="12">
         <v-data-table
           :header-props="{
             class: 'text-body-1 font-weight-bold bg-surface-light',
@@ -185,7 +205,8 @@ function showInfo(message: string) {
             },
             { title: 'Email', key: 'ssoUser.email', align: 'start' },
           ]"
-          :items="tenant?.users || []"
+          :items="tenant.users"
+          :search="userSearch"
           :sort-by="[{ key: 'ssoUser.displayName' }]"
           item-value="id"
           striped="even"
@@ -193,7 +214,11 @@ function showInfo(message: string) {
           hover
         >
           <template #no-data>
-            <v-alert type="info">You have no users in this tenant</v-alert>
+            <v-alert type="info">{{
+              userSearch
+                ? 'No users match your search criteria'
+                : 'You have no users in this tenant'
+            }}</v-alert>
           </template>
           <template #[`item.roles`]="{ item }">
             <div class="d-flex flex-wrap" style="gap: 8px; margin-block: 4px">
@@ -238,54 +263,44 @@ function showInfo(message: string) {
           1. Search for a user based on the selection criteria below:
         </p>
 
-        <template v-if="tenant?.id">
-          <UserSearch
-            :loading="loadingSearch"
-            :search-results="searchResults"
-            @clear-search="handleClearSearch"
-            @search="handleSearch"
-            @select="handleUserSelected"
-          />
-
-          <v-row v-if="selectedUser" class="mt-4">
-            <v-col cols="12">
-              <p class="mb-2">2. Assign role(s) to this user:</p>
-
-              <v-checkbox
-                v-for="role in roles"
-                :key="role.id"
-                :label="role.description"
-                :model-value="selectedRoles.some((r) => r.id === role.id)"
-                class="my-0 py-0"
-                hide-details
-                @update:model-value="(checked) => toggleRole(role, !!checked)"
-              />
-            </v-col>
-          </v-row>
-
-          <v-row class="mt-8">
-            <v-col class="d-flex justify-start" cols="12">
-              <ButtonSecondary
-                class="me-4"
-                text="Cancel"
-                @click="handleCancel"
-              />
-
-              <ButtonPrimary
-                v-if="selectedUser"
-                :disabled="selectedRoles.length === 0"
-                text="Add User"
-                @click="handleAddUser"
-              />
-            </v-col>
-          </v-row>
-        </template>
-
-        <v-alert
-          v-else
-          text="Cannot search users: No tenant selected"
-          type="warning"
+        <UserSearch
+          :loading="loadingSearch"
+          :search-results="searchResults"
+          @clear-search="handleClearSearch"
+          @search="handleSearch"
+          @select="handleUserSelected"
         />
+
+        <v-row v-if="selectedUser" class="mt-4">
+          <v-col cols="12">
+            <p class="mb-2">2. Assign role(s) to this user:</p>
+
+            <v-checkbox
+              v-for="role in roles"
+              :key="role.id"
+              :label="role.description"
+              :model-value="selectedRoles.some((r) => r.id === role.id)"
+              class="my-0 py-0"
+              hide-details
+              @update:model-value="
+                (checked: boolean | null) => toggleRole(role, !!checked)
+              "
+            />
+          </v-col>
+        </v-row>
+
+        <v-row class="mt-8">
+          <v-col class="d-flex justify-start" cols="12">
+            <ButtonSecondary class="me-4" text="Cancel" @click="handleCancel" />
+
+            <ButtonPrimary
+              v-if="selectedUser"
+              :disabled="selectedRoles.length === 0"
+              text="Add User"
+              @click="handleAddUser"
+            />
+          </v-col>
+        </v-row>
       </div>
     </v-expand-transition>
 

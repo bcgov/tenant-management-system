@@ -5,6 +5,9 @@ import { User } from '@/models'
 import { userService } from '@/services'
 import { type IdirSearchType, IDIR_SEARCH_TYPE } from '@/utils/constants'
 
+/**
+ * Pinia store for searching and managing IDIR users.
+ */
 export const useUserStore = defineStore('user', () => {
   const loading = ref(false)
   const searchResults = ref<User[]>([])
@@ -17,6 +20,7 @@ export const useUserStore = defineStore('user', () => {
    * @param {string} searchValue - The search value to pass to the service.
    * @returns {Promise<User[]>} A promise that resolves to an array of User
    *   objects.
+   * @throws {Error} If the search type is invalid.
    */
   async function _searchIdirUsers(
     searchType: IdirSearchType,

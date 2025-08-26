@@ -1,0 +1,25 @@
+{
+  "tasks": [
+    {
+      "args": ["run", "build"],
+      "command": "npm",
+      "group": "build",
+      "label": "Frontend - Build",
+      "options": {
+        "cwd": "${workspaceFolder}/frontend"
+      },
+      "type": "shell"
+    },
+    {
+      "args": ["run", "lint"],
+      "command": "npm",
+      "group": "test",
+      "label": "Frontend - Lint",
+      "options": {
+        "cwd": "${workspaceFolder}/frontend"
+      },
+      "type": "shell"
+    }
+  ],
+  "version": "2.0.0"
+}

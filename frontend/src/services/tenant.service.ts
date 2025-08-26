@@ -6,6 +6,17 @@ import { User } from '@/models'
 const api = authenticatedAxios()
 
 export const tenantService = {
+  /**
+   * Adds a user to the specified tenant.
+   *
+   * Note: The format of the user in the request body differs from elsewhere,
+   * so it requires explicit construction.
+   *
+   * @param {string} tenantId - The unique identifier of the tenant.
+   * @param {User} user - The user to add.
+   * @returns {Promise<object>} A promise resolving to the added user object.
+   * @throws Will throw an error if the API request fails.
+   */
   async addUser(tenantId: string, user: User) {
     try {
       // It's a little tricky that the format of the user here is unlike
@@ -136,6 +147,14 @@ export const tenantService = {
     }
   },
 
+  /**
+   * Retrieves the roles assigned within a specific tenant.
+   *
+   * @param {string} tenantId - The unique identifier of the tenant.
+   * @returns {Promise<object[]>} A promise that resolves to an array of role-like
+   *   objects.
+   * @throws Will throw an error if the API request fails.
+   */
   async getTenantRoles(tenantId: string) {
     try {
       const response = await api.get(`/tenants/${tenantId}/roles`)
@@ -148,6 +167,15 @@ export const tenantService = {
     }
   },
 
+  /**
+   * Retrieves the roles assigned to a user within a specific tenant.
+   *
+   * @param {string} tenantId - The unique identifier of the tenant.
+   * @param {string} userId - The unique identifier of the user.
+   * @returns {Promise<object[]>} A promise that resolves to an array of role-like
+   *   objects.
+   * @throws Will throw an error if the API request fails.
+   */
   async getUserRoles(tenantId: string, userId: string) {
     try {
       const response = await api.get(
@@ -184,6 +212,14 @@ export const tenantService = {
     }
   },
 
+  /**
+   * Retrieves all users associated with a specified tenant.
+   *
+   * @param {string} tenantId - The unique identifier of the tenant.
+   * @returns {Promise<object[]>} A promise that resolves to an array of
+   *   user-like objects.
+   * @throws Will throw an error if the API request fails.
+   */
   async getUsers(tenantId: string) {
     try {
       const response = await api.get(`/tenants/${tenantId}/users`)

@@ -1,5 +1,6 @@
 export { groupService } from './group.service'
 export { roleService } from './role.service'
+export { serviceService } from './service.service'
 export { tenantRequestService } from './tenantrequest.service'
 export { tenantService } from './tenant.service'
 export { userService } from './user.service'

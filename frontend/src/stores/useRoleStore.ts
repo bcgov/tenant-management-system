@@ -4,6 +4,9 @@ import { ref } from 'vue'
 import { Role } from '@/models'
 import { roleService } from '@/services'
 
+/**
+ * Pinia store for managing application roles.
+ */
 export const useRoleStore = defineStore('role', () => {
   const roles = ref<Role[]>([])
 
@@ -11,6 +14,11 @@ export const useRoleStore = defineStore('role', () => {
 
   // Exported Methods
 
+  /**
+   * Fetches all roles from the API and updates the store.
+   *
+   * @returns {Promise<void>}
+   */
   const fetchRoles = async () => {
     loading.value = true
     try {
