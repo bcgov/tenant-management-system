@@ -21,12 +21,9 @@ RUN npm config set registry https://registry.npmjs.org/ && \
 # Copy package files
 COPY package*.json ./
 
-# Fix the @types/node compatibility issue by overriding it
-# Safe to ignore scripts as @types/node has no postinstall scripts
-RUN npm install @types/node@^18.0.0 --save-dev --no-package-lock --ignore-scripts
-
-# Then install everything else with verbose logging and security flags
-RUN npm config set loglevel verbose && npm install --legacy-peer-deps --ignore-scripts
+# Install dependencies with security flags and verbose logging
+RUN npm config set loglevel verbose && \
+    npm ci --ignore-scripts
 
 # Copy application source code
 COPY . .
