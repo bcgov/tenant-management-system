@@ -1,5 +1,5 @@
 # Build stage: build static files with Node
-FROM --platform=linux/amd64 node:22-slim AS build
+FROM node:22-slim AS build
 
 WORKDIR /app
 
@@ -26,7 +26,8 @@ COPY package*.json ./
 
 # Clean npm cache and install dependencies
 RUN npm cache clean --force && \
-    npm ci --no-audit --no-fund --ignore-scripts
+    rm -f package-lock.json && \
+    npm install --no-audit --no-fund --ignore-scripts
 
 # Then copy source code and build
 COPY . ./
