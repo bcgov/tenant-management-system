@@ -22,6 +22,7 @@ RUN npm config set registry https://registry.npmjs.org/ && \
 COPY package*.json ./
 
 # Fix the @types/node compatibility issue by overriding it
+# Safe to ignore scripts as @types/node has no postinstall scripts
 RUN npm install @types/node@^18.0.0 --save-dev --no-package-lock --ignore-scripts
 
 # Then install everything else with verbose logging and security flags
