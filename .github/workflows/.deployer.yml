@@ -61,7 +61,7 @@ on:
       ### Usually a bad idea / not recommended
       timeout-minutes:
         description: 'Timeout minutes'
-        default: 25
+        default: 15  # Reduced from 25 to fail faster
         required: false
         type: number
       values:
@@ -111,6 +111,8 @@ jobs:
       name: ${{ inputs.environment }}
       url: ${{ inputs.deployment_url }}
     runs-on: ubuntu-24.04
+    # Add timeout to prevent jobs from hanging indefinitely
+    timeout-minutes: 30
     outputs:
       tag: ${{ inputs.tag || steps.pr.outputs.pr }}
       triggered: ${{ steps.deploy.outputs.triggered }}
@@ -159,7 +161,7 @@ jobs:
           echo "release=${release}" >> $GITHUB_OUTPUT
           echo "version=${version}" >> $GITHUB_OUTPUT
 
-      - name: Check and Handle Concurrent Helm Operations
+      - name: Force Cleanup Any Stuck Helm Operations
         uses: bcgov/action-oc-runner@10033668ef4374d9bb78149faa73e4ccda0e93dd
         with:
           oc_namespace: ${{ secrets.oc_namespace }}
@@ -170,31 +172,53 @@ jobs:
             set -euo pipefail
             
             RELEASE_NAME="${{ steps.vars.outputs.release }}"
-            echo "🔍 Checking Helm release status for: $RELEASE_NAME"
+            echo "🔄 Force cleanup of any stuck Helm operations for: $RELEASE_NAME"
             
-            # Check current helm status
-            if helm list -o json | jq -r '.[] | select(.name=="'$RELEASE_NAME'") | .status' | grep -E "(pending-install|pending-upgrade|pending-rollback)" >/dev/null 2>&1; then
-              echo "⚠️ Found stuck Helm operation, attempting to resolve..."
+            # Function to force cleanup stuck helm releases
+            force_cleanup_helm() {
+              local release_name="$1"
+              echo "🧹 Starting force cleanup for release: $release_name"
               
-              # Try to get the current status
-              CURRENT_STATUS=$(helm status $RELEASE_NAME -o json | jq -r '.info.status' 2>/dev/null || echo "unknown")
-              echo "Current status: $CURRENT_STATUS"
-              
-              if [[ "$CURRENT_STATUS" =~ pending ]]; then
-                echo "🔄 Attempting to rollback stuck operation..."
-                helm rollback $RELEASE_NAME || {
-                  echo "❌ Rollback failed, attempting uninstall..."
-                  helm uninstall $RELEASE_NAME --wait || {
-                    echo "❌ Uninstall failed, force removing..."
-                    # Force cleanup if uninstall fails
-                    kubectl delete secret -l owner=helm,name=$RELEASE_NAME --ignore-not-found=true
-                  }
-                }
-                echo "✅ Resolved stuck Helm operation"
+              # Get current status if release exists
+              if helm list -q | grep -q "^$release_name$"; then
+                CURRENT_STATUS=$(helm status "$release_name" -o json 2>/dev/null | jq -r '.info.status' || echo "unknown")
+                echo "Current status: $CURRENT_STATUS"
+                
+                case "$CURRENT_STATUS" in
+                  "pending-install"|"pending-upgrade"|"pending-rollback"|"uninstalling")
+                    echo "⚠️ Found stuck operation: $CURRENT_STATUS - forcing cleanup"
+                    
+                    # Force delete all helm secrets for this release
+                    echo "🗑️ Removing Helm secrets..."
+                    kubectl delete secret -l owner=helm,name="$release_name" --ignore-not-found=true --timeout=60s || true
+                    kubectl delete configmap -l owner=helm,name="$release_name" --ignore-not-found=true --timeout=60s || true
+                    
+                    # Wait a moment for cleanup
+                    sleep 5
+                    
+                    # Verify cleanup worked
+                    if helm list -q | grep -q "^$release_name$"; then
+                      echo "⚠️ Release still exists after secret cleanup, attempting final removal..."
+                      kubectl patch secret -l owner=helm,name="$release_name" -p '{"metadata":{"finalizers":[]}}' --ignore-not-found=true || true
+                      kubectl delete secret -l owner=helm,name="$release_name" --ignore-not-found=true --force --grace-period=0 || true
+                    fi
+                    ;;
+                  "deployed"|"failed")
+                    echo "✅ Release is in stable state: $CURRENT_STATUS - no cleanup needed"
+                    ;;
+                  *)
+                    echo "⚠️ Unknown status: $CURRENT_STATUS - will proceed with deployment"
+                    ;;
+                esac
+              else
+                echo "ℹ️ No existing release found - clean slate"
               fi
-            else
-              echo "✅ No stuck Helm operations detected"
-            fi
+              
+              echo "✅ Cleanup completed for $release_name"
+            }
+            
+            # Execute cleanup
+            force_cleanup_helm "$RELEASE_NAME"
 
       - name: Deploy Database (Smart Preservation)
         id: deploy_database
@@ -257,7 +281,7 @@ jobs:
           env: ${{ inputs.environment || 'dev' }}
           desc: "Starting deployment..."
 
-      - name: Helm Deploy
+      - name: Helm Deploy with Improved Resilience
         id: deploy
         uses: bcgov/action-oc-runner@10033668ef4374d9bb78149faa73e4ccda0e93dd
         with:
@@ -279,70 +303,17 @@ jobs:
 
             RELEASE_NAME="${{ steps.vars.outputs.release }}"
             
-            # Function to check for stuck operations and resolve them
-            check_and_resolve_stuck_operations() {
-              local release_name="$1"
-              echo "🔍 Checking for stuck operations on: $release_name"
-              
-              # Get current status with better error handling
-              local current_status
-              if current_status=$(helm status "$release_name" -o json 2>/dev/null | jq -r '.info.status'); then
-                echo "Current Helm status: $current_status"
-                
-                case "$current_status" in
-                  "pending-install"|"pending-upgrade"|"pending-rollback")
-                    echo "⚠️ Found stuck operation: $current_status"
-                    echo "🔄 Attempting to resolve..."
-                    
-                    # Try rollback first
-                    if helm rollback "$release_name" 2>/dev/null; then
-                      echo "✅ Successfully rolled back stuck operation"
-                      sleep 5
-                      return 0
-                    fi
-                    
-                    # If rollback fails, try uninstall
-                    echo "⚠️ Rollback failed, attempting uninstall..."
-                    if helm uninstall "$release_name" --wait --timeout=300s 2>/dev/null; then
-                      echo "✅ Successfully uninstalled stuck release"
-                      sleep 5
-                      return 0
-                    fi
-                    
-                    # If uninstall fails, force cleanup
-                    echo "⚠️ Uninstall failed, forcing cleanup..."
-                    kubectl delete secret -l owner=helm,name="$release_name" --ignore-not-found=true
-                    kubectl delete configmap -l owner=helm,name="$release_name" --ignore-not-found=true
-                    sleep 5
-                    ;;
-                  "deployed"|"failed")
-                    echo "✅ Release is in stable state: $current_status"
-                    ;;
-                  *)
-                    echo "⚠️ Unknown status: $current_status"
-                    ;;
-                esac
-              else
-                echo "ℹ️ Release does not exist yet or status check failed"
-              fi
-              
-              return 0
-            }
-            
-            # Function to perform helm upgrade with retry logic
+            # Function to perform helm upgrade with improved error handling
             perform_helm_upgrade() {
               local release_name="$1"
-              local max_attempts=5
+              local max_attempts=3  # Reduced attempts for faster failure
               local attempt=1
               
               while [ $attempt -le $max_attempts ]; do
                 echo "🚀 Helm deployment attempt $attempt/$max_attempts..."
                 
-                # Check for stuck operations before each attempt
-                check_and_resolve_stuck_operations "$release_name"
-                
-                # Attempt the upgrade
-                if helm upgrade \
+                # Attempt the upgrade with shorter timeout
+                if timeout 600 helm upgrade \
                   --set-string global.repository=${{ github.repository }} \
                   --set-string global.tag="${{ steps.vars.outputs.tag }}" \
                   --set-string global.config.databaseUser="${{ inputs.db_user }}" \
@@ -354,7 +325,7 @@ jobs:
                   --install --wait ${{ inputs.atomic && '--atomic' || '' }} "$release_name" \
                   --timeout ${{ inputs.timeout-minutes }}m \
                   --values ${{ inputs.values }} \
-                  ./${{ github.event.repository.name }}-${{ steps.pr.outputs.pr || steps.vars.outputs.version }}.tgz; then
+                  ./${{ github.event.repository.name }}-${{ steps.pr.outputs.pr || steps.vars.outputs.version }}.tgz 2>&1; then
                   
                   echo "✅ Helm deployment completed successfully on attempt $attempt"
                   return 0
@@ -362,20 +333,22 @@ jobs:
                   local exit_code=$?
                   echo "❌ Helm deployment failed on attempt $attempt (exit code: $exit_code)"
                   
+                  # If this was the last attempt, fail
                   if [ $attempt -eq $max_attempts ]; then
-                    echo "💥 All attempts failed, giving up"
+                    echo "💥 All attempts failed"
                     return $exit_code
                   fi
                   
-                  echo "⏳ Waiting 30 seconds before retry..."
-                  sleep 30
+                  # Clean up any stuck resources before retry
+                  echo "🧹 Cleaning up before retry..."
+                  kubectl delete secret -l owner=helm,name="$release_name" --ignore-not-found=true --timeout=30s || true
+                  
+                  echo "⏳ Waiting 15 seconds before retry..."
+                  sleep 15
                   attempt=$((attempt + 1))
                 fi
               done
             }
-
-            # Initial check and cleanup
-            check_and_resolve_stuck_operations "$RELEASE_NAME"
 
             # Helm package
             sed -i 's/^name:.*/name: ${{ github.event.repository.name }}/' Chart.yaml
@@ -385,7 +358,7 @@ jobs:
             perform_helm_upgrade "$RELEASE_NAME"
 
             # Helm release history
-            helm history "$RELEASE_NAME"
+            helm history "$RELEASE_NAME" --max 5
 
             # Clean up completed pods
             oc delete po --field-selector=status.phase==Succeeded --ignore-not-found=true || true
