@@ -4,7 +4,7 @@ FROM --platform=linux/amd64 node:22-slim AS build
 WORKDIR /app
 
 # Install curl for healthcheck and other dependencies
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     ca-certificates \
     python3 \

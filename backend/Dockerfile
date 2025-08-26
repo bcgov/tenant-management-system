@@ -2,8 +2,21 @@ FROM node:18-alpine
 
 WORKDIR /app/tms-api
 
-# Install build dependencies
-RUN apk add --no-cache python3 make g++ curl
+# Install build dependencies with no-cache (Alpine best practice)
+RUN apk add --no-cache \
+    python3 \
+    make \
+    g++ \
+    curl
+
+# Increase Node.js memory limit
+ENV NODE_OPTIONS="--max-old-space-size=4096"
+
+# Configure npm for reliability
+RUN npm config set registry https://registry.npmjs.org/ && \
+    npm config set fetch-retry-maxtimeout 600000 && \
+    npm config set fetch-retry-mintimeout 10000 && \
+    npm config set fetch-timeout 600000
 
 # Copy package files
 COPY package*.json ./
