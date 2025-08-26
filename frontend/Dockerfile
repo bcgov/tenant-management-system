@@ -26,7 +26,7 @@ COPY package*.json ./
 
 # Clean npm cache and install dependencies
 RUN npm cache clean --force && \
-    npm ci --no-audit --no-fund
+    npm ci --no-audit --no-fund --ignore-scripts
 
 # Then copy source code and build
 COPY . ./
