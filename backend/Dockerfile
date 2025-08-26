@@ -1,4 +1,4 @@
-FROM --platform=linux/amd64 node:18-alpine
+FROM node:18-alpine
 
 WORKDIR /app/tms-api
 
@@ -8,8 +8,11 @@ RUN apk add --no-cache python3 make g++ curl
 # Copy package files
 COPY package*.json ./
 
-# Try simple npm install first
-RUN npm install
+# Fix the @types/node compatibility issue by overriding it
+RUN npm install @types/node@^18.0.0 --save-dev --no-package-lock
+
+# Then install everything else with verbose logging
+RUN npm config set loglevel verbose && npm install --legacy-peer-deps
 
 # Copy application source code
 COPY . .
