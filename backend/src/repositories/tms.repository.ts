@@ -100,9 +100,10 @@ export class TMSRepository {
         await this.manager.transaction(async(transactionEntityManager) => {
             try {
 
-                if (!await this.checkIfTenantExists(tenantId, transactionEntityManager)) {
-                    throw new NotFoundError(`Tenant not found: ${tenantId}`)
-                }
+                // REDUNDANT: checkTenantAccess middleware already validates tenant exists and user has access
+                // if (!await this.checkIfTenantExists(tenantId, transactionEntityManager)) {
+                //     throw new NotFoundError(`Tenant not found: ${tenantId}`)
+                // }
 
                 if (name || ministryName) {
                     const existingTenant = await transactionEntityManager
@@ -160,9 +161,10 @@ export class TMSRepository {
             const roles:string[] = req.body.roles
             const ssoUserId:string = req.body.user.ssoUserId
             
-            if(!await this.checkIfTenantExists(tenantId)) {  
-                throw new NotFoundError("Tenant Not Found: "+tenantId)
-            } 
+            // REDUNDANT: checkTenantAccess middleware already validates tenant exists and user has access
+            // if(!await this.checkIfTenantExists(tenantId)) {  
+            //     throw new NotFoundError("Tenant Not Found: "+tenantId)
+            // } 
         
             const tenant:Tenant = await this.getTenantIfUserDoesNotExistForTenant(ssoUserId,tenantId)
     
@@ -252,10 +254,11 @@ export class TMSRepository {
         transactionEntityManager = transactionEntityManager ? transactionEntityManager : this.manager
         
         try {
-            const tenantUserExists:boolean = await this.checkIfTenantUserExistsForTenant(tenantId, tenantUserId,transactionEntityManager);
-            if (!tenantUserExists) {
-                throw new NotFoundError(`Tenant user not found for tenant: ${tenantId}`)
-            }
+            // REDUNDANT: checkTenantAccess middleware already validates tenant user exists and user has access
+            // const tenantUserExists:boolean = await this.checkIfTenantUserExistsForTenant(tenantId, tenantUserId,transactionEntityManager);
+            // if (!tenantUserExists) {
+            //     throw new NotFoundError(`Tenant user not found for tenant: ${tenantId}`)
+            // }
 
             const existingRoles:Role[] = await this.getExistingRolesForUser(tenantUserId, transactionEntityManager);
 
@@ -301,13 +304,14 @@ export class TMSRepository {
     public async getUserRoles(req:Request) {
         const tenantId = req.params.tenantId
         const tenantUserId = req.params.tenantUserId
-        if(!await this.checkIfTenantUserExistsForTenant(tenantId,tenantUserId) ) {
-            throw new NotFoundError("Tenant or Tenant user not found: Tenant: "+tenantId+" Tenant User: "+tenantUserId)
-        }
-        else {
+        // REDUNDANT: checkTenantAccess middleware already validates tenant user exists and user has access
+        // if(!await this.checkIfTenantUserExistsForTenant(tenantId,tenantUserId) ) {
+        //     throw new NotFoundError("Tenant or Tenant user not found: Tenant: "+tenantId+" Tenant User: "+tenantUserId)
+        // }
+        // else {
             const roles:Role [] = await this.getRolesForUser(tenantUserId)
             return roles
-        }
+        // }
     }
 
     public async unassignUserRoles(req:Request) {
@@ -948,9 +952,10 @@ export class TMSRepository {
         
         await this.manager.transaction(async(transactionEntityManager) => {
             try {
-                if (!await this.checkIfTenantExists(tenantId, transactionEntityManager)) {
-                    throw new NotFoundError(`Tenant not found: ${tenantId}`)
-                }
+                // REDUNDANT: checkTenantAccess middleware already validates tenant exists and user has access
+                // if (!await this.checkIfTenantExists(tenantId, transactionEntityManager)) {
+                //     throw new NotFoundError(`Tenant not found: ${tenantId}`)
+                // }
 
                 const sharedService:SharedService = await transactionEntityManager
                     .createQueryBuilder(SharedService, 'sharedService')

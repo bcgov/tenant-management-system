@@ -4,6 +4,7 @@ import { SharedServiceRole } from './SharedServiceRole';
 
 @Entity('GroupSharedServiceRole', { schema: 'tms' })
 @Unique(["group", "sharedServiceRole"])
+@Index("idx_groupsharedservicerole_access", ["group", "sharedServiceRole", "isDeleted"])
 export class GroupSharedServiceRole {
     
   @PrimaryGeneratedColumn('uuid')

@@ -1,8 +1,9 @@
-import { Entity, PrimaryGeneratedColumn, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, Column } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, Column, Index } from 'typeorm';
 import { TenantUser } from './TenantUser';
 import { Role } from './Role';
 
 @Entity('TenantUserRole', { schema: 'tms' })
+@Index("idx_tenantuserrole_access", ["tenantUser", "role", "isDeleted"])
 export class TenantUserRole {
     
   @PrimaryGeneratedColumn('uuid')
