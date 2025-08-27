@@ -236,6 +236,19 @@ export class TMRepository {
         return !!existingGroupUser
     }
 
+    public async findSoftDeletedGroupUser(tenantUserId: string, groupId: string, transactionEntityManager?: EntityManager) {
+        transactionEntityManager = transactionEntityManager ? transactionEntityManager : this.manager
+        
+        const softDeletedGroupUser = await transactionEntityManager
+            .createQueryBuilder(GroupUser, 'groupUser')
+            .where('groupUser.tenantUser.id = :tenantUserId', { tenantUserId })
+            .andWhere('groupUser.group.id = :groupId', { groupId })
+            .andWhere('groupUser.isDeleted = :isDeleted', { isDeleted: true })
+            .getOne();
+
+        return softDeletedGroupUser
+    }
+
     public async addGroupUser(req: Request) {
         let groupUserResponse: any = null
         
@@ -260,11 +273,22 @@ export class TMRepository {
                 const existingTenant:Tenant = await this.tmsRepository.getTenantIfUserDoesNotExistForTenant(user.ssoUserId, tenantId)
 
                 if (!existingTenant) {
-                    const existingTenantUser:TenantUser = await this.tmsRepository.getTenantUserBySsoId(user.ssoUserId, tenantId, transactionEntityManager)
+                    let existingTenantUser:TenantUser = await this.tmsRepository.getTenantUserBySsoId(user.ssoUserId, tenantId, transactionEntityManager)
+                    
                     if (!existingTenantUser) {
-                        throw new NotFoundError(`Tenant user not found: ${user.ssoUserId}`)
+                        const softDeletedUser: TenantUser = await this.tmsRepository.findSoftDeletedTenantUser(user.ssoUserId, tenantId, transactionEntityManager)
+                        
+                        if (softDeletedUser) {
+                            softDeletedUser.isDeleted = false
+                            softDeletedUser.updatedBy = createdBy
+                            softDeletedUser.updatedDateTime = new Date()
+                            
+                            existingTenantUser = await transactionEntityManager.save(softDeletedUser)
+                        } else {
+                            throw new NotFoundError(`Tenant user not found: ${user.ssoUserId}`)
+                        }
                     }
-                    tenantUser = existingTenantUser;
+                    tenantUser = existingTenantUser
                 } else {
                     const serviceUserRole = await this.tmsRepository.findRoles([TMSConstants.SERVICE_USER], null)
                     if (serviceUserRole.length === 0) {
@@ -287,14 +311,25 @@ export class TMRepository {
                     throw new ConflictError(`User is already a member of this group`)
                 }
 
-                const groupUser: GroupUser = new GroupUser()
-                groupUser.group = { id: groupId } as Group
-                groupUser.tenantUser = tenantUser
-                groupUser.isDeleted = false
-                groupUser.createdBy = createdBy
-                groupUser.updatedBy = createdBy
+                const softDeletedGroupUser = await this.findSoftDeletedGroupUser(tenantUser.id, groupId, transactionEntityManager)
+                let savedGroupUser: GroupUser
 
-                const savedGroupUser: GroupUser = await transactionEntityManager.save(groupUser)
+                if (softDeletedGroupUser) {
+                    softDeletedGroupUser.isDeleted = false
+                    softDeletedGroupUser.updatedBy = createdBy
+                    softDeletedGroupUser.updatedDateTime = new Date()
+                    
+                    savedGroupUser = await transactionEntityManager.save(softDeletedGroupUser)
+                } else {
+                    const groupUser: GroupUser = new GroupUser()
+                    groupUser.group = { id: groupId } as Group
+                    groupUser.tenantUser = tenantUser
+                    groupUser.isDeleted = false
+                    groupUser.createdBy = createdBy
+                    groupUser.updatedBy = createdBy
+
+                    savedGroupUser = await transactionEntityManager.save(groupUser)
+                }
 
                 groupUserResponse = await transactionEntityManager
                     .createQueryBuilder(GroupUser, 'groupUser')
