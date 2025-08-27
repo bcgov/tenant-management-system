@@ -3,9 +3,31 @@ FROM node:22-slim AS build
 
 WORKDIR /app
 
+# Install curl for healthcheck and other dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    ca-certificates \
+    python3 \
+    make \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
+
+# Increase Node.js memory limit for large builds
+ENV NODE_OPTIONS="--max-old-space-size=4096"
+
+# Configure npm for reliability
+RUN npm config set registry https://registry.npmjs.org/ && \
+    npm config set fetch-retry-maxtimeout 600000 && \
+    npm config set fetch-retry-mintimeout 10000 && \
+    npm config set fetch-timeout 600000
+
 # First copy package files and install dependencies
 COPY package*.json ./
-RUN npm ci
+
+# Clean npm cache and install dependencies
+RUN npm cache clean --force && \
+    rm -f package-lock.json && \
+    npm install --no-audit --no-fund --ignore-scripts
 
 # Then copy source code and build
 COPY . ./
@@ -14,7 +36,7 @@ RUN npm run build
 # Deploy stage: serve static files with Caddy
 FROM caddy:2.10.0-alpine
 
-RUN apk add --no-cache ca-certificates
+RUN apk add --no-cache ca-certificates curl
 
 # Copy built static files and Caddyfile
 COPY --from=build /app/dist /srv

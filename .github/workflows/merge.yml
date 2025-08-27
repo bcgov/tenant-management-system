@@ -16,9 +16,9 @@ on:
         default: latest
 
 concurrency:
-  # Prevent concurrent deployments - use repository name to make it unique
+  # Fixed: More granular concurrency control that allows cancellation
   group: merge-deployment-${{ github.repository }}-${{ github.ref }}
-  cancel-in-progress: false  # Don't cancel, let them queue instead
+  cancel-in-progress: true  # Changed to true to cancel stuck deployments
 
 permissions:
   contents: read
@@ -36,7 +36,8 @@ jobs:
       id-token: write
       attestations: write
     with:
-      tags: ${{ github.ref_name == 'main' && (inputs.tags || 'latest') || format('test-{0}', github.ref_name) }}
+      # Fixed: Treat deployment-fix same as main for tagging
+      tags: ${{ (github.ref_name == 'main' || github.ref_name == 'deployment-fix') && (inputs.tags || 'latest') || format('test-{0}', github.ref_name) }}
       keep_versions: 10
   
   # Auto-deploy to TEST (merge auto-deploys here)
@@ -44,10 +45,10 @@ jobs:
     name: Deploy (TEST)
     needs: [builds]
     if: github.ref_name == 'main' || github.ref_name == 'deployment-fix'
-    # Add environment-specific concurrency to prevent overlapping TEST deployments
+    # Fixed: Environment-specific concurrency with cancellation
     concurrency:
-      group: deploy-test-${{ github.repository }}
-      cancel-in-progress: false
+      group: deploy-test-${{ github.repository }}-${{ github.ref_name }}
+      cancel-in-progress: true  # Allow cancelling stuck TEST deployments
     uses: ./.github/workflows/.deployer.yml
     secrets:
       oc_namespace: ${{ secrets.OC_NAMESPACE }}
@@ -60,7 +61,7 @@ jobs:
       environment: test
       db_user: app
       preserve_database: true
-      tags: ${{ github.ref_name == 'main' && (inputs.tags || 'latest') || format('test-{0}', github.ref_name) }}
+      tags: ${{ (github.ref_name == 'main' || github.ref_name == 'deployment-fix') && (inputs.tags || 'latest') || format('test-{0}', github.ref_name) }}
       params: >-
         --set backend.deploymentStrategy=RollingUpdate
         --set frontend.deploymentStrategy=RollingUpdate
@@ -77,18 +78,18 @@ jobs:
       contents: read
     name: ZAP Security Scan (TEST)
     needs: [deploy-test]
-    if: github.ref_name == 'main'
+    if: github.ref_name == 'main'  # Only run security scan on main, not deployment-fix
     uses: ./.github/workflows/.zap-scan.yml
     with:
       target_url: https://${{ github.event.repository.name }}-test-frontend.apps.silver.devops.gov.bc.ca
       fail_on_high: true
       scan_type: full
 
-  # Manual approval gate for PROD deployment
+  # Manual approval gate for PROD deployment - only for main branch
   approve-prod:
     name: Approve Production Deployment
     needs: [test_security_scan]
-    if: github.ref_name == 'main'
+    if: github.ref_name == 'main'  # Only main branch can trigger prod
     runs-on: ubuntu-24.04
     environment:
       name: PROD
@@ -103,11 +104,11 @@ jobs:
   deploy-prod:
     name: Deploy (PROD)
     needs: [approve-prod]
-    if: github.ref_name == 'main'
-    # Add environment-specific concurrency to prevent overlapping PROD deployments
+    if: github.ref_name == 'main'  # Only main branch deploys to prod
+    # Fixed: Environment-specific concurrency with cancellation
     concurrency:
       group: deploy-prod-${{ github.repository }}
-      cancel-in-progress: false
+      cancel-in-progress: true  # Allow cancelling stuck PROD deployments
     uses: ./.github/workflows/.deployer.yml
     secrets:
       oc_namespace: ${{ secrets.OC_NAMESPACE }}
