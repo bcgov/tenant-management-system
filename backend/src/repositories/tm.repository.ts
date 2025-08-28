@@ -10,8 +10,6 @@ import { ConflictError } from '../errors/ConflictError'
 import logger from '../common/logger'
 import { TMSRepository } from './tms.repository'
 import { TMSConstants } from '../common/tms.constants'
-import { SharedServiceRole } from '../entities/SharedServiceRole'
-import { TenantSharedService } from '../entities/TenantSharedService'
 import { GroupSharedServiceRole } from '../entities/GroupSharedServiceRole'
 import { SSOUser } from '../entities/SSOUser'
 
@@ -71,6 +69,7 @@ export class TMRepository {
                     .createQueryBuilder(Group, 'group')
                     .leftJoinAndSelect('group.users', 'groupUsers')
                     .where('group.id = :id', { id: savedGroup.id })
+                    .andWhere('groupUsers.isDeleted = :isDeleted', { isDeleted: false })
                     .getOne();
 
             } catch(error) {
@@ -226,7 +225,7 @@ export class TMRepository {
     public async checkIfUserExistsInGroup(tenantUserId: string, groupId: string, transactionEntityManager?: EntityManager) {
         transactionEntityManager = transactionEntityManager ? transactionEntityManager : this.manager
         
-        const existingGroupUser = await transactionEntityManager
+        const existingGroupUser:GroupUser = await transactionEntityManager
             .createQueryBuilder(GroupUser, 'groupUser')
             .where('groupUser.tenantUser.id = :tenantUserId', { tenantUserId })
             .andWhere('groupUser.group.id = :groupId', { groupId })
@@ -239,7 +238,7 @@ export class TMRepository {
     public async findSoftDeletedGroupUser(tenantUserId: string, groupId: string, transactionEntityManager?: EntityManager) {
         transactionEntityManager = transactionEntityManager ? transactionEntityManager : this.manager
         
-        const softDeletedGroupUser = await transactionEntityManager
+        const softDeletedGroupUser:GroupUser = await transactionEntityManager
             .createQueryBuilder(GroupUser, 'groupUser')
             .where('groupUser.tenantUser.id = :tenantUserId', { tenantUserId })
             .andWhere('groupUser.group.id = :groupId', { groupId })
@@ -338,6 +337,7 @@ export class TMRepository {
                     .leftJoinAndSelect('tenantUser.roles', 'tenantUserRoles')
                     .leftJoinAndSelect('tenantUserRoles.role', 'role')
                     .where('groupUser.id = :id', { id: savedGroupUser.id })
+                    .andWhere('tenantUserRoles.isDeleted = :isDeleted', { isDeleted: false })
                     .getOne();
 
                 if (groupUserResponse) {
@@ -482,6 +482,8 @@ export class TMRepository {
             groupQuery.leftJoinAndSelect("group.users", "groupUsers")
                 .leftJoinAndSelect("groupUsers.tenantUser", "tenantUser")
                 .leftJoinAndSelect("tenantUser.ssoUser", "ssoUser")
+                .andWhere("groupUsers.isDeleted = :isDeleted", { isDeleted: false })
+                .andWhere("tenantUser.isDeleted = :isDeleted", { isDeleted: false })
         }
 
         const group: any = await groupQuery.getOne();
@@ -497,7 +499,6 @@ export class TMRepository {
 
         if (expand.includes("groupUsers") && group.users) {
             const transformedUsers = group.users
-                .filter((groupUser: any) => !groupUser.isDeleted)
                 .map((groupUser: any) => ({
                     id: groupUser.id,
                     isDeleted: groupUser.isDeleted,
