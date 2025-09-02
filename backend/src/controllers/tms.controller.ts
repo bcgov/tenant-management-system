@@ -344,5 +344,22 @@ export class TMSController {
         }
     }
 
+    public async removeTenantUser(req: Request, res: Response) {
+        try {
+            await this.tmsService.removeTenantUser(req)
+            res.status(204).send()
+        } catch (error) {
+            logger.error(error);
+            if (error instanceof NotFoundError) {
+                this.errorHandler.generalError(res, "Error occurred removing tenant user", error.message, error.statusCode, "Not Found");
+            } else if (error instanceof ConflictError) {
+                this.errorHandler.generalError(res, "Error occurred removing tenant user", error.message, error.statusCode, "Conflict");
+            } else if (error instanceof BadRequestError) {
+                this.errorHandler.generalError(res, "Error occurred removing tenant user", error.message, error.statusCode, "Bad Request");
+            } else {
+                this.errorHandler.generalError(res, "Error occurred removing tenant user", error.message, 500, "Internal Server Error");
+            }
+        }
+    }
 
 }

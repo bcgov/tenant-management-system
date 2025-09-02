@@ -4,6 +4,8 @@ import { SSOUser } from './SSOUser'
 import {TenantUserRole} from './TenantUserRole'
 
 @Entity('TenantUser', { schema: 'tms' })
+@Index(['tenant', 'isDeleted'])
+@Index(['ssoUser', 'isDeleted'])
 export class TenantUser {
 
     @PrimaryGeneratedColumn('uuid')
@@ -23,6 +25,9 @@ export class TenantUser {
         cascade: true,
     })
     roles: TenantUserRole[];
+
+    @Column({ type: 'boolean', name: 'is_deleted', default: false })
+    isDeleted: boolean;
 
     @CreateDateColumn({ type: 'date', name: 'created_datetime', nullable: true })
     createdDateTime: Date;
