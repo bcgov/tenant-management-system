@@ -4,7 +4,8 @@ global:
   domain: apps.silver.devops.gov.bc.ca
   autoscaling: false
   secrets:
-    persist: false  # Don't persist secrets for PRs
+    enabled: true      # Add this line - ensures secrets are created
+    persist: false     # Don't persist secrets for PRs
   config:
     nodeEnv: development
     databaseUser: app
