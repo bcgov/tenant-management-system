@@ -363,60 +363,6 @@ jobs:
             # Clean up completed pods
             oc delete po --field-selector=status.phase==Succeeded --ignore-not-found=true || true
 
-      - name: Update Database Password for PR Environments
-        if: contains(steps.vars.outputs.release, '-pr-')
-        uses: bcgov/action-oc-runner@10033668ef4374d9bb78149faa73e4ccda0e93dd
-        with:
-            oc_namespace: ${{ secrets.oc_namespace }}
-            oc_token: ${{ secrets.oc_token }}
-            oc_server: ${{ inputs.oc_server }}
-            commands: |
-              set -euo pipefail
-              
-              RELEASE_NAME="${{ steps.vars.outputs.release }}"
-              DB_USER="${{ inputs.db_user }}"
-              DB_SECRET_NAME="${RELEASE_NAME}-pguser-${DB_USER}"
-              
-              echo "Updating database password for PR environment..."
-              echo "Release: $RELEASE_NAME"
-              echo "DB User: $DB_USER"
-              echo "Expected DB Secret: $DB_SECRET_NAME"
-              
-              # Wait for the database secret to exist
-              for i in {1..60}; do
-                if oc get secret "$DB_SECRET_NAME" &>/dev/null; then
-                  echo "Database secret found: $DB_SECRET_NAME"
-                  break
-                fi
-                echo "Attempt $i/60: Database secret not found yet, waiting..."
-                sleep 5
-              done
-              
-              if ! oc get secret "$DB_SECRET_NAME" &>/dev/null; then
-                echo "Database secret not found: $DB_SECRET_NAME"
-                echo "Available secrets:"
-                oc get secrets | grep -E "(pguser|postgres)" || echo "No database secrets found"
-                exit 1
-              fi
-              
-              # Get the real database password
-              DB_PASSWORD=$(oc get secret "$DB_SECRET_NAME" -o jsonpath='{.data.password}')
-              if [ -z "$DB_PASSWORD" ]; then
-                echo "Database password not found in secret"
-                exit 1
-              fi
-              
-              echo "Found database password, updating backend secret..."
-              
-              # Update the backend secret with the real database password
-              oc patch secret "${RELEASE_NAME}-backend" \
-                -p '{"data":{"POSTGRES_PASSWORD":"'$DB_PASSWORD'"}}'
-              
-              # Update the flyway secret with the real database password
-              oc patch secret "${RELEASE_NAME}-flyway" \
-                -p '{"data":{"FLYWAY_PASSWORD":"'$DB_PASSWORD'"}}'
-              
-              echo "Database password updated successfully"
       - name: Update secrets
         uses: bcgov/action-oc-runner@10033668ef4374d9bb78149faa73e4ccda0e93dd
         with:
@@ -534,6 +480,62 @@ jobs:
 
             echo "✅ All secrets and configurations updated successfully"
 
+
+      - name: Update Database Password for PR Environments
+        if: contains(steps.vars.outputs.release, '-pr-')
+        uses: bcgov/action-oc-runner@10033668ef4374d9bb78149faa73e4ccda0e93dd
+        with:
+          oc_namespace: ${{ secrets.oc_namespace }}
+          oc_token: ${{ secrets.oc_token }}
+          oc_server: ${{ inputs.oc_server }}
+          commands: |
+            set -euo pipefail
+            
+            RELEASE_NAME="${{ steps.vars.outputs.release }}"
+            DB_USER="${{ inputs.db_user }}"
+            DB_SECRET_NAME="${RELEASE_NAME}-pguser-${DB_USER}"
+            
+            echo "Updating database password for PR environment..."
+            echo "Release: $RELEASE_NAME"
+            echo "DB User: $DB_USER"
+            echo "Expected DB Secret: $DB_SECRET_NAME"
+            
+            # Wait for the database secret to exist
+            for i in {1..60}; do
+              if oc get secret "$DB_SECRET_NAME" &>/dev/null; then
+                echo "Database secret found: $DB_SECRET_NAME"
+                break
+              fi
+              echo "Attempt $i/60: Database secret not found yet, waiting..."
+              sleep 5
+            done
+            
+            if ! oc get secret "$DB_SECRET_NAME" &>/dev/null; then
+              echo "Database secret not found: $DB_SECRET_NAME"
+              echo "Available secrets:"
+              oc get secrets | grep -E "(pguser|postgres)" || echo "No database secrets found"
+              exit 1
+            fi
+            
+            # Get the real database password
+            DB_PASSWORD=$(oc get secret "$DB_SECRET_NAME" -o jsonpath='{.data.password}')
+            if [ -z "$DB_PASSWORD" ]; then
+              echo "Database password not found in secret"
+              exit 1
+            fi
+            
+            echo "Found database password, updating backend secret..."
+            
+            # Update the backend secret with the real database password
+            oc patch secret "${RELEASE_NAME}-backend" \
+              -p '{"data":{"POSTGRES_PASSWORD":"'$DB_PASSWORD'"}}'
+            
+            # Update the flyway secret with the real database password
+            oc patch secret "${RELEASE_NAME}-flyway" \
+              -p '{"data":{"FLYWAY_PASSWORD":"'$DB_PASSWORD'"}}'
+            
+            echo "Database password updated successfully"
+            
       - name: Update deployment status
         uses: bobheadxi/deployments@v1.4.0
         if: always() && steps.deployment.outputs.deployment_id
