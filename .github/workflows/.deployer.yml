@@ -372,27 +372,28 @@ jobs:
           oc_server: ${{ inputs.oc_server }}
           commands: |
             RELEASE_NAME="${{ steps.vars.outputs.release }}"
-        
+            
             echo "=== DEBUGGING HELM DEPLOYMENT ==="
             echo "Release name: $RELEASE_NAME"
+            
             # Check Helm status
-           echo "--- Helm Status ---"
-           helm status "$RELEASE_NAME" || echo "Helm status failed"
-      
-           # Check what resources exist
-           echo "--- Deployments ---"
-           oc get deployments -l app.kubernetes.io/instance="$RELEASE_NAME" || echo "No deployments found"
-      
-           echo "--- Secrets ---"
-           oc get secrets | grep "$RELEASE_NAME" || echo "No secrets found"
-      
-           echo "--- Pods ---"
-           oc get pods -l app.kubernetes.io/instance="$RELEASE_NAME" || echo "No pods found"
-      
-           echo "--- Recent Events ---"
-           oc get events --sort-by=.metadata.creationTimestamp | tail -20
-      
-           echo "=== END DEBUG ==="
+            echo "--- Helm Status ---"
+            helm status "$RELEASE_NAME" || echo "Helm status failed"
+            
+            # Check what resources exist
+            echo "--- Deployments ---"
+            oc get deployments -l app.kubernetes.io/instance="$RELEASE_NAME" || echo "No deployments found"
+            
+            echo "--- Secrets ---"
+            oc get secrets | grep "$RELEASE_NAME" || echo "No secrets found"
+            
+            echo "--- Pods ---"
+            oc get pods -l app.kubernetes.io/instance="$RELEASE_NAME" || echo "No pods found"
+            
+            echo "--- Recent Events ---"
+            oc get events --sort-by=.metadata.creationTimestamp | tail -20
+            
+            echo "=== END DEBUG ==="
 
       - name: Update secrets
         uses: bcgov/action-oc-runner@10033668ef4374d9bb78149faa73e4ccda0e93dd
