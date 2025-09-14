@@ -303,17 +303,38 @@ jobs:
 
             RELEASE_NAME="${{ steps.vars.outputs.release }}"
             
-            # Function to perform helm upgrade with improved error handling
+            # Function to perform helm upgrade with improved error handling and debugging
             perform_helm_upgrade() {
               local release_name="$1"
-              local max_attempts=3  # Reduced attempts for faster failure
+              local max_attempts=3
               local attempt=1
-            
+
               while [ $attempt -le $max_attempts ]; do
-                echo "🚀 Helm deployment attempt $attempt/$max_attempts..."
-            
-                # Attempt the upgrade with shorter timeout
-                if timeout 600 helm upgrade \
+                echo "Helm deployment attempt $attempt/$max_attempts..."
+                echo "Release name: $release_name"
+                echo "Chart directory: $(pwd)"
+                echo "Chart file exists: $(ls -la ./${{ github.event.repository.name }}-*.tgz 2>/dev/null || echo 'NOT FOUND')"
+                
+                # Show the exact helm command that will be run
+                echo "--- HELM COMMAND ---"
+                echo "helm upgrade \\"
+                echo "  --set-string global.repository=${{ github.repository }} \\"
+                echo "  --set-string global.tag=\"${{ steps.vars.outputs.tag }}\" \\"
+                echo "  --set-string global.config.databaseUser=\"${{ inputs.db_user }}\" \\"
+                echo "  --set-string global.config.nodeEnv=${{ (inputs.environment == 'prod' || inputs.environment == 'production') && 'production' || (inputs.environment == 'test' && 'test' || 'development') }} \\"
+                echo "  --set-string global.databaseAlias=\"$DATABASE_ALIAS\" \\"
+                echo "  --set-string global.secrets.enabled=true \\"
+                echo "  --set-string global.preserveDatabase=\"${{ inputs.preserve_database }}\" \\"
+                echo "  ${{ inputs.params }} \\"
+                echo "  --install --wait --timeout ${{ inputs.timeout-minutes }}m \\"
+                echo "  --values ${{ inputs.values }} \\"
+                echo "  \"$release_name\" \\"
+                echo "  ./${{ github.event.repository.name }}-${{ steps.pr.outputs.pr || steps.vars.outputs.version }}.tgz"
+                echo "-------------------"
+
+                # Attempt the upgrade with full output capture
+                set +e  # Don't exit on error so we can capture output
+                HELM_OUTPUT=$(helm upgrade \
                   --set-string global.repository=${{ github.repository }} \
                   --set-string global.tag="${{ steps.vars.outputs.tag }}" \
                   --set-string global.config.databaseUser="${{ inputs.db_user }}" \
@@ -322,28 +343,43 @@ jobs:
                   --set-string global.secrets.enabled=true \
                   --set-string global.preserveDatabase="${{ inputs.preserve_database }}" \
                   ${{ inputs.params }} \
-                  --install --wait ${{ inputs.atomic && '--atomic' || '' }} "$release_name" \
-                  --timeout ${{ inputs.timeout-minutes }}m \
+                  --install --wait --timeout ${{ inputs.timeout-minutes }}m \
                   --values ${{ inputs.values }} \
-                  ./${{ github.event.repository.name }}-${{ steps.pr.outputs.pr || steps.vars.outputs.version }}.tgz 2>&1; then
-            
-                  echo "✅ Helm deployment completed successfully on attempt $attempt"
+                  --debug \
+                  "$release_name" \
+                  ./${{ github.event.repository.name }}-${{ steps.pr.outputs.pr || steps.vars.outputs.version }}.tgz 2>&1)
+                
+                HELM_EXIT_CODE=$?
+                set -e  # Re-enable exit on error
+                
+                echo "--- HELM OUTPUT ---"
+                echo "$HELM_OUTPUT"
+                echo "--- END HELM OUTPUT ---"
+                echo "Helm exit code: $HELM_EXIT_CODE"
+
+                if [ $HELM_EXIT_CODE -eq 0 ]; then
+                  echo "Helm deployment completed successfully on attempt $attempt"
                   return 0
                 else
-                  local exit_code=$?
-                  echo "❌ Helm deployment failed on attempt $attempt (exit code: $exit_code)"
-            
-                  # If this was the last attempt, fail
+                  echo "Helm deployment failed on attempt $attempt (exit code: $HELM_EXIT_CODE)"
+                  
+                  # Show additional debugging info
+                  echo "--- POST-FAILURE DEBUG ---"
+                  helm list || echo "Helm list failed"
+                  oc get all -l app.kubernetes.io/instance="$release_name" || echo "No resources found"
+                  echo "--- END POST-FAILURE DEBUG ---"
+
                   if [ $attempt -eq $max_attempts ]; then
-                    echo "💥 All attempts failed"
-                    return $exit_code
+                    echo "All attempts failed"
+                    echo "FINAL HELM OUTPUT:"
+                    echo "$HELM_OUTPUT"
+                    return $HELM_EXIT_CODE
                   fi
-            
-                  # Clean up any stuck resources before retry
-                  echo "🧹 Cleaning up before retry..."
+
+                  echo "Cleaning up before retry..."
                   kubectl delete secret -l owner=helm,name="$release_name" --ignore-not-found=true --timeout=30s || true
-            
-                  echo "⏳ Waiting 15 seconds before retry..."
+
+                  echo "Waiting 15 seconds before retry..."
                   sleep 15
                   attempt=$((attempt + 1))
                 fi
