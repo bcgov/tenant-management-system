@@ -248,7 +248,10 @@ export default {
             roles: Joi.array().items(
                 Joi.object().keys({
                     name: Joi.string().min(1).max(30).pattern(/^\S.*\S$/).required(),
-                    description: Joi.string().min(1).max(255).optional()
+                    description: Joi.string().min(1).max(255).optional(),
+                    allowedIdentityProviders: Joi.array().items(
+                        Joi.string().valid('idir', 'azureidir', 'bceidbasic', 'bceidbusiness')
+                    ).allow(null).optional()
                 })
             ).min(1).max(10).required()
         }).options({abortEarly:false,convert:false})
@@ -311,7 +314,10 @@ export default {
             roles: Joi.array().items(
                 Joi.object().keys({
                     name: Joi.string().min(1).max(30).pattern(/^\S.*\S$/).required(),
-                    description: Joi.string().min(1).max(255).optional()
+                    description: Joi.string().min(1).max(255).optional(),
+                    allowedIdentityProviders: Joi.array().items(
+                        Joi.string().valid('idir', 'azureidir', 'bceidbasic', 'bceidbusiness')
+                    ).allow(null).optional()
                 })
             ).min(1).max(10).required()
         }).options({abortEarly:false,convert:false})
