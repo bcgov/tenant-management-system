@@ -281,6 +281,62 @@ jobs:
           env: ${{ inputs.environment || 'dev' }}
           desc: "Starting deployment..."
 
+      - name: Basic Helm Debug Check
+        uses: bcgov/action-oc-runner@10033668ef4374d9bb78149faa73e4ccda0e93dd
+        with:
+          oc_namespace: ${{ secrets.oc_namespace }}
+          oc_token: ${{ secrets.oc_token }}
+          oc_server: ${{ inputs.oc_server }}
+          commands: |
+            set -euo pipefail
+            
+            RELEASE_NAME="${{ steps.vars.outputs.release }}"
+            
+            echo "=== BASIC HELM DEBUG CHECK ==="
+            echo "Release name: $RELEASE_NAME"
+            echo "Working directory: $(pwd)"
+            
+            # Check if we're in the right directory
+            echo "--- Directory Contents ---"
+            ls -la
+            
+            # Check for Chart.yaml
+            echo "--- Chart.yaml ---"
+            if [ -f "Chart.yaml" ]; then
+              echo "Chart.yaml exists:"
+              cat Chart.yaml
+            else
+              echo "Chart.yaml NOT FOUND"
+            fi
+            
+            # Check for templates directory
+            echo "--- Templates Directory ---"
+            if [ -d "templates" ]; then
+              echo "Templates directory contents:"
+              ls -la templates/
+            else
+              echo "Templates directory NOT FOUND"
+            fi
+            
+            # Check for values files
+            echo "--- Values Files ---"
+            ls -la values*.yaml || echo "No values files found"
+            
+            # Try helm template (dry run) to see if chart renders
+            echo "--- Helm Template Test ---"
+            if helm template test-release . \
+              --set-string global.repository=${{ github.repository }} \
+              --set-string global.tag="${{ steps.vars.outputs.tag }}" \
+              --set-string global.config.databaseUser="${{ inputs.db_user }}" \
+              --set-string global.databaseAlias="$RELEASE_NAME" \
+              --set-string global.secrets.enabled=true \
+              --values ${{ inputs.values }} 2>&1; then
+              echo "Helm template rendering SUCCESS"
+            else
+              echo "Helm template rendering FAILED"
+            fi
+            
+            echo "=== END BASIC DEBUG ==="
       - name: Helm Deploy with Improved Resilience
         id: deploy
         uses: bcgov/action-oc-runner@10033668ef4374d9bb78149faa73e4ccda0e93dd
