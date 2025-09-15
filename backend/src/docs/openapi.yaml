@@ -1102,6 +1102,14 @@ paths:
                         type: string
                         maxLength: 255
                         example: "Can send emails through the service"
+                      allowedIdentityProviders:
+                        type: array
+                        items:
+                          type: string
+                          enum: ['idir', 'azureidir', 'bceidbasic', 'bceidbusiness']
+                        nullable: true
+                        example: ["idir", "bceidbusiness"]
+                        description: "List of identity providers allowed to access this role. If null or empty, all identity providers are allowed."
       responses:
         '201':
           description: Shared service successfully created
@@ -2087,13 +2095,23 @@ paths:
                         type: string
                         maxLength: 255
                         example: "New administrator role for the shared service"
+                      allowedIdentityProviders:
+                        type: array
+                        items:
+                          type: string
+                          enum: ['idir', 'azureidir', 'bceidbasic', 'bceidbusiness']
+                        nullable: true
+                        example: ["idir"]
+                        description: "List of identity providers allowed to access this role. If null or empty, all identity providers are allowed."
                   minItems: 1
                   maxItems: 10
                   example:
                     - name: "New Admin Role"
                       description: "New administrator role for the shared service"
+                      allowedIdentityProviders: ["idir", "bceidbusiness"]
                     - name: "New User Role"
                       description: "New standard user role for the shared service"
+                      allowedIdentityProviders: null
       responses:
         '201':
           description: Roles successfully added to shared service
@@ -2860,6 +2878,14 @@ components:
           type: string
           maxLength: 255
           example: "Can send emails through the service"
+        allowedIdentityProviders:
+          type: array
+          items:
+            type: string
+            enum: ['idir', 'azureidir', 'bceidbasic', 'bceidbusiness']
+          nullable: true
+          example: ["idir", "bceidbusiness"]
+          description: "List of identity providers allowed to access this role. If null or empty, all identity providers are allowed."
         isDeleted:
           type: boolean
           default: false
