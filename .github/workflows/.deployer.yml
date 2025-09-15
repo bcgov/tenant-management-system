@@ -282,6 +282,7 @@ jobs:
           desc: "Starting deployment..."
 
       - name: Helm Deploy with Improved Resilience
+        if: ${{ !inputs.triggers || contains(steps.vars.outputs.release, '-pr-') }}  # Always run for PRs
         id: deploy
         uses: bcgov/action-oc-runner@10033668ef4374d9bb78149faa73e4ccda0e93dd
         with:
