@@ -56,8 +56,8 @@ jobs:
         --set frontend.resources.limits.memory=256Mi
         --set global.namespace.suffix=-pr-${{ github.event.number }}
         --set global.config.databaseUser=app-pr-${{ github.event.number }}
-      triggers: "backend/,frontend/,migrations/,charts/,.github/"
-      db_triggers: "charts/crunchy/"
+      #triggers: "backend/,frontend/,migrations/,charts/,.github/"
+      #db_triggers: "charts/crunchy/"
       deployment_url: https://${{ github.event.repository.name }}-pr-${{ github.event.number }}-frontend.apps.silver.devops.gov.bc.ca
 
   security_scan:
