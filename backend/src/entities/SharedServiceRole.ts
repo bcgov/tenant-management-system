@@ -15,6 +15,9 @@ export class SharedServiceRole {
     @Column({ type: 'varchar', length: 255, name: 'description', nullable: true })
     description: string;
     
+    @Column({ type: 'text', array: true, name: 'allowed_identity_providers', nullable: true, default: null })
+    allowedIdentityProviders: string[] | null;
+    
     @Column({ type: 'boolean', name: 'is_deleted', default: false })
     isDeleted: boolean;
 

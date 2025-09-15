@@ -943,6 +943,9 @@ export class TMSRepository {
                     const sharedServiceRole:SharedServiceRole = new SharedServiceRole()
                     sharedServiceRole.name = role.name
                     sharedServiceRole.description = role.description
+                    sharedServiceRole.allowedIdentityProviders = (role.allowedIdentityProviders && role.allowedIdentityProviders.length > 0) 
+                        ? role.allowedIdentityProviders 
+                        : null
                     sharedServiceRole.sharedService = savedSharedService
                     sharedServiceRole.createdBy = req.decodedJwt?.idir_user_guid || 'system'
                     sharedServiceRole.updatedBy = req.decodedJwt?.idir_user_guid || 'system'
@@ -1005,6 +1008,9 @@ export class TMSRepository {
                 const sharedServiceRole:SharedServiceRole = new SharedServiceRole()
                 sharedServiceRole.name = role.name
                 sharedServiceRole.description = role.description
+                sharedServiceRole.allowedIdentityProviders = (role.allowedIdentityProviders && role.allowedIdentityProviders.length > 0) 
+                    ? role.allowedIdentityProviders 
+                    : null
                 sharedServiceRole.sharedService = sharedService
                 sharedServiceRole.isDeleted = false
                 sharedServiceRole.createdBy = ssoUserId
