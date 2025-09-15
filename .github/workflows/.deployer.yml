@@ -281,62 +281,6 @@ jobs:
           env: ${{ inputs.environment || 'dev' }}
           desc: "Starting deployment..."
 
-      - name: Basic Helm Debug Check
-        uses: bcgov/action-oc-runner@10033668ef4374d9bb78149faa73e4ccda0e93dd
-        with:
-          oc_namespace: ${{ secrets.oc_namespace }}
-          oc_token: ${{ secrets.oc_token }}
-          oc_server: ${{ inputs.oc_server }}
-          commands: |
-            set -euo pipefail
-            
-            RELEASE_NAME="${{ steps.vars.outputs.release }}"
-            
-            echo "=== BASIC HELM DEBUG CHECK ==="
-            echo "Release name: $RELEASE_NAME"
-            echo "Working directory: $(pwd)"
-            
-            # Check if we're in the right directory
-            echo "--- Directory Contents ---"
-            ls -la
-            
-            # Check for Chart.yaml
-            echo "--- Chart.yaml ---"
-            if [ -f "Chart.yaml" ]; then
-              echo "Chart.yaml exists:"
-              cat Chart.yaml
-            else
-              echo "Chart.yaml NOT FOUND"
-            fi
-            
-            # Check for templates directory
-            echo "--- Templates Directory ---"
-            if [ -d "templates" ]; then
-              echo "Templates directory contents:"
-              ls -la templates/
-            else
-              echo "Templates directory NOT FOUND"
-            fi
-            
-            # Check for values files
-            echo "--- Values Files ---"
-            ls -la values*.yaml || echo "No values files found"
-            
-            # Try helm template (dry run) to see if chart renders
-            echo "--- Helm Template Test ---"
-            if helm template test-release . \
-              --set-string global.repository=${{ github.repository }} \
-              --set-string global.tag="${{ steps.vars.outputs.tag }}" \
-              --set-string global.config.databaseUser="${{ inputs.db_user }}" \
-              --set-string global.databaseAlias="$RELEASE_NAME" \
-              --set-string global.secrets.enabled=true \
-              --values ${{ inputs.values }} 2>&1; then
-              echo "Helm template rendering SUCCESS"
-            else
-              echo "Helm template rendering FAILED"
-            fi
-            
-            echo "=== END BASIC DEBUG ==="
       - name: Helm Deploy with Improved Resilience
         id: deploy
         uses: bcgov/action-oc-runner@10033668ef4374d9bb78149faa73e4ccda0e93dd
@@ -350,8 +294,36 @@ jobs:
             # Enable strict error handling
             set -euo pipefail
             
-            # If directory provided, cd to it
-            [ -z "${{ inputs.directory }}" ] || cd ${{ inputs.directory }}
+            # Enhanced directory change with validation
+            echo "Input directory: '${{ inputs.directory }}'"
+            echo "Current working directory: $(pwd)"
+
+            if [ -n "${{ inputs.directory }}" ] && [ "${{ inputs.directory }}" != "" ]; then
+              echo "Changing to directory: ${{ inputs.directory }}"
+              if [ -d "${{ inputs.directory }}" ]; then
+                cd "${{ inputs.directory }}"
+                echo "Successfully changed to: $(pwd)"
+                echo "Directory contents:"
+                ls -la
+              else
+                echo "ERROR: Directory '${{ inputs.directory }}' does not exist!"
+                echo "Available directories in $(pwd):"
+                ls -la
+                exit 1
+              fi
+            else
+              echo "No directory specified, staying in: $(pwd)"
+            fi
+
+            # Verify we're in the right place for Helm chart
+            if [ ! -f "Chart.yaml" ]; then
+              echo "ERROR: Chart.yaml not found in $(pwd)"
+              echo "Looking for Chart.yaml in subdirectories:"
+              find . -name "Chart.yaml" -type f 2>/dev/null || echo "No Chart.yaml found anywhere"
+              exit 1
+            fi
+
+            echo "Found Chart.yaml - proceeding with Helm deployment"
 
             # Set database alias to match what was created
             DATABASE_ALIAS="${{ steps.vars.outputs.release }}"
@@ -359,7 +331,7 @@ jobs:
 
             RELEASE_NAME="${{ steps.vars.outputs.release }}"
             
-            # Function to perform helm upgrade with improved error handling and debugging
+            # Function to perform helm upgrade with improved error handling
             perform_helm_upgrade() {
               local release_name="$1"
               local max_attempts=3
@@ -454,38 +426,6 @@ jobs:
 
             # Clean up completed pods
             oc delete po --field-selector=status.phase==Succeeded --ignore-not-found=true || true
-
-      - name: Debug Helm Deployment Status
-        if: contains(steps.vars.outputs.release, '-pr-')
-        uses: bcgov/action-oc-runner@10033668ef4374d9bb78149faa73e4ccda0e93dd
-        with:
-          oc_namespace: ${{ secrets.oc_namespace }}
-          oc_token: ${{ secrets.oc_token }}
-          oc_server: ${{ inputs.oc_server }}
-          commands: |
-            RELEASE_NAME="${{ steps.vars.outputs.release }}"
-            
-            echo "=== DEBUGGING HELM DEPLOYMENT ==="
-            echo "Release name: $RELEASE_NAME"
-            
-            # Check Helm status
-            echo "--- Helm Status ---"
-            helm status "$RELEASE_NAME" || echo "Helm status failed"
-            
-            # Check what resources exist
-            echo "--- Deployments ---"
-            oc get deployments -l app.kubernetes.io/instance="$RELEASE_NAME" || echo "No deployments found"
-            
-            echo "--- Secrets ---"
-            oc get secrets | grep "$RELEASE_NAME" || echo "No secrets found"
-            
-            echo "--- Pods ---"
-            oc get pods -l app.kubernetes.io/instance="$RELEASE_NAME" || echo "No pods found"
-            
-            echo "--- Recent Events ---"
-            oc get events --sort-by=.metadata.creationTimestamp | tail -20
-            
-            echo "=== END DEBUG ==="
 
       - name: Update secrets
         uses: bcgov/action-oc-runner@10033668ef4374d9bb78149faa73e4ccda0e93dd
