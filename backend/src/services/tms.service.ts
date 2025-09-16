@@ -156,6 +156,25 @@ export class TMSService {
         }
     }
 
+    public async searchBCGOVSSOBceidUsers(req:Request) {
+        try {
+            const token:string = await this.getToken()
+            const queryParams = req.query
+            const response = await axios.get(process.env.BCGOV_SSO_API_URL_BCEID, {
+                headers: { Authorization: `Bearer ${token}` },
+                params: queryParams,
+            });       
+            return await response.data
+        }
+        catch(error: any) {
+            logger.error(error)
+            if (error.response?.status === 400) {
+                throw new BadRequestError(`BC GOV SSO BCEID API returned bad request: ${error.response.data?.message || error.message}`)
+            }
+            throw new Error("Error invoking BC GOV SSO BCEID API. "+error)
+        }
+    }
+
     public async getTenant(req:Request) {
         const tenant = await this.tmsRepository.getTenant(req)
         

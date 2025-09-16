@@ -111,6 +111,16 @@ export default {
             guid: Joi.string()
         }).or('firstName', 'lastName', 'email', 'guid')
     },
+
+    searchBCGOVSSOBceidUsers: {
+        query: Joi.object({
+            bceidType: Joi.string().valid('basic', 'business', 'both').required(),
+            guid: Joi.string(),
+            displayName: Joi.string(),
+            username: Joi.string(),
+            email: Joi.string()
+        }).or('guid', 'displayName', 'username', 'email')
+    },
     
     getTenant: {
         params: Joi.object({
