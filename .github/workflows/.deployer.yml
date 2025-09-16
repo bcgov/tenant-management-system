@@ -282,7 +282,6 @@ jobs:
           desc: "Starting deployment..."
 
       - name: Helm Deploy with Improved Resilience
-        if: ${{ !inputs.triggers || contains(steps.vars.outputs.release, '-pr-') }}  # Always run for PRs
         id: deploy
         uses: bcgov/action-oc-runner@10033668ef4374d9bb78149faa73e4ccda0e93dd
         with:
@@ -326,6 +325,18 @@ jobs:
 
             echo "Found Chart.yaml - proceeding with Helm deployment"
 
+            # Verify values file exists
+            VALUES_FILE="${{ inputs.values }}"
+            if [ ! -f "$VALUES_FILE" ]; then
+              echo "ERROR: Values file '$VALUES_FILE' not found in $(pwd)"
+              echo "Available YAML files:"
+              ls -la *.yaml || echo "No YAML files found"
+              exit 1
+            fi
+
+            echo "Found values file: $VALUES_FILE"
+            echo "Values file size: $(wc -l < "$VALUES_FILE") lines"
+
             # Set database alias to match what was created
             DATABASE_ALIAS="${{ steps.vars.outputs.release }}"
             echo "Setting database alias to: $DATABASE_ALIAS"
@@ -342,10 +353,14 @@ jobs:
                 echo "Helm deployment attempt $attempt/$max_attempts..."
                 echo "Release name: $release_name"
                 echo "Chart directory: $(pwd)"
-                echo "Chart file exists: $(ls -la ./${{ github.event.repository.name }}-*.tgz 2>/dev/null || echo 'NOT FOUND')"
+                
+                # Verify files exist before each attempt
+                echo "Verifying files before attempt $attempt:"
+                echo "Chart file: $(ls -la ./tenant-management-system-*.tgz 2>/dev/null || echo 'NOT FOUND')"
+                echo "Values file: $(ls -la "$VALUES_FILE" 2>/dev/null || echo 'NOT FOUND')"
                 
                 # Show the exact helm command that will be run
-                echo "--- HELM COMMAND ---"
+                echo "--- HELM COMMAND (Attempt $attempt) ---"
                 echo "helm upgrade \\"
                 echo "  --set-string global.repository=${{ github.repository }} \\"
                 echo "  --set-string global.tag=\"${{ steps.vars.outputs.tag }}\" \\"
@@ -356,10 +371,10 @@ jobs:
                 echo "  --set-string global.preserveDatabase=\"${{ inputs.preserve_database }}\" \\"
                 echo "  ${{ inputs.params }} \\"
                 echo "  --install --wait --timeout ${{ inputs.timeout-minutes }}m \\"
-                echo "  --values ${{ inputs.values }} \\"
+                echo "  --values \"$VALUES_FILE\" \\"
                 echo "  \"$release_name\" \\"
-                echo "  ./${{ github.event.repository.name }}-${{ steps.pr.outputs.pr || steps.vars.outputs.version }}.tgz"
-                echo "-------------------"
+                echo "  \"./tenant-management-system-${{ steps.pr.outputs.pr || steps.vars.outputs.version }}.tgz\""
+                echo "---------------------------------------"
 
                 # Attempt the upgrade with full output capture
                 set +e  # Don't exit on error so we can capture output
@@ -373,15 +388,15 @@ jobs:
                   --set-string global.preserveDatabase="${{ inputs.preserve_database }}" \
                   ${{ inputs.params }} \
                   --install --wait --timeout ${{ inputs.timeout-minutes }}m \
-                  --values ${{ inputs.values }} \
+                  --values "$VALUES_FILE" \
                   --debug \
                   "$release_name" \
-                  ./${{ github.event.repository.name }}-${{ steps.pr.outputs.pr || steps.vars.outputs.version }}.tgz 2>&1)
+                  "./tenant-management-system-${{ steps.pr.outputs.pr || steps.vars.outputs.version }}.tgz" 2>&1)
                 
                 HELM_EXIT_CODE=$?
                 set -e  # Re-enable exit on error
                 
-                echo "--- HELM OUTPUT ---"
+                echo "--- HELM OUTPUT (Attempt $attempt) ---"
                 echo "$HELM_OUTPUT"
                 echo "--- END HELM OUTPUT ---"
                 echo "Helm exit code: $HELM_EXIT_CODE"
@@ -393,9 +408,12 @@ jobs:
                   echo "Helm deployment failed on attempt $attempt (exit code: $HELM_EXIT_CODE)"
                   
                   # Show additional debugging info
-                  echo "--- POST-FAILURE DEBUG ---"
+                  echo "--- POST-FAILURE DEBUG (Attempt $attempt) ---"
                   helm list || echo "Helm list failed"
                   oc get all -l app.kubernetes.io/instance="$release_name" || echo "No resources found"
+                  echo "Working directory: $(pwd)"
+                  echo "Files in directory:"
+                  ls -la
                   echo "--- END POST-FAILURE DEBUG ---"
 
                   if [ $attempt -eq $max_attempts ]; then
@@ -416,8 +434,12 @@ jobs:
             }
 
             # Helm package
+            echo "Packaging Helm chart..."
             sed -i 's/^name:.*/name: ${{ github.event.repository.name }}/' Chart.yaml
             helm package -u . --app-version="tag-${{ steps.vars.outputs.tag }}_run-${{ github.run_number }}" --version=${{ steps.pr.outputs.pr || steps.vars.outputs.version }}
+            
+            echo "Chart packaged successfully:"
+            ls -la ./tenant-management-system-*.tgz
             
             # Perform the deployment with retry logic
             perform_helm_upgrade "$RELEASE_NAME"
