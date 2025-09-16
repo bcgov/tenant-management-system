@@ -213,6 +213,15 @@ jobs:
               else
                 echo "ℹ️ No existing release found - clean slate"
               fi
+              
+              # NEW: Clean up orphaned resources that prevent Helm adoption
+              echo "Cleaning up orphaned ConfigMaps and resources..."
+              oc delete configmap "${release_name}-frontend-config" --ignore-not-found=true || true
+  
+              # Clean up any resources that might conflict with Helm installation
+              echo "Cleaning up any existing resources without proper Helm ownership..."
+              oc delete all,configmap,secret,route -l app.kubernetes.io/instance="${release_name}" --ignore-not-found=true || true
+  
             
               echo "✅ Cleanup completed for $release_name"
             }
