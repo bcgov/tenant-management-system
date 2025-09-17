@@ -448,13 +448,17 @@ jobs:
 
             # Update dependencies to get the correct chart version
             echo "Updating Helm dependencies..."
-            helm dependency update --skip-refresh
-
-            # Clean any existing charts directory
+            
+            # Add Bitnami repo if not present
+            helm repo add bitnami https://charts.bitnami.com/bitnami || true
+            helm repo update
+            
+            # Clean any existing charts directory and lock file
             rm -rf charts/ || true
-
-            # Build dependencies again to ensure clean state
-            helm dependency build
+            rm -f Chart.lock || true
+            
+            # Update dependencies
+            helm dependency update
 
             echo "Dependencies updated, packaging chart..."
             helm package . --app-version="tag-${{ steps.vars.outputs.tag }}_run-${{ github.run_number }}" --version=${{ steps.pr.outputs.pr || steps.vars.outputs.version }}
