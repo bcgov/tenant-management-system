@@ -60,7 +60,8 @@ jobs:
         --set global.namespace.suffix=-pr-${{ github.event.number }}
         --set global.config.databaseUser=app
         --set bitnami-pg.auth.username=app
-        --set bitnami-pg.auth.database=app-pr-${{ github.event.number }}
+        --set bitnami-pg.auth.database=app
+        --set bitnami-pg.auth.password=pr-password-${{ github.event.number }}
         --set bitnami-pg.nameOverride=bitnami-pg-pr-${{ github.event.number }}
         --set crunchy.enabled=false
         --set bitnami-pg.enabled=true
