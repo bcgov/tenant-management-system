@@ -42,6 +42,7 @@ jobs:
       environment: dev
       db_user: app-pr-${{ github.event.number }}
       tags: pr-${{ github.event.pull_request.number }}
+      timeout-minutes: 5
       values: values-pr.yaml  # Use PR-specific values
       params: >-
         --set global.secrets.persist=false
@@ -55,7 +56,13 @@ jobs:
         --set frontend.resources.requests.memory=128Mi
         --set frontend.resources.limits.memory=256Mi
         --set global.namespace.suffix=-pr-${{ github.event.number }}
-        --set global.config.databaseUser=app-pr-${{ github.event.number }}
+        --set global.config.databaseUser=app
+        --set bitnami-pg.auth.username=app
+        --set bitnami-pg.auth.database=app-pr-${{ github.event.number }}
+        --set bitnami-pg.nameOverride=bitnami-pg-pr-${{ github.event.number }}
+        --set crunchy.enabled=false
+        --set bitnami-pg.enabled=true
+
       #triggers: "backend/,frontend/,migrations/,charts/,.github/"
       #db_triggers: "charts/crunchy/"
       deployment_url: https://${{ github.event.repository.name }}-pr-${{ github.event.number }}-frontend.apps.silver.devops.gov.bc.ca
