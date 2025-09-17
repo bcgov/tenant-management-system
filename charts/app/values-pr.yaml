@@ -1,6 +1,7 @@
 # PR-specific values for the main application chart
 global:
   registry: ghcr.io
+  repository: bcgov/tenant-management-system  # Add this line
   domain: apps.silver.devops.gov.bc.ca
   autoscaling: false
   secrets:
@@ -35,7 +36,7 @@ backend:
   service:
     type: ClusterIP
     port: 80
-    targetPort: 3000
+    targetPort: 4144  # Fix: Backend runs on port 4144, not 3000
 
 frontend:
   enabled: true
