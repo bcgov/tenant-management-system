@@ -92,11 +92,6 @@ frontend:
 bitnami-pg:
   enabled: true
 
-  image:
-    registry: docker.io
-    repository: bitnami/postgresql
-    tag: "17.2.0"
-
   auth:
     database: "app"
     username: "app"
