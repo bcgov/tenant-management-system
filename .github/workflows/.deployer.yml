@@ -137,7 +137,7 @@ jobs:
             tag="latest"
           elif [ -n "${{ steps.pr.outputs.pr }}" ] && [ "${{ steps.pr.outputs.pr }}" != "null" ] && [ "${{ steps.pr.outputs.pr }}" != "" ]; then
             # Use PR number for actual PR environments
-            tag="${{ steps.pr.outputs.pr }}"
+            tag="pr-${{ steps.pr.outputs.pr }}"
           else
             # Final fallback
             tag="latest"
