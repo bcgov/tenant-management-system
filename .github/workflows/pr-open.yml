@@ -62,6 +62,7 @@ jobs:
         --set bitnami-pg.auth.username=app
         --set bitnami-pg.auth.database=app-pr-${{ github.event.number }}
         --set bitnami-pg.nameOverride=bitnami-pg-pr-${{ github.event.number }}
+        --set backend.environment.postgresHost=tenant-management-system-pr-${{ github.event.number }}-bitnami-pg-pr-${{ github.event.number }}
         --set crunchy.enabled=false
         --set bitnami-pg.enabled=true
 
