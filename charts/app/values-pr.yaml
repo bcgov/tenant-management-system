@@ -95,7 +95,6 @@ bitnami-pg:
   auth:
     database: "app"
     username: "app"
-    password: "pr-password"
 
   primary:
     persistence:
