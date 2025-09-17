@@ -269,12 +269,24 @@ jobs:
             
             # Ensure database secret exists
             echo "Creating/updating database secret..."
+            
+            # Determine the correct database host based on environment
+            if [[ "${RELEASE_NAME}" == *"-pr-"* ]]; then
+            # PR environments use Bitnami PostgreSQL
+            DB_HOST="${RELEASE_NAME}-bitnami-pg-pr-$(echo ${RELEASE_NAME} | grep -o 'pr-[0-9]*' | cut -d'-' -f2)"
+            echo "PR environment detected - using Bitnami host: $DB_HOST"
+            else
+            # Test/prod environments use Crunchy PostgreSQL with PgBouncer
+            DB_HOST="${RELEASE_NAME}-pgbouncer"
+            echo "Non-PR environment detected - using Crunchy host: $DB_HOST"
+            fi
+            
             oc delete secret ${RELEASE_NAME}-pguser-${DB_USER} --ignore-not-found=true
             oc create secret generic ${RELEASE_NAME}-pguser-${DB_USER} \
               --from-literal=password="$DB_PASSWORD" \
               --from-literal=username="$DB_USER" \
               --from-literal=dbname="app" \
-              --from-literal=host="${RELEASE_NAME}-pgbouncer" \
+              --from-literal=host="$DB_HOST" \
               --from-literal=port="5432"
             
             echo "✅ Database secret created/updated"
