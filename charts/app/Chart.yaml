@@ -36,7 +36,3 @@ dependencies:
     repository: "https://charts.bitnami.com/bitnami"
     condition: bitnami-pg.enabled
     alias: bitnami-pg
-  - name: crunchy
-    version: "0.1.0"
-    repository: "file://charts/crunchy"
-    condition: crunchy.enabled
