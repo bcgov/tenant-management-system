@@ -32,7 +32,7 @@ maintainers:
 
 dependencies:
   - name: postgresql
-    version: "13.2.24"
+    version: "12.12.10"
     repository: "https://charts.bitnami.com/bitnami"
     condition: bitnami-pg.enabled
     alias: bitnami-pg

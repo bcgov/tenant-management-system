@@ -442,11 +442,23 @@ jobs:
               done
             }
 
-            # Helm package
+          # Helm package
             echo "Packaging Helm chart..."
             sed -i 's/^name:.*/name: ${{ github.event.repository.name }}/' Chart.yaml
-            helm package -u . --app-version="tag-${{ steps.vars.outputs.tag }}_run-${{ github.run_number }}" --version=${{ steps.pr.outputs.pr || steps.vars.outputs.version }}
-            
+
+            # Update dependencies to get the correct chart version
+            echo "Updating Helm dependencies..."
+            helm dependency update --skip-refresh
+  
+            # Clean any existing charts directory
+            rm -rf charts/ || true
+  
+            # Build dependencies again to ensure clean state
+            helm dependency build
+  
+            echo "Dependencies updated, packaging chart..."
+            helm package . --app-version="tag-${{ steps.vars.outputs.tag }}_run-${{ github.run_number }}" --version=${{ steps.pr.outputs.pr || steps.vars.outputs.version }}            
+         
             echo "Chart packaged successfully:"
             ls -la ./tenant-management-system-*.tgz
             
