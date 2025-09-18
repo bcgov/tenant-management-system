@@ -618,37 +618,17 @@ jobs:
       
             RELEASE_NAME="${{ steps.vars.outputs.release }}"
             DB_USER="${{ inputs.db_user }}"
-            DB_SECRET_NAME="${RELEASE_NAME}-pguser-${DB_USER}"
       
             echo "Updating database password for PR environment..."
             echo "Release: $RELEASE_NAME"
             echo "DB User: $DB_USER"
-            echo "Expected DB Secret: $DB_SECRET_NAME"
       
-            # Wait for the database secret to exist
-            for i in {1..60}; do
-              if oc get secret "$DB_SECRET_NAME" &>/dev/null; then
-                echo "Database secret found: $DB_SECRET_NAME"
-                break
-              fi
-              echo "Attempt $i/60: Database secret not found yet, waiting..."
-              sleep 5
-            done
-      
-            if ! oc get secret "$DB_SECRET_NAME" &>/dev/null; then
-              echo "Database secret not found: $DB_SECRET_NAME"
-              echo "Available secrets:"
-              oc get secrets | grep -E "(pguser|postgres)" || echo "No database secrets found"
-              exit 1
-            fi
-      
-            # Get the real database password
-            # For PR environments, get password from Bitnami secret
+            # For PR environments, get password directly from Bitnami secret
             PR_NUM=$(echo ${RELEASE_NAME} | grep -o 'pr-[0-9]*' | cut -d'-' -f2)
             BITNAMI_SECRET="${RELEASE_NAME}-bitnami-pg-pr-${PR_NUM}"
-
+      
             echo "Getting password from Bitnami secret: $BITNAMI_SECRET"
-
+      
             # Wait for the Bitnami secret to exist
             for i in {1..60}; do
               if oc get secret "$BITNAMI_SECRET" &>/dev/null; then
@@ -666,7 +646,7 @@ jobs:
               exit 1
             fi
       
-            # Get the USER password (not postgres-password) from Bitnami secret
+            # Get the USER password from Bitnami secret
             DB_PASSWORD=$(oc get secret "$BITNAMI_SECRET" -o jsonpath='{.data.password}')
             if [ -z "$DB_PASSWORD" ]; then
               echo "User password not found in Bitnami secret"
