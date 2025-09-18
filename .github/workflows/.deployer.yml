@@ -272,14 +272,14 @@ jobs:
             
             # Determine the correct database host based on environment
             if [[ "${RELEASE_NAME}" == *"-pr-"* ]]; then
-            # PR environments use Bitnami PostgreSQL
-   PR_NUM=$(echo ${RELEASE_NAME} | grep -o 'pr-[0-9]*' | cut -d'-' -f2)
-  DB_HOST="${RELEASE_NAME}-bitnami-pg-pr-${PR_NUM}"
-            echo "PR environment detected - using Bitnami host: $DB_HOST"
+              # PR environments use Bitnami PostgreSQL
+              PR_NUM=$(echo ${RELEASE_NAME} | grep -o 'pr-[0-9]*' | cut -d'-' -f2)
+              DB_HOST="${RELEASE_NAME}-bitnami-pg-pr-${PR_NUM}"
+              echo "PR environment detected - using Bitnami host: $DB_HOST"
             else
-            # Test/prod environments use Crunchy PostgreSQL with PgBouncer
-            DB_HOST="${RELEASE_NAME}-pgbouncer"
-            echo "Non-PR environment detected - using Crunchy host: $DB_HOST"
+              # Test/prod environments use Crunchy PostgreSQL with PgBouncer
+              DB_HOST="${RELEASE_NAME}-pgbouncer"
+              echo "Non-PR environment detected - using Crunchy host: $DB_HOST"
             fi
             
             oc delete secret ${RELEASE_NAME}-pguser-${DB_USER} --ignore-not-found=true
