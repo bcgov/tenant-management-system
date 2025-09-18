@@ -273,7 +273,8 @@ jobs:
             # Determine the correct database host based on environment
             if [[ "${RELEASE_NAME}" == *"-pr-"* ]]; then
             # PR environments use Bitnami PostgreSQL
-            DB_HOST="${RELEASE_NAME}-bitnami-pg-pr-$(echo ${RELEASE_NAME} | grep -o 'pr-[0-9]*' | cut -d'-' -f2)"
+   PR_NUM=$(echo ${RELEASE_NAME} | grep -o 'pr-[0-9]*' | cut -d'-' -f2)
+  DB_HOST="${RELEASE_NAME}-bitnami-pg-pr-${PR_NUM}"
             echo "PR environment detected - using Bitnami host: $DB_HOST"
             else
             # Test/prod environments use Crunchy PostgreSQL with PgBouncer
@@ -642,23 +643,56 @@ jobs:
             fi
       
             # Get the real database password
-            DB_PASSWORD=$(oc get secret "$DB_SECRET_NAME" -o jsonpath='{.data.password}')
-            if [ -z "$DB_PASSWORD" ]; then
-              echo "Database password not found in secret"
-              exit 1
+            # For PR environments, get password from Bitnami secret
+            PR_NUM=$(echo ${RELEASE_NAME} | grep -o 'pr-[0-9]*' | cut -d'-' -f2)
+            BITNAMI_SECRET="${RELEASE_NAME}-bitnami-pg-pr-${PR_NUM}"
+
+            echo "Getting password from Bitnami secret: $BITNAMI_SECRET"
+
+            # Wait for the Bitnami secret to exist
+            for i in {1..60}; do
+             if oc get secret "$BITNAMI_SECRET" &>/dev/null; then
+            echo "Bitnami secret found: $BITNAMI_SECRET"
+            break
             fi
-      
-            echo "Found database password, updating backend secret..."
-      
+            echo "Attempt $i/60: Bitnami secret not found yet, waiting..."
+            sleep 5
+            done
+  
+            if ! oc get secret "$BITNAMI_SECRET" &>/dev/null; then
+            echo "Bitnami secret not found: $BITNAMI_SECRET"
+            echo "Available Bitnami secrets:"
+            oc get secrets | grep bitnami || echo "No Bitnami secrets found"
+            exit 1
+            fi
+  
+            # Get the USER password (not postgres-password) from Bitnami secret
+            DB_PASSWORD=$(oc get secret "$BITNAMI_SECRET" -o jsonpath='{.data.password}')
+            if [ -z "$DB_PASSWORD" ]; then
+            echo "User password not found in Bitnami secret"
+            echo "Available keys in secret:"
+            oc get secret "$BITNAMI_SECRET" -o jsonpath='{.data}' | jq 'keys'
+            exit 1
+            fi
+  
+            echo "Found user password from Bitnami secret, updating application secrets..."
+  
             # Update the backend secret with the real database password
             oc patch secret "${RELEASE_NAME}-backend" \
-              -p '{"data":{"POSTGRES_PASSWORD":"'$DB_PASSWORD'"}}'
-      
+            -p '{"data":{"POSTGRES_PASSWORD":"'$DB_PASSWORD'"}}'
+  
             # Update the flyway secret with the real database password
             oc patch secret "${RELEASE_NAME}-flyway" \
-              -p '{"data":{"FLYWAY_PASSWORD":"'$DB_PASSWORD'"}}'
-      
+            -p '{"data":{"FLYWAY_PASSWORD":"'$DB_PASSWORD'"}}'
+  
             echo "Database password updated successfully"
+            echo "Password source: ${BITNAMI_SECRET}.data.password"
+
+            # Restart backend deployment to pick up new password
+            if oc get deployment "${RELEASE_NAME}-backend" &>/dev/null; then
+            echo "Restarting backend deployment to pick up new password..."
+            oc rollout restart deployment/"${RELEASE_NAME}-backend"
+            fi
 
       - name: Update deployment status
         uses: bobheadxi/deployments@v1.4.0

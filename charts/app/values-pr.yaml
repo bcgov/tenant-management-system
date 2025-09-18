@@ -23,7 +23,6 @@ backend:
   environment:
     port: "4144"
     allowedOrigins: "*"
-    postgresHost: "bitnami-pg-pr-{{ .Values.global.prNumber | default \"195\" }}-postgresql"
     postgresPort: "5432"
     postgresUser: "app"
     postgresDatabase: "app"

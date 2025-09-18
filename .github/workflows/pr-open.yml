@@ -40,7 +40,7 @@ jobs:
     with:
       release_name: ${{ github.event.repository.name }}-pr-${{ github.event.number }}
       environment: dev
-      db_user: app-pr-${{ github.event.number }}
+      db_user: app
       tags: pr-${{ github.event.pull_request.number }}
       timeout-minutes: 5
       values: values-pr.yaml  # Use PR-specific values
