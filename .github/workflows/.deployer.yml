@@ -273,8 +273,7 @@ jobs:
             # Determine the correct database host based on environment
             if [[ "${RELEASE_NAME}" == *"-pr-"* ]]; then
               # PR environments use Bitnami PostgreSQL
-              PR_NUM=$(echo ${RELEASE_NAME} | grep -o 'pr-[0-9]*' | cut -d'-' -f2)
-              DB_HOST="${RELEASE_NAME}-bitnami-pg-pr-${PR_NUM}"
+              DB_HOST="${RELEASE_NAME}-postgresql"
               echo "PR environment detected - using Bitnami host: $DB_HOST"
             else
               # Test/prod environments use Crunchy PostgreSQL with PgBouncer
@@ -624,8 +623,7 @@ jobs:
             echo "DB User: $DB_USER"
       
             # For PR environments, get password directly from Bitnami secret
-            PR_NUM=$(echo ${RELEASE_NAME} | grep -o 'pr-[0-9]*' | cut -d'-' -f2)
-            BITNAMI_SECRET="${RELEASE_NAME}-bitnami-pg-pr-${PR_NUM}"
+            BITNAMI_SECRET="${RELEASE_NAME}-postgresql"
       
             echo "Getting password from Bitnami secret: $BITNAMI_SECRET"
       
