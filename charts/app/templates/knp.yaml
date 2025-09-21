@@ -25,7 +25,14 @@ metadata:
 spec:
   podSelector:
     matchLabels:
+      {{- if contains "-pr-" .Release.Name }}
+      # PR environments use Bitnami PostgreSQL
+      app.kubernetes.io/name: bitnami-pg
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      {{- else }}
+      # Test/Prod use Crunchy PostgreSQL
       postgres-operator.crunchydata.com/cluster: {{ .Values.global.databaseAlias}}
+      {{- end }}
   ingress:
     - ports:
         - protocol: TCP
@@ -33,7 +40,7 @@ spec:
       from:
         - podSelector:
             matchLabels:
-              app.kubernetes.io/name: {{ template  "backend.name"}}
+              app.kubernetes.io/name: backend
               app.kubernetes.io/instance: {{ .Release.Name }}
   policyTypes:
     - Ingress
