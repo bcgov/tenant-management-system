@@ -17,23 +17,23 @@ permissions:
   attestations: write
 
 jobs:
+  # Build images using the reusable workflow
   builds:
     name: Builds
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+    uses: ./.github/workflows/.build-images.yml
+    permissions:
+      packages: write
+      id-token: write
+      attestations: write
+    with:
+      tags: pr-${{ github.event.pull_request.number }}
+      keep_versions: 5
 
-      - name: Build Images
-        uses: ./.github/workflows/.build-images.yml@main
-        with:
-          tags: pr-${{ github.event.pull_request.number }}
-          keep_versions: 5
-
+  # Deploy to PR environment
   deploys:
-    name: Deploy PR Environment
+    name: Deploy PR-${{ github.event.number }} Environment
     needs: [builds]
-    uses: ./.github/workflows/.deployer.yml@main
+    uses: ./.github/workflows/.deployer.yml
     secrets:
       oc_namespace: ${{ secrets.OC_NAMESPACE }}
       oc_token: ${{ secrets.OC_TOKEN }}
@@ -56,10 +56,56 @@ jobs:
         --set frontend.imagePullPolicy=Always
         --set backend.deploymentStrategy=Recreate
         --set frontend.deploymentStrategy=Recreate
-        --set bitnami-pg.enabled=true
+        --set global.debug=true
+        --set backend.resources.requests.memory=256Mi
+        --set backend.resources.limits.memory=512Mi
+        --set frontend.resources.requests.memory=128Mi
+        --set frontend.resources.limits.memory=256Mi
+        --set global.namespace.suffix=-pr-${{ github.event.number }}
+        --set global.config.databaseUser=app
+        --set bitnami-pg.auth.username=app
+        --set bitnami-pg.auth.database=app
+        --set bitnami-pg.auth.password=pr-password-${{ github.event.number }}
+        --set bitnami-pg.fullnameOverride=${{ github.event.repository.name }}-pr-${{ github.event.number }}-postgresql
         --set crunchy.enabled=false
+        --set bitnami-pg.enabled=true
       deployment_url: https://${{ github.event.repository.name }}-pr-${{ github.event.number }}-frontend.apps.silver.devops.gov.bc.ca
 
+  # Security scan
+  security_scan:
+    name: ZAP Security Scan (PR-${{ github.event.number }})
+    permissions:
+      contents: read
+    needs: [deploys]
+    if: needs.deploys.result == 'success'
+    uses: ./.github/workflows/.zap-scan.yml
+    with:
+      target_url: https://${{ github.event.repository.name }}-pr-${{ github.event.number }}-frontend.apps.silver.devops.gov.bc.ca
+      fail_on_high: false
+      scan_type: baseline
+
+  # Final results check
+  results:
+    name: PR Results
+    needs: [builds, deploys, security_scan]
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check results
+        run: |
+          if [ "${{ contains(needs.*.result, 'failure') }}" == "true" ]; then
+            echo "❌ One or more jobs failed"
+            exit 1
+          fi
+          
+          if [ "${{ contains(needs.*.result, 'cancelled') }}" == "true" ]; then
+            echo "⚠️ Workflow was cancelled"
+            exit 1
+          fi
+          
+          echo "✅ All jobs completed successfully!"
+
+  # Comment on PR with deployment info
   comment:
     name: Comment on PR
     needs: [deploys]
@@ -74,5 +120,9 @@ jobs:
           message: |
             ## 🚀 PR Environment Deployed!
 
+            **Environment:** `dev`  
             **Frontend URL:** https://${{ github.event.repository.name }}-pr-${{ github.event.pull_request.number }}-frontend.apps.silver.devops.gov.bc.ca  
-            **Environment:** PR-${{ github.event.pull_request.number }}
+            **Tags:** `pr-${{ github.event.pull_request.number }}`
+            **Database:** Isolated PR database with user `app`
+
+            The application has been deployed to the dev environment with PR-specific resources including its own database.
