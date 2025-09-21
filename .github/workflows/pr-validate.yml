@@ -1,7 +1,7 @@
 name: PR Validate
 
 on:
-  pull_request_target:  # Changed from pull_request to pull_request_target
+  pull_request_target:  # Changed to pull_request_target for fork safety
     types: [edited, opened, synchronize, reopened, ready_for_review]
 
 concurrency:
@@ -13,108 +13,176 @@ permissions:
   pull-requests: write
 
 jobs:
+  # Security check for fork PRs
   security-check:
     name: Security Check
     runs-on: ubuntu-24.04
     outputs:
-      safe-to-run: ${{ steps.security-check.outputs.safe-to-run }}
+      safe-to-run: ${{ steps.check.outputs.safe-to-run }}
     steps:
-      - name: Check if PR is safe to run
-        id: security-check
+      - name: Check if safe to run
+        id: check
         run: |
           # Check if PR is from a fork
           if [ "${{ github.event.pull_request.head.repo.full_name }}" != "${{ github.repository }}" ]; then
-            echo "PR is from fork: ${{ github.event.pull_request.head.repo.full_name }}"
+            echo "PR from fork: ${{ github.event.pull_request.head.repo.full_name }}"
             
-            # Additional security checks for forks
-            # Check if author is a collaborator, member, or owner
+            # Check user permissions
             author="${{ github.event.pull_request.user.login }}"
-            echo "Checking permissions for user: $author"
-            
-            # Use GitHub API to check user permissions
             response=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
               "https://api.github.com/repos/${{ github.repository }}/collaborators/$author/permission")
             
             permission=$(echo "$response" | jq -r '.permission // "none"')
-            echo "User permission level: $permission"
             
-            # Allow if user has write, admin permissions, or is a maintainer
             if [[ "$permission" == "admin" || "$permission" == "write" || "$permission" == "maintain" ]]; then
-              echo "✅ Fork PR from trusted collaborator - safe to run"
+              echo "Fork PR from trusted user - safe to run"
               echo "safe-to-run=true" >> $GITHUB_OUTPUT
             else
-              echo "⚠️  Fork PR from external contributor - requires manual approval"
+              echo "Fork PR from external contributor - skipping validation"
               echo "safe-to-run=false" >> $GITHUB_OUTPUT
             fi
           else
-            echo "✅ PR from same repository - safe to run"
+            echo "PR from same repository - safe to run"
             echo "safe-to-run=true" >> $GITHUB_OUTPUT
           fi
 
   validate:
     name: Validate PR
-    needs: security-check
-    if: ${{ !github.event.pull_request.draft && needs.security-check.outputs.safe-to-run == 'true' }}
-    uses: bcgov/quickstart-openshift-helpers/.github/workflows/.pr-validate.yml@v0.9.0
-    with:
-      markdown_links: |
-        - [Frontend](https://${{ github.event.repository.name }}-pr-${{ github.event.number }}-frontend.apps.silver.devops.gov.bc.ca)
-      # Pass PR information for security context
-      pr-number: ${{ github.event.number }}
-      pr-sha: ${{ github.event.pull_request.head.sha }}
-    secrets: inherit
+    needs: [security-check]
+    if: |
+      !github.event.pull_request.draft && 
+      needs.security-check.outputs.safe-to-run == 'true'
+    runs-on: ubuntu-24.04
+    steps:
+      # Safe checkout - use the PR's SHA
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          # Important: For pull_request_target, we need to explicitly checkout the PR head
+          # This is safe because we've already done security checks
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+
+      - name: Validate PR title
+        run: |
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          # Check if title follows conventional commit format
+          if [[ ! "$PR_TITLE" =~ ^(feat|fix|docs|style|refactor|test|chore|perf|ci|build|revert)(\(.+\))?:\ .+ ]]; then
+            echo "❌ PR title doesn't follow conventional commit format"
+            echo "Expected format: type(scope): description"
+            echo "Example: feat(api): add new endpoint"
+            exit 1
+          else
+            echo "✅ PR title is valid"
+          fi
+
+      - name: Check for merge conflicts
+        run: |
+          git fetch origin ${{ github.event.pull_request.base.ref }}
+          if git merge-tree $(git merge-base HEAD FETCH_HEAD) HEAD FETCH_HEAD | grep -q "<<<<<<<"; then
+            echo "❌ Merge conflicts detected"
+            exit 1
+          else
+            echo "✅ No merge conflicts"
+          fi
+
+      - name: Check file changes
+        run: |
+          echo "Files changed in this PR:"
+          git diff --name-only origin/${{ github.event.pull_request.base.ref }}...${{ github.event.pull_request.head.sha }}
+
+      - name: Add deployment links comment
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const comment = `### 🔗 Deployment Links
+
+            - [Frontend](https://${{ github.event.repository.name }}-pr-${{ github.event.number }}-frontend.apps.silver.devops.gov.bc.ca)
+            
+            *Note: Deployment will be available after the PR workflow completes successfully.*`;
+
+            // Check if comment already exists
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ github.event.number }}
+            });
+
+            const botComment = comments.find(comment => 
+              comment.body.includes('🔗 Deployment Links')
+            );
+
+            if (!botComment) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: ${{ github.event.number }},
+                body: comment
+              });
+            }
+
+  notify-external:
+    name: Notify External Contributor
+    needs: [security-check]
+    if: needs.security-check.outputs.safe-to-run == 'false'
+    runs-on: ubuntu-24.04
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Comment on PR
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ github.event.number }}
+            });
+            
+            // Check if we already posted this message
+            const alreadyCommented = comments.some(comment => 
+              comment.body.includes('Thank you for your contribution!')
+            );
+            
+            if (!alreadyCommented) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: ${{ github.event.number }},
+                body: `## Thank you for your contribution!
+                
+                As this PR is from a fork, automatic deployment requires approval from a maintainer for security reasons.
+                
+                **What happens next:**
+                1. A maintainer will review your code
+                2. Once approved, they will trigger the deployment
+                3. You'll be notified when the PR environment is ready
+                
+                **For maintainers:** Add a comment with \`/approve\` to allow deployment after code review.`
+              });
+            }
 
   results:
     name: Validate Results
     if: always()
-    needs: [security-check, validate]
+    needs: [security-check, validate, notify-external]
     runs-on: ubuntu-24.04
     steps:
-      - name: Print success message
-        if: ${{ needs.validate.result == 'success' }}
-        run: echo "✅ Validation job completed!"
-
-      - name: Print security block message
-        if: ${{ needs.security-check.outputs.safe-to-run == 'false' }}
+      - name: Summary
         run: |
-          echo "⚠️  PR from external fork blocked for security reasons"
-          echo "A maintainer must review and manually trigger workflows if safe"
-
-      - name: Post success comment
-        if: ${{ needs.validate.result == 'success' }}
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh pr comment ${{ github.event.number }} --body "✅ Validation job completed successfully!"
-
-      - name: Post failure comment
-        if: ${{ needs.validate.result == 'failure' }}
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh pr comment ${{ github.event.number }} --body "❌ Validation job failed. Please check the workflow logs for details."
-
-      - name: Post security block comment
-        if: ${{ needs.security-check.outputs.safe-to-run == 'false' }}
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh pr comment ${{ github.event.number }} --body "⚠️ **Security Notice**: This PR is from an external fork and requires manual review by a maintainer before workflows can run.
+          if [ "${{ needs.security-check.outputs.safe-to-run }}" == "false" ]; then
+            echo "ℹ️ Fork PR - waiting for maintainer approval"
+            exit 0
+          fi
           
-          **For Maintainers**: If this PR is safe to run, you can:
-          1. Review the code changes carefully
-          2. Re-run the failed workflow manually
-          3. Or add the contributor as a collaborator if they'll be contributing regularly
-          
-          This security measure helps protect against malicious code execution in workflows."
-
-      # Safe checkout for security analysis (optional)
-      - name: Safe checkout for analysis
-        if: ${{ needs.security-check.outputs.safe-to-run == 'true' }}
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-          # Use a limited token scope
-          token: ${{ github.token }}
-          # Only fetch the specific commit, not full history
-          fetch-depth: 1
+          if [ "${{ needs.validate.result }}" == "success" ]; then
+            echo "✅ Validation completed successfully!"
+          elif [ "${{ needs.validate.result }}" == "skipped" ]; then
+            echo "⏭️ Validation skipped (draft or external PR)"
+          else
+            echo "❌ Validation failed!"
+            exit 1
+          fi

@@ -1,7 +1,7 @@
 name: PR
 
 on:
-  pull_request_target:  # Change from pull_request to pull_request_target
+  pull_request_target:  # Changed to pull_request_target for fork safety
     types: [opened, synchronize, reopened]
 
 concurrency:
@@ -17,7 +17,7 @@ permissions:
   attestations: write
 
 jobs:
-  # Add security check as first job
+  # Security check for fork PRs
   security-check:
     name: Security Check
     runs-on: ubuntu-24.04
@@ -27,6 +27,7 @@ jobs:
       - name: Check if safe to run
         id: check
         run: |
+          # Check if PR is from a fork
           if [ "${{ github.event.pull_request.head.repo.full_name }}" != "${{ github.repository }}" ]; then
             echo "PR from fork: ${{ github.event.pull_request.head.repo.full_name }}"
             
@@ -46,17 +47,70 @@ jobs:
               
               # Post comment
               gh pr comment ${{ github.event.number }} \
-                --body "⚠️ This PR is from a fork and requires manual approval from a maintainer before deployment."
-              exit 1
+                --body "⚠️ This PR is from a fork and requires manual approval from a maintainer before deployment.
+                
+                **For maintainers:** If this PR is safe to run, you can:
+                1. Review the code changes carefully
+                2. Add a comment with \`/approve\` to allow deployment
+                3. Or add the contributor as a collaborator if they'll be contributing regularly"
+              exit 0  # Don't fail, just skip deployment
             fi
           else
+            echo "PR from same repository - safe to run"
             echo "safe-to-run=true" >> $GITHUB_OUTPUT
           fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Check for manual approval command
+  check-approval:
+    name: Check Manual Approval
+    needs: [security-check]
+    if: needs.security-check.outputs.safe-to-run == 'false'
+    runs-on: ubuntu-24.04
+    outputs:
+      approved: ${{ steps.check-comment.outputs.approved }}
+    steps:
+      - name: Check for approval comment
+        id: check-comment
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            // Get all comments
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ github.event.number }}
+            });
+            
+            // Check for approval from maintainer
+            for (const comment of comments) {
+              if (comment.body.includes('/approve')) {
+                // Check if commenter has write permissions
+                const { data: perm } = await github.rest.repos.getCollaboratorPermissionLevel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  username: comment.user.login
+                });
+                
+                if (['admin', 'write', 'maintain'].includes(perm.permission)) {
+                  console.log(`Approved by ${comment.user.login}`);
+                  core.setOutput('approved', 'true');
+                  return;
+                }
+              }
+            }
+            
+            core.setOutput('approved', 'false');
 
   builds:
     name: Builds
-    needs: [security-check]
-    if: needs.security-check.outputs.safe-to-run == 'true'
+    needs: [security-check, check-approval]
+    if: |
+      always() && 
+      (needs.security-check.outputs.safe-to-run == 'true' || 
+       needs.check-approval.outputs.approved == 'true')
     uses: ./.github/workflows/.build-images.yml
     permissions:
       packages: write
@@ -68,8 +122,12 @@ jobs:
 
   deploys:
     name: Deploy PR-${{ github.event.number }} Environment
-    needs: [builds, security-check]
-    if: needs.security-check.outputs.safe-to-run == 'true'
+    needs: [builds, security-check, check-approval]
+    if: |
+      always() && 
+      needs.builds.result == 'success' &&
+      (needs.security-check.outputs.safe-to-run == 'true' || 
+       needs.check-approval.outputs.approved == 'true')
     uses: ./.github/workflows/.deployer.yml
     secrets:
       oc_namespace: ${{ secrets.OC_NAMESPACE }}
@@ -83,7 +141,8 @@ jobs:
       db_user: app
       tags: pr-${{ github.event.pull_request.number }}
       timeout-minutes: 10
-      values: values-pr.yaml  # Use PR-specific values
+      values: values-pr.yaml
+      preserve_database: false
       params: >-
         --set-string global.registry=ghcr.io
         --set-string global.repository=bcgov/tenant-management-system
@@ -105,9 +164,6 @@ jobs:
         --set bitnami-pg.fullnameOverride=${{ github.event.repository.name }}-pr-${{ github.event.number }}-postgresql
         --set crunchy.enabled=false
         --set bitnami-pg.enabled=true
-
-      #triggers: "backend/,frontend/,migrations/,charts/,.github/"
-      #db_triggers: "charts/crunchy/"
       deployment_url: https://${{ github.event.repository.name }}-pr-${{ github.event.number }}-frontend.apps.silver.devops.gov.bc.ca
 
   security_scan:
@@ -115,6 +171,7 @@ jobs:
     permissions:
       contents: read
     needs: [deploys]
+    if: needs.deploys.result == 'success'
     uses: ./.github/workflows/.zap-scan.yml
     with:
       target_url: https://${{ github.event.repository.name }}-pr-${{ github.event.number }}-frontend.apps.silver.devops.gov.bc.ca
@@ -123,13 +180,28 @@ jobs:
 
   results:
     name: PR Results
-    needs: [builds, deploys, security_scan]
+    needs: [builds, deploys, security_scan, security-check]
     if: always()
     runs-on: ubuntu-24.04
     steps:
-      - if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
-        run: echo "At least one job has failed." && exit 1
-      - run: echo "Success!"
+      - name: Check results
+        run: |
+          if [ "${{ needs.security-check.outputs.safe-to-run }}" == "false" ]; then
+            echo "⚠️ Fork PR requires manual approval before deployment"
+            exit 0
+          fi
+          
+          if [ "${{ contains(needs.*.result, 'failure') }}" == "true" ]; then
+            echo "❌ One or more jobs failed"
+            exit 1
+          fi
+          
+          if [ "${{ contains(needs.*.result, 'cancelled') }}" == "true" ]; then
+            echo "⚠️ Workflow was cancelled"
+            exit 1
+          fi
+          
+          echo "✅ All jobs completed successfully!"
 
   comment:
     name: Comment on PR
@@ -142,7 +214,6 @@ jobs:
       - name: Comment PR
         uses: thollander/actions-comment-pull-request@v2
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
           message: |
             ## 🚀 PR Environment Deployed!
 
