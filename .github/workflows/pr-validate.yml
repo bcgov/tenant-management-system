@@ -59,9 +59,9 @@ jobs:
     with:
       markdown_links: |
         - [Frontend](https://${{ github.event.repository.name }}-pr-${{ github.event.number }}-frontend.apps.silver.devops.gov.bc.ca)
-      # Pass PR information for security context
-      pr-number: ${{ github.event.number }}
-      pr-sha: ${{ github.event.pull_request.head.sha }}
+      # Remove these two lines - they're not valid inputs:
+      # pr-number: ${{ github.event.number }}
+      # pr-sha: ${{ github.event.pull_request.head.sha }}
     secrets: inherit
 
   results:
