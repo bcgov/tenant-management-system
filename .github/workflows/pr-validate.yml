@@ -1,7 +1,7 @@
 name: PR Validate
 
 on:
-  pull_request_target:  # Changed from pull_request to pull_request_target
+  pull_request_target:
     types: [edited, opened, synchronize, reopened, ready_for_review]
 
 concurrency:
