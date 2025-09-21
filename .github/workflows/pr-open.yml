@@ -1,7 +1,7 @@
 name: PR
 
 on:
-  pull_request_target:  # Changed to pull_request_target for fork safety
+  pull_request:
     types: [opened, synchronize, reopened]
 
 concurrency:
@@ -17,118 +17,23 @@ permissions:
   attestations: write
 
 jobs:
-  # Security check for fork PRs
-  security-check:
-    name: Security Check
-    runs-on: ubuntu-24.04
-    outputs:
-      safe-to-run: ${{ steps.check.outputs.safe-to-run }}
-    steps:
-      - name: Check if safe to run
-        id: check
-        run: |
-          # Check if PR is from a fork
-          if [ "${{ github.event.pull_request.head.repo.full_name }}" != "${{ github.repository }}" ]; then
-            echo "PR from fork: ${{ github.event.pull_request.head.repo.full_name }}"
-            
-            # Check user permissions
-            author="${{ github.event.pull_request.user.login }}"
-            response=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-              "https://api.github.com/repos/${{ github.repository }}/collaborators/$author/permission")
-            
-            permission=$(echo "$response" | jq -r '.permission // "none"')
-            
-            if [[ "$permission" == "admin" || "$permission" == "write" || "$permission" == "maintain" ]]; then
-              echo "Fork PR from trusted user - safe to run"
-              echo "safe-to-run=true" >> $GITHUB_OUTPUT
-            else
-              echo "Fork PR needs manual approval"
-              echo "safe-to-run=false" >> $GITHUB_OUTPUT
-              
-              # Post comment
-              gh pr comment ${{ github.event.number }} \
-                --body "⚠️ This PR is from a fork and requires manual approval from a maintainer before deployment.
-                
-                **For maintainers:** If this PR is safe to run, you can:
-                1. Review the code changes carefully
-                2. Add a comment with \`/approve\` to allow deployment
-                3. Or add the contributor as a collaborator if they'll be contributing regularly"
-              exit 0  # Don't fail, just skip deployment
-            fi
-          else
-            echo "PR from same repository - safe to run"
-            echo "safe-to-run=true" >> $GITHUB_OUTPUT
-          fi
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  # Check for manual approval command
-  check-approval:
-    name: Check Manual Approval
-    needs: [security-check]
-    if: needs.security-check.outputs.safe-to-run == 'false'
-    runs-on: ubuntu-24.04
-    outputs:
-      approved: ${{ steps.check-comment.outputs.approved }}
-    steps:
-      - name: Check for approval comment
-        id: check-comment
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            // Get all comments
-            const { data: comments } = await github.rest.issues.listComments({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: ${{ github.event.number }}
-            });
-            
-            // Check for approval from maintainer
-            for (const comment of comments) {
-              if (comment.body.includes('/approve')) {
-                // Check if commenter has write permissions
-                const { data: perm } = await github.rest.repos.getCollaboratorPermissionLevel({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  username: comment.user.login
-                });
-                
-                if (['admin', 'write', 'maintain'].includes(perm.permission)) {
-                  console.log(`Approved by ${comment.user.login}`);
-                  core.setOutput('approved', 'true');
-                  return;
-                }
-              }
-            }
-            
-            core.setOutput('approved', 'false');
-
   builds:
     name: Builds
-    needs: [security-check, check-approval]
-    if: |
-      always() && 
-      (needs.security-check.outputs.safe-to-run == 'true' || 
-       needs.check-approval.outputs.approved == 'true')
-    uses: ./.github/workflows/.build-images.yml
-    permissions:
-      packages: write
-      id-token: write
-      attestations: write
-    with:
-      tags: pr-${{ github.event.pull_request.number }}
-      keep_versions: 5
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build Images
+        uses: ./.github/workflows/.build-images.yml@main
+        with:
+          tags: pr-${{ github.event.pull_request.number }}
+          keep_versions: 5
 
   deploys:
-    name: Deploy PR-${{ github.event.number }} Environment
-    needs: [builds, security-check, check-approval]
-    if: |
-      always() && 
-      needs.builds.result == 'success' &&
-      (needs.security-check.outputs.safe-to-run == 'true' || 
-       needs.check-approval.outputs.approved == 'true')
-    uses: ./.github/workflows/.deployer.yml
+    name: Deploy PR Environment
+    needs: [builds]
+    uses: ./.github/workflows/.deployer.yml@main
     secrets:
       oc_namespace: ${{ secrets.OC_NAMESPACE }}
       oc_token: ${{ secrets.OC_TOKEN }}
@@ -151,57 +56,9 @@ jobs:
         --set frontend.imagePullPolicy=Always
         --set backend.deploymentStrategy=Recreate
         --set frontend.deploymentStrategy=Recreate
-        --set global.debug=true
-        --set backend.resources.requests.memory=256Mi
-        --set backend.resources.limits.memory=512Mi
-        --set frontend.resources.requests.memory=128Mi
-        --set frontend.resources.limits.memory=256Mi
-        --set global.namespace.suffix=-pr-${{ github.event.number }}
-        --set global.config.databaseUser=app
-        --set bitnami-pg.auth.username=app
-        --set bitnami-pg.auth.database=app
-        --set bitnami-pg.auth.password=pr-password-${{ github.event.number }}
-        --set bitnami-pg.fullnameOverride=${{ github.event.repository.name }}-pr-${{ github.event.number }}-postgresql
-        --set crunchy.enabled=false
         --set bitnami-pg.enabled=true
+        --set crunchy.enabled=false
       deployment_url: https://${{ github.event.repository.name }}-pr-${{ github.event.number }}-frontend.apps.silver.devops.gov.bc.ca
-
-  security_scan:
-    name: ZAP Security Scan (PR-${{ github.event.number }})
-    permissions:
-      contents: read
-    needs: [deploys]
-    if: needs.deploys.result == 'success'
-    uses: ./.github/workflows/.zap-scan.yml
-    with:
-      target_url: https://${{ github.event.repository.name }}-pr-${{ github.event.number }}-frontend.apps.silver.devops.gov.bc.ca
-      fail_on_high: false
-      scan_type: baseline
-
-  results:
-    name: PR Results
-    needs: [builds, deploys, security_scan, security-check]
-    if: always()
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Check results
-        run: |
-          if [ "${{ needs.security-check.outputs.safe-to-run }}" == "false" ]; then
-            echo "⚠️ Fork PR requires manual approval before deployment"
-            exit 0
-          fi
-          
-          if [ "${{ contains(needs.*.result, 'failure') }}" == "true" ]; then
-            echo "❌ One or more jobs failed"
-            exit 1
-          fi
-          
-          if [ "${{ contains(needs.*.result, 'cancelled') }}" == "true" ]; then
-            echo "⚠️ Workflow was cancelled"
-            exit 1
-          fi
-          
-          echo "✅ All jobs completed successfully!"
 
   comment:
     name: Comment on PR
@@ -217,9 +74,5 @@ jobs:
           message: |
             ## 🚀 PR Environment Deployed!
 
-            **Environment:** `dev`  
             **Frontend URL:** https://${{ github.event.repository.name }}-pr-${{ github.event.pull_request.number }}-frontend.apps.silver.devops.gov.bc.ca  
-            **Tags:** `pr-${{ github.event.pull_request.number }}`
-            **Database:** Isolated PR database with user `app`
-
-            The application has been deployed to the dev environment with PR-specific resources including its own database.
+            **Environment:** PR-${{ github.event.pull_request.number }}
