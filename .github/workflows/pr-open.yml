@@ -65,15 +65,13 @@ jobs:
         --set global.config.databaseUser=app
         --set bitnami-pg.auth.username=app
         --set bitnami-pg.auth.database=app
-        --set bitnami-pg.auth.password=pr-password-${{ github.event.number }}
         --set bitnami-pg.fullnameOverride=${{ github.event.repository.name }}-pr-${{ github.event.number }}-postgresql
         --set crunchy.enabled=false
         --set bitnami-pg.enabled=true
       deployment_url: https://${{ github.event.repository.name }}-pr-${{ github.event.number }}-frontend.apps.silver.devops.gov.bc.ca
 
-  # Security scan
   security_scan:
-    name: ZAP Security Scan (PR-${{ github.event.number }})
+    name: ZAP Security Scan
     permissions:
       contents: read
     needs: [deploys]
@@ -84,7 +82,6 @@ jobs:
       fail_on_high: false
       scan_type: baseline
 
-  # Final results check
   results:
     name: PR Results
     needs: [builds, deploys, security_scan]
@@ -123,6 +120,5 @@ jobs:
             **Environment:** `dev`  
             **Frontend URL:** https://${{ github.event.repository.name }}-pr-${{ github.event.pull_request.number }}-frontend.apps.silver.devops.gov.bc.ca  
             **Tags:** `pr-${{ github.event.pull_request.number }}`
-            **Database:** Isolated PR database with user `app`
 
-            The application has been deployed to the dev environment with PR-specific resources including its own database.
+            The application has been deployed to the dev environment with PR-specific resources.

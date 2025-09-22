@@ -16,7 +16,7 @@ global:
 backend:
   enabled: true
   replicaCount: 1
-  deploymentStrategy: Recreate  # Faster for PRs
+  deploymentStrategy: Recreate
   imagePullPolicy: Always
 
   # Override database connection for PR environments to use bitnami-pg
