@@ -231,6 +231,8 @@ jobs:
 
       - name: Deploy Database (Smart Preservation)
         id: deploy_database
+        # Only run for non-PR environments (test/prod use Crunchy)
+        if: "!contains(steps.vars.outputs.release, '-pr-')"
         uses: bcgov/action-oc-runner@10033668ef4374d9bb78149faa73e4ccda0e93dd
         with:
           oc_namespace: ${{ secrets.oc_namespace }}
