@@ -111,6 +111,16 @@ export default {
             guid: Joi.string()
         }).or('firstName', 'lastName', 'email', 'guid')
     },
+
+    searchBCGOVSSOBceidUsers: {
+        query: Joi.object({
+            bceidType: Joi.string().valid('basic', 'business', 'both').required(),
+            guid: Joi.string(),
+            displayName: Joi.string(),
+            username: Joi.string(),
+            email: Joi.string()
+        }).or('guid', 'displayName', 'username', 'email')
+    },
     
     getTenant: {
         params: Joi.object({
@@ -248,7 +258,10 @@ export default {
             roles: Joi.array().items(
                 Joi.object().keys({
                     name: Joi.string().min(1).max(30).pattern(/^\S.*\S$/).required(),
-                    description: Joi.string().min(1).max(255).optional()
+                    description: Joi.string().min(1).max(255).optional(),
+                    allowedIdentityProviders: Joi.array().items(
+                        Joi.string().valid('idir', 'azureidir', 'bceidbasic', 'bceidbusiness')
+                    ).allow(null).optional()
                 })
             ).min(1).max(10).required()
         }).options({abortEarly:false,convert:false})
@@ -311,7 +324,10 @@ export default {
             roles: Joi.array().items(
                 Joi.object().keys({
                     name: Joi.string().min(1).max(30).pattern(/^\S.*\S$/).required(),
-                    description: Joi.string().min(1).max(255).optional()
+                    description: Joi.string().min(1).max(255).optional(),
+                    allowedIdentityProviders: Joi.array().items(
+                        Joi.string().valid('idir', 'azureidir', 'bceidbasic', 'bceidbusiness')
+                    ).allow(null).optional()
                 })
             ).min(1).max(10).required()
         }).options({abortEarly:false,convert:false})

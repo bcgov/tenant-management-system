@@ -746,6 +746,9 @@ export class TMSRepository {
         let tenantRequestResponse = {}
         await this.manager.transaction(async(transactionEntityManager) => {
             try {
+                if (await this.checkIfTenantNameAndMinistryNameExists(req.body.name, req.body.ministryName)) {
+                    throw new ConflictError(`A tenant with name '${req.body.name}' and ministry name '${req.body.ministryName}' already exists`);
+                }
                 const tenantRequest:TenantRequest = new TenantRequest()
                 tenantRequest.name = req.body.name
                 tenantRequest.ministryName = req.body.ministryName
@@ -943,6 +946,9 @@ export class TMSRepository {
                     const sharedServiceRole:SharedServiceRole = new SharedServiceRole()
                     sharedServiceRole.name = role.name
                     sharedServiceRole.description = role.description
+                    sharedServiceRole.allowedIdentityProviders = (role.allowedIdentityProviders && role.allowedIdentityProviders.length > 0) 
+                        ? role.allowedIdentityProviders 
+                        : null
                     sharedServiceRole.sharedService = savedSharedService
                     sharedServiceRole.createdBy = req.decodedJwt?.idir_user_guid || 'system'
                     sharedServiceRole.updatedBy = req.decodedJwt?.idir_user_guid || 'system'
@@ -1005,6 +1011,9 @@ export class TMSRepository {
                 const sharedServiceRole:SharedServiceRole = new SharedServiceRole()
                 sharedServiceRole.name = role.name
                 sharedServiceRole.description = role.description
+                sharedServiceRole.allowedIdentityProviders = (role.allowedIdentityProviders && role.allowedIdentityProviders.length > 0) 
+                    ? role.allowedIdentityProviders 
+                    : null
                 sharedServiceRole.sharedService = sharedService
                 sharedServiceRole.isDeleted = false
                 sharedServiceRole.createdBy = ssoUserId
