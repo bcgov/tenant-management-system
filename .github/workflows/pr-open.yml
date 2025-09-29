@@ -91,30 +91,14 @@ jobs:
     name: Builds
     needs: [security-check]
     if: needs.security-check.outputs.safe_to_deploy == 'true'
-    runs-on: ubuntu-24.04
+    uses: ./.github/workflows/.build-images.yml
     permissions:
       packages: write
       id-token: write
       attestations: write
-    strategy:
-      matrix:
-        package: [backend, frontend, migrations]
-    timeout-minutes: 10
-    steps:
-      # CRITICAL: For forks, checkout the PR branch, NOT the base branch
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ needs.security-check.outputs.pr_ref }}
-
-      - name: Build and push image
-        uses: bcgov/action-builder-ghcr@8489f0ddc8342896e2b57e476620ae2c774ef070
-        with:
-          keep_versions: 5
-          package: ${{ matrix.package }}
-          tags: pr-${{ github.event.pull_request.number }}
-          tag_fallback: latest
-          triggers: ('${{ matrix.package }}/')
+    with:
+      tags: pr-${{ github.event.pull_request.number }}
+      keep_versions: 5
 
   # Deploy to PR environment
   deploys:
@@ -273,23 +257,6 @@ jobs:
           fi
           
           echo "All jobs completed successfully"
-        run: |
-          if [ "$IS_FORK" == "true" ] && [ "$SAFE_TO_DEPLOY" != "true" ]; then
-            echo "Fork PR awaiting approval - no deployment attempted"
-            exit 0
-          fi
-          
-          if [ "${{ contains(needs.*.result, 'failure') }}" == "true" ]; then
-            echo "❌ One or more jobs failed"
-            exit 1
-          fi
-          
-          if [ "${{ contains(needs.*.result, 'cancelled') }}" == "true" ]; then
-            echo "⚠️ Workflow was cancelled"
-            exit 1
-          fi
-          
-          echo "✅ All jobs completed successfully!"
 
   # Comment on PR with deployment info
   comment:
