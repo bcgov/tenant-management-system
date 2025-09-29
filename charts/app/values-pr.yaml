@@ -1,12 +1,12 @@
 # PR-specific values for the main application chart
 global:
   registry: ghcr.io
-  repository: bcgov/tenant-management-system  # Add this line
+  repository: bcgov/tenant-management-system
   domain: apps.silver.devops.gov.bc.ca
   autoscaling: false
   secrets:
-    enabled: true      # Add this line - ensures secrets are created
-    persist: false     # Don't persist secrets for PRs
+    enabled: true
+    persist: false
   config:
     nodeEnv: development
     databaseUser: app

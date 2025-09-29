@@ -605,7 +605,9 @@ jobs:
             echo "✅ All secrets and configurations updated successfully"
 
 
-      - name: Update Database Password for PR Environments
+      # This step can now be removed or greatly simplified since passwords are synchronized in secret.yaml
+      # Keeping a minimal version just to verify the setup
+      - name: Verify Database Setup for PR Environments
         if: contains(steps.vars.outputs.release, '-pr-')
         uses: bcgov/action-oc-runner@10033668ef4374d9bb78149faa73e4ccda0e93dd
         with:
@@ -616,63 +618,32 @@ jobs:
             set -euo pipefail
       
             RELEASE_NAME="${{ steps.vars.outputs.release }}"
-            DB_USER="${{ inputs.db_user }}"
+            echo "Verifying database setup for: $RELEASE_NAME"
       
-            echo "Updating database password for PR environment..."
-            echo "Release: $RELEASE_NAME"
-            echo "DB User: $DB_USER"
+            # Check that secrets exist
+            if oc get secret "${RELEASE_NAME}-backend" &>/dev/null; then
+              echo "✅ Backend secret exists"
+            else
+              echo "❌ Backend secret missing"
+              exit 1
+            fi
       
-            # For PR environments, get password directly from Bitnami secret
+            if oc get secret "${RELEASE_NAME}-flyway" &>/dev/null; then
+              echo "✅ Flyway secret exists"
+            else
+              echo "❌ Flyway secret missing"
+              exit 1
+            fi
+      
+            # Check that Bitnami PostgreSQL is running
             BITNAMI_SECRET="${RELEASE_NAME}-postgresql"
-      
-            echo "Getting password from Bitnami secret: $BITNAMI_SECRET"
-      
-            # Wait for the Bitnami secret to exist
-            for i in {1..60}; do
-              if oc get secret "$BITNAMI_SECRET" &>/dev/null; then
-                echo "Bitnami secret found: $BITNAMI_SECRET"
-                break
-              fi
-              echo "Attempt $i/60: Bitnami secret not found yet, waiting..."
-              sleep 5
-            done
-      
-            if ! oc get secret "$BITNAMI_SECRET" &>/dev/null; then
-              echo "Bitnami secret not found: $BITNAMI_SECRET"
-              echo "Available Bitnami secrets:"
-              oc get secrets | grep bitnami || echo "No Bitnami secrets found"
-              exit 1
+            if oc get secret "$BITNAMI_SECRET" &>/dev/null; then
+              echo "✅ Bitnami PostgreSQL secret exists"
+            else
+              echo "⚠️  Bitnami secret not found yet (may still be creating)"
             fi
       
-            # Get the USER password from Bitnami secret
-            DB_PASSWORD=$(oc get secret "$BITNAMI_SECRET" -o jsonpath='{.data.password}')
-            if [ -z "$DB_PASSWORD" ]; then
-              echo "User password not found in Bitnami secret"
-              echo "Available keys in secret:"
-              oc get secret "$BITNAMI_SECRET" -o jsonpath='{.data}' | jq 'keys'
-              exit 1
-            fi
-      
-            echo "Found user password from Bitnami secret, updating application secrets..."
-      
-            # Update the backend secret with the real database password
-            oc patch secret "${RELEASE_NAME}-backend" \
-              -p '{"data":{"POSTGRES_PASSWORD":"'$DB_PASSWORD'"}}'
-      
-            # Update the flyway secret with the real database password
-            oc patch secret "${RELEASE_NAME}-flyway" \
-              -p '{"data":{"FLYWAY_PASSWORD":"'$DB_PASSWORD'"}}'
-      
-            echo "Database password updated successfully"
-            echo "Password source: ${BITNAMI_SECRET}.data.password"
-
-            # Restart backend deployment to pick up new password
-            if oc get deployment "${RELEASE_NAME}-backend" &>/dev/null; then
-              echo "Restarting backend deployment to pick up new password..."
-              oc rollout restart deployment/"${RELEASE_NAME}-backend"
-            fi
-
-      - name: Update deployment status
+            echo "✅ Database setup verification complete"      - name: Update deployment status
         uses: bobheadxi/deployments@v1.4.0
         if: always() && steps.deployment.outputs.deployment_id
         with:
