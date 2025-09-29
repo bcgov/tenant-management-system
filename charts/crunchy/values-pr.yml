@@ -1,95 +1,147 @@
-# PR-specific values for crunchy postgresql
-# Inherits from values.yml and overrides for PR environments
-
-# Use Crunchy operator (since it's available in your cluster)
-useCrunchyOperator: true
-
-# Image configuration
-image:
-  repository: registry.developers.crunchydata.com/crunchydata/crunchy-postgres
-  tag: "ubi8-15.5-1"
-
-# Cluster configuration for PRs
-cluster:
-  name: crunchy-postgres-pr
-  instances: 1  # Single instance for PR environments
-
-# PostgreSQL configuration optimized for development
-postgresql:
-  version: 15
-  parameters:
-    max_connections: "50"  # Reduced for PR environments
-    shared_buffers: "128MB"
-    effective_cache_size: "512MB"
-    maintenance_work_mem: "32MB"
-    checkpoint_completion_target: "0.9"
-    wal_buffers: "8MB"
-    default_statistics_target: "100"
-    random_page_cost: "1.1"
-    effective_io_concurrency: "200"
-
-# Database and user configuration for PRs
-database:
-  name: app
-  user: app  # This will be overridden by the deployer to include PR number
-
-# Reduced resources for PR environments
-resources:
-  requests:
-    cpu: "50m"
-    memory: "128Mi"
-  limits:
-    cpu: "250m"
-    memory: "256Mi"
-
-# Smaller storage for PR environments
-storage:
-  size: "2Gi"
-  storageClass: "netapp-file-standard"
-
-# Simplified backup configuration for PRs
-pgBackRest:
-  enabled: true
-  retention:
-    full: "3"  # Reduced retention for PRs
-    differential: "1"
-
-  # S3 backup disabled for PRs
-  s3:
-    enabled: false
-    bucket: ""
-    endpoint: ""
-    region: ""
-
-  # Local backup only for PRs
-  local:
-    enabled: true
-    retention: "3-full"
-
-# Monitoring disabled for PRs
-monitoring:
-  enabled: false
-  image:
-    repository: registry.developers.crunchydata.com/crunchydata/crunchy-postgres-exporter
-    tag: "ubi8-5.5.0-0"
-
-# Security configuration
-security:
-  tls:
-    enabled: false
-
-# HA disabled for PRs
-ha:
-  enabled: false
-
-# Global configuration for PR environments
+# PR-specific values for the main application chart
+# Ensures complete isolation between PR environments
 global:
-  # Environment-specific settings
-  environment: development
+  registry: ghcr.io
+  domain: apps.silver.devops.gov.bc.ca
+  autoscaling: false
+  secrets:
+    enabled: true
+    persist: false  # Don't persist secrets for PRs
+  config:
+    nodeEnv: development
+    databaseUser: app
+    dbName: app
+  debug: true
 
-  # Storage class override
-  storageClass: "netapp-file-standard"
+backend:
+  enabled: true
+  replicaCount: 1
+  deploymentStrategy: Recreate  # Faster for PRs
+  imagePullPolicy: Always
 
-  # PR-specific namespace suffix (will be set by deployer)
-  namespace:
-    suffix: ""
+  # Backend environment variables with proper database connection
+  environment:
+    port: "4144"
+    allowedOrigins: "*"
+    postgresHost: "{{ .Release.Name }}-bitnami-pg"
+    postgresPort: "5432"
+    postgresUser: "app"
+    postgresDatabase: "app"
+    # SSO and authentication settings
+    bcgovSsoApiUrl: "https://api.loginproxy.gov.bc.ca/api/v1/dev/idir/users"
+    bcgovTokenUrl: "https://loginproxy.gov.bc.ca/auth/realms/standard/protocol/openid-connect/token"
+    bcGovSsoClientId: "client-id"  # Will be overridden by deployment
+    bcgovSsoClientSecret: "secret"  # Will be overridden by deployment
+    logLevel: "debug"  # Debug logging for PR environments
+    tmsAudience: "tenant-management-system-6014"
+    jwksUri: "https://dev.loginproxy.gov.bc.ca/auth/realms/standard/protocol/openid-connect/certs"
+    issuer: "https://dev.loginproxy.gov.bc.ca/auth/realms/standard"
+
+  # Resource limits for PR environments
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+  # Disable autoscaling for PRs
+  autoscaling:
+    enabled: false
+
+  # Disable PDB for PRs
+  pdb:
+    enabled: false
+
+  # Backend service configuration
+  service:
+    type: ClusterIP
+    port: 80
+    targetPort: 4144  # Backend listens on port 4144
+
+frontend:
+  enabled: true
+  replicaCount: 1
+  deploymentStrategy: Recreate  # Faster for PRs
+  imagePullPolicy: Always
+
+  # Frontend environment variables
+  environment:
+    viteKeycloakClientId: tenant-management-system-6014
+    viteKeycloakRealm: standard
+    viteKeycloakLogoutUrl: https://dev.loginproxy.gov.bc.ca/auth/realms/standard/protocol/openid-connect/logout
+    viteKeycloakUrl: https://dev.loginproxy.gov.bc.ca/auth
+
+  # Resource limits for PR environments
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+  # Disable autoscaling for PRs
+  autoscaling:
+    enabled: false
+
+  # Disable PDB for PRs
+  pdb:
+    enabled: false
+
+  # Frontend service configuration
+  service:
+    type: ClusterIP
+    ports:
+      - port: 80
+        targetPort: 3000  # Frontend listens on port 3000
+        name: http
+
+  # Ingress configuration for PR environments
+  ingress:
+    enabled: true
+    annotations:
+      route.openshift.io/termination: "edge"
+
+# Use simple Bitnami PostgreSQL for PR environments
+# Each PR gets its own isolated database instance
+bitnami-pg:
+  enabled: true
+
+  # Database authentication
+  auth:
+    database: "app"
+    username: "app"
+    password: "simple-pr-password"  # Simple password for PR testing
+
+  # Primary database configuration
+  primary:
+    # Minimal storage for PR environments
+    persistence:
+      size: "1Gi"
+      storageClass: "netapp-file-standard"
+
+    # Reduced resources for PR environments
+    resources:
+      requests:
+        memory: "128Mi"
+        cpu: "50m"
+      limits:
+        memory: "256Mi"
+        cpu: "200m"
+
+    # Disable security contexts for OpenShift compatibility
+    containerSecurityContext:
+      enabled: false
+    podSecurityContext:
+      enabled: false
+
+  # Disable shared memory volume for resource efficiency
+  shmVolume:
+    enabled: false
+
+# Disable Crunchy PostgreSQL for PR environments
+# PRs use the simpler Bitnami PostgreSQL instead
+crunchy:
+  enabled: false

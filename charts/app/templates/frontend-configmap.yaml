@@ -1,4 +1,4 @@
-{{- if .Values.frontend.enabled }}
+{{- if and .Values.frontend.enabled (not (contains "-pr-" .Release.Name)) }}
 apiVersion: v1
 kind: ConfigMap
 metadata:

@@ -42,7 +42,9 @@ spec:
             - name: FLYWAY_DEFAULT_SCHEMA
               value: "USERS"
             - name: FLYWAY_CONNECT_RETRIES
-              value: "10"
+              value: "30"
+            - name: FLYWAY_CONNECT_RETRY_DELAY
+              value: "5"
             - name: FLYWAY_GROUP
               value: "true"
           resources:
