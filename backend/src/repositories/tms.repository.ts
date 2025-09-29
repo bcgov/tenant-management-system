@@ -746,6 +746,9 @@ export class TMSRepository {
         let tenantRequestResponse = {}
         await this.manager.transaction(async(transactionEntityManager) => {
             try {
+                if (await this.checkIfTenantNameAndMinistryNameExists(req.body.name, req.body.ministryName)) {
+                    throw new ConflictError(`A tenant with name '${req.body.name}' and ministry name '${req.body.ministryName}' already exists`);
+                }
                 const tenantRequest:TenantRequest = new TenantRequest()
                 tenantRequest.name = req.body.name
                 tenantRequest.ministryName = req.body.ministryName
