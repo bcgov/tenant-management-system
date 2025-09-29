@@ -24,8 +24,10 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Validate PR title
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
-          PR_TITLE="${{ github.event.pull_request.title }}"
+          # PR title is now safely in environment variable
           # Check if title follows conventional commit format
           if [[ ! "$PR_TITLE" =~ ^(feat|fix|docs|style|refactor|test|chore|perf|ci|build|revert)(\(.+\))?:\ .+ ]]; then
             echo "❌ PR title doesn't follow conventional commit format"
