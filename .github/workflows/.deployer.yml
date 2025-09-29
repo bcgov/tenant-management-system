@@ -460,19 +460,7 @@ jobs:
             echo "Packaging Helm chart..."
             sed -i 's/^name:.*/name: ${{ github.event.repository.name }}/' Chart.yaml
 
-            # Update dependencies to get the correct chart version
-            echo "Updating Helm dependencies..."
-            
-            # Add Bitnami repo if not present
-            helm repo add bitnami https://charts.bitnami.com/bitnami || true
-            helm repo update
-            
-            # Clean any existing charts directory and lock file
-            rm -rf charts/ || true
-            rm -f Chart.lock || true
-            
-            # Update dependencies
-            helm dependency update
+            echo "Packaging Helm chart (no external dependencies)..."
 
             echo "Dependencies updated, packaging chart..."
             helm package . --app-version="tag-${{ steps.vars.outputs.tag }}_run-${{ github.run_number }}" --version=${{ steps.pr.outputs.pr || steps.vars.outputs.version }}

@@ -30,9 +30,6 @@ maintainers:
   - name: Derek Roberts
     email: derek.roberts@gov.bc.ca
 
-dependencies:
-  - name: postgresql
-    version: "13.2.24"
-    repository: "https://charts.bitnami.com/bitnami"
-    condition: bitnami-pg.enabled
-    alias: bitnami-pg
+# Note: Bitnami PostgreSQL dependency removed
+# PR environments now use OpenShift's native PostgreSQL
+# Test/Prod environments use Crunchy PostgreSQL

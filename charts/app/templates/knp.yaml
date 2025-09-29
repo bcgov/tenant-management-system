@@ -26,7 +26,7 @@ spec:
   podSelector:
     matchLabels:
       {{- if contains "-pr-" .Release.Name }}
-      # PR environments use Bitnami PostgreSQL
+      # PR environments use OpenShift PostgreSQL
       app.kubernetes.io/name: postgresql
       app.kubernetes.io/instance: {{ .Release.Name }}
       {{- else }}

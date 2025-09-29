@@ -87,35 +87,30 @@ frontend:
     annotations:
       route.openshift.io/termination: "edge"
 
-# Use Bitnami PostgreSQL for PR environments (simple and fast)
-bitnami-pg:
+# Use OpenShift PostgreSQL for PR environments (simple and reliable)
+postgresql-pr:
   enabled: true
 
-  auth:
-    database: "app"
-    username: "app"
+  image:
+    registry: image-registry.openshift-image-registry.svc:5000
+    repository: openshift/postgresql
+    tag: "13-el8"
 
-  primary:
-    persistence:
-      size: "1Gi"
-      storageClass: "netapp-file-standard"
+  persistence:
+    size: "1Gi"
+    storageClass: "netapp-file-standard"
 
-    resources:
-      requests:
-        memory: "256Mi"
-        cpu: "100m"
-      limits:
-        memory: "512Mi"
-        cpu: "500m"
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "100m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
 
-    # OpenShift compatibility
-    containerSecurityContext:
-      enabled: false
-    podSecurityContext:
-      enabled: false
-
-  shmVolume:
-    enabled: false
+# Disable Bitnami PostgreSQL for PR environments
+bitnami-pg:
+  enabled: false
 
 # Disable Crunchy PostgreSQL for PR environments
 crunchy:
