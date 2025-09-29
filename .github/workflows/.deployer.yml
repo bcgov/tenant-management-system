@@ -644,15 +644,6 @@ jobs:
             fi
       
             echo "✅ Database setup verification complete"      - name: Update deployment status
-        uses: bobheadxi/deployments@v1.4.0
-        if: always() && steps.deployment.outputs.deployment_id
-        with:
-          step: finish
-          token: ${{ github.token }}
-          status: ${{ job.status }}
-          env: ${{ inputs.environment || 'dev' }}
-          deployment_id: ${{ steps.deployment.outputs.deployment_id }}
-          env_url: ${{ inputs.deployment_url }}
 
       - name: Log deployment status (fallback)
         if: always() && !steps.deployment.outputs.deployment_id
