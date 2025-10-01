@@ -30,7 +30,7 @@ function handleLogout() {
   <v-app-bar class="px-4" elevation="1" app>
     <v-toolbar-title class="flex-grow-1 d-flex align-center">
       <img alt="Logo" class="logo" src="/BCID_H_RGB_pos.svg" />
-      <span class="app-title">Connected Service team Application (CSTAR)</span>
+      <span class="app-title">Connected Services Teams And Roles (CSTAR)</span>
     </v-toolbar-title>
 
     <div v-if="user" class="d-flex align-center user-info">
