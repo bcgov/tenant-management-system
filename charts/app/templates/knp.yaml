@@ -25,15 +25,23 @@ metadata:
 spec:
   podSelector:
     matchLabels:
+      {{- if contains "-pr-" .Release.Name }}
+      # PR environments use OpenShift PostgreSQL
+      app.kubernetes.io/name: postgresql
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      {{- else }}
+      # Test/Prod use Crunchy PostgreSQL
       postgres-operator.crunchydata.com/cluster: {{ .Values.global.databaseAlias}}
+      {{- end }}
   ingress:
     - ports:
         - protocol: TCP
           port: 5432
       from:
+        # Allow both the backend pods AND their init containers
         - podSelector:
             matchLabels:
-              app.kubernetes.io/name: {{ template  "backend.name"}}
+              app.kubernetes.io/name: backend
               app.kubernetes.io/instance: {{ .Release.Name }}
   policyTypes:
     - Ingress
@@ -46,7 +54,7 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app.kubernetes.io/name: {{ template  "backend.name"}}
+      app.kubernetes.io/name: backend
       app.kubernetes.io/instance: {{ .Release.Name }}
   ingress:
     - ports:
@@ -55,7 +63,7 @@ spec:
       from:
         - podSelector:
             matchLabels:
-              app.kubernetes.io/name: {{ template  "frontend.name"}}
+              app.kubernetes.io/name: frontend
               app.kubernetes.io/instance: {{ .Release.Name }}
   policyTypes:
     - Ingress

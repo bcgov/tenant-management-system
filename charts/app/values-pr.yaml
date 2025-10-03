@@ -1,0 +1,117 @@
+# PR-specific values for the main application chart
+global:
+  registry: ghcr.io
+  repository: bcgov/tenant-management-system
+  domain: apps.silver.devops.gov.bc.ca
+  autoscaling: false
+  secrets:
+    enabled: true
+    persist: false
+  config:
+    nodeEnv: development
+    databaseUser: app
+    dbName: app
+  debug: true
+
+backend:
+  enabled: true
+  replicaCount: 1
+  deploymentStrategy: Recreate
+  imagePullPolicy: Always
+
+  # Override database connection for PR environments to use bitnami-pg
+  environment:
+    port: "4144"
+    allowedOrigins: "*"
+    postgresPort: "5432"
+    postgresUser: "app"
+    postgresDatabase: "app"
+    # SSO and authentication settings
+    bcgovSsoApiUrl: "https://api.loginproxy.gov.bc.ca/api/v1/dev/idir/users"
+    bcgovTokenUrl: "https://loginproxy.gov.bc.ca/auth/realms/standard/protocol/openid-connect/token"
+    bcGovSsoClientId: "client-id"
+    bcgovSsoClientSecret: "secret"
+    logLevel: "debug"
+    tmsAudience: "tenant-management-system-6014"
+    jwksUri: "https://dev.loginproxy.gov.bc.ca/auth/realms/standard/protocol/openid-connect/certs"
+    issuer: "https://dev.loginproxy.gov.bc.ca/auth/realms/standard"
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+  autoscaling:
+    enabled: false
+
+  pdb:
+    enabled: false  # Disable for PRs
+
+  service:
+    type: ClusterIP
+    port: 80
+    targetPort: 4144  # Fix: Backend runs on port 4144, not 3000
+
+frontend:
+  enabled: true
+  replicaCount: 1
+  deploymentStrategy: Recreate  # Faster for PRs
+  imagePullPolicy: Always
+
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+  autoscaling:
+    enabled: false
+
+  pdb:
+    enabled: false  # Disable for PRs
+
+  service:
+    type: ClusterIP
+    ports:
+      - port: 80
+        targetPort: 3000
+        name: http
+
+  ingress:
+    enabled: true
+    annotations:
+      route.openshift.io/termination: "edge"
+
+# Use OpenShift PostgreSQL for PR environments (simple and reliable)
+postgresql-pr:
+  enabled: true
+
+  image:
+    registry: image-registry.openshift-image-registry.svc:5000
+    repository: openshift/postgresql
+    tag: "13-el8"
+
+  persistence:
+    size: "1Gi"
+    storageClass: "netapp-file-standard"
+
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "100m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+
+# Disable Bitnami PostgreSQL for PR environments
+bitnami-pg:
+  enabled: false
+
+# Disable Crunchy PostgreSQL for PR environments
+crunchy:
+  enabled: false

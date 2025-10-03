@@ -14,7 +14,7 @@ on:
         type: boolean
       directory:
         description: Chart directory
-        default:  'charts/app'
+        default: 'charts/app'
         required: false
         type: string
       environment:
@@ -137,7 +137,7 @@ jobs:
             tag="latest"
           elif [ -n "${{ steps.pr.outputs.pr }}" ] && [ "${{ steps.pr.outputs.pr }}" != "null" ] && [ "${{ steps.pr.outputs.pr }}" != "" ]; then
             # Use PR number for actual PR environments
-            tag="${{ steps.pr.outputs.pr }}"
+            tag="pr-${{ steps.pr.outputs.pr }}"
           else
             # Final fallback
             tag="latest"
@@ -178,24 +178,24 @@ jobs:
             force_cleanup_helm() {
               local release_name="$1"
               echo "🧹 Starting force cleanup for release: $release_name"
-              
+            
               # Get current status if release exists
               if helm list -q | grep -q "^$release_name$"; then
                 CURRENT_STATUS=$(helm status "$release_name" -o json 2>/dev/null | jq -r '.info.status' || echo "unknown")
                 echo "Current status: $CURRENT_STATUS"
-                
+            
                 case "$CURRENT_STATUS" in
                   "pending-install"|"pending-upgrade"|"pending-rollback"|"uninstalling")
                     echo "⚠️ Found stuck operation: $CURRENT_STATUS - forcing cleanup"
-                    
+            
                     # Force delete all helm secrets for this release
                     echo "🗑️ Removing Helm secrets..."
                     kubectl delete secret -l owner=helm,name="$release_name" --ignore-not-found=true --timeout=60s || true
                     kubectl delete configmap -l owner=helm,name="$release_name" --ignore-not-found=true --timeout=60s || true
-                    
+            
                     # Wait a moment for cleanup
                     sleep 5
-                    
+            
                     # Verify cleanup worked
                     if helm list -q | grep -q "^$release_name$"; then
                       echo "⚠️ Release still exists after secret cleanup, attempting final removal..."
@@ -214,6 +214,15 @@ jobs:
                 echo "ℹ️ No existing release found - clean slate"
               fi
               
+              # NEW: Clean up orphaned resources that prevent Helm adoption
+              echo "Cleaning up orphaned ConfigMaps and resources..."
+              oc delete configmap "${release_name}-frontend-config" --ignore-not-found=true || true
+  
+              # Clean up any resources that might conflict with Helm installation
+              echo "Cleaning up any existing resources without proper Helm ownership..."
+              oc delete all,configmap,secret,route -l app.kubernetes.io/instance="${release_name}" --ignore-not-found=true || true
+  
+            
               echo "✅ Cleanup completed for $release_name"
             }
             
@@ -222,6 +231,8 @@ jobs:
 
       - name: Deploy Database (Smart Preservation)
         id: deploy_database
+        # Only run for non-PR environments (test/prod use Crunchy)
+        if: "!contains(steps.vars.outputs.release, '-pr-')"
         uses: bcgov/action-oc-runner@10033668ef4374d9bb78149faa73e4ccda0e93dd
         with:
           oc_namespace: ${{ secrets.oc_namespace }}
@@ -260,12 +271,24 @@ jobs:
             
             # Ensure database secret exists
             echo "Creating/updating database secret..."
+            
+            # Determine the correct database host based on environment
+            if [[ "${RELEASE_NAME}" == *"-pr-"* ]]; then
+              # PR environments use Bitnami PostgreSQL
+              DB_HOST="${RELEASE_NAME}-postgresql"
+              echo "PR environment detected - using Bitnami host: $DB_HOST"
+            else
+              # Test/prod environments use Crunchy PostgreSQL with PgBouncer
+              DB_HOST="${RELEASE_NAME}-pgbouncer"
+              echo "Non-PR environment detected - using Crunchy host: $DB_HOST"
+            fi
+            
             oc delete secret ${RELEASE_NAME}-pguser-${DB_USER} --ignore-not-found=true
             oc create secret generic ${RELEASE_NAME}-pguser-${DB_USER} \
               --from-literal=password="$DB_PASSWORD" \
               --from-literal=username="$DB_USER" \
               --from-literal=dbname="app" \
-              --from-literal=host="${RELEASE_NAME}-pgbouncer" \
+              --from-literal=host="$DB_HOST" \
               --from-literal=port="5432"
             
             echo "✅ Database secret created/updated"
@@ -294,8 +317,48 @@ jobs:
             # Enable strict error handling
             set -euo pipefail
             
-            # If directory provided, cd to it
-            [ -z "${{ inputs.directory }}" ] || cd ${{ inputs.directory }}
+            # Enhanced directory change with validation
+            echo "Input directory: '${{ inputs.directory }}'"
+            echo "Current working directory: $(pwd)"
+
+            if [ -n "${{ inputs.directory }}" ] && [ "${{ inputs.directory }}" != "" ]; then
+              echo "Changing to directory: ${{ inputs.directory }}"
+              if [ -d "${{ inputs.directory }}" ]; then
+                cd "${{ inputs.directory }}"
+                echo "Successfully changed to: $(pwd)"
+                echo "Directory contents:"
+                ls -la
+              else
+                echo "ERROR: Directory '${{ inputs.directory }}' does not exist!"
+                echo "Available directories in $(pwd):"
+                ls -la
+                exit 1
+              fi
+            else
+              echo "No directory specified, staying in: $(pwd)"
+            fi
+
+            # Verify we're in the right place for Helm chart
+            if [ ! -f "Chart.yaml" ]; then
+              echo "ERROR: Chart.yaml not found in $(pwd)"
+              echo "Looking for Chart.yaml in subdirectories:"
+              find . -name "Chart.yaml" -type f 2>/dev/null || echo "No Chart.yaml found anywhere"
+              exit 1
+            fi
+
+            echo "Found Chart.yaml - proceeding with Helm deployment"
+
+            # Verify values file exists
+            VALUES_FILE="${{ inputs.values }}"
+            if [ ! -f "$VALUES_FILE" ]; then
+              echo "ERROR: Values file '$VALUES_FILE' not found in $(pwd)"
+              echo "Available YAML files:"
+              ls -la *.yaml || echo "No YAML files found"
+              exit 1
+            fi
+
+            echo "Found values file: $VALUES_FILE"
+            echo "Values file size: $(wc -l < "$VALUES_FILE") lines"
 
             # Set database alias to match what was created
             DATABASE_ALIAS="${{ steps.vars.outputs.release }}"
@@ -306,14 +369,39 @@ jobs:
             # Function to perform helm upgrade with improved error handling
             perform_helm_upgrade() {
               local release_name="$1"
-              local max_attempts=3  # Reduced attempts for faster failure
+              local max_attempts=3
               local attempt=1
-              
+
               while [ $attempt -le $max_attempts ]; do
-                echo "🚀 Helm deployment attempt $attempt/$max_attempts..."
+                echo "Helm deployment attempt $attempt/$max_attempts..."
+                echo "Release name: $release_name"
+                echo "Chart directory: $(pwd)"
                 
-                # Attempt the upgrade with shorter timeout
-                if timeout 600 helm upgrade \
+                # Verify files exist before each attempt
+                echo "Verifying files before attempt $attempt:"
+                echo "Chart file: $(ls -la ./tenant-management-system-*.tgz 2>/dev/null || echo 'NOT FOUND')"
+                echo "Values file: $(ls -la "$VALUES_FILE" 2>/dev/null || echo 'NOT FOUND')"
+                
+                # Show the exact helm command that will be run
+                echo "--- HELM COMMAND (Attempt $attempt) ---"
+                echo "helm upgrade \\"
+                echo "  --set-string global.repository=${{ github.repository }} \\"
+                echo "  --set-string global.tag=\"${{ steps.vars.outputs.tag }}\" \\"
+                echo "  --set-string global.config.databaseUser=\"${{ inputs.db_user }}\" \\"
+                echo "  --set-string global.config.nodeEnv=${{ (inputs.environment == 'prod' || inputs.environment == 'production') && 'production' || (inputs.environment == 'test' && 'test' || 'development') }} \\"
+                echo "  --set-string global.databaseAlias=\"$DATABASE_ALIAS\" \\"
+                echo "  --set-string global.secrets.enabled=true \\"
+                echo "  --set-string global.preserveDatabase=\"${{ inputs.preserve_database }}\" \\"
+                echo "  ${{ inputs.params }} \\"
+                echo "  --install --wait --timeout ${{ inputs.timeout-minutes }}m \\"
+                echo "  --values \"$VALUES_FILE\" \\"
+                echo "  \"$release_name\" \\"
+                echo "  \"./tenant-management-system-${{ steps.pr.outputs.pr || steps.vars.outputs.version }}.tgz\""
+                echo "---------------------------------------"
+
+                # Attempt the upgrade with full output capture
+                set +e  # Don't exit on error so we can capture output
+                HELM_OUTPUT=$(helm upgrade \
                   --set-string global.repository=${{ github.repository }} \
                   --set-string global.tag="${{ steps.vars.outputs.tag }}" \
                   --set-string global.config.databaseUser="${{ inputs.db_user }}" \
@@ -322,28 +410,46 @@ jobs:
                   --set-string global.secrets.enabled=true \
                   --set-string global.preserveDatabase="${{ inputs.preserve_database }}" \
                   ${{ inputs.params }} \
-                  --install --wait ${{ inputs.atomic && '--atomic' || '' }} "$release_name" \
-                  --timeout ${{ inputs.timeout-minutes }}m \
-                  --values ${{ inputs.values }} \
-                  ./${{ github.event.repository.name }}-${{ steps.pr.outputs.pr || steps.vars.outputs.version }}.tgz 2>&1; then
-                  
-                  echo "✅ Helm deployment completed successfully on attempt $attempt"
+                  --install --wait --timeout ${{ inputs.timeout-minutes }}m \
+                  --values "$VALUES_FILE" \
+                  --debug \
+                  "$release_name" \
+                  "./tenant-management-system-${{ steps.pr.outputs.pr || steps.vars.outputs.version }}.tgz" 2>&1)
+                
+                HELM_EXIT_CODE=$?
+                set -e  # Re-enable exit on error
+                
+                echo "--- HELM OUTPUT (Attempt $attempt) ---"
+                echo "$HELM_OUTPUT"
+                echo "--- END HELM OUTPUT ---"
+                echo "Helm exit code: $HELM_EXIT_CODE"
+
+                if [ $HELM_EXIT_CODE -eq 0 ]; then
+                  echo "Helm deployment completed successfully on attempt $attempt"
                   return 0
                 else
-                  local exit_code=$?
-                  echo "❌ Helm deployment failed on attempt $attempt (exit code: $exit_code)"
+                  echo "Helm deployment failed on attempt $attempt (exit code: $HELM_EXIT_CODE)"
                   
-                  # If this was the last attempt, fail
+                  # Show additional debugging info
+                  echo "--- POST-FAILURE DEBUG (Attempt $attempt) ---"
+                  helm list || echo "Helm list failed"
+                  oc get all -l app.kubernetes.io/instance="$release_name" || echo "No resources found"
+                  echo "Working directory: $(pwd)"
+                  echo "Files in directory:"
+                  ls -la
+                  echo "--- END POST-FAILURE DEBUG ---"
+
                   if [ $attempt -eq $max_attempts ]; then
-                    echo "💥 All attempts failed"
-                    return $exit_code
+                    echo "All attempts failed"
+                    echo "FINAL HELM OUTPUT:"
+                    echo "$HELM_OUTPUT"
+                    return $HELM_EXIT_CODE
                   fi
-                  
-                  # Clean up any stuck resources before retry
-                  echo "🧹 Cleaning up before retry..."
+
+                  echo "Cleaning up before retry..."
                   kubectl delete secret -l owner=helm,name="$release_name" --ignore-not-found=true --timeout=30s || true
-                  
-                  echo "⏳ Waiting 15 seconds before retry..."
+
+                  echo "Waiting 15 seconds before retry..."
                   sleep 15
                   attempt=$((attempt + 1))
                 fi
@@ -351,8 +457,16 @@ jobs:
             }
 
             # Helm package
+            echo "Packaging Helm chart..."
             sed -i 's/^name:.*/name: ${{ github.event.repository.name }}/' Chart.yaml
-            helm package -u . --app-version="tag-${{ steps.vars.outputs.tag }}_run-${{ github.run_number }}" --version=${{ steps.pr.outputs.pr || steps.vars.outputs.version }}
+
+            echo "Packaging Helm chart (no external dependencies)..."
+
+            echo "Dependencies updated, packaging chart..."
+            helm package . --app-version="tag-${{ steps.vars.outputs.tag }}_run-${{ github.run_number }}" --version=${{ steps.pr.outputs.pr || steps.vars.outputs.version }}
+            
+            echo "Chart packaged successfully:"
+            ls -la ./tenant-management-system-*.tgz
             
             # Perform the deployment with retry logic
             perform_helm_upgrade "$RELEASE_NAME"
@@ -372,7 +486,7 @@ jobs:
           commands: |
             # Get release name
             RELEASE="${{ inputs.release_name }}"
-            
+      
             # Wait for backend secret to exist (created by helm)
             echo "Waiting for backend secret to be created by helm..."
             for i in {1..30}; do
@@ -383,15 +497,15 @@ jobs:
               echo "Attempt $i/30: Backend secret not found yet, waiting..."
               sleep 2
             done
-            
+      
             if ! oc get secret $RELEASE-backend &>/dev/null; then
               echo "❌ Backend secret was not created by helm"
               exit 1
             fi
-            
+      
             # Update secrets with real values
             echo "Updating backend secret with real SSO values..."
-            
+      
             # Set appropriate login proxy URL based on environment
             if [[ "${{ inputs.environment }}" == "prod" ]]; then
               LOGIN_PROXY="loginproxy.gov.bc.ca"
@@ -480,16 +594,46 @@ jobs:
 
             echo "✅ All secrets and configurations updated successfully"
 
-      - name: Update deployment status
-        uses: bobheadxi/deployments@v1.4.0
-        if: always() && steps.deployment.outputs.deployment_id
+
+      # This step can now be removed or greatly simplified since passwords are synchronized in secret.yaml
+      # Keeping a minimal version just to verify the setup
+      - name: Verify Database Setup for PR Environments
+        if: contains(steps.vars.outputs.release, '-pr-')
+        uses: bcgov/action-oc-runner@10033668ef4374d9bb78149faa73e4ccda0e93dd
         with:
-          step: finish
-          token: ${{ github.token }}
-          status: ${{ job.status }}
-          env: ${{ inputs.environment || 'dev' }}
-          deployment_id: ${{ steps.deployment.outputs.deployment_id }}
-          env_url: ${{ inputs.deployment_url }}
+          oc_namespace: ${{ secrets.oc_namespace }}
+          oc_token: ${{ secrets.oc_token }}
+          oc_server: ${{ inputs.oc_server }}
+          commands: |
+            set -euo pipefail
+      
+            RELEASE_NAME="${{ steps.vars.outputs.release }}"
+            echo "Verifying database setup for: $RELEASE_NAME"
+      
+            # Check that secrets exist
+            if oc get secret "${RELEASE_NAME}-backend" &>/dev/null; then
+              echo "✅ Backend secret exists"
+            else
+              echo "❌ Backend secret missing"
+              exit 1
+            fi
+      
+            if oc get secret "${RELEASE_NAME}-flyway" &>/dev/null; then
+              echo "✅ Flyway secret exists"
+            else
+              echo "❌ Flyway secret missing"
+              exit 1
+            fi
+      
+            # Check that Bitnami PostgreSQL is running
+            BITNAMI_SECRET="${RELEASE_NAME}-postgresql"
+            if oc get secret "$BITNAMI_SECRET" &>/dev/null; then
+              echo "✅ Bitnami PostgreSQL secret exists"
+            else
+              echo "⚠️  Bitnami secret not found yet (may still be creating)"
+            fi
+      
+            echo "✅ Database setup verification complete"      - name: Update deployment status
 
       - name: Log deployment status (fallback)
         if: always() && !steps.deployment.outputs.deployment_id
