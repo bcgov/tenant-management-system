@@ -1400,7 +1400,15 @@ paths:
 
     get:
       summary: Get all groups for a tenant
-      description: Retrieves all groups associated with a tenant. Requires JWT authentication and tenant access.
+      description: |
+        Retrieves groups for a tenant with different behavior based on access type:
+        
+        **TMS Users**: Returns ALL groups in the tenant where the user is a member.
+        
+        **External Services**: Returns ONLY groups that have at least one enabled 
+        shared service role belonging to the requesting service.
+        
+        Requires JWT authentication and tenant access.
       security:
         - bearerAuth: []
       parameters:
