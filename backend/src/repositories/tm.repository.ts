@@ -171,6 +171,14 @@ export class TMRepository {
                 .innerJoin('tu.ssoUser', 'su')
                 .andWhere('su.ssoUserId = :ssoUserId', { ssoUserId })
                 .andWhere('tu.isDeleted = :isDeleted', { isDeleted: false });
+        } else {
+            groupsQuery
+                .leftJoin('SharedServiceRole', 'ssr', 'ss.id = ssr.sharedService.id')
+                .leftJoin('GroupSharedServiceRole', 'gssr', 
+                    'ssr.id = gssr.sharedServiceRole.id AND group.id = gssr.group.id')
+                .andWhere('gssr.isDeleted = :gssrDeleted', { gssrDeleted: false })
+                .andWhere('ssr.isDeleted = :ssrDeleted', { ssrDeleted: false })
+                .distinct(true); 
         }
 
         const groups: Group[] = await groupsQuery.getMany()
