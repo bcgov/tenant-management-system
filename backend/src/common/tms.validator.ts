@@ -316,6 +316,17 @@ export default {
         }).options({abortEarly:false,convert:false})
     },
 
+    getTenantUser: {
+        params: Joi.object({
+            tenantId: Joi.string().guid().required(),
+            tenantUserId: Joi.string().guid().required()
+        }),
+        query: Joi.object({
+            expand: Joi.string().optional()
+                .pattern(/^(groupMemberships|tenantUserRoles|sharedServiceRoles)(,(groupMemberships|tenantUserRoles|sharedServiceRoles))*$/)
+        }).optional()
+    },
+
     addSharedServiceRoles: {
         params: Joi.object({
             sharedServiceId: Joi.string().guid().required()
