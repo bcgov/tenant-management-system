@@ -567,6 +567,7 @@ describe('Tenant API', () => {
       firstName: 'Test',
       lastName: 'User',
       displayName: 'Test User',
+      isDeleted: false,
       ssoUserId: 'F45AFBBD68C4411F956BA3A1D91878EF',
       email: 'test@testministry.gov.bc.ca',
       createdDateTime: new Date(),
