@@ -10,6 +10,7 @@ import { Group } from '../entities/Group'
 import { GroupUser } from '../entities/GroupUser'
 import { ConflictError } from '../errors/ConflictError'
 import { NotFoundError } from '../errors/NotFoundError'
+import { BadRequestError } from '../errors/BadRequestError'
 
 jest.mock('../repositories/tm.repository')
 jest.mock('../repositories/tms.repository')
@@ -1988,6 +1989,288 @@ describe('Tenant Management API', () => {
 
       expect(response.status).toBe(400)
       expect(response.body.message).toBe("Validation Failed")
+    })
+  })
+
+  describe('GET /v1/tenants/:tenantId/users/:tenantUserId', () => {
+    const tenantId = 'f98cbbfb-b96c-4a40-a10b-c2a7e795022c'
+    const tenantUserId = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'
+    const ssoUserId = 'fd33f1cef7ca4b19a71104d4ecf7066b'
+
+    beforeEach(() => {
+      app.get('/v1/tenants/:tenantId/users/:tenantUserId', 
+        validate(validator.getTenantUser, {}, {}),
+        (req, res) => tmController.getTenantUser(req, res)
+      )
+    })
+
+    it('should get tenant user with default response (no expand)', async () => {
+      const mockTenantUser = {
+        id: tenantUserId,
+        ssoUser: {
+          ssoUserId: ssoUserId,
+          firstName: 'John',
+          lastName: 'Smith',
+          displayName: 'Smith, John: MOT: EX',
+          userName: 'JSMITH1',
+          email: 'john.smith@gov.bc.ca'
+        },
+        createdDateTime: '2024-01-01',
+        updatedDateTime: '2024-01-01',
+        createdBy: 'system',
+        updatedBy: 'system'
+      }
+
+      mockTMRepository.getTenantUser = jest.fn().mockResolvedValue(mockTenantUser)
+
+      const response = await request(app)
+        .get(`/v1/tenants/${tenantId}/users/${tenantUserId}`)
+
+      expect(response.status).toBe(200)
+      expect(response.body.data.tenantUser).toEqual(mockTenantUser)
+      expect(mockTMRepository.getTenantUser).toHaveBeenCalledWith(
+        expect.objectContaining({
+          params: { tenantId, tenantUserId },
+          query: {}
+        })
+      )
+    })
+
+    it('should get tenant user with groupMemberships expand', async () => {
+      const mockTenantUser = {
+        id: tenantUserId,
+        ssoUser: {
+          ssoUserId: ssoUserId,
+          firstName: 'John',
+          lastName: 'Smith',
+          displayName: 'Smith, John: MOT: EX',
+          userName: 'JSMITH1',
+          email: 'john.smith@gov.bc.ca'
+        },
+        groups: [
+          {
+            id: 'group-1',
+            name: 'Test Group',
+            description: 'Test Group Description',
+            createdDateTime: '2024-01-01',
+            updatedDateTime: '2024-01-01',
+            createdBy: 'system',
+            updatedBy: 'system'
+          }
+        ],
+        createdDateTime: '2024-01-01',
+        updatedDateTime: '2024-01-01',
+        createdBy: 'system',
+        updatedBy: 'system'
+      }
+
+      mockTMRepository.getTenantUser = jest.fn().mockResolvedValue(mockTenantUser)
+
+      const response = await request(app)
+        .get(`/v1/tenants/${tenantId}/users/${tenantUserId}?expand=groupMemberships`)
+
+      expect(response.status).toBe(200)
+      expect(response.body.data.tenantUser).toEqual(mockTenantUser)
+      expect(mockTMRepository.getTenantUser).toHaveBeenCalledWith(
+        expect.objectContaining({
+          params: { tenantId, tenantUserId },
+          query: { expand: 'groupMemberships' }
+        })
+      )
+    })
+
+    it('should get tenant user with tenantUserRoles expand', async () => {
+      const mockTenantUser = {
+        id: tenantUserId,
+        ssoUser: {
+          ssoUserId: ssoUserId,
+          firstName: 'John',
+          lastName: 'Smith',
+          displayName: 'Smith, John: MOT: EX',
+          userName: 'JSMITH1',
+          email: 'john.smith@gov.bc.ca'
+        },
+        roles: [
+          {
+            id: 'role-1',
+            name: 'TENANT_OWNER',
+            description: 'Tenant Owner Role',
+            isDeleted: false
+          }
+        ],
+        createdDateTime: '2024-01-01',
+        updatedDateTime: '2024-01-01',
+        createdBy: 'system',
+        updatedBy: 'system'
+      }
+
+      mockTMRepository.getTenantUser = jest.fn().mockResolvedValue(mockTenantUser)
+
+      const response = await request(app)
+        .get(`/v1/tenants/${tenantId}/users/${tenantUserId}?expand=tenantUserRoles`)
+
+      expect(response.status).toBe(200)
+      expect(response.body.data.tenantUser).toEqual(mockTenantUser)
+      expect(mockTMRepository.getTenantUser).toHaveBeenCalledWith(
+        expect.objectContaining({
+          params: { tenantId, tenantUserId },
+          query: { expand: 'tenantUserRoles' }
+        })
+      )
+    })
+
+    it('should get tenant user with sharedServiceRoles expand', async () => {
+      const mockTenantUser = {
+        id: tenantUserId,
+        ssoUser: {
+          ssoUserId: ssoUserId,
+          firstName: 'John',
+          lastName: 'Smith',
+          displayName: 'Smith, John: MOT: EX',
+          userName: 'JSMITH1',
+          email: 'john.smith@gov.bc.ca'
+        },
+        sharedServiceRoles: [
+          {
+            role: {
+              id: 'ssr-1',
+              name: 'ADMIN',
+              description: 'Admin Role',
+              isDeleted: false
+            },
+            sharedService: {
+              id: 'ss-1',
+              name: 'Test Service',
+              clientIdentifier: 'test-client',
+              description: 'Test Service Description',
+              isActive: true
+            }
+          }
+        ],
+        createdDateTime: '2024-01-01',
+        updatedDateTime: '2024-01-01',
+        createdBy: 'system',
+        updatedBy: 'system'
+      }
+
+      mockTMRepository.getTenantUser = jest.fn().mockResolvedValue(mockTenantUser)
+
+      const response = await request(app)
+        .get(`/v1/tenants/${tenantId}/users/${tenantUserId}?expand=sharedServiceRoles`)
+
+      expect(response.status).toBe(200)
+      expect(response.body.data.tenantUser).toEqual(mockTenantUser)
+      expect(mockTMRepository.getTenantUser).toHaveBeenCalledWith(
+        expect.objectContaining({
+          params: { tenantId, tenantUserId },
+          query: { expand: 'sharedServiceRoles' }
+        })
+      )
+    })
+
+    it('should get tenant user with multiple expand parameters', async () => {
+      const mockTenantUser = {
+        id: tenantUserId,
+        ssoUser: {
+          ssoUserId: ssoUserId,
+          firstName: 'John',
+          lastName: 'Smith',
+          displayName: 'Smith, John: MOT: EX',
+          userName: 'JSMITH1',
+          email: 'john.smith@gov.bc.ca'
+        },
+        groups: [
+          {
+            id: 'group-1',
+            name: 'Test Group',
+            description: 'Test Group Description',
+            createdDateTime: '2024-01-01',
+            updatedDateTime: '2024-01-01',
+            createdBy: 'system',
+            updatedBy: 'system'
+          }
+        ],
+        roles: [
+          {
+            id: 'role-1',
+            name: 'TENANT_OWNER',
+            description: 'Tenant Owner Role',
+            isDeleted: false
+          }
+        ],
+        createdDateTime: '2024-01-01',
+        updatedDateTime: '2024-01-01',
+        createdBy: 'system',
+        updatedBy: 'system'
+      }
+
+      mockTMRepository.getTenantUser = jest.fn().mockResolvedValue(mockTenantUser)
+
+      const response = await request(app)
+        .get(`/v1/tenants/${tenantId}/users/${tenantUserId}?expand=groupMemberships,tenantUserRoles`)
+
+      expect(response.status).toBe(200)
+      expect(response.body.data.tenantUser).toEqual(mockTenantUser)
+      expect(mockTMRepository.getTenantUser).toHaveBeenCalledWith(
+        expect.objectContaining({
+          params: { tenantId, tenantUserId },
+          query: { expand: 'groupMemberships,tenantUserRoles' }
+        })
+      )
+    })
+
+    it('should return 400 when invalid expand values are provided', async () => {
+      mockTMRepository.getTenantUser = jest.fn().mockRejectedValue(
+        new BadRequestError('Invalid expand values: invalidExpand. Valid values are: groupMemberships, tenantUserRoles, sharedServiceRoles')
+      )
+
+      const response = await request(app)
+        .get(`/v1/tenants/${tenantId}/users/${tenantUserId}?expand=invalidExpand`)
+
+      expect(response.status).toBe(400)
+      expect(response.body.message).toBe('Error occurred getting tenant user')
+    })
+
+    it('should return 404 when tenant user is not found', async () => {
+      mockTMRepository.getTenantUser = jest.fn().mockRejectedValue(
+        new NotFoundError(`Tenant user not found: ${tenantUserId}`)
+      )
+
+      const response = await request(app)
+        .get(`/v1/tenants/${tenantId}/users/${tenantUserId}`)
+
+      expect(response.status).toBe(404)
+      expect(response.body.message).toBe('Error occurred getting tenant user')
+    })
+
+    it('should return 400 when validation fails for invalid tenant ID', async () => {
+      const invalidTenantId = 'invalid-uuid'
+
+      const response = await request(app)
+        .get(`/v1/tenants/${invalidTenantId}/users/${tenantUserId}`)
+
+      expect(response.status).toBe(400)
+      expect(response.body.message).toBe("Validation Failed")
+    })
+
+    it('should return 400 when validation fails for invalid tenant user ID', async () => {
+      const invalidTenantUserId = 'invalid-uuid'
+
+      const response = await request(app)
+        .get(`/v1/tenants/${tenantId}/users/${invalidTenantUserId}`)
+
+      expect(response.status).toBe(400)
+      expect(response.body.message).toBe("Validation Failed")
+    })
+
+    it('should return 500 when database error occurs', async () => {
+      mockTMRepository.getTenantUser = jest.fn().mockRejectedValue(new Error('Database connection failed'))
+
+      const response = await request(app)
+        .get(`/v1/tenants/${tenantId}/users/${tenantUserId}`)
+
+      expect(response.status).toBe(500)
+      expect(response.body.message).toBe('Error occurred getting tenant user')
     })
   })
 }) 

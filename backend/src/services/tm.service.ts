@@ -101,4 +101,14 @@ export class TMService {
             data: result
         };
     }
+
+    public async getTenantUser(req: Request) {
+        const tenantUser: any = await this.tmRepository.getTenantUser(req)
+        
+        return {
+            data: { 
+                tenantUser: tenantUser
+            }   
+        }       
+    }
 } 
