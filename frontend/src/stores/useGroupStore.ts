@@ -3,6 +3,7 @@ import { ref } from 'vue'
 
 import { Group, type GroupDetailFields, GroupUser, User } from '@/models'
 import { groupService } from '@/services'
+import { ServerError } from '@/errors'
 
 /**
  * Pinia store for managing groups and group users.
@@ -50,6 +51,16 @@ export const useGroupStore = defineStore('group', () => {
       name,
       description,
     )
+    if (
+      apiResponse === null ||
+      apiResponse?.data === null ||
+      apiResponse?.data?.data === null ||
+      apiResponse?.data?.data?.group === null
+    ) {
+      throw new ServerError(
+        'Server did not return a group please try again later.',
+      )
+    }
     const group = Group.fromApiData(apiResponse)
 
     return upsertGroup(group)

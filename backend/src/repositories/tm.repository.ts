@@ -68,9 +68,8 @@ export class TMRepository {
 
                 groupResponse = await transactionEntityManager
                     .createQueryBuilder(Group, 'group')
-                    .leftJoinAndSelect('group.users', 'groupUsers')
+                    .leftJoinAndSelect('group.users', 'groupUsers', 'groupUsers.isDeleted = :isDeleted', { isDeleted: false })
                     .where('group.id = :id', { id: savedGroup.id })
-                    .andWhere('groupUsers.isDeleted = :isDeleted', { isDeleted: false })
                     .getOne();
 
             } catch(error) {
