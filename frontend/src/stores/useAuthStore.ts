@@ -180,27 +180,13 @@ export const useAuthStore = defineStore('auth', {
      * to the app. It also clears authentication state from the store and
      * browser storage.
      */
-    logout(): void {
-      if (refreshTimer) {
-        clearTimeout(refreshTimer)
-        refreshTimer = undefined
-      }
-
-      this.keycloak
-        ?.logout({
-          redirectUri: window.location.origin,
-        })
-        .then(() => {
-          localStorage.clear()
-          sessionStorage.clear()
-          this.authenticated = false
-          this.token = ''
-          this.user = null
-          logger.info('Logged out and storage cleared')
-        })
-        .catch((error: Error) => {
-          logger.error('Logout failed', error)
-        })
+    logout(): string | undefined {
+      // For whatever reason the components in this app are getting cancelled with the logout method
+      // so instead returning a string to use as a href
+      const q = this.keycloak?.createLogoutUrl({
+        redirectUri: window.location.origin,
+      }) // Ensure redirectUri is set
+      return q
     },
 
     /**
