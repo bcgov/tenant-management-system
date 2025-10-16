@@ -4,9 +4,10 @@ import GroupManagementContainer from '@/components/route/GroupManagementContaine
 import SettingsContainer from '@/components/route/SettingsContainer.vue'
 import TenantListContainer from '@/components/route/TenantListContainer.vue'
 import TenantManagementContainer from '@/components/route/TenantManagementContainer.vue'
+import LandingPageContainer from '@/components/route/LandingPageContainer.vue'
 
 const routes = [
-  { path: '/', redirect: '/tenants' },
+  { path: '/', component: LandingPageContainer },
   { path: '/settings', component: SettingsContainer },
   { path: '/tenants', component: TenantListContainer },
   {
@@ -19,6 +20,7 @@ const routes = [
     component: GroupManagementContainer,
     props: true,
   },
+  { path: '/:catchAll(.*)', redirect: '/' },
 ]
 
 const router = createRouter({
