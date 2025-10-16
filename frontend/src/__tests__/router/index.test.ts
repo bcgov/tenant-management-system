@@ -5,22 +5,28 @@ import { createRouter, createWebHistory } from 'vue-router'
 import type { ComponentPublicInstance } from 'vue'
 import router from '@/router' // adjust path as needed
 
+const GROUP_MANAGE_TEMPLATE = 'GroupManagementContainer'
+const SETTINGS_TEMPLATE = 'SettingsContainer'
+const TENANT_LIST_TEMPLATE = 'TenantListContainer'
+const TENANT_MANAGE_TEMPLATE = 'TenantManagementContainer'
+const LANDING_PAGE_TEMPLATE = 'LandingPageContainer'
+
 // Mock the components since we're testing routes, not component functionality
 vi.mock('@/components/route/GroupManagementContainer.vue', () => ({
-  default: { template: '<div>GroupManagementContainer</div>' },
+  default: { template: `<div>${GROUP_MANAGE_TEMPLATE}</div>` },
 }))
 vi.mock('@/components/route/SettingsContainer.vue', () => ({
-  default: { template: '<div>SettingsContainer</div>' },
+  default: { template: `<div>${SETTINGS_TEMPLATE}</div>` },
 }))
 vi.mock('@/components/route/TenantListContainer.vue', () => ({
-  default: { template: '<div>TenantListContainer</div>' },
+  default: { template: `<div>${TENANT_LIST_TEMPLATE}</div>` },
 }))
 vi.mock('@/components/route/TenantManagementContainer.vue', () => ({
-  default: { template: '<div>TenantManagementContainer</div>' },
+  default: { template: `<div>${TENANT_MANAGE_TEMPLATE}</div>` },
 }))
 
 vi.mock('@/components/route/LandingPageContainer.vue', () => ({
-  default: { template: '<div>LandingPageContainer</div>' },
+  default: { template: `<div>${LANDING_PAGE_TEMPLATE}</div>` },
 }))
 
 // Create a test app component
@@ -51,23 +57,14 @@ describe('Vue Router', () => {
     })
   }
 
-  it('redirects from root path to /', async () => {
+  it('loads landing page', async () => {
     wrapper = initWrapper()
 
     await router.push('/')
     await router.isReady()
 
     expect(router.currentRoute.value.path).toBe('/')
-  })
-
-  it('navigates to tenants', async () => {
-    wrapper = initWrapper()
-
-    await router.push('/tenants')
-    await router.isReady()
-
-    expect(router.currentRoute.value.path).toBe('/tenants')
-    expect(wrapper.text()).toContain('TenantListContainer')
+    expect(wrapper.text()).toContain(LANDING_PAGE_TEMPLATE)
   })
 
   it('navigates to settings route', async () => {
@@ -77,7 +74,7 @@ describe('Vue Router', () => {
     await router.isReady()
 
     expect(router.currentRoute.value.path).toBe('/settings')
-    expect(wrapper.text()).toContain('SettingsContainer')
+    expect(wrapper.text()).toContain(SETTINGS_TEMPLATE)
   })
 
   it('navigates to tenants list route', async () => {
@@ -87,7 +84,7 @@ describe('Vue Router', () => {
     await router.isReady()
 
     expect(router.currentRoute.value.path).toBe('/tenants')
-    expect(wrapper.text()).toContain('TenantListContainer')
+    expect(wrapper.text()).toContain(TENANT_LIST_TEMPLATE)
   })
 
   it('navigates to tenant management route with params', async () => {
@@ -99,7 +96,7 @@ describe('Vue Router', () => {
 
     expect(router.currentRoute.value.path).toBe(`/tenants/${tenantId}`)
     expect(router.currentRoute.value.params.tenantId).toBe(tenantId)
-    expect(wrapper.text()).toContain('TenantManagementContainer')
+    expect(wrapper.text()).toContain(TENANT_MANAGE_TEMPLATE)
   })
 
   it('navigates to group management route with params', async () => {
@@ -115,7 +112,7 @@ describe('Vue Router', () => {
     )
     expect(router.currentRoute.value.params.tenantId).toBe(tenantId)
     expect(router.currentRoute.value.params.groupId).toBe(groupId)
-    expect(wrapper.text()).toContain('GroupManagementContainer')
+    expect(wrapper.text()).toContain(GROUP_MANAGE_TEMPLATE)
   })
 
   it('passes props correctly to components', async () => {
@@ -162,11 +159,6 @@ describe('Route Configuration', () => {
     expect(paths).toContain('/tenants')
     expect(paths).toContain('/tenants/:tenantId')
     expect(paths).toContain('/tenants/:tenantId/groups/:groupId')
-  })
-
-  it('has redirect configured correctly', () => {
-    const rootRoute = router.getRoutes().find((route) => route.path === '/')
-    expect(rootRoute?.redirect).toBe('/tenants')
   })
 
   it('has props enabled for parameterized routes', () => {
