@@ -49,7 +49,7 @@ describe('Vue Router', () => {
     }
   })
 
-  const initWrapper = function () {
+  const initWrapper = function() {
     return mount(TestApp, {
       global: {
         plugins: [router],
