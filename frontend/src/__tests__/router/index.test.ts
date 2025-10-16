@@ -5,12 +5,6 @@ import { createRouter, createWebHistory } from 'vue-router'
 import type { ComponentPublicInstance } from 'vue'
 import router from '@/router' // adjust path as needed
 
-const GROUP_MANAGE_TEMPLATE = 'GroupManagementContainer'
-const SETTINGS_TEMPLATE = 'SettingsContainer'
-const TENANT_LIST_TEMPLATE = 'TenantListContainer'
-const TENANT_MANAGE_TEMPLATE = 'TenantManagementContainer'
-const LANDING_PAGE_TEMPLATE = 'LandingPageContainer'
-
 // Mock the components since we're testing routes, not component functionality
 vi.mock('@/components/route/GroupManagementContainer.vue', () => ({
   default: { template: `<div>GroupManagementContainer</div>` },
@@ -28,6 +22,12 @@ vi.mock('@/components/route/TenantManagementContainer.vue', () => ({
 vi.mock('@/components/route/LandingPageContainer.vue', () => ({
   default: { template: `<div>LandingPageContainer</div>` },
 }))
+
+const GROUP_MANAGE_TEMPLATE = 'GroupManagementContainer'
+const SETTINGS_TEMPLATE = 'SettingsContainer'
+const TENANT_LIST_TEMPLATE = 'TenantListContainer'
+const TENANT_MANAGE_TEMPLATE = 'TenantManagementContainer'
+const LANDING_PAGE_TEMPLATE = 'LandingPageContainer'
 
 // Create a test app component
 const TestApp = {
