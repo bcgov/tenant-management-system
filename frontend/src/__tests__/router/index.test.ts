@@ -43,12 +43,16 @@ describe('Vue Router', () => {
     }
   })
 
-  it('redirects from root path to /', async () => {
-    wrapper = mount(TestApp, {
+  const initWrapper = function() {
+    return mount(TestApp, {
       global: {
         plugins: [router],
       },
     })
+  }
+
+  it('redirects from root path to /', async () => {
+    wrapper = initWrapper()
 
     await router.push('/')
     await router.isReady()
@@ -56,12 +60,8 @@ describe('Vue Router', () => {
     expect(router.currentRoute.value.path).toBe('/')
   })
 
-  it('redirects from root path to /', async () => {
-    wrapper = mount(TestApp, {
-      global: {
-        plugins: [router],
-      },
-    })
+  it('navigates to tenants', async () => {
+    wrapper = initWrapper()
 
     await router.push('/tenants')
     await router.isReady()
@@ -71,11 +71,7 @@ describe('Vue Router', () => {
   })
 
   it('navigates to settings route', async () => {
-    wrapper = mount(TestApp, {
-      global: {
-        plugins: [router],
-      },
-    })
+    wrapper = initWrapper()
 
     await router.push('/settings')
     await router.isReady()
@@ -85,11 +81,7 @@ describe('Vue Router', () => {
   })
 
   it('navigates to tenants list route', async () => {
-    wrapper = mount(TestApp, {
-      global: {
-        plugins: [router],
-      },
-    })
+    wrapper = initWrapper()
 
     await router.push('/tenants')
     await router.isReady()
@@ -99,11 +91,7 @@ describe('Vue Router', () => {
   })
 
   it('navigates to tenant management route with params', async () => {
-    wrapper = mount(TestApp, {
-      global: {
-        plugins: [router],
-      },
-    })
+    wrapper = initWrapper()
 
     const tenantId = '123'
     await router.push(`/tenants/${tenantId}`)
@@ -115,11 +103,7 @@ describe('Vue Router', () => {
   })
 
   it('navigates to group management route with params', async () => {
-    wrapper = mount(TestApp, {
-      global: {
-        plugins: [router],
-      },
-    })
+    wrapper = initWrapper()
 
     const tenantId = '123'
     const groupId = '456'
