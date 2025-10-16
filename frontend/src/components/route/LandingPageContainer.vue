@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, watchEffect } from 'vue'
+import { useRouter } from 'vue-router'
 import { config, configLoaded } from '@/services/config.service'
 import { useAuthStore } from '@/stores'
 
 const authStore = useAuthStore()
+const router = useRouter()
 
 const idirHint = computed(() => (configLoaded.value ? config.idirBroker : ''))
 const basicBceidHint = computed(() =>
@@ -13,9 +15,11 @@ const businessBceidHint = computed(() =>
   configLoaded.value ? config.businessBceidBroker : '',
 )
 
-if (authStore.isAuthenticated) {
-  window.location.href = '/tenants'
-}
+watchEffect(() => {
+  if (authStore.isAuthenticated) {
+    router.push('/tenants')
+  }
+})
 </script>
 
 <template>
