@@ -19,6 +19,10 @@ vi.mock('@/components/route/TenantManagementContainer.vue', () => ({
   default: { template: '<div>TenantManagementContainer</div>' },
 }))
 
+vi.mock('@/components/route/LandingPageContainer.vue', () => ({
+  default: { template: '<div>LandingPageContainer</div>' },
+}))
+
 // Create a test app component
 const TestApp = {
   template: '<router-view />',
@@ -39,7 +43,7 @@ describe('Vue Router', () => {
     }
   })
 
-  it('redirects from root path to /tenants', async () => {
+  it('redirects from root path to /', async () => {
     wrapper = mount(TestApp, {
       global: {
         plugins: [router],
@@ -49,7 +53,21 @@ describe('Vue Router', () => {
     await router.push('/')
     await router.isReady()
 
+    expect(router.currentRoute.value.path).toBe('/')
+  })
+
+  it('redirects from root path to /', async () => {
+    wrapper = mount(TestApp, {
+      global: {
+        plugins: [router],
+      },
+    })
+
+    await router.push('/tenants')
+    await router.isReady()
+
     expect(router.currentRoute.value.path).toBe('/tenants')
+    expect(wrapper.text()).toContain('TenantListContainer')
   })
 
   it('navigates to settings route', async () => {
