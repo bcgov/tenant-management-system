@@ -371,3 +371,6 @@ pyrightconfig.json
 
 # IDE
 .codebuddy
+
+# MAC
+**.DS_Store
