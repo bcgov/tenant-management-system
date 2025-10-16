@@ -13,20 +13,20 @@ const LANDING_PAGE_TEMPLATE = 'LandingPageContainer'
 
 // Mock the components since we're testing routes, not component functionality
 vi.mock('@/components/route/GroupManagementContainer.vue', () => ({
-  default: { template: `<div>${GROUP_MANAGE_TEMPLATE}</div>` },
+  default: { template: `<div>GroupManagementContainer</div>` },
 }))
 vi.mock('@/components/route/SettingsContainer.vue', () => ({
-  default: { template: `<div>${SETTINGS_TEMPLATE}</div>` },
+  default: { template: `<div>SettingsContainer</div>` },
 }))
 vi.mock('@/components/route/TenantListContainer.vue', () => ({
-  default: { template: `<div>${TENANT_LIST_TEMPLATE}</div>` },
+  default: { template: `<div>TenantListContainer</div>` },
 }))
 vi.mock('@/components/route/TenantManagementContainer.vue', () => ({
-  default: { template: `<div>${TENANT_MANAGE_TEMPLATE}</div>` },
+  default: { template: `<div>TenantManagementContainer</div>` },
 }))
 
 vi.mock('@/components/route/LandingPageContainer.vue', () => ({
-  default: { template: `<div>${LANDING_PAGE_TEMPLATE}</div>` },
+  default: { template: `<div>LandingPageContainer</div>` },
 }))
 
 // Create a test app component
