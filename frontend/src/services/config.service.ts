@@ -37,8 +37,7 @@ const defaultConfig: AppConfig = {
   },
   idirBroker: import.meta.env.VITE_KEYCLOAK_IDIR_HINT ?? '',
   basicBceidBroker: import.meta.env.VITE_KEYCLOAK_BASIC_BCEID_HINT ?? '',
-  businessBceidBroker:
-    import.meta.env.VITE_KEYCLOAK_BUSINESS_BCEID_HINT ?? '',
+  businessBceidBroker: import.meta.env.VITE_KEYCLOAK_BUSINESS_BCEID_HINT ?? '',
 }
 
 // Create reactive config
