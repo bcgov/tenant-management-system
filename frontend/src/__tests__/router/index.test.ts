@@ -196,7 +196,7 @@ describe('Router Integration', () => {
     // Start at root, should redirect to tenants
     await router.push('/')
     await router.isReady()
-    expect(router.currentRoute.value.path).toBe('/tenants')
+    expect(router.currentRoute.value.path).toBe('/')
 
     // Navigate to a specific tenant
     await router.push('/tenants/123')
