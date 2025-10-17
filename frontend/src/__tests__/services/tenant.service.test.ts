@@ -139,10 +139,10 @@ describe('tenantService', () => {
     it('should successfully assign role to user', async () => {
       mockPut.mockResolvedValueOnce({})
 
-      await tenantService.assignUserRoles(tenantId, userId, roleId)
+      await tenantService.assignUserRoles(tenantId, userId, [roleId])/
 
       expect(mockPut).toHaveBeenCalledWith(
-        `/tenants/${tenantId}/users/${userId}/roles/${roleId}`,
+        `/tenants/${tenantId}/users/${userId}/roles`,
       )
     })
 
@@ -151,7 +151,7 @@ describe('tenantService', () => {
       mockPut.mockRejectedValueOnce(error)
 
       await expect(
-        tenantService.assignUserRoles(tenantId, userId, roleId),
+        tenantService.assignUserRoles(tenantId, userId, [roleId]),
       ).rejects.toThrow(error)
 
       expect(mockedUtils.logApiError).toHaveBeenCalledWith(

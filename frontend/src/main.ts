@@ -9,6 +9,7 @@ import { createApp } from 'vue'
 import App from '@/App.vue'
 import vuetify from '@/plugins/vuetify'
 import router from '@/router'
+import { i18n } from '@/i18n'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { loadConfig, configLoaded } from './services/config.service'
 import { logger } from '@/utils/logger'
@@ -37,6 +38,7 @@ async function initializeApp() {
   app.use(pinia)
   app.use(router)
   app.use(vuetify)
+  app.use(i18n)
 
   const authStore = useAuthStore()
 

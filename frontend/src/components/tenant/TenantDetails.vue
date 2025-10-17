@@ -171,7 +171,7 @@ function toggleEdit() {
           <v-col cols="12" md="6">
             <v-text-field
               :model-value="owner?.ssoUser.userName ?? 'No owner assigned'"
-              label="Tenant Owner"
+              :label="$t('roles.owner')"
               disabled
             />
           </v-col>

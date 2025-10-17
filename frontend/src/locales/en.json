@@ -1,0 +1,23 @@
+{
+  "tenants": {
+    "tenant": "Tenants | Tenant | Tenants",
+    "learnMore": "Learn more about",
+    "roleAssignDesc": "Below are the available tenant roles you can assign to a user. A checkmark shows roles currently assigned to this user. Select additional role(s) to update their permissions."
+  },
+  "roles": {
+    "role": "Roles | Role | Roles",
+    "owner": "Tenant Owner",
+    "admin": "User Admin",
+    "user": "Service User",
+    "ownerDesc": "Creates and manages tenants",
+    "adminDesc": "Manages groups and users ",
+    "userDesc": "Accesses services via groups",
+    "updateSuccess": "Roles updated successfully",
+    "updateError": "Failed to update roles:"
+  },
+  "general": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "description": "Description"
+  }
+}

@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
+const { t } = useI18n() 
 
 import GroupListContainer from '@/components/group/GroupListContainer.vue'
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
@@ -7,6 +9,7 @@ import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
 import FloatingActionButton from '@/components/ui/FloatingActionButton.vue'
 import SimpleDialog from '@/components/ui/SimpleDialog.vue'
 import UserSearch from '@/components/tenant/UserSearch.vue'
+import RoleDialog from '@/components/tenant/RoleDialog.vue'
 import type { Role, Tenant, User } from '@/models'
 import { type IdirSearchType, ROLES } from '@/utils/constants'
 import { currentUserHasRole } from '@/utils/permissions'
@@ -50,6 +53,8 @@ const selectedRoles = ref<Role[]>([])
 const selectedUser = ref<User | null>(null)
 const showSearch = ref(false)
 const userSearch = ref('')
+const roleDialogVisible = ref(false)
+const modifyingUser = ref<User | null>(null)
 
 // --- Computed Values ---------------------------------------------------------
 
@@ -133,7 +138,7 @@ function handleRemoveRole(user: User, role: Role) {
 
   if (isOwnerRole && ownerCount <= 1) {
     showInfo(
-      'There must be at least one user with the Tenant Owner role. To remove ' +
+      `There must be at least one user with the ${t('roles.owner')} role. To remove ` +
         'this role from the current user, assign the role to another user first.',
     )
     return
@@ -164,6 +169,16 @@ function handleUserSelected(user: User) {
 function showInfo(message: string) {
   infoDialog.value.message = message
   infoDialogVisible.value = true
+}
+
+function showRoleDialog(user: User) {
+  modifyingUser.value = user
+  roleDialogVisible.value = true
+}
+
+function handleCloseRoleDialog(open: boolean) {
+  roleDialogVisible.value = open
+  modifyingUser.value = null;
 }
 </script>
 
@@ -222,6 +237,12 @@ function showInfo(message: string) {
           </template>
           <template #[`item.roles`]="{ item }">
             <div class="d-flex flex-wrap" style="gap: 8px; margin-block: 4px">
+              <v-btn
+                class="default-radius"
+                size="x-small"
+                icon="mdi-plus"
+                @click="showRoleDialog(item)"
+              />
               <v-chip
                 v-for="role in item.roles"
                 :key="role.id"
@@ -321,8 +342,21 @@ function showInfo(message: string) {
       @button-click="handleConfirmButtonClick"
     />
 
+    <RoleDialog
+      v-model="roleDialogVisible"
+      :user="modifyingUser"
+      :tenant="tenant"
+      @update:open-dialog="handleCloseRoleDialog"
+    />
+
     <v-divider class="my-12" />
 
     <GroupListContainer :tenant="tenant" />
   </v-container>
 </template>
+
+<style scoped>
+.v-btn--icon.default-radius {
+  border-radius: 4px;
+}
+</style>

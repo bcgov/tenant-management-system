@@ -64,10 +64,13 @@ export const tenantService = {
   async assignUserRoles(
     tenantId: string,
     userId: string,
-    roleId: string,
+    roleIds: Array<string>,
   ): Promise<void> {
     try {
-      await api.put(`/tenants/${tenantId}/users/${userId}/roles/${roleId}`)
+      const data = {
+        roles: roleIds
+      }
+      await api.post(`/tenants/${tenantId}/users/${userId}/roles`, data)
     } catch (error) {
       logApiError('Error assigning user role in tenant', error)
 

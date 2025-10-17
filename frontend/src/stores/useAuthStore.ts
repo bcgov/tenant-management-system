@@ -143,6 +143,9 @@ export const useAuthStore = defineStore('auth', {
 
         const authenticated = await this.keycloak.init({
           // onLoad: 'login-required',
+          onLoad: 'check-sso',
+          silentCheckSsoRedirectUri:
+            window.location.origin + '/silent-check-sso.html',
           checkLoginIframe: false,
         })
 
