@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-const { t } = useI18n() 
+const { t } = useI18n()
 
 import GroupListContainer from '@/components/group/GroupListContainer.vue'
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
@@ -178,7 +178,7 @@ function showRoleDialog(user: User) {
 
 function handleCloseRoleDialog(open: boolean) {
   roleDialogVisible.value = open
-  modifyingUser.value = null;
+  modifyingUser.value = null
 }
 </script>
 
@@ -239,8 +239,8 @@ function handleCloseRoleDialog(open: boolean) {
             <div class="d-flex flex-wrap" style="gap: 8px; margin-block: 4px">
               <v-btn
                 class="default-radius"
-                size="x-small"
                 icon="mdi-plus"
+                size="x-small"
                 @click="showRoleDialog(item)"
               />
               <v-chip
@@ -344,8 +344,8 @@ function handleCloseRoleDialog(open: boolean) {
 
     <RoleDialog
       v-model="roleDialogVisible"
-      :user="modifyingUser"
       :tenant="tenant"
+      :user="modifyingUser"
       @update:open-dialog="handleCloseRoleDialog"
     />
 

@@ -90,7 +90,10 @@ export const ROLES = Object.freeze({
   /**
    * Standard user role with basic service access
    */
-  SERVICE_USER: { title: i18n.global.t('roles.user'), value: 'TMS.SERVICE_USER' },
+  SERVICE_USER: {
+    title: i18n.global.t('roles.user'),
+    value: 'TMS.SERVICE_USER',
+  },
 
   /**
    * Owner of a specific tenant with management privileges

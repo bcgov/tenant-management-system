@@ -68,7 +68,7 @@ export const tenantService = {
   ): Promise<void> {
     try {
       const data = {
-        roles: roleIds
+        roles: roleIds,
       }
       await api.post(`/tenants/${tenantId}/users/${userId}/roles`, data)
     } catch (error) {
