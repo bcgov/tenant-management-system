@@ -101,8 +101,8 @@ const hasChanges = computed(() => {
 })
 
 const atLeastOneRole = computed(() => {
-  for (let i = 0; i < items.value.length; i++) {
-    if (items.value[i].value) {
+  for (const item of items.value) {
+    if (item.value) {
       return true
     }
   }
@@ -130,10 +130,8 @@ const handleSave = async () => {
         roleIds.push(ROLE_LOOKUP.value[i].id)
       }
       fullRoleIds.push(ROLE_LOOKUP.value[i].id)
-    } else {
-      if (defaultValues.value[i]) {
-        removeIds.push(ROLE_LOOKUP.value[i].id)
-      }
+    } else if (defaultValues.value[i]) {
+      removeIds.push(ROLE_LOOKUP.value[i].id)
     }
   }
   try {
