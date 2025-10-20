@@ -1,13 +1,15 @@
 import { nextTick } from 'vue'
 import { createI18n, type I18n, type I18nOptions } from 'vue-i18n'
-import { default as messagesEn } from './locales/en.json'
 
 export const SUPPORT_LOCALES = ['en']
 const DEFAULT_OPTS = {
   locale: 'en',
-  messages: {
-    en: messagesEn,
-  }
+  messages: {},
+}
+
+if (process.env.NODE_ENV === 'test') {
+  const messages = await import('./locales/en.json')
+  DEFAULT_OPTS.messages = { en: messages.default }
 }
 
 export function setupI18n(opts: I18nOptions): I18n {
@@ -19,7 +21,7 @@ export function setupI18n(opts: I18nOptions): I18n {
   return i18n
 }
 
-export function setI18nLanguage(i18n: any, locale: string) {
+export function setI18nLanguage(i18n: I18n, locale: string) {
   i18n.global.locale.value = locale
   /**
    * NOTE:
@@ -28,16 +30,17 @@ export function setI18nLanguage(i18n: any, locale: string) {
    *
    * axios.defaults.headers.common['Accept-Language'] = locale
    */
-  try{
+  try {
     document?.querySelector('html')?.setAttribute('lang', locale)
-  }catch(err){
-    //pass probably a test environment
+    // eslint-disable-next-line
+  } catch (e) {
+    // do nothing as likely test env
   }
 }
 
-export async function loadSyncLocaleMessages(i18n: any, locale: string) {
+export async function loadSyncLocaleMessages(i18n: I18n, locale: string) {
   // load locale messages with dynamic import
-  let messages = await import(
+  const messages = await import(
     /* webpackChunkName: "locale-[request]" */ `./locales/${locale}.json`
   )
 
@@ -45,9 +48,9 @@ export async function loadSyncLocaleMessages(i18n: any, locale: string) {
   i18n.global.setLocaleMessage(locale, messages.default)
 }
 
-export async function loadLocaleMessages(i18n: any, locale: string) {
+export async function loadLocaleMessages(i18n: I18n, locale: string) {
   // load locale messages with dynamic import
-  let messages = await import(
+  const messages = await import(
     /* webpackChunkName: "locale-[request]" */ `./locales/${locale}.json`
   )
 

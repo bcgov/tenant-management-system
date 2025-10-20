@@ -125,9 +125,9 @@ const handleSave = async () => {
   const removeIds = []
   //built array of roles to add/remove
   for (let i = 0; i < items.value.length; i++) {
-    if ( (items.value[i].value) && (!defaultValues.value[i]) ){
-        roleIds.push(ROLE_LOOKUP.value?.[i]?.id as string)
-        fullRoleIds.push(ROLE_LOOKUP.value?.[i]?.id as string)
+    if (items.value[i].value && !defaultValues.value[i]) {
+      roleIds.push(ROLE_LOOKUP.value?.[i]?.id as string)
+      fullRoleIds.push(ROLE_LOOKUP.value?.[i]?.id as string)
     } else if (defaultValues.value[i]) {
       if (ROLE_LOOKUP?.value?.[i]?.id !== undefined) {
         removeIds.push(ROLE_LOOKUP.value?.[i]?.id as string)
@@ -156,7 +156,7 @@ const handleSave = async () => {
     //success, show notification toast
     notification.success(t('roles.updateSuccess'))
     emit('update:openDialog', false)
-  } catch (error: any) {
+  } catch (error: unknown) {
     // show the best possible error message in error case
     const msg =
       error.response?.data?.details?.body?.[0]?.message ||

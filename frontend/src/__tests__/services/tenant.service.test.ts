@@ -144,7 +144,7 @@ describe('tenantService', () => {
         `/tenants/${tenantId}/users/${userId}/roles`,
         {
           roles: [roleId],
-        }
+        },
       )
     })
 
