@@ -2,8 +2,11 @@ import { nextTick } from 'vue'
 import { createI18n } from 'vue-i18n'
 
 export const SUPPORT_LOCALES = ['en']
+const DEFAULT_OPTS = {
+  locale: 'en',
+}
 
-export async function setupI18n(opts = { locale: 'en' }) {
+export async function setupI18n(opts = DEFAULT_OPTS) {
   opts.legacy = false
   const i18n = createI18n(opts)
   setI18nLanguage(i18n, opts.locale)

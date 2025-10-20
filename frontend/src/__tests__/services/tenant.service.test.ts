@@ -140,9 +140,9 @@ describe('tenantService', () => {
       mockPut.mockResolvedValueOnce({})
 
       await tenantService.assignUserRoles(tenantId, userId, [roleId])
-        expect(mockPut).toHaveBeenCalledWith(
-          `/tenants/${tenantId}/users/${userId}/roles`,
-        )
+      expect(mockPut).toHaveBeenCalledWith(
+        `/tenants/${tenantId}/users/${userId}/roles`,
+      )
     })
 
     it('should log and rethrow errors', async () => {

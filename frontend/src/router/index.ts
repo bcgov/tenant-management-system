@@ -1,10 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
-import {
-  loadLocaleMessages,
-  setI18nLanguage,
-  i18n,
-} from '@/i18n'
+import { loadLocaleMessages, setI18nLanguage, i18n } from '@/i18n'
 
 import GroupManagementContainer from '@/components/route/GroupManagementContainer.vue'
 import SettingsContainer from '@/components/route/SettingsContainer.vue'

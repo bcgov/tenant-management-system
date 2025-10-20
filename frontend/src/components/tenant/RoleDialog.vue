@@ -15,12 +15,24 @@ const notification = useNotification()
 
 //props and default state
 const props = defineProps<{
-  user: User | null
+  userIndex: number | null
   tenant: Tenant | null
 }>()
 
+const user = computed<User | null>(() => {
+  if (
+    props.tenant &&
+    props.userIndex !== null &&
+    props.userIndex >= 0 &&
+    props.userIndex < props.tenant.users.length
+  ) {
+    const newUser = props.tenant.users[props.userIndex]
+    updateState(newUser)
+    return newUser
+  }
+  return null
+})
 const dialogVisible = defineModel<boolean>()
-
 
 const items = ref<Array<{ role: string; description: string; value: boolean }>>(
   [
@@ -32,28 +44,41 @@ const items = ref<Array<{ role: string; description: string; value: boolean }>>(
 const defaultValues = ref<Array<boolean>>([false, false, false])
 
 //catch user prop changes and update defaults / state
-watch(
-  () => props.user,
-  (newUser) => {
-    items.value[0].value = false
-    defaultValues.value[0] = false
-    items.value[1].value = false
-    defaultValues.value[1] = false
-    items.value[2].value = false
-    defaultValues.value[2] = false
-    if (newUser && newUser?.roles) {
-      for (const role of newUser.roles) {
-        if (role.name === ROLES.TENANT_OWNER.value) {
-          items.value[0].value = true
-          defaultValues.value[0] = true
-        } else if (role.name === ROLES.USER_ADMIN.value) {
-          items.value[1].value = true
-          defaultValues.value[1] = true
-        } else if (role.name === ROLES.SERVICE_USER.value) {
-          items.value[2].value = true
-          defaultValues.value[2] = true
-        }
+
+const updateState = (newUser: User | null) => {
+  items.value[0].value = false
+  defaultValues.value[0] = false
+  items.value[1].value = false
+  defaultValues.value[1] = false
+  items.value[2].value = false
+  defaultValues.value[2] = false
+  if (newUser && newUser?.roles) {
+    for (const role of newUser.roles) {
+      if (role.name === ROLES.TENANT_OWNER.value) {
+        items.value[0].value = true
+        defaultValues.value[0] = true
+      } else if (role.name === ROLES.USER_ADMIN.value) {
+        items.value[1].value = true
+        defaultValues.value[1] = true
+      } else if (role.name === ROLES.SERVICE_USER.value) {
+        items.value[2].value = true
+        defaultValues.value[2] = true
       }
+    }
+  }
+}
+
+watch(
+  () => props.userIndex,
+  (newIndex) => {
+    if (
+      props.tenant &&
+      newIndex !== null &&
+      newIndex >= 0 &&
+      newIndex < props.tenant.users.length
+    ) {
+      const newUser = props.tenant.users[newIndex]
+      updateState(newUser)
     }
   },
 )
@@ -65,11 +90,6 @@ const ROLE_LOOKUP = computed(() => [
   roleStore.roles.find((r) => r.name === ROLES.SERVICE_USER.value),
 ])
 
-// the api needs remove to be used if user has all roles assigned
-const useRemoveInstead = computed(
-  () => defaultValues.value.some((v) => v === false),
-)
-
 // watch state for changes based on default values
 const hasChanges = computed(() => {
   for (let i = 0; i < items.value.length; i++) {
@@ -80,10 +100,17 @@ const hasChanges = computed(() => {
   return false
 })
 
+const atLeastOneRole = computed(() => {
+  for (let i = 0; i < items.value.length; i++) {
+    if (items.value[i].value) {
+      return true
+    }
+  }
+  return false
+})
+
 // emit when dialog is closed/opened
-const emit = defineEmits<{
-  (event: 'update:openDialog', value: boolean): void
-}>()
+const emit = defineEmits(['update:openDialog'])
 
 //headers for the table
 const headers = [
@@ -94,32 +121,39 @@ const headers = [
 //save method
 const handleSave = async () => {
   const roleIds = []
+  const fullRoleIds = []
   const removeIds = []
   //built array of roles to add/remove
   for (let i = 0; i < items.value.length; i++) {
     if (items.value[i].value) {
-      roleIds.push(ROLE_LOOKUP.value[i].id)
+      if (!defaultValues.value[i]) {
+        roleIds.push(ROLE_LOOKUP.value[i].id)
+      }
+      fullRoleIds.push(ROLE_LOOKUP.value[i].id)
     } else {
-      removeIds.push(ROLE_LOOKUP.value[i].id)
+      if (defaultValues.value[i]) {
+        removeIds.push(ROLE_LOOKUP.value[i].id)
+      }
     }
   }
   try {
-    // use assign if user doesn't have all roles
-    if (useRemoveInstead.value) {
-      //use remove to remove roles if they previously had all roles
+    //add first because remove fails if last role
+    if (roleIds.length > 0) {
+      await tenantStore.assignTenantUserRoles(
+        props.tenant,
+        user?.value?.id,
+        fullRoleIds,
+      )
+    }
+    //remove any that aren't added
+    if (removeIds.length > 0) {
       for (const removeId of removeIds) {
         await tenantStore.removeTenantUserRole(
           props.tenant,
-          props.user?.id,
+          user?.value?.id,
           removeId,
         )
       }
-    } else {
-      await tenantStore.assignTenantUserRoles(
-        props.tenant,
-        props.user?.id,
-        roleIds,
-      )
     }
     //success, show notification toast
     notification.success(t('roles.updateSuccess'))
@@ -186,7 +220,7 @@ const handleSave = async () => {
           @click="$emit('update:openDialog', false)"
         />
         <v-btn
-          :disabled="!hasChanges"
+          :disabled="!hasChanges || !atLeastOneRole"
           :text="$t('general.save')"
           color="primary"
           variant="flat"

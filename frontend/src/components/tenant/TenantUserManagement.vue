@@ -54,7 +54,7 @@ const selectedUser = ref<User | null>(null)
 const showSearch = ref(false)
 const userSearch = ref('')
 const roleDialogVisible = ref(false)
-const modifyingUser = ref<User | null>(null)
+const modifyingUserIndex = ref<number | null>(null)
 
 // --- Computed Values ---------------------------------------------------------
 
@@ -171,14 +171,14 @@ function showInfo(message: string) {
   infoDialogVisible.value = true
 }
 
-function showRoleDialog(user: User) {
-  modifyingUser.value = user
+function showRoleDialog(user: User, index: number) {
+  modifyingUserIndex.value = index
   roleDialogVisible.value = true
 }
 
 function handleCloseRoleDialog(open: boolean) {
   roleDialogVisible.value = open
-  modifyingUser.value = null
+  modifyingUserIndex.value = null
 }
 </script>
 
@@ -235,13 +235,13 @@ function handleCloseRoleDialog(open: boolean) {
                 : 'You have no users in this tenant'
             }}</v-alert>
           </template>
-          <template #[`item.roles`]="{ item }">
+          <template #[`item.roles`]="{ item, index }">
             <div class="d-flex flex-wrap" style="gap: 8px; margin-block: 4px">
               <v-btn
                 class="default-radius"
                 icon="mdi-plus"
                 size="x-small"
-                @click="showRoleDialog(item)"
+                @click="showRoleDialog(item, index)"
               />
               <v-chip
                 v-for="role in item.roles"
@@ -345,7 +345,7 @@ function handleCloseRoleDialog(open: boolean) {
     <RoleDialog
       v-model="roleDialogVisible"
       :tenant="tenant"
-      :user="modifyingUser"
+      :user-index="modifyingUserIndex"
       @update:open-dialog="handleCloseRoleDialog"
     />
 
