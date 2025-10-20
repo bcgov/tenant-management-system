@@ -1,9 +1,13 @@
 import { nextTick } from 'vue'
 import { createI18n, type I18n, type I18nOptions } from 'vue-i18n'
+import { default as messagesEn } from './locales/en.json'
 
 export const SUPPORT_LOCALES = ['en']
 const DEFAULT_OPTS = {
   locale: 'en',
+  messages: {
+    en: messagesEn,
+  }
 }
 
 export function setupI18n(opts: I18nOptions): I18n {
@@ -24,7 +28,11 @@ export function setI18nLanguage(i18n: any, locale: string) {
    *
    * axios.defaults.headers.common['Accept-Language'] = locale
    */
-  document?.querySelector('html')?.setAttribute('lang', locale)
+  try{
+    document?.querySelector('html')?.setAttribute('lang', locale)
+  }catch(err){
+    //pass probably a test environment
+  }
 }
 
 export async function loadSyncLocaleMessages(i18n: any, locale: string) {
