@@ -136,7 +136,7 @@ export const useTenantStore = defineStore('tenant', () => {
   }
 
   /**
-   * Adds/Assigns a role from a user in a tenant.
+   * Adds/Assigns roles from a user in a tenant. (removes those not in array)
    *
    * @param {Tenant} tenant - The tenant the user belongs to.
    * @param {string} userId - The ID of the user.

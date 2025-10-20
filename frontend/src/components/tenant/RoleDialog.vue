@@ -1,4 +1,5 @@
 <script setup lang="ts">
+//imports
 import type { Tenant, User } from '@/models'
 import { watch, ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -7,9 +8,19 @@ import { ROLES } from '@/utils/constants'
 import { useTenantStore, useRoleStore } from '@/stores'
 import { useNotification } from '@/composables'
 
+//stores
 const tenantStore = useTenantStore()
 const roleStore = useRoleStore()
 const notification = useNotification()
+
+//props and default state
+const props = defineProps<{
+  user: User | null
+  tenant: Tenant | null
+}>()
+
+const dialogVisible = defineModel<boolean>()
+
 
 const items = ref<Array<{ role: string; description: string; value: boolean }>>(
   [
@@ -19,21 +30,8 @@ const items = ref<Array<{ role: string; description: string; value: boolean }>>(
   ],
 )
 const defaultValues = ref<Array<boolean>>([false, false, false])
-const ROLE_LOOKUP = computed(() => [
-  roleStore.roles.find((r) => r.name === ROLES.TENANT_OWNER.value),
-  roleStore.roles.find((r) => r.name === ROLES.USER_ADMIN.value),
-  roleStore.roles.find((r) => r.name === ROLES.SERVICE_USER.value),
-])
 
-const useRemoveInstead = computed(
-  () => defaultValues.value.findIndex((v) => v === false) === -1,
-)
-
-const props = defineProps<{
-  user: User | null
-  tenant: Tenant | null
-}>()
-
+//catch user prop changes and update defaults / state
 watch(
   () => props.user,
   (newUser) => {
@@ -60,8 +58,19 @@ watch(
   },
 )
 
-const dialogVisible = defineModel<boolean>()
+//computed
+const ROLE_LOOKUP = computed(() => [
+  roleStore.roles.find((r) => r.name === ROLES.TENANT_OWNER.value),
+  roleStore.roles.find((r) => r.name === ROLES.USER_ADMIN.value),
+  roleStore.roles.find((r) => r.name === ROLES.SERVICE_USER.value),
+])
 
+// the api needs remove to be used if user has all roles assigned
+const useRemoveInstead = computed(
+  () => defaultValues.value.findIndex((v) => v === false) === -1,
+)
+
+// watch state for changes based on default values
 const hasChanges = computed(() => {
   for (let i = 0; i < items.value.length; i++) {
     if (items.value[i].value !== defaultValues.value[i]) {
@@ -71,17 +80,22 @@ const hasChanges = computed(() => {
   return false
 })
 
+// emit when dialog is closed/opened
 const emit = defineEmits<{
   (e: 'update:openDialog', value: boolean): void
 }>()
+
+//headers for the table
 const headers = [
   { title: t('roles.role', 1), value: 'role' },
   { title: t('general.description'), value: 'description' },
 ]
 
+//save method
 const handleSave = async () => {
   const roleIds = []
   const removeIds = []
+  //built array of roles to add/remove
   for (let i = 0; i < items.value.length; i++) {
     if (items.value[i].value) {
       roleIds.push(ROLE_LOOKUP.value[i].id)
@@ -90,6 +104,7 @@ const handleSave = async () => {
     }
   }
   try {
+    // use assign if user doesn't have all roles
     if (!useRemoveInstead.value) {
       await tenantStore.assignTenantUserRoles(
         props.tenant,
@@ -97,6 +112,7 @@ const handleSave = async () => {
         roleIds,
       )
     } else {
+      //use remove to remove roles if they previously had all roles
       for (let i = 0; i < removeIds.length; i++) {
         await tenantStore.removeTenantUserRole(
           props.tenant,
@@ -105,9 +121,11 @@ const handleSave = async () => {
         )
       }
     }
+    //success, show notification toast
     notification.success(t('roles.updateSuccess'))
     emit('update:openDialog', false)
   } catch (error) {
+    // show the best possible error message in error case
     const msg =
       error.response?.data?.details?.body?.[0]?.message ||
       error.response?.data?.message ||
