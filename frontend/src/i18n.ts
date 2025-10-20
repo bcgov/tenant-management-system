@@ -1,20 +1,21 @@
 import { nextTick } from 'vue'
-import { createI18n } from 'vue-i18n'
+import { createI18n, type I18n, type I18nOptions } from 'vue-i18n'
 
 export const SUPPORT_LOCALES = ['en']
 const DEFAULT_OPTS = {
   locale: 'en',
 }
 
-export async function setupI18n(opts = DEFAULT_OPTS) {
+export function setupI18n(opts: I18nOptions): I18n {
+  opts = { ...DEFAULT_OPTS, ...opts }
   opts.legacy = false
   const i18n = createI18n(opts)
-  setI18nLanguage(i18n, opts.locale)
-  await loadSyncLocaleMessages(i18n, opts.locale)
+  setI18nLanguage(i18n, opts.locale as string)
+  loadSyncLocaleMessages(i18n, opts.locale as string)
   return i18n
 }
 
-export function setI18nLanguage(i18n, locale) {
+export function setI18nLanguage(i18n: any, locale: string) {
   i18n.global.locale.value = locale
   /**
    * NOTE:
@@ -23,12 +24,12 @@ export function setI18nLanguage(i18n, locale) {
    *
    * axios.defaults.headers.common['Accept-Language'] = locale
    */
-  document.querySelector('html').setAttribute('lang', locale)
+  document?.querySelector('html')?.setAttribute('lang', locale)
 }
 
-export async function loadSyncLocaleMessages(i18n, locale) {
+export async function loadSyncLocaleMessages(i18n: any, locale: string) {
   // load locale messages with dynamic import
-  const messages = await import(
+  let messages = await import(
     /* webpackChunkName: "locale-[request]" */ `./locales/${locale}.json`
   )
 
@@ -36,9 +37,9 @@ export async function loadSyncLocaleMessages(i18n, locale) {
   i18n.global.setLocaleMessage(locale, messages.default)
 }
 
-export async function loadLocaleMessages(i18n, locale) {
+export async function loadLocaleMessages(i18n: any, locale: string) {
   // load locale messages with dynamic import
-  const messages = await import(
+  let messages = await import(
     /* webpackChunkName: "locale-[request]" */ `./locales/${locale}.json`
   )
 
@@ -48,4 +49,4 @@ export async function loadLocaleMessages(i18n, locale) {
   return nextTick()
 }
 
-export const i18n = await setupI18n({ locale: 'en' })
+export const i18n: I18n = setupI18n({ locale: 'en' })

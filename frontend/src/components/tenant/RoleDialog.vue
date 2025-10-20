@@ -125,21 +125,21 @@ const handleSave = async () => {
   const removeIds = []
   //built array of roles to add/remove
   for (let i = 0; i < items.value.length; i++) {
-    if (items.value[i].value) {
-      if (!defaultValues.value[i]) {
-        roleIds.push(ROLE_LOOKUP.value[i].id)
-      }
-      fullRoleIds.push(ROLE_LOOKUP.value[i].id)
+    if ( (items.value[i].value) && (!defaultValues.value[i]) ){
+        roleIds.push(ROLE_LOOKUP.value?.[i]?.id as string)
+        fullRoleIds.push(ROLE_LOOKUP.value?.[i]?.id as string)
     } else if (defaultValues.value[i]) {
-      removeIds.push(ROLE_LOOKUP.value[i].id)
+      if (ROLE_LOOKUP?.value?.[i]?.id !== undefined) {
+        removeIds.push(ROLE_LOOKUP.value?.[i]?.id as string)
+      }
     }
   }
   try {
     //add first because remove fails if last role
     if (roleIds.length > 0) {
       await tenantStore.assignTenantUserRoles(
-        props.tenant,
-        user?.value?.id,
+        props.tenant as Tenant,
+        user?.value?.id as string,
         fullRoleIds,
       )
     }
@@ -147,8 +147,8 @@ const handleSave = async () => {
     if (removeIds.length > 0) {
       for (const removeId of removeIds) {
         await tenantStore.removeTenantUserRole(
-          props.tenant,
-          user?.value?.id,
+          props.tenant as Tenant,
+          user?.value?.id as string,
           removeId,
         )
       }
@@ -156,7 +156,7 @@ const handleSave = async () => {
     //success, show notification toast
     notification.success(t('roles.updateSuccess'))
     emit('update:openDialog', false)
-  } catch (error) {
+  } catch (error: any) {
     // show the best possible error message in error case
     const msg =
       error.response?.data?.details?.body?.[0]?.message ||
