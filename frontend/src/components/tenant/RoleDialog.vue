@@ -42,7 +42,7 @@ watch(
     items.value[2].value = false
     defaultValues.value[2] = false
     if (newUser && newUser?.roles) {
-      for (const role of newUser?.roles) {
+      for (const role of newUser.roles) {
         if (role.name === ROLES.TENANT_OWNER.value) {
           items.value[0].value = true
           defaultValues.value[0] = true
@@ -67,7 +67,7 @@ const ROLE_LOOKUP = computed(() => [
 
 // the api needs remove to be used if user has all roles assigned
 const useRemoveInstead = computed(
-  () => defaultValues.value.findIndex((v) => v === false) === -1,
+  () => defaultValues.value.some((v) => v === false),
 )
 
 // watch state for changes based on default values
@@ -82,7 +82,7 @@ const hasChanges = computed(() => {
 
 // emit when dialog is closed/opened
 const emit = defineEmits<{
-  (e: 'update:openDialog', value: boolean): void
+  (event: 'update:openDialog', value: boolean): void
 }>()
 
 //headers for the table
@@ -105,21 +105,21 @@ const handleSave = async () => {
   }
   try {
     // use assign if user doesn't have all roles
-    if (!useRemoveInstead.value) {
+    if (useRemoveInstead.value) {
+      //use remove to remove roles if they previously had all roles
+      for (const removeId of removeIds) {
+        await tenantStore.removeTenantUserRole(
+          props.tenant,
+          props.user?.id,
+          removeId,
+        )
+      }
+    } else {
       await tenantStore.assignTenantUserRoles(
         props.tenant,
         props.user?.id,
         roleIds,
       )
-    } else {
-      //use remove to remove roles if they previously had all roles
-      for (let i = 0; i < removeIds.length; i++) {
-        await tenantStore.removeTenantUserRole(
-          props.tenant,
-          props.user?.id,
-          removeIds[i],
-        )
-      }
     }
     //success, show notification toast
     notification.success(t('roles.updateSuccess'))

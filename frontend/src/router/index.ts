@@ -38,11 +38,6 @@ const router = createRouter({
 router.beforeEach(async (to, from, next) => {
   const paramsLocale = to.params.locale ?? 'en'
 
-  // // use locale if paramsLocale is not in SUPPORT_LOCALES
-  // if (!SUPPORT_LOCALES.includes(paramsLocale)) {
-  //   return next(`/${locale}`)
-  // }
-
   // load locale messages
   if (!i18n.global.availableLocales.includes(paramsLocale)) {
     await loadLocaleMessages(i18n, paramsLocale)

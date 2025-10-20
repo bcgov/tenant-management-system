@@ -3,11 +3,11 @@ import { createI18n } from 'vue-i18n'
 
 export const SUPPORT_LOCALES = ['en']
 
-export async function setupI18n(options = { locale: 'en' }) {
-  options.legacy = false
-  const i18n = createI18n(options)
-  setI18nLanguage(i18n, options.locale)
-  await loadSyncLocaleMessages(i18n, options.locale)
+export async function setupI18n(opts = { locale: 'en' }) {
+  opts.legacy = false
+  const i18n = createI18n(opts)
+  setI18nLanguage(i18n, opts.locale)
+  await loadSyncLocaleMessages(i18n, opts.locale)
   return i18n
 }
 
