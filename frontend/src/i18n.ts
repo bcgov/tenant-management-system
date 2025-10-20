@@ -22,7 +22,7 @@ export function setupI18n(opts: I18nOptions): I18n {
 }
 
 export function setI18nLanguage(i18n: I18n, locale: string) {
-  i18n.global.locale.value = locale
+  i18n.global.locale = locale
   /**
    * NOTE:
    * If you need to specify the language setting for headers, such as the `fetch` API, set it here.

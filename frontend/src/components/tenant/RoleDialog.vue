@@ -156,7 +156,8 @@ const handleSave = async () => {
     //success, show notification toast
     notification.success(t('roles.updateSuccess'))
     emit('update:openDialog', false)
-  } catch (error: unknown) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (error: any) {
     // show the best possible error message in error case
     const msg =
       error.response?.data?.details?.body?.[0]?.message ||
