@@ -486,6 +486,8 @@ describe('tenantService', () => {
     it('should log and rethrow unknown errors', async () => {
       const genericError = new Error('Update failed')
       mockPut.mockRejectedValueOnce(genericError)
+      mockedUtils.isDuplicateEntityError.mockReturnValueOnce(false)
+      mockedUtils.isValidationError.mockReturnValueOnce(false)
 
       await expect(
         tenantService.updateTenant(
