@@ -142,6 +142,9 @@ describe('tenantService', () => {
       await tenantService.assignUserRoles(tenantId, userId, [roleId])
       expect(mockPost).toHaveBeenCalledWith(
         `/tenants/${tenantId}/users/${userId}/roles`,
+        {
+          roles: [roleId],
+        }
       )
     })
 
