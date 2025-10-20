@@ -11,7 +11,7 @@ const authStore = useAuthStore()
 
 watchEffect(() => {
   if (!authStore.isAuthenticated) {
-    authStore.login()
+    window.location.href = '/'
   }
 })
 </script>

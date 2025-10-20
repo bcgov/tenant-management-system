@@ -85,7 +85,7 @@ const handleGroupCreate = async (
       notification.error(error.userMessage)
     } else if (error instanceof ServerError) {
       console.log('server error', error)
-      notification.error(error.userMessage)
+      notification.error(error.userMessage ?? 'Failed to create the new group')
     } else {
       // Otherwise display a generic error message.
       notification.error('Failed to create the new group')

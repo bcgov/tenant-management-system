@@ -142,20 +142,22 @@ export const useAuthStore = defineStore('auth', {
         }
 
         const authenticated = await this.keycloak.init({
-          onLoad: 'login-required',
+          // onLoad: 'login-required',
           checkLoginIframe: false,
         })
 
-        if (!authenticated) {
-          logger.warning('User not authenticated')
-          throw new Error('User not authenticated')
-        }
+        // if (!authenticated) {
+        //   logger.warning('User not authenticated')
+        //   throw new Error('User not authenticated')
+        // }
 
-        this.authenticated = true
-        this.token = this.keycloak.token ?? ''
-        this.user = this.parseUserFromToken()
-        this.scheduleTokenRefresh()
-        logger.info('Keycloak authenticated')
+        this.authenticated = authenticated
+        if (authenticated) {
+          this.token = this.keycloak.token ?? ''
+          this.user = this.parseUserFromToken()
+          this.scheduleTokenRefresh()
+          logger.info('Keycloak authenticated')
+        }
       } catch (error) {
         logger.error('Keycloak init failed', error)
         throw error
@@ -168,8 +170,8 @@ export const useAuthStore = defineStore('auth', {
      * Redirects the user to the Keycloak login screen. Upon successful login,
      * Keycloak will redirect back to the app.
      */
-    login(): void {
-      this.keycloak?.login()
+    login(options: object = {}): void {
+      this.keycloak?.login(options)
     },
 
     /**
@@ -180,27 +182,13 @@ export const useAuthStore = defineStore('auth', {
      * to the app. It also clears authentication state from the store and
      * browser storage.
      */
-    logout(): void {
-      if (refreshTimer) {
-        clearTimeout(refreshTimer)
-        refreshTimer = undefined
-      }
-
-      this.keycloak
-        ?.logout({
-          redirectUri: window.location.origin,
-        })
-        .then(() => {
-          localStorage.clear()
-          sessionStorage.clear()
-          this.authenticated = false
-          this.token = ''
-          this.user = null
-          logger.info('Logged out and storage cleared')
-        })
-        .catch((error: Error) => {
-          logger.error('Logout failed', error)
-        })
+    logout(): string | undefined {
+      // For whatever reason the components in this app are getting cancelled with the logout method
+      // so instead returning a string to use as a href
+      const q = this.keycloak?.createLogoutUrl({
+        redirectUri: window.location.origin,
+      }) // Ensure redirectUri is set
+      return q
     },
 
     /**
