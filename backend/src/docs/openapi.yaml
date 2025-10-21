@@ -155,7 +155,7 @@ paths:
   /v1/tenants/{tenantId}/users:
     post:
       summary: Add a user to a tenant
-      description: Adds a new user to an existing tenant. Requires JWT authentication and TENANT_OWNER or USER_ADMIN role.
+      description: Adds a new user to an existing tenant. Supports IDIR, basic BCeID, and business BCeID users. Requires JWT authentication and TENANT_OWNER or USER_ADMIN role.
       security:
         - bearerAuth: []
       parameters:
@@ -2430,6 +2430,12 @@ components:
           format: email
           nullable: true
           example: "John@gov.bc.ca"
+        idpType:
+          type: string
+          enum: ['idir', 'bceidbasic', 'bceidbusiness']
+          nullable: true
+          example: "idir"
+          description: "Identity Provider type. Defaults to 'idir' if not provided."
 
     User:
       type: object
@@ -2477,6 +2483,12 @@ components:
           format: email
           nullable: true
           example: "John@gov.bc.ca"
+        idpType:
+          type: string
+          enum: ['idir', 'bceidbasic', 'bceidbusiness']
+          nullable: true
+          example: "idir"
+          description: "Identity Provider type"
         createdDateTime:
           type: string
           format: date-time

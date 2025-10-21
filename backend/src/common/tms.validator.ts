@@ -29,7 +29,8 @@ export default {
                 displayName: Joi.string().min(1).max(50).required(),
                 userName: Joi.string().min(1).max(15).optional(),
                 ssoUserId: Joi.string().required(), // will need to be updated to the right regex and length
-                email: Joi.string().email().max(100).optional(),                
+                email: Joi.string().email().max(100).optional(),
+                idpType: Joi.string().valid('idir', 'bceidbasic', 'bceidbusiness').optional()                
             }).required(),
             roles: Joi.array().items(
                 Joi.string().guid()
