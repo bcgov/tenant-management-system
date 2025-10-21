@@ -522,7 +522,8 @@ describe('Tenant Management API', () => {
         displayName: 'John Doe',
         ssoUserId: 'F45AFBBD68C51D6F956BA3A1DE1878A1',
         email: 'john.doe@gov.bc.ca',
-        userName: 'johndoe'
+        userName: 'johndoe',
+        idpType: 'idir'
       }
     }
 
