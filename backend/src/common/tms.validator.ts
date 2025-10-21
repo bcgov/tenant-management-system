@@ -34,7 +34,11 @@ export default {
             }).required(),
             roles: Joi.array().items(
                 Joi.string().guid()
-            ).min(1).max(3).required()
+            ).min(1).max(3).when('user.idpType', {
+                is: 'idir',
+                then: Joi.required(),
+                otherwise: Joi.optional()
+            })
         }).options({abortEarly:false,convert:false})
     },
 
