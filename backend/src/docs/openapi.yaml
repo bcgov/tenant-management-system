@@ -155,7 +155,7 @@ paths:
   /v1/tenants/{tenantId}/users:
     post:
       summary: Add a user to a tenant
-      description: Adds a new user to an existing tenant. Requires JWT authentication and TENANT_OWNER or USER_ADMIN role.
+      description: Adds a new user to an existing tenant. Supports IDIR, basic BCeID, and business BCeID users. For IDIR users, roles are required. For BCeID users, roles are optional and will be overridden with SERVICE_USER role. Requires JWT authentication and TENANT_OWNER or USER_ADMIN role.
       security:
         - bearerAuth: []
       parameters:
@@ -174,7 +174,6 @@ paths:
               type: object
               required:
                 - user
-                - roles
               properties:
                 user:
                   $ref: '#/components/schemas/BasicUser'
@@ -185,6 +184,9 @@ paths:
                     format: uuid
                   minItems: 1
                   maxItems: 3
+                  description: |
+                    Required for IDIR users. Optional for BCeID users (will be overridden with SERVICE_USER role).
+                    If not provided for IDIR users, validation will fail.
                   example: ["14c6bb48-54e2-4ce0-9bbd-af4982fff13b"]
       responses:
         '201':
@@ -201,7 +203,7 @@ paths:
                     items:
                       $ref: '#/components/schemas/Role'
         '400':
-          description: Invalid input
+          description: Invalid input - IDIR users must provide roles, BCeID users roles are optional
           content:
             application/json:
               schema:
@@ -2430,6 +2432,12 @@ components:
           format: email
           nullable: true
           example: "John@gov.bc.ca"
+        idpType:
+          type: string
+          enum: ['idir', 'bceidbasic', 'bceidbusiness']
+          nullable: true
+          example: "idir"
+          description: "Identity Provider type. Defaults to 'idir' if not provided."
 
     User:
       type: object
@@ -2477,6 +2485,12 @@ components:
           format: email
           nullable: true
           example: "John@gov.bc.ca"
+        idpType:
+          type: string
+          enum: ['idir', 'bceidbasic', 'bceidbusiness']
+          nullable: true
+          example: "idir"
+          description: "Identity Provider type"
         createdDateTime:
           type: string
           format: date-time

@@ -294,7 +294,8 @@ describe('Tenant API', () => {
         lastName: 'User',
         displayName: 'Test User',
         ssoUserId: 'F45AFBBD68C4466F956BA3A1D91878AD',
-        email: 'test@gov.bc.ca'
+        email: 'test@gov.bc.ca',
+        idpType: 'idir'
       },
       roles: ['123e4567-e89b-12d3-a456-426614174002']
     }

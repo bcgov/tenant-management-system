@@ -40,4 +40,7 @@ export class SSOUser {
 
     @Column({ type: 'char', length: 32, name: 'updated_by', nullable: true })
     updatedBy: string;
+
+    @Column({ type: 'varchar', length: 20, name: 'idp_type', nullable: true })
+    idpType: string;
 }
