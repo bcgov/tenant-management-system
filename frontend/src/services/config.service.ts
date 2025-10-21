@@ -12,6 +12,9 @@ export interface AppConfig {
     realm: string
     serverUrl: string
   }
+  idirBroker: string
+  basicBceidBroker: string
+  businessBceidBroker: string
 }
 
 // Default config for development
@@ -32,6 +35,9 @@ const defaultConfig: AppConfig = {
       import.meta.env.VITE_KEYCLOAK_URL ??
       'https://dev.loginproxy.gov.bc.ca/auth',
   },
+  idirBroker: import.meta.env.VITE_KEYCLOAK_IDIR_HINT ?? '',
+  basicBceidBroker: import.meta.env.VITE_KEYCLOAK_BASIC_BCEID_HINT ?? '',
+  businessBceidBroker: import.meta.env.VITE_KEYCLOAK_BUSINESS_BCEID_HINT ?? '',
 }
 
 // Create reactive config
