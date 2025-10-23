@@ -143,6 +143,9 @@ export const useAuthStore = defineStore('auth', {
 
         const authenticated = await this.keycloak.init({
           // onLoad: 'login-required',
+          onLoad: 'check-sso',
+          silentCheckSsoRedirectUri:
+            globalThis.location.origin + '/silent-check-sso.html',
           checkLoginIframe: false,
         })
 
@@ -186,7 +189,7 @@ export const useAuthStore = defineStore('auth', {
       // For whatever reason the components in this app are getting cancelled with the logout method
       // so instead returning a string to use as a href
       const q = this.keycloak?.createLogoutUrl({
-        redirectUri: window.location.origin,
+        redirectUri: globalThis.location.origin,
       }) // Ensure redirectUri is set
       return q
     },
