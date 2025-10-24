@@ -6,7 +6,7 @@ import { UnauthorizedError } from '../errors/UnauthorizedError';
 import {RoutesConstants} from './routes.constants'
 import { TMSConstants } from './tms.constants';
 
-const TMS_AUDIENCE = process.env.TMS_AUDIENCE || 'tenant-manager-poc-5908';
+const TMS_AUDIENCE = process.env.TMS_AUDIENCE || 'tenant-management-system-6014'
 
 declare global {
   namespace Express {
@@ -15,6 +15,8 @@ declare global {
         [key: string]: any;
       };
       isSharedServiceAccess?: boolean;
+      bceidType?: 'bceidbasic' | 'bceidbusiness';
+      idpType?: 'idir' | 'bceidbasic' | 'bceidbusiness'
     }
   }
 }
@@ -22,6 +24,13 @@ declare global {
 interface CheckJwtOptions {
   sharedServiceAccess?: boolean
 }
+
+const determineBceidType = (decodedJwt: any): 'bceidbasic' | 'bceidbusiness' => {
+  if (decodedJwt.bceid_business_guid) {
+    return 'bceidbusiness';
+  }
+  return 'bceidbasic';
+};
 
 const createJwtMiddleware = (options: CheckJwtOptions = {}) => {
   const { sharedServiceAccess = false } = options
@@ -71,21 +80,62 @@ export const checkJwt = (options: CheckJwtOptions = {}) => {
       }
       
       if (options.sharedServiceAccess) {
-        req.isSharedServiceAccess = true;
+        req.isSharedServiceAccess = true
+        
+        if (req.params.ssoUserId) {
+        const tokenUserId: string = req.decodedJwt?.idir_user_guid || req.decodedJwt?.bceid_user_guid
+          const requestedUserId: string = req.params.ssoUserId
+          
+          if (tokenUserId !== requestedUserId) {
+            logger.error('User ID mismatch - token user does not match requested user', {
+              tokenUserId,
+              requestedUserId,
+              sub: req.decodedJwt?.sub
+            });
+            
+            return res.status(403).json({
+              error: 'Forbidden',
+              message: 'Access denied - the requested user does not match the token user',
+              statusCode: 403
+            });
+          }
+        }
+        
+        if (req.decodedJwt) {
+          const provider = req.decodedJwt.idp || req.decodedJwt.identity_provider
+          
+          if (provider === TMSConstants.BCEID_BOTH_PROVIDER) {
+            req.bceidType = determineBceidType(req.decodedJwt);
+            req.idpType = req.bceidType;
+            logger.info('BCeID type determined for shared service', { 
+              bceidType: req.bceidType,
+              sub: req.decodedJwt.sub,
+              hasBusinessGuid: !!req.decodedJwt.bceid_business_guid
+            });
+          } else if (provider === TMSConstants.BASIC_BCEID_PROVIDER) {
+            req.idpType = 'bceidbasic';
+          } else if (provider === TMSConstants.BUSINESS_BCEID_PROVIDER) {
+            req.idpType = 'bceidbusiness';
+          } else {
+            req.idpType = 'idir';
+          }
+        }
       } else if (req.decodedJwt) {
         const provider = req.decodedJwt.idp || req.decodedJwt.identity_provider
+
         if (provider !== TMSConstants.IDIR_PROVIDER && provider !== TMSConstants.AZURE_IDIR_PROVIDER) {
-          logger.error('Invalid provider - cannot access TMS with this provider', { 
+          logger.error('Invalid provider - TMS endpoints require IDIR access', { 
             provider, 
             sub: req.decodedJwt.sub,
             expectedProvider: [TMSConstants.IDIR_PROVIDER, TMSConstants.AZURE_IDIR_PROVIDER]
           });
           return res.status(401).json({ 
             error: 'Unauthorized',
-            message: 'IDIR or Azure IDIR provider required for TMS access',
+            message: 'TMS endpoints require IDIR or Azure IDIR access',
             statusCode: 401
           });
         }
+        req.idpType = 'idir';
       }
       
       next();

@@ -695,12 +695,13 @@ export class TMRepository {
     }
 
     public async getUserGroupsWithSharedServiceRoles(req: Request, audience: string) {
-        const tenantId = req.params.tenantId;
-        const ssoUserId = req.params.ssoUserId;
+        const tenantId: string = req.params.tenantId
+        const ssoUserId: string = req.params.ssoUserId
+        const idpType: string = req.idpType
 
-        const tenantUser = await this.tmsRepository.getTenantUserBySsoId(ssoUserId, tenantId);
+        const tenantUser: TenantUser = await this.tmsRepository.getTenantUserBySsoId(ssoUserId, tenantId)
         if (!tenantUser) {
-            throw new NotFoundError(`Tenant user not found: ${ssoUserId}`);
+            throw new NotFoundError(`Tenant user not found: ${ssoUserId}`)
         }
 
         const result = await this.manager
@@ -718,12 +719,13 @@ export class TMRepository {
             .andWhere('ss.clientIdentifier = :audience', { audience })
             .andWhere('tss.tenant.id = :tenantId', { tenantId })
             .andWhere('tss.isDeleted = :tssDeleted', { tssDeleted: false })
+            .andWhere('(ssr.allowedIdentityProviders IS NULL OR :idpType = ANY(ssr.allowedIdentityProviders))', { idpType })
             .orderBy('group.name', 'ASC')
             .addOrderBy('ss.name', 'ASC')
             .addOrderBy('ssr.name', 'ASC')
             .getMany();
 
-        const groupsMap = new Map();
+        const groupsMap = new Map()
 
         result.forEach(gu => {
             const groupId = gu.group.id;
@@ -734,7 +736,7 @@ export class TMRepository {
                     sharedServiceRoles: []
                 });
             }
-            const group = groupsMap.get(groupId);
+            const group = groupsMap.get(groupId)
             
             if (gu.group.sharedServiceRoles) {
                 gu.group.sharedServiceRoles.forEach(gssr => {
@@ -755,10 +757,10 @@ export class TMRepository {
             }
         });
 
-        const groups = Array.from(groupsMap.values());
-        groups.sort((a, b) => a.name.localeCompare(b.name));
+        const groups = Array.from(groupsMap.values())
+        groups.sort((a, b) => a.name.localeCompare(b.name))
 
-        return { groups };
+        return { groups }
     }
 
     public async getTenantUser(req: Request) {
