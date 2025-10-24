@@ -199,6 +199,8 @@ export class TMSRepository {
 
                 const tenantUser:TenantUser = new TenantUser()
                 tenantUser.tenant = tenant
+                tenantUser.createdBy = updatedBy
+                tenantUser.updatedBy = updatedBy
                 const user = req.body.user
                 const ssoUser:SSOUser = await this.setSSOUser(user.ssoUserId,user.firstName,user.lastName,user.displayName,
                     user.userName,user.email, user.idpType)       
