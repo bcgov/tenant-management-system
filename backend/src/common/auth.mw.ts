@@ -82,6 +82,7 @@ export const checkJwt = (options: CheckJwtOptions = {}) => {
         req.isSharedServiceAccess = true;
         // For shared service endpoints, allow all valid providers and determine BCeID type
         if (req.decodedJwt) {
+          const provider = req.decodedJwt.idp || req.decodedJwt.identity_provider;
           
           // Determine BCeID type for BCeID tokens
           if (provider === TMSConstants.BCEID_BOTH_PROVIDER) {
