@@ -15,6 +15,7 @@ declare global {
         [key: string]: any;
       };
       isSharedServiceAccess?: boolean;
+      bceidType?: 'bceidbasic' | 'bceidbusiness'
     }
   }
 }
@@ -22,6 +23,13 @@ declare global {
 interface CheckJwtOptions {
   sharedServiceAccess?: boolean
 }
+
+const determineBceidType = (decodedJwt: any): 'bceidbasic' | 'bceidbusiness' => {
+  if (decodedJwt.bceid_business_guid) {
+    return 'bceidbusiness';
+  }
+  return 'bceidbasic';
+};
 
 const createJwtMiddleware = (options: CheckJwtOptions = {}) => {
   const { sharedServiceAccess = false } = options
@@ -72,17 +80,31 @@ export const checkJwt = (options: CheckJwtOptions = {}) => {
       
       if (options.sharedServiceAccess) {
         req.isSharedServiceAccess = true;
+        // For shared service endpoints, allow all valid providers and determine BCeID type
+        if (req.decodedJwt) {
+          
+          // Determine BCeID type for BCeID tokens
+          if (provider === TMSConstants.BCEID_BOTH_PROVIDER) {
+            req.bceidType = determineBceidType(req.decodedJwt);
+            logger.info('BCeID type determined for shared service', { 
+              bceidType: req.bceidType,
+              sub: req.decodedJwt.sub,
+              hasBusinessGuid: !!req.decodedJwt.bceid_business_guid
+            });
+          }
+        }
       } else if (req.decodedJwt) {
         const provider = req.decodedJwt.idp || req.decodedJwt.identity_provider
+        // For TMS endpoints (sharedServiceAccess: false), only allow IDIR tokens
         if (provider !== TMSConstants.IDIR_PROVIDER && provider !== TMSConstants.AZURE_IDIR_PROVIDER) {
-          logger.error('Invalid provider - cannot access TMS with this provider', { 
+          logger.error('Invalid provider - TMS endpoints require IDIR access', { 
             provider, 
             sub: req.decodedJwt.sub,
             expectedProvider: [TMSConstants.IDIR_PROVIDER, TMSConstants.AZURE_IDIR_PROVIDER]
           });
           return res.status(401).json({ 
             error: 'Unauthorized',
-            message: 'IDIR or Azure IDIR provider required for TMS access',
+            message: 'TMS endpoints require IDIR or Azure IDIR access',
             statusCode: 401
           });
         }

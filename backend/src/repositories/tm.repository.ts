@@ -697,6 +697,9 @@ export class TMRepository {
     public async getUserGroupsWithSharedServiceRoles(req: Request, audience: string) {
         const tenantId = req.params.tenantId;
         const ssoUserId = req.params.ssoUserId;
+        const provider = req.decodedJwt.identity_provider;
+        const idpType = provider === 'bceidboth' ? 'bceidbasic' : 
+                        (provider === 'azureidir' ? 'idir' : provider);
 
         const tenantUser = await this.tmsRepository.getTenantUserBySsoId(ssoUserId, tenantId);
         if (!tenantUser) {
@@ -718,6 +721,7 @@ export class TMRepository {
             .andWhere('ss.clientIdentifier = :audience', { audience })
             .andWhere('tss.tenant.id = :tenantId', { tenantId })
             .andWhere('tss.isDeleted = :tssDeleted', { tssDeleted: false })
+            .andWhere('(ssr.allowedIdentityProviders IS NULL OR :idpType = ANY(ssr.allowedIdentityProviders))', { idpType })
             .orderBy('group.name', 'ASC')
             .addOrderBy('ss.name', 'ASC')
             .addOrderBy('ssr.name', 'ASC')
