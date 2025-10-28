@@ -647,11 +647,14 @@ export class TMSRepository {
 
         if (jwtAudience !== TMS_AUDIENCE) {
             tenantQuery
-                .innerJoin("TenantSharedService", "tss", "t.id = tss.tenant_id")
-                .innerJoin("SharedService", "ss", "tss.shared_service_id = ss.id")
-                .andWhere("ss.client_identifier = :jwtAudience", { jwtAudience })
-                .andWhere("tss.is_deleted = :tssDeleted", { tssDeleted: false })
-                .andWhere("ss.is_active = :ssActive", { ssActive: true });
+                .andWhere(`EXISTS (
+                    SELECT 1 FROM "tms"."TenantSharedService" tss 
+                    INNER JOIN "tms"."SharedService" ss ON tss.shared_service_id = ss.id 
+                    WHERE tss.tenant_id = t.id 
+                    AND ss.client_identifier = :jwtAudience 
+                    AND tss.is_deleted = :tssDeleted 
+                    AND ss.is_active = :ssActive
+                )`, { jwtAudience, tssDeleted: false, ssActive: true });
         }
 
         if (expand?.includes("tenantUserRoles")) {
