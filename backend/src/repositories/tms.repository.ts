@@ -642,19 +642,17 @@ export class TMSRepository {
         const tenantQuery = this.manager.createQueryBuilder(Tenant, "t")
             .innerJoin("t.users", "tu")
             .innerJoin("tu.ssoUser", "su")
-            .leftJoin("TenantSharedService", "tss", "t.id = tss.tenant_id")
-            .leftJoin("SharedService", "ss", "tss.shared_service_id = ss.id")
             .where("su.ssoUserId = :ssoUserId", { ssoUserId })
-            .andWhere("tu.isDeleted = :isDeleted", { isDeleted: false })
-            .andWhere(
-                ":jwtAudience = :tmsAudience OR (:jwtAudience != :tmsAudience AND ss.client_identifier = :jwtAudience AND tss.is_deleted = :tssDeleted AND ss.is_active = :ssActive)",
-                { 
-                    jwtAudience, 
-                    tmsAudience: TMS_AUDIENCE, 
-                    tssDeleted: false,
-                    ssActive: true
-                }
-            );
+            .andWhere("tu.isDeleted = :isDeleted", { isDeleted: false });
+
+        if (jwtAudience !== TMS_AUDIENCE) {
+            tenantQuery
+                .innerJoin("TenantSharedService", "tss", "t.id = tss.tenant_id")
+                .innerJoin("SharedService", "ss", "tss.shared_service_id = ss.id")
+                .andWhere("ss.client_identifier = :jwtAudience", { jwtAudience })
+                .andWhere("tss.is_deleted = :tssDeleted", { tssDeleted: false })
+                .andWhere("ss.is_active = :ssActive", { ssActive: true });
+        }
 
         if (expand?.includes("tenantUserRoles")) {
             tenantQuery.leftJoinAndSelect("t.users", "user")
