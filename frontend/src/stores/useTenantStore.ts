@@ -3,6 +3,7 @@ import { ref } from 'vue'
 
 import { Tenant, type TenantDetailFields, User } from '@/models'
 import { tenantService } from '@/services'
+import { useRoleStore } from './useRoleStore'
 
 /**
  * Pinia store for managing tenants and tenant users.
@@ -135,6 +136,35 @@ export const useTenantStore = defineStore('tenant', () => {
   }
 
   /**
+   * Adds/Assigns roles from a user in a tenant. (removes those not in array)
+   *
+   * @param {Tenant} tenant - The tenant the user belongs to.
+   * @param {string} userId - The ID of the user.
+   * @param {string[]} roleIds - The IDs of the role to ensure are present.
+   * @throws {Error} If the user is not found in the tenant.
+   * @returns {Promise<void>}
+   */
+  const assignTenantUserRoles = async (
+    tenant: Tenant,
+    userId: string,
+    roleIds: string[],
+  ) => {
+    const roleStore = useRoleStore()
+    await tenantService.assignUserRoles(tenant.id, userId, roleIds)
+
+    const user = tenant.users.find((u) => u.id === userId)
+    if (!user) {
+      throw new Error(`User with ID ${userId} not found in tenant ${tenant.id}`)
+    }
+
+    const newRoles = roleStore.roles.filter((role) => {
+      return roleIds.includes(role.id)
+    })
+
+    user.roles = newRoles
+  }
+
+  /**
    * Updates the details of a tenant.
    *
    * @param {string} id - The ID of the tenant to update.
@@ -177,6 +207,7 @@ export const useTenantStore = defineStore('tenant', () => {
     fetchTenants,
     getTenant,
     removeTenantUserRole,
+    assignTenantUserRoles,
     updateTenantDetails,
   }
 })

@@ -25,7 +25,7 @@ export const checkTenantAccess = (requiredRoles?: string[]) => {
                 }
             }
 
-            const ssoUserId:string = req.decodedJwt?.idir_user_guid;
+            const ssoUserId:string = req.decodedJwt?.idir_user_guid || req.decodedJwt?.bceid_user_guid;
             if (!tenantId || !ssoUserId) {
                 throw new ForbiddenError('Missing tenant ID or user ID');
             }
