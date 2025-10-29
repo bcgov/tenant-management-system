@@ -1,8 +1,13 @@
 import { Request, Response, NextFunction } from 'express';
 import logger from '../common/logger';
+import { RoutesConstants } from './routes.constants';
 
 export const requestLoggingMiddleware = (req: Request, res: Response, next: NextFunction) => {
     const startTime = Date.now();
+
+    if (req.path === RoutesConstants.HEALTH) {
+        return next()
+    }
 
     if (logger.isLevelEnabled('info')) {
         logger.info('Incoming request', {
