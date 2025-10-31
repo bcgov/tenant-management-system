@@ -12,6 +12,7 @@ import { useNotification } from '@/composables'
 import { DomainError, DuplicateEntityError } from '@/errors'
 import { type GroupDetailFields } from '@/models'
 import { useGroupStore, useTenantStore } from '@/stores'
+import GroupRoleContainer from '../group/GroupRoleContainer.vue'
 
 // --- Store and Composable Setup ----------------------------------------------
 
@@ -158,13 +159,7 @@ onMounted(async () => {
           <v-window-item :value="0" />
 
           <v-window-item :value="1">
-            <v-container fluid>
-              <v-row>
-                <v-col cols="12">
-                  <p>Content for Service Roles tab</p>
-                </v-col>
-              </v-row>
-            </v-container>
+            <GroupRoleContainer :group="group!" :tenant="tenant!" />
           </v-window-item>
 
           <v-window-item :value="2">
@@ -175,3 +170,10 @@ onMounted(async () => {
     </LoadingWrapper>
   </LoginContainer>
 </template>
+
+<style>
+/* This has to be important because the other one is also important... */
+.v-input.v-input--disabled.noBackground .v-input__control {
+  background-color: transparent !important;
+}
+</style>

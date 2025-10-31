@@ -15,9 +15,37 @@
     "updateSuccess": "Roles updated successfully",
     "updateError": "Failed to update roles:"
   },
+  "groups": {
+    "group": "Groups | Group | Groups",
+    "createGroup": "Create New Group",
+    "editGroup": "Edit Group",
+    "deleteGroup": "Delete Group",
+    "deleteConfirm": "Are you sure you want to delete the group \"{groupName}\"?",
+    "noServices": "No services available.",
+    "createSuccess": "Group created successfully",
+    "createError": "Failed to create group:",
+    "updateSuccess": "Group updated successfully",
+    "updateError": "Failed to update group:",
+    "deleteSuccess": "Group deleted successfully",
+    "deleteError": "Failed to delete group:",
+    "sharedServices": "Adding Shared Service Roles",
+    "sharedServicesDesc": "Click 'Edit' to start assigning roles. Choose the roles you want to add to your Group from each available Shared Service, then click 'Save' to apply your changes.",
+    "sharedServicesSavedTitle": "Roles Saved",
+    "sharedServicesSavedDesc": "The roles for this group have been successfully updated.",
+    "sharedServicesSaveErrorTitle": "Error Saving Roles",
+    "sharedServicesSaveErrorDesc": "There was an error updating the roles {error}. Please try again.",
+    "undoRoleModalTitle": "Revert to Previous Roles?",
+    "undoRoleModalDesc": "You're about to undo your current selections and restore the previously assigned roles. Are you sure you want to continue?",
+    "clearAllRoleModalTitle": "Delete all Selections?",
+    "clearAllRoleModalDesc": "You're about to delete all of your current role selections. Are you sure you want to continue?"
+  },
   "general": {
     "save": "Save",
     "cancel": "Cancel",
-    "description": "Description"
+    "description": "Description",
+    "edit": "Edit",
+    "clearAll": "Clear All",
+    "undoChanges": "Undo Changes",
+    "revert": "Revert"
   }
 }

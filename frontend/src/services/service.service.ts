@@ -1,3 +1,4 @@
+import type { GroupServiceRoles } from '@/models/groupserviceroles.model'
 import { authenticatedAxios } from './authenticated.axios'
 import { logApiError } from './utils'
 
@@ -65,6 +66,48 @@ export const serviceService = {
       return response.data.data.sharedServices
     } catch (error) {
       logApiError('Error getting tenant shared services', error)
+
+      throw error
+    }
+  },
+
+  /**
+   * Retrieves all shared services associated with a group.
+   *
+   * @param {string} tenantId - The unique identifier of the tenant.
+   * @param {string} groupId - The unique identifier of the group.
+   * @returns {Promise<object[]>} A promise that resolves to an array of
+   *   shared service objects associated with the tenant.
+   * @throws Will throw an error if the API request fails.
+   */
+  async getTenantGroupServices(tenantId: string, groupId: string) {
+    try {
+      const response = await api.get(
+        `/tenants/${tenantId}/groups/${groupId}/shared-services/shared-service-roles`,
+      )
+
+      return response.data.data.sharedServices
+    } catch (error) {
+      logApiError('Error getting tenant shared services', error)
+
+      throw error
+    }
+  },
+
+  async updateTenantGroupServices(
+    tenantId: string,
+    groupId: string,
+    data: GroupServiceRoles,
+  ) {
+    try {
+      const response = await api.put(
+        `/tenants/${tenantId}/groups/${groupId}/shared-services/shared-service-roles`,
+        data,
+      )
+
+      return response.data.data
+    } catch (error) {
+      logApiError('Error updating shared services to group', error)
 
       throw error
     }
