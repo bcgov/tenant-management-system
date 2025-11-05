@@ -9,3 +9,4 @@ export {
   type TenantRequestDetailFields,
 } from './tenantrequest.model'
 export { User } from './user.model'
+export { GroupServiceRoles, SharedServicesArray, SharedServiceRoles } from './groupserviceroles.model'
