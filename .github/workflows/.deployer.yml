@@ -228,10 +228,14 @@ jobs:
 
               # Extra cleanup: Delete any ConfigMap with the release name pattern that might exist
               echo "Extra cleanup: Removing any lingering frontend config resources..."
-              for cm in $(oc get configmap -o name 2>/dev/null | grep -i "${release_name}" || echo ""); do
+              for cm in $(oc get configmap -o name 2>/dev/null | grep -iE "(${release_name}|frontend-config)" || echo ""); do
                 echo "Deleting ConfigMap: $cm"
                 oc delete "$cm" --ignore-not-found=true || true
               done
+
+              # Additional cleanup for TEST environment specifically
+              echo "Additional cleanup for ConfigMap ownership issues..."
+              oc delete configmap "${release_name}-frontend-config" --force --grace-period=0 --ignore-not-found=true 2>/dev/null || true
   
             
               echo "✅ Cleanup completed for $release_name"
@@ -583,20 +587,34 @@ jobs:
             EOF
             )
 
-            # Update frontend ConfigMap
-            if oc get configmap $RELEASE-frontend-config &>/dev/null; then
-              echo "Updating existing frontend ConfigMap..."
-              oc delete configmap $RELEASE-frontend-config
+            # Update frontend ConfigMap ONLY for PR and Dev environments (Helm manages it for others)
+            # PR and Dev don't use Helm hook since release name contains '-pr-' or '-dev'
+            if [[ "$RELEASE" == *"-pr-"* ]] || [[ "$RELEASE" == *"-dev"* ]]; then
+              echo "Updating frontend ConfigMap (PR/Dev environment)..."
+
+              # Delete old ConfigMap if exists
+              if oc get configmap $RELEASE-frontend-config &>/dev/null; then
+                echo "Deleting existing frontend ConfigMap..."
+                oc delete configmap $RELEASE-frontend-config --wait=true
+                sleep 2
+              fi
+
+              # Create new ConfigMap with proper Helm labels for adoption
+              echo "$CONFIG_JSON" | oc create configmap $RELEASE-frontend-config \
+                --from-file=default.json=/dev/stdin \
+                --dry-run=client -o yaml | \
+                oc label -f - app.kubernetes.io/instance=$RELEASE --overwrite --dry-run=client -o yaml | \
+                oc apply -f -
+
+              echo "✅ Frontend ConfigMap created/updated"
+            else
+              echo "Skipping manual ConfigMap creation (TEST/PROD - Helm manages it)"
             fi
-
-            echo "$CONFIG_JSON" | oc create configmap $RELEASE-frontend-config --from-file=default.json=/dev/stdin
-
-            echo "✅ Frontend ConfigMap updated"
 
             # Restart frontend deployment to pick up new config
             if oc get deployment/$RELEASE-frontend &>/dev/null; then
               echo "Restarting frontend deployment..."
-              oc delete pods -l app.kubernetes.io/name=frontend,app.kubernetes.io/instance=$RELEASE
+              oc rollout restart deployment/$RELEASE-frontend
               echo "Waiting for frontend deployment to complete..."
               oc rollout status deployment/$RELEASE-frontend --timeout=300s
             else
