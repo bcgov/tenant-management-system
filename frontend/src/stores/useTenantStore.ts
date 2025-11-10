@@ -148,7 +148,12 @@ export const useTenantStore = defineStore('tenant', () => {
     tenant: Tenant,
     userId: string,
     roleIds: string[],
+    fullRoleIds?: string[],
   ) => {
+    if (!fullRoleIds) {
+      fullRoleIds = roleIds
+    }
+
     const roleStore = useRoleStore()
     await tenantService.assignUserRoles(tenant.id, userId, roleIds)
 
@@ -158,7 +163,7 @@ export const useTenantStore = defineStore('tenant', () => {
     }
 
     const newRoles = roleStore.roles.filter((role) => {
-      return roleIds.includes(role.id)
+      return fullRoleIds.includes(role.id)
     })
 
     user.roles = newRoles
