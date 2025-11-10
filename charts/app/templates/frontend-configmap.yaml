@@ -1,4 +1,4 @@
-{{- if and .Values.frontend.enabled (not (contains "-pr-" .Release.Name)) (not (contains "-dev" .Release.Name)) }}
+{{- if .Values.frontend.enabled }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -19,4 +19,4 @@ data:
         "logoutUrl": "https://dev.loginproxy.gov.bc.ca/auth/realms/standard/protocol/openid-connect/logout"
       }
     }
-  {{- end }}
+{{- end }}

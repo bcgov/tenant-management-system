@@ -598,29 +598,39 @@ jobs:
             EOF
             )
 
-            # Update frontend ConfigMap ONLY for PR and Dev environments (Helm manages it for others)
-            # PR and Dev don't use Helm hook since release name contains '-pr-' or '-dev'
-            if [[ "$RELEASE" == *"-pr-"* ]] || [[ "$RELEASE" == *"-dev"* ]]; then
-              echo "Updating frontend ConfigMap (PR/Dev environment)..."
+            # Update frontend ConfigMap
+            echo "Updating frontend configuration..."
 
-              # Delete old ConfigMap if exists
-              if oc get configmap $RELEASE-frontend-config &>/dev/null; then
-                echo "Deleting existing frontend ConfigMap..."
-                oc delete configmap $RELEASE-frontend-config --wait=true
-                sleep 2
+            # Determine the ConfigMap name
+            CONFIG_MAP_NAME="$RELEASE-frontend-config"
+
+            # Wait for ConfigMap to be created by Helm
+            echo "Waiting for ConfigMap to be created by Helm..."
+            for i in {1..30}; do
+              if oc get configmap $CONFIG_MAP_NAME &>/dev/null; then
+                echo "✅ ConfigMap found"
+                break
               fi
+              echo "Attempt $i/30: ConfigMap not found yet, waiting..."
+              sleep 2
+            done
 
-              # Create new ConfigMap with proper Helm labels for adoption
-              echo "$CONFIG_JSON" | oc create configmap $RELEASE-frontend-config \
-                --from-file=default.json=/dev/stdin \
-                --dry-run=client -o yaml | \
-                oc label -f - app.kubernetes.io/instance=$RELEASE --overwrite --dry-run=client -o yaml | \
-                oc apply -f -
-
-              echo "✅ Frontend ConfigMap created/updated"
-            else
-              echo "Skipping manual ConfigMap creation (TEST/PROD - Helm manages it)"
+            if ! oc get configmap $CONFIG_MAP_NAME &>/dev/null; then
+              echo "❌ ConfigMap was not created by Helm, attempting manual creation..."
+              # Fallback: create ConfigMap manually if Helm didn't
+              echo "$CONFIG_JSON" | oc create configmap $CONFIG_MAP_NAME --from-file=default.json=/dev/stdin || true
             fi
+
+            # Delete and recreate ConfigMap to ensure it has latest config
+            echo "Removing old ConfigMap to ensure fresh config..."
+            oc delete configmap $CONFIG_MAP_NAME --ignore-not-found=true
+            sleep 2
+
+            # Create fresh ConfigMap with real values
+            echo "Creating fresh frontend ConfigMap with real values..."
+            echo "$CONFIG_JSON" | oc create configmap $CONFIG_MAP_NAME --from-file=default.json=/dev/stdin
+
+            echo "✅ Frontend ConfigMap created with real values"
 
             # Restart frontend deployment to pick up new config
             if oc get deployment/$RELEASE-frontend &>/dev/null; then
