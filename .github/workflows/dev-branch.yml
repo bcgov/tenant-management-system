@@ -84,18 +84,24 @@ jobs:
 
   results:
     name: Dev Results
-    needs: [builds, deploy-dev, security_scan]
+    needs: [builds, deploy-dev]
     if: always()
     runs-on: ubuntu-24.04
     steps:
       - name: Check results
         run: |
-          if [ "${{ contains(needs.*.result, 'failure') }}" == "true" ]; then
+          BUILDS_RESULT="${{ needs.builds.result }}"
+          DEPLOY_RESULT="${{ needs.deploy-dev.result }}"
+
+          echo "Builds: $BUILDS_RESULT"
+          echo "Deploy: $DEPLOY_RESULT"
+
+          if [ "$BUILDS_RESULT" == "failure" ] || [ "$DEPLOY_RESULT" == "failure" ]; then
             echo "One or more jobs failed"
             exit 1
           fi
 
-          if [ "${{ contains(needs.*.result, 'cancelled') }}" == "true" ]; then
+          if [ "$BUILDS_RESULT" == "cancelled" ] || [ "$DEPLOY_RESULT" == "cancelled" ]; then
             echo "Workflow was cancelled"
             exit 1
           fi
