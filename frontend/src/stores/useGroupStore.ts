@@ -2,8 +2,14 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
 import { Group, type GroupDetailFields, GroupUser, User } from '@/models'
-import { groupService } from '@/services'
+import { groupService, serviceService } from '@/services'
 import { ServerError } from '@/errors'
+import { ServiceRole } from '@/models/servicerole.model'
+import type { GroupServiceRoles } from '@/models/groupserviceroles.model'
+
+type GroupRoleType = {
+  [key: string]: ServiceRole[]
+}
 
 /**
  * Pinia store for managing groups and group users.
@@ -11,6 +17,7 @@ import { ServerError } from '@/errors'
 export const useGroupStore = defineStore('group', () => {
   const loading = ref(false)
   const groups = ref<Group[]>([])
+  const groupRoles = ref<GroupRoleType>({})
 
   // Private methods
 
@@ -208,9 +215,65 @@ export const useGroupStore = defineStore('group', () => {
     group.description = updatedGroup.description
   }
 
+  /**
+   * Get the group service roles from the api (includes whether or not they are enabled).
+   *
+   * @param {string} tenantId - The ID of the tenant.
+   * @param {string} groupId - The ID of the group.
+   * @throws {Error} If the group is not found in the store.
+   * @returns {Promise<void>}
+   */
+  const fetchRoles = async (tenantId: string, groupId: string) => {
+    // Grab the existing group from the store, to confirm the ID and for use
+    // later.
+    const group = getGroup(groupId)
+    if (!group) {
+      throw new Error(`Group with ID ${groupId} not found`)
+    }
+
+    const apiResponse = await serviceService.getTenantGroupServices(
+      tenantId,
+      groupId,
+    )
+    groupRoles.value = {}
+    for (const d of apiResponse) {
+      const ind = []
+      for (const r of d.sharedServiceRoles) {
+        const role = ServiceRole.fromApiData(r)
+        ind.push(role)
+      }
+      groupRoles.value[d.id] = ind
+    }
+  }
+
+  /**
+   * Updates the roles of a group.
+   *
+   * @param {string} tenantId - The ID of the tenant.
+   * @param {string} groupId - The ID of the group.
+   * @param {GroupServiceRoles} data - The new group service roles.
+   * @throws {Error} If the group is not found in the store.
+   * @returns {Promise<void>}
+   */
+  const updateRoles = async (
+    tenantId: string,
+    groupId: string,
+    data: GroupServiceRoles,
+  ) => {
+    // Grab the existing group from the store, to confirm the ID and for use
+    // later.
+    const group = getGroup(groupId)
+    if (!group) {
+      throw new Error(`Group with ID ${groupId} not found`)
+    }
+
+    await serviceService.updateTenantGroupServices(tenantId, groupId, data)
+  }
+
   return {
     loading,
     groups,
+    groupRoles,
 
     addGroup,
     addGroupUser,
@@ -219,5 +282,7 @@ export const useGroupStore = defineStore('group', () => {
     getGroup,
     removeGroupUser,
     updateGroupDetails,
+    fetchRoles,
+    updateRoles,
   }
 })

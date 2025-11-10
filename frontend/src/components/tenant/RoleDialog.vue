@@ -125,10 +125,12 @@ const handleSave = async () => {
   const removeIds = []
   //built array of roles to add/remove
   for (let i = 0; i < items.value.length; i++) {
-    if (items.value[i].value && !defaultValues.value[i]) {
-      roleIds.push(ROLE_LOOKUP.value?.[i]?.id as string)
+    if (items.value[i].value) {
       fullRoleIds.push(ROLE_LOOKUP.value?.[i]?.id as string)
-    } else if (defaultValues.value[i]) {
+      if (!defaultValues.value[i]) {
+        roleIds.push(ROLE_LOOKUP.value?.[i]?.id as string)
+      }
+    } else if (!items.value[i].value && defaultValues.value[i]) {
       if (ROLE_LOOKUP?.value?.[i]?.id !== undefined) {
         removeIds.push(ROLE_LOOKUP.value?.[i]?.id as string)
       }
@@ -140,6 +142,7 @@ const handleSave = async () => {
       await tenantStore.assignTenantUserRoles(
         props.tenant as Tenant,
         user?.value?.id as string,
+        roleIds,
         fullRoleIds,
       )
     }

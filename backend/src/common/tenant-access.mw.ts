@@ -6,6 +6,7 @@ import logger from './logger';
 import { ErrorHandler } from './error.handler';
 
 const errorHandler:ErrorHandler = new ErrorHandler();
+const TMS_AUDIENCE = process.env.TMS_AUDIENCE || 'tenant-management-system-6014'
 
 export const checkTenantAccess = (requiredRoles?: string[]) => {
     return async (req: Request, res: Response, next: NextFunction) => {
@@ -19,9 +20,11 @@ export const checkTenantAccess = (requiredRoles?: string[]) => {
                     throw new ForbiddenError('Missing tenant ID or client identifier');
                 }
 
-                const hasServiceAccess:boolean = await tmsRepository.checkIfTenantHasSharedServiceAccess(tenantId, clientIdentifier)
-                if (!hasServiceAccess) {
-                    throw new ForbiddenError('Shared service not authorized for this tenant')
+                if (clientIdentifier !== TMS_AUDIENCE) {
+                    const hasServiceAccess:boolean = await tmsRepository.checkIfTenantHasSharedServiceAccess(tenantId, clientIdentifier)
+                    if (!hasServiceAccess) {
+                        throw new ForbiddenError('Shared service not authorized for this tenant')
+                    }
                 }
             }
 
