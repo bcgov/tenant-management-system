@@ -233,9 +233,20 @@ jobs:
                 oc delete "$cm" --ignore-not-found=true || true
               done
 
-              # Additional cleanup for TEST environment specifically
+              # Additional cleanup for ConfigMap ownership issues (especially for TEST/PROD)
               echo "Additional cleanup for ConfigMap ownership issues..."
               oc delete configmap "${release_name}-frontend-config" --force --grace-period=0 --ignore-not-found=true 2>/dev/null || true
+
+              # Wait for deletion to complete
+              sleep 3
+
+              # Verify deletion
+              if ! oc get configmap "${release_name}-frontend-config" &>/dev/null; then
+                echo "✅ ConfigMap successfully deleted"
+              else
+                echo "⚠️ ConfigMap still exists, attempting second deletion..."
+                oc delete configmap "${release_name}-frontend-config" --grace-period=0 --force --namespace="${KUBE_NAMESPACE}" 2>/dev/null || true
+              fi
   
             
               echo "✅ Cleanup completed for $release_name"
