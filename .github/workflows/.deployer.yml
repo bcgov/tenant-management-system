@@ -257,7 +257,7 @@ jobs:
 
       - name: Deploy Database (Smart Preservation)
         id: deploy_database
-        # Only run for non-PR environments (test/prod use Crunchy, dev uses Bitnami like PR)
+        # Run for TEST/PROD (Crunchy) - PR and Dev are handled separately below
         if: "!contains(steps.vars.outputs.release, '-pr-') && !contains(steps.vars.outputs.release, '-dev')"
         uses: bcgov/action-oc-runner@10033668ef4374d9bb78149faa73e4ccda0e93dd
         with:
@@ -502,6 +502,44 @@ jobs:
 
             # Clean up completed pods
             oc delete po --field-selector=status.phase==Succeeded --ignore-not-found=true || true
+
+      - name: Create Database Secret for PR and Dev Environments
+        id: create_db_secret
+        # Only run for PR and Dev environments (TEST/PROD already created above)
+        if: contains(steps.vars.outputs.release, '-pr-') || contains(steps.vars.outputs.release, '-dev')
+        uses: bcgov/action-oc-runner@10033668ef4374d9bb78149faa73e4ccda0e93dd
+        with:
+          oc_namespace: ${{ secrets.oc_namespace }}
+          oc_token: ${{ secrets.oc_token }}
+          oc_server: ${{ inputs.oc_server }}
+          commands: |
+            # Enable strict error handling
+            set -euo pipefail
+
+            RELEASE_NAME="${{ steps.vars.outputs.release }}"
+            DB_USER="${{ inputs.db_user }}"
+
+            echo "🚀 CREATING DATABASE SECRET FOR PR/DEV ENVIRONMENT..."
+            echo "Release name: $RELEASE_NAME"
+            echo "Database user: $DB_USER"
+
+            # Generate a consistent password
+            DB_PASSWORD=$(echo -n "${RELEASE_NAME}-${DB_USER}" | sha256sum | cut -d' ' -f1 | head -c32)
+
+            # PR and Dev environments use Bitnami PostgreSQL
+            DB_HOST="${RELEASE_NAME}-postgresql"
+            echo "Using Bitnami database host: $DB_HOST"
+
+            # Create database secret
+            oc delete secret ${RELEASE_NAME}-pguser-${DB_USER} --ignore-not-found=true
+            oc create secret generic ${RELEASE_NAME}-pguser-${DB_USER} \
+              --from-literal=password="$DB_PASSWORD" \
+              --from-literal=username="$DB_USER" \
+              --from-literal=dbname="app" \
+              --from-literal=host="$DB_HOST" \
+              --from-literal=port="5432"
+
+            echo "✅ Database secret created for PR/Dev: ${RELEASE_NAME}-pguser-${DB_USER}"
 
       - name: Update secrets
         uses: bcgov/action-oc-runner@10033668ef4374d9bb78149faa73e4ccda0e93dd
