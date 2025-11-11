@@ -299,14 +299,14 @@ jobs:
             echo "Creating/updating database secret..."
             
             # Determine the correct database host based on environment
-            if [[ "${RELEASE_NAME}" == *"-pr-"* ]]; then
-              # PR environments use Bitnami PostgreSQL
+            if [[ "${RELEASE_NAME}" == *"-pr-"* ]] || [[ "${RELEASE_NAME}" == *"-dev"* ]]; then
+              # PR and Dev environments use Bitnami PostgreSQL
               DB_HOST="${RELEASE_NAME}-postgresql"
-              echo "PR environment detected - using Bitnami host: $DB_HOST"
+              echo "PR/Dev environment detected - using Bitnami host: $DB_HOST"
             else
               # Test/prod environments use Crunchy PostgreSQL with PgBouncer
               DB_HOST="${RELEASE_NAME}-pgbouncer"
-              echo "Non-PR environment detected - using Crunchy host: $DB_HOST"
+              echo "Test/Prod environment detected - using Crunchy host: $DB_HOST"
             fi
             
             oc delete secret ${RELEASE_NAME}-pguser-${DB_USER} --ignore-not-found=true
