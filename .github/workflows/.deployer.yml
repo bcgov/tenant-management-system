@@ -541,6 +541,43 @@ jobs:
 
             echo "✅ Database secret created for PR/Dev: ${RELEASE_NAME}-pguser-${DB_USER}"
 
+            # Wait for Flyway secret to be created by Helm
+            echo "Waiting for Flyway secret to be created by Helm..."
+            for i in {1..30}; do
+              if oc get secret ${RELEASE_NAME}-flyway &>/dev/null; then
+                echo "✅ Flyway secret found"
+                break
+              fi
+              echo "Attempt $i/30: Flyway secret not found yet, waiting..."
+              sleep 2
+            done
+
+            if ! oc get secret ${RELEASE_NAME}-flyway &>/dev/null; then
+              echo "⚠️ Flyway secret was not created by Helm, creating manually..."
+              # Create Flyway secret manually if Helm didn't
+              FLYWAY_URL="jdbc:postgresql://${DB_HOST}:5432/app"
+              FLYWAY_USER_B64=$(echo -n "$DB_USER" | base64 -w0)
+              FLYWAY_PASSWORD_B64=$(echo -n "$DB_PASSWORD" | base64 -w0)
+              FLYWAY_URL_B64=$(echo -n "$FLYWAY_URL" | base64 -w0)
+
+              oc create secret generic ${RELEASE_NAME}-flyway \
+                --from-literal=FLYWAY_USER="$DB_USER" \
+                --from-literal=FLYWAY_PASSWORD="$DB_PASSWORD" \
+                --from-literal=FLYWAY_URL="$FLYWAY_URL"
+            else
+              echo "Updating Flyway secret with correct database connection..."
+              # Update the Flyway secret with correct values
+              FLYWAY_URL="jdbc:postgresql://${DB_HOST}:5432/app"
+              FLYWAY_USER_B64=$(echo -n "$DB_USER" | base64 -w0)
+              FLYWAY_PASSWORD_B64=$(echo -n "$DB_PASSWORD" | base64 -w0)
+              FLYWAY_URL_B64=$(echo -n "$FLYWAY_URL" | base64 -w0)
+
+              oc patch secret ${RELEASE_NAME}-flyway \
+                -p '{"data":{"FLYWAY_USER":"'$FLYWAY_USER_B64'","FLYWAY_PASSWORD":"'$FLYWAY_PASSWORD_B64'","FLYWAY_URL":"'$FLYWAY_URL_B64'"}}'
+
+              echo "✅ Flyway secret updated"
+            fi
+
       - name: Update secrets
         uses: bcgov/action-oc-runner@10033668ef4374d9bb78149faa73e4ccda0e93dd
         with:
