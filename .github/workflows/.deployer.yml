@@ -503,7 +503,7 @@ jobs:
             # Clean up completed pods
             oc delete po --field-selector=status.phase==Succeeded --ignore-not-found=true || true
 
-      - name: Create Database Secret for PR and Dev Environments
+      - name: Wait for PostgreSQL and Create Database Secrets (PR/Dev)
         id: create_db_secret
         # Only run for PR and Dev environments (TEST/PROD already created above)
         if: contains(steps.vars.outputs.release, '-pr-') || contains(steps.vars.outputs.release, '-dev')
@@ -519,9 +519,27 @@ jobs:
             RELEASE_NAME="${{ steps.vars.outputs.release }}"
             DB_USER="${{ inputs.db_user }}"
 
-            echo "🚀 CREATING DATABASE SECRET FOR PR/DEV ENVIRONMENT..."
+            echo "🚀 WAITING FOR POSTGRESQL AND CREATING DATABASE SECRETS..."
             echo "Release name: $RELEASE_NAME"
             echo "Database user: $DB_USER"
+
+            # Wait for PostgreSQL to be ready (for Bitnami)
+            echo "Waiting for PostgreSQL deployment to be ready..."
+            oc rollout status deployment/${RELEASE_NAME}-postgresql --timeout=300s 2>/dev/null || {
+              echo "⚠️ PostgreSQL deployment not ready yet, checking pod status..."
+              for i in {1..60}; do
+                if oc get pod -l app.kubernetes.io/name=postgresql,app.kubernetes.io/instance=${RELEASE_NAME} &>/dev/null; then
+                  POD_STATUS=$(oc get pod -l app.kubernetes.io/name=postgresql,app.kubernetes.io/instance=${RELEASE_NAME} -o jsonpath='{.items[0].status.phase}')
+                  echo "PostgreSQL pod status: $POD_STATUS"
+                  if [ "$POD_STATUS" == "Running" ]; then
+                    echo "✅ PostgreSQL pod is running"
+                    break
+                  fi
+                fi
+                echo "Attempt $i/60: Waiting for PostgreSQL pod to be ready..."
+                sleep 5
+              done
+            }
 
             # Generate a consistent password
             DB_PASSWORD=$(echo -n "${RELEASE_NAME}-${DB_USER}" | sha256sum | cut -d' ' -f1 | head -c32)
@@ -530,7 +548,8 @@ jobs:
             DB_HOST="${RELEASE_NAME}-postgresql"
             echo "Using Bitnami database host: $DB_HOST"
 
-            # Create database secret
+            # Create database secret (pguser-app)
+            echo "Creating pguser-app secret..."
             oc delete secret ${RELEASE_NAME}-pguser-${DB_USER} --ignore-not-found=true
             oc create secret generic ${RELEASE_NAME}-pguser-${DB_USER} \
               --from-literal=password="$DB_PASSWORD" \
@@ -539,25 +558,13 @@ jobs:
               --from-literal=host="$DB_HOST" \
               --from-literal=port="5432"
 
-            echo "✅ Database secret created for PR/Dev: ${RELEASE_NAME}-pguser-${DB_USER}"
+            echo "✅ Database secret created: ${RELEASE_NAME}-pguser-${DB_USER}"
 
-            # Wait for Flyway secret to be created by Helm
-            echo "Waiting for Flyway secret to be created by Helm..."
-            for i in {1..30}; do
-              if oc get secret ${RELEASE_NAME}-flyway &>/dev/null; then
-                echo "✅ Flyway secret found"
-                break
-              fi
-              echo "Attempt $i/30: Flyway secret not found yet, waiting..."
-              sleep 2
-            done
-
-            # Delete old Flyway secret to ensure fresh values
-            echo "Deleting old Flyway secret to recreate with correct values..."
+            # Delete and recreate Flyway secret with correct values
+            echo "Recreating Flyway secret with correct database connection..."
             oc delete secret ${RELEASE_NAME}-flyway --ignore-not-found=true
             sleep 2
 
-            # Create Flyway secret with correct database connection
             FLYWAY_URL="jdbc:postgresql://${DB_HOST}:5432/app"
             echo "Creating Flyway secret with:"
             echo "  Host: $DB_HOST"
@@ -570,6 +577,16 @@ jobs:
               --from-literal=FLYWAY_URL="$FLYWAY_URL"
 
             echo "✅ Flyway secret created with correct database connection"
+
+            # Verify secrets were created correctly
+            echo ""
+            echo "Verifying secrets..."
+            echo "Flyway secret FLYWAY_URL:"
+            oc get secret ${RELEASE_NAME}-flyway -o jsonpath='{.data.FLYWAY_URL}' | base64 -d
+            echo ""
+            echo "pguser-app secret host:"
+            oc get secret ${RELEASE_NAME}-pguser-${DB_USER} -o jsonpath='{.data.host}' | base64 -d
+            echo ""
 
       - name: Update secrets
         uses: bcgov/action-oc-runner@10033668ef4374d9bb78149faa73e4ccda0e93dd
@@ -636,6 +653,18 @@ jobs:
               -p '{"data":{"JWKS_URI":"'$JWKS_URI_B64'"}}'
 
             echo "✅ Backend secret updated with real values"
+
+            # For PR and Dev environments, also update the database host in backend secret
+            if [[ "$RELEASE" == *"-pr-"* ]] || [[ "$RELEASE" == *"-dev"* ]]; then
+              echo "Updating backend database host for PR/Dev environment..."
+              DB_HOST="${RELEASE}-postgresql"
+              DB_HOST_B64=$(echo -n "$DB_HOST" | base64 -w0)
+
+              oc patch secret $RELEASE-backend \
+                -p '{"data":{"DATABASE_HOST":"'$DB_HOST_B64'"}}'
+
+              echo "✅ Backend database host updated to: $DB_HOST"
+            fi
 
             # Restart backend deployment to pick up new secrets
             if oc get deployment/$RELEASE-backend &>/dev/null; then
