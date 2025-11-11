@@ -552,31 +552,24 @@ jobs:
               sleep 2
             done
 
-            if ! oc get secret ${RELEASE_NAME}-flyway &>/dev/null; then
-              echo "⚠️ Flyway secret was not created by Helm, creating manually..."
-              # Create Flyway secret manually if Helm didn't
-              FLYWAY_URL="jdbc:postgresql://${DB_HOST}:5432/app"
-              FLYWAY_USER_B64=$(echo -n "$DB_USER" | base64 -w0)
-              FLYWAY_PASSWORD_B64=$(echo -n "$DB_PASSWORD" | base64 -w0)
-              FLYWAY_URL_B64=$(echo -n "$FLYWAY_URL" | base64 -w0)
+            # Delete old Flyway secret to ensure fresh values
+            echo "Deleting old Flyway secret to recreate with correct values..."
+            oc delete secret ${RELEASE_NAME}-flyway --ignore-not-found=true
+            sleep 2
 
-              oc create secret generic ${RELEASE_NAME}-flyway \
-                --from-literal=FLYWAY_USER="$DB_USER" \
-                --from-literal=FLYWAY_PASSWORD="$DB_PASSWORD" \
-                --from-literal=FLYWAY_URL="$FLYWAY_URL"
-            else
-              echo "Updating Flyway secret with correct database connection..."
-              # Update the Flyway secret with correct values
-              FLYWAY_URL="jdbc:postgresql://${DB_HOST}:5432/app"
-              FLYWAY_USER_B64=$(echo -n "$DB_USER" | base64 -w0)
-              FLYWAY_PASSWORD_B64=$(echo -n "$DB_PASSWORD" | base64 -w0)
-              FLYWAY_URL_B64=$(echo -n "$FLYWAY_URL" | base64 -w0)
+            # Create Flyway secret with correct database connection
+            FLYWAY_URL="jdbc:postgresql://${DB_HOST}:5432/app"
+            echo "Creating Flyway secret with:"
+            echo "  Host: $DB_HOST"
+            echo "  URL: $FLYWAY_URL"
+            echo "  User: $DB_USER"
 
-              oc patch secret ${RELEASE_NAME}-flyway \
-                -p '{"data":{"FLYWAY_USER":"'$FLYWAY_USER_B64'","FLYWAY_PASSWORD":"'$FLYWAY_PASSWORD_B64'","FLYWAY_URL":"'$FLYWAY_URL_B64'"}}'
+            oc create secret generic ${RELEASE_NAME}-flyway \
+              --from-literal=FLYWAY_USER="$DB_USER" \
+              --from-literal=FLYWAY_PASSWORD="$DB_PASSWORD" \
+              --from-literal=FLYWAY_URL="$FLYWAY_URL"
 
-              echo "✅ Flyway secret updated"
-            fi
+            echo "✅ Flyway secret created with correct database connection"
 
       - name: Update secrets
         uses: bcgov/action-oc-runner@10033668ef4374d9bb78149faa73e4ccda0e93dd
