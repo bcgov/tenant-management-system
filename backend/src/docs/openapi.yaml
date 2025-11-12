@@ -6,9 +6,11 @@ info:
 servers:
   - url: http://localhost:4144
     description: Local dev server
+  - url: https://tenant-management-system-dev-frontend.apps.silver.devops.gov.bc.ca/api
+    description: CSTAR Dev API
 
 paths:
-  /health:
+  /v1/health:
     get:
       summary: Health check endpoint
       description: Checks the health status of the API service
