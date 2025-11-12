@@ -18,6 +18,18 @@ export class Routes {
     public tmController:TMController = new TMController()
 
     public routes (app:any) {
+        // Proxy swagger docs endpoints to /v1/docs for access through frontend
+        // Frontend proxies /api/v1/docs -> /v1/docs on backend
+        app.get('/v1/docs', (req:Request, res:Response) => {
+            res.redirect('/docs')
+        })
+
+        // Proxy swagger assets to /v1/swagger-resources for proper loading
+        app.get('/v1/swagger-resources/*', (req:Request, res:Response) => {
+            const path = req.path.replace('/v1/swagger-resources', '')
+            res.redirect(`/swagger-resources${path}`)
+        })
+
         app.route(RoutesConstants.HEALTH).get((req:Request, res:Response) => this.tmsController.health(req, res))
         app.route(RoutesConstants.CREATE_TENANTS).post(checkJwt(),checkOperationsAdmin, validate(validator.createTenant,{},{}),(req:Request,res:Response) => this.tmsController.createTenant(req,res))
         app.route(RoutesConstants.ADD_TENANT_USERS).post(checkJwt(), validate(validator.addTenantUser,{},{}), checkTenantAccess([TMSConstants.TENANT_OWNER, TMSConstants.USER_ADMIN]),(req:Request,res:Response) => this.tmsController.addTenantUser(req,res))

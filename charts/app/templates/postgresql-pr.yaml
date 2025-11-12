@@ -1,4 +1,4 @@
-{{- if and (contains "-pr-" .Release.Name) (index .Values "postgresql-pr" "enabled") }}
+{{- if and (or (contains "-pr-" .Release.Name) (contains "-dev" .Release.Name)) (index .Values "postgresql-pr" "enabled") }}
 ---
 apiVersion: v1
 kind: Secret
