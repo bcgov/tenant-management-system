@@ -47,6 +47,16 @@ spec:
             - name: http
               containerPort: {{ index .Values.frontend.service.ports 0 "targetPort" }}
               protocol: TCP
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 3001
+              scheme: HTTP
+            initialDelaySeconds: 0
+            periodSeconds: 5
+            timeoutSeconds: 2
+            successThreshold: 1
+            failureThreshold: 20
           readinessProbe:
             httpGet:
               path: /health
