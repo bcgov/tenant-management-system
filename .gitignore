@@ -372,5 +372,8 @@ pyrightconfig.json
 # IDE
 .codebuddy
 
+# Claude Code Configuration (local machine only)
+.claude/
+
 # MAC
 **.DS_Store

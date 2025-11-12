@@ -57,8 +57,10 @@ jobs:
         --set global.secrets.persist=false
         --set backend.imagePullPolicy=Always
         --set frontend.imagePullPolicy=Always
-        --set backend.deploymentStrategy=Recreate
-        --set frontend.deploymentStrategy=Recreate
+        --set backend.deploymentStrategy=RollingUpdate
+        --set frontend.deploymentStrategy=RollingUpdate
+        --set backend.autoscaling.minReplicas=2
+        --set frontend.autoscaling.minReplicas=2
         --set global.debug=true
         --set backend.resources.requests.memory=256Mi
         --set backend.resources.limits.memory=512Mi
@@ -67,6 +69,10 @@ jobs:
         --set global.config.databaseUser=app
         --set postgresql-pr.enabled=true
         --set crunchy.enabled=false
+        --set backend.pdb.enabled=true
+        --set backend.pdb.minAvailable=1
+        --set frontend.pdb.enabled=true
+        --set frontend.pdb.minAvailable=1
       deployment_url: https://${{ github.event.repository.name }}-dev-frontend.apps.silver.devops.gov.bc.ca
 
   # Security scan after DEV deployment
