@@ -28,6 +28,18 @@ export const requestLoggingMiddleware = (req: Request, res: Response, next: Next
         return next()
     }
 
+    const rawPath = req.originalUrl?.split('?')[0] || req.url?.split('?')[0] || req.path;
+    if (
+        rawPath === RoutesConstants.HEALTH ||
+        rawPath === '/health' ||
+        rawPath === `/api${RoutesConstants.HEALTH}` ||
+        rawPath.startsWith(RoutesConstants.HEALTH + '/') ||
+        rawPath.startsWith('/health/') ||
+        rawPath.startsWith(`/api${RoutesConstants.HEALTH}/`)
+    ) {
+        return next()
+    }
+
     if (logger.isLevelEnabled('info')) {
         logger.info('Incoming request', {
             method: req.method,
