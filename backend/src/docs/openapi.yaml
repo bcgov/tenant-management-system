@@ -8,6 +8,8 @@ servers:
     description: Local dev server
   - url: https://tenant-management-system-dev-backend.apps.silver.devops.gov.bc.ca
     description: CSTAR Dev API
+  - url: https://tenant-management-system-test-frontend.apps.silver.devops.gov.bc.ca/api/
+    description: TEST env api
 
 paths:
   /v1/health:
