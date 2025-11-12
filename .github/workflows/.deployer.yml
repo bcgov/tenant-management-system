@@ -541,8 +541,9 @@ jobs:
               done
             }
 
-            # Generate a consistent password
-            DB_PASSWORD=$(echo -n "${RELEASE_NAME}-${DB_USER}" | sha256sum | cut -d' ' -f1 | head -c32)
+            # Generate password using SAME formula as Helm template (postgresql-pr.yaml line 13)
+            # Formula: printf "%s-pr-db-pass" .Release.Name | sha256sum | trunc 32
+            DB_PASSWORD=$(echo -n "${RELEASE_NAME}-pr-db-pass" | sha256sum | cut -d' ' -f1 | head -c32)
 
             # PR and Dev environments use Bitnami PostgreSQL
             DB_HOST="${RELEASE_NAME}-postgresql"
