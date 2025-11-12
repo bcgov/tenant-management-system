@@ -489,7 +489,7 @@ jobs:
 
             RELEASE_NAME="${{ steps.vars.outputs.release }}"
             DB_USER="${{ inputs.db_user }}"
-            CLUSTER_NAME="${RELEASE_NAME}-crunchy"
+            CLUSTER_NAME="${RELEASE_NAME}-postgres"
 
             echo "🔐 WAITING FOR CRUNCHY POSTGRESQL AUTO-GENERATED SECRETS..."
             echo "Cluster name: $CLUSTER_NAME"
