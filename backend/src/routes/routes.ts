@@ -18,14 +18,15 @@ export class Routes {
     public tmController:TMController = new TMController()
 
     public routes (app:any) {
-        // Proxy swagger docs endpoints to /api/v1/docs for access through frontend
-        app.get('/api/v1/docs', (req:Request, res:Response) => {
+        // Proxy swagger docs endpoints to /v1/docs for access through frontend
+        // Frontend proxies /api/v1/docs -> /v1/docs on backend
+        app.get('/v1/docs', (req:Request, res:Response) => {
             res.redirect('/docs')
         })
 
-        // Proxy swagger assets to /api/v1/swagger-resources for proper loading
-        app.get('/api/v1/swagger-resources/*', (req:Request, res:Response) => {
-            const path = req.path.replace('/api/v1/swagger-resources', '')
+        // Proxy swagger assets to /v1/swagger-resources for proper loading
+        app.get('/v1/swagger-resources/*', (req:Request, res:Response) => {
+            const path = req.path.replace('/v1/swagger-resources', '')
             res.redirect(`/swagger-resources${path}`)
         })
 
