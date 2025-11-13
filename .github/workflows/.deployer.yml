@@ -257,7 +257,7 @@ jobs:
 
       - name: Deploy Database (Smart Preservation)
         id: deploy_database
-        # Only run for non-PR environments (test/prod use Crunchy, dev uses Bitnami like PR)
+        # Run for TEST/PROD (Crunchy) - PR and Dev are handled separately below
         if: "!contains(steps.vars.outputs.release, '-pr-') && !contains(steps.vars.outputs.release, '-dev')"
         uses: bcgov/action-oc-runner@10033668ef4374d9bb78149faa73e4ccda0e93dd
         with:
@@ -267,57 +267,28 @@ jobs:
           commands: |
             # Enable strict error handling
             set -euo pipefail
-            
-            echo "🚀 DATABASE DEPLOYMENT STARTING..."
-            
+
+            echo "🚀 DATABASE DEPLOYMENT STARTING (TEST/PROD with Crunchy)..."
+
             # Set database configuration
             RELEASE_NAME="${{ steps.vars.outputs.release }}"
             DB_USER="${{ inputs.db_user }}"
             PRESERVE_DB="${{ inputs.preserve_database }}"
-            
+
             echo "Release name: $RELEASE_NAME"
             echo "Database user: $DB_USER"
             echo "Preserve database: $PRESERVE_DB"
-            
-            # Generate a consistent password
-            DB_PASSWORD=$(echo -n "${RELEASE_NAME}-${DB_USER}" | sha256sum | cut -d' ' -f1 | head -c32)
-            
+
             # Check if database already exists
-            if oc get deployment ${RELEASE_NAME}-postgres &>/dev/null; then
-              echo "✅ Database deployment already exists"
+            if oc get postgrescluster ${RELEASE_NAME}-crunchy &>/dev/null; then
+              echo "✅ Crunchy PostgreSQL cluster already exists"
             else
-              echo "❌ Database deployment missing - this will be created by Helm"
+              echo "ℹ️ Crunchy PostgreSQL cluster will be created by Helm"
             fi
-            
-            if oc get pvc ${RELEASE_NAME}-postgres-data &>/dev/null; then
-              echo "✅ Database PVC already exists"
-            else
-              echo "❌ Database PVC missing - this will be created by Helm"
-            fi
-            
-            # Ensure database secret exists
-            echo "Creating/updating database secret..."
-            
-            # Determine the correct database host based on environment
-            if [[ "${RELEASE_NAME}" == *"-pr-"* ]]; then
-              # PR environments use Bitnami PostgreSQL
-              DB_HOST="${RELEASE_NAME}-postgresql"
-              echo "PR environment detected - using Bitnami host: $DB_HOST"
-            else
-              # Test/prod environments use Crunchy PostgreSQL with PgBouncer
-              DB_HOST="${RELEASE_NAME}-pgbouncer"
-              echo "Non-PR environment detected - using Crunchy host: $DB_HOST"
-            fi
-            
-            oc delete secret ${RELEASE_NAME}-pguser-${DB_USER} --ignore-not-found=true
-            oc create secret generic ${RELEASE_NAME}-pguser-${DB_USER} \
-              --from-literal=password="$DB_PASSWORD" \
-              --from-literal=username="$DB_USER" \
-              --from-literal=dbname="app" \
-              --from-literal=host="$DB_HOST" \
-              --from-literal=port="5432"
-            
-            echo "✅ Database secret created/updated"
+
+            # For Crunchy PostgreSQL with PgBouncer
+            DB_HOST="${RELEASE_NAME}-pgbouncer"
+            echo "Test/Prod environment detected - using Crunchy PgBouncer host: $DB_HOST"
 
       - uses: actions/checkout@v4
 
@@ -503,6 +474,166 @@ jobs:
             # Clean up completed pods
             oc delete po --field-selector=status.phase==Succeeded --ignore-not-found=true || true
 
+      - name: Wait for Crunchy PostgreSQL Secrets (TEST/PROD)
+        id: crunchy_secrets
+        # Only run for TEST/PROD environments with Crunchy
+        if: "!contains(steps.vars.outputs.release, '-pr-') && !contains(steps.vars.outputs.release, '-dev')"
+        uses: bcgov/action-oc-runner@10033668ef4374d9bb78149faa73e4ccda0e93dd
+        with:
+          oc_namespace: ${{ secrets.oc_namespace }}
+          oc_token: ${{ secrets.oc_token }}
+          oc_server: ${{ inputs.oc_server }}
+          commands: |
+            # Enable strict error handling
+            set -euo pipefail
+
+            RELEASE_NAME="${{ steps.vars.outputs.release }}"
+            DB_USER="${{ inputs.db_user }}"
+            CLUSTER_NAME="${RELEASE_NAME}-postgres"
+
+            echo "🔐 WAITING FOR CRUNCHY POSTGRESQL AUTO-GENERATED SECRETS..."
+            echo "Cluster name: $CLUSTER_NAME"
+
+            # Wait for Crunchy to create the postgres user password secret
+            echo "Waiting for Crunchy to generate postgres password secret..."
+            for i in {1..60}; do
+              # Crunchy creates secrets named: {cluster}-postgres or {cluster}-pguser-{username}
+              if oc get secret ${CLUSTER_NAME}-pguser-${DB_USER} &>/dev/null; then
+                echo "✅ Crunchy created secret: ${CLUSTER_NAME}-pguser-${DB_USER}"
+
+                # Get password from Crunchy's secret
+                DB_PASSWORD=$(oc get secret ${CLUSTER_NAME}-pguser-${DB_USER} -o jsonpath='{.data.password}' | base64 -d)
+                DB_HOST="${RELEASE_NAME}-pgbouncer"
+
+                # Create a copy of Crunchy's secret with the naming convention our app expects
+                echo "Creating application-compatible secret: ${RELEASE_NAME}-pguser-${DB_USER}"
+                oc delete secret ${RELEASE_NAME}-pguser-${DB_USER} --ignore-not-found=true
+                oc create secret generic ${RELEASE_NAME}-pguser-${DB_USER} \
+                  --from-literal=password="$DB_PASSWORD" \
+                  --from-literal=username="$DB_USER" \
+                  --from-literal=dbname="app" \
+                  --from-literal=host="$DB_HOST" \
+                  --from-literal=port="5432"
+
+                echo "✅ Application secret created with Crunchy's auto-generated password"
+                break
+              fi
+
+              echo "Attempt $i/60: Waiting for Crunchy secrets..."
+              sleep 5
+            done
+
+            if ! oc get secret ${RELEASE_NAME}-pguser-${DB_USER} &>/dev/null; then
+              echo "❌ Crunchy secret not created after timeout"
+              echo "Available secrets:"
+              oc get secrets | grep -i crunchy || echo "No Crunchy secrets found"
+              exit 1
+            fi
+
+            # Create Flyway secret for TEST/PROD with Crunchy password
+            echo ""
+            echo "Creating Flyway secret for TEST/PROD environment..."
+            DB_PASSWORD=$(oc get secret ${RELEASE_NAME}-pguser-${DB_USER} -o jsonpath='{.data.password}' | base64 -d)
+            FLYWAY_URL="jdbc:postgresql://${DB_HOST}:5432/app"
+
+            oc delete secret ${RELEASE_NAME}-flyway --ignore-not-found=true
+            sleep 1
+
+            oc create secret generic ${RELEASE_NAME}-flyway \
+              --from-literal=FLYWAY_USER="$DB_USER" \
+              --from-literal=FLYWAY_PASSWORD="$DB_PASSWORD" \
+              --from-literal=FLYWAY_URL="$FLYWAY_URL"
+
+            echo "✅ Flyway secret created with Crunchy auto-generated password"
+            echo "  URL: $FLYWAY_URL"
+            echo "  User: $DB_USER"
+
+      - name: Wait for PostgreSQL and Create Database Secrets (PR/Dev)
+        id: create_db_secret
+        # Only run for PR and Dev environments (TEST/PROD already created above)
+        if: contains(steps.vars.outputs.release, '-pr-') || contains(steps.vars.outputs.release, '-dev')
+        uses: bcgov/action-oc-runner@10033668ef4374d9bb78149faa73e4ccda0e93dd
+        with:
+          oc_namespace: ${{ secrets.oc_namespace }}
+          oc_token: ${{ secrets.oc_token }}
+          oc_server: ${{ inputs.oc_server }}
+          commands: |
+            # Enable strict error handling
+            set -euo pipefail
+
+            RELEASE_NAME="${{ steps.vars.outputs.release }}"
+            DB_USER="${{ inputs.db_user }}"
+
+            echo "🚀 WAITING FOR POSTGRESQL AND CREATING DATABASE SECRETS..."
+            echo "Release name: $RELEASE_NAME"
+            echo "Database user: $DB_USER"
+
+            # Wait for PostgreSQL to be ready (for Bitnami)
+            echo "Waiting for PostgreSQL deployment to be ready..."
+            oc rollout status deployment/${RELEASE_NAME}-postgresql --timeout=300s 2>/dev/null || {
+              echo "⚠️ PostgreSQL deployment not ready yet, checking pod status..."
+              for i in {1..60}; do
+                if oc get pod -l app.kubernetes.io/name=postgresql,app.kubernetes.io/instance=${RELEASE_NAME} &>/dev/null; then
+                  POD_STATUS=$(oc get pod -l app.kubernetes.io/name=postgresql,app.kubernetes.io/instance=${RELEASE_NAME} -o jsonpath='{.items[0].status.phase}')
+                  echo "PostgreSQL pod status: $POD_STATUS"
+                  if [ "$POD_STATUS" == "Running" ]; then
+                    echo "✅ PostgreSQL pod is running"
+                    break
+                  fi
+                fi
+                echo "Attempt $i/60: Waiting for PostgreSQL pod to be ready..."
+                sleep 5
+              done
+            }
+
+            # Generate password using SAME formula as Helm template (postgresql-pr.yaml line 13)
+            # Formula: printf "%s-pr-db-pass" .Release.Name | sha256sum | trunc 32
+            DB_PASSWORD=$(echo -n "${RELEASE_NAME}-pr-db-pass" | sha256sum | cut -d' ' -f1 | head -c32)
+
+            # PR and Dev environments use Bitnami PostgreSQL
+            DB_HOST="${RELEASE_NAME}-postgresql"
+            echo "Using Bitnami database host: $DB_HOST"
+
+            # Create database secret (pguser-app)
+            echo "Creating pguser-app secret..."
+            oc delete secret ${RELEASE_NAME}-pguser-${DB_USER} --ignore-not-found=true
+            oc create secret generic ${RELEASE_NAME}-pguser-${DB_USER} \
+              --from-literal=password="$DB_PASSWORD" \
+              --from-literal=username="$DB_USER" \
+              --from-literal=dbname="app" \
+              --from-literal=host="$DB_HOST" \
+              --from-literal=port="5432"
+
+            echo "✅ Database secret created: ${RELEASE_NAME}-pguser-${DB_USER}"
+
+            # Delete and recreate Flyway secret with correct values
+            echo "Recreating Flyway secret with correct database connection..."
+            oc delete secret ${RELEASE_NAME}-flyway --ignore-not-found=true
+            sleep 2
+
+            FLYWAY_URL="jdbc:postgresql://${DB_HOST}:5432/app"
+            echo "Creating Flyway secret with:"
+            echo "  Host: $DB_HOST"
+            echo "  URL: $FLYWAY_URL"
+            echo "  User: $DB_USER"
+
+            oc create secret generic ${RELEASE_NAME}-flyway \
+              --from-literal=FLYWAY_USER="$DB_USER" \
+              --from-literal=FLYWAY_PASSWORD="$DB_PASSWORD" \
+              --from-literal=FLYWAY_URL="$FLYWAY_URL"
+
+            echo "✅ Flyway secret created with correct database connection"
+
+            # Verify secrets were created correctly
+            echo ""
+            echo "Verifying secrets..."
+            echo "Flyway secret FLYWAY_URL:"
+            oc get secret ${RELEASE_NAME}-flyway -o jsonpath='{.data.FLYWAY_URL}' | base64 -d
+            echo ""
+            echo "pguser-app secret host:"
+            oc get secret ${RELEASE_NAME}-pguser-${DB_USER} -o jsonpath='{.data.host}' | base64 -d
+            echo ""
+
       - name: Update secrets
         uses: bcgov/action-oc-runner@10033668ef4374d9bb78149faa73e4ccda0e93dd
         with:
@@ -568,6 +699,18 @@ jobs:
               -p '{"data":{"JWKS_URI":"'$JWKS_URI_B64'"}}'
 
             echo "✅ Backend secret updated with real values"
+
+            # For PR and Dev environments, also update the database host in backend secret
+            if [[ "$RELEASE" == *"-pr-"* ]] || [[ "$RELEASE" == *"-dev"* ]]; then
+              echo "Updating backend database host for PR/Dev environment..."
+              DB_HOST="${RELEASE}-postgresql"
+              DB_HOST_B64=$(echo -n "$DB_HOST" | base64 -w0)
+
+              oc patch secret $RELEASE-backend \
+                -p '{"data":{"DATABASE_HOST":"'$DB_HOST_B64'"}}'
+
+              echo "✅ Backend database host updated to: $DB_HOST"
+            fi
 
             # Restart backend deployment to pick up new secrets
             if oc get deployment/$RELEASE-backend &>/dev/null; then
