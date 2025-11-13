@@ -1,5 +1,10 @@
 import { GroupUser } from '@/models'
 
+enum GroupIdEnum {
+  _ = '',
+}
+declare type GroupId = string & GroupIdEnum
+
 /**
  * Utility type that represents the subset of Group properties used in the form
  * that edits these fields.
@@ -30,7 +35,7 @@ export class Group {
   /**
    * Unique identifier for the group.
    */
-  id: string
+  id: GroupId
 
   /**
    * Display name of the group.
@@ -64,7 +69,7 @@ export class Group {
     this.createdBy = createdBy
     this.createdDate = createdDate
     this.description = description
-    this.id = id
+    this.id = id as GroupId
     this.name = name
     this.groupUsers = Array.isArray(groupUsers) ? groupUsers : []
   }
