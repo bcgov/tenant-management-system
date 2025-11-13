@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { GroupServiceRoles, SharedServicesArray, SharedServiceRoles } from '@/models'
+
 import * as utils from '@/services/utils'
 
 vi.mock('@/services/utils', () => ({
@@ -33,6 +35,8 @@ vi.mock('@/services/authenticated.axios', () => ({
 }))
 
 import { serviceService } from '@/services/service.service'
+import { group } from 'console'
+import type { Group } from '@/models'
 
 describe('serviceService', () => {
   const tenantId = '1'
@@ -154,6 +158,109 @@ describe('serviceService', () => {
 
       expect(mockedUtils.logApiError).toHaveBeenCalledWith(
         'Error getting tenant shared services',
+        error,
+      )
+    })
+  })
+
+  describe('getTenantGroupServices', () => {
+    const fakeSharedGroupServices = {
+      "id": "f454ab17-c0dd-46b3-8bce-b56874df57f4",
+      "name": "CHEFS",
+      "clientIdentifier": "tenant-management-system-6014",
+      "description": "chefs service local",
+      "createdDateTime": "2025-10-29",
+      "updatedDateTime": "2025-10-29",
+      "createdBy": "B1SHARRA                        ",
+      "updatedBy": "B1SHARRA                        ",
+      "sharedServiceRoles": [{
+          "id": "c7c82cb9-6344-4864-be39-19ffb03d105f",
+          "name": "Admin",
+          "description": "does admin things",
+          "enabled": false,
+          "createdDateTime": "2025-10-29",
+          "createdBy": "B1SHARRA                        "
+      }]
+    }
+    const groupId = '1'
+
+    it('should return tenant group services on success', async () => {
+      const groupId = '1'
+      mockGet.mockResolvedValueOnce({
+        data: { data: { sharedServices: fakeSharedGroupServices } },
+      })
+
+      const result = await serviceService.getTenantGroupServices(tenantId, groupId)
+
+      expect(result).toEqual(fakeSharedGroupServices)
+      expect(mockGet).toHaveBeenCalledWith(
+        `/tenants/${tenantId}/groups/${groupId}/shared-services/shared-service-roles`,
+      )
+    })
+
+    it('should return empty array when tenant has no services', async () => {
+      mockGet.mockResolvedValueOnce({
+        data: { data: { sharedServices: [] } },
+      })
+
+      const result = await serviceService.getTenantGroupServices(tenantId, groupId)
+
+      expect(result).toEqual([])
+      expect(mockGet).toHaveBeenCalledWith(
+        `/tenants/${tenantId}/groups/${groupId}/shared-services/shared-service-roles`,
+      )
+    })
+
+    it('should log and rethrow errors', async () => {
+      const error = new Error('Failed to fetch tenant services')
+      mockGet.mockRejectedValueOnce(error)
+
+      await expect(serviceService.getTenantGroupServices(tenantId, groupId)).rejects.toThrow(
+        error,
+      )
+
+      expect(mockedUtils.logApiError).toHaveBeenCalledWith(
+        'Error getting tenant shared services',
+        error,
+      )
+    })
+  })
+
+  describe('updateTenantGroupServices', () => {
+    const fakeUpdateData: GroupServiceRoles = {
+      "sharedServices": [{
+        "id": "c7c82cb9-6344-4864-be39-19ffb03d105f",
+        "sharedServiceRoles": [{
+            "id": "c7c82cb9-6344-4864-be39-19ffb03d105f",
+            "enabled": true
+        }]
+      }]
+    }
+    const groupId = '1'
+
+    it('should return tenant group services on success', async () => {
+      const groupId = '1'
+      mockPut.mockResolvedValueOnce({data: {data: {}}})
+
+      const result = await serviceService.updateTenantGroupServices(tenantId, groupId, fakeUpdateData)
+
+      expect(result).toEqual({})
+      expect(mockPut).toHaveBeenCalledWith(
+        `/tenants/${tenantId}/groups/${groupId}/shared-services/shared-service-roles`,
+        fakeUpdateData
+      )
+    })
+
+    it('should log and rethrow errors', async () => {
+      const error = new Error('Failed to fetch tenant services')
+      mockPut.mockRejectedValueOnce(error)
+
+      await expect(serviceService.updateTenantGroupServices(tenantId, groupId, fakeUpdateData)).rejects.toThrow(
+        error,
+      )
+
+      expect(mockedUtils.logApiError).toHaveBeenCalledWith(
+        'Error updating shared services to group',
         error,
       )
     })

@@ -1,4 +1,4 @@
-{{- if and .Values.frontend.enabled (not (contains "-pr-" .Release.Name)) }}
+{{- if .Values.frontend.enabled }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -6,9 +6,6 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "frontend.labels" . | nindent 4 }}
-  annotations:
-    "helm.sh/hook": pre-install,pre-upgrade
-    "helm.sh/hook-weight": "-5"
 data:
   default.json: |
     {
@@ -22,4 +19,4 @@ data:
         "logoutUrl": "https://dev.loginproxy.gov.bc.ca/auth/realms/standard/protocol/openid-connect/logout"
       }
     }
-  {{- end }}
+{{- end }}

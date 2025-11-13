@@ -4,7 +4,6 @@ import { RoutesConstants } from './routes.constants';
 
 export const requestLoggingMiddleware = (req: Request, res: Response, next: NextFunction) => {
     const startTime = Date.now();
-
     const rawPath = req.originalUrl?.split('?')[0] || req.url?.split('?')[0] || req.path;
     if (
         rawPath === RoutesConstants.HEALTH ||
