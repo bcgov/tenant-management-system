@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { Role, SsoUser, User } from '@/models'
+import type { UserId } from '@/models/user.model'
+import type { RoleId } from '@/models/role.model'
 
 describe('User model', () => {
   it('constructor assigns properties correctly', () => {
@@ -36,18 +38,18 @@ describe('User model', () => {
 
   it('fromApiData converts API data to User instance correctly', () => {
     const apiData = {
-      id: 'userApi',
-      ssoUser: {
-        ssoUserId: 'ssoApi',
-        userName: 'usernameApi',
-        firstName: 'FirstApi',
-        lastName: 'LastApi',
-        displayName: 'DisplayApi',
-        email: 'api@example.com',
-      },
+      id: 'userApi' as UserId,
+      ssoUser: new SsoUser(
+        'ssoApi',
+        'usernameApi',
+        'FirstApi',
+        'LastApi',
+        'DisplayApi',
+        'api@example.com',
+      ),
       roles: [
-        { id: 'r1', name: 'role1', description: 'desc1' },
-        { id: 'r2', name: 'role2', description: 'desc2' },
+        { id: 'r1' as RoleId, name: 'role1', description: 'desc1' },
+        { id: 'r2' as RoleId, name: 'role2', description: 'desc2' },
       ],
     }
 
@@ -62,14 +64,14 @@ describe('User model', () => {
   it('fromApiData handles missing roles gracefully', () => {
     const apiData = {
       id: 'userApiNoRoles',
-      ssoUser: {
-        ssoUserId: 'ssoNoRoles',
-        userName: 'usernameNoRoles',
-        firstName: 'FirstNoRoles',
-        lastName: 'LastNoRoles',
-        displayName: 'DisplayNoRoles',
-        email: 'noroles@example.com',
-      },
+      ssoUser: new SsoUser(
+        'ssoNoRoles',
+        'usernameNoRoles',
+        'FirstNoRoles',
+        'LastNoRoles',
+        'DisplayNoRoles',
+        'noroles@example.com',
+      ),
     }
 
     const user = User.fromApiData(apiData)

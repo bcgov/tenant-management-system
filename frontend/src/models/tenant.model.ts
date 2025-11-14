@@ -1,5 +1,11 @@
 import { User } from '@/models'
 import { ROLES } from '@/utils/constants'
+import type { SSOUserId } from '@/models/ssouser.model'
+
+enum TenantIdEnum {
+  _ = '',
+}
+export declare type TenantId = string & TenantIdEnum
 
 /**
  * Utility type that represents the subset of Tenant properties used in the form
@@ -34,7 +40,7 @@ export class Tenant {
   /**
    * Unique identifier for the tenant.
    */
-  id: string
+  id: TenantId
 
   /**
    * Display name of the tenant.
@@ -75,7 +81,7 @@ export class Tenant {
     this.createdBy = createdBy
     this.createdDate = createdDate
     this.description = description
-    this.id = id
+    this.id = id as TenantId
     this.name = name
     this.ministryName = ministryName
     this.users = Array.isArray(users) ? users : []
@@ -88,7 +94,9 @@ export class Tenant {
    * @returns The User if found, or undefined if not found
    */
   findUser(ssoUserId: string): User | undefined {
-    return this.users.find((user) => user.ssoUser.ssoUserId === ssoUserId)
+    return this.users.find(
+      (user) => user.ssoUser.ssoUserId === (ssoUserId as SSOUserId),
+    )
   }
 
   /**

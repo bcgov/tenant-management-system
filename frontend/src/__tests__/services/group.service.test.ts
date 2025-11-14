@@ -37,7 +37,7 @@ vi.mock('@/services/authenticated.axios', () => ({
 }))
 
 import { DuplicateEntityError, ValidationError } from '@/errors'
-import { User } from '@/models'
+import { User, SsoUser } from '@/models'
 import { groupService } from '@/services'
 
 describe('groupService', () => {
@@ -51,18 +51,15 @@ describe('groupService', () => {
     description: 'Group description',
   }
 
-  const fakeUser: User = {
-    id: 'user123',
-    ssoUser: {
-      displayName: 'John Doe',
-      email: 'john.doe@example.com',
-      firstName: 'John',
-      lastName: 'Doe',
-      ssoUserId: '789',
-      userName: 'johndoe',
-    },
-    roles: [],
-  }
+  const ssoFakeUser: SsoUser = new SsoUser(
+    '789',
+    'johndoe',
+    'John',
+    'Doe',
+    'John Doe',
+    'john.doe@example.com',
+  )
+  const fakeUser: User = new User('user123', ssoFakeUser, [])
 
   const fakeGroupUser = {
     id: groupUserId,

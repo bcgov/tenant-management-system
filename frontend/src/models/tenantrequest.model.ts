@@ -1,3 +1,8 @@
+enum TenantRequestIdEnum {
+  _ = '',
+}
+declare type TenantRequestId = string & TenantRequestIdEnum
+
 /**
  * Utility type that represents the subset of Tenant Request properties used in
  * the form that edits these fields.
@@ -31,7 +36,7 @@ export class TenantRequest {
   /**
    * Unique identifier for the tenant request.
    */
-  id: string
+  id: TenantRequestId
 
   /**
    * Display name of the tenant request.
@@ -79,7 +84,7 @@ export class TenantRequest {
     this.createdBy = createdBy
     this.createdDate = createdDate
     this.description = description
-    this.id = id
+    this.id = id as TenantRequestId
     this.name = name
     this.ministryName = ministryName
     this.rejectionReason = ''

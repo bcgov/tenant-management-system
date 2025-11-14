@@ -1,3 +1,8 @@
+enum ServiceRoleIdEnum {
+  _ = '',
+}
+declare type ServiceRoleId = string & ServiceRoleIdEnum
+
 /**
  * Represents a service role within the system.
  */
@@ -10,7 +15,7 @@ export class ServiceRole {
   /**
    * Unique identifier for the role.
    */
-  id: string
+  id: ServiceRoleId
 
   /**
    * Name of the role.
@@ -76,7 +81,7 @@ export class ServiceRole {
     enabled: boolean = false,
   ) {
     this.description = description
-    this.id = id
+    this.id = id as ServiceRoleId
     this.name = name
     this.allowedIdentityProviders = allowedIdentityProviders
     this.createdBy = createdBy

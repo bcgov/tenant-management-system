@@ -39,23 +39,24 @@ vi.mock('@/services/authenticated.axios', () => ({
 import { DuplicateEntityError, ValidationError } from '@/errors'
 import { type TenantRequestDetailFields, User } from '@/models'
 import { tenantRequestService } from '@/services'
+import type { SSOUserId } from '@/models/ssouser.model'
 
 describe('tenantRequestService', () => {
   const requestId = '123'
   const ssoUserId = '789'
 
-  const fakeUser: User = {
-    id: '1',
-    ssoUser: {
+  const fakeUser: User = new User(
+    '1',
+    {
       displayName: 'John Doe',
       email: 'john.doe@example.com',
       firstName: 'John',
       lastName: 'Doe',
-      ssoUserId: ssoUserId,
+      ssoUserId: ssoUserId as SSOUserId,
       userName: 'johndoe',
     },
-    roles: [],
-  }
+    [],
+  )
 
   const fakeTenantRequestDetails: TenantRequestDetailFields = {
     name: 'Test Tenant Request',
