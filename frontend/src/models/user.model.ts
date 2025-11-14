@@ -3,7 +3,7 @@ import { Role, SsoUser } from '@/models'
 enum UserIdEnum {
   _ = '',
 }
-declare type UserId = string & UserIdEnum
+export declare type UserId = string & UserIdEnum
 
 /**
  * Represents a user in the system.

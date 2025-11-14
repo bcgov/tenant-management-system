@@ -1,10 +1,11 @@
 import { User } from '@/models'
 import { ROLES } from '@/utils/constants'
+import type { SSOUserId } from '@/models/ssouser.model'
 
 enum TenantIdEnum {
   _ = '',
 }
-declare type TenantId = string & TenantIdEnum
+export declare type TenantId = string & TenantIdEnum
 
 /**
  * Utility type that represents the subset of Tenant properties used in the form

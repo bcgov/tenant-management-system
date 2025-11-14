@@ -1,7 +1,7 @@
 enum RoleIdEnum {
   _ = '',
 }
-declare type RoleId = string & RoleIdEnum
+export declare type RoleId = string & RoleIdEnum
 
 /**
  * Represents a role within the system.

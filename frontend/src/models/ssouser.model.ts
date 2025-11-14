@@ -1,7 +1,7 @@
 enum SSOUserIdEnum {
   _ = '',
 }
-declare type SSOUserId = string & SSOUserIdEnum
+export type SSOUserId = string & SSOUserIdEnum
 
 /**
  * Represents a single SSO user.

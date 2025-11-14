@@ -1,12 +1,7 @@
 enum SharedServiceRoleIdEnum {
   _ = '',
 }
-declare type SharedServiceRoleId = string & SharedServiceRoleIdEnum
-
-enum SharedServicesArrayIdEnum {
-  _ = '',
-}
-declare type SharedServicesArrayId = string & SharedServicesArrayIdEnum
+export declare type SharedServiceRoleId = string & SharedServiceRoleIdEnum
 
 export class SharedServiceRoles {
   id: SharedServiceRoleId
@@ -19,11 +14,11 @@ export class SharedServiceRoles {
 }
 
 export class SharedServicesArray {
-  id: SharedServicesArrayId
+  id: SharedServiceRoleId
   sharedServiceRoles: SharedServiceRoles[]
 
   constructor(id: string, sharedServiceRoles: SharedServiceRoles[]) {
-    this.id = id as SharedServicesArrayId
+    this.id = id as SharedServiceRoleId
     this.sharedServiceRoles = sharedServiceRoles
   }
 }

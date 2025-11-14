@@ -3,7 +3,7 @@ import { GroupUser } from '@/models'
 enum GroupIdEnum {
   _ = '',
 }
-declare type GroupId = string & GroupIdEnum
+export declare type GroupId = string & GroupIdEnum
 
 /**
  * Utility type that represents the subset of Group properties used in the form
