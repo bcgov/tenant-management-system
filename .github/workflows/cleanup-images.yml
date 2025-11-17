@@ -1,0 +1,199 @@
+name: Cleanup Unused Container Images
+
+on:
+  schedule:
+    # Run daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+permissions:
+  packages: write
+  contents: read
+
+jobs:
+  identify-in-use:
+    name: Identify Images in Use
+    runs-on: ubuntu-24.04
+    outputs:
+      in_use_tags: ${{ steps.identify.outputs.in_use_tags }}
+      pr_deployments: ${{ steps.identify.outputs.pr_deployments }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get current deployments and in-use tags
+        id: identify
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "🔍 Identifying images in use..."
+
+          # Images we always keep (current production/test/dev deployments)
+          IN_USE_TAGS=""
+
+          # 1. Latest tag (production) - only if actually deployed
+          echo "Checking for 'latest' tag in deployments..."
+          if gh api repos/bcgov/tenant-management-system/deployments \
+            --jq '.[] | select(.environment=="prod" or .environment=="production") | .ref' \
+            2>/dev/null | grep -q "main"; then
+            echo "  ✅ 'latest' tag is in use (production deployment found)"
+            IN_USE_TAGS="${IN_USE_TAGS}latest "
+          else
+            echo "  ℹ️ 'latest' tag not deployed to production, may be cleaned if older than 30 days"
+          fi
+
+          # 2. Dev-latest tag (dev environment) - only if actually deployed
+          echo "Checking for 'dev-latest' tag in deployments..."
+          if gh api repos/bcgov/tenant-management-system/deployments \
+            --jq '.[] | select(.environment=="dev") | .ref' \
+            2>/dev/null | grep -q "dev"; then
+            echo "  ✅ 'dev-latest' tag is in use (dev deployment found)"
+            IN_USE_TAGS="${IN_USE_TAGS}dev-latest "
+          else
+            echo "  ℹ️ 'dev-latest' tag not deployed to dev, may be cleaned if older than 30 days"
+          fi
+
+          # 3. Get all active PR numbers from recent commits
+          ACTIVE_PRS=$(gh api search/issues \
+            --jq '.items[] | select(.state=="open" and .pull_request) | "pr-\(.number)"' \
+            -q "repo:bcgov/tenant-management-system is:pr is:open" | sort | uniq || echo "")
+
+          if [ -n "$ACTIVE_PRS" ]; then
+            echo "  📋 Found active PRs: $ACTIVE_PRS"
+            IN_USE_TAGS="${IN_USE_TAGS}${ACTIVE_PRS// / }"
+          fi
+
+          # Output the tags
+          echo "in_use_tags<<EOF" >> $GITHUB_OUTPUT
+          echo "$IN_USE_TAGS" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+          echo "pr_deployments<<EOF" >> $GITHUB_OUTPUT
+          echo "$ACTIVE_PRS" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+          echo ""
+          echo "✅ In-use tags identified:"
+          echo "$IN_USE_TAGS" | tr ' ' '\n'
+
+  cleanup:
+    name: Cleanup Unused Images
+    needs: identify-in-use
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Delete unused images
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          IN_USE_TAGS: ${{ needs.identify-in-use.outputs.in_use_tags }}
+        run: |
+          OWNER="bcgov"
+          REPO="tenant-management-system"
+
+          echo "🧹 Starting cleanup of unused container images..."
+          echo ""
+          echo "📌 Protected tags (in use):"
+          echo "$IN_USE_TAGS" | tr ' ' '\n' | sed 's/^/   • /'
+          echo ""
+
+          TOTAL_DELETED=0
+
+          for PACKAGE in backend frontend migrations; do
+            echo "📦 Analyzing $PACKAGE images..."
+
+            # Get all image versions
+            ALL_IMAGES=$(gh api \
+              -H "Accept: application/vnd.github+json" \
+              "/users/$OWNER/packages/container/$REPO%2F$PACKAGE/versions" \
+              --jq '.[] | {id: .id, tags: .metadata.container.tags, created_at: .created_at}' \
+              2>/dev/null || echo "")
+
+            if [ -z "$ALL_IMAGES" ]; then
+              echo "  ℹ️  No images found for $PACKAGE"
+              continue
+            fi
+
+            # Parse each image and check if it's in use
+            echo "$ALL_IMAGES" | jq -r '.id' | while read IMAGE_ID; do
+              if [ -z "$IMAGE_ID" ]; then
+                continue
+              fi
+
+              # Get tags for this image
+              TAGS=$(echo "$ALL_IMAGES" | jq -r "select(.id | tostring == \"$IMAGE_ID\") | .tags | .[]" 2>/dev/null)
+
+              # Check if any tag matches an in-use tag
+              IS_IN_USE=false
+              while IFS= read -r IN_USE_TAG; do
+                if [ -n "$IN_USE_TAG" ]; then
+                  if echo "$TAGS" | grep -q "^${IN_USE_TAG}$"; then
+                    IS_IN_USE=true
+                    break
+                  fi
+                fi
+              done <<< "$(echo "$IN_USE_TAGS" | tr ' ' '\n')"
+
+              if [ "$IS_IN_USE" = true ]; then
+                echo "  ✅ Keeping image $IMAGE_ID (tags: $TAGS)"
+              else
+                # Get image creation date
+                CREATED_AT=$(echo "$ALL_IMAGES" | jq -r "select(.id | tostring == \"$IMAGE_ID\") | .created_at")
+
+                # Calculate age in days
+                CREATED_EPOCH=$(date -d "$CREATED_AT" +%s 2>/dev/null || echo 0)
+                NOW_EPOCH=$(date +%s)
+                AGE_DAYS=$(( (NOW_EPOCH - CREATED_EPOCH) / 86400 ))
+
+                # Delete if older than 7 days or untagged
+                if [ "$AGE_DAYS" -gt 7 ] || echo "$TAGS" | grep -q "^$"; then
+                  echo "  🗑️  Deleting unused image $IMAGE_ID (created: $CREATED_AT, age: ${AGE_DAYS} days, tags: $TAGS)"
+
+                  if gh api \
+                    -X DELETE \
+                    "/users/$OWNER/packages/container/$REPO%2F$PACKAGE/versions/$IMAGE_ID" \
+                    2>/dev/null; then
+                    TOTAL_DELETED=$((TOTAL_DELETED + 1))
+                  else
+                    echo "    ⚠️  Failed to delete image $IMAGE_ID"
+                  fi
+                else
+                  echo "  ⏰ Keeping image $IMAGE_ID (age: ${AGE_DAYS} days, will delete after 7 days, tags: $TAGS)"
+                fi
+              fi
+            done
+          done
+
+          echo ""
+          echo "✅ Cleanup completed"
+          echo "   Total images deleted: $TOTAL_DELETED"
+
+      - name: Cleanup Summary
+        if: always()
+        run: |
+          echo ""
+          echo "📊 Cleanup Policy:"
+          echo ""
+          echo "Protected Images (NEVER deleted):"
+          echo "  • latest (if deployed to production)"
+          echo "  • dev-latest (if deployed to dev environment)"
+          echo "  • pr-N (all active/open PR deployments)"
+          echo ""
+          echo "Retained Images (Recent):"
+          echo "  • Unused images < 7 days old (retained for rollback)"
+          echo ""
+          echo "Deleted Images:"
+          echo "  • Closed/inactive PR images (immediately after PR closes)"
+          echo "  • Unused images > 7 days old (automatic cleanup)"
+          echo "  • Untagged orphaned images (any age)"
+          echo "  • Images not deployed to any environment for 7+ days"
+          echo ""
+          echo "Deployment Verification:"
+          echo "  • Checks GitHub deployment environment status"
+          echo "  • Only protects tags actively deployed"
+          echo ""
+          echo "Schedule: Daily at 2 AM UTC"
+          echo "Manual trigger: Available via workflow_dispatch"
+          echo ""
+          echo "Benefits:"
+          echo "  ✅ Prevents accidental deletion of deployed images"
+          echo "  ✅ Maintains 7-day rollback window"
+          echo "  ✅ Automatic cleanup of old/unused versions"
+          echo "  ✅ Validates actual deployment status before protecting"

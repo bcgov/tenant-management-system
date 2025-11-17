@@ -176,21 +176,18 @@ export class TMSRepository {
                 const softDeletedUser = await this.findSoftDeletedTenantUser(ssoUserId, tenantId, transactionEntityManager)
                 
                 if (softDeletedUser) {
-                    // Restore the soft-deleted user (start fresh with roles and groups)
                     softDeletedUser.isDeleted = false
                     softDeletedUser.updatedBy = updatedBy
                     softDeletedUser.updatedDateTime = new Date()
                     
                     const restoredTenantUser:TenantUser = await transactionEntityManager.save(softDeletedUser)
                     
-                    // Reload the restored user with all relationships to include ssoUser in response
                     const restoredTenantUserWithRelations = await transactionEntityManager
                         .createQueryBuilder(TenantUser, 'tu')
                         .leftJoinAndSelect('tu.ssoUser', 'ssoUser')
                         .where('tu.id = :tenantUserId', { tenantUserId: restoredTenantUser.id })
                         .getOne()
                     
-                    // Assign new roles (fresh start, no restoration of old roles)
                     const roleAssignments = await this.assignUserRoles(tenantId, restoredTenantUser.id, req.body.roles, transactionEntityManager)
                     
                     delete restoredTenantUserWithRelations.tenant
@@ -199,17 +196,28 @@ export class TMSRepository {
                     throw new ConflictError("User is already added to this tenant: "+tenantId)
                 }
             } else {
-                // Create new user as before
+
                 const tenantUser:TenantUser = new TenantUser()
                 tenantUser.tenant = tenant
+                tenantUser.createdBy = updatedBy
+                tenantUser.updatedBy = updatedBy
                 const user = req.body.user
                 const ssoUser:SSOUser = await this.setSSOUser(user.ssoUserId,user.firstName,user.lastName,user.displayName,
-                    user.userName,user.email)       
+                    user.userName,user.email, user.idpType)       
                 tenantUser.ssoUser = ssoUser
         
                 const savedTenantUser:TenantUser = await transactionEntityManager.save(tenantUser)
     
-                const roleAssignments = await this.assignUserRoles(tenantId, savedTenantUser.id, req.body.roles, transactionEntityManager)
+                let rolesToAssign = req.body.roles
+                if (user.idpType === 'bceidbasic' || user.idpType === 'bceidbusiness') {
+                    const serviceUserRole:Role[] = await this.findRoles([TMSConstants.SERVICE_USER], null)
+                    if (serviceUserRole.length === 0) {
+                        throw new NotFoundError('SERVICE_USER role not found')
+                    }
+                    rolesToAssign = [serviceUserRole[0].id]
+                }
+                
+                const roleAssignments = await this.assignUserRoles(tenantId, savedTenantUser.id, rolesToAssign, transactionEntityManager)
                        
                 delete savedTenantUser.tenant
                 response = {savedTenantUser,roleAssignments}
@@ -632,28 +640,34 @@ export class TMSRepository {
         const jwtAudience:string = req.decodedJwt?.aud || req.decodedJwt?.audience || TMS_AUDIENCE
         
         const tenantQuery = this.manager.createQueryBuilder(Tenant, "t")
-            .innerJoin("t.users", "tu")
-            .innerJoin("tu.ssoUser", "su")
-            .leftJoin("TenantSharedService", "tss", "t.id = tss.tenant_id")
-            .leftJoin("SharedService", "ss", "tss.shared_service_id = ss.id")
-            .where("su.ssoUserId = :ssoUserId", { ssoUserId })
-            .andWhere("tu.isDeleted = :isDeleted", { isDeleted: false })
-            .andWhere(
-                ":jwtAudience = :tmsAudience OR (:jwtAudience != :tmsAudience AND ss.client_identifier = :jwtAudience AND tss.is_deleted = :tssDeleted AND ss.is_active = :ssActive)",
-                { 
-                    jwtAudience, 
-                    tmsAudience: TMS_AUDIENCE, 
-                    tssDeleted: false,
-                    ssActive: true
-                }
-            );
+            .where(`EXISTS (
+                SELECT 1 FROM "tms"."TenantUser" tu
+                INNER JOIN "tms"."SSOUser" su ON tu.sso_id = su.id
+                WHERE tu.tenant_id = t.id
+                AND su.sso_user_id = :ssoUserId
+                AND tu.is_deleted = :tuDeleted
+            )`, { ssoUserId, tuDeleted: false });
+
+        if (jwtAudience !== TMS_AUDIENCE) {
+            tenantQuery
+                .andWhere(`EXISTS (
+                    SELECT 1 FROM "tms"."TenantSharedService" tss 
+                    INNER JOIN "tms"."SharedService" ss ON tss.shared_service_id = ss.id 
+                    WHERE tss.tenant_id = t.id 
+                    AND ss.client_identifier = :jwtAudience 
+                    AND tss.is_deleted = :tssDeleted 
+                    AND ss.is_active = :ssActive
+                )`, { jwtAudience, tssDeleted: false, ssActive: true });
+        }
 
         if (expand?.includes("tenantUserRoles")) {
-            tenantQuery.leftJoinAndSelect("t.users", "user")
+            tenantQuery
+                .leftJoinAndSelect("t.users", "user")
                 .leftJoinAndSelect("user.ssoUser", "ssoUser")
                 .leftJoinAndSelect("user.roles", "tenantUserRole")
                 .leftJoinAndSelect("tenantUserRole.role", "role")
-                .andWhere("tenantUserRole.isDeleted = :isDeleted", { isDeleted: false });
+                .andWhere("tenantUserRole.isDeleted = :turDeleted", { turDeleted: false })
+                .andWhere("user.isDeleted = :userDeleted", { userDeleted: false });
         }
 
         const tenants:Tenant[] = await tenantQuery.getMany()
@@ -711,7 +725,7 @@ export class TMSRepository {
         return roles ?? []
     }
 
-    public async setSSOUser(ssoUserId:string, firstName:string, lastName:string, displayName:string,userName:string, email:string) {
+    public async setSSOUser(ssoUserId:string, firstName:string, lastName:string, displayName:string,userName:string, email:string, idpType?:string) {
         let ssoUser:SSOUser = await this.manager.findOne(SSOUser,{where:{ssoUserId:ssoUserId}})
         if(!ssoUser) { 
             ssoUser = new SSOUser()
@@ -721,6 +735,7 @@ export class TMSRepository {
             ssoUser.userName = userName
             ssoUser.ssoUserId = ssoUserId
             ssoUser.email = email || null
+            ssoUser.idpType = idpType || 'idir'
             ssoUser.createdBy = ssoUserId
             ssoUser.updatedBy = ssoUserId
         }
@@ -746,6 +761,9 @@ export class TMSRepository {
         let tenantRequestResponse = {}
         await this.manager.transaction(async(transactionEntityManager) => {
             try {
+                if (await this.checkIfTenantNameAndMinistryNameExists(req.body.name, req.body.ministryName)) {
+                    throw new ConflictError(`A tenant with name '${req.body.name}' and ministry name '${req.body.ministryName}' already exists`);
+                }
                 const tenantRequest:TenantRequest = new TenantRequest()
                 tenantRequest.name = req.body.name
                 tenantRequest.ministryName = req.body.ministryName
@@ -943,6 +961,9 @@ export class TMSRepository {
                     const sharedServiceRole:SharedServiceRole = new SharedServiceRole()
                     sharedServiceRole.name = role.name
                     sharedServiceRole.description = role.description
+                    sharedServiceRole.allowedIdentityProviders = (role.allowedIdentityProviders && role.allowedIdentityProviders.length > 0) 
+                        ? role.allowedIdentityProviders 
+                        : null
                     sharedServiceRole.sharedService = savedSharedService
                     sharedServiceRole.createdBy = req.decodedJwt?.idir_user_guid || 'system'
                     sharedServiceRole.updatedBy = req.decodedJwt?.idir_user_guid || 'system'
@@ -1005,6 +1026,9 @@ export class TMSRepository {
                 const sharedServiceRole:SharedServiceRole = new SharedServiceRole()
                 sharedServiceRole.name = role.name
                 sharedServiceRole.description = role.description
+                sharedServiceRole.allowedIdentityProviders = (role.allowedIdentityProviders && role.allowedIdentityProviders.length > 0) 
+                    ? role.allowedIdentityProviders 
+                    : null
                 sharedServiceRole.sharedService = sharedService
                 sharedServiceRole.isDeleted = false
                 sharedServiceRole.createdBy = ssoUserId
@@ -1238,4 +1262,3 @@ export class TMSRepository {
 
 
 }
-

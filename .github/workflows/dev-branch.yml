@@ -1,0 +1,134 @@
+name: Dev Branch Deploy
+
+on:
+  push:
+    branches: [dev]
+    paths-ignore:
+      - '*.md'
+      - '.github/**'
+      - '.github/graphics/**'
+      - '!.github/workflows/**'
+  workflow_dispatch:
+
+concurrency:
+  group: dev-deployment-${{ github.repository }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  deployments: write
+  id-token: write
+  packages: write
+  attestations: write
+
+jobs:
+  builds:
+    name: Builds
+    uses: ./.github/workflows/.build-images.yml
+    permissions:
+      packages: write
+      id-token: write
+      attestations: write
+    with:
+      tags: dev-latest
+      keep_versions: 10
+
+  deploy-dev:
+    name: Deploy DEV Environment
+    needs: [builds]
+    uses: ./.github/workflows/.deployer.yml
+    secrets:
+      oc_namespace: ${{ secrets.OC_NAMESPACE }}
+      oc_token: ${{ secrets.OC_TOKEN }}
+      bcgov_sso_api_client_id: ${{ secrets.BCGOV_SSO_API_CLIENT_ID }}
+      bcgov_sso_api_client_secret: ${{ secrets.BCGOV_SSO_API_CLIENT_SECRET }}
+      vite_keycloak_client_id: ${{ secrets.VITE_KEYCLOAK_CLIENT_ID }}
+    with:
+      release_name: ${{ github.event.repository.name }}-dev
+      environment: dev
+      db_user: app
+      preserve_database: false
+      tags: dev-latest
+      timeout-minutes: 10
+      values: values-pr.yaml
+      params: >-
+        --set-string global.registry=ghcr.io
+        --set-string global.repository=bcgov/tenant-management-system
+        --set global.secrets.persist=false
+        --set backend.imagePullPolicy=Always
+        --set frontend.imagePullPolicy=Always
+        --set backend.deploymentStrategy=RollingUpdate
+        --set frontend.deploymentStrategy=RollingUpdate
+        --set backend.autoscaling.minReplicas=2
+        --set frontend.autoscaling.minReplicas=2
+        --set global.debug=true
+        --set backend.resources.requests.memory=256Mi
+        --set backend.resources.limits.memory=512Mi
+        --set frontend.resources.requests.memory=128Mi
+        --set frontend.resources.limits.memory=256Mi
+        --set global.config.databaseUser=app
+        --set postgresql-pr.enabled=true
+        --set crunchy.enabled=false
+        --set backend.pdb.enabled=true
+        --set backend.pdb.minAvailable=1
+        --set frontend.pdb.enabled=true
+        --set frontend.pdb.minAvailable=1
+      deployment_url: https://${{ github.event.repository.name }}-dev-frontend.apps.silver.devops.gov.bc.ca
+
+  # Security scan after DEV deployment
+  security_scan:
+    name: ZAP Security Scan (DEV)
+    permissions:
+      contents: read
+    needs: [deploy-dev]
+    if: needs.deploy-dev.result == 'success'
+    uses: ./.github/workflows/.zap-scan.yml
+    with:
+      target_url: https://${{ github.event.repository.name }}-dev-frontend.apps.silver.devops.gov.bc.ca
+      fail_on_high: false
+      scan_type: baseline
+
+  results:
+    name: Dev Results
+    needs: [builds, deploy-dev]
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check results
+        run: |
+          BUILDS_RESULT="${{ needs.builds.result }}"
+          DEPLOY_RESULT="${{ needs.deploy-dev.result }}"
+
+          echo "Builds: $BUILDS_RESULT"
+          echo "Deploy: $DEPLOY_RESULT"
+
+          if [ "$BUILDS_RESULT" == "failure" ] || [ "$DEPLOY_RESULT" == "failure" ]; then
+            echo "One or more jobs failed"
+            exit 1
+          fi
+
+          if [ "$BUILDS_RESULT" == "cancelled" ] || [ "$DEPLOY_RESULT" == "cancelled" ]; then
+            echo "Workflow was cancelled"
+            exit 1
+          fi
+
+          echo "All jobs completed successfully"
+
+  # Comment on deployment
+  comment:
+    name: Post Deployment Info
+    needs: [deploy-dev]
+    if: always() && needs.deploy-dev.result == 'success'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - name: Log Deployment
+        run: |
+          echo "## 🚀 Dev Environment Deployed!"
+          echo ""
+          echo "**Environment:** \`dev\`"
+          echo "**Frontend URL:** https://${{ github.event.repository.name }}-dev-frontend.apps.silver.devops.gov.bc.ca"
+          echo "**Tags:** \`dev-latest\`"
+          echo ""
+          echo "The application has been deployed to the dev environment."

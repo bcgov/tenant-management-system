@@ -4,6 +4,7 @@ import { ErrorHandler } from '../common/error.handler'
 import { NotFoundError } from '../errors/NotFoundError'
 import { ConflictError } from '../errors/ConflictError'
 import { UnauthorizedError } from '../errors/UnauthorizedError'
+import { BadRequestError } from '../errors/BadRequestError'
 import logger from '../common/logger'
 
 export class TMController {
@@ -166,6 +167,22 @@ export class TMController {
                 this.errorHandler.generalError(res, "Error occurred getting user groups with shared services", error.message, error.statusCode, "Unauthorized")
             } else {
                 this.errorHandler.generalError(res, "Error occurred getting user groups with shared services", error.message, 500, "Internal Server Error")
+            }
+        }
+    }
+
+    public async getTenantUser(req: Request, res: Response) {
+        try {
+            const tenantUserResponse = await this.tmService.getTenantUser(req)
+            res.status(200).send(tenantUserResponse)
+        } 
+        catch(error) {
+            logger.error(error)
+            if (error instanceof NotFoundError) {
+                this.errorHandler.generalError(res, "Error occurred getting tenant user", error.message, error.statusCode, "Not Found")
+            }
+            else {
+                this.errorHandler.generalError(res, "Error occurred getting tenant user", error.message, 500, "Internal Server Error")
             }
         }
     }

@@ -8,17 +8,13 @@ import { useAuthStore } from '@/stores'
 
 const authStore = useAuthStore()
 const user = computed(() => authStore.getUser)
-
-function handleLogout() {
-  authStore.logout()
-}
 </script>
 
 <template>
   <v-app>
     <!-- Custom Components common to all application views -->
     <AppNotifications />
-    <AppHeader :user="user" @logout="handleLogout" />
+    <AppHeader :user="user" />
 
     <!-- Router view for dynamic component rendering -->
     <v-main>

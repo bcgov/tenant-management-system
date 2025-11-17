@@ -294,7 +294,8 @@ describe('Tenant API', () => {
         lastName: 'User',
         displayName: 'Test User',
         ssoUserId: 'F45AFBBD68C4466F956BA3A1D91878AD',
-        email: 'test@gov.bc.ca'
+        email: 'test@gov.bc.ca',
+        idpType: 'idir'
       },
       roles: ['123e4567-e89b-12d3-a456-426614174002']
     }
@@ -567,6 +568,7 @@ describe('Tenant API', () => {
       firstName: 'Test',
       lastName: 'User',
       displayName: 'Test User',
+      isDeleted: false,
       ssoUserId: 'F45AFBBD68C4411F956BA3A1D91878EF',
       email: 'test@testministry.gov.bc.ca',
       createdDateTime: new Date(),
@@ -692,6 +694,7 @@ describe('Tenant API', () => {
         },
         tenantUser: {
           id: tenantUserId,
+          isDeleted: false,
           ssoUser: {
             id: '123e4567-e89b-12d3-a456-426614174004',
             ssoUserId: 'F45AFBBD68C44D6F956BA3A1D91878AD',

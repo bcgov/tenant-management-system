@@ -18,6 +18,18 @@ export class Routes {
     public tmController:TMController = new TMController()
 
     public routes (app:any) {
+        // Proxy swagger docs endpoints to /v1/docs for access through frontend
+        // Frontend proxies /api/v1/docs -> /v1/docs on backend
+        app.get('/v1/docs', (req:Request, res:Response) => {
+            res.redirect('/docs')
+        })
+
+        // Proxy swagger assets to /v1/swagger-resources for proper loading
+        app.get('/v1/swagger-resources/*', (req:Request, res:Response) => {
+            const path = req.path.replace('/v1/swagger-resources', '')
+            res.redirect(`/swagger-resources${path}`)
+        })
+
         app.route(RoutesConstants.HEALTH).get((req:Request, res:Response) => this.tmsController.health(req, res))
         app.route(RoutesConstants.CREATE_TENANTS).post(checkJwt(),checkOperationsAdmin, validate(validator.createTenant,{},{}),(req:Request,res:Response) => this.tmsController.createTenant(req,res))
         app.route(RoutesConstants.ADD_TENANT_USERS).post(checkJwt(), validate(validator.addTenantUser,{},{}), checkTenantAccess([TMSConstants.TENANT_OWNER, TMSConstants.USER_ADMIN]),(req:Request,res:Response) => this.tmsController.addTenantUser(req,res))
@@ -30,6 +42,7 @@ export class Routes {
         app.route(RoutesConstants.GET_USER_ROLES).get(checkJwt(),  validate(validator.getUserRoles,{},{}),(req:Request,res:Response) => this.tmsController.getUserRoles(req,res))
         app.route(RoutesConstants.UNASSIGN_USER_ROLES).delete(checkJwt(),  validate(validator.unassignUserRoles,{},{}), checkTenantAccess([TMSConstants.TENANT_OWNER, TMSConstants.USER_ADMIN]),(req:Request,res:Response) => this.tmsController.unassignUserRoles(req,res))
         app.route(RoutesConstants.SEARCH_BC_GOV_IDIR_USERS).get(checkJwt(), validate(validator.searchBCGOVSSOUsers,{},{}),(req:Request,res:Response) => this.tmsController.searchBCGOVSSOUsers(req,res))
+        app.route(RoutesConstants.SEARCH_BC_GOV_BCEID_USERS).get(checkJwt(), validate(validator.searchBCGOVSSOBceidUsers,{},{}),(req:Request,res:Response) => this.tmsController.searchBCGOVSSOBceidUsers(req,res))
         app.route(RoutesConstants.GET_TENANT).get(checkJwt(),  validate(validator.getTenant,{},{}), checkTenantAccess([]),(req:Request,res:Response) => this.tmsController.getTenant(req,res))
         app.route(RoutesConstants.GET_ROLES_FOR_SSO_USER).get(checkJwt( {sharedServiceAccess: true}),  validate(validator.getRolesForSSOUser,{},{}),(req:Request,res:Response) => this.tmsController.getRolesForSSOUser(req,res))
         app.route(RoutesConstants.UPDATE_TENANT).put(checkJwt(), validate(validator.updateTenant,{},{}), checkTenantAccess([TMSConstants.TENANT_OWNER]),(req:Request,res:Response) => this.tmsController.updateTenant(req,res))
@@ -52,6 +65,7 @@ export class Routes {
         app.route(RoutesConstants.ASSOCIATE_SHARED_SERVICE_TO_TENANT).post(checkJwt(), validate(validator.associateSharedServiceToTenant,{},{}), checkTenantAccess([TMSConstants.TENANT_OWNER]),(req:Request,res:Response) => this.tmsController.associateSharedServiceToTenant(req,res))
         app.route(RoutesConstants.GET_SHARED_SERVICES_FOR_TENANT).get(checkJwt(), validate(validator.getSharedServicesForTenant,{},{}), checkTenantAccess([]),(req:Request,res:Response) => this.tmsController.getSharedServicesForTenant(req,res))
         app.route(RoutesConstants.GET_USER_GROUPS_WITH_SHARED_SERVICE_ROLES).get(checkJwt({ sharedServiceAccess: true }), validate(validator.getUserGroupsWithSharedServiceRoles,{},{}), checkTenantAccess([]),(req:Request,res:Response) => this.tmController.getUserGroupsWithSharedServiceRoles(req,res))
+        app.route(RoutesConstants.GET_TENANT_USER).get(checkJwt(), validate(validator.getTenantUser,{},{}), checkTenantAccess([]),(req:Request,res:Response) => this.tmController.getTenantUser(req,res))
 
         app.use(function (error: Error, req: any, res: Response<any, Record<string, any>>, next: any) {
             if (error instanceof ValidationError) {

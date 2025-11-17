@@ -6,9 +6,13 @@ info:
 servers:
   - url: http://localhost:4144
     description: Local dev server
+  - url: https://tenant-management-system-dev-backend.apps.silver.devops.gov.bc.ca
+    description: CSTAR Dev API
+  - url: https://tenant-management-system-test-frontend.apps.silver.devops.gov.bc.ca/api/
+    description: TEST env api
 
 paths:
-  /health:
+  /v1/health:
     get:
       summary: Health check endpoint
       description: Checks the health status of the API service
@@ -155,7 +159,7 @@ paths:
   /v1/tenants/{tenantId}/users:
     post:
       summary: Add a user to a tenant
-      description: Adds a new user to an existing tenant. Requires JWT authentication and TENANT_OWNER or USER_ADMIN role.
+      description: Adds a new user to an existing tenant. Supports IDIR, basic BCeID, and business BCeID users. For IDIR users, roles are required. For BCeID users, roles are optional and will be overridden with SERVICE_USER role. Requires JWT authentication and TENANT_OWNER or USER_ADMIN role.
       security:
         - bearerAuth: []
       parameters:
@@ -174,7 +178,6 @@ paths:
               type: object
               required:
                 - user
-                - roles
               properties:
                 user:
                   $ref: '#/components/schemas/BasicUser'
@@ -185,6 +188,9 @@ paths:
                     format: uuid
                   minItems: 1
                   maxItems: 3
+                  description: |
+                    Required for IDIR users. Optional for BCeID users (will be overridden with SERVICE_USER role).
+                    If not provided for IDIR users, validation will fail.
                   example: ["14c6bb48-54e2-4ce0-9bbd-af4982fff13b"]
       responses:
         '201':
@@ -201,7 +207,7 @@ paths:
                     items:
                       $ref: '#/components/schemas/Role'
         '400':
-          description: Invalid input
+          description: Invalid input - IDIR users must provide roles, BCeID users roles are optional
           content:
             application/json:
               schema:
@@ -285,6 +291,105 @@ paths:
                 $ref: '#/components/schemas/ForbiddenErrorResponse'
         '404':
           description: Tenant not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+
+  /v1/tenants/{tenantId}/users/{tenantUserId}:
+    get:
+      summary: Get tenant user details
+      description: Retrieves details of a specific tenant user with optional expansions. Requires JWT authentication and tenant access.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: tenantId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The unique identifier of the tenant
+        - name: tenantUserId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The unique identifier of the tenant user
+        - name: expand
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [groupMemberships, tenantUserRoles, sharedServiceRoles]
+          description: |
+            Comma-separated list of relations to expand. Currently supports:
+            - groupMemberships: Include groups the user belongs to
+            - tenantUserRoles: Include tenant roles assigned to the user
+            - sharedServiceRoles: Include shared service roles linked via user's groups
+      responses:
+        '200':
+          description: Tenant user details retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      tenantUser:
+                        allOf:
+                          - $ref: '#/components/schemas/User'
+                          - type: object
+                            properties:
+                              groups:
+                                type: array
+                                items:
+                                  $ref: '#/components/schemas/Group'
+                                description: Present only when expand=groupMemberships
+                              roles:
+                                type: array
+                                items:
+                                  $ref: '#/components/schemas/Role'
+                                description: Present only when expand=tenantUserRoles
+                              sharedServiceRoles:
+                                type: array
+                                items:
+                                  type: object
+                                  properties:
+                                    role:
+                                      $ref: '#/components/schemas/SharedServiceRole'
+                                    sharedService:
+                                      $ref: '#/components/schemas/SharedService'
+                                description: Present only when expand=sharedServiceRoles
+        '400':
+          description: Invalid input or expand values
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        '403':
+          description: Forbidden - User does not have access to the tenant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        '404':
+          description: Tenant or tenant user not found
           content:
             application/json:
               schema:
@@ -1102,6 +1207,14 @@ paths:
                         type: string
                         maxLength: 255
                         example: "Can send emails through the service"
+                      allowedIdentityProviders:
+                        type: array
+                        items:
+                          type: string
+                          enum: ['idir', 'azureidir', 'bceidbasic', 'bceidbusiness']
+                        nullable: true
+                        example: ["idir", "bceidbusiness"]
+                        description: "List of identity providers allowed to access this role. If null or empty, all identity providers are allowed."
       responses:
         '201':
           description: Shared service successfully created
@@ -1392,7 +1505,15 @@ paths:
 
     get:
       summary: Get all groups for a tenant
-      description: Retrieves all groups associated with a tenant. Requires JWT authentication and tenant access.
+      description: |
+        Retrieves groups for a tenant with different behavior based on access type:
+        
+        **TMS Users**: Returns ALL groups in the tenant where the user is a member.
+        
+        **External Services**: Returns ONLY groups that have at least one enabled 
+        shared service role belonging to the requesting service.
+        
+        Requires JWT authentication and tenant access.
       security:
         - bearerAuth: []
       parameters:
@@ -2087,13 +2208,23 @@ paths:
                         type: string
                         maxLength: 255
                         example: "New administrator role for the shared service"
+                      allowedIdentityProviders:
+                        type: array
+                        items:
+                          type: string
+                          enum: ['idir', 'azureidir', 'bceidbasic', 'bceidbusiness']
+                        nullable: true
+                        example: ["idir"]
+                        description: "List of identity providers allowed to access this role. If null or empty, all identity providers are allowed."
                   minItems: 1
                   maxItems: 10
                   example:
                     - name: "New Admin Role"
                       description: "New administrator role for the shared service"
+                      allowedIdentityProviders: ["idir", "bceidbusiness"]
                     - name: "New User Role"
                       description: "New standard user role for the shared service"
+                      allowedIdentityProviders: null
       responses:
         '201':
           description: Roles successfully added to shared service
@@ -2305,6 +2436,12 @@ components:
           format: email
           nullable: true
           example: "John@gov.bc.ca"
+        idpType:
+          type: string
+          enum: ['idir', 'bceidbasic', 'bceidbusiness']
+          nullable: true
+          example: "idir"
+          description: "Identity Provider type. Defaults to 'idir' if not provided."
 
     User:
       type: object
@@ -2352,6 +2489,12 @@ components:
           format: email
           nullable: true
           example: "John@gov.bc.ca"
+        idpType:
+          type: string
+          enum: ['idir', 'bceidbasic', 'bceidbusiness']
+          nullable: true
+          example: "idir"
+          description: "Identity Provider type"
         createdDateTime:
           type: string
           format: date-time
@@ -2860,6 +3003,14 @@ components:
           type: string
           maxLength: 255
           example: "Can send emails through the service"
+        allowedIdentityProviders:
+          type: array
+          items:
+            type: string
+            enum: ['idir', 'azureidir', 'bceidbasic', 'bceidbusiness']
+          nullable: true
+          example: ["idir", "bceidbusiness"]
+          description: "List of identity providers allowed to access this role. If null or empty, all identity providers are allowed."
         isDeleted:
           type: boolean
           default: false

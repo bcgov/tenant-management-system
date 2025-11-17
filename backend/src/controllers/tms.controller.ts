@@ -184,6 +184,21 @@ export class TMSController {
         }   
     }
 
+    public async searchBCGOVSSOBceidUsers(req:Request,res:Response) {
+        try {
+            const users = await this.tmsService.searchBCGOVSSOBceidUsers(req)
+            return res.status(200).send(users)
+        }
+        catch(error) {
+            logger.error(error)
+            if (error instanceof BadRequestError) {
+                this.errorHandler.generalError(res, "Error occurred searching BCEID users", error.message, error.statusCode, "Bad Request")
+            } else {
+                this.errorHandler.generalError(res, "Error occurred searching BCEID users", error.message, 500, "Internal Server Error")
+            }
+        }   
+    }
+
     public async getTenant(req:Request, res:Response) {
         try {
             const tenant = await this.tmsService.getTenant(req)

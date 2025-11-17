@@ -6,7 +6,7 @@ import GroupCreateDialog from '@/components/group/GroupCreateDialog.vue'
 import GroupList from '@/components/group/GroupList.vue'
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import { useNotification } from '@/composables'
-import { DomainError, DuplicateEntityError } from '@/errors'
+import { DomainError, DuplicateEntityError, ServerError } from '@/errors'
 import { Group, type GroupDetailFields, Tenant } from '@/models'
 import { useAuthStore, useGroupStore } from '@/stores'
 import { ROLES } from '@/utils/constants'
@@ -61,11 +61,13 @@ const handleGroupCreate = async (
   let group: Group
 
   try {
+    console.log(groupDetails, 'group details')
     group = await groupStore.addGroup(
       props.tenant.id,
       groupDetails.name,
       groupDetails.description,
     )
+    console.log('3')
 
     isDuplicateName.value = false
     notification.success('Group Created Successfully')
@@ -79,7 +81,11 @@ const handleGroupCreate = async (
       // For any other API Domain Error, display the user message that comes
       // from the API. This should not happen but is useful if there are
       // business rules in the API that are not implemented in the UI.
+      console.log('domain error', error)
       notification.error(error.userMessage)
+    } else if (error instanceof ServerError) {
+      console.log('server error', error)
+      notification.error(error.userMessage ?? 'Failed to create the new group')
     } else {
       // Otherwise display a generic error message.
       notification.error('Failed to create the new group')

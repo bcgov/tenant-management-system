@@ -137,21 +137,23 @@ describe('tenantService', () => {
 
   describe('assignUserRoles', () => {
     it('should successfully assign role to user', async () => {
-      mockPut.mockResolvedValueOnce({})
+      mockPost.mockResolvedValueOnce({})
 
-      await tenantService.assignUserRoles(tenantId, userId, roleId)
-
-      expect(mockPut).toHaveBeenCalledWith(
-        `/tenants/${tenantId}/users/${userId}/roles/${roleId}`,
+      await tenantService.assignUserRoles(tenantId, userId, [roleId])
+      expect(mockPost).toHaveBeenCalledWith(
+        `/tenants/${tenantId}/users/${userId}/roles`,
+        {
+          roles: [roleId],
+        },
       )
     })
 
     it('should log and rethrow errors', async () => {
       const error = new Error('Failed to assign role')
-      mockPut.mockRejectedValueOnce(error)
+      mockPost.mockRejectedValueOnce(error)
 
       await expect(
-        tenantService.assignUserRoles(tenantId, userId, roleId),
+        tenantService.assignUserRoles(tenantId, userId, [roleId]),
       ).rejects.toThrow(error)
 
       expect(mockedUtils.logApiError).toHaveBeenCalledWith(
@@ -487,6 +489,8 @@ describe('tenantService', () => {
     it('should log and rethrow unknown errors', async () => {
       const genericError = new Error('Update failed')
       mockPut.mockRejectedValueOnce(genericError)
+      mockedUtils.isDuplicateEntityError.mockReturnValueOnce(false)
+      mockedUtils.isValidationError.mockReturnValueOnce(false)
 
       await expect(
         tenantService.updateTenant(

@@ -29,11 +29,16 @@ export default {
                 displayName: Joi.string().min(1).max(50).required(),
                 userName: Joi.string().min(1).max(15).optional(),
                 ssoUserId: Joi.string().required(), // will need to be updated to the right regex and length
-                email: Joi.string().email().max(100).optional(),                
+                email: Joi.string().email().max(100).optional(),
+                idpType: Joi.string().valid('idir', 'bceidbasic', 'bceidbusiness').optional()                
             }).required(),
             roles: Joi.array().items(
                 Joi.string().guid()
-            ).min(1).max(3).required()
+            ).min(1).max(3).when('user.idpType', {
+                is: 'idir',
+                then: Joi.required(),
+                otherwise: Joi.optional()
+            })
         }).options({abortEarly:false,convert:false})
     },
 
@@ -110,6 +115,16 @@ export default {
             email: Joi.string(),
             guid: Joi.string()
         }).or('firstName', 'lastName', 'email', 'guid')
+    },
+
+    searchBCGOVSSOBceidUsers: {
+        query: Joi.object({
+            bceidType: Joi.string().valid('basic', 'business', 'both').required(),
+            guid: Joi.string(),
+            displayName: Joi.string(),
+            username: Joi.string(),
+            email: Joi.string()
+        }).or('guid', 'displayName', 'username', 'email')
     },
     
     getTenant: {
@@ -210,7 +225,8 @@ export default {
                 displayName: Joi.string().min(1).max(50).required(),
                 userName: Joi.string().min(1).max(15).optional(),
                 ssoUserId: Joi.string().required(),
-                email: Joi.string().email().max(100).optional()
+                email: Joi.string().email().max(100).optional(),
+                idpType: Joi.string().valid('idir', 'bceidbasic', 'bceidbusiness').optional()
             }).required()
         }).options({abortEarly:false,convert:false})
     },
@@ -248,7 +264,10 @@ export default {
             roles: Joi.array().items(
                 Joi.object().keys({
                     name: Joi.string().min(1).max(30).pattern(/^\S.*\S$/).required(),
-                    description: Joi.string().min(1).max(255).optional()
+                    description: Joi.string().min(1).max(255).optional(),
+                    allowedIdentityProviders: Joi.array().items(
+                        Joi.string().valid('idir', 'azureidir', 'bceidbasic', 'bceidbusiness')
+                    ).allow(null).optional()
                 })
             ).min(1).max(10).required()
         }).options({abortEarly:false,convert:false})
@@ -303,6 +322,17 @@ export default {
         }).options({abortEarly:false,convert:false})
     },
 
+    getTenantUser: {
+        params: Joi.object({
+            tenantId: Joi.string().guid().required(),
+            tenantUserId: Joi.string().guid().required()
+        }),
+        query: Joi.object({
+            expand: Joi.string().optional()
+                .pattern(/^(groupMemberships|tenantUserRoles|sharedServiceRoles)(,(groupMemberships|tenantUserRoles|sharedServiceRoles))*$/)
+        }).optional()
+    },
+
     addSharedServiceRoles: {
         params: Joi.object({
             sharedServiceId: Joi.string().guid().required()
@@ -311,7 +341,10 @@ export default {
             roles: Joi.array().items(
                 Joi.object().keys({
                     name: Joi.string().min(1).max(30).pattern(/^\S.*\S$/).required(),
-                    description: Joi.string().min(1).max(255).optional()
+                    description: Joi.string().min(1).max(255).optional(),
+                    allowedIdentityProviders: Joi.array().items(
+                        Joi.string().valid('idir', 'azureidir', 'bceidbasic', 'bceidbusiness')
+                    ).allow(null).optional()
                 })
             ).min(1).max(10).required()
         }).options({abortEarly:false,convert:false})

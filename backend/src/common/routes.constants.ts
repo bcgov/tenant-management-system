@@ -11,6 +11,7 @@ export class RoutesConstants {
     public static UNASSIGN_USER_ROLES = '/v1/tenants/:tenantId/users/:tenantUserId/roles/:roleId'
     public static REMOVE_TENANT_USER = '/v1/tenants/:tenantId/users/:tenantUserId'
     public static SEARCH_BC_GOV_IDIR_USERS = '/v1/users/bcgovssousers/idir/search'
+    public static SEARCH_BC_GOV_BCEID_USERS = '/v1/users/bcgovssousers/bceid/search'
     public static GET_TENANT = '/v1/tenants/:tenantId'
     public static GET_ROLES_FOR_SSO_USER = '/v1/tenants/:tenantId/ssousers/:ssoUserId/roles'
     public static UPDATE_TENANT = '/v1/tenants/:tenantId'
@@ -31,4 +32,5 @@ export class RoutesConstants {
     public static GET_SHARED_SERVICE_ROLES_FOR_GROUP = '/v1/tenants/:tenantId/groups/:groupId/shared-services/shared-service-roles'
     public static UPDATE_SHARED_SERVICE_ROLES_FOR_GROUP = '/v1/tenants/:tenantId/groups/:groupId/shared-services/shared-service-roles'
     public static GET_USER_GROUPS_WITH_SHARED_SERVICE_ROLES = '/v1/tenants/:tenantId/users/:ssoUserId/groups/shared-service-roles'
+    public static GET_TENANT_USER = '/v1/tenants/:tenantId/users/:tenantUserId'
 }
