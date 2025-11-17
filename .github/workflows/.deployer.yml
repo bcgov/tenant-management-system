@@ -286,9 +286,9 @@ jobs:
               echo "ℹ️ Crunchy PostgreSQL cluster will be created by Helm"
             fi
 
-            # For Crunchy PostgreSQL with PgBouncer
-            DB_HOST="${RELEASE_NAME}-pgbouncer"
-            echo "Test/Prod environment detected - using Crunchy PgBouncer host: $DB_HOST"
+            # For Crunchy PostgreSQL (direct connection to postgres)
+            DB_HOST="${RELEASE_NAME}-postgres"
+            echo "Test/Prod environment detected - using Crunchy PostgreSQL host: $DB_HOST"
 
       - uses: actions/checkout@v4
 
@@ -503,7 +503,7 @@ jobs:
 
                 # Get password from Crunchy's secret
                 DB_PASSWORD=$(oc get secret ${CLUSTER_NAME}-pguser-${DB_USER} -o jsonpath='{.data.password}' | base64 -d)
-                DB_HOST="${RELEASE_NAME}-pgbouncer"
+                DB_HOST="${RELEASE_NAME}-postgres"
 
                 # Create a copy of Crunchy's secret with the naming convention our app expects
                 echo "Creating application-compatible secret: ${RELEASE_NAME}-pguser-${DB_USER}"
