@@ -8,6 +8,7 @@ import { Request} from 'express'
 import { TMSConstants } from '../common/tms.constants'
 import { TenantUserRole } from '../entities/TenantUserRole'
 import { GroupUser } from '../entities/GroupUser'
+import { Group } from '../entities/Group'
 import { GroupSharedServiceRole } from '../entities/GroupSharedServiceRole'
 import { NotFoundError } from '../errors/NotFoundError'
 import { ConflictError } from '../errors/ConflictError'
@@ -190,8 +191,74 @@ export class TMSRepository {
                     
                     const roleAssignments = await this.assignUserRoles(tenantId, restoredTenantUser.id, req.body.roles, transactionEntityManager)
                     
+                    const groupIds:string[] = req.body.groups || []
+                    const groups:Group[] = []
+                    
+                    if (groupIds.length > 0) {
+                        const validGroups = await transactionEntityManager
+                            .createQueryBuilder(Group, 'group')
+                            .where('group.id IN (:...groupIds)', { groupIds })
+                            .andWhere('group.tenant.id = :tenantId', { tenantId })
+                            .getMany()
+
+                        if (validGroups.length !== groupIds.length) {
+                            const validGroupIds = validGroups.map(g => g.id)
+                            const invalidGroupIds = groupIds.filter(id => !validGroupIds.includes(id))
+                            throw new NotFoundError(`Group(s) not found or do not belong to tenant: ${invalidGroupIds.join(', ')}`)
+                        }
+
+                        const existingGroupUsers = await transactionEntityManager
+                            .createQueryBuilder(GroupUser, 'groupUser')
+                            .leftJoinAndSelect('groupUser.group', 'group')
+                            .where('groupUser.tenantUser.id = :tenantUserId', { tenantUserId: restoredTenantUser.id })
+                            .andWhere('groupUser.group.id IN (:...groupIds)', { groupIds })
+                            .andWhere('groupUser.isDeleted = :isDeleted', { isDeleted: false })
+                            .getMany()
+
+                        const existingGroupIds = existingGroupUsers.map(gu => gu.group.id)
+                        const groupsToAdd = validGroups.filter(g => !existingGroupIds.includes(g.id))
+
+                        if (groupsToAdd.length > 0) {
+                            const softDeletedGroupUsers = await transactionEntityManager
+                                .createQueryBuilder(GroupUser, 'groupUser')
+                                .leftJoinAndSelect('groupUser.group', 'group')
+                                .where('groupUser.tenantUser.id = :tenantUserId', { tenantUserId: restoredTenantUser.id })
+                                .andWhere('groupUser.group.id IN (:...groupIds)', { groupIds: groupsToAdd.map(g => g.id) })
+                                .andWhere('groupUser.isDeleted = :isDeleted', { isDeleted: true })
+                                .getMany()
+
+                            const softDeletedGroupIds = softDeletedGroupUsers.map(gu => gu.group.id)
+                            const groupsToRestore = softDeletedGroupUsers
+                            const groupsToCreate = groupsToAdd.filter(g => !softDeletedGroupIds.includes(g.id))
+
+                            if (groupsToRestore.length > 0) {
+                                groupsToRestore.forEach(gu => {
+                                    gu.isDeleted = false
+                                    gu.updatedBy = updatedBy
+                                    gu.updatedDateTime = new Date()
+                                })
+                                await transactionEntityManager.save(groupsToRestore)
+                                groups.push(...groupsToRestore.map(gu => gu.group))
+                            }
+
+                            if (groupsToCreate.length > 0) {
+                                const newGroupUsers = groupsToCreate.map(group => {
+                                    const groupUser = new GroupUser()
+                                    groupUser.group = group
+                                    groupUser.tenantUser = restoredTenantUser
+                                    groupUser.isDeleted = false
+                                    groupUser.createdBy = updatedBy
+                                    groupUser.updatedBy = updatedBy
+                                    return groupUser
+                                })
+                                await transactionEntityManager.save(newGroupUsers)
+                                groups.push(...groupsToCreate)
+                            }
+                        }
+                    }
+                    
                     delete restoredTenantUserWithRelations.tenant
-                    response = {savedTenantUser: restoredTenantUserWithRelations, roleAssignments}
+                    response = {savedTenantUser: restoredTenantUserWithRelations, roleAssignments, groups}
                 } else {
                     throw new ConflictError("User is already added to this tenant: "+tenantId)
                 }
@@ -218,9 +285,75 @@ export class TMSRepository {
                 }
                 
                 const roleAssignments = await this.assignUserRoles(tenantId, savedTenantUser.id, rolesToAssign, transactionEntityManager)
+                
+                const groupIds:string[] = req.body.groups || []
+                const groups:Group[] = []
+                
+                if (groupIds.length > 0) {
+                    const validGroups = await transactionEntityManager
+                        .createQueryBuilder(Group, 'group')
+                        .where('group.id IN (:...groupIds)', { groupIds })
+                        .andWhere('group.tenant.id = :tenantId', { tenantId })
+                        .getMany()
+
+                    if (validGroups.length !== groupIds.length) {
+                        const validGroupIds = validGroups.map(g => g.id)
+                        const invalidGroupIds = groupIds.filter(id => !validGroupIds.includes(id))
+                        throw new NotFoundError(`Group(s) not found or do not belong to tenant: ${invalidGroupIds.join(', ')}`)
+                    }
+
+                    const existingGroupUsers = await transactionEntityManager
+                        .createQueryBuilder(GroupUser, 'groupUser')
+                        .leftJoinAndSelect('groupUser.group', 'group')
+                        .where('groupUser.tenantUser.id = :tenantUserId', { tenantUserId: savedTenantUser.id })
+                        .andWhere('groupUser.group.id IN (:...groupIds)', { groupIds })
+                        .andWhere('groupUser.isDeleted = :isDeleted', { isDeleted: false })
+                        .getMany()
+
+                    const existingGroupIds = existingGroupUsers.map(gu => gu.group.id)
+                    const groupsToAdd = validGroups.filter(g => !existingGroupIds.includes(g.id))
+
+                    if (groupsToAdd.length > 0) {
+                        const softDeletedGroupUsers = await transactionEntityManager
+                            .createQueryBuilder(GroupUser, 'groupUser')
+                            .leftJoinAndSelect('groupUser.group', 'group')
+                            .where('groupUser.tenantUser.id = :tenantUserId', { tenantUserId: savedTenantUser.id })
+                            .andWhere('groupUser.group.id IN (:...groupIds)', { groupIds: groupsToAdd.map(g => g.id) })
+                            .andWhere('groupUser.isDeleted = :isDeleted', { isDeleted: true })
+                            .getMany()
+
+                        const softDeletedGroupIds = softDeletedGroupUsers.map(gu => gu.group.id)
+                        const groupsToRestore = softDeletedGroupUsers
+                        const groupsToCreate = groupsToAdd.filter(g => !softDeletedGroupIds.includes(g.id))
+
+                        if (groupsToRestore.length > 0) {
+                            groupsToRestore.forEach(gu => {
+                                gu.isDeleted = false
+                                gu.updatedBy = updatedBy
+                                gu.updatedDateTime = new Date()
+                            })
+                            await transactionEntityManager.save(groupsToRestore)
+                            groups.push(...groupsToRestore.map(gu => gu.group))
+                        }
+
+                        if (groupsToCreate.length > 0) {
+                            const newGroupUsers = groupsToCreate.map(group => {
+                                const groupUser = new GroupUser()
+                                groupUser.group = group
+                                groupUser.tenantUser = savedTenantUser
+                                groupUser.isDeleted = false
+                                groupUser.createdBy = updatedBy
+                                groupUser.updatedBy = updatedBy
+                                return groupUser
+                            })
+                            await transactionEntityManager.save(newGroupUsers)
+                            groups.push(...groupsToCreate)
+                        }
+                    }
+                }
                        
                 delete savedTenantUser.tenant
-                response = {savedTenantUser,roleAssignments}
+                response = {savedTenantUser, roleAssignments, groups}
             }
             
         }
