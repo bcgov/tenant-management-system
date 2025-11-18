@@ -799,7 +799,7 @@ export class TMSRepository {
 
     public async updateTenantRequestStatus(req: Request) {
         const requestId: string = req.params.requestId;
-        const { status, rejectionReason } = req.body;
+        const { status, rejectionReason, tenantName } = req.body;
         let response = {};
 
         await this.manager.transaction(async(transactionEntityManager) => {
@@ -818,6 +818,9 @@ export class TMSRepository {
                 }
 
                 if (status === 'APPROVED') {
+                    if (tenantName) {
+                        tenantRequest.name = tenantName
+                    }
                     if (await this.checkIfTenantNameAndMinistryNameExists(tenantRequest.name, tenantRequest.ministryName)) {
                         throw new ConflictError(`A tenant with name '${tenantRequest.name}' and ministry name '${tenantRequest.ministryName}' already exists`);
                     }

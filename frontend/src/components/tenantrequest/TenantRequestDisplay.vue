@@ -10,6 +10,7 @@ import { TENANT_REQUEST_STATUS } from '@/utils/constants'
 
 const props = defineProps<{
   tenantRequest: TenantRequest
+  erroredApproving: boolean
 }>()
 
 const emit = defineEmits<{
@@ -96,10 +97,11 @@ const handleSubmit = () => {
     <v-row>
       <v-col cols="4">
         <v-text-field
-          :model-value="tenantRequest.name"
+          v-model="tenantRequest.name"
           label="Requested Tenant Name"
-          disabled
+          :disabled="!erroredApproving"
         />
+        <div v-if="erroredApproving" class="text-error mt-n5">{{ $t('tenants.errors.uniqueName') }}</div>
       </v-col>
       <v-col cols="8">
         <v-textarea

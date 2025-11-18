@@ -181,6 +181,11 @@ export default {
                 is: 'REJECTED',
                 then: Joi.string().required(),
                 otherwise: Joi.string().optional()
+            }),
+            tenantName: Joi.string().when('status', {
+                is: 'APPROVED',
+                then: Joi.string().optional(),
+                otherwise: Joi.forbidden()
             })
         })
     },

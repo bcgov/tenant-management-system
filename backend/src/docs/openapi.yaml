@@ -1011,6 +1011,10 @@ paths:
                   enum: [APPROVED, REJECTED]
                   description: New status for the tenant request
                   example: "APPROVED"
+                tenantName:
+                  type: string
+                  description: If status is approved, tenantName can be provided to change the tenant name on approval, this allows for approval when a collision of names would otherwise occur
+                  example: "Tenant name NEW"
                 rejectionReason:
                   type: string
                   description: Required when status is REJECTED
