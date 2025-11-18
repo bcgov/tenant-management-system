@@ -256,6 +256,100 @@ export class TMRepository {
         return softDeletedGroupUser
     }
 
+    public async validateGroupsForTenant(groupIds: string[], tenantId: string, transactionEntityManager?: EntityManager) {
+        transactionEntityManager = transactionEntityManager ? transactionEntityManager : this.manager
+        
+        const validGroups = await transactionEntityManager
+            .createQueryBuilder(Group, 'group')
+            .where('group.id IN (:...groupIds)', { groupIds })
+            .andWhere('group.tenant.id = :tenantId', { tenantId })
+            .getMany()
+
+        if (validGroups.length !== groupIds.length) {
+            const validGroupIds = validGroups.map(g => g.id)
+            const invalidGroupIds = groupIds.filter(id => !validGroupIds.includes(id))
+            throw new NotFoundError(`Group(s) not found or do not belong to tenant: ${invalidGroupIds.join(', ')}`)
+        }
+
+        return validGroups
+    }
+
+    public async getExistingGroupMemberships(tenantUserId: string, groupIds: string[], transactionEntityManager?: EntityManager) {
+        transactionEntityManager = transactionEntityManager ? transactionEntityManager : this.manager
+        
+        return await transactionEntityManager
+            .createQueryBuilder(GroupUser, 'groupUser')
+            .leftJoinAndSelect('groupUser.group', 'group')
+            .where('groupUser.tenantUser.id = :tenantUserId', { tenantUserId })
+            .andWhere('groupUser.group.id IN (:...groupIds)', { groupIds })
+            .andWhere('groupUser.isDeleted = :isDeleted', { isDeleted: false })
+            .getMany()
+    }
+
+    public async getSoftDeletedGroupMemberships(tenantUserId: string, groupIds: string[], transactionEntityManager?: EntityManager) {
+        transactionEntityManager = transactionEntityManager ? transactionEntityManager : this.manager
+        
+        return await transactionEntityManager
+            .createQueryBuilder(GroupUser, 'groupUser')
+            .leftJoinAndSelect('groupUser.group', 'group')
+            .where('groupUser.tenantUser.id = :tenantUserId', { tenantUserId })
+            .andWhere('groupUser.group.id IN (:...groupIds)', { groupIds })
+            .andWhere('groupUser.isDeleted = :isDeleted', { isDeleted: true })
+            .getMany()
+    }
+
+    public async addUserToGroups(tenantUserId: string, groupIds: string[], tenantId: string, updatedBy: string, transactionEntityManager?: EntityManager) {
+        transactionEntityManager = transactionEntityManager ? transactionEntityManager : this.manager
+        
+        if (groupIds.length === 0) {
+            return []
+        }
+
+        const validGroups = await this.validateGroupsForTenant(groupIds, tenantId, transactionEntityManager)
+        
+        const existingGroupUsers = await this.getExistingGroupMemberships(tenantUserId, groupIds, transactionEntityManager)
+        const existingGroupIds = existingGroupUsers.map(gu => gu.group.id)
+        const groupsToAdd = validGroups.filter(g => !existingGroupIds.includes(g.id))
+
+        if (groupsToAdd.length === 0) {
+            return []
+        }
+
+        const softDeletedGroupUsers = await this.getSoftDeletedGroupMemberships(tenantUserId, groupsToAdd.map(g => g.id), transactionEntityManager)
+        
+        const softDeletedGroupIds = softDeletedGroupUsers.map(gu => gu.group.id)
+        const groupsToRestore = softDeletedGroupUsers
+        const groupsToCreate = groupsToAdd.filter(g => !softDeletedGroupIds.includes(g.id))
+
+        const addedGroups: Group[] = []
+
+        if (groupsToRestore.length > 0) {
+            groupsToRestore.forEach(gu => {
+                gu.isDeleted = false
+                gu.updatedBy = updatedBy
+                gu.updatedDateTime = new Date()
+            })
+            await transactionEntityManager.save(groupsToRestore)
+            addedGroups.push(...groupsToRestore.map(gu => gu.group))
+        }
+
+        if (groupsToCreate.length > 0) {
+            const newGroupUsers = groupsToCreate.map(group => {
+                const groupUser = new GroupUser()
+                groupUser.group = group
+                groupUser.tenantUser = { id: tenantUserId } as TenantUser
+                groupUser.isDeleted = false
+                groupUser.createdBy = updatedBy
+                groupUser.updatedBy = updatedBy
+                return groupUser
+            })
+            await transactionEntityManager.save(newGroupUsers)
+            addedGroups.push(...groupsToCreate)
+        }
+
+        return addedGroups
+    }
+
     public async addGroupUser(req: Request) {
         let groupUserResponse: any = null
         
