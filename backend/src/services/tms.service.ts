@@ -34,14 +34,15 @@ export class TMSService {
         const savedUser:any = response.user?.savedTenantUser || response.savedTenantUser
         const roleAssignments:any = response.roleAssignments || []
         const roles:any = roleAssignments.map(assignment => assignment.role)
+        const groups:any = response.groups || []
         return {
             data: {
               user: {
                 ...savedUser,
                 ssoUser: savedUser?.ssoUser,
-                roles: roles
-              },
-              
+                roles: roles,
+                groups: groups
+              }
             }
         };
     }

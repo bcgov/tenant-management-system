@@ -38,7 +38,10 @@ export default {
                 is: 'idir',
                 then: Joi.required(),
                 otherwise: Joi.optional()
-            })
+            }),
+            groups: Joi.array().items(
+                Joi.string().guid()
+            ).optional()
         }).options({abortEarly:false,convert:false})
     },
 
@@ -269,7 +272,7 @@ export default {
                         Joi.string().valid('idir', 'azureidir', 'bceidbasic', 'bceidbusiness')
                     ).allow(null).optional()
                 })
-            ).min(1).max(10).required()
+            ).min(1).max(50).required()
         }).options({abortEarly:false,convert:false})
     },
 
