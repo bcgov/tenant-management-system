@@ -910,6 +910,50 @@ export class TMSRepository {
         await this.assignUserRoles(tenantId, tenantUserId, [serviceUserRole[0].id], transactionEntityManager)
     }
 
+    public async ensureTenantUserExists(user: any, tenantId: string, updatedBy: string, transactionEntityManager?: EntityManager) {
+        transactionEntityManager = transactionEntityManager ? transactionEntityManager : this.manager
+        
+        const existingTenant:Tenant = await this.getTenantIfUserDoesNotExistForTenant(user.ssoUserId, tenantId)
+
+        if (!existingTenant) {
+            let existingTenantUser:TenantUser = await this.getTenantUserBySsoId(user.ssoUserId, tenantId, transactionEntityManager)
+            
+            if (!existingTenantUser) {
+                const softDeletedUser: TenantUser = await this.findSoftDeletedTenantUser(user.ssoUserId, tenantId, transactionEntityManager)
+                
+                if (softDeletedUser) {
+                    softDeletedUser.isDeleted = false
+                    softDeletedUser.updatedBy = updatedBy
+                    softDeletedUser.updatedDateTime = new Date()
+                    
+                    existingTenantUser = await transactionEntityManager.save(softDeletedUser)
+                } else {
+                    throw new NotFoundError(`Tenant user not found: ${user.ssoUserId}`)
+                }
+            }
+            return existingTenantUser
+        } else {
+            const serviceUserRole = await this.findRoles([TMSConstants.SERVICE_USER], null)
+            if (serviceUserRole.length === 0) {
+                throw new NotFoundError('Service User role not found')
+            }
+            
+            const tenantUser:TenantUser = new TenantUser()
+            tenantUser.tenant = existingTenant
+            tenantUser.createdBy = updatedBy
+            tenantUser.updatedBy = updatedBy
+            const ssoUser:SSOUser = await this.setSSOUser(user.ssoUserId, user.firstName, user.lastName, user.displayName,
+                user.userName, user.email, user.idpType)       
+            tenantUser.ssoUser = ssoUser
+
+            const savedTenantUser:TenantUser = await transactionEntityManager.save(tenantUser)
+            
+            await this.assignUserRoles(tenantId, savedTenantUser.id, [serviceUserRole[0].id], transactionEntityManager)
+            
+            return savedTenantUser
+        }
+    }
+
     public async saveSharedService(req: Request) {
         const { name, clientIdentifier, description, isActive, roles } = req.body
         let sharedServiceResponse = {}

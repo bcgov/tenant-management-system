@@ -350,116 +350,65 @@ export class TMRepository {
         return addedGroups
     }
 
-    public async addGroupUser(req: Request) {
-        let groupUserResponse: any = null
+    public async addGroupUser(req: Request, transactionEntityManager?: EntityManager) {
+        transactionEntityManager = transactionEntityManager ? transactionEntityManager : this.manager
         
-        await this.manager.transaction(async(transactionEntityManager) => {
-            try {
-                const tenantId:string = req.params.tenantId
-                const groupId:string = req.params.groupId
-                const { user } = req.body
-                const createdBy:string = req.decodedJwt?.idir_user_guid || 'system'
+        const tenantId: string = req.params.tenantId
+        const groupId: string = req.params.groupId
+        const tenantUserId: string = req.body.tenantUserId
+        const updatedBy: string = req.decodedJwt?.idir_user_guid || 'system'
 
-                // REDUNDANT: checkTenantAccess middleware already validates tenant exists and user has access
-                // if (!await this.tmsRepository.checkIfTenantExists(tenantId, transactionEntityManager)) {
-                //     throw new NotFoundError(`Tenant not found: ${tenantId}`)
-                // }
+        const group = await this.checkIfGroupExistsInTenant(groupId, tenantId, transactionEntityManager);
+        if (!group) {
+            throw new NotFoundError(`Group not found: ${groupId}`)
+        }
 
-                const group = await this.checkIfGroupExistsInTenant(groupId, tenantId, transactionEntityManager);
-                if (!group) {
-                    throw new NotFoundError(`Group not found: ${groupId}`)
+        if (await this.checkIfUserExistsInGroup(tenantUserId, groupId, transactionEntityManager)) {
+            throw new ConflictError(`User is already a member of this group`)
+        }
+
+        const softDeletedGroupUser = await this.findSoftDeletedGroupUser(tenantUserId, groupId, transactionEntityManager)
+        let savedGroupUser: GroupUser
+
+        if (softDeletedGroupUser) {
+            softDeletedGroupUser.isDeleted = false
+            softDeletedGroupUser.updatedBy = updatedBy
+            softDeletedGroupUser.updatedDateTime = new Date()
+            
+            savedGroupUser = await transactionEntityManager.save(softDeletedGroupUser)
+        } else {
+            const groupUser: GroupUser = new GroupUser()
+            groupUser.group = { id: groupId } as Group
+            groupUser.tenantUser = { id: tenantUserId } as TenantUser
+            groupUser.isDeleted = false
+            groupUser.createdBy = updatedBy
+            groupUser.updatedBy = updatedBy
+
+            savedGroupUser = await transactionEntityManager.save(groupUser)
+        }
+
+        let groupUserResponse: any = await transactionEntityManager
+            .createQueryBuilder(GroupUser, 'groupUser')
+            .leftJoinAndSelect('groupUser.tenantUser', 'tenantUser')
+            .leftJoinAndSelect('tenantUser.ssoUser', 'ssoUser')
+            .leftJoinAndSelect('tenantUser.roles', 'tenantUserRoles')
+            .leftJoinAndSelect('tenantUserRoles.role', 'role')
+            .where('groupUser.id = :id', { id: savedGroupUser.id })
+            .andWhere('tenantUserRoles.isDeleted = :isDeleted', { isDeleted: false })
+            .getOne();
+
+        if (groupUserResponse) {
+            const userRoles = groupUserResponse.tenantUser.roles?.map(tur => tur.role) || []
+            groupUserResponse = {
+                ...groupUserResponse,
+                user: {
+                    ...groupUserResponse.tenantUser,
+                    ssoUser: groupUserResponse.tenantUser.ssoUser,
+                    roles: userRoles
                 }
-
-                let tenantUser: TenantUser
-                const existingTenant:Tenant = await this.tmsRepository.getTenantIfUserDoesNotExistForTenant(user.ssoUserId, tenantId)
-
-                if (!existingTenant) {
-                    let existingTenantUser:TenantUser = await this.tmsRepository.getTenantUserBySsoId(user.ssoUserId, tenantId, transactionEntityManager)
-                    
-                    if (!existingTenantUser) {
-                        const softDeletedUser: TenantUser = await this.tmsRepository.findSoftDeletedTenantUser(user.ssoUserId, tenantId, transactionEntityManager)
-                        
-                        if (softDeletedUser) {
-                            softDeletedUser.isDeleted = false
-                            softDeletedUser.updatedBy = createdBy
-                            softDeletedUser.updatedDateTime = new Date()
-                            
-                            existingTenantUser = await transactionEntityManager.save(softDeletedUser)
-                        } else {
-                            throw new NotFoundError(`Tenant user not found: ${user.ssoUserId}`)
-                        }
-                    }
-                    tenantUser = existingTenantUser
-                } else {
-                    const serviceUserRole = await this.tmsRepository.findRoles([TMSConstants.SERVICE_USER], null)
-                    if (serviceUserRole.length === 0) {
-                        throw new NotFoundError('Service User role not found')
-                    }
-                    
-                    const addTenantUsersRequest = {
-                        params: { tenantId },
-                        body: { 
-                            user: user, 
-                            roles: [serviceUserRole[0].id]
-                        }
-                    } as any;
-                    
-                    const tenantResponse: any = await this.tmsRepository.addTenantUsers(addTenantUsersRequest)
-                    tenantUser = tenantResponse.savedTenantUser
-                }
-
-                if (await this.checkIfUserExistsInGroup(tenantUser.id, groupId, transactionEntityManager)) {
-                    throw new ConflictError(`User is already a member of this group`)
-                }
-
-                const softDeletedGroupUser = await this.findSoftDeletedGroupUser(tenantUser.id, groupId, transactionEntityManager)
-                let savedGroupUser: GroupUser
-
-                if (softDeletedGroupUser) {
-                    softDeletedGroupUser.isDeleted = false
-                    softDeletedGroupUser.updatedBy = createdBy
-                    softDeletedGroupUser.updatedDateTime = new Date()
-                    
-                    savedGroupUser = await transactionEntityManager.save(softDeletedGroupUser)
-                } else {
-                    const groupUser: GroupUser = new GroupUser()
-                    groupUser.group = { id: groupId } as Group
-                    groupUser.tenantUser = tenantUser
-                    groupUser.isDeleted = false
-                    groupUser.createdBy = createdBy
-                    groupUser.updatedBy = createdBy
-
-                    savedGroupUser = await transactionEntityManager.save(groupUser)
-                }
-
-                groupUserResponse = await transactionEntityManager
-                    .createQueryBuilder(GroupUser, 'groupUser')
-                    .leftJoinAndSelect('groupUser.tenantUser', 'tenantUser')
-                    .leftJoinAndSelect('tenantUser.ssoUser', 'ssoUser')
-                    .leftJoinAndSelect('tenantUser.roles', 'tenantUserRoles')
-                    .leftJoinAndSelect('tenantUserRoles.role', 'role')
-                    .where('groupUser.id = :id', { id: savedGroupUser.id })
-                    .andWhere('tenantUserRoles.isDeleted = :isDeleted', { isDeleted: false })
-                    .getOne();
-
-                if (groupUserResponse) {
-                    const userRoles = groupUserResponse.tenantUser.roles?.map(tur => tur.role) || []
-                    groupUserResponse = {
-                        ...groupUserResponse,
-                        user: {
-                            ...groupUserResponse.tenantUser,
-                            ssoUser: groupUserResponse.tenantUser.ssoUser,
-                            roles: userRoles
-                        }
-                    };
-                    delete groupUserResponse.tenantUser
-                }
-
-            } catch(error) {
-                logger.error('Add user to group transaction failure - rolling back inserts ', error)
-                throw error
-            }
-        });
+            };
+            delete groupUserResponse.tenantUser
+        }
 
         return groupUserResponse
     }

@@ -4,10 +4,12 @@ import { TMSRepository } from '../repositories/tms.repository'
 import { connection } from '../common/db.connection'
 import logger from '../common/logger'
 import { UnauthorizedError } from '../errors/UnauthorizedError'
+import { NotFoundError } from '../errors/NotFoundError'
 
 export class TMService {
 
-    tmRepository: TMRepository = new TMRepository(connection.manager, new TMSRepository(connection.manager))
+    tmsRepository: TMSRepository = new TMSRepository(connection.manager)
+    tmRepository: TMRepository = new TMRepository(connection.manager, this.tmsRepository)
     
     public async createGroup(req: Request) {
         const savedGroup: any = await this.tmRepository.saveGroup(req)
@@ -20,7 +22,28 @@ export class TMService {
     }
 
     public async addGroupUser(req: Request) {
-        const savedGroupUser: any = await this.tmRepository.addGroupUser(req)
+        let savedGroupUser: any = null
+        
+        await connection.manager.transaction(async(transactionEntityManager) => {
+            try {
+                const tenantId: string = req.params.tenantId
+                const groupId: string = req.params.groupId
+                const { user } = req.body
+                const updatedBy: string = req.decodedJwt?.idir_user_guid || 'system'
+
+                const group = await this.tmRepository.checkIfGroupExistsInTenant(groupId, tenantId, transactionEntityManager)
+                if (!group) {
+                    throw new NotFoundError(`Group not found or does not exist for tenant: ${tenantId}`)
+                }
+
+                const tenantUser = await this.tmsRepository.ensureTenantUserExists(user, tenantId, updatedBy, transactionEntityManager)
+                req.body.tenantUserId = tenantUser.id
+                savedGroupUser = await this.tmRepository.addGroupUser(req, transactionEntityManager)
+            } catch(error) {
+                logger.error('Add user to group transaction failure - rolling back inserts ', error)
+                throw error
+            }
+        })
         
         return {
             data: { 
