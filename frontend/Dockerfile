@@ -24,10 +24,8 @@ RUN npm config set registry https://registry.npmjs.org/ && \
 # First copy package files and install dependencies
 COPY package*.json ./
 
-# Clean npm cache and install dependencies
-RUN npm cache clean --force && \
-    rm -f package-lock.json && \
-    npm install --no-audit --no-fund --ignore-scripts
+# Install dependencies (including devDependencies for build)
+RUN npm ci --ignore-scripts
 
 # Then copy source code and build
 COPY . ./
