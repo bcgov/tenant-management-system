@@ -25,8 +25,10 @@ describe('Group model', () => {
   it('constructor assigns all properties correctly', () => {
     const fakeSsoUser = new SsoUser('235', undefined, '', '', '', undefined)
     const groupUsers: GroupUser[] = []
-    groupUsers.push(new GroupUser('user1', new User('user1', fakeSsoUser)))
-    groupUsers.push(new GroupUser('user2', new User('user2', fakeSsoUser)))
+    groupUsers.push(
+      new GroupUser('user1', new User('user1', fakeSsoUser)),
+      new GroupUser('user2', new User('user2', fakeSsoUser))
+    )
 
     const group = new Group(
       'creatorUser',
