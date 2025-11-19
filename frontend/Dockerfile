@@ -1,15 +1,15 @@
 # Build stage: build static files with Node
-FROM node:22-slim AS build
+FROM node:22.21.1-trixie-slim AS build
 
 WORKDIR /app
 
 # Install curl for healthcheck and other dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl \
     ca-certificates \
-    python3 \
-    make \
+    curl \
     g++ \
+    make \
+    python3 \
     && rm -rf /var/lib/apt/lists/*
 
 # Increase Node.js memory limit for large builds
@@ -34,7 +34,7 @@ COPY . ./
 RUN npm run build
 
 # Deploy stage: serve static files with Caddy
-FROM caddy:2.10.0-alpine
+FROM caddy:2.10.2-alpine
 
 RUN apk add --no-cache ca-certificates curl
 
