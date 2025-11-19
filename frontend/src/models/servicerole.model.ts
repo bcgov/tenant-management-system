@@ -1,7 +1,4 @@
-enum ServiceRoleIdEnum {
-  _ = '',
-}
-declare type ServiceRoleId = string & ServiceRoleIdEnum
+declare type ServiceRoleId = string & { readonly __brand: 'ServiceRoleId' }
 
 /**
  * Represents a service role within the system.

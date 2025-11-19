@@ -1,9 +1,6 @@
 import { Role, SsoUser } from '@/models'
 
-enum UserIdEnum {
-  _ = '',
-}
-export declare type UserId = string & UserIdEnum
+export declare type UserId = string & { readonly __brand: 'UserId' }
 
 /**
  * Represents a user in the system.

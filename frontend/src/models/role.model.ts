@@ -1,7 +1,4 @@
-enum RoleIdEnum {
-  _ = '',
-}
-export declare type RoleId = string & RoleIdEnum
+export declare type RoleId = string & { readonly __brand: 'RoleId' }
 
 /**
  * Represents a role within the system.

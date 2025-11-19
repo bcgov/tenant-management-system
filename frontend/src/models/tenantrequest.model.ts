@@ -1,7 +1,4 @@
-enum TenantRequestIdEnum {
-  _ = '',
-}
-declare type TenantRequestId = string & TenantRequestIdEnum
+declare type TenantRequestId = string & { readonly __brand: 'TenantRequestId' }
 
 /**
  * Utility type that represents the subset of Tenant Request properties used in

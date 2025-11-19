@@ -1,9 +1,6 @@
 import { GroupUser } from '@/models'
 
-enum GroupIdEnum {
-  _ = '',
-}
-export declare type GroupId = string & GroupIdEnum
+export declare type GroupId = string & { readonly __brand: 'GroupId' }
 
 /**
  * Utility type that represents the subset of Group properties used in the form

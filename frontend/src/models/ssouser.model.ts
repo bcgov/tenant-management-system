@@ -1,7 +1,4 @@
-enum SSOUserIdEnum {
-  _ = '',
-}
-export type SSOUserId = string & SSOUserIdEnum
+export type SSOUserId = string & { readonly __brand: 'SSOUserId' }
 
 /**
  * Represents a single SSO user.

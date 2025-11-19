@@ -1,7 +1,4 @@
-enum SharedServiceRoleIdEnum {
-  _ = '',
-}
-export declare type SharedServiceRoleId = string & SharedServiceRoleIdEnum
+export declare type SharedServiceRoleId = string & { readonly __brand: 'SharedServiceRoleId' }
 
 export class SharedServiceRoles {
   id: SharedServiceRoleId

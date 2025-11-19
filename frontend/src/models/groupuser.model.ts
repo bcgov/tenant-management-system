@@ -1,9 +1,6 @@
 import { User } from '@/models'
 
-enum GroupUserIdEnum {
-  _ = '',
-}
-declare type GroupUserId = string & GroupUserIdEnum
+declare type GroupUserId = string & { readonly __brand: 'GroupUserId' }
 
 /**
  * Represents a user within a group.

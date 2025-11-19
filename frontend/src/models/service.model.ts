@@ -1,14 +1,8 @@
 import { ServiceRole } from './servicerole.model'
 
-enum ServiceIdEnum {
-  _ = '',
-}
-declare type ServiceId = string & ServiceIdEnum
 
-enum RoleIdEnum {
-  _ = '',
-}
-declare type RoleId = string & RoleIdEnum
+declare type ServiceId = string & { readonly __brand: 'ServiceId' }
+declare type RoleId = string & { readonly __brand: 'RoleId' }
 
 /**
  * Represents a service in the system.
