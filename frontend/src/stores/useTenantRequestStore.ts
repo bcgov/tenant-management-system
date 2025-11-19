@@ -54,11 +54,13 @@ export const useTenantRequestStore = defineStore('tenantRequest', () => {
     tenantRequestId: string,
     status: string,
     rejectionReason?: string,
+    tenantName?: string,
   ) => {
     await tenantRequestService.updateTenantRequestStatus(
       tenantRequestId,
       status,
       rejectionReason,
+      tenantName,
     )
 
     const tenantRequest = tenantRequests.value.find(

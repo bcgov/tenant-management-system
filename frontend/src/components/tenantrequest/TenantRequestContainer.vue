@@ -17,6 +17,7 @@ const tenantRequestStore = useTenantRequestStore()
 
 const search = ref('')
 const selectedTenantRequest: Ref<TenantRequest | null> = ref(null)
+const erroredApproving = ref(false)
 
 // --- Computed Values ---------------------------------------------------------
 
@@ -41,7 +42,8 @@ const getStatusColor = (status: string) => {
   }
 }
 
-const handleApproved = async () => {
+const handleApproved = async (name: string) => {
+  erroredApproving.value = false
   if (!selectedTenantRequest.value) {
     return
   }
@@ -50,6 +52,8 @@ const handleApproved = async () => {
     await tenantRequestStore.updateTenantRequestStatus(
       selectedTenantRequest.value.id,
       TENANT_REQUEST_STATUS.APPROVED.value,
+      undefined,
+      name,
     )
     notification.success('Tenant Request has been successfully updated')
     handleBackToList()
@@ -60,23 +64,28 @@ const handleApproved = async () => {
       notification.error(
         'Tenant Request cannot be approved because the name already exists',
       )
+      erroredApproving.value = true
     } else if (error instanceof DomainError && error.userMessage) {
       // For any other API Domain Error, display the user message that comes
       // from the API. This should not happen but is useful if there are
       // business rules in the API that are not implemented in the UI.
       notification.error(error.userMessage)
+      erroredApproving.value = true
     } else {
       // Otherwise display a generic error message.
       notification.error('Failed to update Tenant Request')
+      erroredApproving.value = true
     }
   }
 }
 
 const handleBackToList = () => {
   selectedTenantRequest.value = null
+  erroredApproving.value = false
 }
 
 const handleRejected = async (notes: string) => {
+  erroredApproving.value = false
   if (!selectedTenantRequest.value) {
     return
   }
@@ -113,6 +122,7 @@ onMounted(async () => {
   <v-container class="px-0" fluid>
     <template v-if="selectedTenantRequest">
       <TenantRequestDisplay
+        :errored-approving="erroredApproving"
         :tenant-request="selectedTenantRequest"
         @approved="handleApproved"
         @back="handleBackToList"
