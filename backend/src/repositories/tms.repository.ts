@@ -7,7 +7,6 @@ import { In } from 'typeorm'
 import { Request} from 'express'
 import { TMSConstants } from '../common/tms.constants'
 import { TenantUserRole } from '../entities/TenantUserRole'
-import { GroupUser } from '../entities/GroupUser'
 import { GroupSharedServiceRole } from '../entities/GroupSharedServiceRole'
 import { NotFoundError } from '../errors/NotFoundError'
 import { ConflictError } from '../errors/ConflictError'
@@ -153,86 +152,64 @@ export class TMSRepository {
         return tenantResponse
     }
 
-    public async addTenantUsers(req:Request) {
+    public async addTenantUsers(req:Request, transactionEntityManager?: EntityManager) {
+        transactionEntityManager = transactionEntityManager ? transactionEntityManager : this.manager
 
-        let response = {}
-        await this.manager.transaction(async(transactionEntityManager) => {
+        const tenantId:string = req.params.tenantId
+        const ssoUserId:string = req.body.user.ssoUserId
+        const updatedBy:string = req.decodedJwt?.idir_user_guid || 'system'
+        
+        const tenant:Tenant = await this.getTenantIfUserDoesNotExistForTenant(ssoUserId,tenantId)
 
-        try {  
-            const tenantId:string = req.params.tenantId
-            const roles:string[] = req.body.roles
-            const ssoUserId:string = req.body.user.ssoUserId
-            const updatedBy:string = req.decodedJwt?.idir_user_guid || 'system'
+        if(!tenant) {
+            const softDeletedUser:TenantUser = await this.findSoftDeletedTenantUser(ssoUserId, tenantId, transactionEntityManager)
             
-            // REDUNDANT: checkTenantAccess middleware already validates tenant exists and user has access
-            // if(!await this.checkIfTenantExists(tenantId)) {  
-            //     throw new NotFoundError("Tenant Not Found: "+tenantId)
-            // } 
-        
-            const tenant:Tenant = await this.getTenantIfUserDoesNotExistForTenant(ssoUserId,tenantId)
-    
-            if(!tenant) {
-                // Check if user was previously soft-deleted and restore them
-                const softDeletedUser = await this.findSoftDeletedTenantUser(ssoUserId, tenantId, transactionEntityManager)
+            if (softDeletedUser) {
+                softDeletedUser.isDeleted = false
+                softDeletedUser.updatedBy = updatedBy
+                softDeletedUser.updatedDateTime = new Date()
                 
-                if (softDeletedUser) {
-                    softDeletedUser.isDeleted = false
-                    softDeletedUser.updatedBy = updatedBy
-                    softDeletedUser.updatedDateTime = new Date()
-                    
-                    const restoredTenantUser:TenantUser = await transactionEntityManager.save(softDeletedUser)
-                    
-                    const restoredTenantUserWithRelations = await transactionEntityManager
-                        .createQueryBuilder(TenantUser, 'tu')
-                        .leftJoinAndSelect('tu.ssoUser', 'ssoUser')
-                        .where('tu.id = :tenantUserId', { tenantUserId: restoredTenantUser.id })
-                        .getOne()
-                    
-                    const roleAssignments = await this.assignUserRoles(tenantId, restoredTenantUser.id, req.body.roles, transactionEntityManager)
-                    
-                    delete restoredTenantUserWithRelations.tenant
-                    response = {savedTenantUser: restoredTenantUserWithRelations, roleAssignments}
-                } else {
-                    throw new ConflictError("User is already added to this tenant: "+tenantId)
-                }
+                const restoredTenantUser:TenantUser = await transactionEntityManager.save(softDeletedUser)
+                
+                const restoredTenantUserWithRelations:TenantUser = await transactionEntityManager
+                    .createQueryBuilder(TenantUser, 'tu')
+                    .leftJoinAndSelect('tu.ssoUser', 'ssoUser')
+                    .where('tu.id = :tenantUserId', { tenantUserId: restoredTenantUser.id })
+                    .getOne()
+                
+                const roleAssignments:TenantUserRole[] = await this.assignUserRoles(tenantId, restoredTenantUser.id, req.body.roles, transactionEntityManager)
+                
+                delete restoredTenantUserWithRelations.tenant
+                return {savedTenantUser: restoredTenantUserWithRelations, roleAssignments, tenantUserId: restoredTenantUser.id}
             } else {
-
-                const tenantUser:TenantUser = new TenantUser()
-                tenantUser.tenant = tenant
-                tenantUser.createdBy = updatedBy
-                tenantUser.updatedBy = updatedBy
-                const user = req.body.user
-                const ssoUser:SSOUser = await this.setSSOUser(user.ssoUserId,user.firstName,user.lastName,user.displayName,
-                    user.userName,user.email, user.idpType)       
-                tenantUser.ssoUser = ssoUser
-        
-                const savedTenantUser:TenantUser = await transactionEntityManager.save(tenantUser)
+                throw new ConflictError("User is already added to this tenant: "+tenantId)
+            }
+        } else {
+            const tenantUser:TenantUser = new TenantUser()
+            tenantUser.tenant = tenant
+            tenantUser.createdBy = updatedBy
+            tenantUser.updatedBy = updatedBy
+            const user = req.body.user
+            const ssoUser:SSOUser = await this.setSSOUser(user.ssoUserId,user.firstName,user.lastName,user.displayName,
+                user.userName,user.email, user.idpType)       
+            tenantUser.ssoUser = ssoUser
     
-                let rolesToAssign = req.body.roles
-                if (user.idpType === 'bceidbasic' || user.idpType === 'bceidbusiness') {
-                    const serviceUserRole:Role[] = await this.findRoles([TMSConstants.SERVICE_USER], null)
-                    if (serviceUserRole.length === 0) {
-                        throw new NotFoundError('SERVICE_USER role not found')
-                    }
-                    rolesToAssign = [serviceUserRole[0].id]
+            const savedTenantUser:TenantUser = await transactionEntityManager.save(tenantUser)
+
+            let rolesToAssign = req.body.roles
+            if (user.idpType === 'bceidbasic' || user.idpType === 'bceidbusiness') {
+                const serviceUserRole:Role[] = await this.findRoles([TMSConstants.SERVICE_USER], null)
+                if (serviceUserRole.length === 0) {
+                    throw new NotFoundError('SERVICE_USER role not found')
                 }
-                
-                const roleAssignments = await this.assignUserRoles(tenantId, savedTenantUser.id, rolesToAssign, transactionEntityManager)
-                       
-                delete savedTenantUser.tenant
-                response = {savedTenantUser,roleAssignments}
+                rolesToAssign = [serviceUserRole[0].id]
             }
             
+            const roleAssignments = await this.assignUserRoles(tenantId, savedTenantUser.id, rolesToAssign, transactionEntityManager)
+                   
+            delete savedTenantUser.tenant
+            return {savedTenantUser, roleAssignments, tenantUserId: savedTenantUser.id}
         }
-        
-        catch(error) {
-            console.log(error)
-            logger.error('Add user to a tenant transaction failure - rolling back inserts ', error);
-            throw error
-        }
-        
-    });     
-        return response
     }
 
     public async createRoles(req:Request) {
@@ -931,6 +908,50 @@ export class TMSRepository {
         }
 
         await this.assignUserRoles(tenantId, tenantUserId, [serviceUserRole[0].id], transactionEntityManager)
+    }
+
+    public async ensureTenantUserExists(user: any, tenantId: string, updatedBy: string, transactionEntityManager?: EntityManager) {
+        transactionEntityManager = transactionEntityManager ? transactionEntityManager : this.manager
+        
+        const existingTenant:Tenant = await this.getTenantIfUserDoesNotExistForTenant(user.ssoUserId, tenantId)
+
+        if (!existingTenant) {
+            let existingTenantUser:TenantUser = await this.getTenantUserBySsoId(user.ssoUserId, tenantId, transactionEntityManager)
+            
+            if (!existingTenantUser) {
+                const softDeletedUser: TenantUser = await this.findSoftDeletedTenantUser(user.ssoUserId, tenantId, transactionEntityManager)
+                
+                if (softDeletedUser) {
+                    softDeletedUser.isDeleted = false
+                    softDeletedUser.updatedBy = updatedBy
+                    softDeletedUser.updatedDateTime = new Date()
+                    
+                    existingTenantUser = await transactionEntityManager.save(softDeletedUser)
+                } else {
+                    throw new NotFoundError(`Tenant user not found: ${user.ssoUserId}`)
+                }
+            }
+            return existingTenantUser
+        } else {
+            const serviceUserRole = await this.findRoles([TMSConstants.SERVICE_USER], null)
+            if (serviceUserRole.length === 0) {
+                throw new NotFoundError('Service User role not found')
+            }
+            
+            const tenantUser:TenantUser = new TenantUser()
+            tenantUser.tenant = existingTenant
+            tenantUser.createdBy = updatedBy
+            tenantUser.updatedBy = updatedBy
+            const ssoUser:SSOUser = await this.setSSOUser(user.ssoUserId, user.firstName, user.lastName, user.displayName,
+                user.userName, user.email, user.idpType)       
+            tenantUser.ssoUser = ssoUser
+
+            const savedTenantUser:TenantUser = await transactionEntityManager.save(tenantUser)
+            
+            await this.assignUserRoles(tenantId, savedTenantUser.id, [serviceUserRole[0].id], transactionEntityManager)
+            
+            return savedTenantUser
+        }
     }
 
     public async saveSharedService(req: Request) {

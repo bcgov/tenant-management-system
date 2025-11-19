@@ -286,9 +286,9 @@ jobs:
               echo "ℹ️ Crunchy PostgreSQL cluster will be created by Helm"
             fi
 
-            # For Crunchy PostgreSQL with PgBouncer
-            DB_HOST="${RELEASE_NAME}-pgbouncer"
-            echo "Test/Prod environment detected - using Crunchy PgBouncer host: $DB_HOST"
+            # For Crunchy PostgreSQL (direct connection to postgres)
+            DB_HOST="${RELEASE_NAME}-postgres"
+            echo "Test/Prod environment detected - using Crunchy PostgreSQL host: $DB_HOST"
 
       - uses: actions/checkout@v4
 
@@ -503,7 +503,7 @@ jobs:
 
                 # Get password from Crunchy's secret
                 DB_PASSWORD=$(oc get secret ${CLUSTER_NAME}-pguser-${DB_USER} -o jsonpath='{.data.password}' | base64 -d)
-                DB_HOST="${RELEASE_NAME}-pgbouncer"
+                DB_HOST="${RELEASE_NAME}-postgres"
 
                 # Create a copy of Crunchy's secret with the naming convention our app expects
                 echo "Creating application-compatible secret: ${RELEASE_NAME}-pguser-${DB_USER}"
@@ -547,6 +547,82 @@ jobs:
             echo "✅ Flyway secret created with Crunchy auto-generated password"
             echo "  URL: $FLYWAY_URL"
             echo "  User: $DB_USER"
+
+      - name: Create PostgreSQL Service for TEST/PROD
+        id: create_postgres_service
+        # Only run for TEST/PROD environments
+        if: "!contains(steps.vars.outputs.release, '-pr-') && !contains(steps.vars.outputs.release, '-dev')"
+        uses: bcgov/action-oc-runner@10033668ef4374d9bb78149faa73e4ccda0e93dd
+        with:
+          oc_namespace: ${{ secrets.oc_namespace }}
+          oc_token: ${{ secrets.oc_token }}
+          oc_server: ${{ inputs.oc_server }}
+          commands: |
+            # Enable strict error handling
+            set -euo pipefail
+
+            RELEASE_NAME="${{ steps.vars.outputs.release }}"
+            SERVICE_NAME="${RELEASE_NAME}-postgres"
+
+            echo "🔌 Creating PostgreSQL Service for TEST/PROD..."
+            echo "Service name: $SERVICE_NAME"
+
+            # Check if service already exists
+            if oc get svc "$SERVICE_NAME" -n "$KUBE_NAMESPACE" &>/dev/null; then
+              echo "✅ Service already exists: $SERVICE_NAME"
+              echo "Checking if service has endpoints..."
+
+              ENDPOINTS=$(oc get endpoints "$SERVICE_NAME" -o jsonpath='{.subsets[*].addresses[*].ip}' 2>/dev/null || echo "")
+              if [ -n "$ENDPOINTS" ]; then
+                echo "✅ Service has endpoints: $ENDPOINTS"
+              else
+                echo "⚠️ Service exists but has no endpoints, updating selector..."
+                oc patch svc "$SERVICE_NAME" -p '{"spec":{"selector":{"app":"postgres","instance":"'$RELEASE_NAME'"}}}'
+              fi
+            else
+              echo "ℹ️ Service does not exist, creating new service..."
+
+              # Create service with correct selector
+              oc create service clusterip "$SERVICE_NAME" \
+                --tcp=5432:5432 \
+                --namespace="$KUBE_NAMESPACE" || true
+
+              # Patch service to use correct selector
+              echo "Patching service selector..."
+              oc patch svc "$SERVICE_NAME" \
+                -p '{"spec":{"selector":{"app":"postgres","instance":"'$RELEASE_NAME'"}}}' \
+                --namespace="$KUBE_NAMESPACE"
+
+              sleep 2
+            fi
+
+            # Verify service has endpoints
+            echo ""
+            echo "Verifying service endpoints..."
+            for i in {1..30}; do
+              ENDPOINTS=$(oc get endpoints "$SERVICE_NAME" -o jsonpath='{.subsets[*].addresses[*].ip}' 2>/dev/null || echo "")
+              if [ -n "$ENDPOINTS" ]; then
+                echo "✅ Service is properly configured with endpoints: $ENDPOINTS"
+
+                # Get the service cluster IP
+                CLUSTER_IP=$(oc get svc "$SERVICE_NAME" -o jsonpath='{.spec.clusterIP}')
+                echo "✅ Service ClusterIP: $CLUSTER_IP"
+                echo "✅ Service is accessible at: $SERVICE_NAME:5432"
+                break
+              fi
+
+              echo "Attempt $i/30: Waiting for service endpoints to be assigned..."
+              sleep 1
+            done
+
+            if [ -z "${ENDPOINTS}" ]; then
+              echo "❌ Service endpoints not assigned after timeout"
+              echo "Available services:"
+              oc get svc -n "$KUBE_NAMESPACE" | grep postgres || echo "No postgres services found"
+              exit 1
+            fi
+
+            echo "✅ PostgreSQL service creation/verification completed successfully"
 
       - name: Wait for PostgreSQL and Create Database Secrets (PR/Dev)
         id: create_db_secret
