@@ -159,7 +159,7 @@ paths:
   /v1/tenants/{tenantId}/users:
     post:
       summary: Add a user to a tenant
-      description: Adds a new user to an existing tenant. Supports IDIR, basic BCeID, and business BCeID users. For IDIR users, roles are required. For BCeID users, roles are optional and will be overridden with SERVICE_USER role. Requires JWT authentication and TENANT_OWNER or USER_ADMIN role.
+      description: Adds a new user to an existing tenant. Supports IDIR, basic BCeID, and business BCeID users. For IDIR users, roles are required. For BCeID users, roles are optional and will be overridden with SERVICE_USER role. Optionally adds the user to groups. Requires JWT authentication and TENANT_OWNER or USER_ADMIN role.
       security:
         - bearerAuth: []
       parameters:
@@ -192,6 +192,13 @@ paths:
                     Required for IDIR users. Optional for BCeID users (will be overridden with SERVICE_USER role).
                     If not provided for IDIR users, validation will fail.
                   example: ["14c6bb48-54e2-4ce0-9bbd-af4982fff13b"]
+                groups:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+                  description: Optional array of group IDs to add the user to
+                  example: ["02630496-ac01-407b-84f6-d542c8f4cc8c", "c442d5c6-2a23-439f-956f-a67ba87a42cf"]
       responses:
         '201':
           description: User successfully added to tenant
@@ -200,12 +207,24 @@ paths:
               schema:
                 type: object
                 properties:
-                  user:
-                    $ref: '#/components/schemas/User'
-                  roles:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Role'
+                  data:
+                    type: object
+                    properties:
+                      user:
+                        allOf:
+                          - $ref: '#/components/schemas/User'
+                          - type: object
+                            properties:
+                              roles:
+                                type: array
+                                items:
+                                  $ref: '#/components/schemas/Role'
+                                description: Roles assigned to the user
+                              groups:
+                                type: array
+                                items:
+                                  $ref: '#/components/schemas/Group'
+                                description: Groups the user was added to (if groups were provided in request)
         '400':
           description: Invalid input - IDIR users must provide roles, BCeID users roles are optional
           content:
