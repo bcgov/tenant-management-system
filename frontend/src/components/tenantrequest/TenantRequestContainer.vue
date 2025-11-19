@@ -42,7 +42,7 @@ const getStatusColor = (status: string) => {
   }
 }
 
-const handleApproved = async () => {
+const handleApproved = async (name: string) => {
   erroredApproving.value = false
   if (!selectedTenantRequest.value) {
     return
@@ -53,7 +53,7 @@ const handleApproved = async () => {
       selectedTenantRequest.value.id,
       TENANT_REQUEST_STATUS.APPROVED.value,
       undefined,
-      selectedTenantRequest.value.name,
+      name,
     )
     notification.success('Tenant Request has been successfully updated')
     handleBackToList()
@@ -122,8 +122,8 @@ onMounted(async () => {
   <v-container class="px-0" fluid>
     <template v-if="selectedTenantRequest">
       <TenantRequestDisplay
-        :tenant-request="selectedTenantRequest"
         :errored-approving="erroredApproving"
+        :tenant-request="selectedTenantRequest"
         @approved="handleApproved"
         @back="handleBackToList"
         @rejected="handleRejected"
