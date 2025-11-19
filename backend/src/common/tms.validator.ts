@@ -184,6 +184,7 @@ export default {
             }),
             tenantName: Joi.string().when('status', {
                 is: 'APPROVED',
+                //code quality complains about this but it matches above (it doesn't like then in an object)
                 then: Joi.string().optional(),
                 otherwise: Joi.forbidden()
             })

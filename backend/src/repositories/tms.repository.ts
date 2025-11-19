@@ -7,7 +7,6 @@ import { In } from 'typeorm'
 import { Request} from 'express'
 import { TMSConstants } from '../common/tms.constants'
 import { TenantUserRole } from '../entities/TenantUserRole'
-import { GroupUser } from '../entities/GroupUser'
 import { GroupSharedServiceRole } from '../entities/GroupSharedServiceRole'
 import { NotFoundError } from '../errors/NotFoundError'
 import { ConflictError } from '../errors/ConflictError'
@@ -160,7 +159,7 @@ export class TMSRepository {
 
         try {  
             const tenantId:string = req.params.tenantId
-            const roles:string[] = req.body.roles
+            // const roles:string[] = req.body.roles
             const ssoUserId:string = req.body.user.ssoUserId
             const updatedBy:string = req.decodedJwt?.idir_user_guid || 'system'
             
