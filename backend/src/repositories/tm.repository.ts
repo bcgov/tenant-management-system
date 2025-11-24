@@ -298,6 +298,21 @@ export class TMRepository {
             .getMany()
     }
 
+    public async removeUserFromAllGroups(tenantUserId: string, updatedBy: string, transactionEntityManager?: EntityManager) {
+        transactionEntityManager = transactionEntityManager ? transactionEntityManager : this.manager
+        
+        await transactionEntityManager
+            .createQueryBuilder()
+            .update(GroupUser)
+            .set({
+                isDeleted: true,
+                updatedBy: updatedBy
+            })
+            .where('tenantUser.id = :tenantUserId', { tenantUserId })
+            .andWhere('isDeleted = :isDeleted', { isDeleted: false })
+            .execute()
+    }
+
     public async addUserToGroups(tenantUserId: string, groupIds: string[], tenantId: string, updatedBy: string, transactionEntityManager?: EntityManager) {
         transactionEntityManager = transactionEntityManager ? transactionEntityManager : this.manager
         

@@ -288,7 +288,19 @@ export class TMSService {
     }
 
     public async removeTenantUser(req: Request) {
-        await this.tmsRepository.removeTenantUser(req)
+        const tenantId: string = req.params.tenantId
+        const tenantUserId: string = req.params.tenantUserId
+        const deletedBy: string = req.decodedJwt?.idir_user_guid || 'system'
+        
+        await connection.manager.transaction(async(transactionEntityManager) => {
+            try {
+                await this.tmsRepository.removeTenantUser(tenantUserId, tenantId, deletedBy, transactionEntityManager)
+                await this.tmRepository.removeUserFromAllGroups(tenantUserId, deletedBy, transactionEntityManager)
+            } catch(error) {
+                logger.error('Remove tenant user transaction failure - rolling back changes', error)
+                throw error
+            }
+        })
     }
 
     private async getToken() {
