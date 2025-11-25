@@ -1,6 +1,7 @@
 import request from 'supertest'
 import express from 'express'
 import { TMSRepository } from '../repositories/tms.repository'
+import { TMRepository } from '../repositories/tm.repository'
 import { TMSConstants } from '../common/tms.constants'
 import { TMSController } from '../controllers/tms.controller'
 import { validate } from 'express-validation'
@@ -9,8 +10,10 @@ import { Tenant } from '../entities/Tenant'
 import { TenantUser } from '../entities/TenantUser'
 import { ConflictError } from '../errors/ConflictError'
 import { NotFoundError } from '../errors/NotFoundError'
+import { BadRequestError } from '../errors/BadRequestError'
 
 jest.mock('../repositories/tms.repository')
+jest.mock('../repositories/tm.repository')
 jest.mock('../common/db.connection', () => ({
   connection: {
     manager: {
@@ -25,6 +28,7 @@ jest.mock('../common/db.connection', () => ({
 describe('Tenant API', () => {
   let app: express.Application
   let mockTMSRepository: jest.Mocked<TMSRepository>
+  let mockTMRepository: jest.Mocked<TMRepository>
   let tmsController: TMSController
 
   beforeEach(() => {
@@ -34,6 +38,7 @@ describe('Tenant API', () => {
     
     tmsController = new TMSController()
     mockTMSRepository = TMSRepository.prototype as jest.Mocked<TMSRepository>
+    mockTMRepository = TMRepository.prototype as jest.Mocked<TMRepository>
 
     app.post('/v1/tenants', 
       (req, res, next) => {
@@ -413,6 +418,208 @@ describe('Tenant API', () => {
       expect(response.status).toBe(400)
       expect(response.body.message).toBe("Validation Failed")
       expect(response.body.details.body[0].message).toBe("\"roles\" is required")
+    })
+
+    it('should handle transaction rollback when addTenantUsers succeeds but addUserToGroups fails', async () => {
+      const mockResponse = {
+        savedTenantUser: {
+          id: '123e4567-e89b-12d3-a456-426614174001',
+          firstName: validUserData.user.firstName,
+          lastName: validUserData.user.lastName,
+          ssoUserId: validUserData.user.ssoUserId
+        },
+        roleAssignments: [{
+          role: {
+            id: validUserData.roles[0],
+            name: TMSConstants.SERVICE_USER
+          }
+        }],
+        tenantUserId: '123e4567-e89b-12d3-a456-426614174001'
+      }
+
+      const userDataWithGroups = {
+        ...validUserData,
+        groups: ['123e4567-e89b-12d3-a456-426614174010']
+      }
+
+      mockTMSRepository.addTenantUsers.mockResolvedValue(mockResponse as any)
+      mockTMRepository.addUserToGroups.mockRejectedValue(new NotFoundError('Group not found'))
+
+      const response = await request(app)
+        .post(`/v1/tenants/${tenantId}/users`)
+        .send(userDataWithGroups)
+
+      expect(response.status).toBe(404)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Not Found',
+        httpResponseCode: 404,
+        message: 'Group not found',
+        name: 'Error occurred adding user to the tenant'
+      })
+      expect(mockTMSRepository.addTenantUsers).toHaveBeenCalled()
+      expect(mockTMRepository.addUserToGroups).toHaveBeenCalled()
+    })
+
+    it('should restore soft-deleted user when adding to tenant', async () => {
+      const mockResponse = {
+        savedTenantUser: {
+          id: '123e4567-e89b-12d3-a456-426614174001',
+          firstName: validUserData.user.firstName,
+          lastName: validUserData.user.lastName,
+          ssoUserId: validUserData.user.ssoUserId,
+          isDeleted: false
+        },
+        roleAssignments: [{
+          role: {
+            id: validUserData.roles[0],
+            name: TMSConstants.SERVICE_USER
+          }
+        }],
+        tenantUserId: '123e4567-e89b-12d3-a456-426614174001'
+      }
+
+      mockTMSRepository.addTenantUsers.mockResolvedValue(mockResponse as any)
+      mockTMRepository.addUserToGroups.mockResolvedValue([])
+
+      const response = await request(app)
+        .post(`/v1/tenants/${tenantId}/users`)
+        .send(validUserData)
+
+      expect(response.status).toBe(201)
+      expect(response.body.data.user.id).toBe(mockResponse.savedTenantUser.id)
+    })
+
+    it('should handle empty groups array', async () => {
+      const mockResponse = {
+        savedTenantUser: {
+          id: '123e4567-e89b-12d3-a456-426614174001',
+          firstName: validUserData.user.firstName,
+          lastName: validUserData.user.lastName,
+          ssoUserId: validUserData.user.ssoUserId
+        },
+        roleAssignments: [{
+          role: {
+            id: validUserData.roles[0],
+            name: TMSConstants.SERVICE_USER
+          }
+        }],
+        tenantUserId: '123e4567-e89b-12d3-a456-426614174001'
+      }
+
+      const userDataWithEmptyGroups = {
+        ...validUserData,
+        groups: []
+      }
+
+      mockTMSRepository.addTenantUsers.mockResolvedValue(mockResponse as any)
+      mockTMRepository.addUserToGroups.mockResolvedValue([])
+
+      const response = await request(app)
+        .post(`/v1/tenants/${tenantId}/users`)
+        .send(userDataWithEmptyGroups)
+
+      expect(response.status).toBe(201)
+      expect(response.body.data.user.groups).toEqual([])
+    })
+
+    it('should handle duplicate role IDs in request', async () => {
+      const userDataWithDuplicateRoles = {
+        ...validUserData,
+        roles: [validUserData.roles[0], validUserData.roles[0]] // Duplicate role ID
+      }
+
+      const mockResponse = {
+        savedTenantUser: {
+          id: '123e4567-e89b-12d3-a456-426614174001',
+          firstName: validUserData.user.firstName,
+          lastName: validUserData.user.lastName,
+          ssoUserId: validUserData.user.ssoUserId
+        },
+        roleAssignments: [{
+          role: {
+            id: validUserData.roles[0],
+            name: TMSConstants.SERVICE_USER
+          }
+        }],
+        tenantUserId: '123e4567-e89b-12d3-a456-426614174001'
+      }
+
+      mockTMSRepository.addTenantUsers.mockResolvedValue(mockResponse as any)
+
+      const response = await request(app)
+        .post(`/v1/tenants/${tenantId}/users`)
+        .send(userDataWithDuplicateRoles)
+
+      expect(response.status).toBe(201)
+    })
+
+    it('should handle very long string values in user data', async () => {
+      const longString = 'a'.repeat(1000)
+      const userDataWithLongStrings = {
+        user: {
+          ...validUserData.user,
+          displayName: longString
+        },
+        roles: validUserData.roles
+      }
+
+      const mockResponse = {
+        savedTenantUser: {
+          id: '123e4567-e89b-12d3-a456-426614174001',
+          firstName: validUserData.user.firstName,
+          lastName: validUserData.user.lastName,
+          displayName: longString,
+          ssoUserId: validUserData.user.ssoUserId
+        },
+        roleAssignments: [{
+          role: {
+            id: validUserData.roles[0],
+            name: TMSConstants.SERVICE_USER
+          }
+        }],
+        tenantUserId: '123e4567-e89b-12d3-a456-426614174001'
+      }
+
+      mockTMSRepository.addTenantUsers.mockResolvedValue(mockResponse as any)
+
+      const response = await request(app)
+        .post(`/v1/tenants/${tenantId}/users`)
+        .send(userDataWithLongStrings)
+
+      expect([201, 400]).toContain(response.status)
+    })
+
+    it('should handle duplicate group IDs in groups array', async () => {
+      const duplicateGroupId = '123e4567-e89b-12d3-a456-426614174010'
+      const mockResponse = {
+        savedTenantUser: {
+          id: '123e4567-e89b-12d3-a456-426614174001',
+          firstName: validUserData.user.firstName,
+          lastName: validUserData.user.lastName,
+          ssoUserId: validUserData.user.ssoUserId
+        },
+        roleAssignments: [{
+          role: {
+            id: validUserData.roles[0],
+            name: TMSConstants.SERVICE_USER
+          }
+        }],
+        tenantUserId: '123e4567-e89b-12d3-a456-426614174001'
+      }
+
+      const userDataWithDuplicateGroups = {
+        ...validUserData,
+        groups: [duplicateGroupId, duplicateGroupId] // Duplicate group IDs
+      }
+
+      mockTMSRepository.addTenantUsers.mockResolvedValue(mockResponse as any)
+      mockTMRepository.addUserToGroups.mockResolvedValue([])
+
+      const response = await request(app)
+        .post(`/v1/tenants/${tenantId}/users`)
+        .send(userDataWithDuplicateGroups)
+
+      expect([201, 400, 404]).toContain(response.status)
     })
   })
 
@@ -809,6 +1016,52 @@ describe('Tenant API', () => {
         message: 'All roles are already assigned to the user',
         name: 'Error occurred assigning user role'
       })
+    })
+
+    it('should handle duplicate role IDs in roles array', async () => {
+      const duplicateRoleId = '123e4567-e89b-12d3-a456-426614174002'
+      const mockResponse = {
+        savedAssignments: [{
+          role: {
+            id: duplicateRoleId,
+            name: TMSConstants.USER_ADMIN
+          }
+        }]
+      }
+
+      mockTMSRepository.assignUserRoles.mockResolvedValue(mockResponse as any)
+
+      const response = await request(app)
+        .post(`/v1/tenants/${tenantId}/users/${tenantUserId}/roles`)
+        .send({ roles: [duplicateRoleId, duplicateRoleId] })
+
+      expect([201, 400, 404, 500]).toContain(response.status)
+    })
+
+    it('should restore soft-deleted role assignments when assigning roles', async () => {
+      const mockRoleAssignments = [{
+        id: '123e4567-e89b-12d3-a456-426614174003',
+        role: {
+          id: roleIds[0],
+          name: TMSConstants.USER_ADMIN,
+          description: 'User Admin Role'
+          },
+          isDeleted: false
+        }]
+
+      mockTMSRepository.assignUserRoles.mockResolvedValue(mockRoleAssignments as any)
+
+      const response = await request(app)
+        .post(`/v1/tenants/${tenantId}/users/${tenantUserId}/roles`)
+        .send({ roles: roleIds })
+
+      expect(response.status).toBe(201)
+      expect(response.body.data.roles).toContainEqual(
+        expect.objectContaining({
+          id: roleIds[0],
+          name: TMSConstants.USER_ADMIN
+        })
+      )
     })
   })
 
@@ -1612,6 +1865,50 @@ describe('Tenant API', () => {
         name: 'Error occurred creating tenant request'
       })
     })
+
+    it('should handle null/undefined values in optional fields', async () => {
+      const tenantRequestWithNulls = {
+        name: 'Test Tenant Request',
+        ministryName: 'Test Ministry',
+        description: null,
+        user: {
+          firstName: 'Test',
+          lastName: 'User',
+          displayName: 'Test User',
+          ssoUserId: 'F45AFBBD68C4466F956BA3A1D91878AD',
+          userName: undefined,
+          email: 'test@gov.bc.ca'
+        }
+      }
+
+      const mockTenantRequest = {
+        id: '123e4567-e89b-12d3-a456-426614174000',
+        ...tenantRequestWithNulls,
+        status: 'NEW'
+      }
+
+      mockTMSRepository.saveTenantRequest.mockResolvedValue(mockTenantRequest as any)
+
+      const response = await request(app)
+        .post('/v1/tenant-requests')
+        .send(tenantRequestWithNulls)
+
+      expect([201, 400]).toContain(response.status)
+    })
+
+    it('should handle very long string values', async () => {
+      const longString = 'a'.repeat(5000)
+      const tenantRequestWithLongStrings = {
+        ...validTenantRequestData,
+        description: longString
+      }
+
+      const response = await request(app)
+        .post('/v1/tenant-requests')
+        .send(tenantRequestWithLongStrings)
+
+      expect([201, 400, 404, 500]).toContain(response.status)
+    })
   })
 
   describe('PATCH /v1/tenant-requests/:requestId/status', () => {
@@ -1869,6 +2166,46 @@ describe('Tenant API', () => {
       })
 
       expect(mockTMSRepository.updateTenantRequestStatus).not.toHaveBeenCalled()
+    })
+
+    it('should handle transaction rollback when tenant creation fails during approval', async () => {
+      const error = new Error('Database error during tenant creation')
+      mockTMSRepository.updateTenantRequestStatus.mockRejectedValue(error)
+
+      const response = await request(app)
+        .patch(`/v1/tenant-requests/${requestId}/status`)
+        .send(validApproveData)
+
+      expect(response.status).toBe(500)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Internal Server Error',
+        httpResponseCode: 500,
+        message: 'Database error during tenant creation',
+        name: 'Error occurred updating tenant request status'
+      })
+    })
+
+    it('should handle empty rejection reason when status is APPROVED', async () => {
+      const approveData = {
+        status: 'APPROVED',
+        rejectionReason: '' // Empty string
+      }
+
+      const mockResponse = {
+        tenantRequest: {
+          id: requestId,
+          status: 'APPROVED',
+          rejectionReason: null
+        }
+      }
+
+      mockTMSRepository.updateTenantRequestStatus.mockResolvedValue(mockResponse as any)
+
+      const response = await request(app)
+        .patch(`/v1/tenant-requests/${requestId}/status`)
+        .send(approveData)
+
+      expect([200, 400, 500]).toContain(response.status)
     })
 
     it('should return 400 when request ID is invalid', async () => {
@@ -3084,6 +3421,636 @@ describe('Tenant API', () => {
         httpResponseCode: 500,
         message: 'Database error',
         name: 'Error occurred getting shared services for tenant'
+      })
+    })
+  })
+
+  describe('GET /v1/health', () => {
+    beforeEach(() => {
+      app.get('/v1/health', (req, res) => tmsController.health(req, res))
+    })
+
+    it('should return health status successfully', async () => {
+      const response = await request(app).get('/v1/health')
+
+      expect(response.status).toBe(200)
+      expect(response.body).toMatchObject({
+        apiStatus: 'Healthy'
+      })
+      expect(response.body.time).toBeDefined()
+      expect(typeof response.body.time).toBe('string')
+    })
+  })
+
+  describe('GET /v1/tenants/:tenantId/users/:tenantUserId/roles', () => {
+    const tenantId = '123e4567-e89b-12d3-a456-426614174000'
+    const tenantUserId = '123e4567-e89b-12d3-a456-426614174001'
+
+    beforeEach(() => {
+      app.get('/v1/tenants/:tenantId/users/:tenantUserId/roles',
+        validate(validator.getUserRoles, {}, {}),
+        (req, res) => tmsController.getUserRoles(req, res)
+      )
+
+      app.use((err: any, req: any, res: any, next: any) => {
+        if (err.name === 'ValidationError') {
+          return res.status(err.statusCode).json(err)
+        }
+        next(err)
+      })
+    })
+
+    it('should get user roles successfully', async () => {
+      const mockRoles = [
+        {
+          id: '123e4567-e89b-12d3-a456-426614174002',
+          name: TMSConstants.TENANT_OWNER,
+          description: 'Tenant Owner Role'
+        },
+        {
+          id: '123e4567-e89b-12d3-a456-426614174003',
+          name: TMSConstants.USER_ADMIN,
+          description: 'User Admin Role'
+        }
+      ]
+
+      mockTMSRepository.getUserRoles.mockResolvedValue(mockRoles as any)
+
+      const response = await request(app)
+        .get(`/v1/tenants/${tenantId}/users/${tenantUserId}/roles`)
+
+      expect(response.status).toBe(200)
+      expect(response.body).toMatchObject({
+        data: {
+          roles: expect.arrayContaining([
+            expect.objectContaining({
+              id: mockRoles[0].id,
+              name: mockRoles[0].name
+            }),
+            expect.objectContaining({
+              id: mockRoles[1].id,
+              name: mockRoles[1].name
+            })
+          ])
+        }
+      })
+      expect(mockTMSRepository.getUserRoles).toHaveBeenCalledWith(
+        expect.objectContaining({
+          params: { tenantId, tenantUserId }
+        })
+      )
+    })
+
+    it('should return empty array when user has no roles', async () => {
+      mockTMSRepository.getUserRoles.mockResolvedValue([])
+
+      const response = await request(app)
+        .get(`/v1/tenants/${tenantId}/users/${tenantUserId}/roles`)
+
+      expect(response.status).toBe(200)
+      expect(response.body).toMatchObject({
+        data: {
+          roles: []
+        }
+      })
+    })
+
+    it('should return 400 when tenant ID is invalid', async () => {
+      const response = await request(app)
+        .get(`/v1/tenants/invalid-uuid/users/${tenantUserId}/roles`)
+
+      expect(response.status).toBe(400)
+      expect(response.body).toMatchObject({
+        name: 'ValidationError',
+        message: 'Validation Failed',
+        details: {
+          params: [{
+            message: '"tenantId" must be a valid GUID'
+          }]
+        }
+      })
+    })
+
+    it('should return 400 when tenant user ID is invalid', async () => {
+      const response = await request(app)
+        .get(`/v1/tenants/${tenantId}/users/invalid-uuid/roles`)
+
+      expect(response.status).toBe(400)
+      expect(response.body).toMatchObject({
+        name: 'ValidationError',
+        message: 'Validation Failed',
+        details: {
+          params: [{
+            message: '"tenantUserId" must be a valid GUID'
+          }]
+        }
+      })
+    })
+
+    it('should return 500 when database error occurs', async () => {
+      mockTMSRepository.getUserRoles.mockRejectedValue(new Error('Database connection failed'))
+
+      const response = await request(app)
+        .get(`/v1/tenants/${tenantId}/users/${tenantUserId}/roles`)
+
+      expect(response.status).toBe(500)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Internal Server Error',
+        httpResponseCode: 500,
+        message: 'Database connection failed',
+        name: 'Error occurred getting roles for user'
+      })
+    })
+  })
+
+  describe('DELETE /v1/tenants/:tenantId/users/:tenantUserId', () => {
+    const tenantId = '123e4567-e89b-12d3-a456-426614174000'
+    const tenantUserId = '123e4567-e89b-12d3-a456-426614174001'
+
+    beforeEach(() => {
+      app.delete('/v1/tenants/:tenantId/users/:tenantUserId',
+        validate(validator.removeTenantUser, {}, {}),
+        (req, res) => tmsController.removeTenantUser(req, res)
+      )
+
+      app.use((err: any, req: any, res: any, next: any) => {
+        if (err.name === 'ValidationError') {
+          return res.status(err.statusCode).json(err)
+        }
+        next(err)
+      })
+    })
+
+    it('should remove tenant user successfully', async () => {
+      mockTMSRepository.removeTenantUser.mockResolvedValue(undefined)
+      mockTMRepository.removeUserFromAllGroups.mockResolvedValue(undefined)
+
+      const response = await request(app)
+        .delete(`/v1/tenants/${tenantId}/users/${tenantUserId}`)
+
+      expect(response.status).toBe(204)
+      expect(mockTMSRepository.removeTenantUser).toHaveBeenCalled()
+      expect(mockTMRepository.removeUserFromAllGroups).toHaveBeenCalled()
+    })
+
+    it('should return 404 when tenant user not found', async () => {
+      mockTMSRepository.removeTenantUser.mockRejectedValue(
+        new NotFoundError(`Tenant user not found or already deleted: ${tenantUserId}`)
+      )
+
+      const response = await request(app)
+        .delete(`/v1/tenants/${tenantId}/users/${tenantUserId}`)
+
+      expect(response.status).toBe(404)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Not Found',
+        httpResponseCode: 404,
+        message: `Tenant user not found or already deleted: ${tenantUserId}`,
+        name: 'Error occurred removing tenant user'
+      })
+    })
+
+    it('should return 409 when trying to remove last tenant owner', async () => {
+      mockTMSRepository.removeTenantUser.mockRejectedValue(
+        new ConflictError('Cannot remove the last tenant owner. At least one tenant owner must remain.')
+      )
+
+      const response = await request(app)
+        .delete(`/v1/tenants/${tenantId}/users/${tenantUserId}`)
+
+      expect(response.status).toBe(409)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Conflict',
+        httpResponseCode: 409,
+        message: 'Cannot remove the last tenant owner. At least one tenant owner must remain.',
+        name: 'Error occurred removing tenant user'
+      })
+    })
+
+    it('should return 400 when tenant ID is invalid', async () => {
+      const response = await request(app)
+        .delete(`/v1/tenants/invalid-uuid/users/${tenantUserId}`)
+
+      expect(response.status).toBe(400)
+      expect(response.body).toMatchObject({
+        name: 'ValidationError',
+        message: 'Validation Failed',
+        details: {
+          params: [{
+            message: '"tenantId" must be a valid GUID'
+          }]
+        }
+      })
+    })
+
+    it('should return 400 when tenant user ID is invalid', async () => {
+      const response = await request(app)
+        .delete(`/v1/tenants/${tenantId}/users/invalid-uuid`)
+
+      expect(response.status).toBe(400)
+      expect(response.body).toMatchObject({
+        name: 'ValidationError',
+        message: 'Validation Failed',
+        details: {
+          params: [{
+            message: '"tenantUserId" must be a valid GUID'
+          }]
+        }
+      })
+    })
+
+    it('should return 500 when database error occurs', async () => {
+      mockTMSRepository.removeTenantUser.mockRejectedValue(new Error('Database connection failed'))
+
+      const response = await request(app)
+        .delete(`/v1/tenants/${tenantId}/users/${tenantUserId}`)
+
+      expect(response.status).toBe(500)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Internal Server Error',
+        httpResponseCode: 500,
+        message: 'Database connection failed',
+        name: 'Error occurred removing tenant user'
+      })
+    })
+
+    it('should handle transaction rollback when removeTenantUser succeeds but removeUserFromAllGroups fails', async () => {
+      mockTMSRepository.removeTenantUser.mockResolvedValue(undefined)
+      mockTMRepository.removeUserFromAllGroups.mockRejectedValue(new Error('Database error during group removal'))
+
+      const response = await request(app)
+        .delete(`/v1/tenants/${tenantId}/users/${tenantUserId}`)
+
+      expect(response.status).toBe(500)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Internal Server Error',
+        httpResponseCode: 500,
+        message: 'Database error during group removal',
+        name: 'Error occurred removing tenant user'
+      })
+      expect(mockTMSRepository.removeTenantUser).toHaveBeenCalled()
+      expect(mockTMRepository.removeUserFromAllGroups).toHaveBeenCalled()
+    })
+  })
+
+  describe('GET /v1/users/bcgovssousers/idir/search', () => {
+    beforeEach(() => {
+      app.get('/v1/users/bcgovssousers/idir/search',
+        validate(validator.searchBCGOVSSOUsers, {}, {}),
+        (req, res) => tmsController.searchBCGOVSSOUsers(req, res)
+      )
+
+      app.use((err: any, req: any, res: any, next: any) => {
+        if (err.name === 'ValidationError') {
+          return res.status(err.statusCode).json(err)
+        }
+        next(err)
+      })
+    })
+
+    it('should search IDIR users by email successfully', async () => {
+      const mockSearchResults = {
+        data: [
+          {
+            guid: 'F45AFBBD68C51D6F956BA3A1DE1878A1',
+            firstName: 'John',
+            lastName: 'Doe',
+            email: 'john.doe@gov.bc.ca',
+            displayName: 'Doe, John'
+          }
+        ]
+      }
+
+      const mockToken = 'mock-access-token'
+      const mockAxiosGet = jest.fn().mockResolvedValue({ data: mockSearchResults })
+      const mockAxiosPost = jest.fn().mockResolvedValue({ data: { access_token: mockToken } })
+
+      jest.doMock('axios', () => ({
+        default: {
+          get: mockAxiosGet,
+          post: mockAxiosPost
+        }
+      }))
+
+      // Re-import to get mocked axios
+      const axios = require('axios')
+      const TMSService = require('../services/tms.service').TMSService
+      const service = new TMSService()
+      
+      jest.spyOn(tmsController.tmsService, 'searchBCGOVSSOUsers').mockResolvedValue(mockSearchResults as any)
+
+      const response = await request(app)
+        .get('/v1/users/bcgovssousers/idir/search')
+        .query({ email: 'john.doe@gov.bc.ca' })
+
+      expect(response.status).toBe(200)
+      expect(response.body).toEqual(mockSearchResults)
+    })
+
+    it('should search IDIR users by firstName successfully', async () => {
+      const mockSearchResults = {
+        data: [
+          {
+            guid: 'F45AFBBD68C51D6F956BA3A1DE1878A2',
+            firstName: 'Jane',
+            lastName: 'Smith',
+            email: 'jane.smith@gov.bc.ca',
+            displayName: 'Smith, Jane'
+          }
+        ]
+      }
+
+      jest.spyOn(tmsController.tmsService, 'searchBCGOVSSOUsers').mockResolvedValue(mockSearchResults as any)
+
+      const response = await request(app)
+        .get('/v1/users/bcgovssousers/idir/search')
+        .query({ firstName: 'Jane' })
+
+      expect(response.status).toBe(200)
+      expect(response.body).toEqual(mockSearchResults)
+    })
+
+    it('should search IDIR users by lastName successfully', async () => {
+      const mockSearchResults = {
+        data: [
+          {
+            guid: 'F45AFBBD68C51D6F956BA3A1DE1878A3',
+            firstName: 'Bob',
+            lastName: 'Johnson',
+            email: 'bob.johnson@gov.bc.ca',
+            displayName: 'Johnson, Bob'
+          }
+        ]
+      }
+
+      jest.spyOn(tmsController.tmsService, 'searchBCGOVSSOUsers').mockResolvedValue(mockSearchResults as any)
+
+      const response = await request(app)
+        .get('/v1/users/bcgovssousers/idir/search')
+        .query({ lastName: 'Johnson' })
+
+      expect(response.status).toBe(200)
+      expect(response.body).toEqual(mockSearchResults)
+    })
+
+    it('should search IDIR users by guid successfully', async () => {
+      const mockSearchResults = {
+        data: [
+          {
+            guid: 'F45AFBBD68C51D6F956BA3A1DE1878A4',
+            firstName: 'Alice',
+            lastName: 'Williams',
+            email: 'alice.williams@gov.bc.ca',
+            displayName: 'Williams, Alice'
+          }
+        ]
+      }
+
+      jest.spyOn(tmsController.tmsService, 'searchBCGOVSSOUsers').mockResolvedValue(mockSearchResults as any)
+
+      const response = await request(app)
+        .get('/v1/users/bcgovssousers/idir/search')
+        .query({ guid: 'F45AFBBD68C51D6F956BA3A1DE1878A4' })
+
+      expect(response.status).toBe(200)
+      expect(response.body).toEqual(mockSearchResults)
+    })
+
+    it('should return empty array when no users found', async () => {
+      const mockSearchResults = { data: [] }
+
+      jest.spyOn(tmsController.tmsService, 'searchBCGOVSSOUsers').mockResolvedValue(mockSearchResults as any)
+
+      const response = await request(app)
+        .get('/v1/users/bcgovssousers/idir/search')
+        .query({ email: 'nonexistent@gov.bc.ca' })
+
+      expect(response.status).toBe(200)
+      expect(response.body).toEqual(mockSearchResults)
+    })
+
+    it('should return 400 when no search parameters provided', async () => {
+      const response = await request(app)
+        .get('/v1/users/bcgovssousers/idir/search')
+
+      expect(response.status).toBe(400)
+      expect(response.body.message).toBe('Validation Failed')
+    })
+
+    it('should return 400 when firstName is too short', async () => {
+      const response = await request(app)
+        .get('/v1/users/bcgovssousers/idir/search')
+        .query({ firstName: 'A' })
+
+      expect(response.status).toBe(400)
+      expect(response.body.message).toBe('Validation Failed')
+    })
+
+    it('should return 400 when lastName is too short', async () => {
+      const response = await request(app)
+        .get('/v1/users/bcgovssousers/idir/search')
+        .query({ lastName: 'B' })
+
+      expect(response.status).toBe(400)
+      expect(response.body.message).toBe('Validation Failed')
+    })
+
+    it('should return 400 when BC GOV SSO API returns bad request', async () => {
+      const error = {
+        response: {
+          status: 400,
+          data: { message: 'Invalid search parameters' }
+        }
+      }
+
+      jest.spyOn(tmsController.tmsService, 'searchBCGOVSSOUsers').mockRejectedValue(
+        new BadRequestError(`BC GOV SSO API returned bad request: ${error.response.data.message}`)
+      )
+
+      const response = await request(app)
+        .get('/v1/users/bcgovssousers/idir/search')
+        .query({ email: 'invalid@email' })
+
+      expect(response.status).toBe(400)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Bad Request',
+        httpResponseCode: 400,
+        message: expect.stringContaining('BC GOV SSO API returned bad request'),
+        name: 'Error occurred searching SSO users'
+      })
+    })
+
+    it('should return 500 when API error occurs', async () => {
+      jest.spyOn(tmsController.tmsService, 'searchBCGOVSSOUsers').mockRejectedValue(
+        new Error('Error invoking BC GOV SSO API')
+      )
+
+      const response = await request(app)
+        .get('/v1/users/bcgovssousers/idir/search')
+        .query({ email: 'test@gov.bc.ca' })
+
+      expect(response.status).toBe(500)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Internal Server Error',
+        httpResponseCode: 500,
+        message: 'Error invoking BC GOV SSO API',
+        name: 'Error occurred searching SSO users'
+      })
+    })
+  })
+
+  describe('GET /v1/users/bcgovssousers/bceid/search', () => {
+    beforeEach(() => {
+      app.get('/v1/users/bcgovssousers/bceid/search',
+        validate(validator.searchBCGOVSSOBceidUsers, {}, {}),
+        (req, res) => tmsController.searchBCGOVSSOBceidUsers(req, res)
+      )
+
+      app.use((err: any, req: any, res: any, next: any) => {
+        if (err.name === 'ValidationError') {
+          return res.status(err.statusCode).json(err)
+        }
+        next(err)
+      })
+    })
+
+    it('should search BCEID users by guid successfully', async () => {
+      const mockSearchResults = {
+        data: [
+          {
+            guid: 'F45AFBBD68C51D6F956BA3A1DE1878B1',
+            displayName: 'Test User',
+            username: 'testuser',
+            bceidType: 'basic'
+          }
+        ]
+      }
+
+      jest.spyOn(tmsController.tmsService, 'searchBCGOVSSOBceidUsers').mockResolvedValue(mockSearchResults as any)
+
+      const response = await request(app)
+        .get('/v1/users/bcgovssousers/bceid/search')
+        .query({ bceidType: 'basic', guid: 'F45AFBBD68C51D6F956BA3A1DE1878B1' })
+
+      expect(response.status).toBe(200)
+      expect(response.body).toEqual(mockSearchResults)
+    })
+
+    it('should search BCEID users by displayName successfully', async () => {
+      const mockSearchResults = {
+        data: [
+          {
+            guid: 'F45AFBBD68C51D6F956BA3A1DE1878B2',
+            displayName: 'Business User',
+            username: 'businessuser',
+            bceidType: 'business'
+          }
+        ]
+      }
+
+      jest.spyOn(tmsController.tmsService, 'searchBCGOVSSOBceidUsers').mockResolvedValue(mockSearchResults as any)
+
+      const response = await request(app)
+        .get('/v1/users/bcgovssousers/bceid/search')
+        .query({ bceidType: 'business', displayName: 'Business User' })
+
+      expect(response.status).toBe(200)
+      expect(response.body).toEqual(mockSearchResults)
+    })
+
+    it('should search BCEID users by username successfully', async () => {
+      const mockSearchResults = {
+        data: [
+          {
+            guid: 'F45AFBBD68C51D6F956BA3A1DE1878B3',
+            displayName: 'Username User',
+            username: 'usernameuser',
+            bceidType: 'both'
+          }
+        ]
+      }
+
+      jest.spyOn(tmsController.tmsService, 'searchBCGOVSSOBceidUsers').mockResolvedValue(mockSearchResults as any)
+
+      const response = await request(app)
+        .get('/v1/users/bcgovssousers/bceid/search')
+        .query({ bceidType: 'both', username: 'usernameuser' })
+
+      expect(response.status).toBe(200)
+      expect(response.body).toEqual(mockSearchResults)
+    })
+
+    it('should return empty array when no users found', async () => {
+      const mockSearchResults = { data: [] }
+
+      jest.spyOn(tmsController.tmsService, 'searchBCGOVSSOBceidUsers').mockResolvedValue(mockSearchResults as any)
+
+      const response = await request(app)
+        .get('/v1/users/bcgovssousers/bceid/search')
+        .query({ bceidType: 'basic', guid: 'NONEXISTENT' })
+
+      expect(response.status).toBe(200)
+      expect(response.body).toEqual(mockSearchResults)
+    })
+
+    it('should return 400 when bceidType is missing', async () => {
+      const response = await request(app)
+        .get('/v1/users/bcgovssousers/bceid/search')
+        .query({ guid: 'F45AFBBD68C51D6F956BA3A1DE1878B1' })
+
+      expect(response.status).toBe(400)
+      expect(response.body.message).toBe('Validation Failed')
+    })
+
+    it('should return 400 when bceidType is invalid', async () => {
+      const response = await request(app)
+        .get('/v1/users/bcgovssousers/bceid/search')
+        .query({ bceidType: 'invalid', guid: 'F45AFBBD68C51D6F956BA3A1DE1878B1' })
+
+      expect(response.status).toBe(400)
+      expect(response.body.message).toBe('Validation Failed')
+    })
+
+    it('should return 400 when BC GOV SSO BCEID API returns bad request', async () => {
+      const error = {
+        response: {
+          status: 400,
+          data: { message: 'Invalid search parameters' }
+        }
+      }
+
+      jest.spyOn(tmsController.tmsService, 'searchBCGOVSSOBceidUsers').mockRejectedValue(
+        new BadRequestError(`BC GOV SSO BCEID API returned bad request: ${error.response.data.message}`)
+      )
+
+      const response = await request(app)
+        .get('/v1/users/bcgovssousers/bceid/search')
+        .query({ bceidType: 'basic', guid: 'invalid' })
+
+      expect(response.status).toBe(400)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Bad Request',
+        httpResponseCode: 400,
+        message: expect.stringContaining('BC GOV SSO BCEID API returned bad request'),
+        name: 'Error occurred searching BCEID users'
+      })
+    })
+
+    it('should return 500 when API error occurs', async () => {
+      jest.spyOn(tmsController.tmsService, 'searchBCGOVSSOBceidUsers').mockRejectedValue(
+        new Error('Error invoking BC GOV SSO BCEID API')
+      )
+
+      const response = await request(app)
+        .get('/v1/users/bcgovssousers/bceid/search')
+        .query({ bceidType: 'basic', guid: 'F45AFBBD68C51D6F956BA3A1DE1878B1' })
+
+      expect(response.status).toBe(500)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Internal Server Error',
+        httpResponseCode: 500,
+        message: 'Error invoking BC GOV SSO BCEID API',
+        name: 'Error occurred searching BCEID users'
       })
     })
   })

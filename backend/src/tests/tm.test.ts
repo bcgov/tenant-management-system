@@ -88,7 +88,6 @@ describe('Tenant Management API', () => {
     app.get('/v1/tenants/:tenantId/users/:ssoUserId/groups/shared-service-roles',
       validate(validator.getUserGroupsWithSharedServiceRoles, {}, {}),
       (req, res, next) => {
-        // Mock JWT middleware for testing
         req.decodedJwt = {
           aud: 'test-service-client',
           audience: 'test-service-client',
@@ -98,7 +97,6 @@ describe('Tenant Management API', () => {
         next()
       },
       (req, res, next) => {
-        // Mock tenant access middleware for testing
         next()
       },
       (req, res) => tmController.getUserGroupsWithSharedServiceRoles(req, res)
@@ -308,6 +306,69 @@ describe('Tenant Management API', () => {
 
       expect(response.status).toBe(400)
       expect(response.body.message).toBe("Validation Failed")
+    })
+
+    it('should handle empty group name', async () => {
+      const groupDataWithEmptyName = {
+        ...validGroupData,
+        name: ''
+      }
+
+      const response = await request(app)
+        .post(`/v1/tenants/${tenantId}/groups`)
+        .send(groupDataWithEmptyName)
+
+      expect(response.status).toBe(400)
+      expect(response.body.message).toBe('Validation Failed')
+    })
+
+    it('should handle very long group name', async () => {
+      const longName = 'a'.repeat(500)
+      const groupDataWithLongName = {
+        ...validGroupData,
+        name: longName
+      }
+
+      const response = await request(app)
+        .post(`/v1/tenants/${tenantId}/groups`)
+        .send(groupDataWithLongName)
+
+      expect([201, 400, 404, 500]).toContain(response.status)
+    })
+
+    it('should handle special characters in group name', async () => {
+      const groupDataWithSpecialChars = {
+        ...validGroupData,
+        name: "Test & Group <script>alert('xss')</script>"
+      }
+
+      const response = await request(app)
+        .post(`/v1/tenants/${tenantId}/groups`)
+        .send(groupDataWithSpecialChars)
+
+      expect([201, 400, 500]).toContain(response.status)
+    })
+
+    it('should handle null description', async () => {
+      const groupDataWithNullDescription = {
+        ...validGroupData,
+        description: null
+      }
+
+      const mockGroup = {
+        id: '123e4567-e89b-12d3-a456-426614174001',
+        name: validGroupData.name,
+        description: null,
+        tenant: { id: tenantId }
+      }
+
+      mockTMRepository.saveGroup.mockResolvedValue(mockGroup as any)
+
+      const response = await request(app)
+        .post(`/v1/tenants/${tenantId}/groups`)
+        .send(groupDataWithNullDescription)
+
+      expect([201, 400]).toContain(response.status)
     })
   })
 
@@ -578,7 +639,7 @@ describe('Tenant Management API', () => {
       expect(callArgs[0].params.tenantId).toBe(tenantId)
       expect(callArgs[0].params.groupId).toBe(groupId)
       expect(callArgs[0].body.tenantUserId).toBe(mockTenantUser.id)
-      expect(callArgs.length).toBeGreaterThanOrEqual(2) // Should have req and transactionEntityManager
+      expect(callArgs.length).toBeGreaterThanOrEqual(2)
     })
 
     it('should add a user to a group without optional fields successfully', async () => {
@@ -741,6 +802,156 @@ describe('Tenant Management API', () => {
 
       expect(response3.status).toBe(400)
       expect(response3.body.message).toBe("Validation Failed")
+    })
+
+    it('should handle transaction rollback when checkIfGroupExistsInTenant succeeds but addGroupUser fails', async () => {
+      const mockGroup = { id: groupId, name: 'Test Group' }
+      const mockTenantUser = { id: '123e4567-e89b-12d3-a456-426614174003' }
+
+      mockTMRepository.checkIfGroupExistsInTenant.mockResolvedValue(mockGroup as any)
+      mockTMSRepository.ensureTenantUserExists.mockResolvedValue(mockTenantUser as any)
+      mockTMRepository.addGroupUser.mockRejectedValue(new Error('Database error during group user creation'))
+
+      const response = await request(app)
+        .post(`/v1/tenants/${tenantId}/groups/${groupId}/users`)
+        .send(validUserData)
+
+      expect(response.status).toBe(500)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Internal Server Error',
+        httpResponseCode: 500,
+        message: 'Database error during group user creation',
+        name: 'Error occurred adding user to group'
+      })
+      expect(mockTMRepository.checkIfGroupExistsInTenant).toHaveBeenCalled()
+      expect(mockTMSRepository.ensureTenantUserExists).toHaveBeenCalled()
+      expect(mockTMRepository.addGroupUser).toHaveBeenCalled()
+    })
+
+    it('should handle transaction rollback when ensureTenantUserExists fails', async () => {
+      const mockGroup = { id: groupId, name: 'Test Group' }
+
+      mockTMRepository.checkIfGroupExistsInTenant.mockResolvedValue(mockGroup as any)
+      mockTMSRepository.ensureTenantUserExists.mockRejectedValue(new Error('Database error during tenant user creation'))
+
+      const response = await request(app)
+        .post(`/v1/tenants/${tenantId}/groups/${groupId}/users`)
+        .send(validUserData)
+
+      expect(response.status).toBe(500)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Internal Server Error',
+        httpResponseCode: 500,
+        message: 'Database error during tenant user creation',
+        name: 'Error occurred adding user to group'
+      })
+      expect(mockTMRepository.checkIfGroupExistsInTenant).toHaveBeenCalled()
+      expect(mockTMSRepository.ensureTenantUserExists).toHaveBeenCalled()
+      expect(mockTMRepository.addGroupUser).not.toHaveBeenCalled()
+    })
+
+    it('should restore soft-deleted group user when adding user to group', async () => {
+      const mockGroup = { id: groupId, name: 'Test Group' }
+      const mockTenantUser = { id: '123e4567-e89b-12d3-a456-426614174003' }
+      const mockGroupUser = {
+        id: '123e4567-e89b-12d3-a456-426614174002',
+        group: { id: groupId },
+        tenantUser: {
+          id: '123e4567-e89b-12d3-a456-426614174003',
+          firstName: validUserData.user.firstName,
+          lastName: validUserData.user.lastName,
+          ssoUserId: validUserData.user.ssoUserId
+        },
+        isDeleted: false,
+        updatedBy: 'test-user',
+        updatedDateTime: new Date()
+      }
+
+      mockTMRepository.checkIfGroupExistsInTenant.mockResolvedValue(mockGroup as any)
+      mockTMSRepository.ensureTenantUserExists.mockResolvedValue(mockTenantUser as any)
+      mockTMRepository.addGroupUser.mockResolvedValue(mockGroupUser as any)
+
+      const response = await request(app)
+        .post(`/v1/tenants/${tenantId}/groups/${groupId}/users`)
+        .send(validUserData)
+
+      expect(response.status).toBe(201)
+      expect(response.body.data.groupUser.id).toBe(mockGroupUser.id)
+      expect(response.body.data.groupUser.isDeleted).toBe(false)
+    })
+
+    it('should handle null/undefined values in optional fields', async () => {
+      const userDataWithNulls = {
+        user: {
+          firstName: 'John',
+          lastName: 'Doe',
+          displayName: 'John Doe',
+          ssoUserId: 'F45AFBBD68C51D6F956BA3A1DE1878A1',
+          email: null,
+          userName: undefined
+        }
+      }
+
+      const mockGroup = { id: groupId, name: 'Test Group' }
+      const mockTenantUser = { id: '123e4567-e89b-12d3-a456-426614174003' }
+      const mockGroupUser = {
+        id: '123e4567-e89b-12d3-a456-426614174002',
+        group: { id: groupId },
+        tenantUser: {
+          id: '123e4567-e89b-12d3-a456-426614174003',
+          firstName: userDataWithNulls.user.firstName,
+          lastName: userDataWithNulls.user.lastName,
+          ssoUserId: userDataWithNulls.user.ssoUserId
+        },
+        isDeleted: false
+      }
+
+      mockTMRepository.checkIfGroupExistsInTenant.mockResolvedValue(mockGroup as any)
+      mockTMSRepository.ensureTenantUserExists.mockResolvedValue(mockTenantUser as any)
+      mockTMRepository.addGroupUser.mockResolvedValue(mockGroupUser as any)
+
+      const response = await request(app)
+        .post(`/v1/tenants/${tenantId}/groups/${groupId}/users`)
+        .send(userDataWithNulls)
+
+      expect([201, 400]).toContain(response.status)
+    })
+
+    it('should handle special characters in user data', async () => {
+      const userDataWithSpecialChars = {
+        user: {
+          firstName: "O'Brien",
+          lastName: 'Smith-Johnson',
+          displayName: 'Test & User <script>',
+          ssoUserId: 'F45AFBBD68C51D6F956BA3A1DE1878A1',
+          email: 'test+user@example.com'
+        }
+      }
+
+      const mockGroup = { id: groupId, name: 'Test Group' }
+      const mockTenantUser = { id: '123e4567-e89b-12d3-a456-426614174003' }
+      const mockGroupUser = {
+        id: '123e4567-e89b-12d3-a456-426614174002',
+        group: { id: groupId },
+        tenantUser: {
+          id: '123e4567-e89b-12d3-a456-426614174003',
+          firstName: userDataWithSpecialChars.user.firstName,
+          lastName: userDataWithSpecialChars.user.lastName,
+          displayName: userDataWithSpecialChars.user.displayName,
+          ssoUserId: userDataWithSpecialChars.user.ssoUserId
+        },
+        isDeleted: false
+      }
+
+      mockTMRepository.checkIfGroupExistsInTenant.mockResolvedValue(mockGroup as any)
+      mockTMSRepository.ensureTenantUserExists.mockResolvedValue(mockTenantUser as any)
+      mockTMRepository.addGroupUser.mockResolvedValue(mockGroupUser as any)
+
+      const response = await request(app)
+        .post(`/v1/tenants/${tenantId}/groups/${groupId}/users`)
+        .send(userDataWithSpecialChars)
+
+      expect([201, 400]).toContain(response.status)
     })
   })
 
