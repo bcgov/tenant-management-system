@@ -316,10 +316,11 @@ describe('Tenant API', () => {
             name: TMSConstants.SERVICE_USER,
             description: 'Service User Role'
           }
-        }]
+        }],
+        tenantUserId: '123e4567-e89b-12d3-a456-426614174001'
       }
 
-      mockTMSRepository.addTenantUsers.mockResolvedValue(mockResponse)
+      mockTMSRepository.addTenantUsers.mockResolvedValue(mockResponse as any)
 
       const response = await request(app)
         .post(`/v1/tenants/${tenantId}/users`)
@@ -341,12 +342,10 @@ describe('Tenant API', () => {
         }
       })
 
-      expect(mockTMSRepository.addTenantUsers).toHaveBeenCalledWith(
-        expect.objectContaining({
-          params: { tenantId },
-          body: validUserData
-        })
-      )
+      expect(mockTMSRepository.addTenantUsers).toHaveBeenCalled()
+      const callArgs = mockTMSRepository.addTenantUsers.mock.calls[0]
+      expect(callArgs[0].params.tenantId).toBe(tenantId)
+      expect(callArgs[0].body.user.ssoUserId).toBe(validUserData.user.ssoUserId)
     })
 
     it('should fail when role ID does not exist', async () => {
@@ -595,6 +594,7 @@ describe('Tenant API', () => {
         displayName: 'Test User',
         userName: 'testuser',
         email: 'test@testministry.gov.bc.ca',
+        idpType: 'idir',
         createdDateTime: new Date(),
         updatedDateTime: new Date(),
         createdBy: 'test-user',
@@ -703,6 +703,7 @@ describe('Tenant API', () => {
             displayName: 'Test User',
             userName: 'testuser',
             email: 'test@gov.bc.ca',
+            idpType: 'idir',
             createdDateTime: new Date(),
             updatedDateTime: new Date(),
             createdBy: 'test-user',
@@ -1127,7 +1128,31 @@ describe('Tenant API', () => {
 
     beforeEach(() => {
       app.get('/v1/tenants/:tenantId/ssousers/:ssoUserId/roles',
+        (req, res, next) => {
+          req.isSharedServiceAccess = true
+          req.decodedJwt = {
+            aud: 'test-service-client',
+            idir_user_guid: ssoUserId
+          }
+          next()
+        },
         validate(validator.getRolesForSSOUser, {}, {}),
+        async (req, res, next) => {
+          try {
+            const tenantId = req.params.tenantId
+            const ssoUserIdFromToken = req.decodedJwt?.idir_user_guid || req.decodedJwt?.bceid_user_guid
+            if (!tenantId || !ssoUserIdFromToken) {
+              return res.status(403).json({ error: 'Forbidden', message: 'Missing tenant ID or user ID' })
+            }
+            const hasAccess = await mockTMSRepository.checkUserTenantAccess(tenantId, ssoUserIdFromToken, [])
+            if (!hasAccess) {
+              return res.status(403).json({ error: 'Forbidden', message: 'Access denied' })
+            }
+            next()
+          } catch (error) {
+            next(error)
+          }
+        },
         (req, res) => tmsController.getRolesForSSOUser(req, res)
       )
 
@@ -1140,6 +1165,7 @@ describe('Tenant API', () => {
     })
 
     it('should get roles for SSO user successfully', async () => {
+      mockTMSRepository.checkUserTenantAccess.mockResolvedValue(true)
       mockTMSRepository.getRolesForSSOUser.mockResolvedValue(mockRoles)
 
       const response = await request(app)
@@ -1181,6 +1207,7 @@ describe('Tenant API', () => {
 
     it('should return 404 when tenant not found', async () => {
       const nonExistentTenantId = '123e4567-e89b-12d3-a456-426614174999'
+      mockTMSRepository.checkUserTenantAccess.mockResolvedValue(true)
       mockTMSRepository.getRolesForSSOUser.mockRejectedValue(
         new NotFoundError(`Tenant Not Found: ${nonExistentTenantId}`)
       )
@@ -1198,6 +1225,7 @@ describe('Tenant API', () => {
     })
 
     it('should return empty roles array when user has no roles', async () => {
+      mockTMSRepository.checkUserTenantAccess.mockResolvedValue(true)
       mockTMSRepository.getRolesForSSOUser.mockResolvedValue([])
 
       const response = await request(app)
