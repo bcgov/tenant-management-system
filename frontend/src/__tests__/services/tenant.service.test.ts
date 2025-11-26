@@ -37,7 +37,7 @@ vi.mock('@/services/authenticated.axios', () => ({
 }))
 
 import { DuplicateEntityError, ValidationError } from '@/errors'
-import { User } from '@/models'
+import { SsoUser, User, Role } from '@/models'
 import { tenantService } from '@/services/tenant.service'
 
 describe('tenantService', () => {
@@ -46,24 +46,17 @@ describe('tenantService', () => {
   const roleId = '456'
   const ssoUserId = '789'
 
-  const fakeRole = {
-    id: roleId,
-    name: 'Admin',
-    description: 'Administrator role',
-  }
+  const fakeRole: Role = new Role(roleId, 'Admin', 'Administrator role')
 
-  const fakeUser: User = {
-    id: userId,
-    roles: [fakeRole],
-    ssoUser: {
-      displayName: 'John Doe',
-      email: 'john.doe@example.com',
-      firstName: 'John',
-      lastName: 'Doe',
-      ssoUserId: ssoUserId,
-      userName: 'johndoe',
-    },
-  }
+  const fakeSSOUser = new SsoUser(
+    ssoUserId,
+    'johndow',
+    'John',
+    'Doe',
+    'John Doe',
+    'john.doe@example.com',
+  )
+  const fakeUser: User = new User(userId, fakeSSOUser, [fakeRole])
 
   const fakeTenant = {
     id: tenantId,

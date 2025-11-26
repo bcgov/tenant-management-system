@@ -1,5 +1,7 @@
 import { Role, SsoUser } from '@/models'
 
+export declare type UserId = string & { readonly __brand: 'UserId' }
+
 /**
  * Represents a user in the system.
  */
@@ -7,7 +9,7 @@ export class User {
   /**
    * Unique identifier for the user.
    */
-  id: string
+  id: UserId
 
   /**
    * Array of roles assigned to the user.
@@ -27,7 +29,7 @@ export class User {
    * @param roles - Array of roles assigned to the user (default empty array)
    */
   constructor(id: string, ssoUser: SsoUser, roles: Role[] = []) {
-    this.id = id
+    this.id = id as UserId
     this.roles = Array.isArray(roles) ? roles : []
     this.ssoUser = ssoUser
   }
