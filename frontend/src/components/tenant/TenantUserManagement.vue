@@ -13,8 +13,6 @@ import RoleDialog from '@/components/tenant/RoleDialog.vue'
 import type { Role, Tenant, User } from '@/models'
 import { type IdirSearchType, ROLES } from '@/utils/constants'
 import { currentUserHasRole } from '@/utils/permissions'
-import { makeVStepperActionsProps } from 'vuetify/lib/components/VStepper/VStepperActions.mjs'
-import { tenantService } from '@/services'
 
 // --- Component Interface -----------------------------------------------------
 
@@ -50,8 +48,12 @@ const confirmOffboardDialog = ref({
   title: t('users.offboardUserTitle'),
   message: t('users.offboardUserMessage'),
   buttons: [
-    { text: t('general.cancel'), action: 'cancel', type: 'secondary' as const},
-    { text: t('users.offboardUserAction'), action: 'remove', type: 'secondary' as const },
+    { text: t('general.cancel'), action: 'cancel', type: 'secondary' as const },
+    {
+      text: t('users.offboardUserAction'),
+      action: 'remove',
+      type: 'secondary' as const,
+    },
   ],
 })
 
@@ -146,7 +148,7 @@ function handleOffboardButtonClick(action: string) {
   if (action === 'cancel') {
     pendingUser.value = null
   } else if (action === 'remove') {
-    emit('remove-user', pendingUser.value!.id)
+    emit('remove-user', pendingUser.value?.id)
     pendingUser.value = null
   }
 }
@@ -199,7 +201,7 @@ function showRoleDialog(user: User, index: number) {
   roleDialogVisible.value = true
 }
 
-function showOffboardDialog(user: User, index: number) {
+function showOffboardDialog(user: User) {
   pendingUser.value = user
   confirmOffboardDialog.value.message = t('users.offboardUserMessage')
   confirmOffboardDialogVisible.value = true
@@ -215,7 +217,10 @@ function handleCloseRoleDialog(open: boolean) {
   <v-container class="px-0" fluid>
     <v-row>
       <v-col cols="12">
-        <h4 class="mb-6 mt-12">{{ $t('tenants.tenant', { count: 1 }) }} {{ $t('users.user', { count: 2 }) }}</h4>
+        <h4 class="mb-6 mt-12">
+          {{ $t('tenants.tenant', { count: 1 }) }}
+          {{ $t('users.user', { count: 2 }) }}
+        </h4>
       </v-col>
     </v-row>
 
@@ -291,13 +296,13 @@ function handleCloseRoleDialog(open: boolean) {
             </div>
           </template>
 
-          <template #[`item.actions`]="{ item, index }">
-              <v-btn
-                variant="text"
-                icon="mdi-trash-can-outline"
-                size="x-small"
-                @click="showOffboardDialog(item, index)"
-              />
+          <template #[`item.actions`]="{ item }">
+            <v-btn
+              icon="mdi-trash-can-outline"
+              size="x-small"
+              variant="text"
+              @click="showOffboardDialog(item)"
+            />
           </template>
         </v-data-table>
       </v-col>
@@ -382,7 +387,7 @@ function handleCloseRoleDialog(open: boolean) {
     />
 
     <!-- Confirm offboard user dialog -->
-     <SimpleDialog
+    <SimpleDialog
       v-model="confirmOffboardDialogVisible"
       :buttons="confirmOffboardDialog.buttons"
       :message="confirmOffboardDialog.message"
