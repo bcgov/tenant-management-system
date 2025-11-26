@@ -1,10 +1,20 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { Group, GroupUser } from '@/models'
+import { Group, GroupUser, SsoUser, User } from '@/models'
+import type { GroupId } from '@/models/group.model'
 
 describe('Group model', () => {
   beforeEach(() => {
     vi.spyOn(GroupUser, 'fromApiData').mockImplementation((data) => {
-      return { ...data, mocked: true }
+      const fakeSsoUser = new SsoUser(
+        data.user.id,
+        undefined,
+        '',
+        '',
+        '',
+        undefined,
+      )
+      const gu = new GroupUser(data.id, new User(data.user.id, fakeSsoUser))
+      return { ...gu, mocked: true }
     })
   })
 
@@ -13,10 +23,12 @@ describe('Group model', () => {
   })
 
   it('constructor assigns all properties correctly', () => {
-    const groupUsers = [
-      { user: { id: 'user1' } },
-      { user: { id: 'user2' } },
-    ] as GroupUser[]
+    const fakeSsoUser = new SsoUser('235', undefined, '', '', '', undefined)
+    const groupUsers: GroupUser[] = []
+    groupUsers.push(
+      new GroupUser('user1', new User('user1', fakeSsoUser)),
+      new GroupUser('user2', new User('user2', fakeSsoUser))
+    )
 
     const group = new Group(
       'creatorUser',
@@ -44,16 +56,19 @@ describe('Group model', () => {
   })
 
   it('fromApiData converts API data to Group instance correctly', () => {
+    const fakeSsoUser = new SsoUser('userA', undefined, '', '', '', undefined)
+    const gus = [
+      new GroupUser('userA', new User('userA', fakeSsoUser)),
+      new GroupUser('userB', new User('userB', fakeSsoUser)),
+    ]
+
     const apiData = {
       createdBy: 'creatorUser',
       createdDateTime: '2025-08-01',
       description: 'API description',
-      id: 'group456',
+      id: 'group456' as GroupId,
       name: 'API Group',
-      users: [
-        { user: { id: 'userA' } },
-        { user: { id: 'userB' } },
-      ] as GroupUser[],
+      users: gus,
     }
 
     const group = Group.fromApiData(apiData)

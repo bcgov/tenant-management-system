@@ -10,10 +10,11 @@ import { TENANT_REQUEST_STATUS } from '@/utils/constants'
 
 const props = defineProps<{
   tenantRequest: TenantRequest
+  erroredApproving: boolean
 }>()
 
 const emit = defineEmits<{
-  approved: []
+  approved: [name: string]
   back: []
   rejected: [notes: string]
 }>()
@@ -22,6 +23,7 @@ const emit = defineEmits<{
 
 const rejectionNotes = ref('')
 const selectedStatus = ref(props.tenantRequest.status)
+const name = ref(props.tenantRequest.name)
 
 // Copy these here so that the order can be controlled.
 const statusOptions = [
@@ -56,7 +58,7 @@ const handleBack = () => {
 
 const handleSubmit = () => {
   if (selectedStatus.value === TENANT_REQUEST_STATUS.APPROVED.value) {
-    emit('approved')
+    emit('approved', name.value.trim())
   } else if (
     selectedStatus.value === TENANT_REQUEST_STATUS.REJECTED.value &&
     rejectionNotes.value.trim()
@@ -96,10 +98,13 @@ const handleSubmit = () => {
     <v-row>
       <v-col cols="4">
         <v-text-field
-          :model-value="tenantRequest.name"
+          v-model="name"
+          :disabled="!erroredApproving"
           label="Requested Tenant Name"
-          disabled
         />
+        <div v-if="erroredApproving" class="text-error mt-n5">
+          {{ $t('tenants.errors.uniqueName') }}
+        </div>
       </v-col>
       <v-col cols="8">
         <v-textarea

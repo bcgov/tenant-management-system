@@ -1,7 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type {
-  GroupServiceRoles
+import {
+  SharedServicesArray,
+  GroupServiceRoles,
+  SharedServiceRoles,
 } from '@/models'
 
 import * as utils from '@/services/utils'
@@ -235,19 +237,14 @@ describe('serviceService', () => {
   })
 
   describe('updateTenantGroupServices', () => {
-    const fakeUpdateData: GroupServiceRoles = {
-      sharedServices: [
-        {
-          id: 'c7c82cb9-6344-4864-be39-19ffb03d105f',
-          sharedServiceRoles: [
-            {
-              id: 'c7c82cb9-6344-4864-be39-19ffb03d105f',
-              enabled: true,
-            },
-          ],
-        },
-      ],
-    }
+    const fakeSharedServices: SharedServicesArray[] = [
+      new SharedServicesArray('c7c82cb9-6344-4864-be39-19ffb03d105f', [
+        new SharedServiceRoles('c7c82cb9-6344-4864-be39-19ffb03d105f', true),
+      ]),
+    ]
+    const fakeUpdateData: GroupServiceRoles = new GroupServiceRoles(
+      fakeSharedServices,
+    )
     const groupId = '1'
 
     it('should return tenant group services on success', async () => {

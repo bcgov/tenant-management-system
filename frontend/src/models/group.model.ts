@@ -1,5 +1,7 @@
 import { GroupUser } from '@/models'
 
+export declare type GroupId = string & { readonly __brand: 'GroupId' }
+
 /**
  * Utility type that represents the subset of Group properties used in the form
  * that edits these fields.
@@ -30,7 +32,7 @@ export class Group {
   /**
    * Unique identifier for the group.
    */
-  id: string
+  id: GroupId
 
   /**
    * Display name of the group.
@@ -64,7 +66,7 @@ export class Group {
     this.createdBy = createdBy
     this.createdDate = createdDate
     this.description = description
-    this.id = id
+    this.id = id as GroupId
     this.name = name
     this.groupUsers = Array.isArray(groupUsers) ? groupUsers : []
   }

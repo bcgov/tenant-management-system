@@ -1,6 +1,8 @@
 import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest'
 
 import { Role, SsoUser, Tenant, User } from '@/models'
+import type { TenantId } from '@/models/tenant.model'
+import type { UserId } from '@/models/user.model'
 import { ROLES } from '@/utils/constants'
 
 describe('Tenant model', () => {
@@ -75,12 +77,12 @@ describe('Tenant model', () => {
       createdBy: 'creatorUser',
       createdDateTime: '2025-08-01',
       description: 'API description',
-      id: 'tenant456',
+      id: 'tenant456' as TenantId,
       name: 'API Tenant',
       ministryName: 'Ministry',
       users: [
         {
-          id: 'userA',
+          id: 'userA' as UserId,
           ssoUser: new SsoUser(
             'ssoA',
             'userA',
@@ -92,7 +94,7 @@ describe('Tenant model', () => {
           roles: [new Role('r1', ROLES.TENANT_OWNER.value, 'Owner role')],
         },
         {
-          id: 'userB',
+          id: 'userB' as UserId,
           ssoUser: new SsoUser(
             'ssoB',
             'userB',
