@@ -1,15 +1,15 @@
 #!/bin/bash
 set -e
 
-echo "Starting database connection check..."
+echo "Starting backend application..."
 
-# Function to check if database is available (simplified)
+# Function to check if database is available
 check_db_connection() {
-  npx typeorm-ts-node-commonjs query "SELECT 1" -d ./src/common/db.connection.ts > /dev/null 2>&1
+  npx typeorm-ts-node-commonjs query "SELECT 1" -d ./src/ormconfig.ts > /dev/null 2>&1
   return $?
 }
 
-# Wait for database to be available
+# Wait for database to be available (migrations should already be done via Flyway)
 MAX_RETRIES=30
 RETRY_COUNT=0
 
@@ -25,18 +25,12 @@ done
 
 echo "Database connection established."
 
-# Set fixed schema
-DB_SCHEMA="tms"
-echo "Using database schema: $DB_SCHEMA"
+# Verify schema exists (Flyway should have created it)
+echo "Verifying schema configuration..."
+npx typeorm-ts-node-commonjs query "SET search_path TO \"${POSTGRES_SCHEMA:-users}\", public;" -d ./src/ormconfig.ts
 
-# Just ensure the schema exists
-echo "Ensuring schema exists..."
-npx typeorm-ts-node-commonjs query "CREATE SCHEMA IF NOT EXISTS \"$DB_SCHEMA\";" -d ./src/common/db.connection.ts
-npx typeorm-ts-node-commonjs query "SET search_path TO \"$DB_SCHEMA\", public;" -d ./src/common/db.connection.ts
-# Run migrations - TypeORM will track which ones have been run
-echo "Running migrations..."
-npx typeorm-ts-node-commonjs migration:run -d ./src/common/db.connection.ts || echo "Migration issues detected, but continuing startup"
+# NOTE: Migrations are handled by Flyway in the migrations container
+# TypeORM is configured with empty migrations array - do not run migrations here
 
-# Start the application regardless of migration outcome
 echo "Starting application..."
 exec npm run start

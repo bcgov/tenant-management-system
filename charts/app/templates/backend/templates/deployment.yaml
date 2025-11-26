@@ -40,7 +40,7 @@ spec:
             - name: FLYWAY_BASELINE_ON_MIGRATE
               value: "true"
             - name: FLYWAY_DEFAULT_SCHEMA
-              value: "USERS"
+              value: "tms"
             - name: FLYWAY_CONNECT_RETRIES
               value: "30"
             - name: FLYWAY_CONNECT_RETRY_DELAY

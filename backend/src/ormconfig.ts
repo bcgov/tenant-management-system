@@ -1,6 +1,6 @@
 import * as dotenv from "dotenv";
 dotenv.config();
- 
+
 const dbConfig = {
   type: 'postgres',
   host: process.env.POSTGRES_HOST || 'localhost',
