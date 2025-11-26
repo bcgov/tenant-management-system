@@ -38,7 +38,10 @@ export default {
                 is: 'idir',
                 then: Joi.required(),
                 otherwise: Joi.optional()
-            })
+            }),
+            groups: Joi.array().items(
+                Joi.string().guid()
+            ).optional()
         }).options({abortEarly:false,convert:false})
     },
 
@@ -181,6 +184,12 @@ export default {
                 is: 'REJECTED',
                 then: Joi.string().required(),
                 otherwise: Joi.string().optional()
+            }),
+            tenantName: Joi.string().when('status', {
+                is: 'APPROVED',
+                //code quality complains about this but it matches above (it doesn't like then in an object)
+                then: Joi.string().optional(),
+                otherwise: Joi.forbidden()
             })
         })
     },
@@ -269,7 +278,7 @@ export default {
                         Joi.string().valid('idir', 'azureidir', 'bceidbasic', 'bceidbusiness')
                     ).allow(null).optional()
                 })
-            ).min(1).max(10).required()
+            ).min(1).max(50).required()
         }).options({abortEarly:false,convert:false})
     },
 
