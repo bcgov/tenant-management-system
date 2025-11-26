@@ -489,39 +489,60 @@ jobs:
 
             RELEASE_NAME="${{ steps.vars.outputs.release }}"
             DB_USER="${{ inputs.db_user }}"
-            CLUSTER_NAME="${RELEASE_NAME}-postgres"
+            DATABASE_ALIAS="${{ inputs.database_alias || steps.vars.outputs.release }}"
+            CLUSTER_NAME="${DATABASE_ALIAS}-postgres"
 
             echo "🔐 WAITING FOR CRUNCHY POSTGRESQL AUTO-GENERATED SECRETS..."
+            echo "Release name: $RELEASE_NAME"
+            echo "Database alias: $DATABASE_ALIAS"
             echo "Cluster name: $CLUSTER_NAME"
 
             # Wait for Crunchy to create the postgres user password secret
             echo "Waiting for Crunchy to generate postgres password secret..."
+            SECRET_FOUND=false
             for i in {1..60}; do
-              # Crunchy creates secrets named: {cluster}-postgres or {cluster}-pguser-{username}
-              if oc get secret ${CLUSTER_NAME}-pguser-${DB_USER} &>/dev/null; then
-                echo "✅ Crunchy created secret: ${CLUSTER_NAME}-pguser-${DB_USER}"
-
-                # Get password from Crunchy's secret
-                DB_PASSWORD=$(oc get secret ${CLUSTER_NAME}-pguser-${DB_USER} -o jsonpath='{.data.password}' | base64 -d)
-                DB_HOST="${RELEASE_NAME}-postgres"
-
-                # Create a copy of Crunchy's secret with the naming convention our app expects
-                echo "Creating application-compatible secret: ${RELEASE_NAME}-pguser-${DB_USER}"
-                oc delete secret ${RELEASE_NAME}-pguser-${DB_USER} --ignore-not-found=true
-                oc create secret generic ${RELEASE_NAME}-pguser-${DB_USER} \
-                  --from-literal=password="$DB_PASSWORD" \
-                  --from-literal=username="$DB_USER" \
-                  --from-literal=dbname="app" \
-                  --from-literal=host="$DB_HOST" \
-                  --from-literal=port="5432"
-
-                echo "✅ Application secret created with Crunchy's auto-generated password"
+              # Try primary location: {database-alias}-postgres-pguser-{username}
+              if oc get secret ${DATABASE_ALIAS}-postgres-pguser-${DB_USER} &>/dev/null; then
+                echo "✅ Crunchy created secret: ${DATABASE_ALIAS}-postgres-pguser-${DB_USER}"
+                DB_PASSWORD=$(oc get secret ${DATABASE_ALIAS}-postgres-pguser-${DB_USER} -o jsonpath='{.data.password}' | base64 -d)
+                SECRET_FOUND=true
+                break
+              # Fallback: try alternate naming {release}-postgres-pguser-{username}
+              elif oc get secret ${RELEASE_NAME}-postgres-pguser-${DB_USER} &>/dev/null; then
+                echo "✅ Crunchy created secret: ${RELEASE_NAME}-postgres-pguser-${DB_USER}"
+                DB_PASSWORD=$(oc get secret ${RELEASE_NAME}-postgres-pguser-${DB_USER} -o jsonpath='{.data.password}' | base64 -d)
+                SECRET_FOUND=true
                 break
               fi
 
               echo "Attempt $i/60: Waiting for Crunchy secrets..."
+              echo "  Checked: ${DATABASE_ALIAS}-postgres-pguser-${DB_USER}"
+              echo "  Checked: ${RELEASE_NAME}-postgres-pguser-${DB_USER}"
               sleep 5
             done
+
+            if [ "$SECRET_FOUND" = false ]; then
+              echo "❌ Crunchy secret not found after timeout"
+              echo "Available secrets with 'pguser' in name:"
+              oc get secrets | grep pguser || echo "No pguser secrets found"
+              echo "Available secrets:"
+              oc get secrets | head -20
+              exit 1
+            fi
+
+            DB_HOST="${DATABASE_ALIAS}-postgres"
+
+            # Create a copy of Crunchy's secret with the naming convention our app expects
+            echo "Creating application-compatible secret: ${RELEASE_NAME}-pguser-${DB_USER}"
+            oc delete secret ${RELEASE_NAME}-pguser-${DB_USER} --ignore-not-found=true
+            oc create secret generic ${RELEASE_NAME}-pguser-${DB_USER} \
+              --from-literal=password="$DB_PASSWORD" \
+              --from-literal=username="$DB_USER" \
+              --from-literal=dbname="app" \
+              --from-literal=host="$DB_HOST" \
+              --from-literal=port="5432"
+
+            echo "✅ Application secret created with Crunchy's auto-generated password"
 
             if ! oc get secret ${RELEASE_NAME}-pguser-${DB_USER} &>/dev/null; then
               echo "❌ Crunchy secret not created after timeout"
