@@ -1,3 +1,5 @@
+export declare type RoleId = string & { readonly __brand: 'RoleId' }
+
 /**
  * Represents a role within the system.
  */
@@ -10,7 +12,7 @@ export class Role {
   /**
    * Unique identifier for the role.
    */
-  id: string
+  id: RoleId
 
   /**
    * Name of the role.
@@ -26,7 +28,7 @@ export class Role {
    */
   constructor(id: string, name: string, description: string) {
     this.description = description
-    this.id = id
+    this.id = id as RoleId
     this.name = name
   }
 

@@ -1,20 +1,22 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { GroupUser, User, Role } from '@/models'
+import { GroupUser, User, Role, SsoUser } from '@/models'
 
-const fakeSsoUser = {
-  ssoUserId: 'sso-123',
-  userName: 'jdoe', // optional, but good to provide
-  firstName: 'John',
-  lastName: 'Doe',
-  displayName: 'John Doe',
-  email: 'jdoe@example.com', // optional, but provided here
-}
+const fakeSsoUser = new SsoUser(
+  'sso-123',
+  'jdoe', // optional, but good to provide
+  'John',
+  'Doe',
+  'John Doe',
+  'jdoe@example.com', // optional, but provided here
+)
 
 const fakeUserData = {
   id: 'user1',
   ssoUser: fakeSsoUser,
   roles: [] as Role[],
 }
+
+const fakeUser = new User(fakeUserData.id, fakeSsoUser, fakeUserData.roles)
 
 describe('GroupUser model', () => {
   let mockedUserInstance: User
@@ -23,7 +25,7 @@ describe('GroupUser model', () => {
     // Create a real User instance or a complete mock
     mockedUserInstance = new User(
       fakeUserData.id,
-      fakeUserData.ssoUser,
+      fakeSsoUser,
       fakeUserData.roles,
     )
 
@@ -41,10 +43,7 @@ describe('GroupUser model', () => {
   })
 
   it('fromApiData converts API data to GroupUser instance correctly', () => {
-    const apiData = {
-      id: 'groupUser123',
-      user: fakeUserData, // raw user data matching User.fromApiData input
-    }
+    const apiData = new GroupUser('groupUser123', fakeUser) // raw user data matching User.fromApiData input
 
     const groupUser = GroupUser.fromApiData(apiData)
 
