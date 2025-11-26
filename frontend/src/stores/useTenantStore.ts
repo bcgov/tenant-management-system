@@ -111,6 +111,14 @@ export const useTenantStore = defineStore('tenant', () => {
     return tenants.value.find((t) => t.id === tenantId)
   }
 
+  async function removeTenantUser(tenantId: string, userId: string) {
+    await tenantService.removeUser(tenantId, userId)
+    const tenant = getTenant(tenantId)
+    if (tenant) {
+      tenant.users = tenant.users.filter((u) => u.id !== userId)
+    }
+  }
+
   /**
    * Removes a role from a user in a tenant.
    *
@@ -211,6 +219,7 @@ export const useTenantStore = defineStore('tenant', () => {
     fetchTenant,
     fetchTenants,
     getTenant,
+    removeTenantUser,
     removeTenantUserRole,
     assignTenantUserRoles,
     updateTenantDetails,

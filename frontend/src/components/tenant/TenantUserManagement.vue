@@ -13,6 +13,8 @@ import RoleDialog from '@/components/tenant/RoleDialog.vue'
 import type { Role, Tenant, User } from '@/models'
 import { type IdirSearchType, ROLES } from '@/utils/constants'
 import { currentUserHasRole } from '@/utils/permissions'
+import { makeVStepperActionsProps } from 'vuetify/lib/components/VStepper/VStepperActions.mjs'
+import { tenantService } from '@/services'
 
 // --- Component Interface -----------------------------------------------------
 
@@ -28,6 +30,7 @@ const emit = defineEmits<{
   (event: 'cancel' | 'clear-search'): void
   (event: 'remove-role', userId: string, roleId: string): void
   (event: 'search', searchType: IdirSearchType, searchText: string): void
+  (event: 'remove-user', userId: string): void
 }>()
 
 // --- Component State ---------------------------------------------------------
@@ -41,6 +44,17 @@ const confirmDialog = ref({
   ],
 })
 const confirmDialogVisible = ref(false)
+
+const confirmOffboardDialogVisible = ref(false)
+const confirmOffboardDialog = ref({
+  title: t('users.offboardUserTitle'),
+  message: t('users.offboardUserMessage'),
+  buttons: [
+    { text: t('general.cancel'), action: 'cancel', type: 'secondary' as const},
+    { text: t('users.offboardUserAction'), action: 'remove', type: 'secondary' as const },
+  ],
+})
+
 const infoDialog = ref({
   title: 'Action Blocked',
   message: '',
@@ -128,6 +142,15 @@ function handleConfirmButtonClick(action: string) {
   }
 }
 
+function handleOffboardButtonClick(action: string) {
+  if (action === 'cancel') {
+    pendingUser.value = null
+  } else if (action === 'remove') {
+    emit('remove-user', pendingUser.value!.id)
+    pendingUser.value = null
+  }
+}
+
 function handleRemoveRole(user: User, role: Role) {
   if (!props.tenant) {
     return
@@ -176,6 +199,12 @@ function showRoleDialog(user: User, index: number) {
   roleDialogVisible.value = true
 }
 
+function showOffboardDialog(user: User, index: number) {
+  pendingUser.value = user
+  confirmOffboardDialog.value.message = t('users.offboardUserMessage')
+  confirmOffboardDialogVisible.value = true
+}
+
 function handleCloseRoleDialog(open: boolean) {
   roleDialogVisible.value = open
   modifyingUserIndex.value = null
@@ -186,7 +215,7 @@ function handleCloseRoleDialog(open: boolean) {
   <v-container class="px-0" fluid>
     <v-row>
       <v-col cols="12">
-        <h4 class="mb-6 mt-12">Tenant Users</h4>
+        <h4 class="mb-6 mt-12">{{ $t('tenants.tenant', { count: 1 }) }} {{ $t('users.user', { count: 2 }) }}</h4>
       </v-col>
     </v-row>
 
@@ -219,6 +248,7 @@ function handleCloseRoleDialog(open: boolean) {
               sortable: false,
             },
             { title: 'Email', key: 'ssoUser.email', align: 'start' },
+            { title: '', key: 'actions', sortable: false, align: 'center' },
           ]"
           :items="tenant.users"
           :search="userSearch"
@@ -259,6 +289,15 @@ function handleCloseRoleDialog(open: boolean) {
                 />
               </v-chip>
             </div>
+          </template>
+
+          <template #[`item.actions`]="{ item, index }">
+              <v-btn
+                variant="text"
+                icon="mdi-trash-can-outline"
+                size="x-small"
+                @click="showOffboardDialog(item, index)"
+              />
           </template>
         </v-data-table>
       </v-col>
@@ -340,6 +379,16 @@ function handleCloseRoleDialog(open: boolean) {
       :message="confirmDialog.message"
       :title="confirmDialog.title"
       @button-click="handleConfirmButtonClick"
+    />
+
+    <!-- Confirm offboard user dialog -->
+     <SimpleDialog
+      v-model="confirmOffboardDialogVisible"
+      :buttons="confirmOffboardDialog.buttons"
+      :message="confirmOffboardDialog.message"
+      :title="confirmOffboardDialog.title"
+      dialog-type="warning"
+      @button-click="handleOffboardButtonClick"
     />
 
     <RoleDialog

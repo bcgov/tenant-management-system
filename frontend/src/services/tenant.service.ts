@@ -49,6 +49,36 @@ export const tenantService = {
   },
 
   /**
+   * removes a user from the specified tenant.
+   *
+   * Note: The format of the user in the request body differs from elsewhere,
+   * so it requires explicit construction.
+   *
+   * @param {string} tenantId - The unique identifier of the tenant.
+   * @param {string} userId - The id of the user to remove
+   * @returns {Promise<object>} A promise resolving to the added user object.
+   * @throws Will throw an error if the API request fails.
+   */
+  async removeUser(tenantId: string, userId: string) {
+    try {
+      console.log('remove user');
+      const response = await api.delete(`/tenants/${tenantId}/users/${userId}`)
+      console.log('response', response);
+
+      return response
+    } catch (error: unknown) {
+      logApiError('Error adding user to tenant', error)
+
+      // Handle HTTP 409 Conflict (duplicate)
+      if (isDuplicateEntityError(error)) {
+        throw new DuplicateEntityError(error.response.data.message)
+      }
+
+      throw error
+    }
+  },
+
+  /**
    * Assigns a role to a user within a specific tenant.
    *
    * This sends a PUT request to the API endpoint to assign the given role

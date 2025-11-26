@@ -69,6 +69,15 @@ async function handleRemoveRole(userId: string, roleId: string) {
   }
 }
 
+async function handleRemoveUser(userId: string) {
+  try {
+    await tenantStore.removeTenantUser(props.tenant.id, userId)
+    notification.success('The user was successfully removed', 'User Removed')
+  } catch {
+    notification.error('Failed to remove user')
+  }
+}
+
 async function handleUserSearch(
   searchType: IdirSearchType,
   searchText: string,
@@ -114,6 +123,7 @@ onMounted(async () => {
     @cancel="searchResults = null"
     @clear-search="handleClearSearch"
     @remove-role="handleRemoveRole"
+    @remove-user="handleRemoveUser"
     @search="handleUserSearch"
   />
 </template>
