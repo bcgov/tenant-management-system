@@ -58,6 +58,8 @@ echo "POSTGRES_DATABASE: ${POSTGRES_DATABASE:-NOT SET}"
 
 # NOTE: Migrations are handled by Flyway in the migrations container
 # TypeORM is configured with empty migrations array - do not run migrations here
+echo "Starting Migrations"
+npx typeorm-ts-node-commonjs migration:run -d ./src/common/db.connection.ts
 
 echo "Starting application..."
 exec npm run start
