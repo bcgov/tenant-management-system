@@ -28,7 +28,7 @@ const emit = defineEmits<{
   (event: 'cancel' | 'clear-search'): void
   (event: 'remove-role', userId: string, roleId: string): void
   (event: 'search', searchType: IdirSearchType, searchText: string): void
-  (event: 'remove-user', userId: string): void
+  (event: 'remove-user', userId: string | undefined): void
 }>()
 
 // --- Component State ---------------------------------------------------------

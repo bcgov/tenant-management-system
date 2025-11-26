@@ -69,8 +69,9 @@ async function handleRemoveRole(userId: string, roleId: string) {
   }
 }
 
-async function handleRemoveUser(userId: string) {
+async function handleRemoveUser(userId: string | undefined) {
   try {
+    if (!userId) throw new Error('No user selected')
     await tenantStore.removeTenantUser(props.tenant.id, userId)
     notification.success('The user was successfully removed', 'User Removed')
   } catch {
