@@ -88,17 +88,23 @@ export const tenantRequestService = {
     requestId: string,
     status: string,
     rejectionReason?: string,
+    tenantName?: string,
   ) {
     try {
       const requestBody: {
         status: string
         rejectionReason?: string
+        tenantName?: string
       } = {
         status,
       }
 
       if (rejectionReason) {
         requestBody.rejectionReason = rejectionReason
+      }
+
+      if (tenantName) {
+        requestBody.tenantName = tenantName
       }
 
       await api.patch(`/tenant-requests/${requestId}/status`, requestBody)

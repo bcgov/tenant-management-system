@@ -2,7 +2,10 @@
   "tenants": {
     "tenant": "Tenants | Tenant | Tenants",
     "learnMore": "Learn more about",
-    "roleAssignDesc": "Below are the available tenant roles you can assign to a user. A checkmark shows roles currently assigned to this user. Select additional role(s) to update their permissions."
+    "roleAssignDesc": "Below are the available tenant roles you can assign to a user. A checkmark shows roles currently assigned to this user. Select additional role(s) to update their permissions.",
+    "errors": {
+      "uniqueName": "Tenant name must be unique"
+    }
   },
   "roles": {
     "role": "Roles | Role | Roles",
