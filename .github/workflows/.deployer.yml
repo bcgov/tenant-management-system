@@ -245,7 +245,7 @@ jobs:
                 echo "✅ ConfigMap successfully deleted"
               else
                 echo "⚠️ ConfigMap still exists, attempting second deletion..."
-                oc delete configmap "${release_name}-frontend-config" --grace-period=0 --force --namespace="${KUBE_NAMESPACE}" 2>/dev/null || true
+                oc delete configmap "${release_name}-frontend-config" --grace-period=0 --force 2>/dev/null || true
               fi
   
             
@@ -489,51 +489,82 @@ jobs:
 
             RELEASE_NAME="${{ steps.vars.outputs.release }}"
             DB_USER="${{ inputs.db_user }}"
-            CLUSTER_NAME="${RELEASE_NAME}-postgres"
+            DATABASE_ALIAS="${{ inputs.database_alias || steps.vars.outputs.release }}"
+            CLUSTER_NAME="${DATABASE_ALIAS}-postgres"
 
-            echo "🔐 WAITING FOR CRUNCHY POSTGRESQL AUTO-GENERATED SECRETS..."
+            echo "🔐 HANDLING CRUNCHY POSTGRESQL SECRETS (TEST/PROD)..."
+            echo "Release name: $RELEASE_NAME"
+            echo "Database alias: $DATABASE_ALIAS"
             echo "Cluster name: $CLUSTER_NAME"
 
-            # Wait for Crunchy to create the postgres user password secret
-            echo "Waiting for Crunchy to generate postgres password secret..."
-            for i in {1..60}; do
-              # Crunchy creates secrets named: {cluster}-postgres or {cluster}-pguser-{username}
-              if oc get secret ${CLUSTER_NAME}-pguser-${DB_USER} &>/dev/null; then
-                echo "✅ Crunchy created secret: ${CLUSTER_NAME}-pguser-${DB_USER}"
+            DB_HOST="${DATABASE_ALIAS}-postgres"
 
-                # Get password from Crunchy's secret
-                DB_PASSWORD=$(oc get secret ${CLUSTER_NAME}-pguser-${DB_USER} -o jsonpath='{.data.password}' | base64 -d)
-                DB_HOST="${RELEASE_NAME}-postgres"
+            # FIRST: Check if application secret already exists (from previous deployment)
+            if oc get secret ${RELEASE_NAME}-pguser-${DB_USER} &>/dev/null; then
+              echo "✅ Application secret already exists (from previous deployment): ${RELEASE_NAME}-pguser-${DB_USER}"
+              echo "Skipping Crunchy secret wait - reusing existing password"
+              DB_PASSWORD=$(oc get secret ${RELEASE_NAME}-pguser-${DB_USER} -o jsonpath='{.data.password}' | base64 -d)
+              SECRET_FOUND=true
+            else
+              # SECOND: Wait for Crunchy to create the postgres user password secret
+              echo "Application secret doesn't exist yet, waiting for Crunchy to generate..."
+              echo "Waiting for Crunchy to generate postgres password secret..."
+              SECRET_FOUND=false
+              for i in {1..60}; do
+                # Try primary location: {database-alias}-postgres-pguser-{username}
+                if oc get secret ${DATABASE_ALIAS}-postgres-pguser-${DB_USER} &>/dev/null; then
+                  echo "✅ Crunchy created secret: ${DATABASE_ALIAS}-postgres-pguser-${DB_USER}"
+                  DB_PASSWORD=$(oc get secret ${DATABASE_ALIAS}-postgres-pguser-${DB_USER} -o jsonpath='{.data.password}' | base64 -d)
+                  SECRET_FOUND=true
+                  break
+                # Fallback: try alternate naming {release}-postgres-pguser-{username}
+                elif oc get secret ${RELEASE_NAME}-postgres-pguser-${DB_USER} &>/dev/null; then
+                  echo "✅ Crunchy created secret: ${RELEASE_NAME}-postgres-pguser-${DB_USER}"
+                  DB_PASSWORD=$(oc get secret ${RELEASE_NAME}-postgres-pguser-${DB_USER} -o jsonpath='{.data.password}' | base64 -d)
+                  SECRET_FOUND=true
+                  break
+                fi
 
-                # Create a copy of Crunchy's secret with the naming convention our app expects
-                echo "Creating application-compatible secret: ${RELEASE_NAME}-pguser-${DB_USER}"
-                oc delete secret ${RELEASE_NAME}-pguser-${DB_USER} --ignore-not-found=true
-                oc create secret generic ${RELEASE_NAME}-pguser-${DB_USER} \
-                  --from-literal=password="$DB_PASSWORD" \
-                  --from-literal=username="$DB_USER" \
-                  --from-literal=dbname="app" \
-                  --from-literal=host="$DB_HOST" \
-                  --from-literal=port="5432"
+                echo "Attempt $i/60: Waiting for Crunchy secrets..."
+                echo "  Checked: ${DATABASE_ALIAS}-postgres-pguser-${DB_USER}"
+                echo "  Checked: ${RELEASE_NAME}-postgres-pguser-${DB_USER}"
+                sleep 5
+              done
 
-                echo "✅ Application secret created with Crunchy's auto-generated password"
-                break
+              if [ "$SECRET_FOUND" = false ]; then
+                echo "❌ Crunchy secret not found after timeout"
+                echo "Available secrets with 'pguser' in name:"
+                oc get secrets | grep pguser || echo "No pguser secrets found"
+                echo "Available secrets:"
+                oc get secrets | head -20
+                exit 1
               fi
-
-              echo "Attempt $i/60: Waiting for Crunchy secrets..."
-              sleep 5
-            done
-
-            if ! oc get secret ${RELEASE_NAME}-pguser-${DB_USER} &>/dev/null; then
-              echo "❌ Crunchy secret not created after timeout"
-              echo "Available secrets:"
-              oc get secrets | grep -i crunchy || echo "No Crunchy secrets found"
-              exit 1
             fi
 
-            # Create Flyway secret for TEST/PROD with Crunchy password
+            # Create/update application secret with the password (whether from Crunchy or existing)
+            echo "Creating/updating application-compatible secret: ${RELEASE_NAME}-pguser-${DB_USER}"
+            oc delete secret ${RELEASE_NAME}-pguser-${DB_USER} --ignore-not-found=true
+            oc create secret generic ${RELEASE_NAME}-pguser-${DB_USER} \
+              --from-literal=password="$DB_PASSWORD" \
+              --from-literal=username="$DB_USER" \
+              --from-literal=dbname="app" \
+              --from-literal=host="$DB_HOST" \
+              --from-literal=port="5432"
+
+            echo "✅ Application secret created with database password"
+
+            # Verify the secret was created successfully
+            if ! oc get secret ${RELEASE_NAME}-pguser-${DB_USER} &>/dev/null; then
+              echo "❌ Error: Application secret was not created successfully"
+              echo "Available secrets:"
+              oc get secrets | head -20
+              exit 1
+            fi
+            echo "✅ Verified application secret exists"
+
+            # Create Flyway secret for TEST/PROD with database password
             echo ""
             echo "Creating Flyway secret for TEST/PROD environment..."
-            DB_PASSWORD=$(oc get secret ${RELEASE_NAME}-pguser-${DB_USER} -o jsonpath='{.data.password}' | base64 -d)
             FLYWAY_URL="jdbc:postgresql://${DB_HOST}:5432/app"
 
             oc delete secret ${RELEASE_NAME}-flyway --ignore-not-found=true
@@ -544,7 +575,7 @@ jobs:
               --from-literal=FLYWAY_PASSWORD="$DB_PASSWORD" \
               --from-literal=FLYWAY_URL="$FLYWAY_URL"
 
-            echo "✅ Flyway secret created with Crunchy auto-generated password"
+            echo "✅ Flyway secret created with database password"
             echo "  URL: $FLYWAY_URL"
             echo "  User: $DB_USER"
 
@@ -568,7 +599,7 @@ jobs:
             echo "Service name: $SERVICE_NAME"
 
             # Check if service already exists
-            if oc get svc "$SERVICE_NAME" -n "$KUBE_NAMESPACE" &>/dev/null; then
+            if oc get svc "$SERVICE_NAME" &>/dev/null; then
               echo "✅ Service already exists: $SERVICE_NAME"
               echo "Checking if service has endpoints..."
 
@@ -582,16 +613,14 @@ jobs:
             else
               echo "ℹ️ Service does not exist, creating new service..."
 
-              # Create service with correct selector
+              # Create service with correct selector (namespace is already set by action-oc-runner)
               oc create service clusterip "$SERVICE_NAME" \
-                --tcp=5432:5432 \
-                --namespace="$KUBE_NAMESPACE" || true
+                --tcp=5432:5432 || true
 
               # Patch service to use correct selector
               echo "Patching service selector..."
               oc patch svc "$SERVICE_NAME" \
-                -p '{"spec":{"selector":{"app":"postgres","instance":"'$RELEASE_NAME'"}}}' \
-                --namespace="$KUBE_NAMESPACE"
+                -p '{"spec":{"selector":{"app":"postgres","instance":"'$RELEASE_NAME'"}}}'
 
               sleep 2
             fi
@@ -618,7 +647,7 @@ jobs:
             if [ -z "${ENDPOINTS}" ]; then
               echo "❌ Service endpoints not assigned after timeout"
               echo "Available services:"
-              oc get svc -n "$KUBE_NAMESPACE" | grep postgres || echo "No postgres services found"
+              oc get svc | grep postgres || echo "No postgres services found"
               exit 1
             fi
 

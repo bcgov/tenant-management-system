@@ -27,17 +27,23 @@ services:
   migrations:
     image: flyway/flyway:10-alpine
     container_name: migrations
-    command: info migrate info
+    command: migrate
     volumes: ["./migrations/sql:/flyway/sql:ro"]
     environment:
       FLYWAY_URL: jdbc:postgresql://database:5432/postgres
       FLYWAY_USER: *POSTGRES_USER
       FLYWAY_PASSWORD: *POSTGRES_PASSWORD
       FLYWAY_BASELINE_ON_MIGRATE: true
-      FLYWAY_DEFAULT_SCHEMA: users
+      FLYWAY_DEFAULT_SCHEMA: tms
+      FLYWAY_LOCATIONS: filesystem:/flyway/sql
     depends_on:
       database:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "flyway", "info"]
+      interval: 5s
+      timeout: 10s
+      retries: 3
 
   schemaspy:
     image: schemaspy/schemaspy:6.2.4
@@ -53,7 +59,7 @@ services:
     container_name: backend
     depends_on:
       migrations:
-        condition: service_started
+        condition: service_completed_successfully
     entrypoint: sh -c "npm i && npm run dev"
     environment:
       <<: *postgres-vars
