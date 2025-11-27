@@ -544,12 +544,14 @@ jobs:
 
             echo "✅ Application secret created with Crunchy's auto-generated password"
 
+            # Verify the secret was created successfully
             if ! oc get secret ${RELEASE_NAME}-pguser-${DB_USER} &>/dev/null; then
-              echo "❌ Crunchy secret not created after timeout"
+              echo "❌ Error: Application secret was not created successfully"
               echo "Available secrets:"
-              oc get secrets | grep -i crunchy || echo "No Crunchy secrets found"
+              oc get secrets | head -20
               exit 1
             fi
+            echo "✅ Verified application secret exists"
 
             # Create Flyway secret for TEST/PROD with Crunchy password
             echo ""

@@ -2,47 +2,179 @@
 **Tenant Management System (TMS)**
 
 **Last Updated**: November 26, 2025
-**Status**: Updated with schema mismatch fix, Flyway configuration, and environment-aware database connections
+**Version**: 2.0 (Simplified & Clarified)
 **Branch**: deployment-fix
 
 ---
 
 ## Table of Contents
-
-1. [Executive Summary](#executive-summary)
-2. [CI/CD Pipeline](#cicd-pipeline)
-3. [Containerization](#containerization)
-4. [Kubernetes & OpenShift Deployment](#kubernetes--openshift-deployment)
-5. [Environments Configuration](#environments-configuration)
-6. [Database & Migrations](#database--migrations)
-7. [Security & Scanning](#security--scanning)
-8. [Container Registry & Image Management](#container-registry--image-management)
-9. [Deployment Scripts & Automation](#deployment-scripts--automation)
-10. [Infrastructure Features](#infrastructure-features)
-11. [Pull Request Workflow](#pull-request-workflow)
-12. [Architecture Diagrams](#architecture-diagrams)
+what is the passwor 
+1. [Quick Start - The Golden Rule](#quick-start---the-golden-rule)
+2. [The Three Environments](#the-three-environments)
+3. [Deployment Flow](#deployment-flow)
+4. [GitHub Actions Workflows](#github-actions-workflows)
+5. [Database Strategy](#database-strategy)
+6. [Secrets & Configuration](#secrets--configuration)
+7. [Common Tasks](#common-tasks)
+8. [Troubleshooting](#troubleshooting)
+9. [Architecture Overview](#architecture-overview)
 
 ---
 
-## Executive Summary
+## Quick Start - The Golden Rule
 
-The Tenant Management System uses a **modern GitOps CI/CD pipeline** built on GitHub Actions, deployed to **OpenShift Silver Cluster** (BC Government). The infrastructure follows cloud-native principles with:
+**Every deployment follows this simple rule:**
 
-- **Automated deployments** for PR, DEV, TEST, and PROD environments
-- **Multi-layer security scanning** (DAST, SAST, container scanning)
-- **High availability** configuration with autoscaling and pod disruption budgets
-- **Zero-downtime deployments** using rolling updates
-- **Fork-safe PR workflow** with approval gates for external contributors
-- **Intelligent image cleanup** with 7-day rollback window
-- **Database HA** with Crunchy PostgreSQL in TEST/PROD
+```
+Your Code → GitHub → Actions → Build → Deploy → Test → Done ✅
+```
+
+**The Three Key Steps**:
+1. **Code** - Write code on a branch
+2. **Push** - Push to GitHub (creates PR or merges to main)
+3. **Wait** - Automated pipeline deploys and tests
+
+**That's it.** The rest is automatic.
 
 ---
 
-## CI/CD Pipeline
+## The Three Environments
 
-### Overview
+### 1️⃣ **DEV** (Pull Request Environments)
 
-The CI/CD pipeline is orchestrated by **GitHub Actions** with the following key workflows:
+**When**: Every pull request automatically gets its own temporary environment
+
+**Database**:
+- Fresh PostgreSQL (single instance)
+- Data deleted when PR closes
+- New password generated each time
+
+**Deployment**:
+- Frontend: 1 replica
+- Backend: 1 replica
+- Total startup time: ~10-15 minutes
+
+**URL Format**: `https://tenant-management-system-pr-{NUMBER}.apps.silver.devops.gov.bc.ca`
+
+**Cleanup**: Automatic (when PR closes)
+
+---
+
+### 2️⃣ **TEST** (Staging Environment)
+
+**When**: Automatically deployed when code is merged to `main` branch
+
+**Database**:
+- Crunchy PostgreSQL (3 replicas, High Availability)
+- Data **preserved** between deployments
+- Same production-quality setup as PROD
+
+**Deployment**:
+- Frontend: 2-3 replicas (auto-scaling enabled)
+- Backend: 2-3 replicas (auto-scaling enabled)
+- Database: 3 replicas
+- Total startup time: ~20-25 minutes
+
+**URL Format**: `https://tenant-management-system-test-frontend.apps.silver.devops.gov.bc.ca`
+
+**Cleanup**: Manual (controlled by team)
+
+---
+
+### 3️⃣ **PROD** (Production)
+
+**When**: Manually approved by team lead (after TEST verification)
+
+**Database**:
+- Crunchy PostgreSQL (3+ replicas, Full HA with backups)
+- Data **permanently stored** with automatic backups
+- Disaster recovery tested regularly
+
+**Deployment**:
+- Frontend: 2-3 replicas (auto-scaling enabled)
+- Backend: 2-3 replicas (auto-scaling enabled)
+- Database: 3+ replicas
+- Zero-downtime updates
+- Total startup time: ~20-25 minutes
+
+**URL Format**: `https://tenant-management-system-prod-frontend.apps.silver.devops.gov.bc.ca`
+
+**Cleanup**: Never (permanent production system)
+
+---
+
+## Deployment Flow
+
+### Simple View: What Happens Step-by-Step
+
+```
+1. Developer Creates Pull Request
+   ↓
+2. GitHub Detects New PR
+   ↓
+3. Automatically:
+   ├─ Builds Docker images (backend, frontend, migrations)
+   ├─ Pushes to container registry
+   ├─ Deploys to DEV environment
+   ├─ Creates fresh PostgreSQL database
+   ├─ Runs Flyway migrations
+   ├─ Runs automated tests
+   ├─ Runs security scans (ZAP, CodeQL)
+   └─ Posts results as comment
+   ↓
+4. Developer Sees Results in PR
+   ├─ Tests passed? ✅
+   ├─ Security checks OK? ✅
+   ├─ Visit live environment: https://app-pr-123.apps...
+   └─ Get links to logs and reports
+   ↓
+5. Developer Reviews & Gets Approval
+   ↓
+6. Developer Merges PR to main
+   ↓
+7. GitHub Detects Merge
+   ↓
+8. Automatically:
+   ├─ Builds Docker images with "latest" tag
+   ├─ Pushes to container registry
+   ├─ **AUTO-DEPLOYS TO TEST**
+   ├─ Runs full security scan
+   ├─ Runs load tests
+   └─ Notifies team in Slack/Teams
+   ↓
+9. Team Verifies in TEST
+   ├─ Check live application
+   ├─ Verify database migrations worked
+   ├─ Confirm features work as expected
+   ├─ Review security scan results
+   └─ When satisfied, approve PROD deployment
+   ↓
+10. Team Approves PROD Deployment
+    ↓
+11. Automatically:
+    ├─ Deploys to PROD
+    ├─ Tags Docker images as "prod"
+    ├─ Enables monitoring and alerts
+    └─ Notifies team deployment complete
+    ↓
+12. ✅ DONE - Code is in production!
+```
+
+---
+
+## GitHub Actions Workflows
+
+### Overview (Simple)
+
+GitHub Actions are automated jobs that run when certain events happen. Think of them as robots that do work automatically:
+
+**When they trigger**:
+- You open a pull request → Robots build and deploy
+- You merge code to main → Robots build and deploy to TEST
+- You approve PROD → Robots deploy to PROD
+- Every night → Robots clean up old stuff
+
+### The Main Workflows
 
 | Workflow | File | Trigger | Purpose |
 |----------|------|---------|---------|
