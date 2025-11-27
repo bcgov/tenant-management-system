@@ -492,48 +492,57 @@ jobs:
             DATABASE_ALIAS="${{ inputs.database_alias || steps.vars.outputs.release }}"
             CLUSTER_NAME="${DATABASE_ALIAS}-postgres"
 
-            echo "🔐 WAITING FOR CRUNCHY POSTGRESQL AUTO-GENERATED SECRETS..."
+            echo "🔐 HANDLING CRUNCHY POSTGRESQL SECRETS (TEST/PROD)..."
             echo "Release name: $RELEASE_NAME"
             echo "Database alias: $DATABASE_ALIAS"
             echo "Cluster name: $CLUSTER_NAME"
 
-            # Wait for Crunchy to create the postgres user password secret
-            echo "Waiting for Crunchy to generate postgres password secret..."
-            SECRET_FOUND=false
-            for i in {1..60}; do
-              # Try primary location: {database-alias}-postgres-pguser-{username}
-              if oc get secret ${DATABASE_ALIAS}-postgres-pguser-${DB_USER} &>/dev/null; then
-                echo "✅ Crunchy created secret: ${DATABASE_ALIAS}-postgres-pguser-${DB_USER}"
-                DB_PASSWORD=$(oc get secret ${DATABASE_ALIAS}-postgres-pguser-${DB_USER} -o jsonpath='{.data.password}' | base64 -d)
-                SECRET_FOUND=true
-                break
-              # Fallback: try alternate naming {release}-postgres-pguser-{username}
-              elif oc get secret ${RELEASE_NAME}-postgres-pguser-${DB_USER} &>/dev/null; then
-                echo "✅ Crunchy created secret: ${RELEASE_NAME}-postgres-pguser-${DB_USER}"
-                DB_PASSWORD=$(oc get secret ${RELEASE_NAME}-postgres-pguser-${DB_USER} -o jsonpath='{.data.password}' | base64 -d)
-                SECRET_FOUND=true
-                break
-              fi
-
-              echo "Attempt $i/60: Waiting for Crunchy secrets..."
-              echo "  Checked: ${DATABASE_ALIAS}-postgres-pguser-${DB_USER}"
-              echo "  Checked: ${RELEASE_NAME}-postgres-pguser-${DB_USER}"
-              sleep 5
-            done
-
-            if [ "$SECRET_FOUND" = false ]; then
-              echo "❌ Crunchy secret not found after timeout"
-              echo "Available secrets with 'pguser' in name:"
-              oc get secrets | grep pguser || echo "No pguser secrets found"
-              echo "Available secrets:"
-              oc get secrets | head -20
-              exit 1
-            fi
-
             DB_HOST="${DATABASE_ALIAS}-postgres"
 
-            # Create a copy of Crunchy's secret with the naming convention our app expects
-            echo "Creating application-compatible secret: ${RELEASE_NAME}-pguser-${DB_USER}"
+            # FIRST: Check if application secret already exists (from previous deployment)
+            if oc get secret ${RELEASE_NAME}-pguser-${DB_USER} &>/dev/null; then
+              echo "✅ Application secret already exists (from previous deployment): ${RELEASE_NAME}-pguser-${DB_USER}"
+              echo "Skipping Crunchy secret wait - reusing existing password"
+              DB_PASSWORD=$(oc get secret ${RELEASE_NAME}-pguser-${DB_USER} -o jsonpath='{.data.password}' | base64 -d)
+              SECRET_FOUND=true
+            else
+              # SECOND: Wait for Crunchy to create the postgres user password secret
+              echo "Application secret doesn't exist yet, waiting for Crunchy to generate..."
+              echo "Waiting for Crunchy to generate postgres password secret..."
+              SECRET_FOUND=false
+              for i in {1..60}; do
+                # Try primary location: {database-alias}-postgres-pguser-{username}
+                if oc get secret ${DATABASE_ALIAS}-postgres-pguser-${DB_USER} &>/dev/null; then
+                  echo "✅ Crunchy created secret: ${DATABASE_ALIAS}-postgres-pguser-${DB_USER}"
+                  DB_PASSWORD=$(oc get secret ${DATABASE_ALIAS}-postgres-pguser-${DB_USER} -o jsonpath='{.data.password}' | base64 -d)
+                  SECRET_FOUND=true
+                  break
+                # Fallback: try alternate naming {release}-postgres-pguser-{username}
+                elif oc get secret ${RELEASE_NAME}-postgres-pguser-${DB_USER} &>/dev/null; then
+                  echo "✅ Crunchy created secret: ${RELEASE_NAME}-postgres-pguser-${DB_USER}"
+                  DB_PASSWORD=$(oc get secret ${RELEASE_NAME}-postgres-pguser-${DB_USER} -o jsonpath='{.data.password}' | base64 -d)
+                  SECRET_FOUND=true
+                  break
+                fi
+
+                echo "Attempt $i/60: Waiting for Crunchy secrets..."
+                echo "  Checked: ${DATABASE_ALIAS}-postgres-pguser-${DB_USER}"
+                echo "  Checked: ${RELEASE_NAME}-postgres-pguser-${DB_USER}"
+                sleep 5
+              done
+
+              if [ "$SECRET_FOUND" = false ]; then
+                echo "❌ Crunchy secret not found after timeout"
+                echo "Available secrets with 'pguser' in name:"
+                oc get secrets | grep pguser || echo "No pguser secrets found"
+                echo "Available secrets:"
+                oc get secrets | head -20
+                exit 1
+              fi
+            fi
+
+            # Create/update application secret with the password (whether from Crunchy or existing)
+            echo "Creating/updating application-compatible secret: ${RELEASE_NAME}-pguser-${DB_USER}"
             oc delete secret ${RELEASE_NAME}-pguser-${DB_USER} --ignore-not-found=true
             oc create secret generic ${RELEASE_NAME}-pguser-${DB_USER} \
               --from-literal=password="$DB_PASSWORD" \
@@ -542,7 +551,7 @@ jobs:
               --from-literal=host="$DB_HOST" \
               --from-literal=port="5432"
 
-            echo "✅ Application secret created with Crunchy's auto-generated password"
+            echo "✅ Application secret created with database password"
 
             # Verify the secret was created successfully
             if ! oc get secret ${RELEASE_NAME}-pguser-${DB_USER} &>/dev/null; then
@@ -553,10 +562,9 @@ jobs:
             fi
             echo "✅ Verified application secret exists"
 
-            # Create Flyway secret for TEST/PROD with Crunchy password
+            # Create Flyway secret for TEST/PROD with database password
             echo ""
             echo "Creating Flyway secret for TEST/PROD environment..."
-            DB_PASSWORD=$(oc get secret ${RELEASE_NAME}-pguser-${DB_USER} -o jsonpath='{.data.password}' | base64 -d)
             FLYWAY_URL="jdbc:postgresql://${DB_HOST}:5432/app"
 
             oc delete secret ${RELEASE_NAME}-flyway --ignore-not-found=true
@@ -567,7 +575,7 @@ jobs:
               --from-literal=FLYWAY_PASSWORD="$DB_PASSWORD" \
               --from-literal=FLYWAY_URL="$FLYWAY_URL"
 
-            echo "✅ Flyway secret created with Crunchy auto-generated password"
+            echo "✅ Flyway secret created with database password"
             echo "  URL: $FLYWAY_URL"
             echo "  User: $DB_USER"
 
