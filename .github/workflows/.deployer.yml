@@ -245,7 +245,7 @@ jobs:
                 echo "✅ ConfigMap successfully deleted"
               else
                 echo "⚠️ ConfigMap still exists, attempting second deletion..."
-                oc delete configmap "${release_name}-frontend-config" --grace-period=0 --force --namespace="${KUBE_NAMESPACE}" 2>/dev/null || true
+                oc delete configmap "${release_name}-frontend-config" --grace-period=0 --force 2>/dev/null || true
               fi
   
             
@@ -599,7 +599,9 @@ jobs:
             echo "Service name: $SERVICE_NAME"
 
             # Check if service already exists
-            if oc get svc "$SERVICE_NAME" -n "$KUBE_NAMESPACE" &>/dev/null; then
+            # Note: KUBE_NAMESPACE is set by the action-oc-runner, fallback to default namespace
+            KUBE_NAMESPACE="${KUBE_NAMESPACE:-.}"
+            if oc get svc "$SERVICE_NAME" &>/dev/null; then
               echo "✅ Service already exists: $SERVICE_NAME"
               echo "Checking if service has endpoints..."
 
