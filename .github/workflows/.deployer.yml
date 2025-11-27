@@ -599,8 +599,6 @@ jobs:
             echo "Service name: $SERVICE_NAME"
 
             # Check if service already exists
-            # Note: KUBE_NAMESPACE is set by the action-oc-runner, fallback to default namespace
-            KUBE_NAMESPACE="${KUBE_NAMESPACE:-.}"
             if oc get svc "$SERVICE_NAME" &>/dev/null; then
               echo "✅ Service already exists: $SERVICE_NAME"
               echo "Checking if service has endpoints..."
@@ -615,16 +613,14 @@ jobs:
             else
               echo "ℹ️ Service does not exist, creating new service..."
 
-              # Create service with correct selector
+              # Create service with correct selector (namespace is already set by action-oc-runner)
               oc create service clusterip "$SERVICE_NAME" \
-                --tcp=5432:5432 \
-                --namespace="$KUBE_NAMESPACE" || true
+                --tcp=5432:5432 || true
 
               # Patch service to use correct selector
               echo "Patching service selector..."
               oc patch svc "$SERVICE_NAME" \
-                -p '{"spec":{"selector":{"app":"postgres","instance":"'$RELEASE_NAME'"}}}' \
-                --namespace="$KUBE_NAMESPACE"
+                -p '{"spec":{"selector":{"app":"postgres","instance":"'$RELEASE_NAME'"}}}'
 
               sleep 2
             fi
@@ -651,7 +647,7 @@ jobs:
             if [ -z "${ENDPOINTS}" ]; then
               echo "❌ Service endpoints not assigned after timeout"
               echo "Available services:"
-              oc get svc -n "$KUBE_NAMESPACE" | grep postgres || echo "No postgres services found"
+              oc get svc | grep postgres || echo "No postgres services found"
               exit 1
             fi
 
