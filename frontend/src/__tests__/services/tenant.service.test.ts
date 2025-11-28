@@ -380,6 +380,32 @@ describe('tenantService', () => {
     })
   })
 
+  describe('removeUser', () => {
+    it('should successfully remove user from tenant', async () => {
+      mockDelete.mockResolvedValueOnce({})
+
+      await tenantService.removeUser(tenantId, userId)
+
+      expect(mockDelete).toHaveBeenCalledWith(
+        `/tenants/${tenantId}/users/${userId}`,
+      )
+    })
+
+    it('should log and rethrow errors', async () => {
+      const error = new Error('User not found')
+      mockDelete.mockRejectedValueOnce(error)
+
+      await expect(
+        tenantService.removeUser(tenantId, userId),
+      ).rejects.toThrow(error)
+
+      expect(mockedUtils.logApiError).toHaveBeenCalledWith(
+        'Error adding user to tenant',
+        error,
+      )
+    })
+  })
+
   describe('removeUserRole', () => {
     it('should successfully remove role from user', async () => {
       mockDelete.mockResolvedValueOnce({})
