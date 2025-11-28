@@ -44,7 +44,7 @@ const promptAction = ref<'undo' | 'clear' | null>(null)
 const fetchServices = async () => {
   loadingServices.value = true
   await groupStore.fetchRoles(props.tenant.id, props.group.id)
-  serviceStore.fetchServices().then(() => {
+  serviceStore.fetchTenantServices(props.tenant.id).then(() => {
     loadingServices.value = false
     for (let i = 0; i < services.value.length; i++) {
       const groupValues = groupRoles.value[services.value[i].id] || {}
