@@ -1,11 +1,16 @@
 import { ServiceRole } from './servicerole.model'
+
+
+declare type ServiceId = string & { readonly __brand: 'ServiceId' }
+declare type RoleId = string & { readonly __brand: 'RoleId' }
+
 /**
  * Represents a service in the system.
  */
 
 export type RolesType = {
   description: string
-  id: string
+  id: RoleId
   name: string
   allowedIdentityProviders: string[]
   createdBy: string
@@ -27,7 +32,7 @@ export class Service {
   /**
    * Unique identifier for the service.
    */
-  id: string
+  id: ServiceId
 
   /**
    * Display name of the service.
@@ -86,7 +91,7 @@ export class Service {
     serviceRoles: ServiceRole[],
   ) {
     this.createdDate = createdDate
-    this.id = id
+    this.id = id as ServiceId
     this.name = name
     this.clientIdentifier = clientIdentifier
     this.createdBy = createdBy

@@ -1,5 +1,7 @@
 import { User } from '@/models'
 
+declare type GroupUserId = string & { readonly __brand: 'GroupUserId' }
+
 /**
  * Represents a user within a group.
  */
@@ -7,7 +9,7 @@ export class GroupUser {
   /**
    * Unique identifier for the group user.
    */
-  id: string
+  id: GroupUserId
 
   /**
    * The user associated with the group user.
@@ -21,7 +23,7 @@ export class GroupUser {
    * @param user - The user associated with the group user
    */
   constructor(id: string, user: User) {
-    this.id = id
+    this.id = id as GroupUserId
     this.user = user
   }
 

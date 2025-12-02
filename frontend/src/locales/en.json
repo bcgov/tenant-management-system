@@ -2,7 +2,10 @@
   "tenants": {
     "tenant": "Tenants | Tenant | Tenants",
     "learnMore": "Learn more about",
-    "roleAssignDesc": "Below are the available tenant roles you can assign to a user. A checkmark shows roles currently assigned to this user. Select additional role(s) to update their permissions."
+    "roleAssignDesc": "Below are the available tenant roles you can assign to a user. A checkmark shows roles currently assigned to this user. Select additional role(s) to update their permissions.",
+    "errors": {
+      "uniqueName": "Tenant name must be unique"
+    }
   },
   "roles": {
     "role": "Roles | Role | Roles",
@@ -47,5 +50,11 @@
     "clearAll": "Clear All",
     "undoChanges": "Undo Changes",
     "revert": "Revert"
+  },
+  "users": {
+    "user": "Users | User | Users",
+    "offboardUserTitle": "Offboarding User",
+    "offboardUserMessage": "This action will remove this user's tenant and group memberships. They will no longer have access to any systems using CSTAR.",
+    "offboardUserAction": "Offboard User"
   }
 }

@@ -1,3 +1,5 @@
+export type SSOUserId = string & { readonly __brand: 'SSOUserId' }
+
 /**
  * Represents a single SSO user.
  */
@@ -25,7 +27,7 @@ export class SsoUser {
   /**
    * The unique identifier for the user in the SSO system.
    */
-  ssoUserId: string
+  ssoUserId: SSOUserId
 
   /**
    * The user's username (optional).
@@ -55,7 +57,7 @@ export class SsoUser {
     this.firstName = firstName
     this.lastName = lastName
     this.userName = userName
-    this.ssoUserId = ssoUserId
+    this.ssoUserId = ssoUserId as SSOUserId
   }
 
   /**

@@ -5,10 +5,10 @@ import { useI18n } from 'vue-i18n'
 
 import { useServiceStore, useGroupStore } from '@/stores'
 import { useNotification } from '@/composables'
-import type { Tenant, Group } from '@/models'
+import type { Tenant, Group, GroupServiceRoles } from '@/models'
 import {
-  GroupServiceRoles,
   SharedServicesArray,
+  SharedServiceRoles,
 } from '@/models/groupserviceroles.model'
 
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
@@ -44,7 +44,7 @@ const promptAction = ref<'undo' | 'clear' | null>(null)
 const fetchServices = async () => {
   loadingServices.value = true
   await groupStore.fetchRoles(props.tenant.id, props.group.id)
-  serviceStore.fetchServices().then(() => {
+  serviceStore.fetchTenantServices(props.tenant.id).then(() => {
     loadingServices.value = false
     for (let i = 0; i < services.value.length; i++) {
       const groupValues = groupRoles.value[services.value[i].id] || {}
@@ -76,15 +76,17 @@ const saveChanges = async () => {
 
   for (let i = 0; i < services.value.length; i++) {
     const groupValues = groupRoles.value[services.value[i].id] || {}
-    const append: SharedServicesArray = {
-      id: services.value[i].id,
-      sharedServiceRoles: [],
-    }
+    const append: SharedServicesArray = new SharedServicesArray(
+      services.value[i].id,
+      [],
+    )
+
     for (let j = 0; j < groupValues.length; j++) {
-      append.sharedServiceRoles.push({
-        id: groupValues[j].id,
-        enabled: roleValues.value[i][j],
-      })
+      const val: SharedServiceRoles = new SharedServiceRoles(
+        groupValues[j].id,
+        roleValues.value[i][j],
+      )
+      append.sharedServiceRoles.push(val)
     }
     data.sharedServices.push(append)
   }

@@ -776,7 +776,7 @@ export class TMSRepository {
 
     public async updateTenantRequestStatus(req: Request) {
         const requestId: string = req.params.requestId;
-        const { status, rejectionReason } = req.body;
+        const { status, rejectionReason, tenantName } = req.body;
         let response = {};
 
         await this.manager.transaction(async(transactionEntityManager) => {
@@ -795,6 +795,9 @@ export class TMSRepository {
                 }
 
                 if (status === 'APPROVED') {
+                    if (tenantName) {
+                        tenantRequest.name = tenantName
+                    }
                     if (await this.checkIfTenantNameAndMinistryNameExists(tenantRequest.name, tenantRequest.ministryName)) {
                         throw new ConflictError(`A tenant with name '${tenantRequest.name}' and ministry name '${tenantRequest.ministryName}' already exists`);
                     }
@@ -1179,106 +1182,63 @@ export class TMSRepository {
         return hasAccess
     }
 
-    public async removeTenantUser(req: Request) {
-        const tenantId: string = req.params.tenantId
-        const tenantUserId: string = req.params.tenantUserId
-        const deletedBy: string = req.decodedJwt?.idir_user_guid || 'system'
+    public async removeTenantUser(tenantUserId: string, tenantId: string, deletedBy: string, transactionEntityManager?: EntityManager) {
+        transactionEntityManager = transactionEntityManager ? transactionEntityManager : this.manager
         
-        await this.manager.transaction(async(transactionEntityManager) => {
-            try {
-                const tenantUser: TenantUser = await transactionEntityManager
-                    .createQueryBuilder(TenantUser, 'tu')
-                    .leftJoinAndSelect('tu.roles', 'tur')
-                    .leftJoinAndSelect('tur.role', 'role')
-                    .where('tu.id = :tenantUserId', { tenantUserId })
-                    .andWhere('tu.tenant.id = :tenantId', { tenantId })
-                    .andWhere('tu.isDeleted = :isDeleted', { isDeleted: false })
-                    .getOne();
+        const tenantUser: TenantUser = await transactionEntityManager
+            .createQueryBuilder(TenantUser, 'tu')
+            .leftJoinAndSelect('tu.roles', 'tur')
+            .leftJoinAndSelect('tur.role', 'role')
+            .where('tu.id = :tenantUserId', { tenantUserId })
+            .andWhere('tu.tenant.id = :tenantId', { tenantId })
+            .andWhere('tu.isDeleted = :isDeleted', { isDeleted: false })
+            .getOne();
 
-                if (!tenantUser) {
-                    throw new NotFoundError(`Tenant user not found or already deleted: ${tenantUserId}`)
-                }
+        if (!tenantUser) {
+            throw new NotFoundError(`Tenant user not found or already deleted: ${tenantUserId}`)
+        }
 
-                const tenantOwnerRoles = tenantUser.roles?.filter(tur => 
-                    tur.role.name === TMSConstants.TENANT_OWNER && !tur.isDeleted
-                ) || [];
+        const tenantOwnerRoles = tenantUser.roles?.filter(tur => 
+            tur.role.name === TMSConstants.TENANT_OWNER && !tur.isDeleted
+        ) || [];
 
-                if (tenantOwnerRoles.length > 0) {
-                    const otherTenantOwnersCount:number = await transactionEntityManager
-                        .createQueryBuilder(TenantUserRole, 'tur')
-                        .innerJoin('tur.tenantUser', 'tu')
-                        .innerJoin('tur.role', 'role')
-                        .where('tu.tenant.id = :tenantId', { tenantId })
-                        .andWhere('role.name = :roleName', { roleName: TMSConstants.TENANT_OWNER })
-                        .andWhere('tur.isDeleted = :isDeleted', { isDeleted: false })
-                        .andWhere('tu.isDeleted = :isDeleted', { isDeleted: false })
-                        .andWhere('tu.id != :tenantUserId', { tenantUserId })
-                        .getCount();
+        if (tenantOwnerRoles.length > 0) {
+            const otherTenantOwnersCount:number = await transactionEntityManager
+                .createQueryBuilder(TenantUserRole, 'tur')
+                .innerJoin('tur.tenantUser', 'tu')
+                .innerJoin('tur.role', 'role')
+                .where('tu.tenant.id = :tenantId', { tenantId })
+                .andWhere('role.name = :roleName', { roleName: TMSConstants.TENANT_OWNER })
+                .andWhere('tur.isDeleted = :isDeleted', { isDeleted: false })
+                .andWhere('tu.isDeleted = :isDeleted', { isDeleted: false })
+                .andWhere('tu.id != :tenantUserId', { tenantUserId })
+                .getCount();
 
-                    if (otherTenantOwnersCount === 0) {
-                        throw new ConflictError('Cannot remove the last tenant owner. At least one tenant owner must remain.')
-                    }
-                }
-
-                await transactionEntityManager
-                    .createQueryBuilder()
-                    .update(TenantUserRole)
-                    .set({
-                        isDeleted: true,
-                        updatedBy: deletedBy
-                    })
-                    .where('tenantUser.id = :tenantUserId', { tenantUserId })
-                    .andWhere('isDeleted = :isDeleted', { isDeleted: false })
-                    .execute();
-
-                await transactionEntityManager
-                    .createQueryBuilder()
-                    .update('GroupUser')
-                    .set({
-                        isDeleted: true,
-                        updatedBy: deletedBy
-                    })
-                    .where('tenantUser.id = :tenantUserId', { tenantUserId })
-                    .andWhere('isDeleted = :isDeleted', { isDeleted: false })
-                    .execute();
-
-                const userGroups = await transactionEntityManager
-                    .createQueryBuilder('GroupUser', 'gu')
-                    .leftJoinAndSelect('gu.group', 'group')
-                    .where('gu.tenantUser.id = :tenantUserId', { tenantUserId })
-                    .andWhere('gu.isDeleted = :isDeleted', { isDeleted: false })
-                    .getMany();
-
-                const groupIds = userGroups.map(gu => gu.group.id)
-
-                if (groupIds.length > 0) {
-                    await transactionEntityManager
-                        .createQueryBuilder()
-                        .update('GroupSharedServiceRole')
-                        .set({
-                            isDeleted: true,
-                            updatedBy: deletedBy
-                        })
-                        .where('group.id IN (:...groupIds)', { groupIds })
-                        .andWhere('isDeleted = :isDeleted', { isDeleted: false })
-                        .execute();
-                }
-
-                await transactionEntityManager
-                    .createQueryBuilder()
-                    .update(TenantUser)
-                    .set({
-                        isDeleted: true,
-                        updatedBy: deletedBy
-                    })
-                    .where('id = :tenantUserId', { tenantUserId })
-                    .execute();
-
-            } catch (error) {
-                logger.error('Remove tenant user transaction failure - rolling back changes', error);
-                throw error
+            if (otherTenantOwnersCount === 0) {
+                throw new ConflictError('Cannot remove the last tenant owner. At least one tenant owner must remain.')
             }
-        });
+        }
+
+        await transactionEntityManager
+            .createQueryBuilder()
+            .update(TenantUserRole)
+            .set({
+                isDeleted: true,
+                updatedBy: deletedBy
+            })
+            .where('tenantUser.id = :tenantUserId', { tenantUserId })
+            .andWhere('isDeleted = :isDeleted', { isDeleted: false })
+            .execute();
+
+        await transactionEntityManager
+            .createQueryBuilder()
+            .update(TenantUser)
+            .set({
+                isDeleted: true,
+                updatedBy: deletedBy
+            })
+            .where('id = :tenantUserId', { tenantUserId })
+            .execute();
     }
 
 
