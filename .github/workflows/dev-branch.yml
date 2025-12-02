@@ -48,7 +48,7 @@ jobs:
       environment: dev
       db_user: app
       preserve_database: false
-      tag: dev-latest
+      tags: dev-latest
       timeout-minutes: 10
       values: values-pr.yaml
       params: >-
