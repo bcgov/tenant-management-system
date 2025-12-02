@@ -114,11 +114,11 @@ jobs:
     # Add timeout to prevent jobs from hanging indefinitely
     timeout-minutes: 30
     outputs:
-      tag: ${{ inputs.tag || steps.pr.outputs.pr }}
+      tag: ${{ inputs.tags || steps.pr.outputs.pr }}
       triggered: ${{ steps.deploy.outputs.triggered }}
     steps:
       - name: Get PR number
-        if: inputs.tag == ''
+        if: inputs.tags == ''
         id: pr
         continue-on-error: true  # Don't fail if PR detection fails
         uses: bcgov/action-get-pr@21f9351425cd55a98e869ee28919a512aa30647d
@@ -127,11 +127,11 @@ jobs:
         id: vars
         run: |
           # Simplified tag and release logic
-          
+
           # Tag logic: latest for main/deployment-fix, PR number for actual PRs
-          if [ -n "${{ inputs.tag }}" ]; then
+          if [ -n "${{ inputs.tags }}" ]; then
             # Use explicit tag if provided
-            tag="${{ inputs.tag }}"
+            tag="${{ inputs.tags }}"
           elif [ "${{ github.ref_name }}" == "main" ] || [ "${{ github.ref_name }}" == "deployment-fix" ]; then
             # Use 'latest' for main and deployment-fix branches
             tag="latest"
