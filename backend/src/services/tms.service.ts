@@ -356,4 +356,23 @@ export class TMSService {
         };
     }
 
+    public async getTenantUser(req: Request) {
+        const tenantUser: any = await this.tmsRepository.getTenantUser(req)
+        const expand: string[] = typeof req.query.expand === "string" ? req.query.expand.split(",").map(v => v.trim()) : []
+        
+        if (expand.includes("groups")) {
+            tenantUser.groups = await this.tmRepository.getTenantUserGroups(tenantUser.id)
+        }
+
+        if (expand.includes("sharedserviceroles")) {
+            tenantUser.sharedServiceRoles = await this.tmRepository.getTenantUserSharedServiceRoles(tenantUser.id)
+        }
+
+        return {
+            data: {
+                tenantUser: tenantUser
+            }
+        }
+    }
+
 }

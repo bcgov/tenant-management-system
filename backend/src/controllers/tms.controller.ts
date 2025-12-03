@@ -377,4 +377,23 @@ export class TMSController {
         }
     }
 
+    public async getTenantUser(req: Request, res: Response) {
+        try {
+            const tenantUserResponse = await this.tmsService.getTenantUser(req)
+            res.status(200).send(tenantUserResponse)
+        } 
+        catch(error) {
+            logger.error(error)
+            if (error instanceof NotFoundError) {
+                this.errorHandler.generalError(res, "Error occurred getting tenant user", error.message, error.statusCode, "Not Found")
+            }
+            else if (error instanceof BadRequestError) {
+                this.errorHandler.generalError(res, "Error occurred getting tenant user", error.message, error.statusCode, "Bad Request")
+            }
+            else {
+                this.errorHandler.generalError(res, "Error occurred getting tenant user", error.message, 500, "Internal Server Error")
+            }
+        }
+    }
+
 }
