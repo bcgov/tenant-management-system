@@ -574,6 +574,48 @@ export class TMSRepository {
         return roles
     }
 
+    public async getTenantUser(req: Request) {
+        const tenantId: string = req.params.tenantId
+        const tenantUserId: string = req.params.tenantUserId
+        const expand: string[] = typeof req.query.expand === "string" ? req.query.expand.split(",").map(v => v.trim()) : []
+        const expandRoles = expand.includes("roles")
+
+        const tenantUserQuery = this.manager
+            .createQueryBuilder(TenantUser, "tenantUser")
+            .leftJoinAndSelect("tenantUser.ssoUser", "ssoUser")
+            .leftJoin("tenantUser.tenant", "tenant")
+            .where("tenantUser.id = :tenantUserId", { tenantUserId })
+            .andWhere("tenant.id = :tenantId", { tenantId })
+            .andWhere("tenantUser.isDeleted = :isDeleted", { isDeleted: false })
+
+        if (expandRoles) {
+            tenantUserQuery.leftJoinAndSelect("tenantUser.roles", "tenantUserRole")
+                .leftJoinAndSelect("tenantUserRole.role", "role")
+                .andWhere("tenantUserRole.isDeleted = :isDeleted", { isDeleted: false })
+        }
+
+        const tenantUser: any = await tenantUserQuery.getOne()
+
+        if (!tenantUser) {
+            throw new NotFoundError(`Tenant user not found: ${tenantUserId}`)
+        }
+
+        const result: any = {
+            id: tenantUser.id,
+            ssoUser: tenantUser.ssoUser,
+            createdDateTime: tenantUser.createdDateTime,
+            updatedDateTime: tenantUser.updatedDateTime,
+            createdBy: tenantUser.createdBy,
+            updatedBy: tenantUser.updatedBy
+        }
+
+        if (expandRoles && tenantUser.roles) {
+            result.roles = tenantUser.roles.map((tenantUserRole: any) => tenantUserRole.role)
+        }
+
+        return result
+    }
+
     public async getTenantsUsersAndRoles(tenantId:string,tenantUserId:string,roleId:string,transactionEntityManager:EntityManager) {
         transactionEntityManager = transactionEntityManager ? transactionEntityManager : this.manager
         const tenant = await transactionEntityManager
