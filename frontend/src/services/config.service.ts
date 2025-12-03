@@ -40,6 +40,8 @@ const defaultConfig: AppConfig = {
   businessBceidBroker: import.meta.env.VITE_KEYCLOAK_BUSINESS_BCEID_HINT ?? '',
 }
 
+logger.info('xxxxxxxxxxxxxxxxxxxxxxxxxxxxx ' + defaultConfig.idirBroker)
+
 // Create reactive config
 export const config = reactive<AppConfig>({ ...defaultConfig })
 export const configLoaded = ref(false)
