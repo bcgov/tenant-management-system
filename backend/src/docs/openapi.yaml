@@ -347,15 +347,18 @@ paths:
           required: false
           schema:
             type: string
-            enum: [groupMemberships, tenantUserRoles, sharedServiceRoles]
+            pattern: '^(groups|roles|sharedserviceroles)(,(groups|roles|sharedserviceroles))*$'
           description: |
-            Comma-separated list of relations to expand. Currently supports:
-            - groupMemberships: Include groups the user belongs to
-            - tenantUserRoles: Include tenant roles assigned to the user
-            - sharedServiceRoles: Include shared service roles linked via user's groups
+            Comma-separated list of relations to expand. Valid values:
+            - groups: Include groups the user belongs to
+            - roles: Include tenant roles assigned to the user
+            - sharedserviceroles: Include shared service roles linked via user's groups
+            
+            Multiple values can be provided as a comma-separated list (e.g., `groups,roles`).
+            If not provided, returns only the basic tenant user information.
       responses:
         '200':
-          description: Tenant user details retrieved successfully
+          description: Tenant user details with optional expanded relations
           content:
             application/json:
               schema:
@@ -373,12 +376,12 @@ paths:
                                 type: array
                                 items:
                                   $ref: '#/components/schemas/Group'
-                                description: Present only when expand=groupMemberships
+                                description: Present only when expand=groups. List of groups the user belongs to.
                               roles:
                                 type: array
                                 items:
                                   $ref: '#/components/schemas/Role'
-                                description: Present only when expand=tenantUserRoles
+                                description: Present only when expand=roles. List of tenant roles assigned to the user.
                               sharedServiceRoles:
                                 type: array
                                 items:
@@ -388,7 +391,7 @@ paths:
                                       $ref: '#/components/schemas/SharedServiceRole'
                                     sharedService:
                                       $ref: '#/components/schemas/SharedService'
-                                description: Present only when expand=sharedServiceRoles
+                                description: Present only when expand=sharedserviceroles. Unique list of shared service roles the user has access to through group memberships.
         '400':
           description: Invalid input or expand values
           content:
