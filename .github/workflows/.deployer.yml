@@ -114,52 +114,59 @@ jobs:
     # Add timeout to prevent jobs from hanging indefinitely
     timeout-minutes: 30
     outputs:
-      tag: ${{ inputs.tag || steps.pr.outputs.pr }}
+      tag: ${{ inputs.tags || steps.pr.outputs.pr }}
       triggered: ${{ steps.deploy.outputs.triggered }}
     steps:
       - name: Get PR number
-        if: inputs.tag == ''
+        if: inputs.tags == ''
         id: pr
         continue-on-error: true  # Don't fail if PR detection fails
         uses: bcgov/action-get-pr@21f9351425cd55a98e869ee28919a512aa30647d
 
       - name: Set variables
         id: vars
+        env:
+          INPUT_TAGS: ${{ inputs.tags }}
+          INPUT_RELEASE_NAME: ${{ inputs.release_name }}
+          INPUT_PRESERVE_DB: ${{ inputs.preserve_database }}
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+          GITHUB_RUN_NUMBER: ${{ github.run_number }}
+          PR_NUMBER: ${{ steps.pr.outputs.pr }}
         run: |
           # Simplified tag and release logic
-          
+
           # Tag logic: latest for main/deployment-fix, PR number for actual PRs
-          if [ -n "${{ inputs.tag }}" ]; then
+          if [ -n "$INPUT_TAGS" ]; then
             # Use explicit tag if provided
-            tag="${{ inputs.tag }}"
-          elif [ "${{ github.ref_name }}" == "main" ] || [ "${{ github.ref_name }}" == "deployment-fix" ]; then
+            tag="$INPUT_TAGS"
+          elif [ "$GITHUB_REF_NAME" == "main" ] || [ "$GITHUB_REF_NAME" == "deployment-fix" ]; then
             # Use 'latest' for main and deployment-fix branches
             tag="latest"
-          elif [ -n "${{ steps.pr.outputs.pr }}" ] && [ "${{ steps.pr.outputs.pr }}" != "null" ] && [ "${{ steps.pr.outputs.pr }}" != "" ]; then
+          elif [ -n "$PR_NUMBER" ] && [ "$PR_NUMBER" != "null" ] && [ "$PR_NUMBER" != "" ]; then
             # Use PR number for actual PR environments
-            tag="pr-${{ steps.pr.outputs.pr }}"
+            tag="pr-$PR_NUMBER"
           else
             # Final fallback
             tag="latest"
           fi
 
           # Release name logic - use input release_name directly
-          release="${{ inputs.release_name }}"
-          
+          release="$INPUT_RELEASE_NAME"
+
           # Version for helm packaging
-          version=1.0.0+${{ github.run_number }}
-          
+          version="1.0.0+$GITHUB_RUN_NUMBER"
+
           # Summary
-          echo "Branch: ${{ github.ref_name }}"
-          echo "Tag: ${tag}"
-          echo "Release: ${release}"
-          echo "Version: ${version}"
-          echo "Preserve DB: ${{ inputs.preserve_database }}"
+          echo "Branch: $GITHUB_REF_NAME"
+          echo "Tag: $tag"
+          echo "Release: $release"
+          echo "Version: $version"
+          echo "Preserve DB: $INPUT_PRESERVE_DB"
 
           # Output
-          echo "tag=${tag}" >> $GITHUB_OUTPUT
-          echo "release=${release}" >> $GITHUB_OUTPUT
-          echo "version=${version}" >> $GITHUB_OUTPUT
+          echo "tag=$tag" >> $GITHUB_OUTPUT
+          echo "release=$release" >> $GITHUB_OUTPUT
+          echo "version=$version" >> $GITHUB_OUTPUT
 
       - name: Force Cleanup Any Stuck Helm Operations
         uses: bcgov/action-oc-runner@10033668ef4374d9bb78149faa73e4ccda0e93dd
