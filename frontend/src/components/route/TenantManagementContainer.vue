@@ -112,21 +112,17 @@ onMounted(async () => {
 
       <v-card class="mt-6" elevation="0">
         <v-tabs v-model="tab" :disabled="isEditing" :mandatory="false">
-          <!-- The v-tabs component insists on always having an active tab. Use
-           an invisible Tab 0 to make v-tabs happy. -->
-          <v-tab :value="0" class="pa-0 ma-0" style="min-width: 0px" />
-          <v-tab :value="1">User Management</v-tab>
-          <v-tab :value="2">Available Services</v-tab>
+          <v-tab :value="0">User Management</v-tab>
+          <v-tab :value="1">Available Services</v-tab>
         </v-tabs>
 
         <v-window v-model="tab">
-          <v-window-item :value="0" />
 
-          <v-window-item :value="1">
+          <v-window-item :value="0">
             <UserManagementContainer :tenant="tenant!" />
           </v-window-item>
 
-          <v-window-item :value="2">
+          <v-window-item :value="1">
             <ServiceManagementContainer :tenant="tenant!" />
           </v-window-item>
         </v-window>
