@@ -14,7 +14,7 @@ on:
         type: boolean
       directory:
         description: Chart directory
-        default: 'charts/app'
+        default: "charts/app"
         required: false
         type: string
       environment:
@@ -41,7 +41,7 @@ on:
       db_user:
         description: The database user
         required: false
-        default: 'app'
+        default: "app"
         type: string
       debug:
         description: Debug mode
@@ -60,17 +60,17 @@ on:
 
       ### Usually a bad idea / not recommended
       timeout-minutes:
-        description: 'Timeout minutes'
-        default: 15  # Reduced from 25 to fail faster
+        description: "Timeout minutes"
+        default: 15 # Reduced from 25 to fail faster
         required: false
         type: number
       values:
-        description: 'Values file'
-        default: 'values.yaml'
+        description: "Values file"
+        default: "values.yaml"
         required: false
         type: string
       deployment_url:
-        description: 'Deployment URL; used for environments'
+        description: "Deployment URL; used for environments"
         required: true
         type: string
       db_triggers:
@@ -80,10 +80,10 @@ on:
 
     outputs:
       tag:
-        description: 'Which tag was used for deployment?'
+        description: "Which tag was used for deployment?"
         value: ${{ jobs.deploy.outputs.tag }}
       triggered:
-        description: 'Has a deployment has been triggered?'
+        description: "Has a deployment has been triggered?"
         value: ${{ jobs.deploy.outputs.triggered }}
 
     secrets:
@@ -120,7 +120,7 @@ jobs:
       - name: Get PR number
         if: inputs.tags == ''
         id: pr
-        continue-on-error: true  # Don't fail if PR detection fails
+        continue-on-error: true # Don't fail if PR detection fails
         uses: bcgov/action-get-pr@21f9351425cd55a98e869ee28919a512aa30647d
 
       - name: Set variables
@@ -177,32 +177,32 @@ jobs:
           commands: |
             # Enable strict error handling
             set -euo pipefail
-            
+
             RELEASE_NAME="${{ steps.vars.outputs.release }}"
             echo "🔄 Force cleanup of any stuck Helm operations for: $RELEASE_NAME"
-            
+
             # Function to force cleanup stuck helm releases
             force_cleanup_helm() {
               local release_name="$1"
               echo "🧹 Starting force cleanup for release: $release_name"
-            
+
               # Get current status if release exists
               if helm list -q | grep -q "^$release_name$"; then
                 CURRENT_STATUS=$(helm status "$release_name" -o json 2>/dev/null | jq -r '.info.status' || echo "unknown")
                 echo "Current status: $CURRENT_STATUS"
-            
+
                 case "$CURRENT_STATUS" in
                   "pending-install"|"pending-upgrade"|"pending-rollback"|"uninstalling")
                     echo "⚠️ Found stuck operation: $CURRENT_STATUS - forcing cleanup"
-            
+
                     # Force delete all helm secrets for this release
                     echo "🗑️ Removing Helm secrets..."
                     kubectl delete secret -l owner=helm,name="$release_name" --ignore-not-found=true --timeout=60s || true
                     kubectl delete configmap -l owner=helm,name="$release_name" --ignore-not-found=true --timeout=60s || true
-            
+
                     # Wait a moment for cleanup
                     sleep 5
-            
+
                     # Verify cleanup worked
                     if helm list -q | grep -q "^$release_name$"; then
                       echo "⚠️ Release still exists after secret cleanup, attempting final removal..."
@@ -254,11 +254,11 @@ jobs:
                 echo "⚠️ ConfigMap still exists, attempting second deletion..."
                 oc delete configmap "${release_name}-frontend-config" --grace-period=0 --force 2>/dev/null || true
               fi
-  
-            
+
+
               echo "✅ Cleanup completed for $release_name"
             }
-            
+
             # Execute cleanup
             force_cleanup_helm "$RELEASE_NAME"
 
@@ -320,7 +320,7 @@ jobs:
           commands: |
             # Enable strict error handling
             set -euo pipefail
-            
+
             # Enhanced directory change with validation
             echo "Input directory: '${{ inputs.directory }}'"
             echo "Current working directory: $(pwd)"
@@ -369,7 +369,7 @@ jobs:
             echo "Setting database alias to: $DATABASE_ALIAS"
 
             RELEASE_NAME="${{ steps.vars.outputs.release }}"
-            
+
             # Function to perform helm upgrade with improved error handling
             perform_helm_upgrade() {
               local release_name="$1"
@@ -468,10 +468,10 @@ jobs:
 
             echo "Dependencies updated, packaging chart..."
             helm package . --app-version="tag-${{ steps.vars.outputs.tag }}_run-${{ github.run_number }}" --version=${{ steps.pr.outputs.pr || steps.vars.outputs.version }}
-            
+
             echo "Chart packaged successfully:"
             ls -la ./tenant-management-system-*.tgz
-            
+
             # Perform the deployment with retry logic
             perform_helm_upgrade "$RELEASE_NAME"
 
@@ -755,7 +755,7 @@ jobs:
           commands: |
             # Get release name
             RELEASE="${{ inputs.release_name }}"
-      
+
             # Wait for backend secret to exist (created by helm)
             echo "Waiting for backend secret to be created by helm..."
             for i in {1..30}; do
@@ -766,15 +766,15 @@ jobs:
               echo "Attempt $i/30: Backend secret not found yet, waiting..."
               sleep 2
             done
-      
+
             if ! oc get secret $RELEASE-backend &>/dev/null; then
               echo "❌ Backend secret was not created by helm"
               exit 1
             fi
-      
+
             # Update secrets with real values
             echo "Updating backend secret with real SSO values..."
-      
+
             # Set appropriate login proxy URL based on environment
             if [[ "${{ inputs.environment }}" == "prod" ]]; then
               LOGIN_PROXY="loginproxy.gov.bc.ca"
@@ -842,12 +842,15 @@ jobs:
             {
               "api": {
                 "baseUrl": "/api/v1"
-              },
+              }, 
+              "basicBceidBroker": "bceidboth",
+              "businessBceidBroker": "bceidboth",
+              "idirBroker": "azureidir",
               "oidc": {
                 "clientId": "${{ secrets.vite_keycloak_client_id }}",
+                "logoutUrl": "https://$LOGIN_PROXY/auth/realms/standard/protocol/openid-connect/logout",
                 "realm": "standard",
-                "serverUrl": "https://$LOGIN_PROXY/auth",
-                "logoutUrl": "https://$LOGIN_PROXY/auth/realms/standard/protocol/openid-connect/logout"
+                "serverUrl": "https://$LOGIN_PROXY/auth"
               }
             }
             EOF
@@ -899,7 +902,6 @@ jobs:
 
             echo "✅ All secrets and configurations updated successfully"
 
-
       # This step can now be removed or greatly simplified since passwords are synchronized in secret.yaml
       # Keeping a minimal version just to verify the setup
       - name: Verify Database Setup for PR and Dev Environments
@@ -911,10 +913,10 @@ jobs:
           oc_server: ${{ inputs.oc_server }}
           commands: |
             set -euo pipefail
-      
+
             RELEASE_NAME="${{ steps.vars.outputs.release }}"
             echo "Verifying database setup for: $RELEASE_NAME"
-      
+
             # Check that secrets exist
             if oc get secret "${RELEASE_NAME}-backend" &>/dev/null; then
               echo "✅ Backend secret exists"
@@ -922,14 +924,14 @@ jobs:
               echo "❌ Backend secret missing"
               exit 1
             fi
-      
+
             if oc get secret "${RELEASE_NAME}-flyway" &>/dev/null; then
               echo "✅ Flyway secret exists"
             else
               echo "❌ Flyway secret missing"
               exit 1
             fi
-      
+
             # Check that Bitnami PostgreSQL is running
             BITNAMI_SECRET="${RELEASE_NAME}-postgresql"
             if oc get secret "$BITNAMI_SECRET" &>/dev/null; then
@@ -937,7 +939,7 @@ jobs:
             else
               echo "⚠️  Bitnami secret not found yet (may still be creating)"
             fi
-      
+
             echo "✅ Database setup verification complete"      - name: Update deployment status
 
       - name: Log deployment status (fallback)
