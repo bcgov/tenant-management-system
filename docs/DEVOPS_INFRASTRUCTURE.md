@@ -1,4 +1,5 @@
 # DevOps Infrastructure Documentation
+
 **Tenant Management System (TMS)**
 
 **Last Updated**: November 26, 2025
@@ -8,7 +9,7 @@
 ---
 
 ## Table of Contents
-what is the passwor 
+
 1. [Quick Start - The Golden Rule](#quick-start---the-golden-rule)
 2. [The Three Environments](#the-three-environments)
 3. [Deployment Flow](#deployment-flow)
@@ -30,6 +31,7 @@ Your Code → GitHub → Actions → Build → Deploy → Test → Done ✅
 ```
 
 **The Three Key Steps**:
+
 1. **Code** - Write code on a branch
 2. **Push** - Push to GitHub (creates PR or merges to main)
 3. **Wait** - Automated pipeline deploys and tests
@@ -45,11 +47,13 @@ Your Code → GitHub → Actions → Build → Deploy → Test → Done ✅
 **When**: Every pull request automatically gets its own temporary environment
 
 **Database**:
+
 - Fresh PostgreSQL (single instance)
 - Data deleted when PR closes
 - New password generated each time
 
 **Deployment**:
+
 - Frontend: 1 replica
 - Backend: 1 replica
 - Total startup time: ~10-15 minutes
@@ -65,11 +69,13 @@ Your Code → GitHub → Actions → Build → Deploy → Test → Done ✅
 **When**: Automatically deployed when code is merged to `main` branch
 
 **Database**:
+
 - Crunchy PostgreSQL (3 replicas, High Availability)
 - Data **preserved** between deployments
 - Same production-quality setup as PROD
 
 **Deployment**:
+
 - Frontend: 2-3 replicas (auto-scaling enabled)
 - Backend: 2-3 replicas (auto-scaling enabled)
 - Database: 3 replicas
@@ -86,11 +92,13 @@ Your Code → GitHub → Actions → Build → Deploy → Test → Done ✅
 **When**: Manually approved by team lead (after TEST verification)
 
 **Database**:
+
 - Crunchy PostgreSQL (3+ replicas, Full HA with backups)
 - Data **permanently stored** with automatic backups
 - Disaster recovery tested regularly
 
 **Deployment**:
+
 - Frontend: 2-3 replicas (auto-scaling enabled)
 - Backend: 2-3 replicas (auto-scaling enabled)
 - Database: 3+ replicas
@@ -169,6 +177,7 @@ Your Code → GitHub → Actions → Build → Deploy → Test → Done ✅
 GitHub Actions are automated jobs that run when certain events happen. Think of them as robots that do work automatically:
 
 **When they trigger**:
+
 - You open a pull request → Robots build and deploy
 - You merge code to main → Robots build and deploy to TEST
 - You approve PROD → Robots deploy to PROD
@@ -176,18 +185,18 @@ GitHub Actions are automated jobs that run when certain events happen. Think of 
 
 ### The Main Workflows
 
-| Workflow | File | Trigger | Purpose |
-|----------|------|---------|---------|
-| **PR Open** | `pr-open.yml` | PR open/sync/reopen | Build, deploy to PR env, security scan |
-| **PR Validate** | `pr-validate.yml` | PR open/sync | Validate title format, check merge conflicts |
-| **Merge to Main** | `merge.yml` | Push to main | Auto-deploy to TEST, manual gate for PROD |
-| **Dev Branch** | `dev-branch.yml` | Push to dev | Auto-deploy to DEV |
-| **Analysis** | `analysis.yml` | Push to main, PRs | CodeQL, Trivy, unit tests |
-| **Scheduled** | `scheduled.yml` | Weekly (Saturday) | Purge stale PRs, generate SchemaSpy docs |
-| **Cleanup Images** | `cleanup-images.yml` | Daily (2 AM UTC) | Remove old container images |
-| **PR Close** | `pr-close.yml` | PR closed/merged | Cleanup deployments |
-| **DEMO Route** | `demo.yml` | Label with `demo` | Route long-lived URL to specific PR |
-| **Notifications** | `notifications.yml` | PR open, merge complete | MS Teams notifications |
+| Workflow           | File                 | Trigger                 | Purpose                                      |
+| ------------------ | -------------------- | ----------------------- | -------------------------------------------- |
+| **PR Open**        | `pr-open.yml`        | PR open/sync/reopen     | Build, deploy to PR env, security scan       |
+| **PR Validate**    | `pr-validate.yml`    | PR open/sync            | Validate title format, check merge conflicts |
+| **Merge to Main**  | `merge.yml`          | Push to main            | Auto-deploy to TEST, manual gate for PROD    |
+| **Dev Branch**     | `dev-branch.yml`     | Push to dev             | Auto-deploy to DEV                           |
+| **Analysis**       | `analysis.yml`       | Push to main, PRs       | CodeQL, Trivy, unit tests                    |
+| **Scheduled**      | `scheduled.yml`      | Weekly (Saturday)       | Purge stale PRs, generate SchemaSpy docs     |
+| **Cleanup Images** | `cleanup-images.yml` | Daily (2 AM UTC)        | Remove old container images                  |
+| **PR Close**       | `pr-close.yml`       | PR closed/merged        | Cleanup deployments                          |
+| **DEMO Route**     | `demo.yml`           | Label with `demo`       | Route long-lived URL to specific PR          |
+| **Notifications**  | `notifications.yml`  | PR open, merge complete | MS Teams notifications                       |
 
 **Location**: `.github/workflows/`
 
@@ -195,12 +204,12 @@ GitHub Actions are automated jobs that run when certain events happen. Think of 
 
 These workflows (prefixed with `.`) are called by other workflows:
 
-| Workflow | Purpose |
-|----------|---------|
+| Workflow            | Purpose                                               |
+| ------------------- | ----------------------------------------------------- |
 | `.build-images.yml` | Build Docker images for backend, frontend, migrations |
-| `.deployer.yml` | Deploy to OpenShift using Helm charts |
-| `.tests.yml` | Run E2E and integration tests (Playwright) |
-| `.zap-scan.yml` | OWASP ZAP security scanning |
+| `.deployer.yml`     | Deploy to OpenShift using Helm charts                 |
+| `.tests.yml`        | Run E2E and integration tests (Playwright)            |
+| `.zap-scan.yml`     | OWASP ZAP security scanning                           |
 
 ### Pipeline Flow Diagram
 
@@ -270,6 +279,7 @@ FROM node:18-alpine
 ```
 
 **Key Characteristics**:
+
 - Alpine-based (minimal attack surface)
 - Builds from source (no pre-built binaries)
 - Health check endpoint for Kubernetes probes
@@ -293,6 +303,7 @@ FROM caddy:2.10.2-alpine
 ```
 
 **Key Characteristics**:
+
 - Multi-stage build reduces final image size
 - Caddy reverse proxy handles SSL termination
 - Separate health check port (3001)
@@ -314,21 +325,26 @@ FROM flyway/flyway:10-alpine
 **File**: `docker-compose.yml`
 
 **Services**:
+
 - **database**: PostGIS 16.3.4 (postgis/postgis:16-3.4)
+
   - Username: postgres
   - Password: default
   - Port: 5432
   - Schema: users (Flyway managed)
 
 - **migrations**: Flyway 10
+
   - Runs before backend/frontend
   - Manages schema versions
 
 - **backend**: Node.js NestJS
+
   - Port: 4144
   - Depends on: migrations, database
 
 - **frontend**: Node.js + React/Vite
+
   - Port: 3000
   - Depends on: backend
 
@@ -357,6 +373,7 @@ FROM flyway/flyway:10-alpine
 **Path**: `charts/app/`
 
 **Files**:
+
 - `Chart.yaml` - Metadata (v0.1.0, apiVersion: v2)
 - `values.yaml` - Defaults for TEST/PROD
 - `values-pr.yaml` - Overrides for PR environments
@@ -371,11 +388,13 @@ FROM flyway/flyway:10-alpine
 **Path**: `charts/crunchy/`
 
 **Files**:
+
 - `Chart.yaml` - Metadata
 - `values.yml` - Crunchy PostgreSQL defaults
 - `values-pr.yml` - Simple OpenShift PostgreSQL for PRs
 
 **Database Strategy**:
+
 - **PR Deployments**: OpenShift native PostgreSQL (1Gi, no HA)
 - **DEV**: OpenShift native PostgreSQL
 - **TEST/PROD**: Crunchy PostgreSQL (HA, Patroni failover)
@@ -383,16 +402,19 @@ FROM flyway/flyway:10-alpine
 ### Backend Deployment Configuration
 
 **Replicas**:
+
 - PR: 1
 - DEV: 2
 - TEST/PROD: 2-3 (HPA enabled)
 
 **Resources**:
+
 - PR: 256Mi request / 512Mi limit
 - TEST/PROD: Autoscaled based on 80% CPU target
 
 **Port**: 4144
 **Health Checks**:
+
 - Liveness: HTTP GET `/v1/health` (30s initial, 10s interval)
 - Readiness: Service availability check
 - Startup: Application initialization
@@ -400,17 +422,20 @@ FROM flyway/flyway:10-alpine
 **Connection Pooling**: pgBouncer for database
 
 **SSO Configuration**:
+
 - BC Government LoginProxy API endpoints
 - Environment-specific credentials via GitHub secrets
 
 ### Frontend Deployment Configuration
 
 **Replicas**:
+
 - PR: 1
 - DEV: 2
 - TEST/PROD: 2-3 (HPA enabled)
 
 **Resources**:
+
 - PR: 128Mi request / 256Mi limit
 - TEST/PROD: Auto-calculated
 
@@ -418,6 +443,7 @@ FROM flyway/flyway:10-alpine
 **Health Checks**: HTTP GET `/health` on port 3001
 
 **Rate Limiting** (TEST/PROD):
+
 - 10 concurrent connections
 - 20 requests/sec (HTTP)
 - 50 requests/sec (TCP)
@@ -427,17 +453,18 @@ FROM flyway/flyway:10-alpine
 ### Pod Disruption Budgets (PDB)
 
 Enabled for TEST/PROD deployments:
+
 - Minimum 1 pod available during disruptions
 - Ensures high availability during maintenance
 
 ### Deployment Strategy
 
-| Environment | Strategy | Max Surge | Max Unavailable |
-|-------------|----------|-----------|-----------------|
-| PR | Recreate | N/A | 100% |
-| DEV | RollingUpdate | 25% | 0 |
-| TEST | RollingUpdate | 25% | 0 |
-| PROD | RollingUpdate | 25% | 0 |
+| Environment | Strategy      | Max Surge | Max Unavailable |
+| ----------- | ------------- | --------- | --------------- |
+| PR          | Recreate      | N/A       | 100%            |
+| DEV         | RollingUpdate | 25%       | 0               |
+| TEST        | RollingUpdate | 25%       | 0               |
+| PROD        | RollingUpdate | 25%       | 0               |
 
 ---
 
@@ -445,16 +472,16 @@ Enabled for TEST/PROD deployments:
 
 ### Environment Matrix
 
-| Aspect | PR | DEV | TEST | PROD |
-|--------|-----|-----|------|------|
-| **Branch** | Any | dev | main | main |
-| **Auto-Deploy** | Yes (if approved) | Yes | Yes | Manual |
-| **Database** | OpenShift PG (fresh) | OpenShift PG (fresh) | Crunchy HA (retain) | Crunchy HA (retain) |
-| **Replicas** | 1 | 2 | 2-3 | 2-3 |
-| **HPA** | No | Yes | Yes | Yes |
-| **Namespace** | pr-{number} | dev | test | prod |
-| **Lifespan** | Until merged/closed | Permanent | Permanent | Permanent |
-| **Cleanup** | Automatic (7 days) | Manual | Manual | Manual |
+| Aspect          | PR                   | DEV                  | TEST                | PROD                |
+| --------------- | -------------------- | -------------------- | ------------------- | ------------------- |
+| **Branch**      | Any                  | dev                  | main                | main                |
+| **Auto-Deploy** | Yes (if approved)    | Yes                  | Yes                 | Manual              |
+| **Database**    | OpenShift PG (fresh) | OpenShift PG (fresh) | Crunchy HA (retain) | Crunchy HA (retain) |
+| **Replicas**    | 1                    | 2                    | 2-3                 | 2-3                 |
+| **HPA**         | No                   | Yes                  | Yes                 | Yes                 |
+| **Namespace**   | pr-{number}          | dev                  | test                | prod                |
+| **Lifespan**    | Until merged/closed  | Permanent            | Permanent           | Permanent           |
+| **Cleanup**     | Automatic (7 days)   | Manual               | Manual              | Manual              |
 
 ### Environment Variables
 
@@ -493,6 +520,7 @@ VITE_LOG_LEVEL=debug
 ### GitHub Secrets & Variables
 
 **Organization Level**:
+
 - `OC_SERVER` - OpenShift API (https://api.silver.devops.gov.bc.ca:6443)
 - `MSTEAMS_WEBHOOK` - MS Teams notification webhook
 - `BCGOV_SSO_API_CLIENT_ID` - SSO client ID
@@ -500,6 +528,7 @@ VITE_LOG_LEVEL=debug
 - `VITE_KEYCLOAK_CLIENT_ID` - Keycloak client ID
 
 **Environment-Specific** (GitHub Environments: dev, test, prod):
+
 - `OC_NAMESPACE` - OpenShift namespace
 - `OC_TOKEN` - Service account token
 - Additional environment-specific secrets
@@ -518,13 +547,15 @@ VITE_LOG_LEVEL=debug
 ### Flyway Schema Management
 
 **Configuration**:
+
 - **Version**: 10 (Alpine-based, stable)
 - **Location**: `migrations/sql/`
-- **Schema**: `tms` (created by V1.0.0__init.sql)
+- **Schema**: `tms` (created by V1.0.0\_\_init.sql)
 - **Baseline on Migrate**: Enabled (allows fresh DB creation)
 - **Database User**: app (or specified in config)
 
 **Docker Compose Config** (Local Development):
+
 ```yaml
 FLYWAY_URL: jdbc:postgresql://database:5432/postgres
 FLYWAY_DEFAULT_SCHEMA: tms
@@ -533,30 +564,31 @@ FLYWAY_LOCATIONS: filesystem:/flyway/sql
 ```
 
 **Kubernetes Config** (TEST/PROD via Helm):
+
 ```yaml
 # Environment-aware connection
 PR/DEV:
   FLYWAY_URL: jdbc:postgresql://{release}-postgresql:5432/app
 
 TEST/PROD:
-  FLYWAY_URL: jdbc:postgresql://{databaseAlias}-pgbouncer:5432/app  # Via pgBouncer!
+  FLYWAY_URL: jdbc:postgresql://{databaseAlias}-pgbouncer:5432/app # Via pgBouncer!
 
 FLYWAY_DEFAULT_SCHEMA: tms
 FLYWAY_BASELINE_ON_MIGRATE: true
-FLYWAY_CONNECT_RETRIES: 60         # Increased from 30
-FLYWAY_CONNECT_RETRY_DELAY: 10     # Increased from 5 (10 minute total timeout)
+FLYWAY_CONNECT_RETRIES: 60 # Increased from 30
+FLYWAY_CONNECT_RETRY_DELAY: 10 # Increased from 5 (10 minute total timeout)
 ```
 
 **Note**: The schema name change from `users` to `tms` matches the backend ORM configuration (`schema: 'tms'` in ormconfig.ts)
 
 ### Database Persistence Strategy
 
-| Environment | Strategy | Rationale |
-|-------------|----------|-----------|
-| PR | Fresh DB per deployment | Isolated testing, cleanup on close |
-| DEV | Fresh DB on redeploy | Testing migrations in dev |
-| TEST | Retain data | Pre-production validation |
-| PROD | Retain data | Production data integrity |
+| Environment | Strategy                | Rationale                          |
+| ----------- | ----------------------- | ---------------------------------- |
+| PR          | Fresh DB per deployment | Isolated testing, cleanup on close |
+| DEV         | Fresh DB on redeploy    | Testing migrations in dev          |
+| TEST        | Retain data             | Pre-production validation          |
+| PROD        | Retain data             | Production data integrity          |
 
 **Note**: `preserve_database` flag controls this behavior in deployment values
 
@@ -569,6 +601,7 @@ FLYWAY_CONNECT_RETRY_DELAY: 10     # Increased from 5 (10 minute total timeout)
 ### Connection Pooling
 
 **pgBouncer** in TEST/PROD:
+
 - Reduces connection overhead
 - Connection string: `pgbouncer:6432`
 - Managed by Crunchy PostgreSQL
@@ -578,6 +611,7 @@ FLYWAY_CONNECT_RETRY_DELAY: 10     # Increased from 5 (10 minute total timeout)
 **Version**: PostgreSQL 16 with PostGIS 3.3+
 
 **Features**:
+
 - Automated failover via Patroni
 - Backup management
 - Point-in-time recovery
@@ -595,11 +629,13 @@ FLYWAY_CONNECT_RETRY_DELAY: 10     # Increased from 5 (10 minute total timeout)
 **Configuration File**: `.zap/rules.tsv` (custom ruleset)
 
 **Scan Types**:
+
 - **Baseline**: PR deployments (quick scan, ~5 min)
 - **Full**: TEST environment (comprehensive, ~30 min)
 - **API**: When API changes detected
 
 **Execution**:
+
 - PR: Baseline via `.zap-scan.yml`
 - Merge to main: Full scan via `merge.yml`
 - Fail condition: HIGH severity alerts fail deployment to PROD
@@ -611,11 +647,13 @@ FLYWAY_CONNECT_RETRY_DELAY: 10     # Increased from 5 (10 minute total timeout)
 **Scope**: Repository-wide static analysis
 
 **Coverage**:
+
 - Backend: JavaScript/TypeScript analysis
 - Frontend: JavaScript/TypeScript analysis
 - Detects: Code injection, SQL injection, XSS, auth bypass
 
 **Trigger**:
+
 - All PRs
 - Push to main
 - Weekly scheduled scan
@@ -625,11 +663,13 @@ FLYWAY_CONNECT_RETRY_DELAY: 10     # Increased from 5 (10 minute total timeout)
 **Scope**: Container image vulnerability scanning
 
 **Image Layers Scanned**:
+
 - OS packages
 - Application dependencies
 - Configuration
 
 **Trigger**:
+
 - All builds in `analysis.yml`
 - Detects: CVEs, misconfigurations
 
@@ -641,28 +681,31 @@ FLYWAY_CONNECT_RETRY_DELAY: 10     # Increased from 5 (10 minute total timeout)
 **Renovate**: Recommended (extended capabilities)
 
 **Configuration** (`renovate.json`):
+
 - Extends bcgov/renovate-config preset
 - Automatic PR creation for updates
 - Semantic versioning rules
 
 **Scope**:
+
 - npm dependencies (backend, frontend, migrations)
 - GitHub Actions versions
 - Docker base image versions
 
 ### Security Gates
 
-| Environment | CodeQL | Trivy | ZAP | Manual Review |
-|-------------|--------|-------|-----|---------------|
-| PR | Yes | Yes | Baseline | No |
-| TEST | Yes | Yes | Full | No |
-| PROD | Yes | Yes | Full | **Yes (Manual Approval)** |
+| Environment | CodeQL | Trivy | ZAP      | Manual Review             |
+| ----------- | ------ | ----- | -------- | ------------------------- |
+| PR          | Yes    | Yes   | Baseline | No                        |
+| TEST        | Yes    | Yes   | Full     | No                        |
+| PROD        | Yes    | Yes   | Full     | **Yes (Manual Approval)** |
 
 ### Branch Protection Rules
 
 **Default Branch**: main
 
 **Requirements**:
+
 - Require 1 pull request review
 - Require status checks (Analysis, PR Results, Validate)
 - Require code scanning results (CodeQL, Trivy)
@@ -678,42 +721,47 @@ FLYWAY_CONNECT_RETRY_DELAY: 10     # Increased from 5 (10 minute total timeout)
 **Primary Registry**: GitHub Container Registry (ghcr.io)
 
 **Image Naming Convention**:
+
 ```
 ghcr.io/bcgov/tenant-management-system/{component}:{tag}
 ```
 
 **Components**:
+
 - backend
 - frontend
 - migrations
 
 ### Image Tagging Strategy
 
-| Use Case | Tag | Push Frequency | Retention |
-|----------|-----|-----------------|-----------|
-| PR Deployments | `pr-{PR_NUMBER}` | Per PR build | 7 days |
-| Dev Branch | `dev-latest` | Per dev push | Unlimited |
-| Main/Test | `latest` | Per main merge | Until PROD |
-| Production | `prod`, `prod-{YYYYMMDD}` | Per PROD approval | Permanent |
-| Release | `v{SEMVER}` | Manual tagging | Permanent |
+| Use Case       | Tag                       | Push Frequency    | Retention  |
+| -------------- | ------------------------- | ----------------- | ---------- |
+| PR Deployments | `pr-{PR_NUMBER}`          | Per PR build      | 7 days     |
+| Dev Branch     | `dev-latest`              | Per dev push      | Unlimited  |
+| Main/Test      | `latest`                  | Per main merge    | Until PROD |
+| Production     | `prod`, `prod-{YYYYMMDD}` | Per PROD approval | Permanent  |
+| Release        | `v{SEMVER}`               | Manual tagging    | Permanent  |
 
 ### Image Cleanup Policy
 
 **Daily Cleanup Job** (`cleanup-images.yml`):
+
 - Runs: 2 AM UTC daily
 - Removes: Images older than 7 days
-- Protected Tags**: `latest`, `dev-latest`, active PR images
-- Retention**: 10 recent versions of main/deployment-fix
+- Protected Tags\*\*: `latest`, `dev-latest`, active PR images
+- Retention\*\*: 10 recent versions of main/deployment-fix
 
 **Manual Cleanup Script**: `scripts/cleanup-pr-manual.sh <PR_NUMBER>`
 
 **Cleanup Triggers**:
+
 - PR closed/merged: Via `pr-close.yml`
 - Scheduled: Weekly purge of releases > 1 week old
 
 ### Image Scanning
 
 All images scanned by:
+
 1. **Trivy**: Vulnerability scanning (build time)
 2. **GitHub Secret Scanning**: Detects hardcoded secrets
 3. **Container Registry**: Scans on push
@@ -727,11 +775,13 @@ All images scanned by:
 **Location**: `scripts/cleanup-pr-manual.sh`
 
 **Usage**:
+
 ```bash
 ./scripts/cleanup-pr-manual.sh <PR_NUMBER>
 ```
 
 **Actions Performed**:
+
 1. Helm release uninstall (`app-pr-{number}`)
 2. OpenShift resource cleanup:
    - Secrets
@@ -741,6 +791,7 @@ All images scanned by:
 4. Lists remaining resources for manual review
 
 **Example**:
+
 ```bash
 ./scripts/cleanup-pr-manual.sh 42
 # Uninstalls: app-pr-42
@@ -750,11 +801,13 @@ All images scanned by:
 ### Automated Cleanup Triggers
 
 1. **PR Close Event** (`pr-close.yml`):
+
    - Triggered automatically when PR closed/merged
    - Uses bcgov/quickstart-openshift-helpers
    - Helm uninstall + resource cleanup
 
 2. **Scheduled Cleanup** (`scheduled.yml`):
+
    - Runs: Weekly (Saturdays, 8 AM UTC)
    - Action: Purges releases older than 1 week
    - Also generates SchemaSpy documentation
@@ -767,6 +820,7 @@ All images scanned by:
 ### Deployment Commands
 
 **Manual Helm Deployment**:
+
 ```bash
 helm install app-pr-42 ./charts/app \
   -f charts/app/values-pr.yaml \
@@ -776,6 +830,7 @@ helm install app-pr-42 ./charts/app \
 ```
 
 **Manual Helm Upgrade**:
+
 ```bash
 helm upgrade app-pr-42 ./charts/app \
   -f charts/app/values-pr.yaml \
@@ -791,6 +846,7 @@ helm upgrade app-pr-42 ./charts/app \
 #### Horizontal Pod Autoscaling (HPA)
 
 **Configuration**:
+
 - **Enabled**: TEST, PROD, DEV (optional)
 - **Min Replicas**: 2
 - **Max Replicas**: 3
@@ -802,6 +858,7 @@ helm upgrade app-pr-42 ./charts/app \
 #### Pod Disruption Budgets (PDB)
 
 **Configuration**:
+
 - **Minimum Available**: 1 pod
 - **Environments**: TEST, PROD
 - **Purpose**: Ensures service availability during maintenance
@@ -811,6 +868,7 @@ helm upgrade app-pr-42 ./charts/app \
 **Strategy**: RollingUpdate (default)
 
 **Parameters**:
+
 - **Max Surge**: 25% (1 additional pod)
 - **Max Unavailable**: 0 (all pods remain available)
 - **Result**: Zero-downtime deployments
@@ -818,6 +876,7 @@ helm upgrade app-pr-42 ./charts/app \
 #### Database HA (Crunchy PostgreSQL)
 
 **High Availability Features**:
+
 - Patroni automated failover
 - Streaming replication
 - Multiple standby replicas
@@ -829,11 +888,13 @@ helm upgrade app-pr-42 ./charts/app \
 #### OpenShift Routes
 
 **Configuration**:
+
 - **Edge Termination**: TLS/SSL at route level
 - **Load Balancing**: HAProxy round-robin
 - **Backend**: Service (internal)
 
 **Example Route**:
+
 ```
 app-pr-42.apps.silver.devops.gov.bc.ca → Service:3000
 ```
@@ -844,6 +905,7 @@ app-pr-42.apps.silver.devops.gov.bc.ca → Service:3000
 **Egress**: Allow to Kubernetes DNS, external APIs
 
 **Rate Limiting** (TEST/PROD):
+
 - 10 concurrent connections
 - 20 HTTP requests/sec
 - 50 TCP requests/sec
@@ -858,11 +920,13 @@ app-pr-42.apps.silver.devops.gov.bc.ca → Service:3000
 #### Health Checks
 
 **Backend** (`/v1/health`):
+
 - **Liveness Probe**: 30s initial delay, 10s interval, 3s timeout
 - **Readiness Probe**: Service availability check
 - **Purpose**: Kubernetes automatic restart/scheduling
 
 **Frontend** (`/health`):
+
 - **Port**: 3001 (separate from app port 3000)
 - **Purpose**: Traffic routing decisions
 
@@ -875,11 +939,13 @@ app-pr-42.apps.silver.devops.gov.bc.ca → Service:3000
 #### Debugging Access
 
 **Pod Logs**:
+
 ```bash
 oc logs -f pod/app-pr-42-xyz --namespace=pr-42
 ```
 
 **Port Forward**:
+
 ```bash
 oc port-forward service/app-pr-42 3000:3000 --namespace=pr-42
 ```
@@ -889,11 +955,13 @@ oc port-forward service/app-pr-42 3000:3000 --namespace=pr-42
 #### CPU & Memory Limits
 
 **PR Environments**:
+
 - Backend: 256Mi request / 512Mi limit
 - Frontend: 128Mi request / 256Mi limit
 - Database: 256Mi request / 512Mi limit
 
 **TEST/PROD Environments**:
+
 - Backend: 500m request / 1000m limit (tuned)
 - Frontend: 250m request / 500m limit (tuned)
 - Database: 2Gi request / 4Gi limit
@@ -903,6 +971,7 @@ oc port-forward service/app-pr-42 3000:3000 --namespace=pr-42
 #### Storage
 
 **Database Volume**:
+
 - **PR**: 1Gi (ephemeral)
 - **DEV**: 5Gi
 - **TEST**: 50Gi
@@ -939,14 +1008,13 @@ oc port-forward service/app-pr-42 3000:3000 --namespace=pr-42
 - **Auto-Action**: Same as internal PRs after labeling
 
 **Security Logic**:
+
 ```yaml
 if: github.event.pull_request.head.repo.fork == true
   && !contains(github.event.pull_request.labels.*.name, 'safe-to-deploy')
-then:
-  SKIP deployment
+then: SKIP deployment
   SKIP resource creation
-else:
-  PROCEED with full CI/CD
+else: PROCEED with full CI/CD
 ```
 
 ### PR Template
@@ -954,6 +1022,7 @@ else:
 **Location**: `.github/pull_request_template.md`
 
 **Sections**:
+
 1. **Description**: What does this PR do?
 2. **Issue Reference**: Closes #123
 3. **Type of Change**:
@@ -974,6 +1043,7 @@ else:
 **Format**: `type(scope): description`
 
 **Valid Types**:
+
 - `feat` - New feature
 - `fix` - Bug fix
 - `docs` - Documentation
@@ -987,6 +1057,7 @@ else:
 - `revert` - Revert previous commit
 
 **Examples**:
+
 ```
 feat(auth): add JWT token validation
 fix(api): handle null response in user service
@@ -997,6 +1068,7 @@ chore: upgrade dependencies
 ### PR Deployment Links
 
 **Auto-posted** in PR comments by workflow:
+
 ```
 ## 🚀 Deployment Status
 
@@ -1011,6 +1083,7 @@ chore: upgrade dependencies
 **Purpose**: Long-lived URL for demo environment
 
 **Usage**:
+
 1. Add label `demo` to PR
 2. Workflow triggers `demo.yml`
 3. Routes demo.apps.silver.devops.gov.bc.ca to PR environment
@@ -1179,16 +1252,16 @@ See [DEVOPS_IMPROVEMENTS.md](./DEVOPS_IMPROVEMENTS.md) for detailed analysis and
 
 ### Key Files
 
-| Purpose | Path |
-|---------|------|
-| Workflows | `.github/workflows/` |
-| App Chart | `charts/app/` |
-| DB Chart | `charts/crunchy/` |
-| Dockerfile (Backend) | `backend/Dockerfile` |
-| Dockerfile (Frontend) | `frontend/Dockerfile` |
-| Docker Compose | `docker-compose.yml` |
-| Cleanup Script | `scripts/cleanup-pr-manual.sh` |
-| ZAP Config | `.zap/rules.tsv` |
+| Purpose               | Path                           |
+| --------------------- | ------------------------------ |
+| Workflows             | `.github/workflows/`           |
+| App Chart             | `charts/app/`                  |
+| DB Chart              | `charts/crunchy/`              |
+| Dockerfile (Backend)  | `backend/Dockerfile`           |
+| Dockerfile (Frontend) | `frontend/Dockerfile`          |
+| Docker Compose        | `docker-compose.yml`           |
+| Cleanup Script        | `scripts/cleanup-pr-manual.sh` |
+| ZAP Config            | `.zap/rules.tsv`               |
 
 ### Common Commands
 
@@ -1227,6 +1300,7 @@ oc rollout status deployment/app-pr-42 -n pr-42
 **Problem**: Commit 9db7200 added `schema: 'tms'` to backend ormconfig but migration file still created `USERS` schema.
 
 **Solution**:
+
 - Updated migration file: `CREATE SCHEMA IF NOT EXISTS tms`
 - Updated Flyway configuration: `FLYWAY_DEFAULT_SCHEMA: tms`
 - Consistent schema across all environments
@@ -1234,6 +1308,7 @@ oc rollout status deployment/app-pr-42 -n pr-42
 ### Flyway Configuration Improvements
 
 **Changes**:
+
 1. **Downgraded Flyway from 11 to 10** (stable version, eliminates deprecation warnings)
 2. **Increased retry timeouts** for Crunchy cluster initialization:
    - `FLYWAY_CONNECT_RETRIES: 30 → 60`
@@ -1245,30 +1320,35 @@ oc rollout status deployment/app-pr-42 -n pr-42
 ### Database Connection Initialization
 
 **New wait-for-db InitContainer**:
+
 - Checks database readiness before migrations start
 - PR/DEV: Waits for `{release}-postgresql:5432`
 - TEST/PROD: Waits for `{databaseAlias}-pgbouncer:5432`
 - 60 attempts × 5 seconds = 5-minute timeout
 
 **Backend Startup Dependency**:
+
 - Changed from `service_started` to `service_completed_successfully`
 - Backend now waits for migrations to fully complete before starting
 
 ### Environment-Aware Configuration
 
 **Backend Database Host** (POSTGRES_HOST):
+
 ```
 PR/DEV:  {release}-postgresql (direct)
 TEST/PROD: {databaseAlias}-pgbouncer (connection pooling)
 ```
 
 **Password Sources**:
+
 ```
 PR/DEV:  Generated from {release}-pr-db-pass secret
 TEST/PROD: From Crunchy secret {databaseAlias}-pguser-app
 ```
 
 **Flyway Connection**:
+
 ```
 PR/DEV:  Direct to {release}-postgresql
 TEST/PROD: Via {databaseAlias}-pgbouncer (connection pooling)
@@ -1293,6 +1373,7 @@ TEST/PROD: Via {databaseAlias}-pgbouncer (connection pooling)
 - **Maintainers**: DevOps/Platform Engineering Team
 
 **Next Steps**:
+
 1. Review this document for accuracy
 2. Refer to [DEVOPS_IMPROVEMENTS.md](./DEVOPS_IMPROVEMENTS.md) for recommended improvements
 3. Create tickets for high-priority improvements
