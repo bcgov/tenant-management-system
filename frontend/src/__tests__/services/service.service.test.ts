@@ -74,7 +74,7 @@ describe('serviceService', () => {
   })
 
   describe('getAllSharedServices', () => {
-    it('should return all shared services on success', async () => {
+    it('should return all connected services on success', async () => {
       mockGet.mockResolvedValueOnce({
         data: { data: { sharedServices: fakeSharedServices } },
       })
@@ -86,7 +86,7 @@ describe('serviceService', () => {
     })
 
     it('should log and rethrow errors', async () => {
-      const error = new Error('Failed to fetch shared services')
+      const error = new Error('Failed to fetch connected services')
       mockGet.mockRejectedValueOnce(error)
 
       await expect(serviceService.getAllSharedServices()).rejects.toThrow(error)
@@ -159,7 +159,7 @@ describe('serviceService', () => {
       )
 
       expect(mockedUtils.logApiError).toHaveBeenCalledWith(
-        'Error getting tenant shared services',
+        'Error getting tenant connected services',
         error,
       )
     })
@@ -230,7 +230,7 @@ describe('serviceService', () => {
       ).rejects.toThrow(error)
 
       expect(mockedUtils.logApiError).toHaveBeenCalledWith(
-        'Error getting tenant shared services',
+        'Error getting tenant connected services',
         error,
       )
     })
@@ -277,7 +277,7 @@ describe('serviceService', () => {
       ).rejects.toThrow(error)
 
       expect(mockedUtils.logApiError).toHaveBeenCalledWith(
-        'Error updating shared services to group',
+        'Error updating connected services to group',
         error,
       )
     })

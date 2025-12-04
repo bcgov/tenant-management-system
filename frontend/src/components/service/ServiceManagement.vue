@@ -56,7 +56,7 @@ function handleAddService() {
   <v-container class="px-0" fluid>
     <v-row>
       <v-col cols="12">
-        <h4 class="mb-6 mt-12">Available Services</h4>
+        <h4 class="mb-6 mt-12">{{ $t('general.servicesLabel', 2) }}</h4>
       </v-col>
     </v-row>
 
@@ -115,9 +115,9 @@ function handleAddService() {
       <v-row class="mt-6">
         <v-col cols="12">
           <v-divider class="mb-12" />
-          <h4 class="my-4">Add an available shared service to this Tenant</h4>
+          <h4 class="my-4">Add an available {{ $t('general.servicesLabelLower', 2) }} to this Tenant</h4>
           <p>
-            To add an available shared service to this tenant, choose one from
+            To add an available {{ $t('general.servicesLabelLower', 2) }} to this tenant, choose one from
             the dropdown and click 'Add Service' to confirm.
           </p>
         </v-col>

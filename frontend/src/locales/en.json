@@ -31,8 +31,8 @@
     "updateError": "Failed to update group:",
     "deleteSuccess": "Group deleted successfully",
     "deleteError": "Failed to delete group:",
-    "sharedServices": "Adding Shared Service Roles",
-    "sharedServicesDesc": "Click 'Edit' to start assigning roles. Choose the roles you want to add to your Group from each available Shared Service, then click 'Save' to apply your changes.",
+    "sharedServices": "Adding {servicesLabel} Roles",
+    "sharedServicesDesc": "Click 'Edit' to start assigning roles. Choose the roles you want to add to your Group from each available {servicesLabel}, then click 'Save' to apply your changes.",
     "sharedServicesSavedTitle": "Roles Saved",
     "sharedServicesSavedDesc": "The roles for this group have been successfully updated.",
     "sharedServicesSaveErrorTitle": "Error Saving Roles",
@@ -49,7 +49,9 @@
     "edit": "Edit",
     "clearAll": "Clear All",
     "undoChanges": "Undo Changes",
-    "revert": "Revert"
+    "revert": "Revert",
+    "servicesLabel": "Connected Service | Connected Services",
+    "servicesLabelLower": "connected service | connected services"
   },
   "users": {
     "user": "Users | User | Users",

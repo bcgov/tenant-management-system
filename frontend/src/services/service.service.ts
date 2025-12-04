@@ -6,10 +6,10 @@ const api = authenticatedAxios()
 
 export const serviceService = {
   /**
-   * Retrieves all active shared services.
+   * Retrieves all active connected services.
    *
    * @returns {Promise<object[]>} A promise that resolves to an array of
-   *   shared service objects.
+   *   connected service objects.
    * @throws Will throw an error if the API request fails.
    */
   async getAllSharedServices() {
@@ -18,17 +18,17 @@ export const serviceService = {
 
       return response.data.data.sharedServices
     } catch (error) {
-      logApiError('Error getting all shared services', error)
+      logApiError('Error getting all connected services', error)
 
       throw error
     }
   },
 
   /**
-   * Adds an existing shared service with a tenant.
+   * Adds an existing connected service with a tenant.
    *
    * @param {string} tenantId - The unique identifier of the tenant.
-   * @param {string} serviceId - The unique identifier of the shared service.
+   * @param {string} serviceId - The unique identifier of the connected service.
    * @returns {Promise<object>} A promise that resolves to the result.
    * @throws Will throw an error if the API request fails.
    */
@@ -45,18 +45,18 @@ export const serviceService = {
 
       return response.data.data
     } catch (error) {
-      logApiError('Error adding shared service to tenant', error)
+      logApiError('Error adding connected service to tenant', error)
 
       throw error
     }
   },
 
   /**
-   * Retrieves all shared services associated with a specific tenant.
+   * Retrieves all connected services associated with a specific tenant.
    *
    * @param {string} tenantId - The unique identifier of the tenant.
    * @returns {Promise<object[]>} A promise that resolves to an array of
-   *   shared service objects associated with the tenant.
+   *   connected service objects associated with the tenant.
    * @throws Will throw an error if the API request fails.
    */
   async getTenantServices(tenantId: string) {
@@ -65,19 +65,19 @@ export const serviceService = {
 
       return response.data.data.sharedServices
     } catch (error) {
-      logApiError('Error getting tenant shared services', error)
+      logApiError('Error getting tenant connected services', error)
 
       throw error
     }
   },
 
   /**
-   * Retrieves all shared services associated with a group.
+   * Retrieves all connected services associated with a group.
    *
    * @param {string} tenantId - The unique identifier of the tenant.
    * @param {string} groupId - The unique identifier of the group.
    * @returns {Promise<object[]>} A promise that resolves to an array of
-   *   shared service objects associated with the tenant.
+   *   connected service objects associated with the tenant.
    * @throws Will throw an error if the API request fails.
    */
   async getTenantGroupServices(tenantId: string, groupId: string) {
@@ -88,7 +88,7 @@ export const serviceService = {
 
       return response.data.data.sharedServices
     } catch (error) {
-      logApiError('Error getting tenant shared services', error)
+      logApiError('Error getting tenant connected services', error)
 
       throw error
     }
@@ -107,7 +107,7 @@ export const serviceService = {
 
       return response.data.data
     } catch (error) {
-      logApiError('Error updating shared services to group', error)
+      logApiError('Error updating connected services to group', error)
 
       throw error
     }
