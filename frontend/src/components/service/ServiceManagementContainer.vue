@@ -5,6 +5,9 @@ import ServiceManagement from '@/components/service/ServiceManagement.vue'
 import { useNotification } from '@/composables'
 import { Service, Tenant } from '@/models'
 import { useServiceStore } from '@/stores'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 // --- Component Interface -----------------------------------------------------
 
@@ -39,7 +42,7 @@ async function handleAddService(serviceId: string) {
     }
 
     notification.success(
-      'An available shared service for this tenant was successfully added.',
+      `An available ${t('general.servicesLabelLower', 2)} for this tenant was successfully added.`,
     )
   } catch {
     notification.error('Failed to add service to tenant')
