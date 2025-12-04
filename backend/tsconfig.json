@@ -1,7 +1,8 @@
 {
-    "extends": "@tsconfig/node12/tsconfig.json",   
+    // Note: Temporarily not extending @tsconfig/node20 because it uses es2023
+    // which requires TypeScript 5.0+. Will restore extends after TypeScript upgrade.
     "compilerOptions": {
-       "lib": ["es2019", "es2020.promise", "es2020.bigint", "es2020.string"],
+       "lib": ["es2022", "es2020.promise", "es2020.bigint", "es2020.string"],
        "target": "es2020",
        "module": "NodeNext",
        "moduleResolution": "NodeNext",
@@ -9,11 +10,12 @@
        "emitDecoratorMetadata": true,
        "experimentalDecorators": true,
        "sourceMap": true,
-       "esModuleInterop":true,
+       "esModuleInterop": true,
        "strict": false,
-       "resolveJsonModule": true
+       "resolveJsonModule": true,
+       "skipLibCheck": true
     },
     "include": [
        "src"
    ]
- }
+}
