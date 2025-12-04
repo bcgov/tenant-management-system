@@ -2361,6 +2361,103 @@ paths:
               schema:
                 $ref: '#/components/schemas/InternalServerErrorResponse'
 
+  /v1/tenants/{tenantId}/ssousers/{ssoUserId}/shared-service-roles:
+    get:
+      summary: Get effective shared service roles for an SSO user
+      description: Retrieves all effective shared service roles for a specific SSO user within a tenant, filtered by the JWT audience (client identifier). Roles are deduplicated and include the groups that grant each role. Only returns roles for the shared service matching the client identifier in the JWT token. Requires JWT authentication and shared service access.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: tenantId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The unique identifier of the tenant
+        - name: ssoUserId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The SSO user identifier
+      responses:
+        '200':
+          description: Effective shared service roles successfully retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      sharedServiceRoles:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              format: uuid
+                              description: The unique identifier of the shared service role
+                            name:
+                              type: string
+                              description: The name of the shared service role
+                            description:
+                              type: string
+                              nullable: true
+                              description: The description of the shared service role
+                            allowedIdentityProviders:
+                              type: array
+                              items:
+                                type: string
+                              nullable: true
+                              description: List of identity providers allowed to access this role. If null or empty, all identity providers are allowed.
+                            groups:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  id:
+                                    type: string
+                                    format: uuid
+                                    description: The unique identifier of the group
+                                  name:
+                                    type: string
+                                    description: The name of the group
+                              description: List of groups that grant this role to the user
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestResponse'
+        '401':
+          description: Unauthorized - Missing or invalid JWT audience
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        '403':
+          description: Forbidden - User does not have access to the tenant or shared service not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        '404':
+          description: Tenant user not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+
   /v1/tenants/{tenantId}/users/{ssoUserId}/groups/shared-service-roles:
     get:
       summary: Get user groups with shared service roles

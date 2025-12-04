@@ -171,4 +171,20 @@ export class TMController {
         }
     }
 
+    public async getEffectiveSharedServiceRoles(req: Request, res: Response) {
+        try {
+            const result = await this.tmService.getEffectiveSharedServiceRoles(req)
+            res.status(200).send(result)
+        } catch(error) {
+            logger.error(error)
+            if (error instanceof NotFoundError) {
+                this.errorHandler.generalError(res, "Error occurred getting effective shared service roles", error.message, error.statusCode, "Not Found")
+            } else if (error instanceof UnauthorizedError) {
+                this.errorHandler.generalError(res, "Error occurred getting effective shared service roles", error.message, error.statusCode, "Unauthorized")
+            } else {
+                this.errorHandler.generalError(res, "Error occurred getting effective shared service roles", error.message, 500, "Internal Server Error")
+            }
+        }
+    }
+
 } 

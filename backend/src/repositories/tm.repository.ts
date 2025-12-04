@@ -872,6 +872,73 @@ export class TMRepository {
         return { groups }
     }
 
+    public async getEffectiveSharedServiceRoles(req: Request, audience: string) {
+        const tenantId: string = req.params.tenantId
+        const ssoUserId: string = req.params.ssoUserId
+        const idpType: string = req.idpType
+
+        const tenantUser: TenantUser = await this.tmsRepository.getTenantUserBySsoId(ssoUserId, tenantId)
+        if (!tenantUser) {
+            throw new NotFoundError(`Tenant user not found: ${ssoUserId}`)
+        }
+
+        const result = await this.manager
+            .createQueryBuilder('GroupUser', 'gu')
+            .leftJoinAndSelect('gu.group', 'group')
+            .leftJoinAndSelect('group.sharedServiceRoles', 'gssr')
+            .leftJoinAndSelect('gssr.sharedServiceRole', 'ssr')
+            .leftJoinAndSelect('ssr.sharedService', 'ss')
+            .leftJoin('TenantSharedService', 'tss', 'ss.id = tss.sharedService.id')
+            .where('gu.tenantUser.id = :tenantUserId', { tenantUserId: tenantUser.id })
+            .andWhere('gu.isDeleted = :guDeleted', { guDeleted: false })
+            .andWhere('gssr.isDeleted = :gssrDeleted', { gssrDeleted: false })
+            .andWhere('ssr.isDeleted = :ssrDeleted', { ssrDeleted: false })
+            .andWhere('ss.isActive = :ssActive', { ssActive: true })
+            .andWhere('ss.clientIdentifier = :audience', { audience })
+            .andWhere('tss.tenant.id = :tenantId', { tenantId })
+            .andWhere('tss.isDeleted = :tssDeleted', { tssDeleted: false })
+            .andWhere('(ssr.allowedIdentityProviders IS NULL OR :idpType = ANY(ssr.allowedIdentityProviders))', { idpType })
+            .getMany()
+
+        const rolesMap = new Map()
+
+        result.forEach((gu: any) => {
+            if (gu.group?.sharedServiceRoles) {
+                gu.group.sharedServiceRoles.forEach((gssr: any) => {
+                    if (
+                        gssr.sharedServiceRole &&
+                        gssr.sharedServiceRole.sharedService &&
+                        gssr.sharedServiceRole.sharedService.isActive &&
+                        gssr.sharedServiceRole.sharedService.clientIdentifier === audience &&
+                        !gssr.isDeleted &&
+                        !gssr.sharedServiceRole.isDeleted
+                    ) {
+                        const roleId = gssr.sharedServiceRole.id
+                        if (!rolesMap.has(roleId)) {
+                            rolesMap.set(roleId, {
+                                id: gssr.sharedServiceRole.id,
+                                name: gssr.sharedServiceRole.name,
+                                description: gssr.sharedServiceRole.description,
+                                allowedIdentityProviders: gssr.sharedServiceRole.allowedIdentityProviders,
+                                groups: []
+                            })
+                        }
+                        const role = rolesMap.get(roleId)
+                        const groupExists = role.groups.some((g: any) => g.id === gu.group.id)
+                        if (!groupExists) {
+                            role.groups.push({
+                                id: gu.group.id,
+                                name: gu.group.name
+                            })
+                        }
+                    }
+                })
+            }
+        })
+
+        return Array.from(rolesMap.values())
+    }
+
     public async getTenantUser(req: Request) {
         const tenantId: string = req.params.tenantId
         const tenantUserId: string = req.params.tenantUserId
