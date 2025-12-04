@@ -125,6 +125,21 @@ export class TMService {
         };
     }
 
+    public async getEffectiveSharedServiceRoles(req: Request) {
+        const audience = req.decodedJwt?.aud || req.decodedJwt?.audience;
+        if (!audience) {
+            throw new UnauthorizedError('Missing audience in JWT token');
+        }
+
+        const sharedServiceRoles = await this.tmRepository.getEffectiveSharedServiceRoles(req, audience);
+        
+        return {
+            data: {
+                sharedServiceRoles
+            }
+        };
+    }
+
     public async getTenantUser(req: Request) {
         const tenantUser: any = await this.tmRepository.getTenantUser(req)
         
