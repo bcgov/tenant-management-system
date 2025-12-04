@@ -848,9 +848,9 @@ jobs:
               "idirBroker": "azureidir",
               "oidc": {
                 "clientId": "${{ secrets.vite_keycloak_client_id }}",
-                "logoutUrl": "https://$LOGIN_PROXY/auth/realms/standard/protocol/openid-connect/logout"
+                "logoutUrl": "https://$LOGIN_PROXY/auth/realms/standard/protocol/openid-connect/logout",
                 "realm": "standard",
-                "serverUrl": "https://$LOGIN_PROXY/auth",
+                "serverUrl": "https://$LOGIN_PROXY/auth"
               }
             }
             EOF
