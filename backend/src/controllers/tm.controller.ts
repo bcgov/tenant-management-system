@@ -17,10 +17,10 @@ export class TMController {
             const groupResponse = await this.tmService.createGroup(req)
             res.status(201).send(groupResponse)
         } 
-        catch(error) {
+        catch(error: any) {
             logger.error(error)
             if (error instanceof ConflictError) {
-                this.errorHandler.generalError(res, "Error occurred creating group", error.message, error.statusCode, "Conflict")
+                this.errorHandler.generalError(res, "Error occurred creating group", (error as any).message, (error as any).statusCode, "Conflict")
             } 
             else if (error instanceof NotFoundError) {
                 this.errorHandler.generalError(res, "Error occurred creating group", error.message, error.statusCode, "Not Found")
@@ -36,7 +36,7 @@ export class TMController {
             const groupUserResponse = await this.tmService.addGroupUser(req)
             res.status(201).send(groupUserResponse)
         } 
-        catch(error) {
+        catch(error: any) {
             logger.error(error)
             if (error instanceof ConflictError) {
                 this.errorHandler.generalError(res, "Error occurred adding user to group", error.message, error.statusCode, "Conflict")
@@ -55,7 +55,7 @@ export class TMController {
             const groupResponse = await this.tmService.updateGroup(req)
             res.status(200).send(groupResponse)
         } 
-        catch(error) {
+        catch(error: any) {
             logger.error(error)
             if (error instanceof ConflictError) {
                 this.errorHandler.generalError(res, "Error occurred updating group", error.message, error.statusCode, "Conflict")
@@ -74,7 +74,7 @@ export class TMController {
             await this.tmService.removeGroupUser(req)
             res.status(204).send()
         } 
-        catch(error) {
+        catch(error: any) {
             logger.error(error)
             if (error instanceof ConflictError) {
                 this.errorHandler.generalError(res, "Error occurred removing user from group", error.message, error.statusCode, "Conflict")
@@ -93,7 +93,7 @@ export class TMController {
             const groupResponse = await this.tmService.getGroup(req)
             res.status(200).send(groupResponse)
         } 
-        catch(error) {
+        catch(error: any) {
             logger.error(error)
             if (error instanceof NotFoundError) {
                 this.errorHandler.generalError(res, "Error occurred getting a group", error.message, error.statusCode, "Not Found")
@@ -109,7 +109,7 @@ export class TMController {
             const groupsResponse = await this.tmService.getTenantGroups(req)
             res.status(200).send(groupsResponse)
         } 
-        catch(error) {
+        catch(error: any) {
             logger.error(error)
             if (error instanceof NotFoundError) {
                 this.errorHandler.generalError(res, "Error occurred getting tenant groups", error.message, error.statusCode, "Not Found")
@@ -125,7 +125,7 @@ export class TMController {
             const sharedServiceRolesResponse = await this.tmService.getSharedServiceRolesForGroup(req)
             res.status(200).send(sharedServiceRolesResponse)
         } 
-        catch(error) {
+        catch(error: any) {
             logger.error(error)
             if (error instanceof NotFoundError) {
                 this.errorHandler.generalError(res, "Error occurred getting shared service roles for group", error.message, error.statusCode, "Not Found")
@@ -141,7 +141,7 @@ export class TMController {
             const sharedServiceRolesResponse = await this.tmService.updateSharedServiceRolesForGroup(req)
             res.status(200).send(sharedServiceRolesResponse)
         } 
-        catch(error) {
+        catch(error: any) {
             logger.error(error)
             if (error instanceof NotFoundError) {
                 this.errorHandler.generalError(res, "Error occurred updating shared service roles for group", error.message, error.statusCode, "Not Found")
@@ -159,7 +159,7 @@ export class TMController {
         try {
             const result = await this.tmService.getUserGroupsWithSharedServiceRoles(req)
             res.status(200).send(result)
-        } catch(error) {
+        } catch(error: any) {
             logger.error(error)
             if (error instanceof NotFoundError) {
                 this.errorHandler.generalError(res, "Error occurred getting user groups with shared services", error.message, error.statusCode, "Not Found")
@@ -175,7 +175,7 @@ export class TMController {
         try {
             const result = await this.tmService.getEffectiveSharedServiceRoles(req)
             res.status(200).send(result)
-        } catch(error) {
+        } catch(error: any) {
             logger.error(error)
             if (error instanceof NotFoundError) {
                 this.errorHandler.generalError(res, "Error occurred getting effective shared service roles", error.message, error.statusCode, "Not Found")

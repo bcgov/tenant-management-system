@@ -70,9 +70,9 @@ export class TMRepository {
                     .createQueryBuilder(Group, 'group')
                     .leftJoinAndSelect('group.users', 'groupUsers', 'groupUsers.isDeleted = :isDeleted', { isDeleted: false })
                     .where('group.id = :id', { id: savedGroup.id })
-                    .getOne();
+                    .getOne() as any;
 
-            } catch(error) {
+            } catch(error: any) {
                 logger.error('Create group transaction failure - rolling back inserts ', error);
                 throw error;
             }
@@ -118,7 +118,7 @@ export class TMRepository {
     public async checkIfTenantUserAlreadyInGroup(tenantUserId: string, tenantId: string, transactionEntityManager?: EntityManager) {
         transactionEntityManager = transactionEntityManager ? transactionEntityManager : this.manager;
         
-        const existingGroupUser:GroupUser = await transactionEntityManager
+        const existingGroupUser:GroupUser | null = await transactionEntityManager
             .createQueryBuilder(GroupUser, 'groupUser')
             .leftJoin('groupUser.group', 'group')
             .leftJoin('groupUser.tenantUser', 'tenantUser')
@@ -141,7 +141,7 @@ export class TMRepository {
     public async getTenantGroups(req: Request) {
         const tenantId: string = req.params.tenantId
         const ssoUserId: string = req.decodedJwt?.idir_user_guid
-        const TMS_AUDIENCE: string = process.env.TMS_AUDIENCE
+        const TMS_AUDIENCE: string = process.env.TMS_AUDIENCE!
         const jwtAudience: string = req.decodedJwt?.aud || req.decodedJwt?.audience || TMS_AUDIENCE
 
         // REDUNDANT: checkTenantAccess middleware already validates tenant exists and user has access
@@ -207,7 +207,7 @@ export class TMRepository {
             .createQueryBuilder(Group, 'group')
             .leftJoinAndSelect('group.tenant', 'tenant')
             .where('group.id = :groupId', { groupId })
-            .getOne();
+            .getOne() as any;
 
         if (!group) {
             throw new NotFoundError(`Group not found: ${groupId}`);
@@ -284,7 +284,7 @@ export class TMRepository {
     public async checkIfUserExistsInGroup(tenantUserId: string, groupId: string, transactionEntityManager?: EntityManager) {
         transactionEntityManager = transactionEntityManager ? transactionEntityManager : this.manager
         
-        const existingGroupUser:GroupUser = await transactionEntityManager
+        const existingGroupUser:GroupUser | null = await transactionEntityManager
             .createQueryBuilder(GroupUser, 'groupUser')
             .where('groupUser.tenantUser.id = :tenantUserId', { tenantUserId })
             .andWhere('groupUser.group.id = :groupId', { groupId })
@@ -297,7 +297,7 @@ export class TMRepository {
     public async findSoftDeletedGroupUser(tenantUserId: string, groupId: string, transactionEntityManager?: EntityManager) {
         transactionEntityManager = transactionEntityManager ? transactionEntityManager : this.manager
         
-        const softDeletedGroupUser:GroupUser = await transactionEntityManager
+        const softDeletedGroupUser:GroupUser | null = await transactionEntityManager
             .createQueryBuilder(GroupUser, 'groupUser')
             .where('groupUser.tenantUser.id = :tenantUserId', { tenantUserId })
             .andWhere('groupUser.group.id = :groupId', { groupId })
@@ -464,7 +464,7 @@ export class TMRepository {
             .getOne();
 
         if (groupUserResponse) {
-            const userRoles = groupUserResponse.tenantUser.roles?.map(tur => tur.role) || []
+            const userRoles = groupUserResponse.tenantUser.roles?.map((tur: any) => tur.role) || []
             groupUserResponse = {
                 ...groupUserResponse,
                 user: {
@@ -484,7 +484,7 @@ export class TMRepository {
         const tenantId: string = req.params.tenantId
         const { name, description } = req.body
 
-        let groupResponse: Group = null
+        let groupResponse: Group = null as any
         await this.manager.transaction(async(transactionEntityManager) => {
             try {
                 // REDUNDANT: checkTenantAccess middleware already validates tenant exists and user has access
@@ -492,7 +492,7 @@ export class TMRepository {
                 //     throw new NotFoundError(`Tenant not found: ${tenantId}`)
                 // }
 
-                const existingGroup:Group = await this.checkIfGroupExistsInTenant(groupId, tenantId, transactionEntityManager)
+                const existingGroup:Group = await this.checkIfGroupExistsInTenant(groupId, tenantId, transactionEntityManager) as any
                 if (!existingGroup) {
                     throw new NotFoundError(`Group not found: ${groupId}`)
                 }
@@ -518,10 +518,10 @@ export class TMRepository {
                     .createQueryBuilder(Group, 'group')
                     .leftJoinAndSelect('group.tenant', 'tenant')
                     .where('group.id = :id', { id: groupId })
-                    .getOne();
+                    .getOne() as any;
 
             } catch (error) {
-                logger.error('Update group transaction failure - rolling back changes', error)
+                logger.error('Update group transaction failure - rolling back changes', error as any)
                 throw error
             }
         });
@@ -541,7 +541,7 @@ export class TMRepository {
                 //     throw new NotFoundError(`Tenant not found: ${tenantId}`)
                 // }
 
-                const group: Group = await this.checkIfGroupExistsInTenant(groupId, tenantId, transactionEntityManager)
+                const group: Group = await this.checkIfGroupExistsInTenant(groupId, tenantId, transactionEntityManager) as any
                 if (!group) {
                     throw new NotFoundError(`Group not found: ${groupId}`)
                 }
@@ -553,7 +553,7 @@ export class TMRepository {
                     .andWhere('groupUser.group.id = :groupId', { groupId })
                     .andWhere('group.tenant.id = :tenantId', { tenantId })
                     .andWhere('groupUser.isDeleted = :isDeleted', { isDeleted: false })
-                    .getOne();
+                    .getOne() as any;
 
                 if (!groupUser) {
                     throw new NotFoundError(`Group user not found: ${groupUserId}`)
@@ -570,7 +570,7 @@ export class TMRepository {
                     .execute();
 
             } catch (error) {
-                logger.error('Remove user from group transaction failure - rolling back changes', error)
+                logger.error('Remove user from group transaction failure - rolling back changes', error as any)
                 throw error
             }
         });
@@ -586,7 +586,7 @@ export class TMRepository {
         //     throw new NotFoundError(`Tenant not found: ${tenantId}`)
         // }
 
-        const existingGroup: Group = await this.checkIfGroupExistsInTenant(groupId, tenantId)
+        const existingGroup: Group = await this.checkIfGroupExistsInTenant(groupId, tenantId) as any
         if (!existingGroup) {
             throw new NotFoundError(`Group not found: ${groupId}`)
         }
@@ -806,7 +806,7 @@ export class TMRepository {
     public async getUserGroupsWithSharedServiceRoles(req: Request, audience: string) {
         const tenantId: string = req.params.tenantId
         const ssoUserId: string = req.params.ssoUserId
-        const idpType: string = req.idpType
+        const idpType: string = req.idpType!
 
         const tenantUser: TenantUser = await this.tmsRepository.getTenantUserBySsoId(ssoUserId, tenantId)
         if (!tenantUser) {
@@ -848,7 +848,7 @@ export class TMRepository {
             const group = groupsMap.get(groupId)
             
             if (gu.group.sharedServiceRoles) {
-                gu.group.sharedServiceRoles.forEach(gssr => {
+                gu.group.sharedServiceRoles.forEach((gssr: any) => {
                     if (
                         gssr.sharedServiceRole &&
                         gssr.sharedServiceRole.sharedService &&
@@ -875,7 +875,7 @@ export class TMRepository {
     public async getEffectiveSharedServiceRoles(req: Request, audience: string) {
         const tenantId: string = req.params.tenantId
         const ssoUserId: string = req.params.ssoUserId
-        const idpType: string = req.idpType
+        const idpType: string = req.idpType!
 
         const tenantUser: TenantUser = await this.tmsRepository.getTenantUserBySsoId(ssoUserId, tenantId)
         if (!tenantUser) {

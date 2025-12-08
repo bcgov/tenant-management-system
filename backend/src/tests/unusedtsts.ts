@@ -4,7 +4,7 @@ import * as dotenv from 'dotenv';
 const dbConfig = require('../ormconfig');
 dotenv.config();
 
-let PostgreSqlContainer, testApp, App, container
+let PostgreSqlContainer: any, testApp: any, App: any, container: any
 let dataSource: DataSource;
 
 beforeAll(async () => {

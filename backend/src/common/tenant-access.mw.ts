@@ -40,7 +40,7 @@ export const checkTenantAccess = (requiredRoles?: string[]) => {
 
             next();
         } catch (error) {
-            logger.error('Tenant access check failed:', error);
+            logger.error('Tenant access check failed:', error as any);
             if (error instanceof ForbiddenError) {
                 errorHandler.generalError(res,"Authorization Failure", error.message, error.statusCode, "Forbidden")
             } else {
