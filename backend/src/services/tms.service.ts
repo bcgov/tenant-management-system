@@ -18,9 +18,9 @@ export class TMSService {
         const savedTenant:any = await this.tmsRepository.saveTenant(req)
         
         if (savedTenant?.users) {
-            savedTenant.users = savedTenant.users.map(user => ({
+            savedTenant.users = savedTenant.users.map((user: any) => ({
                 ...user,
-                roles: user.roles.map(tur => tur.role)
+                roles: user.roles.map((tur: any) => tur.role)
             }));
         }
 
@@ -39,7 +39,7 @@ export class TMSService {
                 const tenantUserId = tmsResponse.tenantUserId
                 const savedUser:any = tmsResponse.savedTenantUser
                 const roleAssignments:any = tmsResponse.roleAssignments || []
-                const roles:any = roleAssignments.map(assignment => assignment.role)
+                const roles:any = roleAssignments.map((assignment: any) => assignment.role)
                 
                 const groupIds:string[] = req.body.groups || []
                 const updatedBy:string = req.decodedJwt?.idir_user_guid || 'system'
@@ -56,7 +56,7 @@ export class TMSService {
                         }
                     }
                 }
-            } catch(error) {
+            } catch(error: any) {
                 logger.error('Add user to a tenant transaction failure - rolling back inserts ', error)
                 throw error
             }
@@ -125,7 +125,7 @@ export class TMSService {
             throw new Error("roles must be a non-empty array");
         }
 
-        const data = await this.tmsRepository.assignUserRoles(tenantId, tenantUserId, roles, null);
+        const data = await this.tmsRepository.assignUserRoles(tenantId, tenantUserId, roles, null as any);
         return {
             data: {
                 roles: data.map(assignment => assignment.role)
@@ -159,7 +159,7 @@ export class TMSService {
         try {
             const token:string = await this.getToken()
             const queryParams = req.query;
-            const response = await axios.get(process.env.BCGOV_SSO_API_URL, {
+            const response = await axios.get(process.env.BCGOV_SSO_API_URL!, {
                 headers: { Authorization: `Bearer ${token}` },
                 params: queryParams,
             });       
@@ -178,7 +178,7 @@ export class TMSService {
         try {
             const token:string = await this.getToken()
             const queryParams = req.query
-            const response = await axios.get(process.env.BCGOV_SSO_API_URL_BCEID, {
+            const response = await axios.get(process.env.BCGOV_SSO_API_URL_BCEID!, {
                 headers: { Authorization: `Bearer ${token}` },
                 params: queryParams,
             });       
@@ -297,7 +297,7 @@ export class TMSService {
                 await this.tmsRepository.removeTenantUser(tenantUserId, tenantId, deletedBy, transactionEntityManager)
                 await this.tmRepository.removeUserFromAllGroups(tenantUserId, deletedBy, transactionEntityManager)
             } catch(error) {
-                logger.error('Remove tenant user transaction failure - rolling back changes', error)
+                logger.error('Remove tenant user transaction failure - rolling back changes', error as any)
                 throw error
             }
         })
@@ -306,10 +306,10 @@ export class TMSService {
     private async getToken() {
         try {
             const response = await axios.post(
-                process.env.BCGOV_TOKEN_URL,
+                process.env.BCGOV_TOKEN_URL!,
                 new URLSearchParams({
-                    client_id: process.env.BCGOV_SSO_API_CLIENT_ID,
-                    client_secret: process.env.BCGOV_SSO_API_CLIENT_SECRET,
+                    client_id: process.env.BCGOV_SSO_API_CLIENT_ID!,
+                    client_secret: process.env.BCGOV_SSO_API_CLIENT_SECRET!,
                     grant_type: "client_credentials",
                 }),
                 { headers: { "Content-Type": "application/x-www-form-urlencoded" } }

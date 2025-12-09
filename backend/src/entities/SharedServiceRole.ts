@@ -7,38 +7,38 @@ import { GroupSharedServiceRole } from './GroupSharedServiceRole'
 export class SharedServiceRole {
 
     @PrimaryGeneratedColumn('uuid', { name: 'id' })
-    id: string;
+    id!: string;
 
     @Column({ type: 'varchar', length: 30, name: 'name' })
-    name: string;
+    name!: string;
     
     @Column({ type: 'varchar', length: 255, name: 'description', nullable: true })
-    description: string;
+    description!: string;
     
     @Column({ type: 'text', array: true, name: 'allowed_identity_providers', nullable: true, default: null })
-    allowedIdentityProviders: string[] | null;
+    allowedIdentityProviders!: string[] | null;
     
     @Column({ type: 'boolean', name: 'is_deleted', default: false })
-    isDeleted: boolean;
+    isDeleted!: boolean;
 
     @ManyToOne(() => SharedService, (sharedService) => sharedService.roles, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'shared_service_id' })
-    sharedService: SharedService;
+    sharedService!: SharedService;
 
     @OneToMany(() => GroupSharedServiceRole, (groupSharedServiceRole) => groupSharedServiceRole.sharedServiceRole, {
         cascade: true,
     })
-    groupAssignments: GroupSharedServiceRole[];
+    groupAssignments!: GroupSharedServiceRole[];
 
     @CreateDateColumn({ type: 'date', name: 'created_datetime', nullable: true })
-    createdDateTime: Date;
+    createdDateTime!: Date;
 
     @UpdateDateColumn({ type: 'date', name: 'updated_datetime', nullable: true })
-    updatedDateTime: Date;
+    updatedDateTime!: Date;
 
     @Column({ type: 'char', length: 32, name: 'created_by', nullable: true })
-    createdBy: string;
+    createdBy!: string;
 
     @Column({ type: 'char', length: 32, name: 'updated_by', nullable: true })
-    updatedBy: string;
+    updatedBy!: string;
 } 

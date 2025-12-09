@@ -8,38 +8,38 @@ import { GroupSharedServiceRole } from './GroupSharedServiceRole'
 export class Group {
 
     @PrimaryGeneratedColumn('uuid', { name: 'id' })
-    id: string;
+    id!: string;
 
     @Column({ type: 'varchar', length: 30, name: 'name'})
-    name: string;
+    name!: string;
     
     @Column({ type: 'varchar', length: 500, name: 'description', nullable: true })
-    description: string;
+    description!: string;
     
     @Index()
     @ManyToOne(() => Tenant, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'tenant_id' })
-    tenant: Tenant;
+    tenant!: Tenant;
 
     @OneToMany(() => GroupUser, (groupUser) => groupUser.group, {
         cascade: true,
     })
-    users: GroupUser[];
+    users!: GroupUser[];
 
     @OneToMany(() => GroupSharedServiceRole, (groupSharedServiceRole) => groupSharedServiceRole.group, {
         cascade: true,
     })
-    sharedServiceRoles: GroupSharedServiceRole[];
+    sharedServiceRoles!: GroupSharedServiceRole[];
 
     @CreateDateColumn({ type: 'date', name: 'created_datetime', nullable: true })
-    createdDateTime: Date;
+    createdDateTime!: Date;
 
     @UpdateDateColumn({ type: 'date', name: 'updated_datetime', nullable: true })
-    updatedDateTime: Date;
+    updatedDateTime!: Date;
 
     @Column({ type: 'char', length: 32, name: 'created_by', nullable: true })
-    createdBy: string;
+    createdBy!: string;
 
     @Column({ type: 'char', length: 32, name: 'updated_by', nullable: true })
-    updatedBy: string;
+    updatedBy!: string;
 } 

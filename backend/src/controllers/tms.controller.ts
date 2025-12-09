@@ -27,7 +27,7 @@ export class TMSController {
         const tenantResponse = await this.tmsService.createTenant(req)
         res.status(201).send(tenantResponse);
     } 
-    catch(error) {
+    catch(error: any) {
             logger.error(error)
             if (error instanceof ConflictError) {
                 this.errorHandler.generalError(res,"Error occurred adding user to the tenant", error.message, error.statusCode, "Conflict")
@@ -43,7 +43,7 @@ export class TMSController {
             const response = await this.tmsService.addTenantUser(req)
             res.status(201).send(response)
         }
-        catch(error) {
+        catch(error: any) {
             logger.error(error)
             if (error instanceof NotFoundError) {
                 this.errorHandler.generalError(res,"Error occurred adding user to the tenant", error.message, error.statusCode, "Not Found")
@@ -62,7 +62,7 @@ export class TMSController {
             const tenants = await this.tmsService.getTenantsForUser(req)
             res.status(200).send(tenants)
         }
-        catch(error) {
+        catch(error: any) {
             logger.error(error)
             this.errorHandler.generalError(res,"Error occurred getting tenants for a user", error.message, 500, "Internal Server Error")
         }
@@ -74,7 +74,7 @@ export class TMSController {
             const users = await this.tmsService.getUsersForTenant(req)
             res.status(200).send(users)
         }
-        catch(error) {
+        catch(error: any) {
             logger.error(error)
             this.errorHandler.generalError(res,"Error occurred getting users for a tenant", error.message, 500, "Internal Server Error")
         }
@@ -85,7 +85,7 @@ export class TMSController {
             const role = await this.tmsService.createRoles(req)
             res.status(201).send(role)
         }
-        catch(error) {
+        catch(error: any) {
             logger.error(error)
             if (error instanceof NotFoundError) {
                 this.errorHandler.generalError(res,"Error occurred creating role", error.message, error.statusCode, "Not Found")
@@ -104,7 +104,7 @@ export class TMSController {
             const userRole = await this.tmsService.assignUserRoles(req)
             res.status(201).send(userRole)
         }
-        catch(error) {
+        catch(error: any) {
             logger.error(error)
             if (error instanceof NotFoundError) {
                 this.errorHandler.generalError(res,"Error occurred assigning user role", error.message, error.statusCode, "Not Found")
@@ -123,7 +123,7 @@ export class TMSController {
             const roles = await this.tmsService.getTenantRoles(req)
             return res.status(200).send(roles)
         }
-        catch(error) {
+        catch(error: any) {
             logger.error(error)
             if (error instanceof NotFoundError) {
                 this.errorHandler.generalError(res,"Error occurred getting tenant roles", error.message, error.statusCode, "Not Found")
@@ -139,7 +139,7 @@ export class TMSController {
             const roles = await this.tmsService.getUserRoles(req)
             return res.status(200).send(roles)
         }
-        catch(error) {
+        catch(error: any) {
             logger.error(error)
             if (error instanceof NotFoundError) {
                 this.errorHandler.generalError(res,"Error occurred getting roles for user", error.message, error.statusCode, "Not Found")
@@ -155,7 +155,7 @@ export class TMSController {
             await this.tmsService.unassignUserRoles(req)
             return res.status(204).send()
         }
-        catch(error) {
+        catch(error: any) {
             logger.error(error)            
             if (error instanceof NotFoundError) {
                 this.errorHandler.generalError(res,"Error occurred unassigning user role", error.message, error.statusCode, "Not Found")
@@ -174,7 +174,7 @@ export class TMSController {
             const users = await this.tmsService.searchBCGOVSSOUsers(req)
             return res.status(200).send(users)
         }
-        catch(error) {
+        catch(error: any) {
             logger.error(error)
             if (error instanceof BadRequestError) {
                 this.errorHandler.generalError(res, "Error occurred searching SSO users", error.message, error.statusCode, "Bad Request")
@@ -189,7 +189,7 @@ export class TMSController {
             const users = await this.tmsService.searchBCGOVSSOBceidUsers(req)
             return res.status(200).send(users)
         }
-        catch(error) {
+        catch(error: any) {
             logger.error(error)
             if (error instanceof BadRequestError) {
                 this.errorHandler.generalError(res, "Error occurred searching BCEID users", error.message, error.statusCode, "Bad Request")
@@ -204,7 +204,7 @@ export class TMSController {
             const tenant = await this.tmsService.getTenant(req)
             return res.status(200).send(tenant)
         }
-        catch(error) {
+        catch(error: any) {
             logger.error(error)            
             if (error instanceof NotFoundError) {
                 this.errorHandler.generalError(res,"Error occurred getting a tenant", error.message, error.statusCode, "Not Found")
@@ -223,7 +223,7 @@ export class TMSController {
             const tenant = await this.tmsService.updateTenant(req)
             return res.status(200).send(tenant)
         }
-        catch(error) {
+        catch(error: any) {
             logger.error(error)            
             if (error instanceof NotFoundError) {
                 this.errorHandler.generalError(res,"Error occurred updating tenant", error.message, error.statusCode, "Not Found")
@@ -242,7 +242,7 @@ export class TMSController {
             const roles = await this.tmsService.getRolesForSSOUser(req)
             return res.status(200).send(roles)
         }
-        catch(error) {
+        catch(error: any) {
             logger.error(error)            
             if (error instanceof NotFoundError) {
                 this.errorHandler.generalError(res,"Error occurred getting roles for SSO user", error.message, error.statusCode, "Not Found")
@@ -257,7 +257,7 @@ export class TMSController {
         try {
             const tenantRequest = await this.tmsService.createTenantRequest(req)
             res.status(201).send(tenantRequest)
-        } catch (error) {
+        } catch (error: any) {
             logger.error(error)
             if (error instanceof ConflictError) {
                 this.errorHandler.generalError(res, "Error occurred creating tenant request", error.message, error.statusCode, "Conflict")
@@ -271,7 +271,7 @@ export class TMSController {
         try {
             const response = await this.tmsService.updateTenantRequestStatus(req);
             res.status(200).send(response);
-        } catch (error) {
+        } catch (error: any) {
             logger.error(error);
             if (error instanceof NotFoundError) {
                 this.errorHandler.generalError(res, "Error occurred updating tenant request status", error.message, error.statusCode, "Not Found");
@@ -287,7 +287,7 @@ export class TMSController {
         try {
             const response = await this.tmsService.getTenantRequests(req);
             res.status(200).send(response);
-        } catch (error) {
+        } catch (error: any) {
             logger.error(error);
             this.errorHandler.generalError(res, "Error occurred getting tenant requests", error.message, 500, "Internal Server Error");
         }
@@ -297,7 +297,7 @@ export class TMSController {
         try {
             const sharedService = await this.tmsService.createSharedService(req)
             res.status(201).send(sharedService)
-        } catch (error) {
+        } catch (error: any) {
             logger.error(error)
             if (error instanceof ConflictError) {
                 this.errorHandler.generalError(res, "Error occurred creating shared service", error.message, error.statusCode, "Conflict")
@@ -311,7 +311,7 @@ export class TMSController {
         try {
             const result = await this.tmsService.addSharedServiceRoles(req);
             res.status(201).send(result);
-        } catch (error) {
+        } catch (error: any) {
             logger.error(error);
             if (error instanceof ConflictError) {
                 this.errorHandler.generalError(res, "Error occurred adding shared service roles", error.message, error.statusCode, "Conflict");
@@ -327,7 +327,7 @@ export class TMSController {
         try {
             await this.tmsService.associateSharedServiceToTenant(req)
             res.status(201).send()
-        } catch (error) {
+        } catch (error: any) {
             logger.error(error)
             if (error instanceof NotFoundError) {
                 this.errorHandler.generalError(res, "Error occurred associating shared service to tenant", error.message, error.statusCode, "Not Found")
@@ -343,7 +343,7 @@ export class TMSController {
         try {
             const sharedServices = await this.tmsService.getAllActiveSharedServices(req)
             res.status(200).send(sharedServices)
-        } catch (error) {
+        } catch (error: any) {
             logger.error(error)
             this.errorHandler.generalError(res, "Error occurred getting active shared services", error.message, 500, "Internal Server Error")
         }
@@ -353,7 +353,7 @@ export class TMSController {
         try {
             const sharedServices = await this.tmsService.getSharedServicesForTenant(req)
             res.status(200).send(sharedServices)
-        } catch (error) {
+        } catch (error: any) {
             logger.error(error)
             this.errorHandler.generalError(res, "Error occurred getting shared services for tenant", error.message, 500, "Internal Server Error")
         }
@@ -363,7 +363,7 @@ export class TMSController {
         try {
             await this.tmsService.removeTenantUser(req)
             res.status(204).send()
-        } catch (error) {
+        } catch (error: any) {
             logger.error(error);
             if (error instanceof NotFoundError) {
                 this.errorHandler.generalError(res, "Error occurred removing tenant user", error.message, error.statusCode, "Not Found");
@@ -382,7 +382,7 @@ export class TMSController {
             const tenantUserResponse = await this.tmsService.getTenantUser(req)
             res.status(200).send(tenantUserResponse)
         } 
-        catch(error) {
+        catch(error: any) {
             logger.error(error)
             if (error instanceof NotFoundError) {
                 this.errorHandler.generalError(res, "Error occurred getting tenant user", error.message, error.statusCode, "Not Found")
