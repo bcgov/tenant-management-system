@@ -6,30 +6,30 @@ import { Group } from './Group'
 export class GroupUser {
 
     @PrimaryGeneratedColumn('uuid', { name: 'id' })
-    id: string;
+    id!: string;
 
     @Index()
     @ManyToOne(() => TenantUser, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'tenant_user_id' })
-    tenantUser: TenantUser;
+    tenantUser!: TenantUser;
 
     @Index()
     @ManyToOne(() => Group, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'group_id' })
-    group: Group;
+    group!: Group;
 
     @Column({ type: 'boolean', name: 'is_deleted', default: false, nullable: true })
-    isDeleted: boolean;
+    isDeleted!: boolean;
 
     @CreateDateColumn({ type: 'date', name: 'created_datetime', nullable: true })
-    createdDateTime: Date;
+    createdDateTime!: Date;
 
     @UpdateDateColumn({ type: 'date', name: 'updated_datetime', nullable: true })
-    updatedDateTime: Date;
+    updatedDateTime!: Date;
 
     @Column({ type: 'char', length: 32, name: 'created_by', nullable: true })
-    createdBy: string;
+    createdBy!: string;
 
     @Column({ type: 'char', length: 32, name: 'updated_by', nullable: true })
-    updatedBy: string;
+    updatedBy!: string;
 } 

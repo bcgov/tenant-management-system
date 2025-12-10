@@ -1329,7 +1329,7 @@ describe('Tenant Management API', () => {
     })
 
     it('should return empty array when tenant has no groups', async () => {
-      const mockEmptyGroups = []
+      const mockEmptyGroups: any[] = []
 
       mockTMRepository.getTenantGroups.mockResolvedValue(mockEmptyGroups)
 
@@ -1523,7 +1523,7 @@ describe('Tenant Management API', () => {
     })
 
     it('should return empty array when group has no shared service roles', async () => {
-      const mockEmptySharedServices = []
+      const mockEmptySharedServices: any[] = []
 
       mockTMRepository.getSharedServiceRolesForGroup.mockResolvedValue(mockEmptySharedServices)
 

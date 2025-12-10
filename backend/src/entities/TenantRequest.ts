@@ -4,16 +4,16 @@ import { SSOUser } from './SSOUser'
 @Entity('TenantRequest', { schema: 'tms' })
 export class TenantRequest {
     @PrimaryGeneratedColumn('uuid', { name: 'id' })
-    id: string;
+    id!: string;
 
     @Column({ length: 30, name: 'name' })
-    name: string;
+    name!: string;
 
     @Column({ length: 100, name: 'ministry_name' })
-    ministryName: string;
+    ministryName!: string;
 
     @Column({ type: 'varchar', length: 500, name: 'description', nullable: true })
-    description: string;
+    description!: string;
 
     @Index()
     @Column({ 
@@ -22,36 +22,36 @@ export class TenantRequest {
         name: 'status',
         default: 'NEW'
     })
-    status: 'NEW' | 'APPROVED' | 'REJECTED';
+    status!: 'NEW' | 'APPROVED' | 'REJECTED';
 
     @Index()
     @ManyToOne(() => SSOUser, { eager: true, cascade:['insert'] })
     @JoinColumn({ name: 'requested_by' })
-    requestedBy: SSOUser;
+    requestedBy!: SSOUser;
 
     @CreateDateColumn({ type: 'date', name: 'requested_at' })
-    requestedAt: Date;
+    requestedAt!: Date;
 
     @Index()
     @ManyToOne(() => SSOUser, { eager: true, nullable: true })
     @JoinColumn({ name: 'decisioned_by' })
-    decisionedBy: SSOUser;
+    decisionedBy!: SSOUser;
 
     @Column({ type: 'date', name: 'decisioned_at', nullable: true })
-    decisionedAt: Date;
+    decisionedAt!: Date;
 
     @Column({ type: 'varchar', length: 500, name: 'rejection_reason', nullable: true })
-    rejectionReason: string;
+    rejectionReason!: string;
 
     @CreateDateColumn({ type: 'date', name: 'created_datetime', nullable: true })
-    createdDateTime: Date;
+    createdDateTime!: Date;
 
     @UpdateDateColumn({ type: 'date', name: 'updated_datetime', nullable: true })
-    updatedDateTime: Date;
+    updatedDateTime!: Date;
 
     @Column({ type: 'char', length: 32, name: 'created_by', nullable: true })
-    createdBy: string;
+    createdBy!: string;
 
     @Column({ type: 'char', length: 32, name: 'updated_by', nullable: true })
-    updatedBy: string;
+    updatedBy!: string;
 } 

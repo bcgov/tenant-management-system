@@ -39,7 +39,7 @@ export class TMService {
                 const tenantUser = await this.tmsRepository.ensureTenantUserExists(user, tenantId, updatedBy, transactionEntityManager)
                 req.body.tenantUserId = tenantUser.id
                 savedGroupUser = await this.tmRepository.addGroupUser(req, transactionEntityManager)
-            } catch(error) {
+            } catch(error: any) {
                 logger.error('Add user to group transaction failure - rolling back inserts ', error)
                 throw error
             }
