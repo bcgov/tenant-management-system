@@ -113,7 +113,7 @@ onMounted(async () => {
       <v-card class="mt-6" elevation="0">
         <v-tabs v-model="tab" :disabled="isEditing" :mandatory="false">
           <v-tab :value="0">User Management</v-tab>
-          <v-tab :value="1">Available Services</v-tab>
+          <v-tab :value="1">{{ $t('general.servicesLabel', 2) }}</v-tab>
         </v-tabs>
 
         <v-window v-model="tab">

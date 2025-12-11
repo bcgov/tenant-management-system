@@ -49,7 +49,7 @@ export const useServiceStore = defineStore('service', () => {
   }
 
   /**
-   * Fetches all shared services from the API and updates the store.
+   * Fetches all connected services from the API and updates the store.
    *
    * @returns {Promise<Service[]>} The list of services.
    */
