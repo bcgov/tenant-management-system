@@ -27,7 +27,7 @@
     "testcontainers": "^10.24.2",
     "ts-jest": "^29.2.6",
     "ts-node": "^10.9.2",
-    "typescript": "^5.8.0"
+    "typescript": "^5.9.3"
   },
   "dependencies": {
     "@testcontainers/postgresql": "10.28.0",
