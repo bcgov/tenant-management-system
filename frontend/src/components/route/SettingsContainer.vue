@@ -16,7 +16,7 @@ const tab = ref<number>(0)
       <v-card elevation="0">
         <v-tabs v-model="tab" :mandatory="false">
           <v-tab :value="0">Tenant Requests</v-tab>
-          <v-tab :value="1">Shared Services</v-tab>
+          <v-tab :value="1">{{ $t('general.servicesLabel', 2) }}</v-tab>
         </v-tabs>
 
         <v-window v-model="tab">
@@ -28,7 +28,7 @@ const tab = ref<number>(0)
             <v-container fluid>
               <v-row>
                 <v-col cols="12">
-                  <p>Content for Shared Services tab</p>
+                  <p>Content for {{ $t('general.servicesLabel', 2) }} tab</p>
                 </v-col>
               </v-row>
             </v-container>
