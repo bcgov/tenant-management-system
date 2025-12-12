@@ -7,6 +7,8 @@ import { DomainError, DuplicateEntityError } from '@/errors'
 import type { TenantRequest } from '@/models'
 import { useTenantRequestStore } from '@/stores'
 import { TENANT_REQUEST_STATUS } from '@/utils/constants'
+import { useI18n } from 'vue-i18n'
+const { t } = useI18n()
 
 // --- Store and Composable Setup ----------------------------------------------
 
@@ -59,10 +61,18 @@ const handleApproved = async (name: string) => {
     handleBackToList()
   } catch (error) {
     if (error instanceof DuplicateEntityError) {
+      if (error.userMessage && error.userMessage.includes('Cannot update tenant request with status')) {
+        // If the API says that this name exists already, then show the name
+        // duplicated validation error.
+        notification.error(
+          t('tenants.errors.nonNewStatusChange')
+        )
+        return
+      }
       // If the API says that this name exists already, then show the name
       // duplicated validation error.
       notification.error(
-        'Tenant Request cannot be approved because the name already exists',
+        t('tenants.errors.nameExists'),
       )
       erroredApproving.value = true
     } else if (error instanceof DomainError && error.userMessage) {
@@ -70,11 +80,9 @@ const handleApproved = async (name: string) => {
       // from the API. This should not happen but is useful if there are
       // business rules in the API that are not implemented in the UI.
       notification.error(error.userMessage)
-      erroredApproving.value = true
     } else {
       // Otherwise display a generic error message.
-      notification.error('Failed to update Tenant Request')
-      erroredApproving.value = true
+      notification.error(t('tenants.errors.genericRequestError'))
     }
   }
 }
