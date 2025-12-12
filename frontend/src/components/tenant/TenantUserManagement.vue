@@ -197,6 +197,9 @@ function showInfo(message: string) {
 }
 
 function showRoleDialog(user: User, index: number) {
+  if (!isUserAdmin.value) {
+    return
+  }
   modifyingUserIndex.value = index
   roleDialogVisible.value = true
 }
@@ -273,6 +276,7 @@ function handleCloseRoleDialog(open: boolean) {
           <template #[`item.roles`]="{ item, index }">
             <div class="d-flex flex-wrap" style="gap: 8px; margin-block: 4px">
               <v-btn
+                v-if="isUserAdmin"
                 class="default-radius"
                 icon="mdi-plus"
                 size="x-small"
@@ -398,6 +402,7 @@ function handleCloseRoleDialog(open: boolean) {
 
     <RoleDialog
       v-model="roleDialogVisible"
+      v-if="isUserAdmin"
       :tenant="tenant"
       :user-index="modifyingUserIndex"
       @update:open-dialog="handleCloseRoleDialog"
