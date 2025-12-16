@@ -4,7 +4,10 @@
     "learnMore": "Learn more about",
     "roleAssignDesc": "Below are the available tenant roles you can assign to a user. A checkmark shows roles currently assigned to this user. Select additional role(s) to update their permissions.",
     "errors": {
-      "uniqueName": "Tenant name must be unique"
+      "uniqueName": "Tenant name must be unique",
+      "nonNewStatusChange": "Requests can only have a status change from New. Start a new request instead",
+      "nameExists": "Tenant Request cannot be approved because the name already exists",
+      "genericRequestError": "Failed to update Tenant Request"
     }
   },
   "roles": {
@@ -31,8 +34,8 @@
     "updateError": "Failed to update group:",
     "deleteSuccess": "Group deleted successfully",
     "deleteError": "Failed to delete group:",
-    "sharedServices": "Adding Shared Service Roles",
-    "sharedServicesDesc": "Click 'Edit' to start assigning roles. Choose the roles you want to add to your Group from each available Shared Service, then click 'Save' to apply your changes.",
+    "sharedServices": "Adding {servicesLabel} Roles",
+    "sharedServicesDesc": "Click 'Edit' to start assigning roles. Choose the roles you want to add to your Group from each available {servicesLabel}, then click 'Save' to apply your changes.",
     "sharedServicesSavedTitle": "Roles Saved",
     "sharedServicesSavedDesc": "The roles for this group have been successfully updated.",
     "sharedServicesSaveErrorTitle": "Error Saving Roles",
@@ -49,7 +52,9 @@
     "edit": "Edit",
     "clearAll": "Clear All",
     "undoChanges": "Undo Changes",
-    "revert": "Revert"
+    "revert": "Revert",
+    "servicesLabel": "Connected Service | Connected Services",
+    "servicesLabelLower": "connected service | connected services"
   },
   "users": {
     "user": "Users | User | Users",

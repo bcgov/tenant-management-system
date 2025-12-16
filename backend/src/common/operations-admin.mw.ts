@@ -25,7 +25,7 @@ export const checkOperationsAdmin = (req: Request, res: Response, next: NextFunc
                 name: 'User does not have access to this operation and / resource'
             })
         } else {
-            logger.error('Error checking operations admin role', error)
+            logger.error('Error checking operations admin role', error as any)
             res.status(500).json({
                 errorMessage: 'Internal Server Error',
                 httpResponseCode: 500,

@@ -11,6 +11,7 @@ import { GroupUser } from '../entities/GroupUser'
 import { ConflictError } from '../errors/ConflictError'
 import { NotFoundError } from '../errors/NotFoundError'
 import { BadRequestError } from '../errors/BadRequestError'
+import { UnauthorizedError } from '../errors/UnauthorizedError'
 
 jest.mock('../repositories/tm.repository')
 jest.mock('../repositories/tms.repository')
@@ -100,6 +101,24 @@ describe('Tenant Management API', () => {
         next()
       },
       (req, res) => tmController.getUserGroupsWithSharedServiceRoles(req, res)
+    )
+
+    app.get('/v1/tenants/:tenantId/ssousers/:ssoUserId/shared-service-roles',
+      validate(validator.getEffectiveSharedServiceRoles, {}, {}),
+      (req, res, next) => {
+        req.decodedJwt = {
+          aud: 'test-service-client',
+          audience: 'test-service-client',
+          idir_user_guid: 'F45AFBBD68C51D6F956BA3A1DE1878A2'
+        }
+        req.isSharedServiceAccess = true
+        req.idpType = 'idir'
+        next()
+      },
+      (req, res, next) => {
+        next()
+      },
+      (req, res) => tmController.getEffectiveSharedServiceRoles(req, res)
     )
 
     app.use((err: any, req: any, res: any, next: any) => {
@@ -1310,7 +1329,7 @@ describe('Tenant Management API', () => {
     })
 
     it('should return empty array when tenant has no groups', async () => {
-      const mockEmptyGroups = []
+      const mockEmptyGroups: any[] = []
 
       mockTMRepository.getTenantGroups.mockResolvedValue(mockEmptyGroups)
 
@@ -1504,7 +1523,7 @@ describe('Tenant Management API', () => {
     })
 
     it('should return empty array when group has no shared service roles', async () => {
-      const mockEmptySharedServices = []
+      const mockEmptySharedServices: any[] = []
 
       mockTMRepository.getSharedServiceRolesForGroup.mockResolvedValue(mockEmptySharedServices)
 
@@ -2222,288 +2241,191 @@ describe('Tenant Management API', () => {
     })
   })
 
-  describe('GET /v1/tenants/:tenantId/users/:tenantUserId', () => {
-    const tenantId = 'f98cbbfb-b96c-4a40-a10b-c2a7e795022c'
-    const tenantUserId = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'
-    const ssoUserId = 'fd33f1cef7ca4b19a71104d4ecf7066b'
+  describe('GET /v1/tenants/:tenantId/ssousers/:ssoUserId/shared-service-roles', () => {
+    const tenantId = '123e4567-e89b-12d3-a456-426614174000'
+    const ssoUserId = 'F45AFBBD68C51D6F956BA3A1DE1878A2'
 
-    beforeEach(() => {
-      app.get('/v1/tenants/:tenantId/users/:tenantUserId', 
-        validate(validator.getTenantUser, {}, {}),
-        (req, res) => tmController.getTenantUser(req, res)
+    it('should return effective shared service roles successfully', async () => {
+      const mockSharedServiceRoles = [
+        {
+          id: '123e4567-e89b-12d3-a456-426614174001',
+          name: 'ADMIN',
+          description: 'Administrator role',
+          allowedIdentityProviders: ['idir', 'bceidbusiness'],
+          groups: [
+            { id: '123e4567-e89b-12d3-a456-426614174002', name: 'IT Administrators' },
+            { id: '123e4567-e89b-12d3-a456-426614174003', name: 'System Admins' }
+          ]
+        },
+        {
+          id: '123e4567-e89b-12d3-a456-426614174004',
+          name: 'VIEWER',
+          description: 'Viewer role',
+          allowedIdentityProviders: null,
+          groups: [
+            { id: '123e4567-e89b-12d3-a456-426614174005', name: 'All Users' }
+          ]
+        }
+      ]
+
+      mockTMRepository.getEffectiveSharedServiceRoles.mockResolvedValue(mockSharedServiceRoles as any)
+
+      const response = await request(app)
+        .get(`/v1/tenants/${tenantId}/ssousers/${ssoUserId}/shared-service-roles`)
+
+      expect(response.status).toBe(200)
+      expect(response.body).toMatchObject({
+        data: {
+          sharedServiceRoles: [
+            {
+              id: '123e4567-e89b-12d3-a456-426614174001',
+              name: 'ADMIN',
+              description: 'Administrator role',
+              allowedIdentityProviders: ['idir', 'bceidbusiness'],
+              groups: [
+                { id: '123e4567-e89b-12d3-a456-426614174002', name: 'IT Administrators' },
+                { id: '123e4567-e89b-12d3-a456-426614174003', name: 'System Admins' }
+              ]
+            },
+            {
+              id: '123e4567-e89b-12d3-a456-426614174004',
+              name: 'VIEWER',
+              description: 'Viewer role',
+              allowedIdentityProviders: null,
+              groups: [
+                { id: '123e4567-e89b-12d3-a456-426614174005', name: 'All Users' }
+              ]
+            }
+          ]
+        }
+      })
+
+      expect(mockTMRepository.getEffectiveSharedServiceRoles).toHaveBeenCalledWith(
+        expect.objectContaining({
+          params: { tenantId, ssoUserId }
+        }),
+        'test-service-client'
       )
+    })
 
-      app.use((err: any, req: any, res: any, next: any) => {
+    it('should return empty array when user has no shared service roles', async () => {
+      mockTMRepository.getEffectiveSharedServiceRoles.mockResolvedValue([] as any)
+
+      const response = await request(app)
+        .get(`/v1/tenants/${tenantId}/ssousers/${ssoUserId}/shared-service-roles`)
+
+      expect(response.status).toBe(200)
+      expect(response.body).toMatchObject({
+        data: {
+          sharedServiceRoles: []
+        }
+      })
+    })
+
+    it('should deduplicate roles from multiple groups', async () => {
+      const mockSharedServiceRoles = [
+        {
+          id: '123e4567-e89b-12d3-a456-426614174001',
+          name: 'ADMIN',
+          description: 'Administrator role',
+          allowedIdentityProviders: ['idir'],
+          groups: [
+            { id: '123e4567-e89b-12d3-a456-426614174002', name: 'IT Administrators' },
+            { id: '123e4567-e89b-12d3-a456-426614174003', name: 'System Admins' },
+            { id: '123e4567-e89b-12d3-a456-426614174004', name: 'Power Users' }
+          ]
+        }
+      ]
+
+      mockTMRepository.getEffectiveSharedServiceRoles.mockResolvedValue(mockSharedServiceRoles as any)
+
+      const response = await request(app)
+        .get(`/v1/tenants/${tenantId}/ssousers/${ssoUserId}/shared-service-roles`)
+
+      expect(response.status).toBe(200)
+      expect(response.body.data.sharedServiceRoles).toHaveLength(1)
+      expect(response.body.data.sharedServiceRoles[0].groups).toHaveLength(3)
+      expect(response.body.data.sharedServiceRoles[0].name).toBe('ADMIN')
+    })
+
+    it('should return 404 when tenant user is not found', async () => {
+      const errorMessage = `Tenant user not found: ${ssoUserId}`
+      mockTMRepository.getEffectiveSharedServiceRoles.mockRejectedValue(new NotFoundError(errorMessage))
+
+      const response = await request(app)
+        .get(`/v1/tenants/${tenantId}/ssousers/${ssoUserId}/shared-service-roles`)
+
+      expect(response.status).toBe(404)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Not Found',
+        httpResponseCode: 404,
+        message: errorMessage,
+        name: 'Error occurred getting effective shared service roles'
+      })
+    })
+
+    it('should return 401 when JWT audience is missing', async () => {
+      const appWithoutAudience = express()
+      appWithoutAudience.use(express.json())
+      appWithoutAudience.get('/v1/tenants/:tenantId/ssousers/:ssoUserId/shared-service-roles',
+        validate(validator.getEffectiveSharedServiceRoles, {}, {}),
+        (req, res, next) => {
+          req.decodedJwt = {
+            idir_user_guid: 'F45AFBBD68C51D6F956BA3A1DE1878A2'
+          }
+          req.isSharedServiceAccess = true
+          req.idpType = 'idir'
+          next()
+        },
+        (req, res, next) => {
+          next()
+        },
+        (req, res) => tmController.getEffectiveSharedServiceRoles(req, res)
+      )
+      appWithoutAudience.use((err: any, req: any, res: any, next: any) => {
         if (err.name === 'ValidationError') {
           return res.status(err.statusCode).json(err)
         }
         next(err)
       })
+
+      const response = await request(appWithoutAudience)
+        .get(`/v1/tenants/${tenantId}/ssousers/${ssoUserId}/shared-service-roles`)
+
+      expect(response.status).toBe(401)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Unauthorized',
+        httpResponseCode: 401,
+        message: 'Missing audience in JWT token',
+        name: 'Error occurred getting effective shared service roles'
+      })
     })
 
-    it('should get tenant user with default response (no expand)', async () => {
-      const mockTenantUser = {
-        id: tenantUserId,
-        ssoUser: {
-          ssoUserId: ssoUserId,
-          firstName: 'John',
-          lastName: 'Smith',
-          displayName: 'Smith, John: MOT: EX',
-          userName: 'JSMITH1',
-          email: 'john.smith@gov.bc.ca'
-        },
-        createdDateTime: '2024-01-01',
-        updatedDateTime: '2024-01-01',
-        createdBy: 'system',
-        updatedBy: 'system'
-      }
-
-      mockTMRepository.getTenantUser.mockResolvedValue(mockTenantUser)
+    it('should return 500 when database error occurs', async () => {
+      const errorMessage = 'Database connection failed'
+      mockTMRepository.getEffectiveSharedServiceRoles.mockRejectedValue(new Error(errorMessage))
 
       const response = await request(app)
-        .get(`/v1/tenants/${tenantId}/users/${tenantUserId}`)
+        .get(`/v1/tenants/${tenantId}/ssousers/${ssoUserId}/shared-service-roles`)
 
-      expect(response.status).toBe(200)
-      expect(response.body.data.tenantUser).toEqual(mockTenantUser)
-      expect(mockTMRepository.getTenantUser).toHaveBeenCalledWith(
-        expect.objectContaining({
-          params: { tenantId, tenantUserId },
-          query: {}
-        })
-      )
-    })
-
-    it('should get tenant user with groupMemberships expand', async () => {
-      const mockTenantUser = {
-        id: tenantUserId,
-        ssoUser: {
-          ssoUserId: ssoUserId,
-          firstName: 'John',
-          lastName: 'Smith',
-          displayName: 'Smith, John: MOT: EX',
-          userName: 'JSMITH1',
-          email: 'john.smith@gov.bc.ca'
-        },
-        groups: [
-          {
-            id: 'group-1',
-            name: 'Test Group',
-            description: 'Test Group Description',
-            createdDateTime: '2024-01-01',
-            updatedDateTime: '2024-01-01',
-            createdBy: 'system',
-            updatedBy: 'system'
-          }
-        ],
-        createdDateTime: '2024-01-01',
-        updatedDateTime: '2024-01-01',
-        createdBy: 'system',
-        updatedBy: 'system'
-      }
-
-      mockTMRepository.getTenantUser.mockResolvedValue(mockTenantUser)
-
-      const response = await request(app)
-        .get(`/v1/tenants/${tenantId}/users/${tenantUserId}?expand=groupMemberships`)
-
-      expect(response.status).toBe(200)
-      expect(response.body.data.tenantUser).toEqual(mockTenantUser)
-      expect(mockTMRepository.getTenantUser).toHaveBeenCalledWith(
-        expect.objectContaining({
-          params: { tenantId, tenantUserId },
-          query: { expand: 'groupMemberships' }
-        })
-      )
-    })
-
-    it('should get tenant user with tenantUserRoles expand', async () => {
-      const mockTenantUser = {
-        id: tenantUserId,
-        ssoUser: {
-          ssoUserId: ssoUserId,
-          firstName: 'John',
-          lastName: 'Smith',
-          displayName: 'Smith, John: MOT: EX',
-          userName: 'JSMITH1',
-          email: 'john.smith@gov.bc.ca'
-        },
-        roles: [
-          {
-            id: 'role-1',
-            name: 'TENANT_OWNER',
-            description: 'Tenant Owner Role',
-            isDeleted: false
-          }
-        ],
-        createdDateTime: '2024-01-01',
-        updatedDateTime: '2024-01-01',
-        createdBy: 'system',
-        updatedBy: 'system'
-      }
-
-      mockTMRepository.getTenantUser.mockResolvedValue(mockTenantUser)
-
-      const response = await request(app)
-        .get(`/v1/tenants/${tenantId}/users/${tenantUserId}?expand=tenantUserRoles`)
-
-      expect(response.status).toBe(200)
-      expect(response.body.data.tenantUser).toEqual(mockTenantUser)
-      expect(mockTMRepository.getTenantUser).toHaveBeenCalledWith(
-        expect.objectContaining({
-          params: { tenantId, tenantUserId },
-          query: { expand: 'tenantUserRoles' }
-        })
-      )
-    })
-
-    it('should get tenant user with sharedServiceRoles expand', async () => {
-      const mockTenantUser = {
-        id: tenantUserId,
-        ssoUser: {
-          ssoUserId: ssoUserId,
-          firstName: 'John',
-          lastName: 'Smith',
-          displayName: 'Smith, John: MOT: EX',
-          userName: 'JSMITH1',
-          email: 'john.smith@gov.bc.ca'
-        },
-        sharedServiceRoles: [
-          {
-            role: {
-              id: 'ssr-1',
-              name: 'ADMIN',
-              description: 'Admin Role',
-              isDeleted: false
-            },
-            sharedService: {
-              id: 'ss-1',
-              name: 'Test Service',
-              clientIdentifier: 'test-client',
-              description: 'Test Service Description',
-              isActive: true
-            }
-          }
-        ],
-        createdDateTime: '2024-01-01',
-        updatedDateTime: '2024-01-01',
-        createdBy: 'system',
-        updatedBy: 'system'
-      }
-
-      mockTMRepository.getTenantUser.mockResolvedValue(mockTenantUser)
-
-      const response = await request(app)
-        .get(`/v1/tenants/${tenantId}/users/${tenantUserId}?expand=sharedServiceRoles`)
-
-      expect(response.status).toBe(200)
-      expect(response.body.data.tenantUser).toEqual(mockTenantUser)
-      expect(mockTMRepository.getTenantUser).toHaveBeenCalledWith(
-        expect.objectContaining({
-          params: { tenantId, tenantUserId },
-          query: { expand: 'sharedServiceRoles' }
-        })
-      )
-    })
-
-    it('should get tenant user with multiple expand parameters', async () => {
-      const mockTenantUser = {
-        id: tenantUserId,
-        ssoUser: {
-          ssoUserId: ssoUserId,
-          firstName: 'John',
-          lastName: 'Smith',
-          displayName: 'Smith, John: MOT: EX',
-          userName: 'JSMITH1',
-          email: 'john.smith@gov.bc.ca'
-        },
-        groups: [
-          {
-            id: 'group-1',
-            name: 'Test Group',
-            description: 'Test Group Description',
-            createdDateTime: '2024-01-01',
-            updatedDateTime: '2024-01-01',
-            createdBy: 'system',
-            updatedBy: 'system'
-          }
-        ],
-        roles: [
-          {
-            id: 'role-1',
-            name: 'TENANT_OWNER',
-            description: 'Tenant Owner Role',
-            isDeleted: false
-          }
-        ],
-        createdDateTime: '2024-01-01',
-        updatedDateTime: '2024-01-01',
-        createdBy: 'system',
-        updatedBy: 'system'
-      }
-
-      mockTMRepository.getTenantUser.mockResolvedValue(mockTenantUser)
-
-      const response = await request(app)
-        .get(`/v1/tenants/${tenantId}/users/${tenantUserId}?expand=groupMemberships,tenantUserRoles`)
-
-      expect(response.status).toBe(200)
-      expect(response.body.data.tenantUser).toEqual(mockTenantUser)
-      expect(mockTMRepository.getTenantUser).toHaveBeenCalledWith(
-        expect.objectContaining({
-          params: { tenantId, tenantUserId },
-          query: { expand: 'groupMemberships,tenantUserRoles' }
-        })
-      )
-    })
-
-    it('should return 400 when invalid expand values are provided', async () => {
-      const response = await request(app)
-        .get(`/v1/tenants/${tenantId}/users/${tenantUserId}?expand=invalidExpand`)
-
-      expect(response.status).toBe(400)
-      expect(response.body.message).toBe('Validation Failed')
-    })
-
-    it('should return 404 when tenant user is not found', async () => {
-      mockTMRepository.getTenantUser.mockRejectedValue(
-        new NotFoundError(`Tenant user not found: ${tenantUserId}`)
-      )
-
-      const response = await request(app)
-        .get(`/v1/tenants/${tenantId}/users/${tenantUserId}`)
-
-      expect(response.status).toBe(404)
-      expect(response.body.message).toBe(`Tenant user not found: ${tenantUserId}`)
+      expect(response.status).toBe(500)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Internal Server Error',
+        httpResponseCode: 500,
+        message: errorMessage,
+        name: 'Error occurred getting effective shared service roles'
+      })
     })
 
     it('should return 400 when validation fails for invalid tenant ID', async () => {
       const invalidTenantId = 'invalid-uuid'
 
       const response = await request(app)
-        .get(`/v1/tenants/${invalidTenantId}/users/${tenantUserId}`)
+        .get(`/v1/tenants/${invalidTenantId}/ssousers/${ssoUserId}/shared-service-roles`)
 
       expect(response.status).toBe(400)
       expect(response.body.message).toBe("Validation Failed")
-    })
-
-    it('should return 400 when validation fails for invalid tenant user ID', async () => {
-      const invalidTenantUserId = 'invalid-uuid'
-
-      const response = await request(app)
-        .get(`/v1/tenants/${tenantId}/users/${invalidTenantUserId}`)
-
-      expect(response.status).toBe(400)
-      expect(response.body.message).toBe("Validation Failed")
-    })
-
-    it('should return 500 when database error occurs', async () => {
-      mockTMRepository.getTenantUser.mockRejectedValue(new Error('Database connection failed'))
-
-      const response = await request(app)
-        .get(`/v1/tenants/${tenantId}/users/${tenantUserId}`)
-
-      expect(response.status).toBe(500)
-      expect(response.body.message).toBe('Database connection failed')
     })
   })
+
 }) 

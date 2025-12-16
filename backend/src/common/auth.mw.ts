@@ -38,18 +38,18 @@ const createJwtMiddleware = (options: CheckJwtOptions = {}) => {
   return jwt({
     secret: jwksRsa.expressJwtSecret({
       cache: true,
-      jwksUri: process.env.JWKS_URI,
+      jwksUri: process.env.JWKS_URI!,
       handleSigningKeyError: (err, cb) => {
-        logger.error('Error:', { error: err.message, stack: err.stack });
+        logger.error('Error:', { error: err?.message, stack: err?.stack });
         cb(new UnauthorizedError('Error occurred during authentication'));
       }
     }),
-    issuer: process.env.ISSUER,
+    issuer: process.env.ISSUER!,
     audience: sharedServiceAccess ? undefined : TMS_AUDIENCE,
     algorithms: ['RS256'],
     requestProperty: 'decodedJwt',
     getToken: function fromHeaderOrQuerystring(req) {
-      const authHeader:string = req.headers.authorization
+      const authHeader:string = req.headers.authorization!
       if (authHeader && authHeader.split(' ')[0] === 'Bearer') {
         const token = authHeader.split(' ')[1]
         logger.info('Token found:')

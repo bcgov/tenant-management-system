@@ -7,28 +7,28 @@ import { Role } from './Role';
 export class TenantUserRole {
     
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
   @ManyToOne(() => TenantUser, (tenantUser) => tenantUser.roles, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'tenant_user_id' })
-  tenantUser: TenantUser;
+  tenantUser!: TenantUser;
 
   @ManyToOne(() => Role, (role) => role.tenantUserRoles, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'role_id' })
-  role: Role;
+  role!: Role;
 
   @CreateDateColumn({ type: 'date', name: 'created_datetime', nullable: true })
-  createdDateTime: Date;
+  createdDateTime!: Date;
   
   @UpdateDateColumn({ type: 'date', name: 'updated_datetime', nullable: true })
-  updatedDateTime: Date;
+  updatedDateTime!: Date;
 
   @Column({ type: 'char', length: 32, name: 'created_by', nullable: true })
-  createdBy: string;
+  createdBy!: string;
 
   @Column({ type: 'char', length: 32, name: 'updated_by', nullable: true })
-  updatedBy: string;
+  updatedBy!: string;
 
   @Column({ type: 'boolean', name: 'is_deleted', default: false })
-  isDeleted: boolean;
+  isDeleted!: boolean;
 }

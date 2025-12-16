@@ -6,4 +6,6 @@ module.exports = {
     transform: {
       '^.+\\.ts$': 'ts-jest',
     },
+    testMatch: ['**/src/**/*.test.ts'],
+    testPathIgnorePatterns: ['/node_modules/', '/build/'],
   };

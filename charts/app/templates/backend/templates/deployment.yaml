@@ -123,10 +123,10 @@ spec:
             initialDelaySeconds: 15
             periodSeconds: 30
             timeoutSeconds: 5
-          resources: # this is optional
+          resources:
             requests:
-              cpu: 50m
-              memory: 75Mi
+              cpu: 10m
+              memory: 250Mi
       {{- with .Values.backend.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

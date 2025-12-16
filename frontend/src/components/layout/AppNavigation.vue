@@ -1,14 +1,19 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { useAuthStore } from '@/stores'
+import { useAuthStore, useTenantStore } from '@/stores'
 
 import { currentUserIsOperationsAdmin } from '@/utils/permissions'
+import { storeToRefs } from 'pinia'
 
 // --- Store and Composable Setup ----------------------------------------------
 
 const route = useRoute()
 const authStore = useAuthStore()
+const tenantStore = useTenantStore()
+
+//Refs
+const { tenants } = storeToRefs(tenantStore)
 
 // --- Computed Values ---------------------------------------------------------
 
@@ -22,7 +27,7 @@ const loggedIn = computed(() => authStore.isAuthenticated)
   <v-toolbar class="px-12" color="surface-light-gray" elevation="0" flat>
     <div class="d-flex align-center" style="gap: 8px">
       <v-btn
-        v-if="loggedIn"
+        v-if="loggedIn && tenants.length > 0"
         :active="isRouteTenant"
         exact-active-class=""
         to="/tenants"

@@ -5,42 +5,42 @@ import { TenantUser } from './TenantUser'
 export class SSOUser {
     
     @PrimaryGeneratedColumn('uuid', { name: 'id' })
-    id: string;
+    id!: string;
 
     @Index()
     @Column({ type: 'varchar', length:32, name: 'sso_user_id', unique: true})
-    ssoUserId: string;
+    ssoUserId!: string;
 
     @Column({ type: 'varchar', length: 50, name: 'first_name' })
-    firstName: string;
+    firstName!: string;
 
     @Column({ type: 'varchar', length: 50, name: 'last_name'})
-    lastName: string;
+    lastName!: string;
 
     @Column({ type: 'varchar', length: 50, name: 'display_name' })
-    displayName: string;
+    displayName!: string;
 
     @Column({ type: 'varchar', length: 15, name: 'user_name', nullable: true })
-    userName: string;
+    userName!: string;
 
     @Column({ type: 'varchar', length: 100, name: 'email', nullable: true })
-    email: string;
+    email!: string;
 
     @OneToMany(() => TenantUser, (tenantUser) => tenantUser.ssoUser)
-    tenantUsers: TenantUser[];
+    tenantUsers!: TenantUser[];
 
     @CreateDateColumn({ type: 'date', name: 'created_datetime', nullable: true })
-    createdDateTime: Date;
+    createdDateTime!: Date;
 
     @UpdateDateColumn({ type: 'date', name: 'updated_datetime', nullable: true })
-    updatedDateTime: Date;
+    updatedDateTime!: Date;
 
     @Column({ type: 'char', length: 32, name: 'created_by', nullable: true })
-    createdBy: string;
+    createdBy!: string;
 
     @Column({ type: 'char', length: 32, name: 'updated_by', nullable: true })
-    updatedBy: string;
+    updatedBy!: string;
 
     @Column({ type: 'varchar', length: 20, name: 'idp_type', nullable: true })
-    idpType: string;
+    idpType!: string;
 }

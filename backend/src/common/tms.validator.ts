@@ -331,6 +331,13 @@ export default {
         }).options({abortEarly:false,convert:false})
     },
 
+    getEffectiveSharedServiceRoles: {
+        params: Joi.object({
+            tenantId: Joi.string().guid().required(),
+            ssoUserId: Joi.string().required()
+        }).options({abortEarly:false,convert:false})
+    },
+
     getTenantUser: {
         params: Joi.object({
             tenantId: Joi.string().guid().required(),
@@ -338,7 +345,7 @@ export default {
         }),
         query: Joi.object({
             expand: Joi.string().optional()
-                .pattern(/^(groupMemberships|tenantUserRoles|sharedServiceRoles)(,(groupMemberships|tenantUserRoles|sharedServiceRoles))*$/)
+                .pattern(/^(groups|roles|sharedserviceroles)(,(groups|roles|sharedserviceroles))*$/)
         }).optional()
     },
 

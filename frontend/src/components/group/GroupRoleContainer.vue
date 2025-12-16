@@ -191,12 +191,12 @@ const dialogButtons = computed(() => {
     />
     <v-row>
       <v-col cols="12">
-        <h4>{{ $t('groups.sharedServices') }}</h4>
+        <h4>{{ $t('groups.sharedServices', { servicesLabel: $t('general.servicesLabel', 2) }) }}</h4>
       </v-col>
     </v-row>
     <v-row>
       <v-col cols="12">
-        <p>{{ $t('groups.sharedServicesDesc') }}</p>
+        <p>{{ $t('groups.sharedServicesDesc', { servicesLabel: $t('general.servicesLabel', 2) }) }}</p>
       </v-col>
     </v-row>
     <v-row v-if="loadingServices">
