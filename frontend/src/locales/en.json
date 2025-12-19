@@ -4,7 +4,10 @@
     "learnMore": "Learn more about",
     "roleAssignDesc": "Below are the available tenant roles you can assign to a user. A checkmark shows roles currently assigned to this user. Select additional role(s) to update their permissions.",
     "errors": {
-      "uniqueName": "Tenant name must be unique"
+      "uniqueName": "Tenant name must be unique",
+      "nonNewStatusChange": "Requests can only have a status change from New. Start a new request instead",
+      "nameExists": "Tenant Request cannot be approved because the name already exists",
+      "genericRequestError": "Failed to update Tenant Request"
     }
   },
   "roles": {
