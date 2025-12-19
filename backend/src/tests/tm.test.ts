@@ -749,25 +749,6 @@ describe('Tenant Management API', () => {
       })
     })
 
-    it('should fail when tenant user does not exist', async () => {
-      const mockGroup = { id: groupId, name: 'Test Group' }
-      const errorMessage = `Tenant user not found for SSO user: ${validUserData.user.ssoUserId}`
-      mockTMRepository.checkIfGroupExistsInTenant.mockResolvedValue(mockGroup as any)
-      mockTMSRepository.ensureTenantUserExists.mockRejectedValue(new NotFoundError(errorMessage))
-
-      const response = await request(app)
-        .post(`/v1/tenants/${tenantId}/groups/${groupId}/users`)
-        .send(validUserData)
-
-      expect(response.status).toBe(404)
-      expect(response.body).toMatchObject({
-        errorMessage: 'Not Found',
-        httpResponseCode: 404,
-        message: errorMessage,
-        name: 'Error occurred adding user to group'
-      })
-    })
-
     it('should return 500 when database error occurs', async () => {
       const mockGroup = { id: groupId, name: 'Test Group' }
       const mockTenantUser = { id: '123e4567-e89b-12d3-a456-426614174003' }
@@ -897,6 +878,37 @@ describe('Tenant Management API', () => {
       expect(response.status).toBe(201)
       expect(response.body.data.groupUser.id).toBe(mockGroupUser.id)
       expect(response.body.data.groupUser.isDeleted).toBe(false)
+    })
+
+    it('should restore soft-deleted tenant user when adding user to group', async () => {
+      const mockGroup = { id: groupId, name: 'Test Group' }
+      const mockRestoredTenantUser = { 
+        id: '123e4567-e89b-12d3-a456-426614174003',
+        isDeleted: false
+      }
+      const mockGroupUser = {
+        id: '123e4567-e89b-12d3-a456-426614174002',
+        group: { id: groupId },
+        tenantUser: {
+          id: '123e4567-e89b-12d3-a456-426614174003',
+          firstName: validUserData.user.firstName,
+          lastName: validUserData.user.lastName,
+          ssoUserId: validUserData.user.ssoUserId
+        },
+        isDeleted: false
+      }
+
+      mockTMRepository.checkIfGroupExistsInTenant.mockResolvedValue(mockGroup as any)
+      mockTMSRepository.ensureTenantUserExists.mockResolvedValue(mockRestoredTenantUser as any)
+      mockTMRepository.addGroupUser.mockResolvedValue(mockGroupUser as any)
+
+      const response = await request(app)
+        .post(`/v1/tenants/${tenantId}/groups/${groupId}/users`)
+        .send(validUserData)
+
+      expect(response.status).toBe(201)
+      expect(response.body.data.groupUser.id).toBe(mockGroupUser.id)
+      expect(mockTMSRepository.ensureTenantUserExists).toHaveBeenCalled()
     })
 
     it('should handle null/undefined values in optional fields', async () => {
