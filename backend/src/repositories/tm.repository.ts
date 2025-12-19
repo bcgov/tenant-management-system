@@ -460,11 +460,13 @@ export class TMRepository {
             .leftJoinAndSelect('tenantUser.roles', 'tenantUserRoles')
             .leftJoinAndSelect('tenantUserRoles.role', 'role')
             .where('groupUser.id = :id', { id: savedGroupUser.id })
-            .andWhere('tenantUserRoles.isDeleted = :isDeleted', { isDeleted: false })
             .getOne();
 
         if (groupUserResponse) {
-            const userRoles = groupUserResponse.tenantUser.roles?.map((tur: any) => tur.role) || []
+            const activeRoles = groupUserResponse.tenantUser.roles?.filter(
+                (tur: any) => !tur.isDeleted
+            ) || []
+            const userRoles = activeRoles.map((tur: any) => tur.role) || []
             groupUserResponse = {
                 ...groupUserResponse,
                 user: {

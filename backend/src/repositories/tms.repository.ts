@@ -182,7 +182,12 @@ export class TMSRepository {
                 delete (restoredTenantUserWithRelations as any).tenant
                 return {savedTenantUser: restoredTenantUserWithRelations, roleAssignments, tenantUserId: restoredTenantUser.id}
             } else {
-                throw new ConflictError("User is already added to this tenant: "+tenantId)
+                const activeUser = await this.getTenantUserBySsoId(ssoUserId, tenantId, transactionEntityManager)
+                if (activeUser) {
+                    throw new ConflictError("User is already added to this tenant: "+tenantId)
+                } else {
+                    throw new NotFoundError("User was previously offboarded but cannot be restored. Please contact support.")
+                }
             }
         } else {
             const tenantUser:TenantUser = new TenantUser()
@@ -727,7 +732,8 @@ export class TMSRepository {
         const softDeletedUser = await transactionEntityManager
             .createQueryBuilder(TenantUser, "tu")
             .innerJoin("tu.ssoUser", "su")
-            .where("tu.tenant_id = :tenantId", { tenantId })
+            .innerJoin("tu.tenant", "tenant")
+            .where("tenant.id = :tenantId", { tenantId })
             .andWhere("su.ssoUserId = :ssoUserId", { ssoUserId })
             .andWhere("tu.isDeleted = :isDeleted", { isDeleted: true })
             .getOne();
@@ -972,8 +978,6 @@ export class TMSRepository {
                     softDeletedUser.updatedDateTime = new Date()
                     
                     existingTenantUser = await transactionEntityManager.save(softDeletedUser)
-                } else {
-                    throw new NotFoundError(`Tenant user not found: ${user.ssoUserId}`)
                 }
             }
             return existingTenantUser

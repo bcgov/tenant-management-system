@@ -3,6 +3,7 @@ import express from 'express'
 import { Routes } from './routes/routes'
 import rTracer from 'cls-rtracer'
 import { requestLoggingMiddleware } from './common/logger.mw'
+import { addRequestIdHeader } from './common/request-id-header.mw'
 import { checkJwt, jwtErrorHandler } from './common/auth.mw'
 import logger from './common/logger'
 import swaggerUi from 'swagger-ui-express'
@@ -19,6 +20,7 @@ export default class App {
     const allowedOrigins = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : ['*'];
    
     this.app.use(rTracer.expressMiddleware())
+    this.app.use(addRequestIdHeader)
     this.app.use(requestLoggingMiddleware)
 
     this.app.use(cors({
