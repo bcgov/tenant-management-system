@@ -499,13 +499,25 @@ export class TMSRepository {
             tenantQuery.leftJoinAndSelect("tenant.users", "user").leftJoinAndSelect("user.ssoUser", "ssoUser")
             tenantQuery.leftJoinAndSelect("user.roles", "tenantUserRole")
             tenantQuery.leftJoinAndSelect("tenantUserRole.role", "role")    
-            tenantQuery.andWhere("tenantUserRole.isDeleted = :isDeleted",{ isDeleted: false})
             tenantQuery.andWhere("user.isDeleted = :isDeleted",{ isDeleted: false})                 
         }
         const tenant:Tenant = await tenantQuery.getOne() as any;
         
         if(!tenant) {
             throw new NotFoundError("Tenant Not Found: "+tenantId)
+        }
+        
+        if (expand.includes("tenantUserRoles") && tenant.users) {
+            tenant.users = tenant.users.map((user: any) => {
+                if (user.roles) {
+                    const activeRoles = user.roles.filter((tur: any) => !tur.isDeleted && tur.role && !tur.role.isDeleted)
+                    return {
+                        ...user,
+                        roles: activeRoles
+                    }
+                }
+                return user
+            })
         }
             
         if (tenant.createdBy) {
