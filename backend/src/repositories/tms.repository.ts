@@ -664,24 +664,32 @@ export class TMSRepository {
         const jwtAudience:string = req.decodedJwt?.aud || req.decodedJwt?.audience || TMS_AUDIENCE
         
         const tenantQuery = this.manager.createQueryBuilder(Tenant, "t")
-            .where(`EXISTS (
-                SELECT 1 FROM "tms"."TenantUser" tu
-                INNER JOIN "tms"."SSOUser" su ON tu.sso_id = su.id
-                WHERE tu.tenant_id = t.id
-                AND su.sso_user_id = :ssoUserId
-                AND tu.is_deleted = :tuDeleted
-            )`, { ssoUserId, tuDeleted: false });
+            .where(qb => {
+                const subQuery = qb.subQuery()
+                    .select("1")
+                    .from(TenantUser, "tu")
+                    .innerJoin("tu.ssoUser", "su")
+                    .where("tu.tenant.id = t.id")
+                    .andWhere("su.ssoUserId = :ssoUserId", { ssoUserId })
+                    .andWhere("tu.isDeleted = :tuDeleted", { tuDeleted: false })
+                    .getQuery();
+                return `EXISTS (${subQuery})`;
+            });
 
         if (jwtAudience !== TMS_AUDIENCE) {
             tenantQuery
-                .andWhere(`EXISTS (
-                    SELECT 1 FROM "tms"."TenantSharedService" tss 
-                    INNER JOIN "tms"."SharedService" ss ON tss.shared_service_id = ss.id 
-                    WHERE tss.tenant_id = t.id 
-                    AND ss.client_identifier = :jwtAudience 
-                    AND tss.is_deleted = :tssDeleted 
-                    AND ss.is_active = :ssActive
-                )`, { jwtAudience, tssDeleted: false, ssActive: true });
+                .andWhere(qb => {
+                    const subQuery = qb.subQuery()
+                        .select("1")
+                        .from(TenantSharedService, "tss")
+                        .innerJoin("tss.sharedService", "ss")
+                        .where("tss.tenant.id = t.id")
+                        .andWhere("ss.clientIdentifier = :jwtAudience", { jwtAudience })
+                        .andWhere("tss.isDeleted = :tssDeleted", { tssDeleted: false })
+                        .andWhere("ss.isActive = :ssActive", { ssActive: true })
+                        .getQuery();
+                    return `EXISTS (${subQuery})`;
+                });
         }
 
         if (expand?.includes("tenantUserRoles")) {
@@ -701,8 +709,9 @@ export class TMSRepository {
     public async getUsersForTenant(tenantId:string) {
         const users = await this.manager
             .createQueryBuilder(TenantUser, "tu")
-            .innerJoinAndSelect("tu.ssoUser", "su", "tu.sso_id = su.id")            
-            .where("tu.tenant_id = :tenantId", { tenantId })
+            .innerJoinAndSelect("tu.ssoUser", "su")
+            .innerJoin("tu.tenant", "tenant")
+            .where("tenant.id = :tenantId", { tenantId })
             .andWhere("tu.isDeleted = :isDeleted", { isDeleted: false })
             .getMany();       
         return users
@@ -978,6 +987,11 @@ export class TMSRepository {
                     softDeletedUser.updatedDateTime = new Date()
                     
                     existingTenantUser = await transactionEntityManager.save(softDeletedUser)
+                    
+                    const serviceUserRole = await this.findRoles([TMSConstants.SERVICE_USER], null as any)
+                    if (serviceUserRole.length > 0) {
+                        await this.assignUserRoles(tenantId, existingTenantUser.id, [serviceUserRole[0].id], transactionEntityManager)
+                    }
                 }
             }
             return existingTenantUser
