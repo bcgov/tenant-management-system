@@ -128,11 +128,10 @@ jobs:
           values_file: charts/crunchy/values.yml
           triggers: ${{ inputs.db_triggers }}
 
-      - name: Get PR number
-        if: inputs.tags == ''
+      # Variables
+      - if: inputs.tags == ''
         id: pr
-        continue-on-error: true # Don't fail if PR detection fails
-        uses: bcgov/action-get-pr@21f9351425cd55a98e869ee28919a512aa30647d
+        uses: bcgov/action-get-pr@35514fa1d4765547da319e967b509363598e8b46 # v0.1.0
 
       - name: Set variables
         id: vars
