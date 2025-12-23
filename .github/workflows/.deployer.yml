@@ -117,6 +117,16 @@ jobs:
       tag: ${{ inputs.tags || steps.pr.outputs.pr }}
       triggered: ${{ steps.deploy.outputs.triggered }}
     steps:
+      - uses: bcgov/action-crunchy@9b776dc20a55f435b7c5024152b6b7b294362809 # v1.2.5
+        name: Deploy Crunchy
+        id: deploy_crunchy
+        with:
+          oc_namespace: ${{ secrets.OC_NAMESPACE }}
+          oc_token: ${{ secrets.OC_TOKEN }}
+          environment: ${{ inputs.environment }}
+          values_file: charts/crunchy/values.yml
+          triggers: ${{ inputs.db_triggers }}
+
       - name: Get PR number
         if: inputs.tags == ''
         id: pr
