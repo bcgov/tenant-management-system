@@ -124,6 +124,7 @@ jobs:
           oc_namespace: ${{ secrets.OC_NAMESPACE }}
           oc_token: ${{ secrets.OC_TOKEN }}
           environment: ${{ inputs.environment }}
+          release_name: cstar
           values_file: charts/crunchy/values.yml
           triggers: ${{ inputs.db_triggers }}
 
