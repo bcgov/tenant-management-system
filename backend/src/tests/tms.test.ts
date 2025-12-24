@@ -3700,7 +3700,7 @@ describe('Tenant API', () => {
       )
     })
 
-    it('should get tenant user with sharedserviceroles expand', async () => {
+    it('should get tenant user with sharedServices expand', async () => {
       const mockTenantUser = {
         id: tenantUserId,
         ssoUser: {
@@ -3717,36 +3717,36 @@ describe('Tenant API', () => {
         updatedBy: 'system'
       }
 
-      const mockSharedServiceRoles = [
+      const mockSharedServices = [
         {
-          role: {
-            id: 'ssr-1',
-            name: 'ADMIN',
-            description: 'Admin Role',
-            isDeleted: false
-          },
-          sharedService: {
-            id: 'ss-1',
-            name: 'Test Service',
-            clientIdentifier: 'test-client',
-            description: 'Test Service Description',
-            isActive: true
-          }
+          id: 'ss-1',
+          name: 'Test Service',
+          description: 'Test Service Description',
+          clientIdentifier: 'test-client',
+          isActive: true,
+          sharedServiceRoles: [
+            {
+              id: 'ssr-1',
+              name: 'ADMIN',
+              description: 'Admin Role',
+              isDeleted: false
+            }
+          ]
         }
       ]
 
       mockTMSRepository.getTenantUser.mockResolvedValue(mockTenantUser)
-      mockTMRepository.getTenantUserSharedServiceRoles.mockResolvedValue(mockSharedServiceRoles)
+      mockTMRepository.getTenantUserSharedServiceRoles.mockResolvedValue(mockSharedServices)
 
       const response = await request(app)
-        .get(`/v1/tenants/${tenantId}/users/${tenantUserId}?expand=sharedserviceroles`)
+        .get(`/v1/tenants/${tenantId}/users/${tenantUserId}?expand=sharedServices`)
 
       expect(response.status).toBe(200)
-      expect(response.body.data.tenantUser.sharedServiceRoles).toEqual(mockSharedServiceRoles)
+      expect(response.body.data.tenantUser.sharedServices).toEqual(mockSharedServices)
       expect(mockTMSRepository.getTenantUser).toHaveBeenCalledWith(
         expect.objectContaining({
           params: { tenantId, tenantUserId },
-          query: { expand: 'sharedserviceroles' }
+          query: { expand: 'sharedServices' }
         })
       )
       expect(mockTMRepository.getTenantUserSharedServiceRoles).toHaveBeenCalledWith(tenantUserId)
