@@ -364,8 +364,8 @@ export class TMSService {
             tenantUser.groups = await this.tmRepository.getTenantUserGroups(tenantUser.id)
         }
 
-        if (expand.includes("sharedserviceroles")) {
-            tenantUser.sharedServiceRoles = await this.tmRepository.getTenantUserSharedServiceRoles(tenantUser.id)
+        if (expand.includes("sharedServices")) {
+            tenantUser.sharedServices = await this.tmRepository.getTenantUserSharedServiceRoles(tenantUser.id)
         }
 
         return {

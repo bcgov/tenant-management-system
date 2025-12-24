@@ -345,7 +345,7 @@ export default {
         }),
         query: Joi.object({
             expand: Joi.string().optional()
-                .pattern(/^(groups|roles|sharedserviceroles)(,(groups|roles|sharedserviceroles))*$/)
+                .pattern(/^(groups|roles|sharedServices)(,(groups|roles|sharedServices))*$/)
         }).optional()
     },
 
