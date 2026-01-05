@@ -79,7 +79,7 @@ const handleTenantSubmit = async (
 onMounted(async () => {
   try {
     await tenantStore.fetchTenants(authStore.authenticatedUser.id)
-  } catch(e: Error) {
+  } catch(e: any) {
     // This happens when the user has sat on a screen idle for a while and then tries to do something (but session is dead)
     if (e && e.code && e.code === "ERR_NETWORK") {
       console.error("Network error while fetching tenants:", e)
