@@ -3,7 +3,7 @@ import { GroupUser } from '../entities/GroupUser'
 import { TenantUser } from '../entities/TenantUser'
 import { Tenant } from '../entities/Tenant'
 import { EntityManager } from 'typeorm'
-import { In } from 'typeorm'
+import { In, Brackets } from 'typeorm'
 import { Request } from 'express'
 import { NotFoundError } from '../errors/NotFoundError'
 import { ConflictError } from '../errors/ConflictError'
@@ -631,13 +631,24 @@ export class TMRepository {
             groupQuery.leftJoinAndSelect("group.users", "groupUsers")
                 .leftJoinAndSelect("groupUsers.tenantUser", "tenantUser")
                 .leftJoinAndSelect("tenantUser.ssoUser", "ssoUser")
-                .andWhere("groupUsers.isDeleted = :isDeleted", { isDeleted: false })
-                .andWhere("tenantUser.isDeleted = :isDeleted", { isDeleted: false })
+                .andWhere(
+                  new Brackets((qb) => {
+                      qb.where("groupUsers.isDeleted = :isDeleted", {isDeleted: false})
+                      .orWhere("groupUsers.isDeleted IS NULL")
+                  })
+                )
+                .andWhere(
+                  new Brackets((qb) => {
+                      qb.where("tenantUser.isDeleted = :isDeleted", {isDeleted: false})
+                      .orWhere("tenantUser.isDeleted IS NULL")
+                  })
+                )
         }
 
         const group: any = await groupQuery.getOne();
         
         if(!group) {
+          console.log(`Group not found: ${groupId}`)
             throw new NotFoundError(`Group not found: ${groupId}`)
         }
             
