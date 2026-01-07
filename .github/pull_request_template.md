@@ -22,7 +22,6 @@ Please describe the tests that you ran to verify your changes. Provide instructi
 - [ ] Test A
 - [ ] Test B
 
-
 ## Checklist
 
 <!-- Go over all the following points, and put an `x` in all the boxes that apply. -->
@@ -36,7 +35,6 @@ Please describe the tests that you ran to verify your changes. Provide instructi
 - [ ] I have added tests that prove my fix is effective or that my feature works
 - [ ] New and existing unit tests pass locally with my changes
 - [ ] Any dependent changes have already been accepted and merged
-
 
 ## Further comments
 

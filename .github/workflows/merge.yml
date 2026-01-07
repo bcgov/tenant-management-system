@@ -2,7 +2,7 @@ name: Merge
 
 on:
   push:
-    branches: [main, deployment-fix]
+    branches: [main]
     paths-ignore:
       - '*.md'
       - '.github/**'
@@ -10,124 +10,66 @@ on:
       - '!.github/workflows/**'
   workflow_dispatch:
     inputs:
-      tags:
-        description: 'Tag to use for the deployment (default: latest)'
+      tag:
+        description: "Image tag set to deploy; e.g. PR number or prod"
         type: string
-        default: latest
+        default: 'prod'
 
 concurrency:
-  # Fixed: More granular concurrency control that allows cancellation
-  group: merge-deployment-${{ github.repository }}-${{ github.ref }}
-  cancel-in-progress: true  # Changed to true to cancel stuck deployments
+  # Do not interrupt previous workflows
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
 
-permissions:
-  contents: read
-  deployments: write
-  id-token: write
-  packages: write
-  attestations: write
+permissions: {}
 
 jobs:
-  builds:
-    name: Builds
-    uses: ./.github/workflows/.build-images.yml
-    permissions:
-      packages: write
-      id-token: write
-      attestations: write
-    with:
-      # Fixed: Treat deployment-fix same as main for tagging
-      tags: ${{ (github.ref_name == 'main' || github.ref_name == 'deployment-fix') && (inputs.tags || 'latest') || format('test-{0}', github.ref_name) }}
-      keep_versions: 10
-  
-  # Auto-deploy to TEST (merge auto-deploys here)
+  # https://github.com/bcgov/quickstart-openshift-helpers
   deploy-test:
     name: Deploy (TEST)
-    needs: [builds]
-    if: github.ref_name == 'main' || github.ref_name == 'deployment-fix'
-    # Fixed: Environment-specific concurrency with cancellation
-    concurrency:
-      group: deploy-test-${{ github.repository }}-${{ github.ref_name }}
-      cancel-in-progress: true  # Allow cancelling stuck TEST deployments
     uses: ./.github/workflows/.deployer.yml
-    secrets:
-      oc_namespace: ${{ secrets.OC_NAMESPACE }}
-      oc_token: ${{ secrets.OC_TOKEN }}
-      bcgov_sso_api_client_id: ${{ secrets.BCGOV_SSO_API_CLIENT_ID }}
-      bcgov_sso_api_client_secret: ${{ secrets.BCGOV_SSO_API_CLIENT_SECRET }}
-      vite_keycloak_client_id: ${{ secrets.VITE_KEYCLOAK_CLIENT_ID }}
+    secrets: inherit
     with:
-      release_name: ${{ github.event.repository.name }}-test
       environment: test
-      db_user: app
-      preserve_database: true
-      tags: ${{ (github.ref_name == 'main' || github.ref_name == 'deployment-fix') && (inputs.tags || 'latest') || format('test-{0}', github.ref_name) }}
-      params: >-
-        --set backend.deploymentStrategy=RollingUpdate
-        --set frontend.deploymentStrategy=RollingUpdate
-        --set backend.imagePullPolicy=Always
-        --set frontend.imagePullPolicy=Always
-        --set global.autoscaling=true
-        --set frontend.pdb.enabled=true
-        --set backend.pdb.enabled=true
-      deployment_url: https://${{ github.event.repository.name }}-test-frontend.apps.silver.devops.gov.bc.ca
+      db_user: appproxy # appproxy is the user which works with pgbouncer.
+      tag: ${{ inputs.tag }}
 
-  # Security scan after TEST deployment
-  test_security_scan:
-    permissions:
-      contents: read
-    name: ZAP Security Scan (TEST)
+  tests:
+    name: Tests
     needs: [deploy-test]
-    if: github.ref_name == 'main'  # Only run security scan on main, not deployment-fix
-    uses: ./.github/workflows/.zap-scan.yml
+    uses: ./.github/workflows/.tests.yml
     with:
-      target_url: https://${{ github.event.repository.name }}-test-frontend.apps.silver.devops.gov.bc.ca
-      fail_on_high: true
-      scan_type: full
-
-  # Manual approval gate for PROD deployment - only for main branch
-  approve-prod:
-    name: Approve Production Deployment
-    needs: [test_security_scan]
-    if: github.ref_name == 'main'  # Only main branch can trigger prod
-    runs-on: ubuntu-24.04
-    environment:
-      name: PROD
-    steps:
-      - name: Manual Approval Required for PROD
-        run: |
-          echo "Manual approval required for production deployment"
-          echo "Test environment: https://${{ github.event.repository.name }}-test-frontend.apps.silver.devops.gov.bc.ca"
-          echo "Security scan completed successfully"
-          echo "Ready for production deployment"
+      target: test
 
   deploy-prod:
     name: Deploy (PROD)
-    needs: [approve-prod]
-    if: github.ref_name == 'main'  # Only main branch deploys to prod
-    # Fixed: Environment-specific concurrency with cancellation
-    concurrency:
-      group: deploy-prod-${{ github.repository }}
-      cancel-in-progress: true  # Allow cancelling stuck PROD deployments
+    needs: [tests]
     uses: ./.github/workflows/.deployer.yml
-    secrets:
-      oc_namespace: ${{ secrets.OC_NAMESPACE }}
-      oc_token: ${{ secrets.OC_TOKEN }}
-      bcgov_sso_api_client_id: ${{ secrets.BCGOV_SSO_API_CLIENT_ID }}
-      bcgov_sso_api_client_secret: ${{ secrets.BCGOV_SSO_API_CLIENT_SECRET }}
-      vite_keycloak_client_id: ${{ secrets.VITE_KEYCLOAK_CLIENT_ID }}
+    secrets: inherit
     with:
-      release_name: ${{ github.event.repository.name }}-prod
       environment: prod
-      db_user: app
-      preserve_database: true
-      tags: ${{ inputs.tags || 'latest' }}
-      params: >-
+      db_user: appproxy # appproxy is the user which works with pgbouncer.
+      params:
         --set backend.deploymentStrategy=RollingUpdate
         --set frontend.deploymentStrategy=RollingUpdate
-        --set backend.imagePullPolicy=Always
-        --set frontend.imagePullPolicy=Always
         --set global.autoscaling=true
         --set frontend.pdb.enabled=true
         --set backend.pdb.enabled=true
-      deployment_url: https://${{ github.event.repository.name }}-prod-frontend.apps.silver.devops.gov.bc.ca
+      tag: ${{ inputs.tag }}
+
+  promote:
+    name: Promote Images
+    needs: [deploy-prod]
+    runs-on: ubuntu-24.04
+    permissions:
+      packages: write
+    strategy:
+      matrix:
+        package: [migrations, backend, frontend]
+    timeout-minutes: 1
+    steps:
+      - uses: shrink/actions-docker-registry-tag@f04afd0559f66b288586792eb150f45136a927fa # v4
+        with:
+          registry: ghcr.io
+          repository: ${{ github.repository }}/${{ matrix.package }}
+          target: ${{ needs.deploy-prod.outputs.tag }}
+          tags: prod
