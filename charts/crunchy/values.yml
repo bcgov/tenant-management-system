@@ -27,7 +27,7 @@ crunchy: # enable it for TEST and PROD, for PR based pipelines simply use single
     target: ~ # 2024-03-24 17:16:00-07 this is the target timestamp to go back to in current cluster
   instances:
     name: db # high availability
-    replicas: 2 # 2 or 3 for high availability in TEST and PROD.
+    replicas: 3 # 2 or 3 for high availability in TEST and PROD.
     metadata:
       annotations:
         prometheus.io/scrape: "true"
