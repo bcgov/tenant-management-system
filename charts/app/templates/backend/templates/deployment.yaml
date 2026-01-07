@@ -92,7 +92,7 @@ spec:
             failureThreshold: 3
             httpGet:
               path: /v1/health
-              port: 3000
+              port: http
               scheme: HTTP
             initialDelaySeconds: 15
             periodSeconds: 30
