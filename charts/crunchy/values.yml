@@ -1,90 +1,124 @@
-# Default values for crunchy postgresql
-
-# Use Crunchy operator (since it's available in your cluster)
-useCrunchyOperator: true
-
-# Image configuration
-image:
-  repository: registry.developers.crunchydata.com/crunchydata/crunchy-postgres
-  tag: "ubi8-15.5-1"
-
-# Cluster configuration
-cluster:
-  name: crunchy-postgres
-  instances: 1
-
-# PostgreSQL version and configuration
-postgresql:
-  version: 15
-  parameters:
-    max_connections: "200"
-    shared_buffers: "256MB"
-    effective_cache_size: "1GB"
-    maintenance_work_mem: "64MB"
-    checkpoint_completion_target: "0.9"
-    wal_buffers: "16MB"
-    default_statistics_target: "100"
-    random_page_cost: "1.1"
-    effective_io_concurrency: "200"
-
-# Database and user configuration
-database:
-  name: app
-  user: app
-
-# Resource configuration
-resources:
-  requests:
-    cpu: "100m"
-    memory: "256Mi"
-  limits:
-    cpu: "500m"
-    memory: "512Mi"
-
-# Storage configuration
-storage:
-  size: "5Gi"
-  storageClass: "netapp-file-standard"
-
-# Backup configuration with pgBackRest
-pgBackRest:
-  enabled: true
-  retention:
-    full: "7"
-    differential: "3"
-
-  # S3 backup configuration (disabled by default)
-  s3:
-    enabled: false
-    bucket: ""
-    endpoint: ""
-    region: ""
-
-  # Local backup configuration
-  local:
-    enabled: true
-    retention: "7-full"
-
-# Monitoring configuration
-monitoring:
-  enabled: false
-  image:
-    repository: registry.developers.crunchydata.com/crunchydata/crunchy-postgres-exporter
-    tag: "ubi8-5.5.0-0"
-
-# Security configuration
-security:
-  tls:
-    enabled: false
-
-# High availability configuration
-ha:
-  enabled: false
-
-# Global configuration that can be overridden
+# Values from bcgov/quickstart-openshift
 global:
-  # Environment-specific settings
-  environment: development
+  config:
+    dbName: app #test
+crunchy: # enable it for TEST and PROD, for PR based pipelines simply use single postgres
+  enabled: true
+  postgresVersion: 17
+  postGISVersion: 3.4
+  openshift: true
+  imagePullPolicy: IfNotPresent
+  # enable below to start a new crunchy cluster after disaster from a backed-up location, crunchy will choose the best place to recover from.
+  # follow https://access.crunchydata.com/documentation/postgres-operator/5.2.0/tutorial/disaster-recovery/
+  # Clone From Backups Stored in S3 / GCS / Azure Blob Storage
+  clone:
+    enabled: false
+    s3:
+      enabled: false
+    pvc:
+      enabled: false
+    path: ~ # provide the proper path to source the cluster. ex: /backups/cluster/version/1, if current new cluster being created, this should be current cluster version -1, ideally
+  # enable this to go back to a specific timestamp in history in the current cluster.
+  # follow https://access.crunchydata.com/documentation/postgres-operator/5.2.0/tutorial/disaster-recovery/
+  # Perform an In-Place Point-in-time-Recovery (PITR)
+  restore:
+    repoName: ~ # provide repo name
+    enabled: false
+    target: ~ # 2024-03-24 17:16:00-07 this is the target timestamp to go back to in current cluster
+  instances:
+    name: db # high availability
+    replicas: 2 # 2 or 3 for high availability in TEST and PROD.
+    metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9187"
+    dataVolumeClaimSpec:
+      storage: 150Mi
+      storageClassName: netapp-block-standard
+      walStorage: 300Mi
 
-  # Storage class override
-  storageClass: "netapp-file-standard"
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    replicaCertCopy:
+      requests:
+        cpu: 1m
+        memory: 32Mi
+
+  pgBackRest:
+    enabled: true
+    backupPath: /backups/test/cluster/version # change it for PROD, create values-prod.yaml # this is only used in s3 backups context.
+    clusterCounter: 1 # this is the number to identify what is the current counter for the cluster, each time it is cloned it should be incremented.
+    # If retention-full-type set to 'count' then the oldest backups will expire when the number of backups reach the number defined in retention
+    # If retention-full-type set to 'time' then the number defined in retention will take that many days worth of full backups before expiration
+    retentionFullType: count
+    s3:
+      enabled: false # if enabled, below must be provided
+      retention: 7 # one weeks backup in object store.
+      bucket: ~
+      endpoint: ~
+      accessKey: ~
+      secretKey: ~
+      fullBackupSchedule: ~ # make sure to provide values here, if s3 is enabled.
+      incrementalBackupSchedule: ~ # make sure to provide values here, if s3 is enabled.
+    pvc:
+      retention: 1 # one day hot active backup in pvc
+      retentionFullType: count
+      fullBackupSchedule: 0 8 * * *
+      incrementalBackupSchedule: 0 0-7,9-23 * * * # every hour incremental
+      volume:
+        accessModes: "ReadWriteOnce"
+        storage: 100Mi
+        storageClassName: netapp-file-backup
+
+    config:
+      requests:
+        cpu: 5m
+        memory: 32Mi
+    repoHost:
+      requests:
+        cpu: 20m
+        memory: 128Mi
+    sidecars:
+      requests:
+        cpu: 5m
+        memory: 16Mi
+    jobs:
+      requests:
+        cpu: 20m
+        memory: 128Mi
+
+  patroni:
+    postgresql:
+      pg_hba:
+        - "host all all 0.0.0.0/0 scram-sha-256"
+        - "host all all ::1/128 scram-sha-256"
+      parameters:
+        shared_buffers: 16MB # default is 128MB; a good tuned default for shared_buffers is 25% of the memory allocated to the pod
+        wal_buffers: "64kB" # this can be set to -1 to automatically set as 1/32 of shared_buffers or 64kB, whichever is larger
+        min_wal_size: 32MB
+        max_wal_size: 64MB # default is 1GB
+        max_slot_wal_keep_size: 128MB # default is -1, allowing unlimited wal growth when replicas fall behind
+        work_mem: 2MB # a work_mem value of 2 MB
+        log_min_duration_statement: 1000ms # log queries taking more than 1 second to respond.
+        effective_io_concurrency: 20 #If the underlying disk can handle multiple simultaneous requests, then you should increase the effective_io_concurrency value and test what value provides the best application performance. All BCGov clusters have SSD.
+
+  proxy:
+    enabled: true
+    pgBouncer:
+      image: # it's not necessary to specify an image as the images specified in the Crunchy Postgres Operator will be pulled by default
+      replicas: 2
+      requests:
+        cpu: 5m
+        memory: 32Mi
+      maxConnections: 100 # make sure less than postgres max connections
+      poolMode: "transaction"
+
+  # Postgres Cluster resource values:
+  pgmonitor:
+    enabled: true
+    exporter:
+      image: # it's not necessary to specify an image as the images specified in the Crunchy Postgres Operator will be pulled by default
+      requests:
+        cpu: 10m
+        memory: 32Mi
