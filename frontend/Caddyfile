@@ -8,10 +8,23 @@
     encode zstd gzip
     file_server
 
-    # Explicitly serve configuration files
-    handle /config/* {
-        root * /
-        file_server
+    # Serve configuration file
+    handle /config/default.json {
+        header Content-Type application/json
+        respond `{
+            "api": {
+                "baseUrl": "/api/v1"
+            },
+            "basicBceidBroker": "bceidboth",
+            "businessBceidBroker": "bceidboth",
+            "idirBroker": "azureidir",
+            "oidc": {
+                "clientId": "tenant-management-system-6014",
+                "logoutUrl": "{$LOGIN_PROXY}/auth/realms/standard/protocol/openid-connect/logout",
+                "realm": "standard",
+                "serverUrl": "{$LOGIN_PROXY}/auth"
+            }
+        }` 200
     }
     
     @spa_router {

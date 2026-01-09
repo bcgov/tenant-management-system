@@ -86,7 +86,7 @@ permissions: {}
 jobs:
   deploy:
     name: Stack
-    environment: ${{ inputs.environment }}
+    environment: ${{ inputs.environment || 'dev' }}
     runs-on: ubuntu-24.04
     outputs:
       tag: ${{ inputs.tag || steps.pr.outputs.pr }}
@@ -177,6 +177,7 @@ jobs:
               --set-string global.tag="${{ steps.vars.outputs.tag }}" \
               --set-string global.config.databaseUser="${{ inputs.db_user }}" \
               --set-string global.databaseAlias="${{ steps.deploy_crunchy.outputs.release }}-crunchy" \
+              --set-string frontend.loginProxy="${{ vars.LOGIN_PROXY }}" \
               ${{ inputs.params }} \
               --install --wait ${{ inputs.atomic && '--atomic' || '' }} ${{ steps.vars.outputs.release }} \
               --timeout ${{ inputs.timeout-minutes }}m \
