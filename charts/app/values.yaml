@@ -72,6 +72,8 @@ frontend:
   enabled: true
   # -- the deployment strategy, can be "Recreate" or "RollingUpdate"
   deploymentStrategy: Recreate
+  # -- the base URL of the environment-specific login proxy.
+  loginProxy: ~
 
   #-- autoscaling for the component. it is optional and is an object.
   autoscaling:
