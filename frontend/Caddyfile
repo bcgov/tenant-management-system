@@ -8,12 +8,25 @@
     encode zstd gzip
     file_server
 
-    # Explicitly serve configuration files
-    handle /config/* {
-        root * /
-        file_server
+    # Serve configuration file
+    handle /config/default.json {
+        header Content-Type application/json
+        respond `{
+            "api": {
+                "baseUrl": "/api/v1"
+            },
+            "basicBceidBroker": "bceidboth",
+            "businessBceidBroker": "bceidboth",
+            "idirBroker": "azureidir",
+            "oidc": {
+                "clientId": "tenant-management-system-6014",
+                "logoutUrl": "{$LOGIN_PROXY}/auth/realms/standard/protocol/openid-connect/logout",
+                "realm": "standard",
+                "serverUrl": "{$LOGIN_PROXY}/auth"
+            }
+        }` 200
     }
-    
+
     @spa_router {
         not path /api* /config*
         file {
@@ -23,12 +36,12 @@
     rewrite @spa_router {http.matchers.file.relative}
 
     handle_path /api/* {
-        reverse_proxy {$CADDY_REVERSE_PROXY_API_URL} {
+        reverse_proxy {$BACKEND_URL} {
             header_up Host {upstream_hostport}
             header_up X-Real-IP {remote_host}
         }
     }
-    
+
     header {
         -Server
         X-Frame-Options "SAMEORIGIN"
@@ -51,6 +64,7 @@
         Cross-Origin-Opener-Policy "same-origin"
     }
 }
+
 :3001 {
     handle /health {
         respond "OK"

@@ -16,99 +16,71 @@ concurrency:
 permissions: {}
 
 jobs:
-  check-changes:
-    name: Check Changed Files
-    runs-on: ubuntu-24.04
-    outputs:
-      backend: ${{ steps.diff-backend.outputs.triggered }}
-      frontend: ${{ steps.diff-frontend.outputs.triggered }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # Required for diff-triggers to work properly
-      
-      - name: Check Backend Changes
-        id: diff-backend
-        uses: bcgov/action-diff-triggers@970552c34a063e429eb96fdc700eac4f924366a1
-        with:
-          triggers: ('backend/')
-          
-      - name: Check Frontend Changes
-        id: diff-frontend
-        uses: bcgov/action-diff-triggers@970552c34a063e429eb96fdc700eac4f924366a1
-        with:
-          triggers: ('frontend/')
-      
-      - name: Print Changed Status
-        run: |
-          echo "Backend changes: ${{ steps.diff-backend.outputs.triggered }}"
-          echo "Frontend changes: ${{ steps.diff-frontend.outputs.triggered }}"
-
   backend-tests:
     name: Backend Tests
-    needs: check-changes
-    if: (! github.event.pull_request.draft) && (github.event_name == 'workflow_dispatch' || github.event_name == 'push' || needs.check-changes.outputs.backend == 'true')
+    if: (! github.event.pull_request.draft)
     runs-on: ubuntu-24.04
     timeout-minutes: 5
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_PASSWORD: default
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
     steps:
-      - uses: actions/checkout@v4
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: bcgov/action-test-and-analyse@87f88c90526b8b05cea760492ff33db4ba6e271b # v1.6.0
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_BACKEND }}
         with:
-          node-version: '22'
-          cache: 'npm'
-          cache-dependency-path: 'backend/package-lock.json'
-      
-      - name: Install dependencies
-        working-directory: backend
-        run: npm ci
-      
-      - name: Run tests with coverage
-        working-directory: backend
-        run: npm run test:cov
-      
-      - name: Publish Test Results
-        uses: actions/upload-artifact@v4
-        with:
-          name: backend-test-results
-          path: |
-            backend/coverage/**/*
-            backend/test-results/**/*
-          retention-days: 7
+          commands: |
+            npm ci
+            npm run lint
+            npm run test:cov
+          dir: backend
+          node_version: "22"
+          sonar_args: >
+            -Dsonar.exclusions=**/coverage/**,**/node_modules/**,**/*spec.ts
+            -Dsonar.organization=bcgov-sonarcloud
+            -Dsonar.projectKey=quickstart-openshift_backend
+            -Dsonar.sources=src
+            -Dsonar.tests.inclusions=**/*spec.ts
+            -Dsonar.javascript.lcov.reportPaths=./coverage/lcov.info
+          sonar_token: ${{ env.SONAR_TOKEN }}
+          supply_scan: true
+          triggers: ('backend/')
 
   frontend-tests:
     name: Frontend Tests
-    needs: check-changes
-    if: (! github.event.pull_request.draft) && (github.event_name == 'workflow_dispatch' || github.event_name == 'push' || needs.check-changes.outputs.frontend == 'true')
+    if: (! github.event.pull_request.draft)
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: bcgov/action-test-and-analyse@87f88c90526b8b05cea760492ff33db4ba6e271b # v1.6.0
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_FRONTEND }}
         with:
-          node-version: '22'
-          cache: 'npm'
-          cache-dependency-path: 'frontend/package-lock.json'
-      
-      - name: Install dependencies
-        working-directory: frontend
-        run: npm ci
-      
-      - name: Run tests with coverage
-        working-directory: frontend
-        run: npm run test:cov
-      
-      - name: Publish Test Results
-        uses: actions/upload-artifact@v4
-        with:
-          name: frontend-test-results
-          path: |
-            frontend/coverage/**/*
-            frontend/test-results/**/*
-          retention-days: 7
+          commands: |
+            npm ci
+            npm run lint
+            npm run test:cov
+          dir: frontend
+          node_version: "22"
+          sonar_args: >
+            -Dsonar.exclusions=**/coverage/**,**/node_modules/**,**/*spec.ts
+            -Dsonar.organization=bcgov-sonarcloud
+            -Dsonar.projectKey=quickstart-openshift_frontend
+            -Dsonar.sources=src
+            -Dsonar.tests.inclusions=**/*spec.ts
+            -Dsonar.javascript.lcov.reportPaths=./coverage/lcov.info
+          sonar_token: ${{ env.SONAR_TOKEN }}
+          supply_scan: true
+          triggers: ('frontend/')
 
   # https://github.com/marketplace/actions/aqua-security-trivy
   trivy:
@@ -120,9 +92,9 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 1
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Run Trivy vulnerability scanner in repo mode
-        uses: aquasecurity/trivy-action@76071ef0d7ec797419534a183b498b4d6366cf37 # 0.31.0
+        uses: aquasecurity/trivy-action@b6643a29fecd7f34b3597bc6acb0a98b03d33ff8 # 0.33.1
         with:
           format: "sarif"
           output: "trivy-results.sarif"
@@ -132,18 +104,16 @@ jobs:
           severity: "CRITICAL,HIGH"
 
       - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: "trivy-results.sarif"
 
   results:
     name: Analysis Results
-    needs: [backend-tests, frontend-tests, trivy]
-    if: (! github.event.pull_request.draft) && always()
+    needs: [backend-tests, frontend-tests]
+    if: (! github.event.pull_request.draft)
     runs-on: ubuntu-24.04
     steps:
-      - if: contains(needs.*.result, 'failure') && contains(needs.*.result, 'success')
+      - if: contains(needs.*.result, 'failure')||contains(needs.*.result, 'canceled')
         run: echo "At least one job has failed." && exit 1
-      - if: contains(needs.*.result, 'cancelled')
-        run: echo "At least one job was cancelled." && exit 1
       - run: echo "Success!"
