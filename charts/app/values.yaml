@@ -2,6 +2,12 @@
 # Declare variables to be passed into your templates.
 #-- global variables, can be accessed by sub-charts.
 global:
+  #-- the logon proxy settings for single sign on
+  loginProxy:
+    # -- the client ID registered with the login proxy for this application
+    clientId: ~
+    # -- the host name of the environment-specific login proxy
+    hostName: ~
   #-- the registry where the images are stored. override during runtime for other registry at global level or individual level.
   repository: ~ # provide the repo name from where images will be sourced for example bcgo
   #-- the registry where the images are stored. override during runtime for other registry at global level or individual level. default is ghcr.io
@@ -72,8 +78,6 @@ frontend:
   enabled: true
   # -- the deployment strategy, can be "Recreate" or "RollingUpdate"
   deploymentStrategy: Recreate
-  # -- the base URL of the environment-specific login proxy.
-  loginProxy: ~
 
   #-- autoscaling for the component. it is optional and is an object.
   autoscaling:

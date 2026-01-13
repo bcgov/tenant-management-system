@@ -19,10 +19,10 @@
             "businessBceidBroker": "bceidboth",
             "idirBroker": "azureidir",
             "oidc": {
-                "clientId": "tenant-management-system-6014",
-                "logoutUrl": "{$LOGIN_PROXY}/auth/realms/standard/protocol/openid-connect/logout",
+                "clientId": "{$LOGIN_PROXY_CLIENT_ID}",
+                "logoutUrl": "https://{$LOGIN_PROXY_HOST_NAME}/auth/realms/standard/protocol/openid-connect/logout",
                 "realm": "standard",
-                "serverUrl": "{$LOGIN_PROXY}/auth"
+                "serverUrl": "https://{$LOGIN_PROXY_HOST_NAME}/auth"
             }
         }` 200
     }

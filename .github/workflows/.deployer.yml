@@ -177,7 +177,8 @@ jobs:
               --set-string global.tag="${{ steps.vars.outputs.tag }}" \
               --set-string global.config.databaseUser="${{ inputs.db_user }}" \
               --set-string global.databaseAlias="${{ steps.deploy_crunchy.outputs.release }}-crunchy" \
-              --set-string frontend.loginProxy="${{ vars.LOGIN_PROXY }}" \
+              --set-string global.loginProxy.clientId="${{ vars.LOGIN_PROXY_CLIENT_ID }}" \
+              --set-string global.loginProxy.hostName="${{ vars.LOGIN_PROXY_HOST_NAME }}" \
               ${{ inputs.params }} \
               --install --wait ${{ inputs.atomic && '--atomic' || '' }} ${{ steps.vars.outputs.release }} \
               --timeout ${{ inputs.timeout-minutes }}m \

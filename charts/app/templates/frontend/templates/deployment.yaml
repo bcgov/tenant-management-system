@@ -41,8 +41,10 @@ spec:
               value: "http://{{ .Release.Name }}-backend"
             - name: LOG_LEVEL
               value: "info"
-            - name: LOGIN_PROXY
-              value: "{{.Values.frontend.loginProxy}}"
+            - name: LOGIN_PROXY_CLIENT_ID
+              value: "{{.Values.global.loginProxy.clientId}}"
+            - name: LOGIN_PROXY_HOST_NAME
+              value: "{{.Values.global.loginProxy.hostName}}"
           ports:
             - name: http
               containerPort: 3000

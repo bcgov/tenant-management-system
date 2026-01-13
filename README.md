@@ -145,12 +145,19 @@ BC Government employees can request SonarCloud projects by creating an [issue](h
 
 > Click Settings > Secrets and Variables > Actions > Variables > New repository variable
 
-**`LOGIN_PROXY`**
+**`LOGIN_PROXY_CLIENT_ID`**
 
-The base URL of the environment-specific login proxy server.
+The client ID for the environment-specific login proxy server.
 
-- Consume: `{{ vars.LOGIN_PROXY }}`
-- Value: `https://dev.loginproxy.gov.bc.ca` or `https://test.loginproxy.gov.bc.ca` or `https://loginproxy.gov.bc.ca`
+- Consume: `{{ vars.LOGIN_PROXY_CLIENT_ID }}`
+- Value: client identifier from the SSO CSS application
+
+**`LOGIN_PROXY_HOST_NAME`**
+
+The host name of the environment-specific login proxy server.
+
+- Consume: `{{ vars.LOGIN_PROXY_HOST_NAME }}`
+- Value: `dev.loginproxy.gov.bc.ca` or `test.loginproxy.gov.bc.ca` or `loginproxy.gov.bc.ca`
 
 **`OC_SERVER`**
 
