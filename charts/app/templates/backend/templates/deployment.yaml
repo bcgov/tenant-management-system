@@ -61,8 +61,24 @@ spec:
             - secretRef:
                 name: {{.Release.Name}}-backend
           env:
+            - name: ALLOWED_ORIGINS
+              value: "{{.Values.backend.allowedOrigins}}"
+            - name: BCGOV_SSO_API_URL
+              value: "{{.Values.backend.bcgovSsoApiUrl}}"
+            - name: BCGOV_TOKEN_URL
+              value: "{{.Values.backend.bcgovTokenUrl}}"
+            - name: ISSUER
+              value: "https://{{ .Values.global.loginProxy.hostName }}/auth/realms/standard"
+            - name: JWKS_URI
+              value: "https://{{ .Values.global.loginProxy.hostName }}/auth/realms/standard/protocol/openid-connect/certs"
             - name: LOG_LEVEL
               value: info
+            - name: NODE_ENV
+              value: production
+            - name: PORT
+              value: "{{ .Values.backend.service.targetPort }}"
+            - name: TMS_AUDIENCE
+              value: "{{ .Values.global.loginProxy.clientId }}"
           ports:
             - name: http
               containerPort: {{ .Values.backend.service.targetPort }}

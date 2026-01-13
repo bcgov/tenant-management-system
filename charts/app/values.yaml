@@ -30,8 +30,20 @@ global:
 
 #-- the components of the application, backend.
 backend:
+  #-- allowed origins for the backend
+  allowedOrigins: "*"
+  #-- the client ID registered with the bcgovSsoApiUrl
+  bcgovSsoApiClientId: ~
+  #-- the client secret used with the bcgovSsoApiUrl
+  bcgovSsoApiClientSecret: ~
+  #-- the API URL, used for looking up IDIR and BCeID users
+  bcgovSsoApiUrl: ~
+  #-- the token URL, used for looking up IDIR and BCeID users
+  bcgovTokenUrl: ~
   #-- enable or disable backend
   enabled: true
+  #-- log level for the backend
+  logLevel: "info"
   #-- the deployment strategy, can be "Recreate" or "RollingUpdate"
   deploymentStrategy: Recreate
   #-- autoscaling for the component. it is optional and is an object.

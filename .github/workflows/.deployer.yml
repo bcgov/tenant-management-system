@@ -74,6 +74,12 @@ on:
         value: ${{ jobs.deploy.outputs.triggered }}
 
     secrets:
+      bcgov_sso_api_client_id:
+        description: BCGov SSO API Client ID
+        required: true
+      bcgov_sso_api_client_secret:
+        description: BCGov SSO API Client Secret
+        required: true
       oc_namespace:
         description: OpenShift namespace
         required: true
@@ -173,6 +179,10 @@ jobs:
             # print the values.yaml file to see the values being used
             # Helm upgrade/rollout
             helm upgrade \
+              --set-string backend.bcgovSsoApiClientId=${{ secrets.bcgov_sso_api_client_id }} \
+              --set-string backend.bcgovSsoApiClientSecret=${{ secrets.bcgov_sso_api_client_secret }} \
+              --set-string backend.bcgovSsoApiUrl=${{ vars.BCGOV_SSO_API_URL }} \
+              --set-string backend.bcgovTokenUrl=${{ vars.BCGOV_TOKEN_URL }} \
               --set-string global.repository=${{ github.repository }} \
               --set-string global.tag="${{ steps.vars.outputs.tag }}" \
               --set-string global.config.databaseUser="${{ inputs.db_user }}" \

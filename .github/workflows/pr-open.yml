@@ -35,6 +35,8 @@ jobs:
     needs: [builds]
     uses: ./.github/workflows/.deployer.yml
     secrets:
+      bcgov_sso_api_client_id: ${{ secrets.BCGOV_SSO_API_CLIENT_ID }}
+      bcgov_sso_api_client_secret: ${{ secrets.BCGOV_SSO_API_CLIENT_SECRET }}
       oc_namespace: ${{ secrets.OC_NAMESPACE }}
       oc_token: ${{ secrets.OC_TOKEN }}
     with:
