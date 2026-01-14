@@ -44,6 +44,8 @@ backend:
   enabled: true
   #-- log level for the backend
   logLevel: "info"
+  #-- the number of replicas when autoscaling is disabled
+  replicaCount: 2
   #-- the deployment strategy, can be "Recreate" or "RollingUpdate"
   deploymentStrategy: Recreate
   #-- autoscaling for the component. it is optional and is an object.
@@ -88,6 +90,8 @@ backend:
 frontend:
   # -- enable or disable a component deployment.
   enabled: true
+  #-- the number of replicas when autoscaling is disabled
+  replicaCount: 2
   # -- the deployment strategy, can be "Recreate" or "RollingUpdate"
   deploymentStrategy: Recreate
 
