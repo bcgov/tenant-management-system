@@ -92,21 +92,58 @@ Environments provide a [number of features](https://docs.github.com/en/actions/d
 
 Here is the arrangement of secrets, variables and environments for this repository.
 
-| Environment | Name                   | Description           |
-| ----------- | ---------------------- | --------------------- |
-| \<none\>    | `vars.OC_SERVER`       | Common server address |
-| \<none\>    | `vars.MSTEAMS_WEBHOOK` | Common alert webhook  |
-| DEV         | `vars.LOGIN_PROXY`     | DEV login proxy       |
-| DEV         | `secrets.OC_NAMESPACE` | DEV namespace         |
-| DEV         | `secrets.OC_TOKEN`     | DEV service token     |
-| TEST        | `vars.LOGIN_PROXY`     | TEST login proxy      |
-| TEST        | `secrets.OC_NAMESPACE` | TEST namespace        |
-| TEST        | `secrets.OC_TOKEN`     | TEST service token    |
-| PROD        | `vars.LOGIN_PROXY`     | PROD login proxy      |
-| PROD        | `secrets.OC_NAMESPACE` | PROD namespace        |
-| PROD        | `secrets.OC_TOKEN`     | PROD service token    |
+| Environment | Name                                  | Description                          |
+| ----------- | ------------------------------------- | ------------------------------------ |
+| \<none\>    | `secrets.BCGOV_SSO_API_CLIENT_ID`     | Common Client ID for user lookup     |
+| \<none\>    | `secrets.BCGOV_SSO_API_CLIENT_SECRET` | Common Client secret for user lookup |
+| \<none\>    | `vars.BCGOV_SSO_API_URL`              | Common user lookup API URL           |
+| \<none\>    | `vars.BCGOV_TOKEN_URL`                | Common user lookup token URL         |
+| \<none\>    | `vars.LOGIN_PROXY_CLIENT_ID`          | Common login proxy client id         |
+| \<none\>    | `vars.MSTEAMS_WEBHOOK`                | Common alert webhook                 |
+| \<none\>    | `vars.OC_SERVER`                      | Common server address                |
+| DEV         | `vars.LOGIN_PROXY_HOST_NAME`          | DEV login proxy host name            |
+| DEV         | `secrets.OC_NAMESPACE`                | DEV namespace                        |
+| DEV         | `secrets.OC_TOKEN`                    | DEV service token                    |
+| TEST        | `vars.LOGIN_PROXY_HOST_NAME`          | TEST login proxy host name           |
+| TEST        | `secrets.OC_NAMESPACE`                | TEST namespace                       |
+| TEST        | `secrets.OC_TOKEN`                    | TEST service token                   |
+| PROD        | `vars.LOGIN_PROXY_HOST_NAME`          | PROD login proxy host name           |
+| PROD        | `secrets.OC_NAMESPACE`                | PROD namespace                       |
+| PROD        | `secrets.OC_TOKEN`                    | PROD service token                   |
 
 ### Secret Values
+
+**`BCGOV_SSO_API_CLIENT_ID`**
+
+The client ID used to call the SSO API. This needs to be set up in the SSO CSS application.
+
+- Consume: `{{ secrets.BCGOV_SSO_API_CLIENT_ID }}`
+
+Locate the SSO API client ID:
+
+1. Log into the [SSO CSS Application](https://sso-requests.apps.gold.devops.gov.bc.ca)
+1. Select `My Dashboard` in the top navigation bar
+1. Select `My Teams` in the second navigation bar
+1. Select the team for this application
+1. In the `Team Detail` switch to the `CSS API Account`
+1. Download or copy the API Account information
+1. Use the `clientId` value
+
+**`BCGOV_SSO_API_CLIENT_SECRET`**
+
+The client secret used to call the SSO API. This needs to be set up in the SSO CSS application.
+
+- Consume: `{{ secrets.BCGOV_SSO_API_CLIENT_SECRET }}`
+
+Locate the SSO API client secret:
+
+1. Log into the [SSO CSS Application](https://sso-requests.apps.gold.devops.gov.bc.ca)
+1. Select `My Dashboard` in the top navigation bar
+1. Select `My Teams` in the second navigation bar
+1. Select the team for this application
+1. In the `Team Detail` switch to the `CSS API Account`
+1. Download or copy the API Account information
+1. Use the `clientSecret` value
 
 **`OC_TOKEN`**
 
@@ -145,16 +182,39 @@ BC Government employees can request SonarCloud projects by creating an [issue](h
 
 > Click Settings > Secrets and Variables > Actions > Variables > New repository variable
 
+**`BCGOV_SSO_API_URL`**
+
+The URL for the SSO API.
+
+- Consume: `{{ vars.BCGOV_SSO_API_URL }}`
+- Value: `https://api.loginproxy.gov.bc.ca/api/v1/dev/idir/users`
+
+**`BCGOV_TOKEN_URL`**
+
+The token URL used when calling the SSO API. This needs to be set up in the SSO CSS application.
+
+- Consume: `{{ secrets.BCGOV_TOKEN_URL }}`
+
+Locate the SSO API token URL:
+
+1. Log into the [SSO CSS Application](https://sso-requests.apps.gold.devops.gov.bc.ca)
+1. Select `My Dashboard` in the top navigation bar
+1. Select `My Teams` in the second navigation bar
+1. Select the team for this application
+1. In the `Team Detail` switch to the `CSS API Account`
+1. Download or copy the API Account information
+1. Use the `tokenUrl` value
+
 **`LOGIN_PROXY_CLIENT_ID`**
 
-The client ID for the environment-specific login proxy server.
+The client ID for the login proxy server.
 
 - Consume: `{{ vars.LOGIN_PROXY_CLIENT_ID }}`
 - Value: client identifier from the SSO CSS application
 
 **`LOGIN_PROXY_HOST_NAME`**
 
-The host name of the environment-specific login proxy server.
+The environment-specific host name of the login proxy server.
 
 - Consume: `{{ vars.LOGIN_PROXY_HOST_NAME }}`
 - Value: `dev.loginproxy.gov.bc.ca` or `test.loginproxy.gov.bc.ca` or `loginproxy.gov.bc.ca`
