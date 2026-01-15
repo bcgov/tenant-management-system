@@ -5,7 +5,7 @@ global:
 crunchy: # enable it for TEST and PROD, for PR based pipelines simply use single postgres
   enabled: true
   postgresVersion: 17
-  postGISVersion: 3.4
+  postGISVersion: null
   openshift: true
   imagePullPolicy: IfNotPresent
   # enable below to start a new crunchy cluster after disaster from a backed-up location, crunchy will choose the best place to recover from.
@@ -27,7 +27,7 @@ crunchy: # enable it for TEST and PROD, for PR based pipelines simply use single
     target: ~ # 2024-03-24 17:16:00-07 this is the target timestamp to go back to in current cluster
   instances:
     name: db # high availability
-    replicas: 2 # 2 or 3 for high availability in TEST and PROD.
+    replicas: 3 # 2 or 3 for high availability in TEST and PROD.
     metadata:
       annotations:
         prometheus.io/scrape: "true"
@@ -35,7 +35,7 @@ crunchy: # enable it for TEST and PROD, for PR based pipelines simply use single
     dataVolumeClaimSpec:
       storage: 150Mi
       storageClassName: netapp-block-standard
-      walStorage: 300Mi
+      walStorage: 700Mi
 
     requests:
       cpu: 50m

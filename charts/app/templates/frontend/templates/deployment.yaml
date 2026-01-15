@@ -37,26 +37,28 @@ spec:
           image: "{{.Values.global.registry}}/{{.Values.global.repository}}/frontend:{{ .Values.global.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ default "Always" .Values.frontend.imagePullPolicy }}
           env:
-            - name: CADDY_REVERSE_PROXY_API_URL
-              value: "http://{{ .Release.Name }}-backend.{{ .Release.Namespace }}.svc.cluster.local:80"
-            - name: VITE_API_BASE_URL
-              value: /api/v1
+            - name: BACKEND_URL
+              value: "http://{{ .Release.Name }}-backend"
             - name: LOG_LEVEL
               value: "info"
+            - name: LOGIN_PROXY_CLIENT_ID
+              value: "{{.Values.global.loginProxy.clientId}}"
+            - name: LOGIN_PROXY_HOST_NAME
+              value: "{{.Values.global.loginProxy.hostName}}"
           ports:
             - name: http
-              containerPort: {{ index .Values.frontend.service.ports 0 "targetPort" }}
+              containerPort: 3000
               protocol: TCP
           startupProbe:
             httpGet:
-              path: /health
-              port: 3001
+              path: /
+              port: 3000
               scheme: HTTP
-            initialDelaySeconds: 0
+            initialDelaySeconds: 5
             periodSeconds: 5
             timeoutSeconds: 2
             successThreshold: 1
-            failureThreshold: 20
+            failureThreshold: 5
           readinessProbe:
             httpGet:
               path: /health
@@ -80,7 +82,7 @@ spec:
             timeoutSeconds: 5
           resources:
             requests:
-              cpu: 10m
+              cpu: 5m
               memory: 50Mi
           volumeMounts:
             - name: data
@@ -91,8 +93,7 @@ spec:
         - name: data
           emptyDir: {}
         - name: config
-          configMap:
-            name: {{ include "frontend.fullname" . }}-config
+          emptyDir: {}
       affinity:
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:

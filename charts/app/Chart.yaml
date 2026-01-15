@@ -29,7 +29,3 @@ maintainers:
     email: omprakash.2.mishra@gov.bc.ca
   - name: Derek Roberts
     email: derek.roberts@gov.bc.ca
-
-# Note: Bitnami PostgreSQL dependency removed
-# PR environments now use OpenShift's native PostgreSQL
-# Test/Prod environments use Crunchy PostgreSQL
