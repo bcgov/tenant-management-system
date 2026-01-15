@@ -115,7 +115,7 @@ spec:
             timeoutSeconds: 5
           resources: # this is optional
             requests:
-              cpu: 50m
+              cpu: 5m
               memory: 200Mi
       {{- with .Values.backend.nodeSelector }}
       nodeSelector:
