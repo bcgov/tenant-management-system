@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 const { t } = useI18n()
 
@@ -13,6 +13,12 @@ import RoleDialog from '@/components/tenant/RoleDialog.vue'
 import type { Role, Tenant, User } from '@/models'
 import { type IdirSearchType, ROLES } from '@/utils/constants'
 import { currentUserHasRole } from '@/utils/permissions'
+import { tenantService } from '@/services'
+import { useGroupStore } from '@/stores'
+
+
+// --- Stores ----------------------------------------------------------------
+const groupStore = useGroupStore()
 
 // --- Component Interface -----------------------------------------------------
 
@@ -24,7 +30,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (event: 'add', user: User): void
+  (event: 'add', user: User, groups: Group[]): void
   (event: 'cancel' | 'clear-search'): void
   (event: 'remove-role', userId: string, roleId: string): void
   (event: 'search', searchType: IdirSearchType, searchText: string): void
@@ -71,6 +77,8 @@ const showSearch = ref(false)
 const userSearch = ref('')
 const roleDialogVisible = ref(false)
 const modifyingUserIndex = ref<number | null>(null)
+const selectAllGroups = ref(false)
+const addGroups = ref<boolean[]>([])
 
 // --- Computed Values ---------------------------------------------------------
 
@@ -120,7 +128,14 @@ function handleAddUser() {
   }
 
   selectedUser.value.roles = [...selectedRoles.value]
-  emit('add', selectedUser.value)
+  const selectedGroups: Group[] = []
+  for (let i = 0; i < addGroups.value.length; i++) {
+    if (addGroups.value[i]) {
+      const group = groupStore.groups[i]
+      selectedGroups.push(group)
+    }
+  }
+  emit('add', selectedUser.value, selectedGroups)
   toggleSearch()
 }
 
@@ -214,6 +229,17 @@ function handleCloseRoleDialog(open: boolean) {
   roleDialogVisible.value = open
   modifyingUserIndex.value = null
 }
+
+watch(selectAllGroups, (selectAll) => {
+  if (selectAll) {
+    addGroups.value = []
+    for (const group of groupStore.groups) {
+      addGroups.value.push(true)
+    }
+  } else {
+    addGroups.value = []
+  }
+})
 </script>
 
 <template>
@@ -316,7 +342,8 @@ function handleCloseRoleDialog(open: boolean) {
       <v-col class="d-flex justify-start" cols="12">
         <FloatingActionButton
           icon="mdi-plus-box"
-          text="Add User to Tenant"
+          class="no-transform"
+          :text="$t('tenants.addAnotherUser', tenant.users.length)"
           @click="toggleSearch"
         />
       </v-col>
@@ -335,6 +362,7 @@ function handleCloseRoleDialog(open: boolean) {
         <UserSearch
           :loading="loadingSearch"
           :search-results="searchResults"
+          :current-users="tenant.users"
           @clear-search="handleClearSearch"
           @search="handleSearch"
           @select="handleUserSelected"
@@ -343,17 +371,40 @@ function handleCloseRoleDialog(open: boolean) {
         <v-row v-if="selectedUser" class="mt-4">
           <v-col cols="12">
             <p class="mb-2">2. Assign role(s) to this user:</p>
-
-            <v-checkbox
-              v-for="role in roles"
-              :key="role.id"
-              :label="role.description"
-              :model-value="selectedRoles.some((r) => r.id === role.id)"
-              class="my-0 py-0"
+          </v-col>
+          <v-col cols="6">
+            <p class="mb-2 text-body-2">Available Roles:</p>
+            <v-select
+              v-model="selectedRoles"
+              :items="roles"
+              item-title="description"
+              item-value="id"
+              label="Select roles"
+              multiple
+              chips
+              clearable
+              return-object
               hide-details
-              @update:model-value="
-                (checked: boolean | null) => toggleRole(role, !!checked)
-              "
+            />
+          </v-col>
+        </v-row>
+
+        <v-row v-if="selectedUser" class="mt-4">
+          <v-col cols="12">
+            <p class="mb-2">3. Assign group(s) to this user:</p>
+          </v-col>
+          <v-col cols="12">
+            <v-checkbox 
+              label="Select all"
+              class="d-sm-inline-block"
+              v-model="selectAllGroups"
+            />
+            <v-checkbox 
+              v-for="group in groupStore.groups" 
+              class="d-sm-inline-block"
+              :key="group.id" 
+              :label="group.name"
+              v-model="addGroups"
             />
           </v-col>
         </v-row>
@@ -417,5 +468,8 @@ function handleCloseRoleDialog(open: boolean) {
 <style scoped>
 .v-btn--icon.default-radius {
   border-radius: 4px;
+}
+.v-btn.no-transform {
+  text-transform: none;
 }
 </style>

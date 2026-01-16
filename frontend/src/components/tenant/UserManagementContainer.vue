@@ -5,7 +5,7 @@ import TenantUserManagement from '@/components/tenant/TenantUserManagement.vue'
 import { useNotification } from '@/composables'
 import { DuplicateEntityError } from '@/errors'
 import { Tenant, User } from '@/models'
-import { useRoleStore, useTenantStore, useUserStore } from '@/stores'
+import { useRoleStore, useTenantStore, useUserStore, useGroupStore } from '@/stores'
 import { type IdirSearchType, IDIR_SEARCH_TYPE } from '@/utils/constants'
 
 // --- Component Interface -----------------------------------------------------
@@ -20,6 +20,7 @@ const notification = useNotification()
 const roleStore = useRoleStore()
 const tenantStore = useTenantStore()
 const userStore = useUserStore()
+const groupStore = useGroupStore()
 
 // --- Component State ---------------------------------------------------------
 
@@ -32,7 +33,8 @@ const roles = computed(() => roleStore.roles)
 
 // --- Component Methods -------------------------------------------------------
 
-async function handleAddUser(user: User) {
+async function handleAddUser(user: User, groups : Group[]) {
+  let addToGroups = true
   try {
     await tenantStore.addTenantUser(props.tenant, user)
     searchResults.value = null
@@ -41,6 +43,7 @@ async function handleAddUser(user: User) {
       'User Added',
     )
   } catch (error) {
+    addToGroups = false
     if (error instanceof DuplicateEntityError) {
       notification.error(
         `Cannot add user "${user.ssoUser.displayName}": already a user in ` +
@@ -50,6 +53,15 @@ async function handleAddUser(user: User) {
     } else {
       notification.error('Failed to add user')
     }
+  }
+  if (!addToGroups) return
+  try {
+    for (const group of groups) {
+      await groupStore.addGroupUser(props.tenant.id, group.id, user)
+    }
+    notification.success('New user succesfully added to groups', 'User Added to Groups')
+  } catch (error) {
+    notification.error('Failed to add user to groups')
   }
 }
 

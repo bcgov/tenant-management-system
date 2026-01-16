@@ -7,9 +7,10 @@ import { type IdirSearchType, IDIR_SEARCH_TYPE } from '@/utils/constants'
 
 // --- Component Interface -----------------------------------------------------
 
-defineProps<{
+const props = defineProps<{
   loading?: boolean
   searchResults: User[] | null
+  currentUsers: User[] | null
 }>()
 
 const emit = defineEmits<{
@@ -17,6 +18,17 @@ const emit = defineEmits<{
   (event: 'search', searchType: IdirSearchType, searchText: string): void
   (event: 'select', user: User): void
 }>()
+
+const colorRowItem = (item: any) => {
+  const index = selectedUser.value.findIndex((u) => u?.id === item?.item?.id)
+
+  if (index > -1) {
+    return {
+      class: 'selected-user'
+    }
+  }
+  return {}
+}
 
 // --- Component State ---------------------------------------------------------
 
@@ -37,6 +49,8 @@ const SEARCH_TYPES = [
 const searchText = ref('')
 const searchType = ref<IdirSearchType>(IDIR_SEARCH_TYPE.FIRST_NAME.value)
 const selectedUser = ref<User[]>([])
+const conflict = ref(false)
+const internalItem = ref({})
 
 // --- Watchers and Effects ----------------------------------------------------
 
@@ -45,10 +59,30 @@ watch([searchText, searchType], () => {
 })
 
 watch(selectedUser, (selection) => {
+  
   if (selection?.length) {
     emit('select', selection[0])
   }
 })
+
+const selectUser = (e, r) => {
+  conflict.value = false
+  const index = props.currentUsers?.findIndex(
+    (u: User) => u.ssoUser.ssoUserId === r.item?.ssoUser.ssoUserId
+  )
+  if (index !== -1) {
+    //remove the user from the selection
+    conflict.value = true
+    if (internalItem.value) {
+      internalItem.value = {}
+      r.toggleSelect(internalItem.value)
+
+    }
+    return
+  }
+  internalItem.value = r.internalItem
+  r.toggleSelect(r.internalItem)
+}
 
 // --- Computed Values ---------------------------------------------------------
 
@@ -70,7 +104,25 @@ function handleSearch() {
 
 <template>
   <v-row>
-    <v-col cols="2">
+    <v-dialog
+      v-model="conflict"
+      width="auto"
+    >
+      <v-card>
+        <v-card-title class="text-h5">User Already Added</v-card-title>
+        <v-card-text>
+          The selected user is already added to this tenant.
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <ButtonPrimary
+            text="OK"
+            @click="conflict = false"
+          />
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+    <v-col cols="4">
       <v-select
         v-model="searchType"
         :items="SEARCH_TYPES"
@@ -78,7 +130,7 @@ function handleSearch() {
         hide-details
       />
     </v-col>
-    <v-col cols="4">
+    <v-col cols="5">
       <v-text-field
         v-model="searchText"
         label="Search text"
@@ -115,7 +167,8 @@ function handleSearch() {
         select-strategy="single"
         striped="even"
         return-object
-        show-select
+        :row-props="colorRowItem"
+        @dblclick:row="(e, r) => selectUser(e, r)"
       >
         <template #no-data>
           <v-alert type="info">No matching users found</v-alert>
@@ -124,3 +177,10 @@ function handleSearch() {
     </v-col>
   </v-row>
 </template>
+
+<style>
+  .selected-user {
+    background-color: #F6FFF8;
+    border-color: #42814A;
+  }
+</style>
