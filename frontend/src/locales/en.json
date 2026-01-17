@@ -54,7 +54,9 @@
     "undoChanges": "Undo Changes",
     "revert": "Revert",
     "servicesLabel": "Connected Service | Connected Services",
-    "servicesLabelLower": "connected service | connected services"
+    "servicesLabelLower": "connected service | connected services",
+    "sessionExpired": "Your session has expired. Please log in to continue.",
+    "sessionExpiredDesc": "For security reasons, CSTAR automatically logs you out after a period of inactivity."
   },
   "users": {
     "user": "Users | User | Users",
