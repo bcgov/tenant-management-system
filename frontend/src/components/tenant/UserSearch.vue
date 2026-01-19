@@ -2,8 +2,10 @@
 import { computed, ref, watch } from 'vue'
 
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
+import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
 import type { User } from '@/models'
 import { type IdirSearchType, IDIR_SEARCH_TYPE } from '@/utils/constants'
+import type { ItemSlotBase, DataTableItem } from 'vuetify/lib/components/VDataTable/types.mjs';
 
 // --- Component Interface -----------------------------------------------------
 
@@ -19,7 +21,7 @@ const emit = defineEmits<{
   (event: 'select', user: User): void
 }>()
 
-const colorRowItem = (item: any) => {
+const colorRowItem = (item: ItemSlotBase<User>) => {
   const index = selectedUser.value.findIndex((u) => u?.id === item?.item?.id)
 
   if (index > -1) {
@@ -50,7 +52,7 @@ const searchText = ref('')
 const searchType = ref<IdirSearchType>(IDIR_SEARCH_TYPE.FIRST_NAME.value)
 const selectedUser = ref<User[]>([])
 const conflict = ref(false)
-const internalItem = ref({})
+const internalItem = ref<DataTableItem<User>>({} as DataTableItem<User>)
 
 // --- Watchers and Effects ----------------------------------------------------
 
@@ -65,7 +67,9 @@ watch(selectedUser, (selection) => {
   }
 })
 
-const selectUser = (e, r) => {
+type RowPropsType = ItemSlotBase<User>;
+
+const selectUser = (e: Event, r: RowPropsType) => {
   conflict.value = false
   const index = props.currentUsers?.findIndex(
     (u: User) => u.ssoUser.ssoUserId === r.item?.ssoUser.ssoUserId
@@ -74,7 +78,7 @@ const selectUser = (e, r) => {
     //remove the user from the selection
     conflict.value = true
     if (internalItem.value) {
-      internalItem.value = {}
+      internalItem.value = {} as DataTableItem<User>
       r.toggleSelect(internalItem.value)
 
     }
@@ -109,13 +113,17 @@ function handleSearch() {
       width="auto"
     >
       <v-card>
-        <v-card-title class="text-h5">User Already Added</v-card-title>
+        <v-card-title class="text-h6 border-b-sm">
+          <v-icon color="warning" size="xsmall">mdi-alert</v-icon>
+          {{ $t('general.duplicate') }}
+          <v-icon size="xsmall" class="float-right">mdi-close</v-icon>
+        </v-card-title>
         <v-card-text>
           The selected user is already added to this tenant.
         </v-card-text>
-        <v-card-actions>
+        <v-card-actions class="border-t-sm">
           <v-spacer></v-spacer>
-          <ButtonPrimary
+          <ButtonSecondary
             text="OK"
             @click="conflict = false"
           />
@@ -163,12 +171,12 @@ function handleSearch() {
         ]"
         :items="searchResults || []"
         :loading="loading"
+        :row-props="colorRowItem"
         :sort-by="defaultSort"
         select-strategy="single"
         striped="even"
         return-object
-        :row-props="colorRowItem"
-        @dblclick:row="(e, r) => selectUser(e, r)"
+        @dblclick:row="(e: Event, r: RowPropsType) => selectUser(e, r)"
       >
         <template #no-data>
           <v-alert type="info">No matching users found</v-alert>

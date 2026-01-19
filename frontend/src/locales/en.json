@@ -55,7 +55,8 @@
     "undoChanges": "Undo Changes",
     "revert": "Revert",
     "servicesLabel": "Connected Service | Connected Services",
-    "servicesLabelLower": "connected service | connected services"
+    "servicesLabelLower": "connected service | connected services",
+    "duplicate": "Duplicate Entry"
   },
   "users": {
     "user": "Users | User | Users",

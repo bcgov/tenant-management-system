@@ -4,7 +4,7 @@ import { computed, onMounted, ref } from 'vue'
 import TenantUserManagement from '@/components/tenant/TenantUserManagement.vue'
 import { useNotification } from '@/composables'
 import { DuplicateEntityError } from '@/errors'
-import { Tenant, User } from '@/models'
+import { Group, Tenant, User } from '@/models'
 import { useRoleStore, useTenantStore, useUserStore, useGroupStore } from '@/stores'
 import { type IdirSearchType, IDIR_SEARCH_TYPE } from '@/utils/constants'
 
@@ -60,7 +60,7 @@ async function handleAddUser(user: User, groups : Group[]) {
       await groupStore.addGroupUser(props.tenant.id, group.id, user)
     }
     notification.success('New user succesfully added to groups', 'User Added to Groups')
-  } catch (error) {
+  } catch {
     notification.error('Failed to add user to groups')
   }
 }

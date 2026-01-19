@@ -10,10 +10,9 @@ import FloatingActionButton from '@/components/ui/FloatingActionButton.vue'
 import SimpleDialog from '@/components/ui/SimpleDialog.vue'
 import UserSearch from '@/components/tenant/UserSearch.vue'
 import RoleDialog from '@/components/tenant/RoleDialog.vue'
-import type { Role, Tenant, User } from '@/models'
+import type { Group, Role, Tenant, User } from '@/models'
 import { type IdirSearchType, ROLES } from '@/utils/constants'
 import { currentUserHasRole } from '@/utils/permissions'
-import { tenantService } from '@/services'
 import { useGroupStore } from '@/stores'
 
 
@@ -102,16 +101,6 @@ function confirmRemoveRole() {
 
   pendingUser.value = null
   pendingRole.value = null
-}
-
-function toggleRole(role: Role, checked: boolean) {
-  if (checked) {
-    if (!selectedRoles.value.find((r) => r.id === role.id)) {
-      selectedRoles.value.push(role)
-    }
-  } else {
-    selectedRoles.value = selectedRoles.value.filter((r) => r.id !== role.id)
-  }
 }
 
 function toggleSearch() {
@@ -234,6 +223,7 @@ watch(selectAllGroups, (selectAll) => {
   if (selectAll) {
     addGroups.value = []
     for (const group of groupStore.groups) {
+      console.log('Adding group:', group.name)
       addGroups.value.push(true)
     }
   } else {
@@ -341,9 +331,9 @@ watch(selectAllGroups, (selectAll) => {
     <v-row v-if="isUserAdmin && !showSearch" class="mt-4">
       <v-col class="d-flex justify-start" cols="12">
         <FloatingActionButton
-          icon="mdi-plus-box"
-          class="no-transform"
           :text="$t('tenants.addAnotherUser', tenant.users.length)"
+          class="no-transform"
+          icon="mdi-plus-box"
           @click="toggleSearch"
         />
       </v-col>
@@ -360,9 +350,9 @@ watch(selectAllGroups, (selectAll) => {
         </p>
 
         <UserSearch
+          :current-users="tenant.users"
           :loading="loadingSearch"
           :search-results="searchResults"
-          :current-users="tenant.users"
           @clear-search="handleClearSearch"
           @search="handleSearch"
           @select="handleUserSelected"
@@ -380,11 +370,11 @@ watch(selectAllGroups, (selectAll) => {
               item-title="description"
               item-value="id"
               label="Select roles"
-              multiple
               chips
               clearable
-              return-object
               hide-details
+              multiple
+              return-object
             />
           </v-col>
         </v-row>
@@ -395,16 +385,16 @@ watch(selectAllGroups, (selectAll) => {
           </v-col>
           <v-col cols="12">
             <v-checkbox 
-              label="Select all"
-              class="d-sm-inline-block"
               v-model="selectAllGroups"
+              class="d-sm-inline-block"
+              label="Select all"
             />
             <v-checkbox 
               v-for="group in groupStore.groups" 
-              class="d-sm-inline-block"
-              :key="group.id" 
-              :label="group.name"
+              :key="group.id"
               v-model="addGroups"
+              :label="group.name"
+              class="d-sm-inline-block"
             />
           </v-col>
         </v-row>
@@ -452,8 +442,8 @@ watch(selectAllGroups, (selectAll) => {
     />
 
     <RoleDialog
-      v-model="roleDialogVisible"
       v-if="isUserAdmin"
+      v-model="roleDialogVisible"
       :tenant="tenant"
       :user-index="modifyingUserIndex"
       @update:open-dialog="handleCloseRoleDialog"
