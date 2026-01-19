@@ -302,6 +302,7 @@ function handleCloseRoleDialog(open: boolean) {
 
           <template #[`item.actions`]="{ item }">
             <v-btn
+              v-if="isUserAdmin"
               icon="mdi-trash-can-outline"
               size="x-small"
               variant="text"
