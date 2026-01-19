@@ -402,8 +402,8 @@ function handleCloseRoleDialog(open: boolean) {
     />
 
     <RoleDialog
-      v-model="roleDialogVisible"
       v-if="isUserAdmin"
+      v-model="roleDialogVisible"
       :tenant="tenant"
       :user-index="modifyingUserIndex"
       @update:open-dialog="handleCloseRoleDialog"
