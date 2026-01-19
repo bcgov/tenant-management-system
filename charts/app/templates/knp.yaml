@@ -20,46 +20,20 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: {{ .Release.Name }}-openshift-ingress-to-backend
-  labels: {{- include "selectorLabels" . | nindent 4 }}
-spec:
-  podSelector:
-    matchLabels:
-      app.kubernetes.io/name: backend
-      app.kubernetes.io/instance: {{ .Release.Name }}
-  ingress:
-    - from:
-        - namespaceSelector:
-            matchLabels:
-              network.openshift.io/policy-group: ingress
-  policyTypes:
-    - Ingress
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
   name: {{ .Release.Name }}-allow-backend-to-db
   labels: {{- include "selectorLabels" . | nindent 4 }}
 spec:
   podSelector:
     matchLabels:
-      {{- if or (contains "-pr-" .Release.Name) (contains "-dev" .Release.Name) }}
-      # PR and Dev environments use Bitnami PostgreSQL
-      app.kubernetes.io/name: postgresql
-      app.kubernetes.io/instance: {{ .Release.Name }}
-      {{- else }}
-      # Test/Prod use Crunchy PostgreSQL
       postgres-operator.crunchydata.com/cluster: {{ .Values.global.databaseAlias}}
-      {{- end }}
   ingress:
     - ports:
         - protocol: TCP
           port: 5432
       from:
-        # Allow both the backend pods AND their init containers
         - podSelector:
             matchLabels:
-              app.kubernetes.io/name: backend
+              app.kubernetes.io/name: {{ template  "backend.name"}}
               app.kubernetes.io/instance: {{ .Release.Name }}
   policyTypes:
     - Ingress
@@ -72,16 +46,16 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app.kubernetes.io/name: backend
+      app.kubernetes.io/name: {{ template  "backend.name"}}
       app.kubernetes.io/instance: {{ .Release.Name }}
   ingress:
     - ports:
         - protocol: TCP
-          port: {{ .Values.backend.service.targetPort }}
+          port: 3000
       from:
         - podSelector:
             matchLabels:
-              app.kubernetes.io/name: frontend
+              app.kubernetes.io/name: {{ template  "frontend.name"}}
               app.kubernetes.io/instance: {{ .Release.Name }}
   policyTypes:
     - Ingress

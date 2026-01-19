@@ -2,279 +2,61 @@ name: PR
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened]
-  # Allow manual trigger for fork PRs after review
-  pull_request_target:
-    types: [labeled]
 
 concurrency:
-  group: pr-${{ github.event.number }}
+  # Cancel in progress for PR open and close
+  group: ${{ github.event.number }}
   cancel-in-progress: true
 
-permissions:
-  contents: read
-  deployments: write
-  pull-requests: write
-  packages: write
-  id-token: write
-  attestations: write
+permissions: {}
 
 jobs:
-  # Security check - distinguish between collaborator forks and external forks
-  security-check:
-    name: Security Check
-    runs-on: ubuntu-24.04
-    outputs:
-      is_external_fork: ${{ steps.check.outputs.is_external_fork }}
-      safe_to_deploy: ${{ steps.check.outputs.safe_to_deploy }}
-      pr_ref: ${{ steps.check.outputs.pr_ref }}
-    steps:
-      - name: Check PR author permissions
-        id: check
-        env:
-          PR_HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
-          BASE_REPO: ${{ github.repository }}
-          EVENT_NAME: ${{ github.event_name }}
-          LABEL_NAME: ${{ github.event.label.name }}
-          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          IS_EXTERNAL_FORK="false"
-          SAFE_TO_DEPLOY="false"
-          PR_REF="${{ github.event.pull_request.head.sha }}"
-          
-          # Check if PR is from the same repository
-          if [ "$PR_HEAD_REPO" = "$BASE_REPO" ]; then
-            SAFE_TO_DEPLOY="true"
-            echo "PR is from the main repository - approved for deployment"
-          else
-            # Fork PR - check if author is a collaborator
-            echo "PR is from a fork: $PR_HEAD_REPO"
-            echo "Checking if $PR_AUTHOR has repository access..."
-            
-            # Check collaborator status using GitHub API
-            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
-              -H "Authorization: token $GH_TOKEN" \
-              -H "Accept: application/vnd.github+json" \
-              "https://api.github.com/repos/$BASE_REPO/collaborators/$PR_AUTHOR")
-            
-            if [ "$HTTP_CODE" = "204" ]; then
-              # 204 = user is a collaborator
-              SAFE_TO_DEPLOY="true"
-              echo "✅ $PR_AUTHOR is a repository collaborator - approved for deployment"
-              echo "This is a collaborator's fork PR - treating as trusted"
-            elif [ "$HTTP_CODE" = "404" ]; then
-              # 404 = user is not a collaborator
-              IS_EXTERNAL_FORK="true"
-              echo "⚠️  $PR_AUTHOR is NOT a repository collaborator"
-              
-              # External forks require manual approval
-              if [ "$EVENT_NAME" = "pull_request_target" ] && [ "$LABEL_NAME" = "safe-to-deploy" ]; then
-                SAFE_TO_DEPLOY="true"
-                echo "External fork PR approved for deployment by maintainer"
-              else
-                echo "External fork PR requires 'safe-to-deploy' label"
-              fi
-            else
-              echo "⚠️  Unable to verify collaborator status (HTTP $HTTP_CODE)"
-              echo "Treating as external fork for safety"
-              IS_EXTERNAL_FORK="true"
-            fi
-          fi
-          
-          echo "is_external_fork=${IS_EXTERNAL_FORK}" >> $GITHUB_OUTPUT
-          echo "safe_to_deploy=${SAFE_TO_DEPLOY}" >> $GITHUB_OUTPUT
-          echo "pr_ref=${PR_REF}" >> $GITHUB_OUTPUT
-
-  # Build images - uses pull_request_target for forks to access secrets
+  # https://github.com/bcgov/action-builder-ghcr
   builds:
     name: Builds
-    needs: [security-check]
-    if: needs.security-check.outputs.safe_to_deploy == 'true'
-    uses: ./.github/workflows/.build-images.yml
     permissions:
       packages: write
-      id-token: write
-      attestations: write
-    with:
-      tags: pr-${{ github.event.pull_request.number }}
-      keep_versions: 5
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        package: [backend, frontend, migrations]
+    timeout-minutes: 10
+    steps:
+      - uses: bcgov/action-builder-ghcr@2b24ac7f95e6a019064151498660437cca3202c5 # v4.2.1
+        with:
+          package: ${{ matrix.package }}
+          tags: ${{ github.event.number }}
+          tag_fallback: latest
+          triggers: ('${{ matrix.package }}/')
 
-  # Deploy to PR environment
+  # https://github.com/bcgov/quickstart-openshift-helpers
   deploys:
-    name: Deploy PR-${{ github.event.number }} Environment
-    needs: [security-check, builds]
-    if: needs.security-check.outputs.safe_to_deploy == 'true'
+    name: Deploys (${{ github.event.number }})
+    needs: [builds]
     uses: ./.github/workflows/.deployer.yml
     secrets:
-      oc_namespace: ${{ secrets.OC_NAMESPACE }}
-      oc_token: ${{ secrets.OC_TOKEN }}
       bcgov_sso_api_client_id: ${{ secrets.BCGOV_SSO_API_CLIENT_ID }}
       bcgov_sso_api_client_secret: ${{ secrets.BCGOV_SSO_API_CLIENT_SECRET }}
-      vite_keycloak_client_id: ${{ secrets.VITE_KEYCLOAK_CLIENT_ID }}
+      oc_namespace: ${{ secrets.OC_NAMESPACE }}
+      oc_token: ${{ secrets.OC_TOKEN }}
     with:
-      release_name: ${{ github.event.repository.name }}-pr-${{ github.event.number }}
-      environment: dev
-      db_user: app
-      tags: pr-${{ github.event.pull_request.number }}
-      timeout-minutes: 10
-      values: values-pr.yaml
-      preserve_database: false
-      params: >-
-        --set-string global.registry=ghcr.io
-        --set-string global.repository=bcgov/tenant-management-system
-        --set global.secrets.persist=false
-        --set backend.imagePullPolicy=Always
-        --set frontend.imagePullPolicy=Always
-        --set backend.deploymentStrategy=Recreate
-        --set frontend.deploymentStrategy=Recreate
-        --set global.debug=true
-        --set backend.resources.requests.memory=256Mi
-        --set backend.resources.limits.memory=512Mi
-        --set frontend.resources.requests.memory=128Mi
-        --set frontend.resources.limits.memory=256Mi
-        --set global.namespace.suffix=-pr-${{ github.event.number }}
-        --set global.config.databaseUser=app
-        --set postgresql-pr.enabled=true
-        --set crunchy.enabled=false
-      deployment_url: https://${{ github.event.repository.name }}-pr-${{ github.event.number }}-frontend.apps.silver.devops.gov.bc.ca
+      db_user: app-${{ github.event.number }}
+      params: --set backend.service.targetPort=4144 --set global.secrets.persist=false
+      triggers: ('backend/' 'frontend/' 'migrations/' 'charts/' '.github/workflows/.deployer.yml')
+      db_triggers: ('charts/crunchy/')
 
-  security_scan:
-    name: ZAP Security Scan
-    permissions:
-      contents: read
-    needs: [security-check, deploys]
-    if: needs.security-check.outputs.safe_to_deploy == 'true' && needs.deploys.result == 'success'
-    uses: ./.github/workflows/.zap-scan.yml
-    with:
-      target_url: https://${{ github.event.repository.name }}-pr-${{ github.event.number }}-frontend.apps.silver.devops.gov.bc.ca
-      fail_on_high: false
-      scan_type: baseline
-
-  # Fork PR awaiting approval notification
-  fork-awaiting-approval:
-    name: External Fork PR Awaiting Approval
-    needs: [security-check]
-    if: needs.security-check.outputs.is_external_fork == 'true' && needs.security-check.outputs.safe_to_deploy == 'false'
-    runs-on: ubuntu-24.04
-    permissions:
-      pull-requests: write
-    steps:
-      - name: Comment on External Fork PR
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const comment = `### External Contributor - Manual Approval Required
-            
-            This PR is from an external fork (not from a repository collaborator). For security reasons, automatic deployment requires manual approval.
-            
-            **For Maintainers:**
-            1. Review the code changes carefully
-            2. If safe, add the \`safe-to-deploy\` label to trigger deployment
-            3. Remove the label if you want to stop deployment
-            
-            **What's blocked:**
-            - Automatic deployment to dev environment
-            - Image building with repository secrets
-            
-            **What still runs:**
-            - Code analysis and tests (without secrets)
-            - Security scans
-            
-            Thank you for your contribution! A maintainer will review your PR soon.`;
-
-            const { data: comments } = await github.rest.issues.listComments({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: ${{ github.event.number }}
-            });
-
-            const botComment = comments.find(comment => 
-              comment.body && comment.body.includes('External Contributor - Manual Approval Required')
-            );
-
-            if (!botComment) {
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: ${{ github.event.number }},
-                body: comment
-              });
-            }
-
-  # Fork PR approved notification
-  fork-approved:
-    name: External Fork PR Approved
-    needs: [security-check]
-    if: needs.security-check.outputs.is_external_fork == 'true' && needs.security-check.outputs.safe_to_deploy == 'true'
-    runs-on: ubuntu-24.04
-    permissions:
-      pull-requests: write
-    steps:
-      - name: Comment on Approved External Fork PR
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const comment = `### External Fork PR Approved for Deployment
-            
-            A maintainer has reviewed and approved this PR for deployment.
-            
-            Deployment is now proceeding...`;
-
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: ${{ github.event.number }},
-              body: comment
-            });
+  tests:
+    name: Tests
+    if: needs.deploys.outputs.triggered == 'true'
+    needs: [deploys]
+    uses: ./.github/workflows/.tests.yml
 
   results:
     name: PR Results
-    needs: [security-check, builds, deploys, security_scan]
+    needs: [builds, deploys, tests]
     if: always()
     runs-on: ubuntu-24.04
     steps:
-      - name: Check results
-        env:
-          IS_EXTERNAL_FORK: ${{ needs.security-check.outputs.is_external_fork }}
-          SAFE_TO_DEPLOY: ${{ needs.security-check.outputs.safe_to_deploy }}
-        run: |
-          if [ "$IS_EXTERNAL_FORK" == "true" ] && [ "$SAFE_TO_DEPLOY" != "true" ]; then
-            echo "External fork PR awaiting approval - no deployment attempted"
-            exit 0
-          fi
-          
-          if [ "${{ contains(needs.*.result, 'failure') }}" == "true" ]; then
-            echo "One or more jobs failed"
-            exit 1
-          fi
-          
-          if [ "${{ contains(needs.*.result, 'cancelled') }}" == "true" ]; then
-            echo "Workflow was cancelled"
-            exit 1
-          fi
-          
-          echo "All jobs completed successfully"
-
-  # Comment on PR with deployment info
-  comment:
-    name: Comment on PR
-    needs: [security-check, deploys]
-    if: always() && needs.security-check.outputs.safe_to_deploy == 'true' && needs.deploys.result == 'success'
-    runs-on: ubuntu-24.04
-    permissions:
-      pull-requests: write
-    steps:
-      - name: Comment PR
-        uses: thollander/actions-comment-pull-request@v2
-        with:
-          message: |
-            ## 🚀 PR Environment Deployed!
-
-            **Environment:** `dev`  
-            **Frontend URL:** https://${{ github.event.repository.name }}-pr-${{ github.event.pull_request.number }}-frontend.apps.silver.devops.gov.bc.ca  
-            **Tags:** `pr-${{ github.event.pull_request.number }}`
-
-            The application has been deployed to the dev environment with PR-specific resources.
+      - if: contains(needs.*.result, 'failure')||contains(needs.*.result, 'canceled')
+        run: echo "At least one job has failed." && exit 1
+      - run: echo "Success!"
