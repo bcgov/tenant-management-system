@@ -116,7 +116,7 @@ function handleSearch() {
         <v-card-title class="text-h6 border-b-sm">
           <v-icon color="warning" size="xsmall">mdi-alert</v-icon>
           {{ $t('general.duplicate') }}
-          <v-icon size="xsmall" class="float-right">mdi-close</v-icon>
+          <v-icon class="float-right" size="xsmall">mdi-close</v-icon>
         </v-card-title>
         <v-card-text>
           The selected user is already added to this tenant.

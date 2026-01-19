@@ -79,7 +79,7 @@ const handleTenantSubmit = async (
 onMounted(async () => {
   try {
     await tenantStore.fetchTenants(authStore.authenticatedUser.id)
-  } catch(e) {
+  } catch {
     notification.error('Failed to fetch tenants')
   }
 })
