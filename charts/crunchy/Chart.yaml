@@ -1,6 +1,0 @@
-apiVersion: v2
-name: crunchy
-description: A Helm chart for Crunchy PostgreSQL
-type: application
-version: 0.1.0
-appVersion: "15"
