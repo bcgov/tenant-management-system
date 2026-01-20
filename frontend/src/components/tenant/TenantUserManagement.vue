@@ -83,6 +83,11 @@ const isUserAdmin = computed(() => {
   )
 })
 
+const moreThanOneTenantOwner = computed(() => {
+  const owners = props.tenant.getOwners()
+  return owners.length > 1
+})
+
 const roles = computed(() => props.possibleRoles ?? [])
 
 // --- Component Methods -------------------------------------------------------
@@ -302,7 +307,7 @@ function handleCloseRoleDialog(open: boolean) {
 
           <template #[`item.actions`]="{ item }">
             <v-btn
-              v-if="isUserAdmin"
+              v-if="isUserAdmin && (moreThanOneTenantOwner || !item.roles.some((r) => r.name === 'Tenant Owner'))"
               icon="mdi-trash-can-outline"
               size="x-small"
               variant="text"
