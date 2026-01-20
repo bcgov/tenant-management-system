@@ -47,7 +47,7 @@ spec:
               value: "true"
           resources:
             requests:
-              cpu: 50m
+              cpu: 5m
               memory: 200Mi
       containers:
         - name: {{ include "backend.fullname" . }}
