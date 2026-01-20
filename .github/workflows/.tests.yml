@@ -33,7 +33,7 @@ jobs:
             ${{ runner.os }}-
 
       - env:
-          API_NAME: nest
+          API_NAME: express
           BASE_URL: https://${{ env.PREFIX }}.${{ env.DOMAIN }}
         run: |
           cd tests/integration

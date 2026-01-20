@@ -1,0 +1,22 @@
+{
+  "api_name": "express",
+  "api_version": "1.0.0",
+  "base_url": "${BASE_URL}",
+  "tests": [
+    {
+      "name": "Health Endpoint TEST",
+      "methods": ["GET"],
+      "path": "/v1/health",
+      "headers": {
+        "Content-Type": "application/json",
+        "accept": "application/json"
+      },
+      "assertions": [
+        {
+          "method": "GET",
+          "status_code": 200
+        }
+      ]
+    }
+  ]
+}
