@@ -307,7 +307,7 @@ function handleCloseRoleDialog(open: boolean) {
 
           <template #[`item.actions`]="{ item }">
             <v-btn
-              v-if="isUserAdmin && (moreThanOneTenantOwner || !item.roles.some((r) => r.name === 'Tenant Owner'))"
+              v-if="isUserAdmin && (moreThanOneTenantOwner || !item.roles.some((r: Role) => r.name === 'Tenant Owner'))"
               icon="mdi-trash-can-outline"
               size="x-small"
               variant="text"
