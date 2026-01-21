@@ -28,12 +28,12 @@ function checkStatus(response, checkName, statusCode = 200) {
 }
 
 export default function () {
-  let url = `${__ENV.BACKEND_URL}/v1/users`;
+  let url = `${__ENV.BACKEND_URL}/v1/health`;
   let params = {
     headers: {
       "Content-Type": "application/json",
     },
   };
   let res = http.get(url, params);
-  checkStatus(res, "get-all-users", 200);
+  checkStatus(res, "get-health", 200);
 }
