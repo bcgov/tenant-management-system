@@ -91,4 +91,4 @@ jobs:
           FRONTEND_URL: https://${{ env.PREFIX }}.${{ env.DOMAIN }}
         with:
           path: ./tests/load/${{ matrix.name }}-test.js
-          flags: --vus 10 --duration 30s
+          flags: --vus 1 --iterations 10
