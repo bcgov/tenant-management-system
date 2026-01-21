@@ -47,9 +47,6 @@ jobs:
         working-directory: frontend
     runs-on: ubuntu-24.04
     timeout-minutes: 10
-    strategy:
-      matrix:
-        project: [chromium, firefox, safari]
     steps:
       - uses: actions/checkout@v6
         name: Checkout
@@ -60,23 +57,23 @@ jobs:
           cache: "npm"
           cache-dependency-path: frontend/package-lock.json
       - name: Install dependencies
-        run: |
-          npm ci
-          npx playwright install --with-deps
+        run: npm ci
 
       - name: Run Tests
         env:
-          E2E_BASE_URL: https://${{ github.event.repository.name }}-${{ inputs.target }}.${{ env.DOMAIN }}/
+          CYPRESS_BASE_URL: https://${{ github.event.repository.name }}-${{ inputs.target }}.${{ env.DOMAIN }}/
           CI: "true"
         run: |
-          npx playwright test --project="${{ matrix.project }}" --reporter=html
+          npx cypress run
 
       - uses: actions/upload-artifact@v6
-        if: (! cancelled())
+        if: failure()
         name: upload results
         with:
-          name: playwright-report-${{ matrix.project }}
-          path: "./frontend/playwright-report" # path from current folder
+          name: cypress-results
+          path: |
+            ./frontend/cypress/screenshots
+            ./frontend/cypress/videos
           retention-days: 7
 
   load-tests:
