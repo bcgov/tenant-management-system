@@ -8,7 +8,8 @@
       "nonNewStatusChange": "Requests can only have a status change from New. Start a new request instead",
       "nameExists": "Tenant Request cannot be approved because the name already exists",
       "genericRequestError": "Failed to update Tenant Request"
-    }
+    },
+    "addAnotherUser": "Add a user to this tenant | Add another user to this tenant | Add another user to this tenant"
   },
   "roles": {
     "role": "Roles | Role | Roles",
@@ -54,7 +55,8 @@
     "undoChanges": "Undo Changes",
     "revert": "Revert",
     "servicesLabel": "Connected Service | Connected Services",
-    "servicesLabelLower": "connected service | connected services"
+    "servicesLabelLower": "connected service | connected services",
+    "duplicate": "Duplicate Entry"
   },
   "users": {
     "user": "Users | User | Users",
