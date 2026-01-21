@@ -35,11 +35,5 @@ export default function () {
     },
   };
   let res = http.get(url, params);
-
-  console.log(`Status: ${res.status}`);
-  console.log(`Protocol: ${res.proto}`);
-  console.log(`Error: ${res.error}`);
-  console.log(`Error code: ${res.error_code}`);
-
   checkStatus(res, "get-health", 200);
 }
