@@ -28,12 +28,19 @@
     }
 
     @spa_router {
-        not path /api* /config*
+        not path /api* /config* /docs*
         file {
             try_files {path} /index.html
         }
     }
     rewrite @spa_router {http.matchers.file.relative}
+
+    handle /docs* {
+        reverse_proxy {$BACKEND_URL} {
+            header_up Host {upstream_hostport}
+            header_up X-Real-IP {remote_host}
+        }
+    }
 
     handle_path /api/* {
         reverse_proxy {$BACKEND_URL} {

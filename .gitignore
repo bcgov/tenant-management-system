@@ -377,3 +377,6 @@ pyrightconfig.json
 
 # MAC
 **.DS_Store
+
+# Cypress
+frontend/cypress/videos
