@@ -23,8 +23,8 @@
     "nodemon": "^3.1.5",
     "pg": "^8.14.0",
     "supertest": "^7.1.0",
-    "testcontainers": "^10.24.2",
-    "@testcontainers/postgresql": "10.28.0",
+    "testcontainers": "^11.11.0",
+    "@testcontainers/postgresql": "11.11.0",
     "ts-jest": "^29.2.6",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
