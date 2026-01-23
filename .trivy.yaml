@@ -1,0 +1,8 @@
+misconfiguration:
+  helm:
+    set:
+      - backend.bcgovSsoApiClientId=trivy-client-id
+      - backend.bcgovSsoApiClientSecret=trivy-client-secret
+      - global.config.databaseUser=trivy-database-user
+      - global.databaseAlias=trivy-database-alias
+      - global.staticAnalysis=true
