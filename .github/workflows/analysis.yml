@@ -98,6 +98,7 @@ jobs:
         with:
           format: "sarif"
           output: "trivy-results.sarif"
+          trivy-config: ".trivy.yaml"
           ignore-unfixed: true
           scan-type: "fs"
           scanners: "vuln,secret,config"
