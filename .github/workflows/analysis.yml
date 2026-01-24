@@ -47,8 +47,9 @@ jobs:
           sonar_args: >
             -Dsonar.exclusions=**/coverage/**,**/node_modules/**,**/*spec.ts
             -Dsonar.organization=bcgov-sonarcloud
+            -Dsonar.projectBaseDir=.
             -Dsonar.projectKey=bcgov_tenant-management-system
-            -Dsonar.sources=src
+            -Dsonar.sources=backend/src
             -Dsonar.test.inclusions=**/*spec.ts
             -Dsonar.javascript.lcov.reportPaths=./coverage/lcov.info
           sonar_token: ${{ env.SONAR_TOKEN }}
@@ -74,8 +75,9 @@ jobs:
           sonar_args: >
             -Dsonar.exclusions=**/coverage/**,**/node_modules/**,**/*spec.ts
             -Dsonar.organization=bcgov-sonarcloud
+            -Dsonar.projectBaseDir=.
             -Dsonar.projectKey=bcgov_tenant-management-system
-            -Dsonar.sources=src
+            -Dsonar.sources=frontend/src
             -Dsonar.test.inclusions=**/*spec.ts
             -Dsonar.javascript.lcov.reportPaths=./coverage/lcov.info
           sonar_token: ${{ env.SONAR_TOKEN }}
@@ -98,9 +100,10 @@ jobs:
         with:
           format: "sarif"
           output: "trivy-results.sarif"
+          trivy-config: ".trivy.yaml"
           ignore-unfixed: true
           scan-type: "fs"
-          scanners: "vuln,secret,config"
+          scanners: "vuln,secret,misconfig"
           severity: "CRITICAL,HIGH"
 
       - name: Upload Trivy scan results to GitHub Security tab
