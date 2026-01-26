@@ -830,7 +830,7 @@ describe('Tenant API', () => {
         }
       })
 
-      expect(mockTMSRepository.getUsersForTenant).toHaveBeenCalledWith(tenantId)
+      expect(mockTMSRepository.getUsersForTenant).toHaveBeenCalledWith(tenantId, undefined, undefined)
     })
 
     it('should return 400 when tenant ID is invalid', async () => {
@@ -863,7 +863,7 @@ describe('Tenant API', () => {
         }
       })
 
-      expect(mockTMSRepository.getUsersForTenant).toHaveBeenCalledWith(nonExistentTenantId)
+      expect(mockTMSRepository.getUsersForTenant).toHaveBeenCalledWith(nonExistentTenantId, undefined, undefined)
     })
   })
 
