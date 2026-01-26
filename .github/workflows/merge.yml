@@ -31,6 +31,11 @@ jobs:
     with:
       environment: dev
       db_user: appproxy # appproxy is the user which works with pgbouncer.
+      params: --set backend.deploymentStrategy=RollingUpdate
+        --set frontend.deploymentStrategy=RollingUpdate
+        --set global.autoscaling=true
+        --set frontend.pdb.enabled=true
+        --set backend.pdb.enabled=true
       tag: ${{ inputs.tag }}
 
   tests:
@@ -48,6 +53,11 @@ jobs:
     with:
       environment: test
       db_user: appproxy # appproxy is the user which works with pgbouncer.
+      params: --set backend.deploymentStrategy=RollingUpdate
+        --set frontend.deploymentStrategy=RollingUpdate
+        --set global.autoscaling=true
+        --set frontend.pdb.enabled=true
+        --set backend.pdb.enabled=true
       tag: ${{ inputs.tag }}
 
   deploy-prod:
