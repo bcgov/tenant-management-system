@@ -35,7 +35,11 @@ jobs:
         --set frontend.deploymentStrategy=RollingUpdate
         --set global.autoscaling=true
         --set frontend.pdb.enabled=true
+        --set frontend.pdb.minAvailable=2
+        --set frontend.replicaCount=3
         --set backend.pdb.enabled=true
+        --set backend.pdb.minAvailable=2
+        --set backend.replicaCount=3
       tag: ${{ inputs.tag }}
 
   tests:
@@ -57,7 +61,11 @@ jobs:
         --set frontend.deploymentStrategy=RollingUpdate
         --set global.autoscaling=true
         --set frontend.pdb.enabled=true
+        --set frontend.pdb.minAvailable=2
+        --set frontend.replicaCount=3
         --set backend.pdb.enabled=true
+        --set backend.pdb.minAvailable=2
+        --set backend.replicaCount=3
       tag: ${{ inputs.tag }}
 
   deploy-prod:
@@ -72,7 +80,11 @@ jobs:
         --set frontend.deploymentStrategy=RollingUpdate
         --set global.autoscaling=true
         --set frontend.pdb.enabled=true
+        --set frontend.pdb.minAvailable=2
+        --set frontend.replicaCount=3
         --set backend.pdb.enabled=true
+        --set backend.pdb.minAvailable=2
+        --set backend.replicaCount=3
       tag: ${{ inputs.tag }}
 
   promote:
