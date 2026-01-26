@@ -29,8 +29,19 @@ jobs:
     uses: ./.github/workflows/.deployer.yml
     secrets: inherit
     with:
-      environment: dev
+      environment:
+        name: dev
+        url: https://cstar-dev.apps.silver.devops.gov.bc.ca
       db_user: appproxy # appproxy is the user which works with pgbouncer.
+      params: --set backend.deploymentStrategy=RollingUpdate
+        --set frontend.deploymentStrategy=RollingUpdate
+        --set global.autoscaling=true
+        --set frontend.pdb.enabled=true
+        --set frontend.pdb.minAvailable=2
+        --set frontend.replicaCount=3
+        --set backend.pdb.enabled=true
+        --set backend.pdb.minAvailable=2
+        --set backend.replicaCount=3
       tag: ${{ inputs.tag }}
 
   tests:
@@ -46,8 +57,19 @@ jobs:
     uses: ./.github/workflows/.deployer.yml
     secrets: inherit
     with:
-      environment: test
+      environment:
+        name: test
+        url: https://cstar-test.apps.silver.devops.gov.bc.ca
       db_user: appproxy # appproxy is the user which works with pgbouncer.
+      params: --set backend.deploymentStrategy=RollingUpdate
+        --set frontend.deploymentStrategy=RollingUpdate
+        --set global.autoscaling=true
+        --set frontend.pdb.enabled=true
+        --set frontend.pdb.minAvailable=2
+        --set frontend.replicaCount=3
+        --set backend.pdb.enabled=true
+        --set backend.pdb.minAvailable=2
+        --set backend.replicaCount=3
       tag: ${{ inputs.tag }}
 
   deploy-prod:
@@ -56,13 +78,19 @@ jobs:
     uses: ./.github/workflows/.deployer.yml
     secrets: inherit
     with:
-      environment: prod
+      environment:
+        name: prod
+        url: https://cstar-prod.apps.silver.devops.gov.bc.ca
       db_user: appproxy # appproxy is the user which works with pgbouncer.
       params: --set backend.deploymentStrategy=RollingUpdate
         --set frontend.deploymentStrategy=RollingUpdate
         --set global.autoscaling=true
         --set frontend.pdb.enabled=true
+        --set frontend.pdb.minAvailable=2
+        --set frontend.replicaCount=3
         --set backend.pdb.enabled=true
+        --set backend.pdb.minAvailable=2
+        --set backend.replicaCount=3
       tag: ${{ inputs.tag }}
 
   promote:
