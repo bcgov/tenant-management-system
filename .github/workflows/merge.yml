@@ -29,9 +29,7 @@ jobs:
     uses: ./.github/workflows/.deployer.yml
     secrets: inherit
     with:
-      environment:
-        name: dev
-        url: https://cstar-dev.apps.silver.devops.gov.bc.ca
+      environment: dev
       db_user: appproxy # appproxy is the user which works with pgbouncer.
       params: --set backend.deploymentStrategy=RollingUpdate
         --set frontend.deploymentStrategy=RollingUpdate
@@ -57,9 +55,7 @@ jobs:
     uses: ./.github/workflows/.deployer.yml
     secrets: inherit
     with:
-      environment:
-        name: test
-        url: https://cstar-test.apps.silver.devops.gov.bc.ca
+      environment: test
       db_user: appproxy # appproxy is the user which works with pgbouncer.
       params: --set backend.deploymentStrategy=RollingUpdate
         --set frontend.deploymentStrategy=RollingUpdate
@@ -78,9 +74,7 @@ jobs:
     uses: ./.github/workflows/.deployer.yml
     secrets: inherit
     with:
-      environment:
-        name: prod
-        url: https://cstar-prod.apps.silver.devops.gov.bc.ca
+      environment: prod
       db_user: appproxy # appproxy is the user which works with pgbouncer.
       params: --set backend.deploymentStrategy=RollingUpdate
         --set frontend.deploymentStrategy=RollingUpdate
