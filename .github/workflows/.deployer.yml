@@ -122,7 +122,7 @@ jobs:
           tag=${{ inputs.tag || steps.pr.outputs.pr }}
 
           # Release name includes run numbers to ensure uniqueness
-          release=${{ github.event.repository.name }}-${{ inputs.environment || steps.pr.outputs.pr || inputs.tag }}
+          release=cstar-${{ inputs.environment || steps.pr.outputs.pr || inputs.tag }}
 
           # version, to support helm packaging for non-pr based releases (workflow_dispatch). default to 1.0.0+github run number
           version=1.0.0+${{ github.run_number }}

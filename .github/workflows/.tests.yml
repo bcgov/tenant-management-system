@@ -11,7 +11,7 @@ on:
 
 env:
   DOMAIN: apps.silver.devops.gov.bc.ca
-  PREFIX: ${{ github.event.repository.name }}-${{ inputs.target }}
+  PREFIX: cstar-${{ inputs.target }}
 
 permissions: {}
 
@@ -61,7 +61,7 @@ jobs:
 
       - name: Run Tests
         env:
-          CYPRESS_BASE_URL: https://${{ github.event.repository.name }}-${{ inputs.target }}.${{ env.DOMAIN }}/
+          CYPRESS_BASE_URL: https://${{ env.PREFIX }}.${{ env.DOMAIN }}/
           CI: "true"
         run: |
           npx cypress run
