@@ -58,7 +58,11 @@ export default {
     getTenantUsers: {
         params: Joi.object({
             tenantId: Joi.string().guid().required()
-        }).options({abortEarly:false,convert:false})
+        }).options({abortEarly:false,convert:false}),
+        query: Joi.object({
+            groupIds: Joi.string().pattern(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(,[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})*$/).optional(),
+            sharedServiceRoleIds: Joi.string().pattern(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(,[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})*$/).optional()
+        }).optional()
     },
 
     createTenantRoles: {

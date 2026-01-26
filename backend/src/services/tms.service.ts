@@ -100,7 +100,14 @@ export class TMSService {
     }
     
     public async getUsersForTenant(req:Request) {
-        const users = await this.tmsRepository.getUsersForTenant(req.params.tenantId)
+        const groupIds = typeof req.query.groupIds === "string" 
+            ? req.query.groupIds.split(",").map(id => id.trim()).filter(id => id.length > 0)
+            : undefined;
+        const sharedServiceRoleIds = typeof req.query.sharedServiceRoleIds === "string"
+            ? req.query.sharedServiceRoleIds.split(",").map(id => id.trim()).filter(id => id.length > 0)
+            : undefined;
+        
+        const users = await this.tmsRepository.getUsersForTenant(req.params.tenantId, groupIds, sharedServiceRoleIds)
         return {
             data: {
                 users

@@ -8,6 +8,7 @@ import { Request} from 'express'
 import { TMSConstants } from '../common/tms.constants'
 import { TenantUserRole } from '../entities/TenantUserRole'
 import { GroupSharedServiceRole } from '../entities/GroupSharedServiceRole'
+import { GroupUser } from '../entities/GroupUser'
 import { NotFoundError } from '../errors/NotFoundError'
 import { ConflictError } from '../errors/ConflictError'
 import logger from '../common/logger'
@@ -718,14 +719,36 @@ export class TMSRepository {
         return tenants
     }
 
-    public async getUsersForTenant(tenantId:string) {
-        const users = await this.manager
+    public async getUsersForTenant(tenantId:string, groupIds?: string[], sharedServiceRoleIds?: string[]) {
+        const query = this.manager
             .createQueryBuilder(TenantUser, "tu")
             .innerJoinAndSelect("tu.ssoUser", "su")
             .innerJoin("tu.tenant", "tenant")
             .where("tenant.id = :tenantId", { tenantId })
-            .andWhere("tu.isDeleted = :isDeleted", { isDeleted: false })
-            .getMany();       
+            .andWhere("tu.isDeleted = :isDeleted", { isDeleted: false });
+
+        if (groupIds && groupIds.length > 0) {
+            query.leftJoin('GroupUser', 'gu', 'gu.tenant_user_id = tu.id')
+                .andWhere('gu.group_id IN (:...groupIds)', { groupIds })
+                .andWhere('gu.is_deleted = :guIsDeleted', { guIsDeleted: false });
+        }
+
+        if (sharedServiceRoleIds && sharedServiceRoleIds.length > 0) {
+            if (!groupIds || groupIds.length === 0) {
+                query.leftJoin('GroupUser', 'gu', 'gu.tenant_user_id = tu.id')
+                    .andWhere('gu.is_deleted = :guIsDeleted', { guIsDeleted: false });
+            }
+            query.leftJoin('Group', 'g', 'g.id = gu.group_id')
+                .leftJoin('GroupSharedServiceRole', 'gssr', 'gssr.group_id = g.id')
+                .andWhere('gssr.shared_service_role_id IN (:...sharedServiceRoleIds)', { sharedServiceRoleIds })
+                .andWhere('gssr.is_deleted = :gssrIsDeleted', { gssrIsDeleted: false });
+        }
+
+        if ((groupIds && groupIds.length > 0) || (sharedServiceRoleIds && sharedServiceRoleIds.length > 0)) {
+            query.distinct(true);
+        }
+
+        const users = await query.getMany();
         return users
     }
 
