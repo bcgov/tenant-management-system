@@ -264,7 +264,11 @@ paths:
 
     get:
       summary: Get users for a tenant
-      description: Retrieves all users associated with a tenant. Requires JWT authentication and tenant access.
+      description: |
+        Retrieves all users associated with a tenant. Supports optional filtering by group IDs and shared service role IDs.
+        If no filters are provided, returns all active users for the tenant.
+        If filters are provided, returns only users that match the specified criteria (users in the specified groups AND/OR users whose groups have the specified shared service roles).
+        Requires JWT authentication and tenant access.
       security:
         - bearerAuth: []
       parameters:
@@ -275,6 +279,26 @@ paths:
             type: string
             format: uuid
           description: The unique identifier of the tenant
+        - name: groupIds
+          in: query
+          required: false
+          schema:
+            type: string
+            pattern: '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(,[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})*$'
+          description: |
+            Comma-separated list of group UUIDs to filter by. Returns only users who belong to at least one of the specified groups.
+            Example: `3a3fafee-d41b-4fbe-92df-62dbebf0f73a,8f01087b-edfe-4957-97c4-f0aece2bc514`
+          example: "3a3fafee-d41b-4fbe-92df-62dbebf0f73a,8f01087b-edfe-4957-97c4-f0aece2bc514"
+        - name: sharedServiceRoleIds
+          in: query
+          required: false
+          schema:
+            type: string
+            pattern: '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(,[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})*$'
+          description: |
+            Comma-separated list of shared service role UUIDs to filter by. Returns only users whose groups have at least one of the specified shared service roles.
+            Example: `8f01087b-edfe-4957-97c4-f0aece2bc514`
+          example: "8f01087b-edfe-4957-97c4-f0aece2bc514"
       responses:
         '200':
           description: List of users for the tenant

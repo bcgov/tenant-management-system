@@ -30,33 +30,6 @@ spec:
         {{- toYaml .Values.backend.podSecurityContext | nindent 12 }}
       {{- end }}
       initContainers:
-        - name: {{ include "backend.fullname" . }}-wait-for-db
-          image: busybox:1.28
-          imagePullPolicy: IfNotPresent
-          command: ['sh', '-c']
-          args:
-            - |
-              {{- if and (or (contains "-pr-" .Release.Name) (contains "-dev" .Release.Name)) (index .Values "postgresql-pr" "enabled") }}
-              echo "Waiting for PostgreSQL (PR/DEV) to be ready..."
-              PGHOST={{ .Release.Name }}-postgresql
-              {{- else }}
-              echo "Waiting for pgBouncer (TEST/PROD) to be ready..."
-              PGHOST={{ .Values.global.databaseAlias }}-pgbouncer
-              {{- end }}
-              PGPORT=5432
-              MAX_ATTEMPTS=60
-              ATTEMPT=0
-              while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
-                if nc -z $PGHOST $PGPORT 2>/dev/null; then
-                  echo "Database connection pool is ready!"
-                  exit 0
-                fi
-                ATTEMPT=$((ATTEMPT+1))
-                echo "Waiting for $PGHOST:$PGPORT... (attempt $ATTEMPT/$MAX_ATTEMPTS)"
-                sleep 5
-              done
-              echo "ERROR: Database failed to start within timeout"
-              exit 1
         - name: {{ include "backend.fullname" . }}-init
           image: "{{.Values.global.registry}}/{{.Values.global.repository}}/migrations:{{ .Values.global.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ default "Always" .Values.backend.imagePullPolicy }}
@@ -67,17 +40,15 @@ spec:
             - name: FLYWAY_BASELINE_ON_MIGRATE
               value: "true"
             - name: FLYWAY_DEFAULT_SCHEMA
-              value: "tms"
+              value: "users"
             - name: FLYWAY_CONNECT_RETRIES
-              value: "60"
-            - name: FLYWAY_CONNECT_RETRY_DELAY
               value: "10"
             - name: FLYWAY_GROUP
               value: "true"
           resources:
             requests:
-              cpu: 50m
-              memory: 75Mi
+              cpu: 5m
+              memory: 200Mi
       containers:
         - name: {{ include "backend.fullname" . }}
           {{- if .Values.backend.securityContext }}
@@ -89,6 +60,25 @@ spec:
           envFrom:
             - secretRef:
                 name: {{.Release.Name}}-backend
+          env:
+            - name: ALLOWED_ORIGINS
+              value: "{{.Values.backend.allowedOrigins}}"
+            - name: BCGOV_SSO_API_URL
+              value: "{{.Values.backend.bcgovSsoApiUrl}}"
+            - name: BCGOV_TOKEN_URL
+              value: "{{.Values.backend.bcgovTokenUrl}}"
+            - name: ISSUER
+              value: "https://{{ .Values.global.loginProxy.hostName }}/auth/realms/standard"
+            - name: JWKS_URI
+              value: "https://{{ .Values.global.loginProxy.hostName }}/auth/realms/standard/protocol/openid-connect/certs"
+            - name: LOG_LEVEL
+              value: info
+            - name: NODE_ENV
+              value: production
+            - name: PORT
+              value: "{{ .Values.backend.service.targetPort }}"
+            - name: TMS_AUDIENCE
+              value: "{{ .Values.global.loginProxy.clientId }}"
           ports:
             - name: http
               containerPort: {{ .Values.backend.service.targetPort }}
@@ -98,11 +88,11 @@ spec:
               path: /v1/health
               port: http
               scheme: HTTP
-            initialDelaySeconds: 0
+            initialDelaySeconds: 5
             periodSeconds: 5
             timeoutSeconds: 2
             successThreshold: 1
-            failureThreshold: 20
+            failureThreshold: 10
           readinessProbe:
             httpGet:
               path: /v1/health
@@ -123,10 +113,10 @@ spec:
             initialDelaySeconds: 15
             periodSeconds: 30
             timeoutSeconds: 5
-          resources:
+          resources: # this is optional
             requests:
-              cpu: 10m
-              memory: 250Mi
+              cpu: 5m
+              memory: 200Mi
       {{- with .Values.backend.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
@@ -149,4 +139,5 @@ spec:
                     values:
                       - {{ .Release.Name }}
               topologyKey: "kubernetes.io/hostname"
+
 {{- end }}

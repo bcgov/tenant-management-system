@@ -2,15 +2,21 @@
 # Declare variables to be passed into your templates.
 #-- global variables, can be accessed by sub-charts.
 global:
+  #-- the logon proxy settings for single sign on
+  loginProxy:
+    # -- the client ID registered with the login proxy for this application
+    clientId: ~
+    # -- the host name of the environment-specific login proxy
+    hostName: ~
   #-- the registry where the images are stored. override during runtime for other registry at global level or individual level.
   repository: ~ # provide the repo name from where images will be sourced for example bcgo
   #-- the registry where the images are stored. override during runtime for other registry at global level or individual level. default is ghcr.io
   registry: ghcr.io # ghcr.io for directly streaming from github container registry or "artifacts.developer.gov.bc.ca/github-docker-remote" for artifactory, or any other registry.
+  # Set to true during CI/static analysis
+  staticAnalysis: false
   #-- the tag of the image, it can be latest, 1.0.0 etc..., or the sha256 hash
   tag: ~
   #-- turn off autoscaling for the entire suite by setting this to false. default is true.
-  image:
-    pullPolicy: Always
   autoscaling: false
   #-- global secrets, can be accessed by sub-charts.
   secrets:
@@ -20,34 +26,28 @@ global:
     persist: true
   config:
     databaseUser: ~
-    nodeEnv: development
   #-- domain of the application, it is required, apps.silver.devops.gov.bc.ca for silver cluster and apps.devops.gov.bc.ca for gold cluster
   domain: "apps.silver.devops.gov.bc.ca" # it is apps.gold.devops.gov.bc.ca for gold cluster
   databaseAlias: ~ # set using github action workflow during helm deploy.
 
 #-- the components of the application, backend.
 backend:
+  #-- allowed origins for the backend
+  allowedOrigins: "*"
+  #-- the client ID registered with the bcgovSsoApiUrl
+  bcgovSsoApiClientId: ~
+  #-- the client secret used with the bcgovSsoApiUrl
+  bcgovSsoApiClientSecret: ~
+  #-- the API URL, used for looking up IDIR and BCeID users
+  bcgovSsoApiUrl: ~
+  #-- the token URL, used for looking up IDIR and BCeID users
+  bcgovTokenUrl: ~
   #-- enable or disable backend
-  repository: ghcr.io/bcgov/tenant-management-system/backend
-  tag: "{{ .Values.global.tag | default \"latest\" }}"
   enabled: true
-  pullPolicy: Always
-  environment:
-    port: "4144"
-    allowedOrigins: "*"
-    postgresHost: "{{ .Values.global.databaseAlias }}-pgbouncer"
-    postgresPort: "5432"
-    postgresUser: "{{ .Values.global.config.databaseUser | default 'app' }}"
-    postgresDatabase: "{{ .Values.global.config.dbName | default 'app' }}"
-    # Password comes from secret
-    bcgovSsoApiUrl: "https://api.loginproxy.gov.bc.ca/api/v1/dev/idir/users"
-    bcgovTokenUrl: "https://loginproxy.gov.bc.ca/auth/realms/standard/protocol/openid-connect/token"
-    bcGovSsoClientId: "client-id"  # Default value, override during deployment
-    bcgovSsoClientSecret: "secret"  # Default value, override during deployment
-    logLevel: "info"
-    tmsAudience: "tenant-management-system-6014"
-    jwksUri: "https://dev.loginproxy.gov.bc.ca/auth/realms/standard/protocol/openid-connect/certs"
-    issuer: "https://dev.loginproxy.gov.bc.ca/auth/realms/standard"
+  #-- log level for the backend
+  logLevel: "info"
+  #-- the number of replicas when autoscaling is disabled
+  replicaCount: 2
   #-- the deployment strategy, can be "Recreate" or "RollingUpdate"
   deploymentStrategy: Recreate
   #-- autoscaling for the component. it is optional and is an object.
@@ -55,9 +55,9 @@ backend:
     #-- enable or disable autoscaling.
     enabled: true
     #-- the minimum number of replicas.
-    minReplicas: 2
+    minReplicas: 3
     #-- the maximum number of replicas.
-    maxReplicas: 3
+    maxReplicas: 7
     #-- the target cpu utilization percentage, is from request cpu and NOT LIMIT CPU.
     targetCPUUtilizationPercentage: 80
   #-- vault, for injecting secrets from vault. it is optional and is an object. it creates an initContainer which reads from vault and app container can source those secrets. for referring to a working example with vault follow this link: https://github.com/bcgov/onroutebc/blob/main/charts/onroutebc/values.yaml#L171-L186
@@ -84,27 +84,16 @@ backend:
     #-- the type of the service. it can be ClusterIP, NodePort, LoadBalancer, ExternalName. ClusterIP is the default and is recommended.
     type: ClusterIP
     port: 80 # this is the service port, where it will be exposed internal to the namespace.
-    targetPort: 4144 # this is container port where app listens on
-  #-- ingress configuration for backend. only enabled for dev environment.
-  ingress:
-    annotations:
-      haproxy.router.openshift.io/balance: "roundrobin"
-      route.openshift.io/termination: "edge"
+    targetPort: 3000 # this is container port where app listens on
   pdb:
     enabled: false # enable it in PRODUCTION for having pod disruption budget.
     minAvailable: 1 # the minimum number of pods that must be available during the disruption budget.
 
 frontend:
   # -- enable or disable a component deployment.
-  repository: ghcr.io/bcgov/tenant-management-system/frontend
-  tags: "{{ .Values.global.tag | default \"latest\" }}"
   enabled: true
-  pullPolicy: Always
-  environment:
-    viteKeycloakClientId: tenant-management-system-6014
-    viteKeycloakRealm: standard
-    viteKeycloakLogoutUrl: https://dev.loginproxy.gov.bc.ca/auth/realms/standard/protocol/openid-connect/logout
-    viteKeycloakUrl: https://dev.loginproxy.gov.bc.ca/auth
+  #-- the number of replicas when autoscaling is disabled
+  replicaCount: 2
   # -- the deployment strategy, can be "Recreate" or "RollingUpdate"
   deploymentStrategy: Recreate
 
@@ -113,9 +102,9 @@ frontend:
     #-- enable or disable autoscaling.
     enabled: true
     #-- the minimum number of replicas.
-    minReplicas: 2
+    minReplicas: 3
     #-- the maximum number of replicas.
-    maxReplicas: 3
+    maxReplicas: 7
     #-- the target cpu utilization percentage, is from request cpu and NOT LIMIT CPU.
     targetCPUUtilizationPercentage: 80
   #-- the service for the component. for inter namespace communication, use the service name as the hostname.
@@ -133,6 +122,10 @@ frontend:
         targetPort: 3000
         #-- the protocol for the port. it can be TCP or UDP. TCP is the default and is recommended.
         protocol: TCP
+      - port: 3003
+        targetPort: 3003
+        protocol: TCP
+        name: metrics
   ingress:
     annotations:
       haproxy.router.openshift.io/balance: "roundrobin"
@@ -145,10 +138,3 @@ frontend:
   pdb:
     enabled: false # enable it in PRODUCTION for having pod disruption budget.
     minAvailable: 1 # the minimum number of pods that must be available during the disruption budget.
-
-bitnami-pg:
-  enabled: false
-
-# Crunchy database configuration
-crunchy:
-  enabled: true

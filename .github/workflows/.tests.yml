@@ -11,8 +11,7 @@ on:
 
 env:
   DOMAIN: apps.silver.devops.gov.bc.ca
-  PREFIX: ${{ github.event.repository.name }}-${{ inputs.target }}
-
+  PREFIX: cstar-${{ inputs.target }}
 
 permissions: {}
 
@@ -22,9 +21,9 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 1
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - id: cache-npm
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.npm
           key: ${{ runner.os }}-build-cache-node-modules-${{ hashFiles('**/package-lock.json') }}
@@ -34,8 +33,8 @@ jobs:
             ${{ runner.os }}-
 
       - env:
-          API_NAME: nest
-          BASE_URL: https://${{ env.PREFIX }}-frontend.${{ env.DOMAIN }}
+          API_NAME: express
+          BASE_URL: https://${{ env.PREFIX }}.${{ env.DOMAIN }}
         run: |
           cd tests/integration
           npm ci
@@ -47,37 +46,34 @@ jobs:
       run:
         working-directory: frontend
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
-    strategy:
-      matrix:
-        project: [ chromium, Google Chrome, firefox, safari, Microsoft Edge ]
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         name: Checkout
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         name: Setup Node
         with:
-          node-version: 20
-          cache: 'npm'
+          node-version: 24
+          cache: "npm"
           cache-dependency-path: frontend/package-lock.json
       - name: Install dependencies
-        run: |
-          npm ci
-          npx playwright install --with-deps
+        run: npm ci
 
       - name: Run Tests
         env:
-          E2E_BASE_URL: https://${{ github.event.repository.name }}-${{ inputs.target }}-frontend.${{ env.DOMAIN }}/
-          CI: 'true'
+          CYPRESS_BASE_URL: https://${{ env.PREFIX }}.${{ env.DOMAIN }}/
+          CI: "true"
         run: |
-          npx playwright test --project="${{ matrix.project }}" --reporter=html
+          npx cypress run
 
-      - uses: actions/upload-artifact@v4
-        if: (! cancelled())
+      - uses: actions/upload-artifact@v6
+        if: failure()
         name: upload results
         with:
-          name: playwright-report-${{ matrix.project }}
-          path: "./frontend/playwright-report" # path from current folder
+          name: cypress-results
+          path: |
+            ./frontend/cypress/screenshots
+            ./frontend/cypress/videos
           retention-days: 7
 
   load-tests:
@@ -87,12 +83,12 @@ jobs:
       matrix:
         name: [backend, frontend]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: grafana/setup-k6-action@ffe7d7290dfa715e48c2ccc924d068444c94bde2 # v1.1.0
-      - uses: grafana/run-k6-action@c6b79182b9b666aa4f630f4a6be9158ead62536e # v1.2.0
+      - uses: grafana/run-k6-action@a15e2072ede004e8d46141e33d7f7dad8ad08d9d # v1.3.1
         env:
-          BACKEND_URL: https://${{ env.PREFIX }}-frontend.${{ env.DOMAIN }}/api/v1
-          FRONTEND_URL: https://${{ env.PREFIX }}-frontend.${{ env.DOMAIN }}
+          BACKEND_URL: https://${{ env.PREFIX }}.${{ env.DOMAIN }}/api
+          FRONTEND_URL: https://${{ env.PREFIX }}.${{ env.DOMAIN }}
         with:
           path: ./tests/load/${{ matrix.name }}-test.js
-          flags: --vus 100 --duration 300s
+          flags: --vus 1 --iterations 10

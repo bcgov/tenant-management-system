@@ -30,12 +30,12 @@ on:
         description: Extra parameters to pass to helm upgrade
         required: false
         type: string
-      tags:
+      tag:
         description: Specify a tag to deploy; defaults to PR number
         required: false
         type: string
       triggers:
-        description: Paths used to trigger a deployment; e.g. ('./backend/' './frontend/')
+        description: Paths used to trigger a deployment; e.g. ('./backend/' './frontend/)
         required: false
         type: string
       db_user:
@@ -48,33 +48,20 @@ on:
         default: false
         required: false
         type: boolean
-      release_name:
-        required: true
-        type: string
-        description: "Release name (e.g., tenant-management-system-dev)"
-      preserve_database:
-        description: "Preserve existing database data (true for test/prod, false for PRs)"
-        default: true
+      db_triggers:
+        description: Paths used to trigger a database deployment; e.g. ('charts/crunchy/')
         required: false
-        type: boolean
+        type: string
 
       ### Usually a bad idea / not recommended
       timeout-minutes:
         description: "Timeout minutes"
-        default: 15 # Reduced from 25 to fail faster
+        default: 10
         required: false
         type: number
       values:
         description: "Values file"
         default: "values.yaml"
-        required: false
-        type: string
-      deployment_url:
-        description: "Deployment URL; used for environments"
-        required: true
-        type: string
-      db_triggers:
-        description: Paths used to trigger a database deployment; e.g. ('charts/crunchy/')
         required: false
         type: string
 
@@ -87,865 +74,134 @@ on:
         value: ${{ jobs.deploy.outputs.triggered }}
 
     secrets:
+      bcgov_sso_api_client_id:
+        description: BCGov SSO API Client ID
+        required: true
+      bcgov_sso_api_client_secret:
+        description: BCGov SSO API Client Secret
+        required: true
       oc_namespace:
         description: OpenShift namespace
         required: true
       oc_token:
         description: OpenShift token
         required: true
-      bcgov_sso_api_client_id:
-        required: true
-      bcgov_sso_api_client_secret:
-        required: true
-      vite_keycloak_client_id:
-        required: true
 
-permissions:
-  contents: read
-  deployments: write
+permissions: {}
 
 jobs:
   deploy:
     name: Stack
     environment:
-      name: ${{ inputs.environment }}
-      url: ${{ inputs.deployment_url }}
+      name: ${{ inputs.environment || 'dev' }}
+      url: https://cstar-${{ inputs.environment || steps.pr.outputs.pr || inputs.tag }}.apps.silver.devops.gov.bc.ca
     runs-on: ubuntu-24.04
-    # Add timeout to prevent jobs from hanging indefinitely
-    timeout-minutes: 30
     outputs:
-      tag: ${{ inputs.tags || steps.pr.outputs.pr }}
+      tag: ${{ inputs.tag || steps.pr.outputs.pr }}
       triggered: ${{ steps.deploy.outputs.triggered }}
     steps:
-      - name: Get PR number
-        if: inputs.tags == ''
+      - uses: bcgov/action-crunchy@a109166ff26880dc75676492a33b816ac0ce392f # v1.2.6
+        name: Deploy Crunchy
+        id: deploy_crunchy
+        with:
+          oc_namespace: ${{ secrets.OC_NAMESPACE }}
+          oc_token: ${{ secrets.OC_TOKEN }}
+          release_name: cstar-db
+          environment: ${{ inputs.environment }}
+          values_file: charts/crunchy/values-${{ inputs.environment || 'dev' }}.yml
+          triggers: ${{ inputs.db_triggers }}
+
+      # Variables
+      - if: inputs.tag  == ''
         id: pr
-        continue-on-error: true # Don't fail if PR detection fails
-        uses: bcgov/action-get-pr@21f9351425cd55a98e869ee28919a512aa30647d
+        uses: bcgov/action-get-pr@35514fa1d4765547da319e967b509363598e8b46 # v0.1.0
 
-      - name: Set variables
-        id: vars
-        env:
-          INPUT_TAGS: ${{ inputs.tags }}
-          INPUT_RELEASE_NAME: ${{ inputs.release_name }}
-          INPUT_PRESERVE_DB: ${{ inputs.preserve_database }}
-          GITHUB_REF_NAME: ${{ github.ref_name }}
-          GITHUB_RUN_NUMBER: ${{ github.run_number }}
-          PR_NUMBER: ${{ steps.pr.outputs.pr }}
+      - id: vars
         run: |
-          # Simplified tag and release logic
+          # Vars: tag and release
 
-          # Tag logic: latest for main/deployment-fix, PR number for actual PRs
-          if [ -n "$INPUT_TAGS" ]; then
-            # Use explicit tag if provided
-            tag="$INPUT_TAGS"
-          elif [ "$GITHUB_REF_NAME" == "main" ] || [ "$GITHUB_REF_NAME" == "deployment-fix" ]; then
-            # Use 'latest' for main and deployment-fix branches
-            tag="latest"
-          elif [ -n "$PR_NUMBER" ] && [ "$PR_NUMBER" != "null" ] && [ "$PR_NUMBER" != "" ]; then
-            # Use PR number for actual PR environments
-            tag="pr-$PR_NUMBER"
-          else
-            # Final fallback
-            tag="latest"
-          fi
+          # Tag defaults to PR number, but can be overridden by inputs.tag
+          tag=${{ inputs.tag || steps.pr.outputs.pr }}
 
-          # Release name logic - use input release_name directly
-          release="$INPUT_RELEASE_NAME"
+          # Release name includes run numbers to ensure uniqueness
+          release=cstar-${{ inputs.environment || steps.pr.outputs.pr || inputs.tag }}
 
-          # Version for helm packaging
-          version="1.0.0+$GITHUB_RUN_NUMBER"
+          # version, to support helm packaging for non-pr based releases (workflow_dispatch). default to 1.0.0+github run number
+          version=1.0.0+${{ github.run_number }}
 
-          # Summary
-          echo "Branch: $GITHUB_REF_NAME"
-          echo "Tag: $tag"
-          echo "Release: $release"
-          echo "Version: $version"
-          echo "Preserve DB: $INPUT_PRESERVE_DB"
+            # Summary
+          echo "tag=${tag}"
+          echo "release=${release}"
+          echo "version=${version}"
 
           # Output
-          echo "tag=$tag" >> $GITHUB_OUTPUT
-          echo "release=$release" >> $GITHUB_OUTPUT
-          echo "version=$version" >> $GITHUB_OUTPUT
+          echo "tag=${tag}" >> $GITHUB_OUTPUT
+          echo "release=${release}" >> $GITHUB_OUTPUT
+          echo "version=${version}" >> $GITHUB_OUTPUT
 
-      - name: Force Cleanup Any Stuck Helm Operations
-        uses: bcgov/action-oc-runner@10033668ef4374d9bb78149faa73e4ccda0e93dd
+      - name: Stop pre-existing deployments on PRs (status = pending-upgrade)
+        if: github.event_name == 'pull_request'
+        uses: bcgov/action-oc-runner@f900830adadd4d9eef3ca6ff80103e839ba8b7c0 # v1.3.0
         with:
           oc_namespace: ${{ secrets.oc_namespace }}
           oc_token: ${{ secrets.oc_token }}
-          oc_server: ${{ inputs.oc_server }}
+          oc_server: ${{ vars.oc_server }}
+          triggers: ${{ inputs.triggers }}
           commands: |
-            # Enable strict error handling
-            set -euo pipefail
-
-            RELEASE_NAME="${{ steps.vars.outputs.release }}"
-            echo "🔄 Force cleanup of any stuck Helm operations for: $RELEASE_NAME"
-
-            # Function to force cleanup stuck helm releases
-            force_cleanup_helm() {
-              local release_name="$1"
-              echo "🧹 Starting force cleanup for release: $release_name"
-
-              # Get current status if release exists
-              if helm list -q | grep -q "^$release_name$"; then
-                CURRENT_STATUS=$(helm status "$release_name" -o json 2>/dev/null | jq -r '.info.status' || echo "unknown")
-                echo "Current status: $CURRENT_STATUS"
-
-                case "$CURRENT_STATUS" in
-                  "pending-install"|"pending-upgrade"|"pending-rollback"|"uninstalling")
-                    echo "⚠️ Found stuck operation: $CURRENT_STATUS - forcing cleanup"
-
-                    # Force delete all helm secrets for this release
-                    echo "🗑️ Removing Helm secrets..."
-                    kubectl delete secret -l owner=helm,name="$release_name" --ignore-not-found=true --timeout=60s || true
-                    kubectl delete configmap -l owner=helm,name="$release_name" --ignore-not-found=true --timeout=60s || true
-
-                    # Wait a moment for cleanup
-                    sleep 5
-
-                    # Verify cleanup worked
-                    if helm list -q | grep -q "^$release_name$"; then
-                      echo "⚠️ Release still exists after secret cleanup, attempting final removal..."
-                      kubectl patch secret -l owner=helm,name="$release_name" -p '{"metadata":{"finalizers":[]}}' --ignore-not-found=true || true
-                      kubectl delete secret -l owner=helm,name="$release_name" --ignore-not-found=true --force --grace-period=0 || true
-                    fi
-                    ;;
-                  "deployed"|"failed")
-                    echo "✅ Release is in stable state: $CURRENT_STATUS - no cleanup needed"
-                    ;;
-                  *)
-                    echo "⚠️ Unknown status: $CURRENT_STATUS - will proceed with deployment"
-                    ;;
-                esac
-              else
-                echo "ℹ️ No existing release found - clean slate"
-              fi
-              
-              # NEW: Clean up orphaned resources that prevent Helm adoption
-              echo "Cleaning up orphaned ConfigMaps and resources..."
-              # Delete ConfigMaps that might have stale ownership metadata
-              oc delete configmap "${release_name}-frontend-config" --ignore-not-found=true || true
-
-              # Wait a moment for deletion
-              sleep 2
-
-              # Clean up any resources that might conflict with Helm installation
-              echo "Cleaning up any existing resources without proper Helm ownership..."
-              oc delete all,configmap,secret,route -l app.kubernetes.io/instance="${release_name}" --ignore-not-found=true || true
-
-              # Extra cleanup: Delete any ConfigMap with the release name pattern that might exist
-              echo "Extra cleanup: Removing any lingering frontend config resources..."
-              for cm in $(oc get configmap -o name 2>/dev/null | grep -iE "(${release_name}|frontend-config)" || echo ""); do
-                echo "Deleting ConfigMap: $cm"
-                oc delete "$cm" --ignore-not-found=true || true
-              done
-
-              # Additional cleanup for ConfigMap ownership issues (especially for TEST/PROD)
-              echo "Additional cleanup for ConfigMap ownership issues..."
-              oc delete configmap "${release_name}-frontend-config" --force --grace-period=0 --ignore-not-found=true 2>/dev/null || true
-
-              # Wait for deletion to complete
-              sleep 3
-
-              # Verify deletion
-              if ! oc get configmap "${release_name}-frontend-config" &>/dev/null; then
-                echo "✅ ConfigMap successfully deleted"
-              else
-                echo "⚠️ ConfigMap still exists, attempting second deletion..."
-                oc delete configmap "${release_name}-frontend-config" --grace-period=0 --force 2>/dev/null || true
-              fi
-
-
-              echo "✅ Cleanup completed for $release_name"
-            }
-
-            # Execute cleanup
-            force_cleanup_helm "$RELEASE_NAME"
-
-      - name: Deploy Database (Smart Preservation)
-        id: deploy_database
-        # Run for TEST/PROD (Crunchy) - PR and Dev are handled separately below
-        if: "!contains(steps.vars.outputs.release, '-pr-') && !contains(steps.vars.outputs.release, '-dev')"
-        uses: bcgov/action-oc-runner@10033668ef4374d9bb78149faa73e4ccda0e93dd
-        with:
-          oc_namespace: ${{ secrets.oc_namespace }}
-          oc_token: ${{ secrets.oc_token }}
-          oc_server: ${{ inputs.oc_server }}
-          commands: |
-            # Enable strict error handling
-            set -euo pipefail
-
-            echo "🚀 DATABASE DEPLOYMENT STARTING (TEST/PROD with Crunchy)..."
-
-            # Set database configuration
-            RELEASE_NAME="${{ steps.vars.outputs.release }}"
-            DB_USER="${{ inputs.db_user }}"
-            PRESERVE_DB="${{ inputs.preserve_database }}"
-
-            echo "Release name: $RELEASE_NAME"
-            echo "Database user: $DB_USER"
-            echo "Preserve database: $PRESERVE_DB"
-
-            # Check if database already exists
-            if oc get postgrescluster ${RELEASE_NAME}-crunchy &>/dev/null; then
-              echo "✅ Crunchy PostgreSQL cluster already exists"
-            else
-              echo "ℹ️ Crunchy PostgreSQL cluster will be created by Helm"
+            # Interrupt any previous deployments (PR only)
+            PREVIOUS=$(helm status ${{ steps.vars.outputs.release }} -o json | jq .info.status || true)
+            if [[ ${PREVIOUS} =~ pending ]]; then
+              echo "Rollback triggered"
+              helm rollback ${{ steps.vars.outputs.release }} || \
+                helm uninstall ${{ steps.vars.outputs.release }}
             fi
 
-            # For Crunchy PostgreSQL (direct connection to postgres)
-            DB_HOST="${RELEASE_NAME}-postgres"
-            echo "Test/Prod environment detected - using Crunchy PostgreSQL host: $DB_HOST"
+      - uses: actions/checkout@v6
+      - name: Debug Values File
+        if: inputs.debug == 'true'
+        run: ls -l charts/crunchy/values.yml
 
-      - uses: actions/checkout@v4
-
-      - name: Start deployment
-        uses: bobheadxi/deployments@v1.4.0
-        id: deployment
-        with:
-          step: start
-          token: ${{ github.token }}
-          env: ${{ inputs.environment || 'dev' }}
-          desc: "Starting deployment..."
-
-      - name: Helm Deploy with Improved Resilience
+      - name: Helm Deploy
         id: deploy
-        uses: bcgov/action-oc-runner@10033668ef4374d9bb78149faa73e4ccda0e93dd
+        uses: bcgov/action-oc-runner@f900830adadd4d9eef3ca6ff80103e839ba8b7c0 # v1.3.0
         with:
           oc_namespace: ${{ secrets.oc_namespace }}
           oc_token: ${{ secrets.oc_token }}
-          oc_server: ${{ inputs.oc_server }}
+          oc_server: ${{ vars.oc_server }}
           triggers: ${{ inputs.triggers }}
           ref: ${{ github.ref }}
           commands: |
-            # Enable strict error handling
-            set -euo pipefail
+            # Deploy
 
-            # Enhanced directory change with validation
-            echo "Input directory: '${{ inputs.directory }}'"
-            echo "Current working directory: $(pwd)"
-
-            if [ -n "${{ inputs.directory }}" ] && [ "${{ inputs.directory }}" != "" ]; then
-              echo "Changing to directory: ${{ inputs.directory }}"
-              if [ -d "${{ inputs.directory }}" ]; then
-                cd "${{ inputs.directory }}"
-                echo "Successfully changed to: $(pwd)"
-                echo "Directory contents:"
-                ls -la
-              else
-                echo "ERROR: Directory '${{ inputs.directory }}' does not exist!"
-                echo "Available directories in $(pwd):"
-                ls -la
-                exit 1
-              fi
-            else
-              echo "No directory specified, staying in: $(pwd)"
-            fi
-
-            # Verify we're in the right place for Helm chart
-            if [ ! -f "Chart.yaml" ]; then
-              echo "ERROR: Chart.yaml not found in $(pwd)"
-              echo "Looking for Chart.yaml in subdirectories:"
-              find . -name "Chart.yaml" -type f 2>/dev/null || echo "No Chart.yaml found anywhere"
-              exit 1
-            fi
-
-            echo "Found Chart.yaml - proceeding with Helm deployment"
-
-            # Verify values file exists
-            VALUES_FILE="${{ inputs.values }}"
-            if [ ! -f "$VALUES_FILE" ]; then
-              echo "ERROR: Values file '$VALUES_FILE' not found in $(pwd)"
-              echo "Available YAML files:"
-              ls -la *.yaml || echo "No YAML files found"
-              exit 1
-            fi
-
-            echo "Found values file: $VALUES_FILE"
-            echo "Values file size: $(wc -l < "$VALUES_FILE") lines"
-
-            # Set database alias to match what was created
-            DATABASE_ALIAS="${{ steps.vars.outputs.release }}"
-            echo "Setting database alias to: $DATABASE_ALIAS"
-
-            RELEASE_NAME="${{ steps.vars.outputs.release }}"
-
-            # Function to perform helm upgrade with improved error handling
-            perform_helm_upgrade() {
-              local release_name="$1"
-              local max_attempts=3
-              local attempt=1
-
-              while [ $attempt -le $max_attempts ]; do
-                echo "Helm deployment attempt $attempt/$max_attempts..."
-                echo "Release name: $release_name"
-                echo "Chart directory: $(pwd)"
-                
-                # Verify files exist before each attempt
-                echo "Verifying files before attempt $attempt:"
-                echo "Chart file: $(ls -la ./tenant-management-system-*.tgz 2>/dev/null || echo 'NOT FOUND')"
-                echo "Values file: $(ls -la "$VALUES_FILE" 2>/dev/null || echo 'NOT FOUND')"
-                
-                # Show the exact helm command that will be run
-                echo "--- HELM COMMAND (Attempt $attempt) ---"
-                echo "helm upgrade \\"
-                echo "  --set-string global.repository=${{ github.repository }} \\"
-                echo "  --set-string global.tag=\"${{ steps.vars.outputs.tag }}\" \\"
-                echo "  --set-string global.config.databaseUser=\"${{ inputs.db_user }}\" \\"
-                echo "  --set-string global.config.nodeEnv=${{ (inputs.environment == 'prod' || inputs.environment == 'production') && 'production' || (inputs.environment == 'test' && 'test' || 'development') }} \\"
-                echo "  --set-string global.databaseAlias=\"$DATABASE_ALIAS\" \\"
-                echo "  --set-string global.secrets.enabled=true \\"
-                echo "  --set-string global.preserveDatabase=\"${{ inputs.preserve_database }}\" \\"
-                echo "  ${{ inputs.params }} \\"
-                echo "  --install --wait --timeout ${{ inputs.timeout-minutes }}m \\"
-                echo "  --values \"$VALUES_FILE\" \\"
-                echo "  \"$release_name\" \\"
-                echo "  \"./tenant-management-system-${{ steps.pr.outputs.pr || steps.vars.outputs.version }}.tgz\""
-                echo "---------------------------------------"
-
-                # Attempt the upgrade with full output capture
-                set +e  # Don't exit on error so we can capture output
-                HELM_OUTPUT=$(helm upgrade \
-                  --set-string global.repository=${{ github.repository }} \
-                  --set-string global.tag="${{ steps.vars.outputs.tag }}" \
-                  --set-string global.config.databaseUser="${{ inputs.db_user }}" \
-                  --set-string global.config.nodeEnv=${{ (inputs.environment == 'prod' || inputs.environment == 'production') && 'production' || (inputs.environment == 'test' && 'test' || 'development') }} \
-                  --set-string global.databaseAlias="$DATABASE_ALIAS" \
-                  --set-string global.secrets.enabled=true \
-                  --set-string global.preserveDatabase="${{ inputs.preserve_database }}" \
-                  ${{ inputs.params }} \
-                  --install --wait --timeout ${{ inputs.timeout-minutes }}m \
-                  --values "$VALUES_FILE" \
-                  --debug \
-                  "$release_name" \
-                  "./tenant-management-system-${{ steps.pr.outputs.pr || steps.vars.outputs.version }}.tgz" 2>&1)
-                
-                HELM_EXIT_CODE=$?
-                set -e  # Re-enable exit on error
-                
-                echo "--- HELM OUTPUT (Attempt $attempt) ---"
-                echo "$HELM_OUTPUT"
-                echo "--- END HELM OUTPUT ---"
-                echo "Helm exit code: $HELM_EXIT_CODE"
-
-                if [ $HELM_EXIT_CODE -eq 0 ]; then
-                  echo "Helm deployment completed successfully on attempt $attempt"
-                  return 0
-                else
-                  echo "Helm deployment failed on attempt $attempt (exit code: $HELM_EXIT_CODE)"
-                  
-                  # Show additional debugging info
-                  echo "--- POST-FAILURE DEBUG (Attempt $attempt) ---"
-                  helm list || echo "Helm list failed"
-                  oc get all -l app.kubernetes.io/instance="$release_name" || echo "No resources found"
-                  echo "Working directory: $(pwd)"
-                  echo "Files in directory:"
-                  ls -la
-                  echo "--- END POST-FAILURE DEBUG ---"
-
-                  if [ $attempt -eq $max_attempts ]; then
-                    echo "All attempts failed"
-                    echo "FINAL HELM OUTPUT:"
-                    echo "$HELM_OUTPUT"
-                    return $HELM_EXIT_CODE
-                  fi
-
-                  echo "Cleaning up before retry..."
-                  kubectl delete secret -l owner=helm,name="$release_name" --ignore-not-found=true --timeout=30s || true
-
-                  echo "Waiting 15 seconds before retry..."
-                  sleep 15
-                  attempt=$((attempt + 1))
-                fi
-              done
-            }
+            # If directory provided, cd to it
+            [ -z "${{ inputs.directory }}" ]|| cd ${{ inputs.directory }}
 
             # Helm package
-            echo "Packaging Helm chart..."
             sed -i 's/^name:.*/name: ${{ github.event.repository.name }}/' Chart.yaml
-
-            echo "Packaging Helm chart (no external dependencies)..."
-
-            echo "Dependencies updated, packaging chart..."
-            helm package . --app-version="tag-${{ steps.vars.outputs.tag }}_run-${{ github.run_number }}" --version=${{ steps.pr.outputs.pr || steps.vars.outputs.version }}
-
-            echo "Chart packaged successfully:"
-            ls -la ./tenant-management-system-*.tgz
-
-            # Perform the deployment with retry logic
-            perform_helm_upgrade "$RELEASE_NAME"
+            helm package -u . --app-version="tag-${{ steps.vars.outputs.tag }}_run-${{ github.run_number }}" --version=${{ steps.pr.outputs.pr || steps.vars.outputs.version }}
+            # print the values.yaml file to see the values being used
+            # Helm upgrade/rollout
+            helm upgrade \
+              --set backend.autoscaling.enabled=false \
+              --set-string backend.bcgovSsoApiClientId=${{ secrets.bcgov_sso_api_client_id }} \
+              --set-string backend.bcgovSsoApiClientSecret=${{ secrets.bcgov_sso_api_client_secret }} \
+              --set-string backend.bcgovSsoApiUrl=${{ vars.BCGOV_SSO_API_URL }} \
+              --set-string backend.bcgovTokenUrl=${{ vars.BCGOV_TOKEN_URL }} \
+              --set frontend.autoscaling.enabled=false \
+              --set-string global.repository=${{ github.repository }} \
+              --set-string global.tag="${{ steps.vars.outputs.tag }}" \
+              --set-string global.config.databaseUser="${{ inputs.db_user }}" \
+              --set-string global.databaseAlias="${{ steps.deploy_crunchy.outputs.release }}-crunchy" \
+              --set-string global.loginProxy.clientId="${{ vars.LOGIN_PROXY_CLIENT_ID }}" \
+              --set-string global.loginProxy.hostName="${{ vars.LOGIN_PROXY_HOST_NAME }}" \
+              ${{ inputs.params }} \
+              --install --wait ${{ inputs.atomic && '--atomic' || '' }} ${{ steps.vars.outputs.release }} \
+              --timeout ${{ inputs.timeout-minutes }}m \
+              --values ${{ inputs.values }} \
+              ./${{ github.event.repository.name }}-${{ steps.pr.outputs.pr || steps.vars.outputs.version }}.tgz
 
             # Helm release history
-            helm history "$RELEASE_NAME" --max 5
+            helm history ${{ steps.vars.outputs.release }}
 
-            # Clean up completed pods
-            oc delete po --field-selector=status.phase==Succeeded --ignore-not-found=true || true
-
-      - name: Wait for Crunchy PostgreSQL Secrets (TEST/PROD)
-        id: crunchy_secrets
-        # Only run for TEST/PROD environments with Crunchy
-        if: "!contains(steps.vars.outputs.release, '-pr-') && !contains(steps.vars.outputs.release, '-dev')"
-        uses: bcgov/action-oc-runner@10033668ef4374d9bb78149faa73e4ccda0e93dd
-        with:
-          oc_namespace: ${{ secrets.oc_namespace }}
-          oc_token: ${{ secrets.oc_token }}
-          oc_server: ${{ inputs.oc_server }}
-          commands: |
-            # Enable strict error handling
-            set -euo pipefail
-
-            RELEASE_NAME="${{ steps.vars.outputs.release }}"
-            DB_USER="${{ inputs.db_user }}"
-            DATABASE_ALIAS="${{ inputs.database_alias || steps.vars.outputs.release }}"
-            CLUSTER_NAME="${DATABASE_ALIAS}-postgres"
-
-            echo "🔐 HANDLING CRUNCHY POSTGRESQL SECRETS (TEST/PROD)..."
-            echo "Release name: $RELEASE_NAME"
-            echo "Database alias: $DATABASE_ALIAS"
-            echo "Cluster name: $CLUSTER_NAME"
-
-            DB_HOST="${DATABASE_ALIAS}-postgres"
-
-            # FIRST: Check if application secret already exists (from previous deployment)
-            if oc get secret ${RELEASE_NAME}-pguser-${DB_USER} &>/dev/null; then
-              echo "✅ Application secret already exists (from previous deployment): ${RELEASE_NAME}-pguser-${DB_USER}"
-              echo "Skipping Crunchy secret wait - reusing existing password"
-              DB_PASSWORD=$(oc get secret ${RELEASE_NAME}-pguser-${DB_USER} -o jsonpath='{.data.password}' | base64 -d)
-              SECRET_FOUND=true
-            else
-              # SECOND: Wait for Crunchy to create the postgres user password secret
-              echo "Application secret doesn't exist yet, waiting for Crunchy to generate..."
-              echo "Waiting for Crunchy to generate postgres password secret..."
-              SECRET_FOUND=false
-              for i in {1..60}; do
-                # Try primary location: {database-alias}-postgres-pguser-{username}
-                if oc get secret ${DATABASE_ALIAS}-postgres-pguser-${DB_USER} &>/dev/null; then
-                  echo "✅ Crunchy created secret: ${DATABASE_ALIAS}-postgres-pguser-${DB_USER}"
-                  DB_PASSWORD=$(oc get secret ${DATABASE_ALIAS}-postgres-pguser-${DB_USER} -o jsonpath='{.data.password}' | base64 -d)
-                  SECRET_FOUND=true
-                  break
-                # Fallback: try alternate naming {release}-postgres-pguser-{username}
-                elif oc get secret ${RELEASE_NAME}-postgres-pguser-${DB_USER} &>/dev/null; then
-                  echo "✅ Crunchy created secret: ${RELEASE_NAME}-postgres-pguser-${DB_USER}"
-                  DB_PASSWORD=$(oc get secret ${RELEASE_NAME}-postgres-pguser-${DB_USER} -o jsonpath='{.data.password}' | base64 -d)
-                  SECRET_FOUND=true
-                  break
-                fi
-
-                echo "Attempt $i/60: Waiting for Crunchy secrets..."
-                echo "  Checked: ${DATABASE_ALIAS}-postgres-pguser-${DB_USER}"
-                echo "  Checked: ${RELEASE_NAME}-postgres-pguser-${DB_USER}"
-                sleep 5
-              done
-
-              if [ "$SECRET_FOUND" = false ]; then
-                echo "❌ Crunchy secret not found after timeout"
-                echo "Available secrets with 'pguser' in name:"
-                oc get secrets | grep pguser || echo "No pguser secrets found"
-                echo "Available secrets:"
-                oc get secrets | head -20
-                exit 1
-              fi
-            fi
-
-            # Create/update application secret with the password (whether from Crunchy or existing)
-            echo "Creating/updating application-compatible secret: ${RELEASE_NAME}-pguser-${DB_USER}"
-            oc delete secret ${RELEASE_NAME}-pguser-${DB_USER} --ignore-not-found=true
-            oc create secret generic ${RELEASE_NAME}-pguser-${DB_USER} \
-              --from-literal=password="$DB_PASSWORD" \
-              --from-literal=username="$DB_USER" \
-              --from-literal=dbname="app" \
-              --from-literal=host="$DB_HOST" \
-              --from-literal=port="5432"
-
-            echo "✅ Application secret created with database password"
-
-            # Verify the secret was created successfully
-            if ! oc get secret ${RELEASE_NAME}-pguser-${DB_USER} &>/dev/null; then
-              echo "❌ Error: Application secret was not created successfully"
-              echo "Available secrets:"
-              oc get secrets | head -20
-              exit 1
-            fi
-            echo "✅ Verified application secret exists"
-
-            # Create Flyway secret for TEST/PROD with database password
-            echo ""
-            echo "Creating Flyway secret for TEST/PROD environment..."
-            FLYWAY_URL="jdbc:postgresql://${DB_HOST}:5432/app"
-
-            oc delete secret ${RELEASE_NAME}-flyway --ignore-not-found=true
-            sleep 1
-
-            oc create secret generic ${RELEASE_NAME}-flyway \
-              --from-literal=FLYWAY_USER="$DB_USER" \
-              --from-literal=FLYWAY_PASSWORD="$DB_PASSWORD" \
-              --from-literal=FLYWAY_URL="$FLYWAY_URL"
-
-            echo "✅ Flyway secret created with database password"
-            echo "  URL: $FLYWAY_URL"
-            echo "  User: $DB_USER"
-
-      - name: Create PostgreSQL Service for TEST/PROD
-        id: create_postgres_service
-        # Only run for TEST/PROD environments
-        if: "!contains(steps.vars.outputs.release, '-pr-') && !contains(steps.vars.outputs.release, '-dev')"
-        uses: bcgov/action-oc-runner@10033668ef4374d9bb78149faa73e4ccda0e93dd
-        with:
-          oc_namespace: ${{ secrets.oc_namespace }}
-          oc_token: ${{ secrets.oc_token }}
-          oc_server: ${{ inputs.oc_server }}
-          commands: |
-            # Enable strict error handling
-            set -euo pipefail
-
-            RELEASE_NAME="${{ steps.vars.outputs.release }}"
-            SERVICE_NAME="${RELEASE_NAME}-postgres"
-
-            echo "🔌 Creating PostgreSQL Service for TEST/PROD..."
-            echo "Service name: $SERVICE_NAME"
-
-            # Check if service already exists
-            if oc get svc "$SERVICE_NAME" &>/dev/null; then
-              echo "✅ Service already exists: $SERVICE_NAME"
-              echo "Checking if service has endpoints..."
-
-              ENDPOINTS=$(oc get endpoints "$SERVICE_NAME" -o jsonpath='{.subsets[*].addresses[*].ip}' 2>/dev/null || echo "")
-              if [ -n "$ENDPOINTS" ]; then
-                echo "✅ Service has endpoints: $ENDPOINTS"
-              else
-                echo "⚠️ Service exists but has no endpoints, updating selector..."
-                oc patch svc "$SERVICE_NAME" -p '{"spec":{"selector":{"app":"postgres","instance":"'$RELEASE_NAME'"}}}'
-              fi
-            else
-              echo "ℹ️ Service does not exist, creating new service..."
-
-              # Create service with correct selector (namespace is already set by action-oc-runner)
-              oc create service clusterip "$SERVICE_NAME" \
-                --tcp=5432:5432 || true
-
-              # Patch service to use correct selector
-              echo "Patching service selector..."
-              oc patch svc "$SERVICE_NAME" \
-                -p '{"spec":{"selector":{"app":"postgres","instance":"'$RELEASE_NAME'"}}}'
-
-              sleep 2
-            fi
-
-            # Verify service has endpoints
-            echo ""
-            echo "Verifying service endpoints..."
-            for i in {1..30}; do
-              ENDPOINTS=$(oc get endpoints "$SERVICE_NAME" -o jsonpath='{.subsets[*].addresses[*].ip}' 2>/dev/null || echo "")
-              if [ -n "$ENDPOINTS" ]; then
-                echo "✅ Service is properly configured with endpoints: $ENDPOINTS"
-
-                # Get the service cluster IP
-                CLUSTER_IP=$(oc get svc "$SERVICE_NAME" -o jsonpath='{.spec.clusterIP}')
-                echo "✅ Service ClusterIP: $CLUSTER_IP"
-                echo "✅ Service is accessible at: $SERVICE_NAME:5432"
-                break
-              fi
-
-              echo "Attempt $i/30: Waiting for service endpoints to be assigned..."
-              sleep 1
-            done
-
-            if [ -z "${ENDPOINTS}" ]; then
-              echo "❌ Service endpoints not assigned after timeout"
-              echo "Available services:"
-              oc get svc | grep postgres || echo "No postgres services found"
-              exit 1
-            fi
-
-            echo "✅ PostgreSQL service creation/verification completed successfully"
-
-      - name: Wait for PostgreSQL and Create Database Secrets (PR/Dev)
-        id: create_db_secret
-        # Only run for PR and Dev environments (TEST/PROD already created above)
-        if: contains(steps.vars.outputs.release, '-pr-') || contains(steps.vars.outputs.release, '-dev')
-        uses: bcgov/action-oc-runner@10033668ef4374d9bb78149faa73e4ccda0e93dd
-        with:
-          oc_namespace: ${{ secrets.oc_namespace }}
-          oc_token: ${{ secrets.oc_token }}
-          oc_server: ${{ inputs.oc_server }}
-          commands: |
-            # Enable strict error handling
-            set -euo pipefail
-
-            RELEASE_NAME="${{ steps.vars.outputs.release }}"
-            DB_USER="${{ inputs.db_user }}"
-
-            echo "🚀 WAITING FOR POSTGRESQL AND CREATING DATABASE SECRETS..."
-            echo "Release name: $RELEASE_NAME"
-            echo "Database user: $DB_USER"
-
-            # Wait for PostgreSQL to be ready (for Bitnami)
-            echo "Waiting for PostgreSQL deployment to be ready..."
-            oc rollout status deployment/${RELEASE_NAME}-postgresql --timeout=300s 2>/dev/null || {
-              echo "⚠️ PostgreSQL deployment not ready yet, checking pod status..."
-              for i in {1..60}; do
-                if oc get pod -l app.kubernetes.io/name=postgresql,app.kubernetes.io/instance=${RELEASE_NAME} &>/dev/null; then
-                  POD_STATUS=$(oc get pod -l app.kubernetes.io/name=postgresql,app.kubernetes.io/instance=${RELEASE_NAME} -o jsonpath='{.items[0].status.phase}')
-                  echo "PostgreSQL pod status: $POD_STATUS"
-                  if [ "$POD_STATUS" == "Running" ]; then
-                    echo "✅ PostgreSQL pod is running"
-                    break
-                  fi
-                fi
-                echo "Attempt $i/60: Waiting for PostgreSQL pod to be ready..."
-                sleep 5
-              done
-            }
-
-            # Generate password using SAME formula as Helm template (postgresql-pr.yaml line 13)
-            # Formula: printf "%s-pr-db-pass" .Release.Name | sha256sum | trunc 32
-            DB_PASSWORD=$(echo -n "${RELEASE_NAME}-pr-db-pass" | sha256sum | cut -d' ' -f1 | head -c32)
-
-            # PR and Dev environments use Bitnami PostgreSQL
-            DB_HOST="${RELEASE_NAME}-postgresql"
-            echo "Using Bitnami database host: $DB_HOST"
-
-            # Create database secret (pguser-app)
-            echo "Creating pguser-app secret..."
-            oc delete secret ${RELEASE_NAME}-pguser-${DB_USER} --ignore-not-found=true
-            oc create secret generic ${RELEASE_NAME}-pguser-${DB_USER} \
-              --from-literal=password="$DB_PASSWORD" \
-              --from-literal=username="$DB_USER" \
-              --from-literal=dbname="app" \
-              --from-literal=host="$DB_HOST" \
-              --from-literal=port="5432"
-
-            echo "✅ Database secret created: ${RELEASE_NAME}-pguser-${DB_USER}"
-
-            # Delete and recreate Flyway secret with correct values
-            echo "Recreating Flyway secret with correct database connection..."
-            oc delete secret ${RELEASE_NAME}-flyway --ignore-not-found=true
-            sleep 2
-
-            FLYWAY_URL="jdbc:postgresql://${DB_HOST}:5432/app"
-            echo "Creating Flyway secret with:"
-            echo "  Host: $DB_HOST"
-            echo "  URL: $FLYWAY_URL"
-            echo "  User: $DB_USER"
-
-            oc create secret generic ${RELEASE_NAME}-flyway \
-              --from-literal=FLYWAY_USER="$DB_USER" \
-              --from-literal=FLYWAY_PASSWORD="$DB_PASSWORD" \
-              --from-literal=FLYWAY_URL="$FLYWAY_URL"
-
-            echo "✅ Flyway secret created with correct database connection"
-
-            # Verify secrets were created correctly
-            echo ""
-            echo "Verifying secrets..."
-            echo "Flyway secret FLYWAY_URL:"
-            oc get secret ${RELEASE_NAME}-flyway -o jsonpath='{.data.FLYWAY_URL}' | base64 -d
-            echo ""
-            echo "pguser-app secret host:"
-            oc get secret ${RELEASE_NAME}-pguser-${DB_USER} -o jsonpath='{.data.host}' | base64 -d
-            echo ""
-
-      - name: Update secrets
-        uses: bcgov/action-oc-runner@10033668ef4374d9bb78149faa73e4ccda0e93dd
-        with:
-          oc_namespace: ${{ secrets.oc_namespace }}
-          oc_token: ${{ secrets.oc_token }}
-          oc_server: ${{ inputs.oc_server }}
-          commands: |
-            # Get release name
-            RELEASE="${{ inputs.release_name }}"
-
-            # Wait for backend secret to exist (created by helm)
-            echo "Waiting for backend secret to be created by helm..."
-            for i in {1..30}; do
-              if oc get secret $RELEASE-backend &>/dev/null; then
-                echo "✅ Backend secret found"
-                break
-              fi
-              echo "Attempt $i/30: Backend secret not found yet, waiting..."
-              sleep 2
-            done
-
-            if ! oc get secret $RELEASE-backend &>/dev/null; then
-              echo "❌ Backend secret was not created by helm"
-              exit 1
-            fi
-
-            # Update secrets with real values
-            echo "Updating backend secret with real SSO values..."
-
-            # Set appropriate login proxy URL based on environment
-            if [[ "${{ inputs.environment }}" == "prod" ]]; then
-              LOGIN_PROXY="loginproxy.gov.bc.ca"
-              ISSUER="https://loginproxy.gov.bc.ca/auth/realms/standard"
-              JWKS_URI="https://loginproxy.gov.bc.ca/auth/realms/standard/protocol/openid-connect/certs"
-            elif [[ "${{ inputs.environment }}" == "test" ]]; then
-              LOGIN_PROXY="test.loginproxy.gov.bc.ca"  
-              ISSUER="https://test.loginproxy.gov.bc.ca/auth/realms/standard"
-              JWKS_URI="https://test.loginproxy.gov.bc.ca/auth/realms/standard/protocol/openid-connect/certs"
-            else
-              LOGIN_PROXY="dev.loginproxy.gov.bc.ca"
-              ISSUER="https://dev.loginproxy.gov.bc.ca/auth/realms/standard"
-              JWKS_URI="https://dev.loginproxy.gov.bc.ca/auth/realms/standard/protocol/openid-connect/certs"
-            fi
-
-            # Update client ID
-            CLIENT_ID=$(echo -n "${{ secrets.bcgov_sso_api_client_id }}" | base64 -w0)
-            oc patch secret $RELEASE-backend \
-              -p '{"data":{"BCGOV_SSO_API_CLIENT_ID":"'$CLIENT_ID'"}}'
-
-            # Update client secret 
-            CLIENT_SECRET=$(echo -n "${{ secrets.bcgov_sso_api_client_secret }}" | base64 -w0)
-            oc patch secret $RELEASE-backend \
-              -p '{"data":{"BCGOV_SSO_API_CLIENT_SECRET":"'$CLIENT_SECRET'"}}'
-
-            # Update issuer
-            ISSUER_B64=$(echo -n "$ISSUER" | base64 -w0)
-            oc patch secret $RELEASE-backend \
-              -p '{"data":{"ISSUER":"'$ISSUER_B64'"}}'
-
-            # Update jwks uri
-            JWKS_URI_B64=$(echo -n "$JWKS_URI" | base64 -w0)
-            oc patch secret $RELEASE-backend \
-              -p '{"data":{"JWKS_URI":"'$JWKS_URI_B64'"}}'
-
-            echo "✅ Backend secret updated with real values"
-
-            # For PR and Dev environments, also update the database host in backend secret
-            if [[ "$RELEASE" == *"-pr-"* ]] || [[ "$RELEASE" == *"-dev"* ]]; then
-              echo "Updating backend database host for PR/Dev environment..."
-              DB_HOST="${RELEASE}-postgresql"
-              DB_HOST_B64=$(echo -n "$DB_HOST" | base64 -w0)
-
-              oc patch secret $RELEASE-backend \
-                -p '{"data":{"DATABASE_HOST":"'$DB_HOST_B64'"}}'
-
-              echo "✅ Backend database host updated to: $DB_HOST"
-            fi
-
-            # Restart backend deployment to pick up new secrets
-            if oc get deployment/$RELEASE-backend &>/dev/null; then
-              echo "Restarting backend deployment..."
-              oc rollout restart deployment/$RELEASE-backend
-              echo "Waiting for backend deployment to complete..."
-              oc rollout status deployment/$RELEASE-backend --timeout=300s
-            else
-              echo "Warning: Backend deployment not found: $RELEASE-backend"
-            fi
-
-            # Update frontend ConfigMap
-            echo "Updating frontend configuration..."
-
-            # Create frontend config JSON
-            CONFIG_JSON=$(cat <<EOF
-            {
-              "api": {
-                "baseUrl": "/api/v1"
-              }, 
-              "basicBceidBroker": "bceidboth",
-              "businessBceidBroker": "bceidboth",
-              "idirBroker": "azureidir",
-              "oidc": {
-                "clientId": "${{ secrets.vite_keycloak_client_id }}",
-                "logoutUrl": "https://$LOGIN_PROXY/auth/realms/standard/protocol/openid-connect/logout",
-                "realm": "standard",
-                "serverUrl": "https://$LOGIN_PROXY/auth"
-              }
-            }
-            EOF
-            )
-
-            # Update frontend ConfigMap
-            echo "Updating frontend configuration..."
-
-            # Determine the ConfigMap name
-            CONFIG_MAP_NAME="$RELEASE-frontend-config"
-
-            # Wait for ConfigMap to be created by Helm
-            echo "Waiting for ConfigMap to be created by Helm..."
-            for i in {1..30}; do
-              if oc get configmap $CONFIG_MAP_NAME &>/dev/null; then
-                echo "✅ ConfigMap found"
-                break
-              fi
-              echo "Attempt $i/30: ConfigMap not found yet, waiting..."
-              sleep 2
-            done
-
-            if ! oc get configmap $CONFIG_MAP_NAME &>/dev/null; then
-              echo "❌ ConfigMap was not created by Helm, attempting manual creation..."
-              # Fallback: create ConfigMap manually if Helm didn't
-              echo "$CONFIG_JSON" | oc create configmap $CONFIG_MAP_NAME --from-file=default.json=/dev/stdin || true
-            fi
-
-            # Delete and recreate ConfigMap to ensure it has latest config
-            echo "Removing old ConfigMap to ensure fresh config..."
-            oc delete configmap $CONFIG_MAP_NAME --ignore-not-found=true
-            sleep 2
-
-            # Create fresh ConfigMap with real values
-            echo "Creating fresh frontend ConfigMap with real values..."
-            echo "$CONFIG_JSON" | oc create configmap $CONFIG_MAP_NAME --from-file=default.json=/dev/stdin
-
-            echo "✅ Frontend ConfigMap created with real values"
-
-            # Restart frontend deployment to pick up new config
-            if oc get deployment/$RELEASE-frontend &>/dev/null; then
-              echo "Restarting frontend deployment..."
-              oc rollout restart deployment/$RELEASE-frontend
-              echo "Waiting for frontend deployment to complete..."
-              oc rollout status deployment/$RELEASE-frontend --timeout=300s
-            else
-              echo "Warning: Frontend deployment not found: $RELEASE-frontend"
-            fi
-
-            echo "✅ All secrets and configurations updated successfully"
-
-      # This step can now be removed or greatly simplified since passwords are synchronized in secret.yaml
-      # Keeping a minimal version just to verify the setup
-      - name: Verify Database Setup for PR and Dev Environments
-        if: contains(steps.vars.outputs.release, '-pr-') || contains(steps.vars.outputs.release, '-dev')
-        uses: bcgov/action-oc-runner@10033668ef4374d9bb78149faa73e4ccda0e93dd
-        with:
-          oc_namespace: ${{ secrets.oc_namespace }}
-          oc_token: ${{ secrets.oc_token }}
-          oc_server: ${{ inputs.oc_server }}
-          commands: |
-            set -euo pipefail
-
-            RELEASE_NAME="${{ steps.vars.outputs.release }}"
-            echo "Verifying database setup for: $RELEASE_NAME"
-
-            # Check that secrets exist
-            if oc get secret "${RELEASE_NAME}-backend" &>/dev/null; then
-              echo "✅ Backend secret exists"
-            else
-              echo "❌ Backend secret missing"
-              exit 1
-            fi
-
-            if oc get secret "${RELEASE_NAME}-flyway" &>/dev/null; then
-              echo "✅ Flyway secret exists"
-            else
-              echo "❌ Flyway secret missing"
-              exit 1
-            fi
-
-            # Check that Bitnami PostgreSQL is running
-            BITNAMI_SECRET="${RELEASE_NAME}-postgresql"
-            if oc get secret "$BITNAMI_SECRET" &>/dev/null; then
-              echo "✅ Bitnami PostgreSQL secret exists"
-            else
-              echo "⚠️  Bitnami secret not found yet (may still be creating)"
-            fi
-
-            echo "✅ Database setup verification complete"      - name: Update deployment status
-
-      - name: Log deployment status (fallback)
-        if: always() && !steps.deployment.outputs.deployment_id
-        run: |
-          echo "⚠️ Deployment tracking was not initialized properly"
-          echo "Job status: ${{ job.status }}"
-          echo "Environment: ${{ inputs.environment || 'dev' }}"
-          echo "URL: ${{ inputs.deployment_url }}"
+            # Completed pod cleanup
+            oc delete po --field-selector=status.phase==Succeeded || true

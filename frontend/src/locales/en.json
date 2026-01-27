@@ -8,7 +8,8 @@
       "nonNewStatusChange": "Requests can only have a status change from New. Start a new request instead",
       "nameExists": "Tenant Request cannot be approved because the name already exists",
       "genericRequestError": "Failed to update Tenant Request"
-    }
+    },
+    "addAnotherUser": "Add a user to this tenant | Add another user to this tenant | Add another user to this tenant"
   },
   "roles": {
     "role": "Roles | Role | Roles",
@@ -57,6 +58,7 @@
     "servicesLabelLower": "connected service | connected services",
     "sessionExpired": "Your session has expired. Please log in to continue.",
     "sessionExpiredDesc": "For security reasons, CSTAR automatically logs you out after a period of inactivity."
+    "duplicate": "Duplicate Entry"
   },
   "users": {
     "user": "Users | User | Users",

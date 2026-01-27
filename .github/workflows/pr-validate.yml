@@ -5,86 +5,28 @@ on:
     types: [edited, opened, synchronize, reopened, ready_for_review]
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.number }}
+  group: ${{ github.workflow }}-edit-${{ github.event.number }}
   cancel-in-progress: true
 
-permissions:
-  contents: read
-  pull-requests: write
+permissions: {}
 
 jobs:
   validate:
     name: Validate PR
-    if: ${{ !github.event.pull_request.draft }}
+    if: (! github.event.pull_request.draft)
+    permissions:
+      pull-requests: write
+    uses: bcgov/quickstart-openshift-helpers/.github/workflows/.pr-validate.yml@6d695dd755fa9255ea4bde335890516beb6f95e4 # v1.0.1
+    with:
+      markdown_links: |
+        - [Frontend](https://cstar-${{ github.event.number }}.apps.silver.devops.gov.bc.ca)
+        - [Backend](https://cstar-${{ github.event.number }}.apps.silver.devops.gov.bc.ca/api/v1)
+        - [OpenAPI](https://cstar-${{ github.event.number }}.apps.silver.devops.gov.bc.ca/api/v1/docs)
+
+  results:
+    name: Validate Results
+    if: always()
+    needs: [validate]
     runs-on: ubuntu-24.04
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-
-      - name: Validate PR title
-        env:
-          PR_TITLE: ${{ github.event.pull_request.title }}
-        run: |
-          # PR title is now safely in environment variable
-          # Check if title follows conventional commit format
-          if [[ ! "$PR_TITLE" =~ ^(feat|fix|docs|style|refactor|test|chore|perf|ci|build|revert)(\(.+\))?:\ .+ ]]; then
-            echo "❌ PR title doesn't follow conventional commit format"
-            echo "Expected format: type(scope): description"
-            echo "Example: feat(api): add new endpoint"
-            exit 1
-          else
-            echo "✅ PR title is valid"
-          fi
-
-      - name: Check for merge conflicts
-        run: |
-          git fetch origin ${{ github.event.pull_request.base.ref }}
-          if git merge-tree $(git merge-base HEAD FETCH_HEAD) HEAD FETCH_HEAD | grep -q "<<<<<<<"; then
-            echo "❌ Merge conflicts detected"
-            exit 1
-          else
-            echo "✅ No merge conflicts"
-          fi
-
-      - name: Check file changes
-        run: |
-          echo "Files changed in this PR:"
-          git diff --name-only origin/${{ github.event.pull_request.base.ref }}...${{ github.event.pull_request.head.sha }} || true
-
-      - name: Add deployment links comment
-        if: always()
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            try {
-              const comment = `### 🔗 Deployment Links
-
-              - [Frontend](https://${{ github.event.repository.name }}-pr-${{ github.event.number }}-frontend.apps.silver.devops.gov.bc.ca)
-              
-              *Note: Deployment will be available after the PR workflow completes successfully.*`;
-
-              // Check if comment already exists
-              const { data: comments } = await github.rest.issues.listComments({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: ${{ github.event.number }}
-              });
-
-              const botComment = comments.find(comment => 
-                comment.body && comment.body.includes('🔗 Deployment Links')
-              );
-
-              if (!botComment) {
-                await github.rest.issues.createComment({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  issue_number: ${{ github.event.number }},
-                  body: comment
-                });
-              }
-            } catch (error) {
-              console.log('Could not post comment:', error.message);
-            }
+      - run: echo "Success!"
