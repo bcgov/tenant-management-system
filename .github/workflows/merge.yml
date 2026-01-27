@@ -25,9 +25,6 @@ permissions: {}
 jobs:
   # https://github.com/bcgov/quickstart-openshift-helpers
   deploy-dev:
-    environment:
-      name: dev
-      url: https://cstar-dev.apps.silver.devops.gov.bc.ca
     name: Deploy (DEV)
     uses: ./.github/workflows/.deployer.yml
     secrets: inherit
@@ -53,9 +50,6 @@ jobs:
       target: dev
 
   deploy-test:
-    environment:
-      name: test
-      url: https://cstar-test.apps.silver.devops.gov.bc.ca
     name: Deploy (TEST)
     needs: [tests]
     uses: ./.github/workflows/.deployer.yml
@@ -75,9 +69,6 @@ jobs:
       tag: ${{ inputs.tag }}
 
   deploy-prod:
-    environment:
-      name: prod
-      url: https://cstar-prod.apps.silver.devops.gov.bc.ca
     name: Deploy (PROD)
     needs: [deploy-test]
     uses: ./.github/workflows/.deployer.yml
