@@ -93,8 +93,8 @@ jobs:
   deploy:
     name: Stack
     environment:
-      name:${{ inputs.environment || 'dev' }}
-      url: ${{ inputs.environment || steps.pr.outputs.pr || inputs.tag }}.apps.silver.devops.gov.bc.ca
+      name: ${{ inputs.environment || 'dev' }}
+      url: https://cstar-${{ inputs.environment || steps.pr.outputs.pr || inputs.tag }}.apps.silver.devops.gov.bc.ca
     runs-on: ubuntu-24.04
     outputs:
       tag: ${{ inputs.tag || steps.pr.outputs.pr }}
