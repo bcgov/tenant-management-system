@@ -256,6 +256,7 @@ export const useAuthStore = defineStore('auth', {
             this.user = null
             this.authenticated = false
             logger.error('Failed to refresh token', error)
+            window.location.href='/'
           })
           .finally(() => {
             this.scheduleTokenRefresh()

@@ -39,6 +39,7 @@ export function authenticatedAxios(timeout = 60000) {
         authStore.authenticated = false
         authStore.token = ''
         authStore.user = null
+        window.location.href='/'
         return Promise.reject(new Error('Network Error: Unable to reach the API server'))
       }
       return Promise.reject(
