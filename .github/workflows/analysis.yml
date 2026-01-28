@@ -47,9 +47,7 @@ jobs:
           sonar_args: >
             -Dsonar.exclusions=**/coverage/**,**/node_modules/**,**/*spec.ts
             -Dsonar.organization=bcgov-sonarcloud
-            -Dsonar.projectBaseDir=.
-            -Dsonar.projectKey=bcgov_tenant-management-system
-            -Dsonar.sources=backend/src
+            -Dsonar.projectKey=bcgov_tenant-management-system_backend
             -Dsonar.test.inclusions=**/*spec.ts
             -Dsonar.javascript.lcov.reportPaths=./coverage/lcov.info
           sonar_token: ${{ env.SONAR_TOKEN }}
@@ -75,9 +73,7 @@ jobs:
           sonar_args: >
             -Dsonar.exclusions=**/coverage/**,**/node_modules/**,**/*spec.ts
             -Dsonar.organization=bcgov-sonarcloud
-            -Dsonar.projectBaseDir=.
-            -Dsonar.projectKey=bcgov_tenant-management-system
-            -Dsonar.sources=frontend/src
+            -Dsonar.projectKey=bcgov_tenant-management-system_frontend
             -Dsonar.test.inclusions=**/*spec.ts
             -Dsonar.javascript.lcov.reportPaths=./coverage/lcov.info
           sonar_token: ${{ env.SONAR_TOKEN }}
