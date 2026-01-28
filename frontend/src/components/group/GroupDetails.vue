@@ -120,7 +120,7 @@ function toggleEdit() {
 </script>
 
 <template>
-  <v-row class="pa-4" no-gutters>
+  <v-row class="pa-4 bg-surface-light-gray" no-gutters>
     <!-- Form content -->
     <v-col cols="10">
       <v-form ref="form" v-model="isFormValid" @submit.prevent="handleSubmit">
