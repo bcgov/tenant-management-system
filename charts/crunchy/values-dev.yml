@@ -5,7 +5,7 @@ global:
 crunchy: # enable it for TEST and PROD, for PR based pipelines simply use single postgres
   enabled: true
   postgresVersion: 17
-  postGISVersion: null
+  postGISVersion: ~
   openshift: true
   imagePullPolicy: IfNotPresent
   # enable below to start a new crunchy cluster after disaster from a backed-up location, crunchy will choose the best place to recover from.
@@ -68,7 +68,7 @@ crunchy: # enable it for TEST and PROD, for PR based pipelines simply use single
       incrementalBackupSchedule: 0 0-7,9-23 * * * # every hour incremental
       volume:
         accessModes: "ReadWriteOnce"
-        storage: 100Mi
+        storage: 200Mi
         storageClassName: netapp-file-backup
 
     config:
