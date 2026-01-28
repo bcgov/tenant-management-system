@@ -22,7 +22,9 @@ jobs:
       oc_token: ${{ secrets.OC_TOKEN }}
     with:
       cleanup: helm
+      cleanup_name: cstar
       packages: backend frontend migrations
+      target: ${{ github.event.number }}
 
   cleanup_db: # TODO move it off to another action later.
     name: Remove DB User from Crunchy
@@ -34,4 +36,4 @@ jobs:
           oc_namespace: ${{ secrets.oc_namespace }}
           oc_token: ${{ secrets.oc_token }}
           oc_server: ${{ vars.oc_server }}
-          values_file: charts/crunchy/values.yml
+          values_file: charts/crunchy/values-dev.yml
