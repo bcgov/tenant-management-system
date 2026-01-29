@@ -33,6 +33,15 @@ export function authenticatedAxios(timeout = 60000) {
     // Error, return it directly. Otherwise, create a new Error with the string
     // representation and preserve the original.
     (error) => {
+      const authStore = useAuthStore()
+      if (error && error.code && error.code === "ERR_NETWORK") {
+        authStore.loggedOut = true
+        authStore.authenticated = false
+        authStore.token = ''
+        authStore.user = null
+        window.location.href='/'
+        return Promise.reject(new Error('Network Error: Unable to reach the API server'))
+      }
       return Promise.reject(
         error instanceof Error
           ? error
