@@ -47,7 +47,7 @@ vi.mock('@/utils/constants', () => ({
 }))
 
 import { useUserStore } from '@/stores/useUserStore'
-let userStore = null
+let userStore = useUserStore()
 
 describe('useUserStore', () => {
 
