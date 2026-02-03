@@ -92,7 +92,9 @@ permissions: {}
 jobs:
   deploy:
     name: Stack
-    environment: ${{ inputs.environment || 'dev' }}
+    environment:
+      name: ${{ inputs.environment || 'dev' }}
+      url: https://cstar-${{ inputs.environment || steps.pr.outputs.pr || inputs.tag }}.apps.silver.devops.gov.bc.ca
     runs-on: ubuntu-24.04
     outputs:
       tag: ${{ inputs.tag || steps.pr.outputs.pr }}
@@ -104,6 +106,7 @@ jobs:
         with:
           oc_namespace: ${{ secrets.OC_NAMESPACE }}
           oc_token: ${{ secrets.OC_TOKEN }}
+          release_name: cstar-db
           environment: ${{ inputs.environment }}
           values_file: charts/crunchy/values-${{ inputs.environment || 'dev' }}.yml
           triggers: ${{ inputs.db_triggers }}
@@ -121,7 +124,7 @@ jobs:
           tag=${{ inputs.tag || steps.pr.outputs.pr }}
 
           # Release name includes run numbers to ensure uniqueness
-          release=${{ github.event.repository.name }}-${{ inputs.environment || steps.pr.outputs.pr || inputs.tag }}
+          release=cstar-${{ inputs.environment || steps.pr.outputs.pr || inputs.tag }}
 
           # version, to support helm packaging for non-pr based releases (workflow_dispatch). default to 1.0.0+github run number
           version=1.0.0+${{ github.run_number }}

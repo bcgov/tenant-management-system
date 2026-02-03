@@ -1,6 +1,16 @@
 {
   "tasks": [
     {
+      "args": ["run", "lint"],
+      "command": "npm",
+      "group": "test",
+      "label": "Backend - Lint",
+      "options": {
+        "cwd": "${workspaceFolder}/backend"
+      },
+      "type": "shell"
+    },
+    {
       "args": ["run", "build"],
       "command": "npm",
       "group": "build",

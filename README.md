@@ -1,43 +1,39 @@
 [![MIT License](https://img.shields.io/github/license/bcgov/quickstart-openshift.svg)](/LICENSE)
 [![Lifecycle](https://img.shields.io/badge/Lifecycle-Experimental-339999)](https://github.com/bcgov/repomountie/blob/master/doc/lifecycle-badges.md)
-[![Merge](https://github.com/bcgov/quickstart-openshift/actions/workflows/merge.yml/badge.svg)](https://github.com/bcgov/quickstart-openshift/actions/workflows/merge.yml)
-[![Analysis](https://github.com/bcgov/quickstart-openshift/actions/workflows/analysis.yml/badge.svg)](https://github.com/bcgov/quickstart-openshift/actions/workflows/analysis.yml)
-[![Scheduled](https://github.com/bcgov/quickstart-openshift/actions/workflows/scheduled.yml/badge.svg)](https://github.com/bcgov/quickstart-openshift/actions/workflows/scheduled.yml)
+[![Merge](https://github.com/bcgov/tenant-management-system/actions/workflows/merge.yml/badge.svg)](https://github.com/bcgov/tenant-management-system/actions/workflows/merge.yml)
+[![Analysis](https://github.com/bcgov/tenant-management-system/actions/workflows/analysis.yml/badge.svg)](https://github.com/bcgov/tenant-management-system/actions/workflows/analysis.yml)
+[![Scheduled](https://github.com/bcgov/tenant-management-system/actions/workflows/scheduled.yml/badge.svg)](https://github.com/bcgov/tenant-management-system/actions/workflows/scheduled.yml)
 
-# Tenant Management System
+# Connected Services, Team Access & Roles (CSTAR)
 
-The Tenant Management System (TMS) manages the tenants using multitenanted
-common components.
+The Connected Services, Team Access & Roles (CSTAR) manages tenants who use
+multitenanted common components.
 
-# QuickStart for OpenShift
+## Pull Request-Based Workflows
 
-## Pull Request-Based Workflows with Sample Stack
-
-This repository provides a template to rapidly deploy a modern web application stack to the BC Government's OpenShift platform using [GitHub Actions](https://github.com/bcgov/quickstart-openshift/actions), incorporating best practices for CI/CD, security, and observability. By hitting the ground running we can save weeks-to-months of development time plus receive regular updates and features.
+This repository is based on the [quickstart-openshift](https://github.com/bcgov/quickstart-openshift) repository that provides a template to rapidly deploy a modern web application stack to the BC Government's OpenShift platform using [GitHub Actions](https://github.com/bcgov/tenant-management-system/actions), incorporating best practices for CI/CD, security, and observability. By hitting the ground running we can save weeks-to-months of development time plus receive regular updates and features.
 
 Includes:
 
 - Pull Request-based pipeline
-- Sandboxed development environments
-- Gated/controlled production deployments (optional)
+- Sandboxed Pull Request deployments
+- Gated/controlled test and production deployments
 - Container publishing (ghcr.io) and importing (OpenShift)
 - Security, vulnerability, infrastructure, and container scan tools
 - Automatic dependency patching available from [bcgov/renovate-config](https://github.com/bcgov/renovate-config)
 - Enforced code reviews and workflow jobs (pass|fail)
 - Helm Package Manager
 - Prometheus Metrics export from Backend/Frontend
-- Resource Tuning with Horizontal Pod Autoscaler (TEST/PROD only)
+- Resource Tuning with Horizontal Pod Autoscaler
 - Affinity and anti-affinity for Scheduling on different worker nodes
 - Rolling updates with zero downtime in PROD
-- Database Migrations with Flyway
 - Pod disruption budgets for high availability
 - Self-healing through probes/checks (startup, readiness, liveness)
 - Point the long-lived DEMO route to PRs by using the `demo` label
 - Sample application stack:
-  - Database: Crunchy (Postgres, PostGIS), backups, Flyway
-  - Frontend: TypeScript, Caddy Server
-  - Backend: TypeScript, Nest.js
-  - Alternative backend examples - see [Alternative Backends](#alternative-backends)
+  - Database: Crunchy (Postgres), backups
+  - Frontend: TypeScript, Vue.js, Caddy Server
+  - Backend: TypeScript, Express
 
 # Setup
 
@@ -53,14 +49,6 @@ The following are required:
   - Join the bcgov organization using [these instructions](https://developer.gov.bc.ca/docs/default/component/bc-developer-guide/use-github-in-bcgov/bc-government-organizations-in-github/#directions-to-sign-up-and-link-your-account-for-bcgov).
 - [ ] OpenShift project namespaces:
   - [BCGov signup](https://registry.developer.gov.bc.ca)
-
-## Using this Template
-
-Create a new repository using this repository as a template.
-
-- Verify bcgov/quickstart-openshift is selected under Repository template
-
-![](./.github/graphics/template.png)
 
 ## Secrets, Variables and Environments
 
@@ -467,8 +455,9 @@ Runs on pull request close or merge.
 Runs on merge to main branch.
 
 - Code scanning and reporting to GitHub Security overview
-- Zero-downtime\* TEST deployment
+- Zero-downtime\* DEV deployment
 - Penetration tests on TEST deployment (optional)
+- Zero-downtime\* TEST deployment
 - Zero-downtime\* PROD deployment
 - Labels successful deployment images as PROD
 
@@ -504,51 +493,43 @@ Please note that the label must be manually created using GitHub's web interface
 
 # App Stack
 
-Frontend (JavaScript/TypeScript)
+Frontend (TypeScript)
 
-[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=quickstart-openshift_frontend&metric=bugs)](https://sonarcloud.io/summary/new_code?id=quickstart-openshift_frontend)
-[![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=quickstart-openshift_frontend&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=quickstart-openshift_frontend)
-[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=quickstart-openshift_frontend&metric=coverage)](https://sonarcloud.io/summary/new_code?id=quickstart-openshift_frontend)
-[![Duplicated Lines](https://sonarcloud.io/api/project_badges/measure?project=quickstart-openshift_frontend&metric=duplicated_lines_density)](https://sonarcloud.io/summary/new_code?id=quickstart-openshift_frontend)
-[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=quickstart-openshift_frontend&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=quickstart-openshift_frontend)
-[![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=quickstart-openshift_frontend&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=quickstart-openshift_frontend)
-[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=quickstart-openshift_frontend&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=quickstart-openshift_frontend)
-[![Technical Debt](https://sonarcloud.io/api/project_badges/measure?project=quickstart-openshift_frontend&metric=sqale_index)](https://sonarcloud.io/summary/new_code?id=quickstart-openshift_frontend)
-[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=quickstart-openshift_frontend&metric=vulnerabilities)](https://sonarcloud.io/summary/new_code?id=quickstart-openshift_frontend)
+[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system_frontend&metric=bugs)](https://sonarcloud.io/summary/new_code?id=bcgov_tenant-management-system_frontend)
+[![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system_frontend&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=bcgov_tenant-management-system_frontend)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system_frontend&metric=coverage)](https://sonarcloud.io/summary/new_code?id=bcgov_tenant-management-system_frontend)
+[![Duplicated Lines](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system_frontend&metric=duplicated_lines_density)](https://sonarcloud.io/summary/new_code?id=bcgov_tenant-management-system_frontend)
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system_frontend&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=bcgov_tenant-management-system_frontend)
+[![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system_frontend&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=bcgov_tenant-management-system_frontend)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system_frontend&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=bcgov_tenant-management-system_frontend)
+[![Technical Debt](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system_frontend&metric=sqale_index)](https://sonarcloud.io/summary/new_code?id=bcgov_tenant-management-system_frontend)
+[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system_frontend&metric=vulnerabilities)](https://sonarcloud.io/summary/new_code?id=bcgov_tenant-management-system_frontend)
 
-Backend (JavaScript/TypeScript)
+Backend (TypeScript)
 
-[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=quickstart-openshift_backend&metric=bugs)](https://sonarcloud.io/summary/new_code?id=quickstart-openshift_backend)
-[![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=quickstart-openshift_backend&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=quickstart-openshift_backend)
-[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=quickstart-openshift_backend&metric=coverage)](https://sonarcloud.io/summary/new_code?id=quickstart-openshift_backend)
-[![Duplicated Lines](https://sonarcloud.io/api/project_badges/measure?project=quickstart-openshift_backend&metric=duplicated_lines_density)](https://sonarcloud.io/summary/new_code?id=quickstart-openshift_backend)
-[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=quickstart-openshift_backend&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=quickstart-openshift_backend)
-[![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=quickstart-openshift_backend&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=quickstart-openshift_backend)
-[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=quickstart-openshift_backend&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=quickstart-openshift_backend)
-[![Technical Debt](https://sonarcloud.io/api/project_badges/measure?project=quickstart-openshift_backend&metric=sqale_index)](https://sonarcloud.io/summary/new_code?id=quickstart-openshift_backend)
-[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=quickstart-openshift_backend&metric=vulnerabilities)](https://sonarcloud.io/summary/new_code?id=quickstart-openshift_backend)
+[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system_backend&metric=bugs)](https://sonarcloud.io/summary/new_code?id=bcgov_tenant-management-system_backend)
+[![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system_backend&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=bcgov_tenant-management-system_backend)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system_backend&metric=coverage)](https://sonarcloud.io/summary/new_code?id=bcgov_tenant-management-system_backend)
+[![Duplicated Lines](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system_backend&metric=duplicated_lines_density)](https://sonarcloud.io/summary/new_code?id=bcgov_tenant-management-system_backend)
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system_backend&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=bcgov_tenant-management-system_backend)
+[![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system_backend&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=bcgov_tenant-management-system_backend)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system_backend&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=bcgov_tenant-management-system_backend)
+[![Technical Debt](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system_backend&metric=sqale_index)](https://sonarcloud.io/summary/new_code?id=bcgov_tenant-management-system_backend)
+[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system_backend&metric=vulnerabilities)](https://sonarcloud.io/summary/new_code?id=bcgov_tenant-management-system_backend)
 
-## Starter
+## Stack
 
-The starter stack includes a frontend (React, Bootstrap, Vite, Caddy), backend (Nest/Node) and Postgres or PostGIS database. See subfolder for source, including Dockerfiles and OpenShift templates. Alternative backends are available.
+The stack includes a frontend (Vue.js, Vite, Caddy), backend (Express, Node) and Postgres database. See subfolder for source, including Dockerfiles and OpenShift templates.
 
 Features:
 
 - [TypeScript](https://www.typescriptlang.org/) strong-typing for JavaScript
-- [NestJS](https://docs.nestjs.com) Nest/Node backend and frontend
-- [Flyway](https://flywaydb.org/) database migrations
-- [Crunchy](https://www.crunchydata.com/products/crunchy-postgresql-for-kubernetes) Postgres/PostGIS Database
-
-PostGIS is enabled by default for geospatial data support when postGISVersion value is provided. To switch to standard PostgreSQL, update the `postGISVersion` field in the [Crunchy Helm chart values](./charts/crunchy/values.yml) to `~`. This disables PostGIS extensions, making it a plain PostgreSQL setup.
-
-```yaml
-# Example: Switching to PostgreSQL
-postGISVersion: ~
-```
+- [Express](https://expressjs.com/) Nest/Node backend and frontend
+- [Crunchy](https://www.crunchydata.com/products/crunchy-postgresql-for-kubernetes) Postgres Database
 
 ## Crunchy Database
 
-Crunchy is the default choice for high availability (HA) Postgres/PostGIS databases in BC Government.
+Crunchy is the default choice for high availability (HA) Postgres databases in BC Government.
 
 ### Key Features
 
@@ -582,13 +563,6 @@ For advanced configuration, see the [re-usable GitHub Action](https://github.com
 If you encounter issues, check out the [Troubleshooting Guide](https://github.com/bcgov/crunchy-postgres/blob/main/Troubleshoot.md) for quick solutions.
 
 Need more help? Join the discussion in the [CrunchyDB Rocket.Chat Channel](https://chat.developer.gov.bc.ca/channel/crunchydb) to get support from the community and experts.
-
-## Alternative Backends
-
-The sample Java, Python and Go backends repository has been archived, but we have lots of other great examples of active projects you can learn from!
-
-- [NR-RFC-AlertAuthoring - Python with FastAPI and Alembic](https://github.com/bcgov/nr-rfc-alertauthoring)
-- [QuickStart OpenShift Backends](https://github.com/bcgov/quickstart-openshift-backends)
 
 ## SchemaSpy
 
