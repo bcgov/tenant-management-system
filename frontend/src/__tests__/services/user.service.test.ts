@@ -378,4 +378,60 @@ describe('userService', () => {
     })
   })
 
+  describe('_searchBCeIDUsers', () => {
+    it('should return BCeID users for email search', async () => {
+      const searchValue = 'bob.johnson@gov.bc.ca'
+      mockGet.mockResolvedValueOnce({ data: { data: fakeBceidUsers } })
+
+      const result = await userService._searchBceidUsers('email', searchValue)
+
+      expect(result).toEqual(fakeBceidUsers)
+      expect(mockGet).toHaveBeenCalledWith('/users/bcgovssousers/bceid/search', {
+        params: { email: searchValue, bceidType: 'both' },
+      })
+    })
+
+    it('should return bceid users for displayName search', async () => {
+      const searchValue = 'Bob'
+      mockGet.mockResolvedValueOnce({ data: { data: fakeBceidUsers } })
+
+      const result = await userService._searchBceidUsers(
+        'displayName',
+        searchValue,
+      )
+
+      expect(result).toEqual(fakeBceidUsers)
+      expect(mockGet).toHaveBeenCalledWith('/users/bcgovssousers/bceid/search', {
+        params: { displayName: searchValue, bceidType: 'both' },
+      })
+    })
+
+    it('should return empty array when no users found', async () => {
+      const searchValue = 'nonexistent@gov.bc.ca'
+      mockGet.mockResolvedValueOnce({ data: { data: [] } })
+
+      const result = await userService._searchBceidUsers('email', searchValue)
+
+      expect(result).toEqual([])
+      expect(mockGet).toHaveBeenCalledWith('/users/bcgovssousers/bceid/search', {
+        params: { email: searchValue, bceidType: 'both'  },
+      })
+    })
+
+    it('should log and rethrow errors', async () => {
+      const searchValue = 'test@gov.bc.ca'
+      const error = new Error('Search failed')
+      mockGet.mockRejectedValueOnce(error)
+
+      await expect(
+        userService._searchBceidUsers('email', searchValue),
+      ).rejects.toThrow(error)
+
+      expect(mockedUtils.logApiError).toHaveBeenCalledWith(
+        'Error searching BCeID users:',
+        error,
+      )
+    })
+  })
+
 })
