@@ -6,7 +6,7 @@ on:
   pull_request:
     types: [opened, reopened, synchronize, ready_for_review, converted_to_draft]
   schedule:
-    - cron: "0 11 * * 0" # 3 AM PST = 12 PM UDT, runs sundays
+    - cron: '0 11 * * 0' # 3 AM PST = 12 PM UDT, runs sundays
   workflow_dispatch:
 
 concurrency:
@@ -43,7 +43,7 @@ jobs:
             npm run lint
             npm run test:cov
           dir: backend
-          node_version: "22"
+          node_version: '22'
           sonar_args: >
             -Dsonar.exclusions=**/coverage/**,**/node_modules/**,**/*spec.ts
             -Dsonar.organization=bcgov-sonarcloud
@@ -70,14 +70,14 @@ jobs:
             npm run lint
             npm run test:cov
           dir: frontend
-          node_version: "22"
+          node_version: '22'
           sonar_args: >
             -Dsonar.coverage.exclusions=**/types/**
-            -Dsonar.exclusions=**/coverage/**,**/node_modules/**,**/types/**,**/*.config.ts,**/*spec.ts
+            -Dsonar.exclusions=**/coverage/**,**/node_modules/**,**/types/**,**/*.config.ts,**/*test.ts
             -Dsonar.organization=bcgov-sonarcloud
             -Dsonar.projectKey=bcgov_tenant-management-system_frontend
             -Dsonar.projectName=tenant-management-system_frontend
-            -Dsonar.test.inclusions=**/*spec.ts
+            -Dsonar.test.inclusions=**/*test.ts
             -Dsonar.javascript.lcov.reportPaths=./coverage/lcov.info
           sonar_token: ${{ env.SONAR_TOKEN }}
           supply_scan: true
@@ -97,18 +97,18 @@ jobs:
       - name: Run Trivy vulnerability scanner in repo mode
         uses: aquasecurity/trivy-action@b6643a29fecd7f34b3597bc6acb0a98b03d33ff8 # 0.33.1
         with:
-          format: "sarif"
-          output: "trivy-results.sarif"
-          trivy-config: ".trivy.yaml"
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          trivy-config: '.trivy.yaml'
           ignore-unfixed: true
-          scan-type: "fs"
-          scanners: "vuln,secret,misconfig"
-          severity: "CRITICAL,HIGH"
+          scan-type: 'fs'
+          scanners: 'vuln,secret,misconfig'
+          severity: 'CRITICAL,HIGH'
 
       - name: Upload Trivy scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v4
         with:
-          sarif_file: "trivy-results.sarif"
+          sarif_file: 'trivy-results.sarif'
 
   results:
     name: Analysis Results
