@@ -14,7 +14,7 @@ const logoutURL = computed(() => authStore.logout())
         <h2>{{ $t('landing.bceidWelcome') }}</h2>
         <p class="max-w-text">{{ $t('landing.bceidWelcomeDesc') }}</p>
         <div class="my-4">
-          <v-btn color="primary normal-case" :href="logoutURL">{{ $t('general.logout') }}</v-btn>
+          <v-btn :href="logoutURL" color="primary normal-case">{{ $t('general.logout') }}</v-btn>
         </div>
         <p><a>{{ $t('landing.learnMore') }}</a></p>
       </div>
