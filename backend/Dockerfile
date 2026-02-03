@@ -31,10 +31,6 @@ COPY . .
 # Set proper permissions
 RUN chmod -R 755 /app/tms-api/
 
-# Create logs directory with proper permissions
-RUN mkdir -p /app/tms-api/logs && \
-    chmod -R 777 /app/tms-api/logs
-
 EXPOSE 4144
 
 ENTRYPOINT [ "sh", "start_api.sh" ]
