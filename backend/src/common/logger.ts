@@ -1,5 +1,4 @@
 import winston from 'winston';
-import 'winston-daily-rotate-file';
 import rTracer from 'cls-rtracer';
 import * as dotenv from 'dotenv';
 dotenv.config();
@@ -30,19 +29,6 @@ const winstonLogger = winston.createLogger({
         colorize(),
         logFormat
       )
-    }),
-    new winston.transports.DailyRotateFile({
-      filename: 'logs/tms-api-%DATE%.log',
-      datePattern: 'YYYY-MM-DD',
-      maxSize: '20m',
-      maxFiles: '14d'
-    }),    
-    new winston.transports.DailyRotateFile({
-      filename: 'logs/tms-api-error-%DATE%.log',
-      datePattern: 'YYYY-MM-DD',
-      maxSize: '20m',
-      maxFiles: '14d',
-      level: 'error'
     })
   ]
 });
