@@ -152,13 +152,13 @@ export class TMRepository {
         // }
 
         const groupsQuery = this.manager
-            .createQueryBuilder(Group, 'group')
-            .leftJoin('group.tenant', 'tenant')
-            .leftJoin('TenantSharedService', 'tss', 'tenant.id = tss.tenant_id')
-            .leftJoin('SharedService', 'ss', 'tss.shared_service_id = ss.id')
-            .where('group.tenant.id = :tenantId', { tenantId })
+            .createQueryBuilder(Group, 'grp')
+            .leftJoin('grp.tenant', 'ten')
+            .leftJoin(TenantSharedService, 'tss', 'tss.tenant_id = ten.id')
+            .leftJoin('tss.sharedService', 'ss')
+            .where('grp.tenant.id = :tenantId', { tenantId })
             .andWhere(
-                ':jwtAudience = :tmsAudience OR (:jwtAudience != :tmsAudience AND ss.client_identifier = :jwtAudience AND tss.is_deleted = :tssDeleted AND ss.is_active = :ssActive)',
+                ':jwtAudience = :tmsAudience OR (:jwtAudience != :tmsAudience AND ss.clientIdentifier = :jwtAudience AND tss.isDeleted = :tssDeleted AND ss.isActive = :ssActive)',
                 { 
                     jwtAudience, 
                     tmsAudience: TMS_AUDIENCE, 
@@ -169,15 +169,14 @@ export class TMRepository {
 
         if (jwtAudience === TMS_AUDIENCE && ssoUserId) {
             groupsQuery
-                .innerJoin('tenant.users', 'tu')
+                .innerJoin('ten.users', 'tu')
                 .innerJoin('tu.ssoUser', 'su')
                 .andWhere('su.ssoUserId = :ssoUserId', { ssoUserId })
                 .andWhere('tu.isDeleted = :isDeleted', { isDeleted: false });
         } else {
             groupsQuery
-                .leftJoin('SharedServiceRole', 'ssr', 'ss.id = ssr.sharedService.id')
-                .leftJoin('GroupSharedServiceRole', 'gssr', 
-                    'ssr.id = gssr.sharedServiceRole.id AND group.id = gssr.group.id')
+                .leftJoin('ss.roles', 'ssr')
+                .leftJoin(GroupSharedServiceRole, 'gssr', 'gssr.group_id = grp.id AND gssr.shared_service_role_id = ssr.id')
                 .andWhere('gssr.isDeleted = :gssrDeleted', { gssrDeleted: false })
                 .andWhere('ssr.isDeleted = :ssrDeleted', { ssrDeleted: false })
                 .distinct(true); 
