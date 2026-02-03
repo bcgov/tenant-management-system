@@ -73,7 +73,7 @@ jobs:
           node_version: "22"
           sonar_args: >
             -Dsonar.coverage.exclusions=**/types/**
-            -Dsonar.exclusions=**/coverage/**,**/node_modules/**,**/types/**,**/*.config.ts
+            -Dsonar.exclusions=**/coverage/**,**/node_modules/**,**/types/**,**/*.config.ts,**/*spec.ts
             -Dsonar.organization=bcgov-sonarcloud
             -Dsonar.projectKey=bcgov_tenant-management-system_frontend
             -Dsonar.projectName=tenant-management-system_frontend
