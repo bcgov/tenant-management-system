@@ -12,6 +12,8 @@ import logger from '../common/logger'
 import { TMSRepository } from './tms.repository'
 import { TMSConstants } from '../common/tms.constants'
 import { GroupSharedServiceRole } from '../entities/GroupSharedServiceRole'
+import { SharedServiceRole } from '../entities/SharedServiceRole'
+import { TenantSharedService } from '../entities/TenantSharedService'
 import { SSOUser } from '../entities/SSOUser'
 
 export class TMRepository {
@@ -79,7 +81,7 @@ export class TMRepository {
         });
 
         if (groupResponse && (groupResponse as any).createdBy && (groupResponse as any).createdBy !== 'system') {
-            const creator: any = await this.manager.findOne('SSOUser', { where: { ssoUserId: (groupResponse as any).createdBy } });
+            const creator: any = await this.manager.findOne(SSOUser, { where: { ssoUserId: (groupResponse as any).createdBy } });
             (groupResponse as any).createdBy = creator?.displayName || (groupResponse as any).createdBy
         }
 
@@ -653,7 +655,7 @@ export class TMRepository {
         }
             
         if (group.createdBy) {
-            const creator: any = await this.manager.findOne('SSOUser', { where: { ssoUserId: group.createdBy } });
+            const creator: any = await this.manager.findOne(SSOUser, { where: { ssoUserId: group.createdBy } });
             group.createdBy = creator?.userName || group.createdBy;
         }
 
@@ -686,7 +688,7 @@ export class TMRepository {
         const groupId = req.params.groupId
         
         const group: any = await this.manager
-            .createQueryBuilder('Group', 'group')
+            .createQueryBuilder(Group, 'group')
             .where('group.id = :groupId', { groupId })
             .andWhere('group.tenant.id = :tenantId', { tenantId })
             .getOne();
@@ -696,7 +698,7 @@ export class TMRepository {
         }
       
         const result = await this.manager
-            .createQueryBuilder('SharedServiceRole', 'ssr')
+            .createQueryBuilder(SharedServiceRole, 'ssr')
             .leftJoinAndSelect('ssr.sharedService', 'ss')
             .leftJoin('TenantSharedService', 'tss', 'ss.id = tss.sharedService.id')
             .leftJoin('GroupSharedServiceRole', 'gssr', 
@@ -760,7 +762,7 @@ export class TMRepository {
         await this.manager.transaction(async(transactionEntityManager) => {
 
             const group: any = await transactionEntityManager
-                .createQueryBuilder('Group', 'group')
+                .createQueryBuilder(Group, 'group')
                 .where('group.id = :groupId', { groupId })
                 .andWhere('group.tenant.id = :tenantId', { tenantId })
                 .getOne();
@@ -781,7 +783,7 @@ export class TMRepository {
             });
 
             const tenantSharedServices = await transactionEntityManager
-                .createQueryBuilder('TenantSharedService', 'tss')
+                .createQueryBuilder(TenantSharedService, 'tss')
                 .leftJoinAndSelect('tss.sharedService', 'ss')
                 .where('tss.tenant.id = :tenantId', { tenantId })
                 .andWhere('tss.sharedService.id IN (:...sharedServiceIds)', { sharedServiceIds })
@@ -802,7 +804,7 @@ export class TMRepository {
             }
 
             const sharedServiceRoles = await transactionEntityManager
-                .createQueryBuilder('SharedServiceRole', 'ssr')
+                .createQueryBuilder(SharedServiceRole, 'ssr')
                 .leftJoinAndSelect('ssr.sharedService', 'ss')
                 .where('ssr.id IN (:...sharedServiceRoleIds)', { sharedServiceRoleIds })
                 .andWhere('ssr.isDeleted = :isDeleted', { isDeleted: false })
@@ -824,7 +826,7 @@ export class TMRepository {
             }
 
             const existingAssignments = await transactionEntityManager
-                .createQueryBuilder('GroupSharedServiceRole', 'gssr')
+                .createQueryBuilder(GroupSharedServiceRole, 'gssr')
                 .leftJoinAndSelect('gssr.sharedServiceRole', 'ssr')
                 .where('gssr.group.id = :groupId', { groupId })
                 .andWhere('gssr.sharedServiceRole.id IN (:...sharedServiceRoleIds)', { sharedServiceRoleIds })
@@ -911,7 +913,7 @@ export class TMRepository {
         }
 
         const result = await this.manager
-            .createQueryBuilder('GroupUser', 'gu')
+            .createQueryBuilder(GroupUser, 'gu')
             .leftJoinAndSelect('gu.group', 'group')
             .leftJoinAndSelect('group.sharedServiceRoles', 'gssr')
             .leftJoinAndSelect('gssr.sharedServiceRole', 'ssr')
@@ -980,7 +982,7 @@ export class TMRepository {
         }
 
         const result = await this.manager
-            .createQueryBuilder('GroupUser', 'gu')
+            .createQueryBuilder(GroupUser, 'gu')
             .leftJoinAndSelect('gu.group', 'group')
             .leftJoinAndSelect('group.sharedServiceRoles', 'gssr')
             .leftJoinAndSelect('gssr.sharedServiceRole', 'ssr')
