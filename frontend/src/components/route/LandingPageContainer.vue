@@ -17,7 +17,11 @@ const businessBceidHint = computed(() =>
 
 watchEffect(() => {
   if (authStore.isAuthenticated) {
-    router.push('/tenants')
+    if (authStore.userSource === 'IDIR') {
+      router.push('/tenants')
+      return
+    }
+    router.push('/bceid')
   }
 })
 </script>

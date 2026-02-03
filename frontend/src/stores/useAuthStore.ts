@@ -8,6 +8,11 @@ import { ROLES } from '@/utils/constants'
 
 let refreshTimer: number | undefined
 
+enum UserSource {
+  IDIR = 'IDIR',
+  BCeID = 'BCeID',
+}
+
 /**
  * Pinia store for managing user authentication state via Keycloak.
  *
@@ -55,6 +60,8 @@ export const useAuthStore = defineStore('auth', {
      * not yet available.
      */
     user: null as User | null,
+
+    userSource: UserSource.IDIR,
   }),
 
   getters: {
@@ -158,6 +165,9 @@ export const useAuthStore = defineStore('auth', {
         if (authenticated) {
           this.token = this.keycloak.token ?? ''
           this.user = this.parseUserFromToken()
+          this.userSource = this.keycloak.tokenParsed?.identity_provider?.toLowerCase().includes('idir')
+            ? UserSource.IDIR
+            : UserSource.BCeID
           this.scheduleTokenRefresh()
           logger.info('Keycloak authenticated')
         }
@@ -209,7 +219,7 @@ export const useAuthStore = defineStore('auth', {
         return null
       }
 
-      const ssoUser = new SsoUser(
+      let ssoUser = new SsoUser(
         parsed.idir_user_guid,
         parsed.idir_username,
         parsed.given_name,
@@ -218,7 +228,22 @@ export const useAuthStore = defineStore('auth', {
         parsed.email,
       )
 
-      return new User(parsed.idir_user_guid, ssoUser, [])
+      const source = parsed.identity_provider?.toLowerCase().includes('idir')
+            ? UserSource.IDIR
+            : UserSource.BCeID
+      
+      if (source === UserSource.BCeID) {
+        ssoUser = new SsoUser(
+          parsed.bceid_user_guid,
+          parsed.bceid_username,
+          parsed.given_name,
+          parsed.family_name,
+          parsed.display_name,
+          parsed.email,
+        )
+      }
+
+      return new User(source === UserSource.IDIR ? parsed.idir_user_guid : parsed.bceid_user_guid, ssoUser, [])
     },
 
     /**

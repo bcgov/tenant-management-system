@@ -39,6 +39,10 @@ vi.mock('@/utils/constants', () => ({
     FIRST_NAME: { value: 'firstName' },
     LAST_NAME: { value: 'lastName' },
   },
+  BCeID_SEARCH_TYPE: {
+    EMAIL: { value: 'email' },
+    DISPLAY_NAME: { value: 'displayName' },
+  },
 }))
 
 import { userService } from '@/services/user.service'
@@ -60,6 +64,25 @@ describe('userService', () => {
       lastName: 'Smith',
       displayName: 'Smith, Jane',
       userName: 'JSMITH',
+    },
+  ]
+
+  const fakeBceidUsers = [
+    {
+      ssoUserId: '456',
+      email: 'bob.johnson@gov.bc.ca',
+      firstName: 'Bob',
+      lastName: 'Johnson',
+      displayName: 'Johnson, Bob',
+      userName: 'BJOHNSON',
+    },
+    {
+      ssoUserId: '457',
+      email: 'alice.wilson@gov.bc.ca',
+      firstName: 'Alice',
+      lastName: 'Wilson',
+      displayName: 'Wilson, Alice',
+      userName: 'AWILSON',
     },
   ]
 
@@ -294,4 +317,65 @@ describe('userService', () => {
       )
     })
   })
+
+
+  //bceid searches
+  describe('searchBCeIDDisplayName', () => {
+    it('should search BCeID users by display name', async () => {
+      const displayName = 'Smith'
+      const filteredUsers = [fakeBceidUsers[1]]
+      mockGet.mockResolvedValueOnce({ data: { data: filteredUsers } })
+
+      const result = await userService.searchBCeIDDisplayName(displayName)
+
+      expect(result).toEqual(filteredUsers)
+      expect(mockGet).toHaveBeenCalledWith('/users/bcgovssousers/bceid/search', {
+        params: { displayName: displayName, bceidType: 'both'},
+      })
+    })
+
+    it('should handle case-insensitive searches', async () => {
+      const displayName = 'smith'
+      mockGet.mockResolvedValueOnce({ data: { data: fakeBceidUsers } })
+
+      const result = await userService.searchBCeIDDisplayName(displayName)
+
+      expect(result).toEqual(fakeBceidUsers)
+      expect(mockGet).toHaveBeenCalledWith('/users/bcgovssousers/bceid/search', {
+        params: { displayName: displayName, bceidType: 'both' },
+      })
+    })
+
+    it('should handle partial name searches', async () => {
+      const partialName = 'Sm'
+      mockGet.mockResolvedValueOnce({ data: { data: fakeBceidUsers } })
+
+      const result = await userService.searchBCeIDDisplayName(partialName)
+
+      expect(result).toEqual(fakeBceidUsers)
+      expect(mockGet).toHaveBeenCalledWith('/users/bcgovssousers/bceid/search', {
+        params: { displayName: partialName, bceidType: 'both' },
+      })
+    })
+
+    it('should return empty array for no matches', async () => {
+      const displayName = 'NonexistentName'
+      mockGet.mockResolvedValueOnce({ data: { data: [] } })
+
+      const result = await userService.searchBCeIDDisplayName(displayName)
+
+      expect(result).toEqual([])
+    })
+
+    it('should propagate errors from _searchBCeIDUsers', async () => {
+      const displayName = 'Smith'
+      const error = new Error('Search failed')
+      mockGet.mockRejectedValueOnce(error)
+
+      await expect(userService.searchBCeIDDisplayName(displayName)).rejects.toThrow(
+        error,
+      )
+    })
+  })
+
 })

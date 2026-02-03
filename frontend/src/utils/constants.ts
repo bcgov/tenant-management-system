@@ -24,6 +24,26 @@ export type IdirSearchType =
   (typeof IDIR_SEARCH_TYPE)[keyof typeof IDIR_SEARCH_TYPE]['value']
 
 /**
+ * Available search field types for BCeID user lookups
+ *
+ * Defines the searchable fields when querying BCeID (British Columbia Electronic
+ * Identity) users, each with a human-readable title and corresponding API value.
+ */
+export const BCeID_SEARCH_TYPE = Object.freeze({
+  EMAIL: { title: 'Email', value: 'email' },
+  DISPLAY_NAME: { title: 'Name', value: 'displayName' },
+})
+
+/**
+ * Type definition for IDIR search types
+ *
+ * Represents the possible values for IDIR user search fields: 'email',
+ * 'firstName', 'lastName'
+ */
+export type BCeIDSearchType =
+  (typeof BCeID_SEARCH_TYPE)[keyof typeof BCeID_SEARCH_TYPE]['value']
+
+/**
  * British Columbia government ministries and organizations
  *
  * Complete list of BC government ministries and organizations that a tenant can

@@ -56,12 +56,18 @@
     "revert": "Revert",
     "servicesLabel": "Connected Service | Connected Services",
     "servicesLabelLower": "connected service | connected services",
-    "duplicate": "Duplicate Entry"
+    "duplicate": "Duplicate Entry",
+    "logout": "Log Out"
   },
   "users": {
     "user": "Users | User | Users",
     "offboardUserTitle": "Offboarding User",
     "offboardUserMessage": "This action will remove this user's tenant and group memberships. They will no longer have access to any systems using CSTAR.",
     "offboardUserAction": "Offboard User"
+  },
+  "landing": {
+    "bceidWelcome": "Welcome to CSTAR",
+    "bceidWelcomeDesc": "Thank you for logging in with your BCeID. Your account is available for your system administrator to find and manage. There’s nothing you need to do in CSTAR, and you may log out at any time.",
+    "learnMore": "Learn more about CSTAR"
   }
 }

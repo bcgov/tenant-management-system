@@ -1,6 +1,6 @@
 import { authenticatedAxios } from './authenticated.axios'
 import { logApiError } from './utils'
-import { type IdirSearchType, IDIR_SEARCH_TYPE } from '@/utils/constants'
+import { type IdirSearchType, IDIR_SEARCH_TYPE, type BCeIDSearchType, BCeID_SEARCH_TYPE } from '@/utils/constants'
 
 const api = authenticatedAxios()
 
@@ -16,12 +16,38 @@ export const userService = {
   async _searchIdirUsers(searchType: IdirSearchType, searchValue: string) {
     try {
       const response = await api.get('/users/bcgovssousers/idir/search', {
-        params: { [searchType]: searchValue },
+        params: { 
+          [searchType]: searchValue
+        },
       })
 
       return response.data.data
     } catch (error) {
       logApiError('Error searching IDIR users:', error)
+      throw error
+    }
+  },
+
+  /**
+   * Private function to search for IDIR users with different search parameters.
+   * @param {BCeIDSearchType} searchType - The type of search (email, firstName,
+   *   lastName).
+   * @param {string} searchValue - The search value.
+   * @returns {Promise<object[]>} A promise that resolves to an array of
+   *   user-like objects.
+   */
+  async _searchBceidUsers(searchType: BCeIDSearchType, searchValue: string) {
+    try {
+      const response = await api.get('/users/bcgovssousers/bceid/search', {
+        params: {
+          [searchType]: searchValue,
+          bceidType: 'both'
+        },
+      })
+
+      return response.data.data
+    } catch (error) {
+      logApiError('Error searching BCeID users:', error)
       throw error
     }
   },
@@ -54,5 +80,25 @@ export const userService = {
    */
   async searchIdirLastName(lastName: string) {
     return this._searchIdirUsers(IDIR_SEARCH_TYPE.LAST_NAME.value, lastName)
+  },
+
+  /**
+   * Searches for BCeID users based on the first name.
+   * @param {string} firstName - The first name substring to search.
+   * @returns {Promise<object[]>} A promise that resolves to an array of
+   *   user-like objects.
+   */
+  async searchBCeIDDisplayName(firstName: string) {
+    return this._searchBceidUsers(BCeID_SEARCH_TYPE.DISPLAY_NAME.value, firstName)
+  },
+
+  /**
+   * Searches for BCeID users based on the email.
+   * @param {string} email - The email substring to search.
+   * @returns {Promise<object[]>} A promise that resolves to an array of
+   *   user-like objects.
+   */
+  async searchBCeIDEmail(email: string) {
+    return this._searchBceidUsers(BCeID_SEARCH_TYPE.EMAIL.value, email)
   },
 }
