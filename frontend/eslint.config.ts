@@ -181,6 +181,15 @@ const config = [
   },
 
   skipFormatting,
+
+  {
+    files: ['**/*.{ts,tsx,vue,js,jsx}'],
+    plugins: { prettier: require('eslint-plugin-prettier') },
+    rules: {
+      // 'prettier/prettier': 'error', TODO: enable later
+      'prettier/prettier': 'off',
+    },
+  },
 ]
 
 export default config
