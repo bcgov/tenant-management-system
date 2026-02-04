@@ -1,0 +1,3 @@
+# The recommendation from OpenShift Platform Operations is that CPU limits
+# should not be set. If a container needs a burst of CPU, it will be allowed.
+KSV011
