@@ -6,3 +6,7 @@ misconfiguration:
       - global.config.databaseUser=trivy-database-user
       - global.databaseAlias=trivy-database-alias
       - global.staticAnalysis=true
+
+  policy:
+    allowedRegistries:
+      - ghcr.io

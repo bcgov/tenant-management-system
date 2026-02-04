@@ -1,46 +1,106 @@
-import { globalIgnores } from 'eslint/config'
-import {
-  defineConfigWithVueTs,
-  vueTsConfigs,
-} from '@vue/eslint-config-typescript'
+import tsEslint from '@typescript-eslint/eslint-plugin'
 import pluginVue from 'eslint-plugin-vue'
 import pluginVitest from '@vitest/eslint-plugin'
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
 import pluginCypress from 'eslint-plugin-cypress/flat'
 import tsParser from '@typescript-eslint/parser'
 import vueParser from 'vue-eslint-parser'
 import skipFormatting from '@vue/eslint-config-prettier/skip-formatting'
 
-// To allow more languages other than `ts` in `.vue` files, uncomment the following lines:
-// import { configureVueProject } from '@vue/eslint-config-typescript'
-// configureVueProject({ scriptLangs: ['ts', 'tsx'] })
-// More info at https://github.com/vuejs/eslint-config-typescript/#advanced-setup
+// ---- Shared base rules ----
+const baseRules = {
+  // Code quality
+  curly: ['error', 'all'],
+  eqeqeq: ['error', 'always', { null: 'ignore' }],
+  'no-throw-literal': 'error',
+  'prefer-promise-reject-errors': 'error',
 
-export default defineConfigWithVueTs(
+  // General best practices
+  //'no-console': ['warn', { allow: ['warn', 'error'] }], TODO: enable later
+  'no-debugger': 'warn',
+  'no-var': 'error',
+  'prefer-const': 'error',
+
+  // Style
+  'comma-dangle': ['error', 'always-multiline'],
+  quotes: ['error', 'single', { avoidEscape: true }],
+  semi: ['error', 'never'],
+
+  // TypeScript
+  '@typescript-eslint/explicit-function-return-type': 'off',
+  '@typescript-eslint/explicit-module-boundary-types': 'off',
+  '@typescript-eslint/no-explicit-any': 'error',
+  '@typescript-eslint/no-non-null-assertion': 'warn',
+  '@typescript-eslint/no-unused-vars': [
+    'error',
+    {
+      argsIgnorePattern: '^_',
+      caughtErrorsIgnorePattern: '^_',
+      varsIgnorePattern: '^_',
+    },
+  ],
+}
+
+// ---- ESLint flat config ----
+const config = [
+  // ignore build/output
   {
-    name: 'app/files-to-lint',
-    files: ['**/*.{ts,mts,tsx,vue}'],
+    ignores: [
+      '**/.git/**',
+      '**/build/**',
+      '**/coverage/**',
+      '**/dist/**',
+      '**/dist-ssr/**',
+      '**/node_modules/**',
+      '**/types/**',
+    ],
   },
 
-  globalIgnores(['**/dist/**', '**/dist-ssr/**', '**/coverage/**']),
+  // TS files
+  {
+    files: ['**/*.{ts,mts,tsx}'],
+    languageOptions: {
+      globals: {
+        console: 'readonly',
+        document: 'readonly',
+        navigator: 'readonly',
+        window: 'readonly',
+      },
+      parser: tsParser,
+      parserOptions: {
+        ecmaVersion: 'latest',
+        project: [
+          './tsconfig.app.json',
+          './tsconfig.node.json',
+          './tsconfig.vitest.json',
+          'cypress/tsconfig.json',
+        ],
+        sourceType: 'module',
+      },
+    },
+    plugins: { '@typescript-eslint': tsEslint },
+    rules: baseRules,
+  },
 
-  pluginVue.configs['flat/essential'],
-  pluginVue.configs['flat/strongly-recommended'],
-  pluginVue.configs['flat/recommended'],
-  vueTsConfigs.strict,
-
+  // Vue files
+  ...pluginVue.configs['flat/essential'],
+  ...pluginVue.configs['flat/strongly-recommended'],
+  ...pluginVue.configs['flat/recommended'],
   {
     files: ['**/*.vue'],
     languageOptions: {
       parser: vueParser,
       parserOptions: {
-        parser: tsParser,
         ecmaVersion: 'latest',
+        extraFileExtensions: ['.vue'],
+        parser: tsParser,
+        project: './tsconfig.app.json',
         sourceType: 'module',
       },
     },
+    plugins: { '@typescript-eslint': tsEslint },
     rules: {
+      ...baseRules,
+      // Vue formatting
       'vue/attributes-order': [
         'error',
         {
@@ -63,11 +123,11 @@ export default defineConfigWithVueTs(
           alphabetical: true,
         },
       ],
+      // Vue component naming and structure
       'vue/component-name-in-template-casing': [
         'error',
         'PascalCase',
         {
-          registeredComponentsOnly: false,
           ignores: [
             // All Vuetify components
             '/^v-/',
@@ -82,6 +142,7 @@ export default defineConfigWithVueTs(
             'transition',
             'transition-group',
           ],
+          registeredComponentsOnly: false,
         },
       ],
       'vue/html-self-closing': [
@@ -104,11 +165,13 @@ export default defineConfigWithVueTs(
     },
   },
 
+  // Vitest test files
   {
     ...pluginVitest.configs.recommended,
     files: ['src/**/__tests__/*'],
   },
 
+  // Cypress test files
   {
     ...pluginCypress.configs.recommended,
     files: [
@@ -118,4 +181,15 @@ export default defineConfigWithVueTs(
   },
 
   skipFormatting,
-)
+
+  {
+    files: ['**/*.{ts,tsx,vue,js,jsx}'],
+    plugins: { prettier: require('eslint-plugin-prettier') },
+    rules: {
+      // 'prettier/prettier': 'error', TODO: enable later
+      'prettier/prettier': 'off',
+    },
+  },
+]
+
+export default config
