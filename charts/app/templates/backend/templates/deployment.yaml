@@ -25,12 +25,20 @@ spec:
       labels:
         {{- include "backend.labels" . | nindent 8 }}
     spec:
-      {{- if .Values.backend.podSecurityContext }}
       securityContext:
-        {{- toYaml .Values.backend.podSecurityContext | nindent 12 }}
-      {{- end }}
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
       initContainers:
         - name: {{ include "backend.fullname" . }}-init
+          securityContext:
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ "ALL" ]
           image: "{{.Values.global.registry}}/{{.Values.global.repository}}/migrations:{{ .Values.global.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ default "Always" .Values.backend.imagePullPolicy }}
           envFrom:
@@ -49,12 +57,18 @@ spec:
             requests:
               cpu: 5m
               memory: 200Mi
+            limits:
+              memory: 8Gi
       containers:
         - name: {{ include "backend.fullname" . }}
-          {{- if .Values.backend.securityContext }}
           securityContext:
-            {{- toYaml .Values.backend.securityContext | nindent 12 }}
-          {{- end }}
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ "ALL" ]
           image: "{{.Values.global.registry}}/{{.Values.global.repository}}/backend:{{ .Values.global.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ default "Always" .Values.backend.imagePullPolicy }}
           envFrom:
@@ -117,6 +131,8 @@ spec:
             requests:
               cpu: 5m
               memory: 200Mi
+            limits:
+              memory: 8Gi
       {{- with .Values.backend.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
