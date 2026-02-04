@@ -1,4 +1,4 @@
-import { setActivePinia, createPinia } from 'pinia'
+import { setActivePinia, createPinia, type Store } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import * as utils from '@/services/utils'
@@ -47,7 +47,7 @@ vi.mock('@/utils/constants', () => ({
 }))
 
 import { useUserStore } from '@/stores/useUserStore'
-let userStore = useUserStore()
+let userStore: Store; 
 
 describe('useUserStore', () => {
 
