@@ -56,8 +56,10 @@
     "revert": "Revert",
     "servicesLabel": "Connected Service | Connected Services",
     "servicesLabelLower": "connected service | connected services",
-    "duplicate": "Duplicate Entry",
     "logout": "Log Out"
+    "sessionExpired": "Your session has expired. Please log in to continue.",
+    "sessionExpiredDesc": "For security reasons, CSTAR automatically logs you out after a period of inactivity.",
+    "duplicate": "Duplicate Entry"
   },
   "users": {
     "user": "Users | User | Users",

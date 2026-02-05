@@ -62,6 +62,10 @@ export const useAuthStore = defineStore('auth', {
     user: null as User | null,
 
     userSource: UserSource.IDIR,
+    /**
+     * If the users token doesn't refresh then we set this to true to show a logged out message
+     */
+    loggedOut: false,
   }),
 
   getters: {
@@ -164,6 +168,7 @@ export const useAuthStore = defineStore('auth', {
         this.authenticated = authenticated
         if (authenticated) {
           this.token = this.keycloak.token ?? ''
+          this.loggedOut = false
           this.user = this.parseUserFromToken()
           this.userSource = this.keycloak.tokenParsed?.identity_provider?.toLowerCase().includes('idir')
             ? UserSource.IDIR
@@ -266,10 +271,16 @@ export const useAuthStore = defineStore('auth', {
               this.token = this.keycloak?.token ?? ''
               this.user = this.parseUserFromToken()
               logger.info('Token successfully refreshed')
+              this.loggedOut = false
             }
           })
           .catch((error) => {
+            this.loggedOut = true
+            this.token = ''
+            this.user = null
+            this.authenticated = false
             logger.error('Failed to refresh token', error)
+            window.location.href='/'
           })
           .finally(() => {
             this.scheduleTokenRefresh()
