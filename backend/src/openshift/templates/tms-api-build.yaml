@@ -3,27 +3,27 @@ kind: Template
 metadata:
   name: tms-api-template
   annotations:
-    description: "Template to set up build for TMS API. This template will create a build config and an image stream"
+    description: 'Template to set up build for TMS API. This template will create a build config and an image stream'
 parameters:
-  - name: NAMESPACE    
-    value: "a191b5-tools"
-  - name: APP_NAME    
-    value: "tms-api"
+  - name: NAMESPACE
+    value: 'a191b5-tools'
+  - name: APP_NAME
+    value: 'tms-api'
   - name: GIT_REPO
-    value: "https://github.com/bcgov/chefs-tms-poc.git"
-  - name: GIT_BRANCH    
-    value: "develop"
-  - name: CONTEXT_DIR    
-    value: "/backend/api/tms"
-  - name: IMAGE_TAG    
-    value: "latest"
+    value: 'https://github.com/bcgov/chefs-tms-poc.git'
+  - name: GIT_BRANCH
+    value: 'develop'
+  - name: CONTEXT_DIR
+    value: '/backend/api/tms'
+  - name: IMAGE_TAG
+    value: 'latest'
 
 objects:
   - apiVersion: image.openshift.io/v1
     kind: ImageStream
     metadata:
-      name: "${APP_NAME}"
-      namespace: "${NAMESPACE}"
+      name: '${APP_NAME}'
+      namespace: '${NAMESPACE}'
     spec:
       lookupPolicy:
         local: false
@@ -31,22 +31,22 @@ objects:
   - apiVersion: build.openshift.io/v1
     kind: BuildConfig
     metadata:
-      name: "${APP_NAME}"
-      namespace: "${NAMESPACE}"
+      name: '${APP_NAME}'
+      namespace: '${NAMESPACE}'
     spec:
       source:
         type: Git
         git:
-          uri: "${GIT_REPO}"
-          ref: "${GIT_BRANCH}"
-        contextDir: "${CONTEXT_DIR}"
+          uri: '${GIT_REPO}'
+          ref: '${GIT_BRANCH}'
+        contextDir: '${CONTEXT_DIR}'
       strategy:
         type: Docker
         dockerStrategy: {}
       output:
         to:
           kind: ImageStreamTag
-          name: "${APP_NAME}:${IMAGE_TAG}"
+          name: '${APP_NAME}:${IMAGE_TAG}'
       triggers:
         - type: ConfigChange
         - type: ImageChange

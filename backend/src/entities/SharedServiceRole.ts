@@ -1,44 +1,65 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, Unique, OneToMany } from 'typeorm'
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
+  Unique,
+  OneToMany,
+} from 'typeorm'
 import { SharedService } from './SharedService'
 import { GroupSharedServiceRole } from './GroupSharedServiceRole'
 
 @Entity('SharedServiceRole', { schema: 'tms' })
-@Unique(["name", "sharedService"])
+@Unique(['name', 'sharedService'])
 export class SharedServiceRole {
+  @PrimaryGeneratedColumn('uuid', { name: 'id' })
+  id!: string
 
-    @PrimaryGeneratedColumn('uuid', { name: 'id' })
-    id!: string;
+  @Column({ type: 'varchar', length: 30, name: 'name' })
+  name!: string
 
-    @Column({ type: 'varchar', length: 30, name: 'name' })
-    name!: string;
-    
-    @Column({ type: 'varchar', length: 255, name: 'description', nullable: true })
-    description!: string;
-    
-    @Column({ type: 'text', array: true, name: 'allowed_identity_providers', nullable: true, default: null })
-    allowedIdentityProviders!: string[] | null;
-    
-    @Column({ type: 'boolean', name: 'is_deleted', default: false })
-    isDeleted!: boolean;
+  @Column({ type: 'varchar', length: 255, name: 'description', nullable: true })
+  description!: string
 
-    @ManyToOne(() => SharedService, (sharedService) => sharedService.roles, { onDelete: 'CASCADE' })
-    @JoinColumn({ name: 'shared_service_id' })
-    sharedService!: SharedService;
+  @Column({
+    type: 'text',
+    array: true,
+    name: 'allowed_identity_providers',
+    nullable: true,
+    default: null,
+  })
+  allowedIdentityProviders!: string[] | null
 
-    @OneToMany(() => GroupSharedServiceRole, (groupSharedServiceRole) => groupSharedServiceRole.sharedServiceRole, {
-        cascade: true,
-    })
-    groupAssignments!: GroupSharedServiceRole[];
+  @Column({ type: 'boolean', name: 'is_deleted', default: false })
+  isDeleted!: boolean
 
-    @CreateDateColumn({ type: 'date', name: 'created_datetime', nullable: true })
-    createdDateTime!: Date;
+  @ManyToOne(() => SharedService, (sharedService) => sharedService.roles, {
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn({ name: 'shared_service_id' })
+  sharedService!: SharedService
 
-    @UpdateDateColumn({ type: 'date', name: 'updated_datetime', nullable: true })
-    updatedDateTime!: Date;
+  @OneToMany(
+    () => GroupSharedServiceRole,
+    (groupSharedServiceRole) => groupSharedServiceRole.sharedServiceRole,
+    {
+      cascade: true,
+    },
+  )
+  groupAssignments!: GroupSharedServiceRole[]
 
-    @Column({ type: 'char', length: 32, name: 'created_by', nullable: true })
-    createdBy!: string;
+  @CreateDateColumn({ type: 'date', name: 'created_datetime', nullable: true })
+  createdDateTime!: Date
 
-    @Column({ type: 'char', length: 32, name: 'updated_by', nullable: true })
-    updatedBy!: string;
-} 
+  @UpdateDateColumn({ type: 'date', name: 'updated_datetime', nullable: true })
+  updatedDateTime!: Date
+
+  @Column({ type: 'char', length: 32, name: 'created_by', nullable: true })
+  createdBy!: string
+
+  @Column({ type: 'char', length: 32, name: 'updated_by', nullable: true })
+  updatedBy!: string
+}

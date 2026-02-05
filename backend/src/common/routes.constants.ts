@@ -1,37 +1,51 @@
 export class RoutesConstants {
-    public static HEALTH = '/v1/health'
-    public static CREATE_TENANTS = '/v1/tenants'
-    public static ADD_TENANT_USERS = '/v1/tenants/:tenantId/users'
-    public static GET_USER_TENANTS = '/v1/users/:ssoUserId/tenants'
-    public static GET_TENANT_USERS = '/v1/tenants/:tenantId/users'
-    public static CREATE_TENANT_ROLES = '/v1/tenants/:tenantId/roles'
-    public static ASSIGN_USER_ROLES = '/v1/tenants/:tenantId/users/:tenantUserId/roles'
-    public static GET_TMS_ROLES = '/v1/roles'
-    public static GET_USER_ROLES = '/v1/tenants/:tenantId/users/:tenantUserId/roles'
-    public static UNASSIGN_USER_ROLES = '/v1/tenants/:tenantId/users/:tenantUserId/roles/:roleId'
-    public static REMOVE_TENANT_USER = '/v1/tenants/:tenantId/users/:tenantUserId'
-    public static SEARCH_BC_GOV_IDIR_USERS = '/v1/users/bcgovssousers/idir/search'
-    public static SEARCH_BC_GOV_BCEID_USERS = '/v1/users/bcgovssousers/bceid/search'
-    public static GET_TENANT = '/v1/tenants/:tenantId'
-    public static GET_ROLES_FOR_SSO_USER = '/v1/tenants/:tenantId/ssousers/:ssoUserId/roles'
-    public static UPDATE_TENANT = '/v1/tenants/:tenantId'
-    public static CREATE_TENANT_REQUEST = '/v1/tenant-requests'
-    public static UPDATE_TENANT_REQUEST_STATUS = '/v1/tenant-requests/:requestId/status'
-    public static GET_TENANT_REQUESTS = '/v1/tenant-requests'
-    public static CREATE_GROUP = '/v1/tenants/:tenantId/groups'
-    public static UPDATE_GROUP = '/v1/tenants/:tenantId/groups/:groupId'
-    public static ADD_GROUP_USER = '/v1/tenants/:tenantId/groups/:groupId/users'
-    public static REMOVE_GROUP_USER = '/v1/tenants/:tenantId/groups/:groupId/users/:groupUserId'
-    public static GET_GROUP = '/v1/tenants/:tenantId/groups/:groupId'
-    public static GET_TENANT_GROUPS = '/v1/tenants/:tenantId/groups'
-    public static CREATE_SHARED_SERVICE = '/v1/shared-services'
-    public static ADD_SHARED_SERVICE_ROLES = '/v1/shared-services/:sharedServiceId/shared-service-roles'
-    public static GET_ALL_ACTIVE_SHARED_SERVICES = '/v1/shared-services'
-    public static ASSOCIATE_SHARED_SERVICE_TO_TENANT = '/v1/tenants/:tenantId/shared-services'
-    public static GET_SHARED_SERVICES_FOR_TENANT = '/v1/tenants/:tenantId/shared-services'
-    public static GET_SHARED_SERVICE_ROLES_FOR_GROUP = '/v1/tenants/:tenantId/groups/:groupId/shared-services/shared-service-roles'
-    public static UPDATE_SHARED_SERVICE_ROLES_FOR_GROUP = '/v1/tenants/:tenantId/groups/:groupId/shared-services/shared-service-roles'
-    public static GET_USER_GROUPS_WITH_SHARED_SERVICE_ROLES = '/v1/tenants/:tenantId/users/:ssoUserId/groups/shared-service-roles'
-    public static GET_TENANT_USER = '/v1/tenants/:tenantId/users/:tenantUserId'
-    public static GET_EFFECTIVE_SHARED_SERVICE_ROLES = '/v1/tenants/:tenantId/ssousers/:ssoUserId/shared-service-roles'
+  public static HEALTH = '/v1/health'
+  public static CREATE_TENANTS = '/v1/tenants'
+  public static ADD_TENANT_USERS = '/v1/tenants/:tenantId/users'
+  public static GET_USER_TENANTS = '/v1/users/:ssoUserId/tenants'
+  public static GET_TENANT_USERS = '/v1/tenants/:tenantId/users'
+  public static CREATE_TENANT_ROLES = '/v1/tenants/:tenantId/roles'
+  public static ASSIGN_USER_ROLES =
+    '/v1/tenants/:tenantId/users/:tenantUserId/roles'
+  public static GET_TMS_ROLES = '/v1/roles'
+  public static GET_USER_ROLES =
+    '/v1/tenants/:tenantId/users/:tenantUserId/roles'
+  public static UNASSIGN_USER_ROLES =
+    '/v1/tenants/:tenantId/users/:tenantUserId/roles/:roleId'
+  public static REMOVE_TENANT_USER = '/v1/tenants/:tenantId/users/:tenantUserId'
+  public static SEARCH_BC_GOV_IDIR_USERS = '/v1/users/bcgovssousers/idir/search'
+  public static SEARCH_BC_GOV_BCEID_USERS =
+    '/v1/users/bcgovssousers/bceid/search'
+  public static GET_TENANT = '/v1/tenants/:tenantId'
+  public static GET_ROLES_FOR_SSO_USER =
+    '/v1/tenants/:tenantId/ssousers/:ssoUserId/roles'
+  public static UPDATE_TENANT = '/v1/tenants/:tenantId'
+  public static CREATE_TENANT_REQUEST = '/v1/tenant-requests'
+  public static UPDATE_TENANT_REQUEST_STATUS =
+    '/v1/tenant-requests/:requestId/status'
+  public static GET_TENANT_REQUESTS = '/v1/tenant-requests'
+  public static CREATE_GROUP = '/v1/tenants/:tenantId/groups'
+  public static UPDATE_GROUP = '/v1/tenants/:tenantId/groups/:groupId'
+  public static ADD_GROUP_USER = '/v1/tenants/:tenantId/groups/:groupId/users'
+  public static REMOVE_GROUP_USER =
+    '/v1/tenants/:tenantId/groups/:groupId/users/:groupUserId'
+  public static GET_GROUP = '/v1/tenants/:tenantId/groups/:groupId'
+  public static GET_TENANT_GROUPS = '/v1/tenants/:tenantId/groups'
+  public static CREATE_SHARED_SERVICE = '/v1/shared-services'
+  public static ADD_SHARED_SERVICE_ROLES =
+    '/v1/shared-services/:sharedServiceId/shared-service-roles'
+  public static GET_ALL_ACTIVE_SHARED_SERVICES = '/v1/shared-services'
+  public static ASSOCIATE_SHARED_SERVICE_TO_TENANT =
+    '/v1/tenants/:tenantId/shared-services'
+  public static GET_SHARED_SERVICES_FOR_TENANT =
+    '/v1/tenants/:tenantId/shared-services'
+  public static GET_SHARED_SERVICE_ROLES_FOR_GROUP =
+    '/v1/tenants/:tenantId/groups/:groupId/shared-services/shared-service-roles'
+  public static UPDATE_SHARED_SERVICE_ROLES_FOR_GROUP =
+    '/v1/tenants/:tenantId/groups/:groupId/shared-services/shared-service-roles'
+  public static GET_USER_GROUPS_WITH_SHARED_SERVICE_ROLES =
+    '/v1/tenants/:tenantId/users/:ssoUserId/groups/shared-service-roles'
+  public static GET_TENANT_USER = '/v1/tenants/:tenantId/users/:tenantUserId'
+  public static GET_EFFECTIVE_SHARED_SERVICE_ROLES =
+    '/v1/tenants/:tenantId/ssousers/:ssoUserId/shared-service-roles'
 }

@@ -1,14 +1,17 @@
-import { MigrationInterface, QueryRunner } from "typeorm";
+import { MigrationInterface, QueryRunner } from 'typeorm'
 
 export class RolesSoftdelete1747174712038 implements MigrationInterface {
-    name = 'RolesSoftdelete1747174712038'
+  name = 'RolesSoftdelete1747174712038'
 
-    public async up(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`ALTER TABLE "tms"."TenantUserRole" ADD "is_deleted" boolean NOT NULL DEFAULT false`);
-    }
+  public async up(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(
+      `ALTER TABLE "tms"."TenantUserRole" ADD "is_deleted" boolean NOT NULL DEFAULT false`,
+    )
+  }
 
-    public async down(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`ALTER TABLE "tms"."TenantUserRole" DROP COLUMN "is_deleted"`);
-    }
-
+  public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(
+      `ALTER TABLE "tms"."TenantUserRole" DROP COLUMN "is_deleted"`,
+    )
+  }
 }

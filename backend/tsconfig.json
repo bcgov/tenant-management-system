@@ -1,16 +1,14 @@
 {
-    "extends": "@tsconfig/node20/tsconfig.json",
-    "compilerOptions": {
-       "outDir": "./build",
-       "emitDecoratorMetadata": true,
-       "experimentalDecorators": true,
-       "sourceMap": true,
-       "esModuleInterop": true,
-       "strict": true,
-       "resolveJsonModule": true,
-       "skipLibCheck": true
-    },
-    "include": [
-       "src"
-   ]
+  "extends": "@tsconfig/node20/tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./build",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "sourceMap": true,
+    "esModuleInterop": true,
+    "strict": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true
+  },
+  "include": ["src"]
 }
