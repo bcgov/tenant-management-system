@@ -1,12 +1,10 @@
 export class NotFoundError extends Error {
-  
-  public statusCode: number;
+  public statusCode: number
 
-  constructor(message: string = "Resource not found") {
-    super(message);
-    this.name = "NotFoundError";
-    this.statusCode = 404;
-    Object.setPrototypeOf(this, NotFoundError.prototype);
-  
+  constructor(message: string = 'Resource not found') {
+    super(message)
+    this.name = 'NotFoundError'
+    this.statusCode = 404
+    Object.setPrototypeOf(this, NotFoundError.prototype)
   }
 }

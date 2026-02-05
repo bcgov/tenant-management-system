@@ -8,4 +8,3 @@ oc process -f .\tms-api-build.yaml | oc apply -f -
 
 #set up tms api deployment - create dependencies
 oc process -f .\tms-api-deploy.yaml --param-file=tms-api-deploy.properties | oc apply -f -
-

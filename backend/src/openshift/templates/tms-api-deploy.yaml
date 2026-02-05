@@ -3,81 +3,81 @@ kind: Template
 metadata:
   name: tms-api-deploy-template
   annotations:
-    description: "Template to deploy TMS API" 
-    tags: "tms,api,tms-api" 
+    description: 'Template to deploy TMS API'
+    tags: 'tms,api,tms-api'
 parameters:
   - name: NAMESPACE
     required: true
-    value: "a191b5-tools"
+    value: 'a191b5-tools'
   - name: APP_NAME
     required: true
-    value: "tms-api"
+    value: 'tms-api'
   - name: IMAGE_NAMESPACE
     required: true
-    value: "a191b5-tools"
+    value: 'a191b5-tools'
   - name: IMAGE_TAG
-    value: "latest"
+    value: 'latest'
   - name: REPLICAS
-    value: "1"
+    value: '1'
   - name: PORT
-    value: "4144"
+    value: '4144'
   - name: ALLOWED_ORIGINS
-    value: "*"
+    value: '*'
   - name: CPU_REQUEST
-    value: "100m"
+    value: '100m'
   - name: CPU_LIMIT
-    value: "200m"
+    value: '200m'
   - name: MEMORY_REQUEST
-    value: "128Mi"
+    value: '128Mi'
   - name: MEMORY_LIMIT
-    value: "256Mi"
+    value: '256Mi'
   - name: DB_HOST
     required: true
-    value: "tms-db"
+    value: 'tms-db'
   - name: DB_PORT
     required: true
-    value: "5432"
+    value: '5432'
   - name: DB_USER
     required: true
-    value: "tmsuser"
+    value: 'tmsuser'
   - name: DB_PASSWORD
     required: false
   - name: DB_DATABASE
     required: true
-    value: "tmsdb"
+    value: 'tmsdb'
   - name: BCGOV_SSO_API_URL
     required: true
-    value: "https://api.loginproxy.gov.bc.ca/api/v1/dev/idir/users"
+    value: 'https://api.loginproxy.gov.bc.ca/api/v1/dev/idir/users'
   - name: BCGOV_TOKEN_URL
     required: true
-    value: "https://loginproxy.gov.bc.ca/auth/realms/standard/protocol/openid-connect/token"
+    value: 'https://loginproxy.gov.bc.ca/auth/realms/standard/protocol/openid-connect/token'
   - name: BCGOV_SSO_API_CLIENT_ID
     required: true
   - name: BCGOV_SSO_API_CLIENT_SECRET
     required: true
   - name: READINESS_INITIAL_DELAY
-    value: "20"
+    value: '20'
   - name: READINESS_TIMEOUT
-    value: "5"
+    value: '5'
   - name: LIVENESS_INITIAL_DELAY
-    value: "20"
+    value: '20'
   - name: LIVENESS_TIMEOUT
-    value: "3"
+    value: '3'
   - name: ROUTE_HOST
-    value: "tms-api-mynamespace.apps.silver.devops.gov.bc.ca"
+    value: 'tms-api-mynamespace.apps.silver.devops.gov.bc.ca'
   - name: LOG_LEVEL
-    value: "info"
+    value: 'info'
   - name: LOGS_VOLUME_CAPACITY
-    value: "128Mi"
+    value: '128Mi'
   - name: TMS_AUDIENCE
     required: true
-    value: "tenant-management-system-6014"
+    value: 'tenant-management-system-6014'
   - name: JWKS_URI
     required: true
-    value: "https://dev.loginproxy.gov.bc.ca/auth/realms/standard/protocol/openid-connect/certs"
+    value: 'https://dev.loginproxy.gov.bc.ca/auth/realms/standard/protocol/openid-connect/certs'
   - name: ISSUER
     required: true
-    value: "https://dev.loginproxy.gov.bc.ca/auth/realms/standard"
+    value: 'https://dev.loginproxy.gov.bc.ca/auth/realms/standard'
 
 objects:
   - apiVersion: v1
@@ -88,7 +88,7 @@ objects:
       labels:
         app: ${APP_NAME}
     type: Opaque
-    stringData:    
+    stringData:
       BCGOV_SSO_API_CLIENT_ID: ${BCGOV_SSO_API_CLIENT_ID}
       BCGOV_SSO_API_CLIENT_SECRET: ${BCGOV_SSO_API_CLIENT_SECRET}
 
