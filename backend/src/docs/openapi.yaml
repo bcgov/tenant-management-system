@@ -26,11 +26,11 @@ paths:
                 properties:
                   apiStatus:
                     type: string
-                    example: "Healthy"
+                    example: 'Healthy'
                   time:
                     type: string
                     format: date-time
-                    example: "2024-03-21T10:00:00Z"
+                    example: '2024-03-21T10:00:00Z'
         '503':
           description: Service is unhealthy
 
@@ -60,29 +60,29 @@ paths:
                   description: |
                     Name must be 1-30 characters, cannot start or end with whitespace.
                     Pattern ensures no leading/trailing whitespace.
-                  example: "Roads initiative"
+                  example: 'Roads initiative'
                 ministryName:
                   type: string
                   minLength: 1
                   maxLength: 100
-                  example: "Ministry of Natural Resources"
+                  example: 'Ministry of Natural Resources'
                 description:
                   type: string
                   maxLength: 500
-                  example: "My Tenant Description"
+                  example: 'My Tenant Description'
                 user:
                   $ref: '#/components/schemas/BasicUser'
               example:
-                name: "Roads Initiative"
-                ministryName: "Ministry of Transportation"
-                description: "Tenant for managing road infrastructure projects"
+                name: 'Roads Initiative'
+                ministryName: 'Ministry of Transportation'
+                description: 'Tenant for managing road infrastructure projects'
                 user:
-                  firstName: "John"
-                  lastName: "Smith"
-                  displayName: "Smith, John: MOT: EX"
-                  userName: "JSMITH1"
-                  ssoUserId: "fd33f1cef7ca4b19a71104d4ecf7066b"
-                  email: "john.smith@gov.bc.ca"
+                  firstName: 'John'
+                  lastName: 'Smith'
+                  displayName: 'Smith, John: MOT: EX'
+                  userName: 'JSMITH1'
+                  ssoUserId: 'fd33f1cef7ca4b19a71104d4ecf7066b'
+                  email: 'john.smith@gov.bc.ca'
       responses:
         '201':
           description: Tenant successfully created
@@ -99,32 +99,32 @@ paths:
               example:
                 data:
                   tenant:
-                    id: "f98cbbfb-b96c-4a40-a10b-c2a7e795022c"
-                    name: "Roads Initiative"
-                    ministryName: "Ministry of Transportation"
-                    description: "Tenant for managing road infrastructure projects"
-                    createdDateTime: "2024-03-21T10:00:00Z"
-                    updatedDateTime: "2024-03-21T10:00:00Z"
+                    id: 'f98cbbfb-b96c-4a40-a10b-c2a7e795022c'
+                    name: 'Roads Initiative'
+                    ministryName: 'Ministry of Transportation'
+                    description: 'Tenant for managing road infrastructure projects'
+                    createdDateTime: '2024-03-21T10:00:00Z'
+                    updatedDateTime: '2024-03-21T10:00:00Z'
                     users:
-                      - id: "fd33f1cef7ca4b19a71104d4ecf7066b"
-                        createdDateTime: "2024-03-21T10:00:00Z"
-                        updatedDateTime: "2024-03-21T10:00:00Z"
+                      - id: 'fd33f1cef7ca4b19a71104d4ecf7066b'
+                        createdDateTime: '2024-03-21T10:00:00Z'
+                        updatedDateTime: '2024-03-21T10:00:00Z'
                         ssoUser:
-                          id: "fd33f1cef7ca4b19a71104d4ecf7066b"
-                          ssoUserId: "fd33f1cef7ca4b19a71104d4ecf7066b"
-                          firstName: "John"
-                          lastName: "Smith"
-                          displayName: "Smith, John: MOT: EX"
-                          userName: "JSMITH1"
-                          email: "john.smith@gov.bc.ca"
-                          createdDateTime: "2024-03-21T10:00:00Z"
-                          updatedDateTime: "2024-03-21T10:00:00Z"
+                          id: 'fd33f1cef7ca4b19a71104d4ecf7066b'
+                          ssoUserId: 'fd33f1cef7ca4b19a71104d4ecf7066b'
+                          firstName: 'John'
+                          lastName: 'Smith'
+                          displayName: 'Smith, John: MOT: EX'
+                          userName: 'JSMITH1'
+                          email: 'john.smith@gov.bc.ca'
+                          createdDateTime: '2024-03-21T10:00:00Z'
+                          updatedDateTime: '2024-03-21T10:00:00Z'
                         roles:
-                          - id: "14c6bb48-54e2-4ce0-9bbd-af4982fff13b"
-                            name: "TMS.TENANT_OWNER"
-                            description: "Tenant Owner Role"
-                            createdDateTime: "2024-03-21T10:00:00Z"
-                            updatedDateTime: "2024-03-21T10:00:00Z"
+                          - id: '14c6bb48-54e2-4ce0-9bbd-af4982fff13b'
+                            name: 'TMS.TENANT_OWNER'
+                            description: 'Tenant Owner Role'
+                            createdDateTime: '2024-03-21T10:00:00Z'
+                            updatedDateTime: '2024-03-21T10:00:00Z'
         '400':
           description: Invalid input
           content:
@@ -191,14 +191,18 @@ paths:
                   description: |
                     Required for IDIR users. Optional for BCeID users (will be overridden with SERVICE_USER role).
                     If not provided for IDIR users, validation will fail.
-                  example: ["14c6bb48-54e2-4ce0-9bbd-af4982fff13b"]
+                  example: ['14c6bb48-54e2-4ce0-9bbd-af4982fff13b']
                 groups:
                   type: array
                   items:
                     type: string
                     format: uuid
                   description: Optional array of group IDs to add the user to
-                  example: ["02630496-ac01-407b-84f6-d542c8f4cc8c", "c442d5c6-2a23-439f-956f-a67ba87a42cf"]
+                  example:
+                    [
+                      '02630496-ac01-407b-84f6-d542c8f4cc8c',
+                      'c442d5c6-2a23-439f-956f-a67ba87a42cf',
+                    ]
       responses:
         '201':
           description: User successfully added to tenant
@@ -288,7 +292,7 @@ paths:
           description: |
             Comma-separated list of group UUIDs to filter by. Returns only users who belong to at least one of the specified groups.
             Example: `3a3fafee-d41b-4fbe-92df-62dbebf0f73a,8f01087b-edfe-4957-97c4-f0aece2bc514`
-          example: "3a3fafee-d41b-4fbe-92df-62dbebf0f73a,8f01087b-edfe-4957-97c4-f0aece2bc514"
+          example: '3a3fafee-d41b-4fbe-92df-62dbebf0f73a,8f01087b-edfe-4957-97c4-f0aece2bc514'
         - name: sharedServiceRoleIds
           in: query
           required: false
@@ -298,7 +302,7 @@ paths:
           description: |
             Comma-separated list of shared service role UUIDs to filter by. Returns only users whose groups have at least one of the specified shared service roles.
             Example: `8f01087b-edfe-4957-97c4-f0aece2bc514`
-          example: "8f01087b-edfe-4957-97c4-f0aece2bc514"
+          example: '8f01087b-edfe-4957-97c4-f0aece2bc514'
       responses:
         '200':
           description: List of users for the tenant
@@ -377,7 +381,7 @@ paths:
             - groups: Include groups the user belongs to
             - roles: Include tenant roles assigned to the user
             - sharedServices: Include shared services with their roles linked via user's groups
-            
+
             Multiple values can be provided as a comma-separated list (e.g., `groups,roles`).
             If not provided, returns only the basic tenant user information.
       responses:
@@ -414,17 +418,17 @@ paths:
                                     id:
                                       type: string
                                       format: uuid
-                                      example: "5066c803-631d-4771-90f4-95f6393b11c1"
+                                      example: '5066c803-631d-4771-90f4-95f6393b11c1'
                                     name:
                                       type: string
-                                      example: "Connected Service 3"
+                                      example: 'Connected Service 3'
                                     description:
                                       type: string
                                       nullable: true
-                                      example: "Test Connected Service 22222222"
+                                      example: 'Test Connected Service 22222222'
                                     clientIdentifier:
                                       type: string
-                                      example: "chefs-frontend-5299"
+                                      example: 'chefs-frontend-5299'
                                     isActive:
                                       type: boolean
                                       example: true
@@ -436,21 +440,27 @@ paths:
                                           id:
                                             type: string
                                             format: uuid
-                                            example: "cae96cec-a693-4b16-b051-f7e56d310137"
+                                            example: 'cae96cec-a693-4b16-b051-f7e56d310137'
                                           name:
                                             type: string
-                                            example: "Role3"
+                                            example: 'Role3'
                                           description:
                                             type: string
                                             nullable: true
-                                            example: "Role3"
+                                            example: 'Role3'
                                           allowedIdentityProviders:
                                             type: array
                                             items:
                                               type: string
-                                              enum: ['idir', 'azureidir', 'bceidbasic', 'bceidbusiness']
+                                              enum:
+                                                [
+                                                  'idir',
+                                                  'azureidir',
+                                                  'bceidbasic',
+                                                  'bceidbusiness',
+                                                ]
                                             nullable: true
-                                            example: ["bceidbusiness"]
+                                            example: ['bceidbusiness']
                                 description: Present only when expand=sharedServices. List of shared services the user has access to through group memberships, with their associated roles.
         '400':
           description: Invalid input or expand values
@@ -581,7 +591,7 @@ paths:
                     type: string
                     format: uuid
                   minItems: 1
-                  example: ["14c6bb48-54e2-4ce0-9bbd-af4982fff13b"]
+                  example: ['14c6bb48-54e2-4ce0-9bbd-af4982fff13b']
       responses:
         '200':
           description: Roles successfully assigned
@@ -782,16 +792,16 @@ paths:
                   type: string
                   minLength: 1
                   maxLength: 30
-                  example: "Updated Roads Initiative"
+                  example: 'Updated Roads Initiative'
                 ministryName:
                   type: string
                   minLength: 1
                   maxLength: 100
-                  example: "Updated Ministry of Natural Resources"
+                  example: 'Updated Ministry of Natural Resources'
                 description:
                   type: string
                   maxLength: 500
-                  example: "Updated tenant description"
+                  example: 'Updated tenant description'
       responses:
         '200':
           description: Tenant successfully updated
@@ -860,16 +870,16 @@ paths:
               example:
                 data:
                   roles:
-                    - id: "14c6bb48-54e2-4ce0-9bbd-af4982fff13b"
-                      name: "TMS.TENANT_OWNER"
-                      description: "Tenant Owner Role"
-                      createdDateTime: "2024-03-21T10:00:00Z"
-                      updatedDateTime: "2024-03-21T10:00:00Z"
-                    - id: "25d7cc59-65f3-5df1-0cce-bg6093ggg24c"
-                      name: "TMS.USER_ADMIN"
-                      description: "User Admin Role"
-                      createdDateTime: "2024-03-21T10:00:00Z"
-                      updatedDateTime: "2024-03-21T10:00:00Z"
+                    - id: '14c6bb48-54e2-4ce0-9bbd-af4982fff13b'
+                      name: 'TMS.TENANT_OWNER'
+                      description: 'Tenant Owner Role'
+                      createdDateTime: '2024-03-21T10:00:00Z'
+                      updatedDateTime: '2024-03-21T10:00:00Z'
+                    - id: '25d7cc59-65f3-5df1-0cce-bg6093ggg24c'
+                      name: 'TMS.USER_ADMIN'
+                      description: 'User Admin Role'
+                      createdDateTime: '2024-03-21T10:00:00Z'
+                      updatedDateTime: '2024-03-21T10:00:00Z'
         '401':
           description: Unauthorized
           content:
@@ -904,16 +914,16 @@ paths:
                   type: string
                   minLength: 1
                   maxLength: 30
-                  example: "Roads Initiative"
+                  example: 'Roads Initiative'
                 ministryName:
                   type: string
                   minLength: 1
                   maxLength: 100
-                  example: "Ministry of Natural Resources"
+                  example: 'Ministry of Natural Resources'
                 description:
                   type: string
                   maxLength: 500
-                  example: "Tenant for managing road infrastructure"
+                  example: 'Tenant for managing road infrastructure'
                 user:
                   type: object
                   required:
@@ -926,23 +936,23 @@ paths:
                   properties:
                     firstName:
                       type: string
-                      example: "John"
+                      example: 'John'
                     lastName:
                       type: string
-                      example: "Smith"
+                      example: 'Smith'
                     displayName:
                       type: string
-                      example: "John Smith: ENV: EX"
+                      example: 'John Smith: ENV: EX'
                     ssoUserId:
                       type: string
-                      example: "F45AFBBD68C4466F956BA3A1D91878AD"
+                      example: 'F45AFBBD68C4466F956BA3A1D91878AD'
                     userName:
                       type: string
-                      example: "johnSmith"
+                      example: 'johnSmith'
                     email:
                       type: string
                       format: email
-                      example: "john.Smith@example.com"
+                      example: 'john.Smith@example.com'
       responses:
         '201':
           description: Tenant request successfully created
@@ -984,7 +994,7 @@ paths:
             type: string
             enum: [NEW, APPROVED, REJECTED]
           description: Filter tenant requests by status
-          example: "NEW"
+          example: 'NEW'
       responses:
         '200':
           description: Tenant requests retrieved successfully
@@ -1003,34 +1013,34 @@ paths:
               example:
                 data:
                   tenantRequests:
-                    - id: "123e4567-e89b-12d3-a456-426614174000"
-                      name: "Roads Initiative"
-                      ministryName: "Ministry of Natural Resources"
-                      description: "Tenant for managing road infrastructure"
-                      status: "NEW"
-                      requestedBy: "John Smith: ENV: EX"
-                      requestedAt: "2024-03-15"
+                    - id: '123e4567-e89b-12d3-a456-426614174000'
+                      name: 'Roads Initiative'
+                      ministryName: 'Ministry of Natural Resources'
+                      description: 'Tenant for managing road infrastructure'
+                      status: 'NEW'
+                      requestedBy: 'John Smith: ENV: EX'
+                      requestedAt: '2024-03-15'
                       decisionedBy: null
                       decisionedAt: null
                       rejectionReason: null
-                      createdDateTime: "2024-03-15"
-                      updatedDateTime: "2024-03-15"
-                      createdBy: "123e4567e89b12d3a456426614174000"
-                      updatedBy: "123e4567e89b12d3a456426614174000"
-                    - id: "456f7890-f12c-23d4-e567-537725285111"
-                      name: "Health Portal"
-                      ministryName: "Ministry of Health"
-                      description: "Tenant for health services portal"
-                      status: "APPROVED"
-                      requestedBy: "Jane Doe: HLTH: EX"
-                      requestedAt: "2024-03-10"
-                      decisionedBy: "Admin User"
-                      decisionedAt: "2024-03-12"
+                      createdDateTime: '2024-03-15'
+                      updatedDateTime: '2024-03-15'
+                      createdBy: '123e4567e89b12d3a456426614174000'
+                      updatedBy: '123e4567e89b12d3a456426614174000'
+                    - id: '456f7890-f12c-23d4-e567-537725285111'
+                      name: 'Health Portal'
+                      ministryName: 'Ministry of Health'
+                      description: 'Tenant for health services portal'
+                      status: 'APPROVED'
+                      requestedBy: 'Jane Doe: HLTH: EX'
+                      requestedAt: '2024-03-10'
+                      decisionedBy: 'Admin User'
+                      decisionedAt: '2024-03-12'
                       rejectionReason: null
-                      createdDateTime: "2024-03-10"
-                      updatedDateTime: "2024-03-12"
-                      createdBy: "456f7890f12c23d4e567537725285111"
-                      updatedBy: "admin-user-guid"
+                      createdDateTime: '2024-03-10'
+                      updatedDateTime: '2024-03-12'
+                      createdBy: '456f7890f12c23d4e567537725285111'
+                      updatedBy: 'admin-user-guid'
         '400':
           description: Invalid query parameters
           content:
@@ -1062,7 +1072,7 @@ paths:
       description: |
         Updates the status of a tenant request. If approved, creates a new tenant.
         Requires JWT authentication and TMS.OPERATIONS_ADMIN role.
-        
+
         **Business Rules:**
         - Only NEW requests can be updated
         - When status is APPROVED, a new tenant is automatically created with the requesting user as TENANT_OWNER
@@ -1092,16 +1102,16 @@ paths:
                   type: string
                   enum: [APPROVED, REJECTED]
                   description: New status for the tenant request
-                  example: "APPROVED"
+                  example: 'APPROVED'
                 tenantName:
                   type: string
                   description: If status is approved, tenantName can be provided to change the tenant name on approval, this allows for approval when a collision of names would otherwise occur
-                  example: "Tenant name NEW"
+                  example: 'Tenant name NEW'
                 rejectionReason:
                   type: string
                   description: Required when status is REJECTED
                   maxLength: 500
-                  example: "Insufficient information provided"
+                  example: 'Insufficient information provided'
       responses:
         '200':
           description: Tenant request status updated successfully
@@ -1117,53 +1127,53 @@ paths:
                         type: string
                         format: uuid
                         description: Unique identifier of the tenant request
-                        example: "123e4567-e89b-12d3-a456-426614174000"
+                        example: '123e4567-e89b-12d3-a456-426614174000'
                       name:
                         type: string
                         description: Name of the tenant
-                        example: "Ministry of Health"
+                        example: 'Ministry of Health'
                       ministryName:
                         type: string
                         description: Name of the ministry
-                        example: "Health"
+                        example: 'Health'
                       description:
                         type: string
                         description: Description of the tenant
-                        example: "Tenant for Ministry of Health applications"
+                        example: 'Tenant for Ministry of Health applications'
                       status:
                         type: string
                         enum: [NEW, APPROVED, REJECTED]
                         description: Current status of the tenant request
-                        example: "APPROVED"
+                        example: 'APPROVED'
                       requestedBy:
                         type: string
                         description: Display name of the user who requested the tenant
-                        example: "John Smith"
+                        example: 'John Smith'
                       decisionedBy:
                         type: string
                         description: Display name of the operations admin who made the decision
-                        example: "Jane Doe"
+                        example: 'Jane Doe'
                       decisionedAt:
                         type: string
                         format: date-time
                         description: Timestamp when the decision was made
-                        example: "2024-03-20T10:30:00Z"
+                        example: '2024-03-20T10:30:00Z'
                       rejectionReason:
                         type: string
                         description: Reason for rejection, if the request was rejected
-                        example: "Insufficient information provided"
+                        example: 'Insufficient information provided'
                       createdBy:
                         type: string
                         description: SSO user ID of the user who created the request
                         minLength: 32
                         maxLength: 32
-                        example: "123e4567e89b12d3a456426614174000"
+                        example: '123e4567e89b12d3a456426614174000'
                       updatedBy:
                         type: string
                         description: SSO user ID of the user who last updated the request
                         minLength: 32
                         maxLength: 32
-                        example: "123e4567e89b12d3a456426614174000"
+                        example: '123e4567e89b12d3a456426614174000'
                   tenant:
                     type: object
                     description: Basic tenant information (only included when status is APPROVED)
@@ -1172,31 +1182,31 @@ paths:
                         type: string
                         format: uuid
                         description: Unique identifier of the tenant
-                        example: "123e4567-e89b-12d3-a456-426614174000"
+                        example: '123e4567-e89b-12d3-a456-426614174000'
                       name:
                         type: string
                         description: Name of the tenant
-                        example: "Ministry of Health"
+                        example: 'Ministry of Health'
                       ministryName:
                         type: string
                         description: Name of the ministry
-                        example: "Health"
+                        example: 'Health'
                       description:
                         type: string
                         description: Description of the tenant
-                        example: "Tenant for Ministry of Health applications"
+                        example: 'Tenant for Ministry of Health applications'
                       createdBy:
                         type: string
                         description: SSO user ID of the user who created the tenant
                         minLength: 32
                         maxLength: 32
-                        example: "123e4567e89b12d3a456426614174000"
+                        example: '123e4567e89b12d3a456426614174000'
                       updatedBy:
                         type: string
                         description: SSO user ID of the user who last updated the tenant
                         minLength: 32
                         maxLength: 32
-                        example: "123e4567e89b12d3a456426614174000"
+                        example: '123e4567e89b12d3a456426614174000'
         '400':
           description: Invalid input
           content:
@@ -1259,17 +1269,17 @@ paths:
                   description: |
                     Name must be 1-30 characters, cannot start or end with whitespace.
                     Pattern ensures no leading/trailing whitespace.
-                  example: "Email Service"
+                  example: 'Email Service'
                 clientIdentifier:
                   type: string
                   minLength: 1
                   maxLength: 55
                   pattern: '^\S.*\S$'
-                  example: "email-service-client"
+                  example: 'email-service-client'
                 description:
                   type: string
                   maxLength: 500
-                  example: "Shared email service for all tenants"
+                  example: 'Shared email service for all tenants'
                 isActive:
                   type: boolean
                   default: true
@@ -1288,19 +1298,20 @@ paths:
                         minLength: 1
                         maxLength: 30
                         pattern: '^\S.*\S$'
-                        example: "Email User"
+                        example: 'Email User'
                       description:
                         type: string
                         maxLength: 255
-                        example: "Can send emails through the service"
+                        example: 'Can send emails through the service'
                       allowedIdentityProviders:
                         type: array
                         items:
                           type: string
-                          enum: ['idir', 'azureidir', 'bceidbasic', 'bceidbusiness']
+                          enum:
+                            ['idir', 'azureidir', 'bceidbasic', 'bceidbusiness']
                         nullable: true
-                        example: ["idir", "bceidbusiness"]
-                        description: "List of identity providers allowed to access this role. If null or empty, all identity providers are allowed."
+                        example: ['idir', 'bceidbusiness']
+                        description: 'List of identity providers allowed to access this role. If null or empty, all identity providers are allowed.'
       responses:
         '201':
           description: Shared service successfully created
@@ -1403,7 +1414,7 @@ paths:
                 sharedServiceId:
                   type: string
                   format: uuid
-                  example: "123e4567-e89b-12d3-a456-426614174000"
+                  example: '123e4567-e89b-12d3-a456-426614174000'
       responses:
         '201':
           description: Shared service successfully associated with tenant
@@ -1530,15 +1541,15 @@ paths:
                   minLength: 1
                   maxLength: 30
                   pattern: '^\S.*\S$'
-                  example: "Development Team"
+                  example: 'Development Team'
                 description:
                   type: string
                   maxLength: 500
-                  example: "Group for development team members"
+                  example: 'Group for development team members'
                 tenantUserId:
                   type: string
                   format: uuid
-                  example: "123e4567-e89b-12d3-a456-426614174001"
+                  example: '123e4567-e89b-12d3-a456-426614174001'
       responses:
         '201':
           description: Group successfully created
@@ -1593,12 +1604,12 @@ paths:
       summary: Get all groups for a tenant
       description: |
         Retrieves groups for a tenant with different behavior based on access type:
-        
+
         **TMS Users**: Returns ALL groups in the tenant where the user is a member.
-        
+
         **External Services**: Returns ONLY groups that have at least one enabled 
         shared service role belonging to the requesting service.
-        
+
         Requires JWT authentication and tenant access.
       security:
         - bearerAuth: []
@@ -1769,11 +1780,11 @@ paths:
                   minLength: 1
                   maxLength: 30
                   pattern: '^\S.*\S$'
-                  example: "Updated Development Team"
+                  example: 'Updated Development Team'
                 description:
                   type: string
                   maxLength: 500
-                  example: "Updated description for development team"
+                  example: 'Updated description for development team'
       responses:
         '200':
           description: Group successfully updated
@@ -2008,30 +2019,30 @@ paths:
                             id:
                               type: string
                               format: uuid
-                              example: "456e7890-e89b-12d3-a456-426614174001"
+                              example: '456e7890-e89b-12d3-a456-426614174001'
                             name:
                               type: string
-                              example: "Email Service"
+                              example: 'Email Service'
                             clientIdentifier:
                               type: string
-                              example: "email-service-client"
+                              example: 'email-service-client'
                             description:
                               type: string
-                              example: "Email service for tenant communications"
+                              example: 'Email service for tenant communications'
                             createdDateTime:
                               type: string
                               format: date-time
-                              example: "2024-01-10T09:00:00Z"
+                              example: '2024-01-10T09:00:00Z'
                             updatedDateTime:
                               type: string
                               format: date-time
-                              example: "2024-01-15T14:30:00Z"
+                              example: '2024-01-15T14:30:00Z'
                             createdBy:
                               type: string
-                              example: "admin123"
+                              example: 'admin123'
                             updatedBy:
                               type: string
-                              example: "admin123"
+                              example: 'admin123'
                             sharedServiceRoles:
                               type: array
                               items:
@@ -2040,13 +2051,13 @@ paths:
                                   id:
                                     type: string
                                     format: uuid
-                                    example: "123e4567-e89b-12d3-a456-426614174000"
+                                    example: '123e4567-e89b-12d3-a456-426614174000'
                                   name:
                                     type: string
-                                    example: "Admin Role"
+                                    example: 'Admin Role'
                                   description:
                                     type: string
-                                    example: "Administrative role for the service"
+                                    example: 'Administrative role for the service'
                                   enabled:
                                     type: boolean
                                     example: true
@@ -2054,11 +2065,11 @@ paths:
                                     type: string
                                     format: date-time
                                     nullable: true
-                                    example: "2024-01-15T10:30:00Z"
+                                    example: '2024-01-15T10:30:00Z'
                                   createdBy:
                                     type: string
                                     nullable: true
-                                    example: "user123"
+                                    example: 'user123'
         '400':
           description: Invalid input
           content:
@@ -2130,7 +2141,7 @@ paths:
                       id:
                         type: string
                         format: uuid
-                        example: "c6c23ac7-f0bf-4025-bcf5-416dd397b4ee"
+                        example: 'c6c23ac7-f0bf-4025-bcf5-416dd397b4ee'
                       sharedServiceRoles:
                         type: array
                         items:
@@ -2142,16 +2153,16 @@ paths:
                             id:
                               type: string
                               format: uuid
-                              example: "5deaa72d-417e-4508-b4d8-3e3e4cf6572a"
+                              example: '5deaa72d-417e-4508-b4d8-3e3e4cf6572a'
                             enabled:
                               type: boolean
                               example: false
                   example:
-                    - id: "c6c23ac7-f0bf-4025-bcf5-416dd397b4ee"
+                    - id: 'c6c23ac7-f0bf-4025-bcf5-416dd397b4ee'
                       sharedServiceRoles:
-                        - id: "5deaa72d-417e-4508-b4d8-3e3e4cf6572a"
+                        - id: '5deaa72d-417e-4508-b4d8-3e3e4cf6572a'
                           enabled: false
-                        - id: "7ec4f5aa-b5d6-4668-a450-09b3f18e6622"
+                        - id: '7ec4f5aa-b5d6-4668-a450-09b3f18e6622'
                           enabled: true
       responses:
         '200':
@@ -2172,30 +2183,30 @@ paths:
                             id:
                               type: string
                               format: uuid
-                              example: "456e7890-e89b-12d3-a456-426614174001"
+                              example: '456e7890-e89b-12d3-a456-426614174001'
                             name:
                               type: string
-                              example: "Email Service"
+                              example: 'Email Service'
                             clientIdentifier:
                               type: string
-                              example: "email-service-client"
+                              example: 'email-service-client'
                             description:
                               type: string
-                              example: "Email service for tenant communications"
+                              example: 'Email service for tenant communications'
                             createdDateTime:
                               type: string
                               format: date-time
-                              example: "2024-01-10T09:00:00Z"
+                              example: '2024-01-10T09:00:00Z'
                             updatedDateTime:
                               type: string
                               format: date-time
-                              example: "2024-01-15T14:30:00Z"
+                              example: '2024-01-15T14:30:00Z'
                             createdBy:
                               type: string
-                              example: "admin123"
+                              example: 'admin123'
                             updatedBy:
                               type: string
-                              example: "admin123"
+                              example: 'admin123'
                             sharedServiceRoles:
                               type: array
                               items:
@@ -2204,13 +2215,13 @@ paths:
                                   id:
                                     type: string
                                     format: uuid
-                                    example: "123e4567-e89b-12d3-a456-426614174000"
+                                    example: '123e4567-e89b-12d3-a456-426614174000'
                                   name:
                                     type: string
-                                    example: "Admin Role"
+                                    example: 'Admin Role'
                                   description:
                                     type: string
-                                    example: "Administrative role for the service"
+                                    example: 'Administrative role for the service'
                                   enabled:
                                     type: boolean
                                     example: true
@@ -2218,11 +2229,11 @@ paths:
                                     type: string
                                     format: date-time
                                     nullable: true
-                                    example: "2024-01-15T10:30:00Z"
+                                    example: '2024-01-15T10:30:00Z'
                                   createdBy:
                                     type: string
                                     nullable: true
-                                    example: "user123"
+                                    example: 'user123'
         '400':
           description: Invalid input
           content:
@@ -2289,27 +2300,28 @@ paths:
                         minLength: 1
                         maxLength: 30
                         pattern: '^\S.*\S$'
-                        example: "New Admin Role"
+                        example: 'New Admin Role'
                       description:
                         type: string
                         maxLength: 255
-                        example: "New administrator role for the shared service"
+                        example: 'New administrator role for the shared service'
                       allowedIdentityProviders:
                         type: array
                         items:
                           type: string
-                          enum: ['idir', 'azureidir', 'bceidbasic', 'bceidbusiness']
+                          enum:
+                            ['idir', 'azureidir', 'bceidbasic', 'bceidbusiness']
                         nullable: true
-                        example: ["idir"]
-                        description: "List of identity providers allowed to access this role. If null or empty, all identity providers are allowed."
+                        example: ['idir']
+                        description: 'List of identity providers allowed to access this role. If null or empty, all identity providers are allowed.'
                   minItems: 1
                   maxItems: 10
                   example:
-                    - name: "New Admin Role"
-                      description: "New administrator role for the shared service"
-                      allowedIdentityProviders: ["idir", "bceidbusiness"]
-                    - name: "New User Role"
-                      description: "New standard user role for the shared service"
+                    - name: 'New Admin Role'
+                      description: 'New administrator role for the shared service'
+                      allowedIdentityProviders: ['idir', 'bceidbusiness']
+                    - name: 'New User Role'
+                      description: 'New standard user role for the shared service'
                       allowedIdentityProviders: null
       responses:
         '201':
@@ -2593,37 +2605,37 @@ components:
           type: string
           minLength: 1
           maxLength: 50
-          example: "John"
+          example: 'John'
         lastName:
           type: string
           minLength: 1
           maxLength: 50
-          example: "Smith"
+          example: 'Smith'
         displayName:
           type: string
           minLength: 1
           maxLength: 50
-          example: "Smith, John: JEDI: EX"
+          example: 'Smith, John: JEDI: EX'
         userName:
           type: string
           minLength: 1
           maxLength: 15
-          example: "JSMITH1"
+          example: 'JSMITH1'
         ssoUserId:
           type: string
           minLength: 1
           maxLength: 32
-          example: "fd33f1cef7ca4b19a71104d4ecf7066b"
+          example: 'fd33f1cef7ca4b19a71104d4ecf7066b'
         email:
           type: string
           format: email
           nullable: true
-          example: "John@gov.bc.ca"
+          example: 'John@gov.bc.ca'
         idpType:
           type: string
           enum: ['idir', 'bceidbasic', 'bceidbusiness']
           nullable: true
-          example: "idir"
+          example: 'idir'
           description: "Identity Provider type. Defaults to 'idir' if not provided."
 
     User:
@@ -2632,15 +2644,15 @@ components:
         id:
           type: string
           format: uuid
-          example: "fd33f1cef7ca4b19a71104d4ecf7066b"
+          example: 'fd33f1cef7ca4b19a71104d4ecf7066b'
         createdDateTime:
           type: string
           format: date-time
-          example: "2024-03-21T10:00:00Z"
+          example: '2024-03-21T10:00:00Z'
         updatedDateTime:
           type: string
           format: date-time
-          example: "2024-03-21T10:00:00Z"
+          example: '2024-03-21T10:00:00Z'
         ssoUser:
           $ref: '#/components/schemas/SSOUser'
 
@@ -2650,42 +2662,42 @@ components:
         id:
           type: string
           format: uuid
-          example: "fd33f1cef7ca4b19a71104d4ecf7066b"
+          example: 'fd33f1cef7ca4b19a71104d4ecf7066b'
         ssoUserId:
           type: string
           format: uuid
-          example: "fd33f1cef7ca4b19a71104d4ecf7066b"
+          example: 'fd33f1cef7ca4b19a71104d4ecf7066b'
         firstName:
           type: string
-          example: "John"
+          example: 'John'
         lastName:
           type: string
-          example: "Smith"
+          example: 'Smith'
         displayName:
           type: string
-          example: "Smith, John: JEDI: EX"
+          example: 'Smith, John: JEDI: EX'
         userName:
           type: string
-          example: "JSMITH1"
+          example: 'JSMITH1'
         email:
           type: string
           format: email
           nullable: true
-          example: "John@gov.bc.ca"
+          example: 'John@gov.bc.ca'
         idpType:
           type: string
           enum: ['idir', 'bceidbasic', 'bceidbusiness']
           nullable: true
-          example: "idir"
-          description: "Identity Provider type"
+          example: 'idir'
+          description: 'Identity Provider type'
         createdDateTime:
           type: string
           format: date-time
-          example: "2024-03-21T10:00:00Z"
+          example: '2024-03-21T10:00:00Z'
         updatedDateTime:
           type: string
           format: date-time
-          example: "2024-03-21T10:00:00Z"
+          example: '2024-03-21T10:00:00Z'
 
     Role:
       type: object
@@ -2693,25 +2705,25 @@ components:
         id:
           type: string
           format: uuid
-          example: "14c6bb48-54e2-4ce0-9bbd-af4982fff13b"
+          example: '14c6bb48-54e2-4ce0-9bbd-af4982fff13b'
         name:
           type: string
           minLength: 1
           maxLength: 100
-          example: "TMS.USER_ADMIN"
+          example: 'TMS.USER_ADMIN'
         description:
           type: string
           minLength: 1
           maxLength: 255
-          example: "TMS User Admin Role"
+          example: 'TMS User Admin Role'
         createdDateTime:
           type: string
           format: date-time
-          example: "2024-03-21T10:00:00Z"
+          example: '2024-03-21T10:00:00Z'
         updatedDateTime:
           type: string
           format: date-time
-          example: "2024-03-21T10:00:00Z"
+          example: '2024-03-21T10:00:00Z'
 
     Tenant:
       type: object
@@ -2719,24 +2731,24 @@ components:
         id:
           type: string
           format: uuid
-          example: "f98cbbfb-b96c-4a40-a10b-c2a7e795022c"
+          example: 'f98cbbfb-b96c-4a40-a10b-c2a7e795022c'
         name:
           type: string
-          example: "Roads initiative"
+          example: 'Roads initiative'
         ministryName:
           type: string
-          example: "Ministry of Natural Resources"
+          example: 'Ministry of Natural Resources'
         description:
           type: string
-          example: "My Tenant Description"
+          example: 'My Tenant Description'
         createdDateTime:
           type: string
           format: date-time
-          example: "2024-03-21T10:00:00Z"
+          example: '2024-03-21T10:00:00Z'
         updatedDateTime:
           type: string
           format: date-time
-          example: "2024-03-21T10:00:00Z"
+          example: '2024-03-21T10:00:00Z'
 
     TenantWithUsers:
       allOf:
@@ -2760,96 +2772,96 @@ components:
       properties:
         name:
           type: string
-          example: "Error occurred during tenant creation"
+          example: 'Error occurred during tenant creation'
         message:
           type: string
-          example: "Validation failed: name is required"
+          example: 'Validation failed: name is required'
         httpResponseCode:
           type: integer
           example: 400
         errorMessage:
           type: string
-          example: "Bad Request"
+          example: 'Bad Request'
 
     UnauthorizedErrorResponse:
       type: object
       properties:
         name:
           type: string
-          example: "Unauthorized"
+          example: 'Unauthorized'
         message:
           type: string
-          example: "Error occurred during authentication"
+          example: 'Error occurred during authentication'
         httpResponseCode:
           type: integer
           example: 401
         errorMessage:
           type: string
-          example: "Unauthorized"
+          example: 'Unauthorized'
 
     ForbiddenErrorResponse:
       type: object
       properties:
         name:
           type: string
-          example: "Authorization Failure"
+          example: 'Authorization Failure'
         message:
           type: string
-          example: "Access denied: User does not have required roles for tenant"
+          example: 'Access denied: User does not have required roles for tenant'
         httpResponseCode:
           type: integer
           example: 403
         errorMessage:
           type: string
-          example: "Forbidden"
+          example: 'Forbidden'
 
     NotFoundErrorResponse:
       type: object
       properties:
         name:
           type: string
-          example: "Error occurred getting a tenant"
+          example: 'Error occurred getting a tenant'
         message:
           type: string
-          example: "Tenant Not Found: 21eb86-9cf5-40a3-9a0d-81b551f50a2f"
+          example: 'Tenant Not Found: 21eb86-9cf5-40a3-9a0d-81b551f50a2f'
         httpResponseCode:
           type: integer
           example: 404
         errorMessage:
           type: string
-          example: "Not Found"
+          example: 'Not Found'
 
     ConflictErrorResponse:
       type: object
       properties:
         name:
           type: string
-          example: "Error occurred adding user to the tenant"
+          example: 'Error occurred adding user to the tenant'
         message:
           type: string
-          example: "User is already added to this tenant: 8821eb86-9cf5-40a3-9a0d-81b551f50a2f"
+          example: 'User is already added to this tenant: 8821eb86-9cf5-40a3-9a0d-81b551f50a2f'
         httpResponseCode:
           type: integer
           example: 409
         errorMessage:
           type: string
-          example: "Conflict"
+          example: 'Conflict'
 
     InternalServerErrorResponse:
       type: object
       properties:
         name:
           type: string
-          example: "Error occurred during tenant creation"
+          example: 'Error occurred during tenant creation'
         message:
           type: string
-          example: "This is an error message"
+          example: 'This is an error message'
         httpResponseCode:
           type: integer
           example: 500
         errorMessage:
           type: string
-          example: "Internal Server Error"
+          example: 'Internal Server Error'
 
     TenantRequest:
       type: object
@@ -2857,27 +2869,27 @@ components:
         id:
           type: string
           format: uuid
-          example: "123e4567-e89b-12d3-a456-426614174000"
+          example: '123e4567-e89b-12d3-a456-426614174000'
         name:
           type: string
-          example: "Roads Initiative"
+          example: 'Roads Initiative'
         ministryName:
           type: string
-          example: "Ministry of Natural Resources"
+          example: 'Ministry of Natural Resources'
         description:
           type: string
-          example: "Tenant for managing road infrastructure"
+          example: 'Tenant for managing road infrastructure'
         status:
           type: string
           enum: [NEW, APPROVED, REJECTED]
-          example: "NEW"
+          example: 'NEW'
         requestedBy:
           type: string
-          example: "John Smith: ENV"
+          example: 'John Smith: ENV'
         requestedAt:
           type: string
           format: date
-          example: "2024-03-15"
+          example: '2024-03-15'
         decisionedBy:
           type: string
           nullable: true
@@ -2894,23 +2906,23 @@ components:
         createdDateTime:
           type: string
           format: date
-          example: "2024-03-15"
+          example: '2024-03-15'
         updatedDateTime:
           type: string
           format: date
-          example: "2024-03-15"
+          example: '2024-03-15'
         createdBy:
           type: string
           description: SSO user ID of the user who created the request
           minLength: 32
           maxLength: 32
-          example: "123e4567e89b12d3a456426614174000"
+          example: '123e4567e89b12d3a456426614174000'
         updatedBy:
           type: string
           description: SSO user ID of the user who last updated the request
           minLength: 32
           maxLength: 32
-          example: "123e4567e89b12d3a456426614174000"
+          example: '123e4567e89b12d3a456426614174000'
 
     TenantRequestCreate:
       type: object
@@ -2923,16 +2935,16 @@ components:
           type: string
           minLength: 1
           maxLength: 30
-          example: "Roads Initiative"
+          example: 'Roads Initiative'
         ministryName:
           type: string
           minLength: 1
           maxLength: 100
-          example: "Ministry of Natural Resources"
+          example: 'Ministry of Natural Resources'
         description:
           type: string
           maxLength: 500
-          example: "Tenant for managing road infrastructure"
+          example: 'Tenant for managing road infrastructure'
         user:
           type: object
           required:
@@ -2945,23 +2957,23 @@ components:
           properties:
             firstName:
               type: string
-              example: "John"
+              example: 'John'
             lastName:
               type: string
-              example: "Smith"
+              example: 'Smith'
             displayName:
               type: string
-              example: "John Smith: ENV: EX"
+              example: 'John Smith: ENV: EX'
             ssoUserId:
               type: string
-              example: "F45AFBBD68C4466F956BA3A1D91878AD"
+              example: 'F45AFBBD68C4466F956BA3A1D91878AD'
             userName:
               type: string
-              example: "johnSmith"
+              example: 'johnSmith'
             email:
               type: string
               format: email
-              example: "john.Smith@example.com"
+              example: 'john.Smith@example.com'
 
     Group:
       type: object
@@ -2969,24 +2981,24 @@ components:
         id:
           type: string
           format: uuid
-          example: "123e4567-e89b-12d3-a456-426614174000"
+          example: '123e4567-e89b-12d3-a456-426614174000'
         name:
           type: string
           minLength: 1
           maxLength: 30
-          example: "Development Team"
+          example: 'Development Team'
         description:
           type: string
           maxLength: 500
-          example: "Group for development team members"
+          example: 'Group for development team members'
         createdDateTime:
           type: string
           format: date-time
-          example: "2024-03-21T10:00:00Z"
+          example: '2024-03-21T10:00:00Z'
         updatedDateTime:
           type: string
           format: date-time
-          example: "2024-03-21T10:00:00Z"
+          example: '2024-03-21T10:00:00Z'
 
     GroupUserWithUser:
       type: object
@@ -2994,7 +3006,7 @@ components:
         id:
           type: string
           format: uuid
-          example: "123e4567-e89b-12d3-a456-426614174000"
+          example: '123e4567-e89b-12d3-a456-426614174000'
         isDeleted:
           type: boolean
           default: false
@@ -3002,40 +3014,40 @@ components:
         createdDateTime:
           type: string
           format: date-time
-          example: "2024-03-21T10:00:00Z"
+          example: '2024-03-21T10:00:00Z'
         updatedDateTime:
           type: string
           format: date-time
-          example: "2024-03-21T10:00:00Z"
+          example: '2024-03-21T10:00:00Z'
         createdBy:
           type: string
-          example: "user123"
+          example: 'user123'
         updatedBy:
           type: string
-          example: "user123"
+          example: 'user123'
         user:
           type: object
           properties:
             id:
               type: string
               format: uuid
-              example: "123e4567-e89b-12d3-a456-426614174001"
+              example: '123e4567-e89b-12d3-a456-426614174001'
             ssoUser:
               $ref: '#/components/schemas/SSOUser'
             createdDateTime:
               type: string
               format: date-time
-              example: "2024-03-21T10:00:00Z"
+              example: '2024-03-21T10:00:00Z'
             updatedDateTime:
               type: string
               format: date-time
-              example: "2024-03-21T10:00:00Z"
+              example: '2024-03-21T10:00:00Z'
             createdBy:
               type: string
-              example: "system"
+              example: 'system'
             updatedBy:
               type: string
-              example: "system"
+              example: 'system'
 
     GroupUser:
       type: object
@@ -3043,15 +3055,15 @@ components:
         id:
           type: string
           format: uuid
-          example: "123e4567-e89b-12d3-a456-426614174000"
+          example: '123e4567-e89b-12d3-a456-426614174000'
         groupId:
           type: string
           format: uuid
-          example: "123e4567-e89b-12d3-a456-426614174000"
+          example: '123e4567-e89b-12d3-a456-426614174000'
         tenantUserId:
           type: string
           format: uuid
-          example: "123e4567-e89b-12d3-a456-426614174001"
+          example: '123e4567-e89b-12d3-a456-426614174001'
         isDeleted:
           type: boolean
           default: false
@@ -3059,17 +3071,17 @@ components:
         createdDateTime:
           type: string
           format: date-time
-          example: "2024-03-21T10:00:00Z"
+          example: '2024-03-21T10:00:00Z'
         updatedDateTime:
           type: string
           format: date-time
-          example: "2024-03-21T10:00:00Z"
+          example: '2024-03-21T10:00:00Z'
         createdBy:
           type: string
-          example: "user123"
+          example: 'user123'
         updatedBy:
           type: string
-          example: "user123"
+          example: 'user123'
 
     SharedServiceWithRoles:
       type: object
@@ -3077,21 +3089,21 @@ components:
         id:
           type: string
           format: uuid
-          example: "123e4567-e89b-12d3-a456-426614174000"
+          example: '123e4567-e89b-12d3-a456-426614174000'
         name:
           type: string
           minLength: 1
           maxLength: 30
-          example: "Email Service"
+          example: 'Email Service'
         clientIdentifier:
           type: string
           minLength: 1
           maxLength: 55
-          example: "email-service-client"
+          example: 'email-service-client'
         description:
           type: string
           maxLength: 500
-          example: "Shared email service for all tenants"
+          example: 'Shared email service for all tenants'
         isActive:
           type: boolean
           default: true
@@ -3110,25 +3122,25 @@ components:
                 minLength: 1
                 maxLength: 30
                 pattern: '^\S.*\S$'
-                example: "Email User"
+                example: 'Email User'
               description:
                 type: string
                 maxLength: 255
-                example: "Can send emails through the service"
+                example: 'Can send emails through the service'
         createdDateTime:
           type: string
           format: date-time
-          example: "2024-03-21T10:00:00Z"
+          example: '2024-03-21T10:00:00Z'
         updatedDateTime:
           type: string
           format: date-time
-          example: "2024-03-21T10:00:00Z"
+          example: '2024-03-21T10:00:00Z'
         createdBy:
           type: string
-          example: "user123"
+          example: 'user123'
         updatedBy:
           type: string
-          example: "user123"
+          example: 'user123'
 
     SharedService:
       type: object
@@ -3136,21 +3148,21 @@ components:
         id:
           type: string
           format: uuid
-          example: "123e4567-e89b-12d3-a456-426614174000"
+          example: '123e4567-e89b-12d3-a456-426614174000'
         name:
           type: string
           minLength: 1
           maxLength: 30
-          example: "Email Service"
+          example: 'Email Service'
         clientIdentifier:
           type: string
           minLength: 1
           maxLength: 55
-          example: "email-service-client"
+          example: 'email-service-client'
         description:
           type: string
           maxLength: 500
-          example: "Shared email service for all tenants"
+          example: 'Shared email service for all tenants'
         isActive:
           type: boolean
           default: true
@@ -3158,17 +3170,17 @@ components:
         createdDateTime:
           type: string
           format: date-time
-          example: "2024-03-21T10:00:00Z"
+          example: '2024-03-21T10:00:00Z'
         updatedDateTime:
           type: string
           format: date-time
-          example: "2024-03-21T10:00:00Z"
+          example: '2024-03-21T10:00:00Z'
         createdBy:
           type: string
-          example: "user123"
+          example: 'user123'
         updatedBy:
           type: string
-          example: "user123"
+          example: 'user123'
 
     SharedServiceRole:
       type: object
@@ -3176,24 +3188,24 @@ components:
         id:
           type: string
           format: uuid
-          example: "123e4567-e89b-12d3-a456-426614174001"
+          example: '123e4567-e89b-12d3-a456-426614174001'
         name:
           type: string
           minLength: 1
           maxLength: 30
-          example: "Email User"
+          example: 'Email User'
         description:
           type: string
           maxLength: 255
-          example: "Can send emails through the service"
+          example: 'Can send emails through the service'
         allowedIdentityProviders:
           type: array
           items:
             type: string
             enum: ['idir', 'azureidir', 'bceidbasic', 'bceidbusiness']
           nullable: true
-          example: ["idir", "bceidbusiness"]
-          description: "List of identity providers allowed to access this role. If null or empty, all identity providers are allowed."
+          example: ['idir', 'bceidbusiness']
+          description: 'List of identity providers allowed to access this role. If null or empty, all identity providers are allowed.'
         isDeleted:
           type: boolean
           default: false
@@ -3201,17 +3213,17 @@ components:
         createdDateTime:
           type: string
           format: date-time
-          example: "2024-03-21T10:00:00Z"
+          example: '2024-03-21T10:00:00Z'
         updatedDateTime:
           type: string
           format: date-time
-          example: "2024-03-21T10:00:00Z"
+          example: '2024-03-21T10:00:00Z'
         createdBy:
           type: string
-          example: "user123"
+          example: 'user123'
         updatedBy:
           type: string
-          example: "user123"
+          example: 'user123'
 
     UserGroupsWithSharedServices:
       type: object
@@ -3238,10 +3250,10 @@ components:
       bearerFormat: JWT
       description: |
         JWT token for authentication. 
-        
+
         **TMS Endpoints**: Requires TMS_AUDIENCE and IDIR/Azure IDIR identity provider.
         **Shared Service Endpoints**: Requires matching client_identifier in JWT audience.
-        
+
         The JWT must be obtained from the configured OIDC provider and contain:
         - Valid signature verified against JWKS
         - Valid issuer and audience claims

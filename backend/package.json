@@ -33,7 +33,6 @@
   },
   "dependencies": {
     "@types/express-jwt": "^6.0.4",
-    "@types/node-fetch": "^2.5.10",
     "axios": "^1.7.7",
     "cls-rtracer": "^2.6.0",
     "cors": "^2.8.5",
@@ -43,7 +42,6 @@
     "express-validation": "^3.0.8",
     "joi": "^17.4.0",
     "jwks-rsa": "^3.2.0",
-    "node-fetch": "^2.7.0",
     "reflect-metadata": "^0.1.10",
     "swagger-ui-express": "^4.6.3",
     "typeorm": "^0.3.20",

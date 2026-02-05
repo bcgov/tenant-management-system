@@ -1,5 +1,5 @@
-import * as dotenv from "dotenv";
-dotenv.config();
+import * as dotenv from 'dotenv'
+dotenv.config()
 
 const dbConfig = {
   type: 'postgres',
@@ -11,20 +11,14 @@ const dbConfig = {
   schema: 'tms',
   synchronize: false,
   logging: true,
-  entities: [
-    'src/entities/**/*.ts'
-  ],
-  migrations: [
-    './src/migrations/*.ts'
-  ],
-  subscribers: [
-    'src/subscriber/**/*.ts'
-  ],
+  entities: ['src/entities/**/*.ts'],
+  migrations: ['./src/migrations/*.ts'],
+  subscribers: ['src/subscriber/**/*.ts'],
   cli: {
     entitiesDir: 'src/entities',
     migrationsDir: 'src/migration',
-    subscribersDir: 'src/subscriber'
-  }
+    subscribersDir: 'src/subscriber',
+  },
 }
 
 module.exports = dbConfig
