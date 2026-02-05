@@ -4,12 +4,8 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  ManyToOne,
-  JoinColumn,
   OneToMany,
 } from 'typeorm'
-import { TenantUser } from './TenantUser'
-import { Tenant } from './Tenant'
 import { TenantUserRole } from './TenantUserRole'
 
 @Entity('Role', { schema: 'tms' })

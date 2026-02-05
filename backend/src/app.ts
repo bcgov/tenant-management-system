@@ -4,7 +4,7 @@ import { Routes } from './routes/routes'
 import rTracer from 'cls-rtracer'
 import { requestLoggingMiddleware } from './common/logger.mw'
 import { addRequestIdHeader } from './common/request-id-header.mw'
-import { checkJwt, jwtErrorHandler } from './common/auth.mw'
+import { jwtErrorHandler } from './common/auth.mw'
 import logger from './common/logger'
 import swaggerUi from 'swagger-ui-express'
 import YAML from 'yamljs'
@@ -28,7 +28,10 @@ export default class App {
     this.app.use(
       cors({
         origin: function (origin, callback) {
-          if (!origin) return callback(null, true)
+          if (!origin) {
+            return callback(null, true)
+          }
+
           if (allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
             return callback(null, true)
           } else {

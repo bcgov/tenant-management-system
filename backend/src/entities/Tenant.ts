@@ -8,7 +8,6 @@ import {
   Unique,
 } from 'typeorm'
 import { TenantUser } from './TenantUser'
-import { Role } from './Role'
 
 @Entity('Tenant', { schema: 'tms' })
 @Unique(['name', 'ministryName'])

@@ -1,4 +1,4 @@
-import { Request, Response } from 'express'
+import { Request } from 'express'
 import { TMRepository } from '../repositories/tm.repository'
 import { TMSRepository } from '../repositories/tms.repository'
 import { connection } from '../common/db.connection'
