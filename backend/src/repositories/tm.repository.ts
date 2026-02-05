@@ -7,10 +7,8 @@ import { In, Brackets } from 'typeorm'
 import { Request } from 'express'
 import { NotFoundError } from '../errors/NotFoundError'
 import { ConflictError } from '../errors/ConflictError'
-import { BadRequestError } from '../errors/BadRequestError'
 import logger from '../common/logger'
 import { TMSRepository } from './tms.repository'
-import { TMSConstants } from '../common/tms.constants'
 import { GroupSharedServiceRole } from '../entities/GroupSharedServiceRole'
 import { SharedServiceRole } from '../entities/SharedServiceRole'
 import { TenantSharedService } from '../entities/TenantSharedService'
@@ -627,7 +625,7 @@ export class TMRepository {
         transactionEntityManager,
       )
     ) {
-      throw new ConflictError(`User is already a member of this group`)
+      throw new ConflictError('User is already a member of this group')
     }
 
     const softDeletedGroupUser = await this.findSoftDeletedGroupUser(

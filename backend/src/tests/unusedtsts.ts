@@ -11,7 +11,7 @@ beforeAll(async () => {
   try {
     const containerModule = require('@testcontainers/postgresql')
     PostgreSqlContainer = containerModule.PostgreSqlContainer
-  } catch (e) {
+  } catch {
     try {
       const containerModule = require('testcontainers')
       PostgreSqlContainer = containerModule.PostgreSqlContainer
@@ -73,8 +73,8 @@ afterAll(async () => {
 console.log('Running tests...')
 
 let tenantId: string, roleId: string, tenantUserId: string
-let initialSSOUserId: string = 'fd33f1cef7ca4b19a71104d4ecf7066b'
-let additionalSSOUserId: string = 'ad43f1cef7ca4b19a71104d4ecf7066d'
+const initialSSOUserId: string = 'fd33f1cef7ca4b19a71104d4ecf7066b'
+const additionalSSOUserId: string = 'ad43f1cef7ca4b19a71104d4ecf7066d'
 
 describe('Health Check API', () => {
   it('should return 200 OK and healthy status', async () => {
