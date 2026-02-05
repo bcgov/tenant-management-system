@@ -2,6 +2,7 @@
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "editor.formatOnSave": true,
   "editor.rulers": [80],
+  "eslint.validate": ["javascript", "typescript", "vue"],
   "sonarlint.connectedMode.project": {
     "connectionId": "bcgov-sonarcloud",
     "projectKey": "bcgov_tenant-management-system"

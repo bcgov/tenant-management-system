@@ -17,31 +17,37 @@ export default class App {
 
   constructor() {
     this.app = express()
-    const allowedOrigins = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : ['*'];
-   
+    const allowedOrigins = process.env.ALLOWED_ORIGINS
+      ? process.env.ALLOWED_ORIGINS.split(',')
+      : ['*']
+
     this.app.use(rTracer.expressMiddleware())
     this.app.use(addRequestIdHeader)
     this.app.use(requestLoggingMiddleware)
 
-    this.app.use(cors({
-      origin: function(origin, callback) {
-        if (!origin) return callback(null, true)
-        if (allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
-          return callback(null, true)
-        } else {
-          const msg = `CORS Error: This site ${origin} does not have access`
-          logger.error(msg, { origin })
-          return callback(new Error(msg), false)
-        }
-      }
-    }))
-    
+    this.app.use(
+      cors({
+        origin: function (origin, callback) {
+          if (!origin) return callback(null, true)
+          if (allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
+            return callback(null, true)
+          } else {
+            const msg = `CORS Error: This site ${origin} does not have access`
+            logger.error(msg, { origin })
+            return callback(new Error(msg), false)
+          }
+        },
+      }),
+    )
+
     this.config()
 
-    const swaggerDocument = YAML.load(path.join(__dirname, "docs", "openapi.yaml"))
-    this.app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument))
+    const swaggerDocument = YAML.load(
+      path.join(__dirname, 'docs', 'openapi.yaml'),
+    )
+    this.app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument))
 
-    this.app.use(jwtErrorHandler) 
+    this.app.use(jwtErrorHandler)
     this.routes.routes(this.app)
   }
 

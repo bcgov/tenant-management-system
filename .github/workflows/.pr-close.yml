@@ -1,0 +1,158 @@
+name: .PR Close
+
+on:
+  workflow_call:
+    inputs:
+      ### Typical / recommended
+      cleanup:
+        description: "Type of cleanup; e.g. helm or label"
+        required: false
+        type: string
+      environment:
+        description: Environment name; omit for PRs
+        required: false
+        type: string
+      packages:
+        description: "Space-separated list of packages to promote"
+        required: false
+        type: string
+      remove_pvc:
+        required: false
+        default: data-${{ github.event.repository.name }}-${{ github.event.number }}-bitnami-pg-0
+        type: string
+        description: "Comma separated list of PVCs to remove"
+
+      ### Usually a bad idea / not recommended
+      merge_branch:
+        description: "Merge target branch"
+        required: false
+        type: string
+        default: ${{ github.event.repository.default_branch }}
+      cleanup_name:
+        description: "Use if template/cleanup name differs from repo"
+        type: string
+        default: ${{ github.event.repository.name }}
+      organization:
+        description: "GitHub organization; e.g. bcgov"
+        default: ${{ github.repository_owner }}
+        required: false
+        type: string
+      repository:
+        description: "GitHub repository, e.g. quickstart-openshift"
+        default: ${{ github.event.repository.name }}
+        required: false
+        type: string
+      tag_promote:
+        description: "Tag to promote to; e.g. latest, test, demo or prod"
+        default: latest
+        required: false
+        type: string
+      target:
+        description: "Target; e.g. PR number, test or prod"
+        default: ${{ github.event.number }}
+        required: false
+        type: string
+
+    secrets:
+      oc_namespace:
+        description: "OpenShift namespace"
+        required: false
+      oc_token:
+        description: "OpenShift token"
+        required: false
+      oc_server:
+        description: "OpenShift server, defaults to https://api.silver.devops.gov.bc.ca:6443"
+        required: false
+
+permissions: {}
+
+env:
+  DEFAULT_OC_SERVER: https://api.silver.devops.gov.bc.ca:6443
+
+jobs:
+  vars:
+    if: inputs.packages != ''
+    runs-on: ubuntu-24.04
+    outputs:
+      packages: ${{ steps.packages.outputs.packages }}
+    steps:
+      - id: packages
+        run: |
+          # Convert packages to JSON array for job matrix
+          echo "packages=$(jq -cn '$ARGS.positional' --args ${{ inputs.packages }})" >> $GITHUB_OUTPUT
+
+      - run: |
+          # Diagnostic vars
+          echo "packages=$(jq -cn '$ARGS.positional' --args ${{ inputs.packages }})"
+          echo "github.event.pull_request.merged=${{ github.event.pull_request.merged }}"
+          echo "github.event.pull_request.base.ref=${{ github.event.pull_request.base.ref }}"
+          echo "inputs.merge_branch=${{ inputs.merge_branch }}"
+
+  retags:
+    name: Retags
+    if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == inputs.merge_branch
+    needs: vars
+    runs-on: ubuntu-24.04
+    permissions:
+      packages: write
+    strategy:
+      matrix:
+        package: ${{ fromJson(needs.vars.outputs.packages) }}
+    timeout-minutes: 1
+    steps:
+      - uses: shrink/actions-docker-registry-tag@f04afd0559f66b288586792eb150f45136a927fa # v4
+        with:
+          registry: ghcr.io
+          repository: ${{ inputs.organization }}/${{ inputs.repository }}/${{ matrix.package }}
+          target: ${{ inputs.target }}
+          tags: ${{ inputs.tag_promote }}
+
+  # Clean up OpenShift when PR closed
+  cleanup:
+    name: OpenShift
+    if: inputs.cleanup == 'helm' || inputs.cleanup == 'label'
+    environment: ${{ inputs.environment }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Helm Cleanup
+        env:
+          release: ${{ inputs.cleanup_name }}-${{ inputs.target }}
+        if: inputs.cleanup == 'helm'
+        uses: bcgov/action-oc-runner@f900830adadd4d9eef3ca6ff80103e839ba8b7c0 # v1.3.0
+        with:
+          oc_namespace: ${{ secrets.oc_namespace }}
+          oc_token: ${{ secrets.oc_token }}
+          oc_server: ${{ secrets.oc_server || env.DEFAULT_OC_SERVER }}
+          commands: |
+            # Cleanup for Helm deployments
+
+            # If found, then remove
+            helm status ${{ env.release }} && helm uninstall --no-hooks ${{ env.release }} || \
+              echo "Not found: ${{ env.release }}"
+
+      - name: OC Template (label) Cleanup
+        if: inputs.cleanup == 'label'
+        uses: bcgov/action-oc-runner@f900830adadd4d9eef3ca6ff80103e839ba8b7c0 # v1.3.0
+        with:
+          oc_namespace: ${{ secrets.oc_namespace }}
+          oc_token: ${{ secrets.oc_token }}
+          oc_server: ${{ secrets.oc_server || env.DEFAULT_OC_SERVER }}
+          commands: |
+            # Cleanup for OpenShift template deployments, uses labels
+
+            # Remove old build runs, build pods and deployment pods
+            oc delete all,cm,pvc,secret -l app=${{ inputs.cleanup_name }}-${{ inputs.target }}
+
+      - name: Remove PVCs
+        if: inputs.remove_pvc
+        uses: bcgov/action-oc-runner@f900830adadd4d9eef3ca6ff80103e839ba8b7c0 # v1.3.0
+        with:
+          oc_namespace: ${{ secrets.oc_namespace }}
+          oc_token: ${{ secrets.oc_token }}
+          oc_server: ${{ secrets.oc_server || env.DEFAULT_OC_SERVER }}
+          commands: |
+            # Remove PVCs from OpenShift when PR closed
+            echo "${{ inputs.remove_pvc }}" | while IFS= read -r pvc; do
+                oc delete pvc ${pvc//,/} || echo "Not found: ${pvc//,/}"
+            done
