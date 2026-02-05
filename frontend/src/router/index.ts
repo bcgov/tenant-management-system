@@ -7,9 +7,11 @@ import SettingsContainer from '@/components/route/SettingsContainer.vue'
 import TenantListContainer from '@/components/route/TenantListContainer.vue'
 import TenantManagementContainer from '@/components/route/TenantManagementContainer.vue'
 import LandingPageContainer from '@/components/route/LandingPageContainer.vue'
+import BCeidLandingContainer from '@/components/route/BCeidLandingContainer.vue'
 
 const routes = [
   { path: '/', component: LandingPageContainer },
+  { path: '/bceid', component: BCeidLandingContainer },
   { path: '/settings', component: SettingsContainer },
   { path: '/tenants', component: TenantListContainer },
   {

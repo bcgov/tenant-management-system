@@ -1,5 +1,6 @@
 {
   "files": [],
+  "exclude": ["**/stores/*.test.ts"],
   "references": [
     {
       "path": "./tsconfig.node.json"
