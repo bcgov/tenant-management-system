@@ -3,7 +3,7 @@ import { ref } from 'vue'
 
 import { User } from '@/models'
 import { userService } from '@/services'
-import { type IdirSearchType, IDIR_SEARCH_TYPE } from '@/utils/constants'
+import { type BCeIDSearchType, type IdirSearchType, BCeID_SEARCH_TYPE, IDIR_SEARCH_TYPE } from '@/utils/constants'
 
 /**
  * Pinia store for searching and managing IDIR users.
@@ -84,6 +84,64 @@ export const useUserStore = defineStore('user', () => {
     return _searchIdirUsers(IDIR_SEARCH_TYPE.LAST_NAME.value, lastName)
   }
 
+  /**
+   * Private function to handle BCEID user search with loading state management.
+   *
+   * @param {BCeIDSearchType} searchType - The type of search (email, firstName,
+   *   lastName).
+   * @param {string} searchValue - The search value to pass to the service.
+   * @returns {Promise<User[]>} A promise that resolves to an array of User
+   *   objects.
+   * @throws {Error} If the search type is invalid.
+   */
+  async function _searchBceidUsers(
+    searchType: BCeIDSearchType,
+    searchValue: string,
+  ) {
+    loading.value = true
+    try {
+      let response
+      switch (searchType) {
+        case BCeID_SEARCH_TYPE.EMAIL.value:
+          response = await userService.searchBCeIDEmail(searchValue)
+          break
+        case BCeID_SEARCH_TYPE.DISPLAY_NAME.value:
+          response = await userService.searchBCeIDDisplayName(searchValue)
+          break
+        default:
+          throw new Error(`Invalid search type: ${searchType}`)
+      }
+
+      searchResults.value = response.map(User.fromSearchData)
+
+      return searchResults.value
+    } finally {
+      loading.value = false
+    }
+  }
+
+  /**
+   * Searches for BCeID users based on the email address.
+   *
+   * @param {string} email - The email address substring to search.
+   * @returns {Promise<User[]>} A promise that resolves to an array of User
+   *   objects.
+   */
+  async function searchBCeIDEmail(email: string) {
+    return _searchBceidUsers(BCeID_SEARCH_TYPE.EMAIL.value, email)
+  }
+
+  /**
+   * Searches for BCeID users based on the first name.
+   *
+   * @param {string} firstName - The first name substring to search.
+   * @returns {Promise<User[]>} A promise that resolves to an array of User
+   *   objects.
+   */
+  async function searchBCeIDDisplayName(firstName: string) {
+    return _searchBceidUsers(BCeID_SEARCH_TYPE.DISPLAY_NAME.value, firstName)
+  }
+
   return {
     loading,
     searchResults,
@@ -91,5 +149,7 @@ export const useUserStore = defineStore('user', () => {
     searchIdirEmail,
     searchIdirFirstName,
     searchIdirLastName,
+    searchBCeIDEmail,
+    searchBCeIDDisplayName,
   }
 })

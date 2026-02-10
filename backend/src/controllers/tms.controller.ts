@@ -6,7 +6,6 @@ import { ConflictError } from '../errors/ConflictError'
 import { BadRequestError } from '../errors/BadRequestError'
 import logger from '../common/logger'
 import { ForbiddenError } from '../errors/ForbiddenError'
-import { UnauthorizedError } from '../errors/UnauthorizedError'
 
 export class TMSController {
   tmsService: TMSService = new TMSService()

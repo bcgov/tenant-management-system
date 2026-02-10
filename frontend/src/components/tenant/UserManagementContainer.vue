@@ -100,10 +100,13 @@ async function handleUserSearch(
   try {
     if (searchType === IDIR_SEARCH_TYPE.FIRST_NAME.value) {
       searchResults.value = await userStore.searchIdirFirstName(searchText)
+      searchResults.value = searchResults.value.concat(await userStore.searchBCeIDDisplayName(searchText))
     } else if (searchType === IDIR_SEARCH_TYPE.LAST_NAME.value) {
       searchResults.value = await userStore.searchIdirLastName(searchText)
+      searchResults.value = searchResults.value.concat(await userStore.searchBCeIDDisplayName(searchText))
     } else if (searchType === IDIR_SEARCH_TYPE.EMAIL.value) {
       searchResults.value = await userStore.searchIdirEmail(searchText)
+      searchResults.value = searchResults.value.concat(await userStore.searchBCeIDEmail(searchText))
     } else {
       throw new Error('Invalid search type')
     }

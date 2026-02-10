@@ -5,9 +5,11 @@ import AppHeader from '@/components/layout/AppHeader.vue'
 import AppNavigation from '@/components/layout/AppNavigation.vue'
 import AppNotifications from '@/components/layout/AppNotifications.vue'
 import { useAuthStore } from '@/stores'
+import LandingPageContainer from './components/route/LandingPageContainer.vue'
 
 const authStore = useAuthStore()
 const user = computed(() => authStore.getUser)
+const loggedOut = computed(() => authStore.loggedOut)
 </script>
 
 <template>
@@ -20,7 +22,12 @@ const user = computed(() => authStore.getUser)
     <v-main>
       <AppNavigation />
       <v-container class="mt-10 px-12" fluid>
-        <router-view />
+        <div v-if="loggedOut" class="text-center my-3">
+          <h2>{{ $t('general.sessionExpired') }}</h2>
+          <p>{{ $t('general.sessionExpiredDesc') }}</p>
+          <LandingPageContainer />
+        </div>
+        <router-view v-else />
       </v-container>
     </v-main>
   </v-app>

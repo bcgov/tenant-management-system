@@ -2,16 +2,11 @@ import request from 'supertest'
 import express from 'express'
 import { TMRepository } from '../repositories/tm.repository'
 import { TMSRepository } from '../repositories/tms.repository'
-import { TMSConstants } from '../common/tms.constants'
 import { TMController } from '../controllers/tm.controller'
 import { validate } from 'express-validation'
 import validator from '../common/tms.validator'
-import { Group } from '../entities/Group'
-import { GroupUser } from '../entities/GroupUser'
 import { ConflictError } from '../errors/ConflictError'
 import { NotFoundError } from '../errors/NotFoundError'
-import { BadRequestError } from '../errors/BadRequestError'
-import { UnauthorizedError } from '../errors/UnauthorizedError'
 
 jest.mock('../repositories/tm.repository')
 jest.mock('../repositories/tms.repository')
@@ -761,7 +756,7 @@ describe('Tenant Management API', () => {
     it('should fail when user is already in the group', async () => {
       const mockGroup = { id: groupId, name: 'Test Group' }
       const mockTenantUser = { id: '123e4567-e89b-12d3-a456-426614174003' }
-      const errorMessage = `User is already a member of this group`
+      const errorMessage = 'User is already a member of this group'
       mockTMRepository.checkIfGroupExistsInTenant.mockResolvedValue(
         mockGroup as any,
       )
@@ -1113,7 +1108,7 @@ describe('Tenant Management API', () => {
     })
 
     it('should fail when user is not in the group', async () => {
-      const errorMessage = `User is not a member of this group`
+      const errorMessage = 'User is not a member of this group'
       mockTMRepository.removeGroupUser.mockRejectedValue(
         new ConflictError(errorMessage),
       )
@@ -1978,7 +1973,8 @@ describe('Tenant Management API', () => {
         ],
       }
 
-      const errorMessage = `Shared service not found: 123e4567-e89b-12d3-a456-426614174999`
+      const errorMessage =
+        'Shared service not found: 123e4567-e89b-12d3-a456-426614174999'
       mockTMRepository.updateSharedServiceRolesForGroup.mockRejectedValue(
         new NotFoundError(errorMessage),
       )
@@ -2013,7 +2009,8 @@ describe('Tenant Management API', () => {
         ],
       }
 
-      const errorMessage = `Shared service role not found: 123e4567-e89b-12d3-a456-426614174999`
+      const errorMessage =
+        'Shared service role not found: 123e4567-e89b-12d3-a456-426614174999'
       mockTMRepository.updateSharedServiceRolesForGroup.mockRejectedValue(
         new NotFoundError(errorMessage),
       )

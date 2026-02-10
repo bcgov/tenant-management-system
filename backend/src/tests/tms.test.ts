@@ -6,8 +6,6 @@ import { TMSConstants } from '../common/tms.constants'
 import { TMSController } from '../controllers/tms.controller'
 import { validate } from 'express-validation'
 import validator from '../common/tms.validator'
-import { Tenant } from '../entities/Tenant'
-import { TenantUser } from '../entities/TenantUser'
 import { ConflictError } from '../errors/ConflictError'
 import { NotFoundError } from '../errors/NotFoundError'
 import { BadRequestError } from '../errors/BadRequestError'
@@ -1512,12 +1510,10 @@ describe('Tenant API', () => {
             const ssoUserIdFromToken =
               req.decodedJwt?.idir_user_guid || req.decodedJwt?.bceid_user_guid
             if (!tenantId || !ssoUserIdFromToken) {
-              return res
-                .status(403)
-                .json({
-                  error: 'Forbidden',
-                  message: 'Missing tenant ID or user ID',
-                })
+              return res.status(403).json({
+                error: 'Forbidden',
+                message: 'Missing tenant ID or user ID',
+              })
             }
             const hasAccess = await mockTMSRepository.checkUserTenantAccess(
               tenantId,
@@ -2945,7 +2941,8 @@ describe('Tenant API', () => {
     })
 
     it('should fail when role name already exists', async () => {
-      const errorMessage = `Role 'New Admin Role' already exists for this shared service`
+      const errorMessage =
+        "Role 'New Admin Role' already exists for this shared service"
       mockTMSRepository.addSharedServiceRoles.mockRejectedValue(
         new ConflictError(errorMessage),
       )

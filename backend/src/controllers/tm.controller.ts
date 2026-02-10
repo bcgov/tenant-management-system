@@ -4,7 +4,6 @@ import { ErrorHandler } from '../common/error.handler'
 import { NotFoundError } from '../errors/NotFoundError'
 import { ConflictError } from '../errors/ConflictError'
 import { UnauthorizedError } from '../errors/UnauthorizedError'
-import { BadRequestError } from '../errors/BadRequestError'
 import logger from '../common/logger'
 
 export class TMController {

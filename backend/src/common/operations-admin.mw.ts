@@ -1,5 +1,4 @@
 import { Request, Response, NextFunction } from 'express'
-import { UnauthorizedError } from '../errors/UnauthorizedError'
 import logger from './logger'
 import { ForbiddenError } from '../errors/ForbiddenError'
 
