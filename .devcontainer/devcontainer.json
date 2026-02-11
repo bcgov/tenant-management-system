@@ -1,4 +1,8 @@
 {
+  "containerEnv": {
+    "HOME": "/home/node"
+  },
+
   // Configure tool-specific properties.
   "customizations": {
     "vscode": {
@@ -50,9 +54,11 @@
   // Use 'postCreateCommand' to run commands after the container is created.
   "postCreateCommand": "bash ./.devcontainer/post-install.sh",
 
-  "remoteUser": "root",
+  "remoteUser": "node",
 
   "service": "devcontainer",
+
+  "updateRemoteUserUID": true,
 
   "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}"
 }
