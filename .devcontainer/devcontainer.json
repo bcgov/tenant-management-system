@@ -28,19 +28,19 @@
 
   // Ports forwarded from the container so they are available locally.
   "forwardPorts": [
-    4144, // TMS Backend
-    5173, // TMS Frontend
+    4144, // CSTAR Backend
+    5173, // CSTAR Frontend
     5432 // Postgres Database
   ],
 
-  "name": "tenant-management-system",
+  "name": "cstar",
 
   "portsAttributes": {
     "4144": {
-      "label": "TMS Backend"
+      "label": "CSTAR Backend"
     },
     "5173": {
-      "label": "TMS Frontend"
+      "label": "CSTAR Frontend"
     },
     "5432": {
       "label": "Postgres Database"
