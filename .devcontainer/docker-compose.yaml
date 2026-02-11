@@ -40,7 +40,5 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
-version: '3.8'
-
 volumes:
   postgres_data:
