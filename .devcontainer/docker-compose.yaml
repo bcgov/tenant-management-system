@@ -1,5 +1,5 @@
 networks:
-  tms-net:
+  cstar-net:
 
 services:
   devcontainer:
@@ -15,26 +15,30 @@ services:
         sleep infinity
       "
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     networks:
-      - tms-net
+      - cstar-net
     volumes:
       - ../..:/workspaces:cached
 
   postgres:
-    container_name: tms_postgres
+    container_name: cstar_postgres
     environment:
       POSTGRES_DB: tmsdb
       POSTGRES_USER: tms
       POSTGRES_PASSWORD: mysecretpassword
-    image: postgres:15.12-bookworm
+    healthcheck:
+      interval: 5s
+      retries: 5
+      test: ['CMD-SHELL', 'pg_isready -U tms -d tmsdb']
+      timeout: 5s
+    image: postgres:17.0-bookworm
     networks:
-      - tms-net
+      - cstar-net
     restart: unless-stopped
     volumes:
       - postgres_data:/var/lib/postgresql/data
-
-version: "3.8"
 
 volumes:
   postgres_data:

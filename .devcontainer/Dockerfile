@@ -15,12 +15,18 @@ RUN apt-get update && \
         libxss1 \
         libxtst6 \
         openjdk-17-jre-headless \
+        postgresql-client \
+        sudo \
         vim \
         xauth \
         xvfb \
     && apt-get clean
 
+# Give the node user sudo access for devcontainer operations
+RUN echo "node ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers.d/node && \
+    chmod 0440 /etc/sudoers.d/node
+
 # The GitHub tool Trivy sees a Dockerfile and wants a health check, even though
 # it isn't that useful for a devcontainer. Make Trivy happy.
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node --version || exit 1
+    CMD node --version || exit 1
