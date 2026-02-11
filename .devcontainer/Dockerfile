@@ -15,6 +15,7 @@ RUN apt-get update && \
         libxss1 \
         libxtst6 \
         openjdk-17-jre-headless \
+        postgresql-client \
         sudo \
         vim \
         xauth \
