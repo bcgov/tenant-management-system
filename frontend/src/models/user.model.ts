@@ -53,7 +53,14 @@ export class User {
       : []
     const ssoUser = SsoUser.fromApiData(apiData.ssoUser)
 
-    return new User(apiData.id, ssoUser, roles)
+    let userId = apiData.id as UserId
+    if (!apiData.id) {
+      if (apiData?.attributes?.bceid_user_guid?.length > 0){
+        userId = apiData.attributes.bceid_user_guid[0] as UserId
+      }
+    }
+
+    return new User(userId, ssoUser, roles)
   }
 
   /**
@@ -84,8 +91,8 @@ export class User {
     // but note that if the username is undefined then it will cause issues.
     const attributes = searchData.attributes
     const userId =
-      attributes.idir_user_guid?.[0] ?? attributes.idir_userid?.[0] ?? ''
-    const username = attributes.idir_username?.[0]
+      attributes.idir_user_guid?.[0] ?? attributes.idir_userid?.[0] ?? attributes.bceid_user_guid?.[0] ?? attributes.bceid_userid?.[0] ?? ''
+    const username = attributes.idir_username?.[0] ?? attributes.bceid_username?.[0] ?? ''
     const displayName =
       attributes.display_name?.[0] ?? attributes.displayName?.[0] ?? ''
 
