@@ -226,14 +226,14 @@ function handleCloseRoleDialog(open: boolean) {
 
 watch(groupStore.groups, (newGroups) => {
   addGroups.value = []
-  for (const group of newGroups) {
+  for (const _ of newGroups) {
     addGroups.value.push(selectAllGroups.value)
   }
 })
 
-watch(selectAllGroups, (selectAll) => {
+watch(selectAllGroups, () => {
   addGroups.value = []
-  for (const group of groupStore.groups) {
+  for (const _ of groupStore.groups) {
     addGroups.value.push(selectAllGroups.value)
   }
 })
