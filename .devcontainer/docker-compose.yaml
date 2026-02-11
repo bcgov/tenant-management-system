@@ -1,5 +1,5 @@
 networks:
-  tms-net:
+  cstar-net:
 
 services:
   devcontainer:
@@ -18,12 +18,12 @@ services:
       postgres:
         condition: service_healthy
     networks:
-      - tms-net
+      - cstar-net
     volumes:
       - ../..:/workspaces:cached
 
   postgres:
-    container_name: tms_postgres
+    container_name: cstar_postgres
     environment:
       POSTGRES_DB: tmsdb
       POSTGRES_USER: tms
@@ -35,7 +35,7 @@ services:
       timeout: 5s
     image: postgres:15.12-bookworm
     networks:
-      - tms-net
+      - cstar-net
     restart: unless-stopped
     volumes:
       - postgres_data:/var/lib/postgresql/data
