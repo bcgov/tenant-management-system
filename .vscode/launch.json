@@ -1,14 +1,14 @@
 {
   "compounds": [
     {
-      "configurations": ["TMS Backend", "TMS Frontend"],
-      "name": "TMS"
+      "configurations": ["CSTAR Backend", "CSTAR Frontend"],
+      "name": "CSTAR"
     }
   ],
   "configurations": [
     {
       "cwd": "${workspaceFolder}/backend",
-      "name": "TMS Backend",
+      "name": "CSTAR Backend",
       "outputCapture": "std",
       "request": "launch",
       "runtimeArgs": ["run", "dev"],
@@ -17,7 +17,7 @@
     },
     {
       "cwd": "${workspaceFolder}/frontend",
-      "name": "TMS Frontend",
+      "name": "CSTAR Frontend",
       "outputCapture": "std",
       "request": "launch",
       "runtimeArgs": ["run", "dev"],
