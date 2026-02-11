@@ -15,7 +15,8 @@ services:
         sleep infinity
       "
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     networks:
       - tms-net
     volumes:
@@ -27,6 +28,11 @@ services:
       POSTGRES_DB: tmsdb
       POSTGRES_USER: tms
       POSTGRES_PASSWORD: mysecretpassword
+    healthcheck:
+      interval: 5s
+      retries: 5
+      test: ['CMD-SHELL', 'pg_isready -U tms -d tmsdb']
+      timeout: 5s
     image: postgres:15.12-bookworm
     networks:
       - tms-net
@@ -34,7 +40,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
-version: "3.8"
+version: '3.8'
 
 volumes:
   postgres_data:
