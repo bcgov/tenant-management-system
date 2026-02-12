@@ -14,7 +14,7 @@ on:
         type: boolean
       directory:
         description: Chart directory
-        default: "charts/app"
+        default: 'charts/app'
         required: false
         type: string
       environment:
@@ -41,7 +41,7 @@ on:
       db_user:
         description: The database user
         required: false
-        default: "app"
+        default: 'app'
         type: string
       debug:
         description: Debug mode
@@ -55,22 +55,22 @@ on:
 
       ### Usually a bad idea / not recommended
       timeout-minutes:
-        description: "Timeout minutes"
+        description: 'Timeout minutes'
         default: 10
         required: false
         type: number
       values:
-        description: "Values file"
-        default: "values.yaml"
+        description: 'Values file'
+        default: 'values.yaml'
         required: false
         type: string
 
     outputs:
       tag:
-        description: "Which tag was used for deployment?"
+        description: 'Which tag was used for deployment?'
         value: ${{ jobs.deploy.outputs.tag }}
       triggered:
-        description: "Has a deployment has been triggered?"
+        description: 'Has a deployment has been triggered?'
         value: ${{ jobs.deploy.outputs.triggered }}
 
     secrets:
@@ -186,6 +186,7 @@ jobs:
               --set-string backend.bcgovSsoApiClientId=${{ secrets.bcgov_sso_api_client_id }} \
               --set-string backend.bcgovSsoApiClientSecret=${{ secrets.bcgov_sso_api_client_secret }} \
               --set-string backend.bcgovSsoApiUrl=${{ vars.BCGOV_SSO_API_URL }} \
+              --set-string backend.bcgovSsoApiUrlBceid=${{ vars.BCGOV_SSO_API_URL_BCEID }} \
               --set-string backend.bcgovTokenUrl=${{ vars.BCGOV_TOKEN_URL }} \
               --set frontend.autoscaling.enabled=false \
               --set-string global.repository=${{ github.repository }} \
