@@ -53,12 +53,7 @@ export class User {
       : []
     const ssoUser = SsoUser.fromApiData(apiData.ssoUser)
 
-    let userId = apiData.id as UserId
-    if (!apiData.id) {
-      if (apiData?.attributes?.bceid_user_guid?.length > 0){
-        userId = apiData.attributes.bceid_user_guid[0] as UserId
-      }
-    }
+    const userId = apiData.id as UserId
 
     return new User(userId, ssoUser, roles)
   }
