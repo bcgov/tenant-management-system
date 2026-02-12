@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express'
 import logger from './logger'
+import { getErrorMessage } from './error.handler'
 import { ForbiddenError } from '../errors/ForbiddenError'
 
 export const checkOperationsAdmin = (
@@ -24,7 +25,7 @@ export const checkOperationsAdmin = (
     }
 
     next()
-  } catch (error) {
+  } catch (error: unknown) {
     if (error instanceof ForbiddenError) {
       res.status(403).json({
         errorMessage: 'Forbidden',
@@ -33,7 +34,7 @@ export const checkOperationsAdmin = (
         name: 'User does not have access to this operation and / resource',
       })
     } else {
-      logger.error('Error checking operations admin role', error as any)
+      logger.error('Error checking operations admin role', { error: getErrorMessage(error) })
       res.status(500).json({
         errorMessage: 'Internal Server Error',
         httpResponseCode: 500,

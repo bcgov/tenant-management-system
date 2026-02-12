@@ -10,6 +10,7 @@ import { TenantUserRole } from '../entities/TenantUserRole'
 import { NotFoundError } from '../errors/NotFoundError'
 import { ConflictError } from '../errors/ConflictError'
 import logger from '../common/logger'
+import { getErrorMessage } from '../common/error.handler'
 import { TenantRequest } from '../entities/TenantRequest'
 import { SharedService } from '../entities/SharedService'
 import { SharedServiceRole } from '../entities/SharedServiceRole'
@@ -111,10 +112,10 @@ export class TMSRepository {
           .leftJoinAndSelect('turoles.role', 'role')
           .where('tenant.id = :id', { id: savedTenant.id })
           .getOne()) as any
-      } catch (error: any) {
+      } catch (error: unknown) {
         logger.error(
           'Create tenant transaction failure - rolling back inserts ',
-          error,
+          { error: getErrorMessage(error) },
         )
         throw error
       }
@@ -177,10 +178,10 @@ export class TMSRepository {
           ...tenant,
           createdBy: createdBy?.userName || tenant.createdBy,
         }
-      } catch (error) {
+      } catch (error: unknown) {
         logger.error(
           'Update tenant transaction failure - rolling back changes',
-          error as any,
+          { error: getErrorMessage(error) },
         )
         throw error
       }
@@ -342,10 +343,10 @@ export class TMSRepository {
         const savedRole = await transactionEntityManager.save(role)
         //  delete savedRole.tenant
         response = savedRole
-      } catch (error) {
+      } catch (error: unknown) {
         logger.error(
           'Create Role for tenant transaction failure - rolling back inserts ',
-          error as any,
+          { error: getErrorMessage(error) },
         )
         throw error
       }
@@ -467,10 +468,10 @@ export class TMSRepository {
       }
 
       return savedAssignments
-    } catch (error) {
+    } catch (error: unknown) {
       logger.error(
         'Assign roles to user transaction failure - rolling back inserts',
-        error as any,
+        { error: getErrorMessage(error) },
       )
       throw error
     }
@@ -1114,10 +1115,10 @@ export class TMSRepository {
           transactionEntityManager,
           savedTenantRequest.id,
         )) as any
-      } catch (error) {
+      } catch (error: unknown) {
         logger.error(
           'Create tenant request transaction failure - rolling back inserts ',
-          error as any,
+          { error: getErrorMessage(error) },
         )
         throw error
       }
@@ -1240,10 +1241,10 @@ export class TMSRepository {
           ...updatedRequest,
         }
         response = { ...response, tenantRequest: tenantRequestResponse }
-      } catch (error) {
+      } catch (error: unknown) {
         logger.error(
           'Update tenant request status transaction failure - rolling back changes',
-          error as any,
+          { error: getErrorMessage(error) },
         )
         throw error
       }
@@ -1468,10 +1469,10 @@ export class TMSRepository {
           savedSharedService.id,
           transactionEntityManager,
         )) as any
-      } catch (error) {
+      } catch (error: unknown) {
         logger.error(
           'Create shared service transaction failure - rolling back inserts ',
-          error as any,
+          { error: getErrorMessage(error) },
         )
         throw error
       }
@@ -1640,10 +1641,10 @@ export class TMSRepository {
         tenantSharedService.updatedBy = ssoUserId
 
         await transactionEntityManager.save(tenantSharedService)
-      } catch (error) {
+      } catch (error: unknown) {
         logger.error(
           'Associate shared service to tenant transaction failure - rolling back inserts',
-          error as any,
+          { error: getErrorMessage(error) },
         )
         throw error
       }

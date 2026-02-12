@@ -176,16 +176,16 @@ export const extractOidcSub = (
 }
 
 export const jwtErrorHandler = (
-  err: any,
+  err: unknown,
   req: Request,
   res: Response,
   next: NextFunction,
 ) => {
-  if (err.name === 'UnauthorizedError') {
+  if (err instanceof Error && err.name === 'UnauthorizedError') {
     logger.error('JWT Validation Error (fallback):', {
       error: err.message,
-      code: err.code,
-      inner: err.inner?.message,
+      code: 'code' in err ? (err as { code?: string }).code : undefined,
+      inner: 'inner' in err ? (err as { inner?: { message?: string } }).inner?.message : undefined,
     })
 
     return res.status(401).json({

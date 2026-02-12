@@ -8,6 +8,7 @@ import logger from '../common/logger'
 import { TenantRequest } from '../entities/TenantRequest'
 import { Tenant } from '../entities/Tenant'
 import { BadRequestError } from '../errors/BadRequestError'
+import { getErrorMessage } from '../common/error.handler'
 
 export class TMSService {
   tmsRepository: TMSRepository = new TMSRepository(connection.manager)
@@ -69,10 +70,10 @@ export class TMSService {
             },
           },
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
         logger.error(
           'Add user to a tenant transaction failure - rolling back inserts ',
-          error,
+          { error: getErrorMessage(error) },
         )
         throw error
       }
@@ -205,14 +206,22 @@ export class TMSService {
         params: queryParams,
       })
       return await response.data
-    } catch (error: any) {
-      logger.error(error)
-      if (error.response?.status === 400) {
-        throw new BadRequestError(
-          `BC GOV SSO API returned bad request: ${error.response.data?.message || error.message}`,
-        )
+    } catch (error: unknown) {
+      logger.error(getErrorMessage(error))
+      if (
+        error &&
+        typeof error === 'object' &&
+        'response' in error &&
+        typeof (error as { response?: { status?: number; data?: { message?: string } } }).response?.status === 'number'
+      ) {
+        const axiosError = error as { response: { status: number; data?: { message?: string } } }
+        if (axiosError.response.status === 400) {
+          throw new BadRequestError(
+            `BC GOV SSO API returned bad request: ${axiosError.response.data?.message || getErrorMessage(error)}`,
+          )
+        }
       }
-      throw new Error('Error invoking BC GOV SSO API. ' + error)
+      throw new Error('Error invoking BC GOV SSO API. ' + getErrorMessage(error))
     }
   }
 
@@ -225,14 +234,22 @@ export class TMSService {
         params: queryParams,
       })
       return await response.data
-    } catch (error: any) {
-      logger.error(error)
-      if (error.response?.status === 400) {
-        throw new BadRequestError(
-          `BC GOV SSO BCEID API returned bad request: ${error.response.data?.message || error.message}`,
-        )
+    } catch (error: unknown) {
+      logger.error(getErrorMessage(error))
+      if (
+        error &&
+        typeof error === 'object' &&
+        'response' in error &&
+        typeof (error as { response?: { status?: number; data?: { message?: string } } }).response?.status === 'number'
+      ) {
+        const axiosError = error as { response: { status: number; data?: { message?: string } } }
+        if (axiosError.response.status === 400) {
+          throw new BadRequestError(
+            `BC GOV SSO BCEID API returned bad request: ${axiosError.response.data?.message || getErrorMessage(error)}`,
+          )
+        }
       }
-      throw new Error('Error invoking BC GOV SSO BCEID API. ' + error)
+      throw new Error('Error invoking BC GOV SSO BCEID API. ' + getErrorMessage(error))
     }
   }
 
@@ -353,10 +370,10 @@ export class TMSService {
           deletedBy,
           transactionEntityManager,
         )
-      } catch (error) {
+      } catch (error: unknown) {
         logger.error(
           'Remove tenant user transaction failure - rolling back changes',
-          error as any,
+          { error: getErrorMessage(error) },
         )
         throw error
       }
@@ -375,8 +392,8 @@ export class TMSService {
         { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } },
       )
       return response.data.access_token
-    } catch (error) {
-      throw new Error('Failed to obtain access token: ' + error)
+    } catch (error: unknown) {
+      throw new Error('Failed to obtain access token: ' + getErrorMessage(error))
     }
   }
 

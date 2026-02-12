@@ -3,6 +3,7 @@ import { TMRepository } from '../repositories/tm.repository'
 import { TMSRepository } from '../repositories/tms.repository'
 import { connection } from '../common/db.connection'
 import logger from '../common/logger'
+import { getErrorMessage } from '../common/error.handler'
 import { UnauthorizedError } from '../errors/UnauthorizedError'
 import { NotFoundError } from '../errors/NotFoundError'
 
@@ -55,10 +56,10 @@ export class TMService {
           req,
           transactionEntityManager,
         )
-      } catch (error: any) {
+      } catch (error: unknown) {
         logger.error(
           'Add user to group transaction failure - rolling back inserts ',
-          error,
+          { error: getErrorMessage(error) },
         )
         throw error
       }

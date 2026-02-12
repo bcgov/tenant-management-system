@@ -8,6 +8,7 @@ import { Request } from 'express'
 import { NotFoundError } from '../errors/NotFoundError'
 import { ConflictError } from '../errors/ConflictError'
 import logger from '../common/logger'
+import { getErrorMessage } from '../common/error.handler'
 import { TMSRepository } from './tms.repository'
 import { GroupSharedServiceRole } from '../entities/GroupSharedServiceRole'
 import { SharedServiceRole } from '../entities/SharedServiceRole'
@@ -97,10 +98,10 @@ export class TMRepository {
           )
           .where('group.id = :id', { id: savedGroup.id })
           .getOne()) as any
-      } catch (error: any) {
+      } catch (error: unknown) {
         logger.error(
           'Create group transaction failure - rolling back inserts ',
-          error,
+          { error: getErrorMessage(error) },
         )
         throw error
       }
@@ -734,10 +735,10 @@ export class TMRepository {
           .leftJoinAndSelect('group.tenant', 'tenant')
           .where('group.id = :id', { id: groupId })
           .getOne()) as any
-      } catch (error) {
+      } catch (error: unknown) {
         logger.error(
           'Update group transaction failure - rolling back changes',
-          error as any,
+          { error: getErrorMessage(error) },
         )
         throw error
       }
@@ -789,10 +790,10 @@ export class TMRepository {
           })
           .where('id = :groupUserId', { groupUserId })
           .execute()
-      } catch (error) {
+      } catch (error: unknown) {
         logger.error(
           'Remove user from group transaction failure - rolling back changes',
-          error as any,
+          { error: getErrorMessage(error) },
         )
         throw error
       }
