@@ -33,7 +33,7 @@
   },
   "dependencies": {
     "@types/express-jwt": "^6.0.4",
-    "axios": "^1.7.7",
+    "axios": "^1.13.5",
     "cls-rtracer": "^2.6.0",
     "cors": "^2.8.5",
     "dotenv": "^8.2.0",
