@@ -1,4 +1,8 @@
 {
+  "containerEnv": {
+    "HOME": "/home/node"
+  },
+
   // Configure tool-specific properties.
   "customizations": {
     "vscode": {
@@ -28,19 +32,19 @@
 
   // Ports forwarded from the container so they are available locally.
   "forwardPorts": [
-    4144, // TMS Backend
-    5173, // TMS Frontend
+    4144, // CSTAR Backend
+    5173, // CSTAR Frontend
     5432 // Postgres Database
   ],
 
-  "name": "tenant-management-system",
+  "name": "cstar",
 
   "portsAttributes": {
     "4144": {
-      "label": "TMS Backend"
+      "label": "CSTAR Backend"
     },
     "5173": {
-      "label": "TMS Frontend"
+      "label": "CSTAR Frontend"
     },
     "5432": {
       "label": "Postgres Database"
@@ -50,9 +54,11 @@
   // Use 'postCreateCommand' to run commands after the container is created.
   "postCreateCommand": "bash ./.devcontainer/post-install.sh",
 
-  "remoteUser": "root",
+  "remoteUser": "node",
 
   "service": "devcontainer",
+
+  "updateRemoteUserUID": true,
 
   "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}"
 }
