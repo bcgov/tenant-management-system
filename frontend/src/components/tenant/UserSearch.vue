@@ -69,7 +69,7 @@ watch(selectedUser, (selection) => {
 
 type RowPropsType = ItemSlotBase<User>;
 
-const selectUser = (e: Event, r: RowPropsType) => {
+const selectUser = (e: Event | null, r: RowPropsType) => {
   conflict.value = false
   const index = props.currentUsers?.findIndex(
     (u: User) => u.ssoUser.ssoUserId === r.item?.ssoUser.ssoUserId
@@ -168,6 +168,13 @@ function handleSearch() {
           { title: 'First Name', key: 'ssoUser.firstName', align: 'start' },
           { title: 'Last Name', key: 'ssoUser.lastName', align: 'start' },
           { title: 'Email', key: 'ssoUser.email', align: 'start' },
+          {
+            title: '',
+            key: 'actions',
+            sortable: false,
+            align: 'center',
+            width: '80px',
+          },
         ]"
         :items="searchResults || []"
         :loading="loading"
@@ -176,10 +183,20 @@ function handleSearch() {
         select-strategy="single"
         striped="even"
         return-object
-        @dblclick:row="(e: Event, r: RowPropsType) => selectUser(e, r)"
+        @click:row="(e: Event, r: RowPropsType) => selectUser(e, r)"
       >
         <template #no-data>
           <v-alert type="info">No matching users found</v-alert>
+        </template>
+        <template  v-slot:item.actions="{ item, internalItem, index }">
+          <v-btn
+            size="x-large"
+            density="compact"
+            class="pa-0 ma-0"
+            style="width: 24px; height: 24px; min-width: 24px;"
+          >
+            +
+          </v-btn>
         </template>
       </v-data-table>
     </v-col>
