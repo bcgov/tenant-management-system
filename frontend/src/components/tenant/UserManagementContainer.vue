@@ -59,7 +59,10 @@ async function handleAddUser(user: User, groups : Group[]) {
     for (const group of groups) {
       await groupStore.addGroupUser(props.tenant.id, group.id, user)
     }
-    notification.success('New user succesfully added to groups', 'User Added to Groups')
+    //only show alert if user was added to at least one group
+    if (groups.length > 0) {
+      notification.success('New user succesfully added to groups', 'User Added to Groups')
+    }
   } catch {
     notification.error('Failed to add user to groups')
   }

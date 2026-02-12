@@ -16,7 +16,9 @@ import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
 import SimpleDialog, {
   type DialogButton,
 } from '@/components/ui/SimpleDialog.vue'
-
+import { currentUserHasRole } from '@/utils/permissions'
+import { ROLES } from '@/utils/constants'
+  
 // Props
 const props = defineProps<{
   tenant: Tenant
@@ -123,6 +125,14 @@ const openDialog = (action: 'undo' | 'clear') => {
   promptToContinue.value = true
 }
 
+const canMakeChanges = computed(() => {
+  return (
+    currentUserHasRole(props.tenant, ROLES.TENANT_OWNER.value)
+    || currentUserHasRole(props.tenant, ROLES.USER_ADMIN.value)
+    || currentUserHasRole(props.tenant, ROLES.OPERATIONS_ADMIN.value)
+  )
+})
+
 // Watchers
 
 watch(
@@ -213,7 +223,7 @@ const dialogButtons = computed(() => {
       <!-- Edit button -->
       <v-col cols="12">
         <ButtonPrimary
-          v-if="!editing"
+          v-if="!editing && canMakeChanges"
           :text="$t('general.edit')"
           @click="editing = true"
         />
@@ -236,7 +246,7 @@ const dialogButtons = computed(() => {
                 :key="`checkbox-role-${role.id}`"
                 v-model="roleValues[serviceIndex][roleIndex]"
                 :color="editing ? 'primary' : ''"
-                :disabled="!editing"
+                :disabled="!editing || !canMakeChanges"
                 :label="role.name"
                 class="noBackground"
               >
@@ -247,7 +257,7 @@ const dialogButtons = computed(() => {
       </v-col>
 
       <!-- save/cancel/reset buttons -->
-      <v-col class="text-right" cols="12">
+      <v-col v-if="canMakeChanges" class="text-right" cols="12">
         <v-btn
           :disabled="!editing"
           class="mr-2"

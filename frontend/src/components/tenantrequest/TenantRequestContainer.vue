@@ -5,7 +5,7 @@ import TenantRequestDisplay from '@/components/tenantrequest/TenantRequestDispla
 import { useNotification } from '@/composables'
 import { DomainError, DuplicateEntityError } from '@/errors'
 import type { TenantRequest } from '@/models'
-import { useTenantRequestStore } from '@/stores'
+import { useTenantRequestStore, useAuthStore, useTenantStore } from '@/stores'
 import { TENANT_REQUEST_STATUS } from '@/utils/constants'
 import { useI18n } from 'vue-i18n'
 const { t } = useI18n()
@@ -14,6 +14,8 @@ const { t } = useI18n()
 
 const notification = useNotification()
 const tenantRequestStore = useTenantRequestStore()
+const authStore = useAuthStore()
+const tenantStore = useTenantStore()
 
 // --- Component State ---------------------------------------------------------
 
@@ -58,6 +60,7 @@ const handleApproved = async (name: string) => {
       name,
     )
     notification.success('Tenant Request has been successfully updated')
+    await tenantStore.fetchTenants(authStore.authenticatedUser.id)
     handleBackToList()
   } catch (error) {
     if (error instanceof DuplicateEntityError) {

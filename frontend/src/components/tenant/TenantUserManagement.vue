@@ -224,15 +224,17 @@ function handleCloseRoleDialog(open: boolean) {
   modifyingUserIndex.value = null
 }
 
-watch(selectAllGroups, (selectAll) => {
-  if (selectAll) {
-    addGroups.value = []
-    for (const group of groupStore.groups) {
-      console.log('Adding group:', group.name)
-      addGroups.value.push(true)
-    }
-  } else {
-    addGroups.value = []
+watch(groupStore.groups, (newGroups) => {
+  addGroups.value = []
+  for (const _ of newGroups) {
+    addGroups.value.push(selectAllGroups.value)
+  }
+})
+
+watch(selectAllGroups, () => {
+  addGroups.value = []
+  for (const _ of groupStore.groups) {
+    addGroups.value.push(selectAllGroups.value)
   }
 })
 </script>
@@ -396,9 +398,9 @@ watch(selectAllGroups, (selectAll) => {
               label="Select all"
             />
             <v-checkbox 
-              v-for="group in groupStore.groups" 
+              v-for="(group, index) in groupStore.groups" 
               :key="group.id"
-              v-model="addGroups"
+              v-model="addGroups[index]"
               :label="group.name"
               class="d-sm-inline-block"
             />
