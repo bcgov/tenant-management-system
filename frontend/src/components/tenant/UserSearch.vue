@@ -188,11 +188,11 @@ function handleSearch() {
         <template #no-data>
           <v-alert type="info">No matching users found</v-alert>
         </template>
-        <template  v-slot:item.actions="{ item, internalItem, index }">
+        <template  #item.actions>
           <v-btn
-            size="x-large"
             density="compact"
             class="pa-0 ma-0"
+            size="x-large"
             style="width: 24px; height: 24px; min-width: 24px;"
           >
             +
