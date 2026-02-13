@@ -411,7 +411,7 @@ watch(selectAllRoles, () => {
           </v-col>
         </v-row>
 
-        <v-row v-if="selectedUser" class="mt-4">
+        <v-row v-if="selectedUser && groupStore.groups.length && groupStore.groups.length > 0" class="mt-4">
           <v-col cols="12">
             <p class="mb-2">3. Assign group(s) to this user:</p>
           </v-col>
