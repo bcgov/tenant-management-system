@@ -1,5 +1,5 @@
 import request from 'supertest'
-import express from 'express'
+import express, { type ErrorRequestHandler } from 'express'
 import { TMRepository } from '../repositories/tm.repository'
 import { TMSRepository } from '../repositories/tms.repository'
 import { TMController } from '../controllers/tm.controller'
@@ -126,12 +126,13 @@ describe('Tenant Management API', () => {
       (req, res) => tmController.getEffectiveSharedServiceRoles(req, res),
     )
 
-    app.use((err: any, req: any, res: any, next: any) => {
-      if (err.name === 'ValidationError') {
-        return res.status(err.statusCode).json(err)
+    const validationErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
+      if (err && typeof err === 'object' && 'name' in err && (err as { name: string }).name === 'ValidationError') {
+        return res.status((err as { statusCode: number }).statusCode).json(err)
       }
       next(err)
-    })
+    }
+    app.use(validationErrorHandler)
   })
 
   describe('POST /v1/tenants/:tenantId/groups', () => {
@@ -2593,12 +2594,13 @@ describe('Tenant Management API', () => {
         },
         (req, res) => tmController.getEffectiveSharedServiceRoles(req, res),
       )
-      appWithoutAudience.use((err: any, req: any, res: any, next: any) => {
-        if (err.name === 'ValidationError') {
-          return res.status(err.statusCode).json(err)
+      const validationErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
+        if (err && typeof err === 'object' && 'name' in err && (err as { name: string }).name === 'ValidationError') {
+          return res.status((err as { statusCode: number }).statusCode).json(err)
         }
         next(err)
-      })
+      }
+      appWithoutAudience.use(validationErrorHandler)
 
       const response = await request(appWithoutAudience).get(
         `/v1/tenants/${tenantId}/ssousers/${ssoUserId}/shared-service-roles`,

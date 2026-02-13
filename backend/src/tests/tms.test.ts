@@ -1,5 +1,5 @@
 import request from 'supertest'
-import express from 'express'
+import express, { type ErrorRequestHandler } from 'express'
 import { TMSRepository } from '../repositories/tms.repository'
 import { TMRepository } from '../repositories/tm.repository'
 import { TMSConstants } from '../common/tms.constants'
@@ -101,12 +101,13 @@ describe('Tenant API', () => {
       (req, res) => tmsController.updateTenantRequestStatus(req, res),
     )
 
-    app.use((err: any, req: any, res: any, next: any) => {
-      if (err.name === 'ValidationError') {
-        return res.status(err.statusCode).json(err)
+    const validationErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
+      if (err && typeof err === 'object' && 'name' in err && (err as { name: string }).name === 'ValidationError') {
+        return res.status((err as { statusCode: number }).statusCode).json(err)
       }
       next(err)
-    })
+    }
+    app.use(validationErrorHandler)
   })
 
   const validTenantData = {
@@ -948,12 +949,13 @@ describe('Tenant API', () => {
         (req, res) => tmsController.assignUserRoles(req, res),
       )
 
-      app.use((err: any, req: any, res: any, next: any) => {
-        if (err.name === 'ValidationError') {
-          return res.status(err.statusCode).json(err)
+      const validationErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
+        if (err && typeof err === 'object' && 'name' in err && (err as { name: string }).name === 'ValidationError') {
+          return res.status((err as { statusCode: number }).statusCode).json(err)
         }
         next(err)
-      })
+      }
+      app.use(validationErrorHandler)
     })
 
     it('should assign roles to user successfully', async () => {
@@ -1159,12 +1161,13 @@ describe('Tenant API', () => {
         (req, res) => tmsController.unassignUserRoles(req, res),
       )
 
-      app.use((err: any, req: any, res: any, next: any) => {
-        if (err.name === 'ValidationError') {
-          return res.status(err.statusCode).json(err)
+      const validationErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
+        if (err && typeof err === 'object' && 'name' in err && (err as { name: string }).name === 'ValidationError') {
+          return res.status((err as { statusCode: number }).statusCode).json(err)
         }
         next(err)
-      })
+      }
+      app.use(validationErrorHandler)
     })
 
     it('should unassign role from user successfully', async () => {
@@ -1346,12 +1349,13 @@ describe('Tenant API', () => {
         (req, res) => tmsController.getTenant(req, res),
       )
 
-      app.use((err: any, req: any, res: any, next: any) => {
-        if (err.name === 'ValidationError') {
-          return res.status(err.statusCode).json(err)
+      const validationErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
+        if (err && typeof err === 'object' && 'name' in err && (err as { name: string }).name === 'ValidationError') {
+          return res.status((err as { statusCode: number }).statusCode).json(err)
         }
         next(err)
-      })
+      }
+      app.use(validationErrorHandler)
     })
 
     it('should get tenant details successfully', async () => {
@@ -1533,12 +1537,13 @@ describe('Tenant API', () => {
         (req, res) => tmsController.getRolesForSSOUser(req, res),
       )
 
-      app.use((err: any, req: any, res: any, next: any) => {
-        if (err.name === 'ValidationError') {
-          return res.status(err.statusCode).json(err)
+      const validationErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
+        if (err && typeof err === 'object' && 'name' in err && (err as { name: string }).name === 'ValidationError') {
+          return res.status((err as { statusCode: number }).statusCode).json(err)
         }
         next(err)
-      })
+      }
+      app.use(validationErrorHandler)
     })
 
     it('should get roles for SSO user successfully', async () => {
@@ -1642,12 +1647,13 @@ describe('Tenant API', () => {
     beforeEach(() => {
       app.get('/v1/roles', (req, res) => tmsController.getTenantRoles(req, res))
 
-      app.use((err: any, req: any, res: any, next: any) => {
-        if (err.name === 'ValidationError') {
-          return res.status(err.statusCode).json(err)
+      const validationErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
+        if (err && typeof err === 'object' && 'name' in err && (err as { name: string }).name === 'ValidationError') {
+          return res.status((err as { statusCode: number }).statusCode).json(err)
         }
         next(err)
-      })
+      }
+      app.use(validationErrorHandler)
     })
 
     it('should get all roles successfully', async () => {
@@ -1716,12 +1722,13 @@ describe('Tenant API', () => {
         (req, res) => tmsController.updateTenant(req, res),
       )
 
-      app.use((err: any, req: any, res: any, next: any) => {
-        if (err.name === 'ValidationError') {
-          return res.status(err.statusCode).json(err)
+      const validationErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
+        if (err && typeof err === 'object' && 'name' in err && (err as { name: string }).name === 'ValidationError') {
+          return res.status((err as { statusCode: number }).statusCode).json(err)
         }
         next(err)
-      })
+      }
+      app.use(validationErrorHandler)
     })
 
     it('should update tenant successfully', async () => {
@@ -1870,12 +1877,13 @@ describe('Tenant API', () => {
         (req, res) => tmsController.createTenantRequest(req, res),
       )
 
-      app.use((err: any, req: any, res: any, next: any) => {
-        if (err.name === 'ValidationError') {
-          return res.status(err.statusCode).json(err)
+      const validationErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
+        if (err && typeof err === 'object' && 'name' in err && (err as { name: string }).name === 'ValidationError') {
+          return res.status((err as { statusCode: number }).statusCode).json(err)
         }
         next(err)
-      })
+      }
+      app.use(validationErrorHandler)
     })
 
     it('should create a tenant request successfully', async () => {
@@ -2440,12 +2448,13 @@ describe('Tenant API', () => {
         (req, res) => tmsController.getTenantRequests(req, res),
       )
 
-      app.use((err: any, req: any, res: any, next: any) => {
-        if (err.name === 'ValidationError') {
-          return res.status(err.statusCode).json(err)
+      const validationErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
+        if (err && typeof err === 'object' && 'name' in err && (err as { name: string }).name === 'ValidationError') {
+          return res.status((err as { statusCode: number }).statusCode).json(err)
         }
         next(err)
-      })
+      }
+      app.use(validationErrorHandler)
     })
 
     it('should get all tenant requests successfully', async () => {
@@ -2562,12 +2571,13 @@ describe('Tenant API', () => {
         (req, res) => tmsController.createSharedService(req, res),
       )
 
-      app.use((err: any, req: any, res: any, next: any) => {
-        if (err.name === 'ValidationError') {
-          return res.status(err.statusCode).json(err)
+      const validationErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
+        if (err && typeof err === 'object' && 'name' in err && (err as { name: string }).name === 'ValidationError') {
+          return res.status((err as { statusCode: number }).statusCode).json(err)
         }
         next(err)
-      })
+      }
+      app.use(validationErrorHandler)
     })
 
     it('should create a shared service successfully', async () => {
@@ -2791,12 +2801,13 @@ describe('Tenant API', () => {
         (req, res) => tmsController.addSharedServiceRoles(req, res),
       )
 
-      app.use((err: any, req: any, res: any, next: any) => {
-        if (err.name === 'ValidationError') {
-          return res.status(err.statusCode).json(err)
+      const validationErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
+        if (err && typeof err === 'object' && 'name' in err && (err as { name: string }).name === 'ValidationError') {
+          return res.status((err as { statusCode: number }).statusCode).json(err)
         }
         next(err)
-      })
+      }
+      app.use(validationErrorHandler)
     })
 
     it('should add roles to shared service successfully', async () => {
@@ -3011,12 +3022,13 @@ describe('Tenant API', () => {
         tmsController.getAllActiveSharedServices(req, res),
       )
 
-      app.use((err: any, req: any, res: any, next: any) => {
-        if (err.name === 'ValidationError') {
-          return res.status(err.statusCode).json(err)
+      const validationErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
+        if (err && typeof err === 'object' && 'name' in err && (err as { name: string }).name === 'ValidationError') {
+          return res.status((err as { statusCode: number }).statusCode).json(err)
         }
         next(err)
-      })
+      }
+      app.use(validationErrorHandler)
     })
 
     it('should get all active shared services successfully', async () => {
@@ -3252,12 +3264,13 @@ describe('Tenant API', () => {
         (req, res) => tmsController.associateSharedServiceToTenant(req, res),
       )
 
-      app.use((err: any, req: any, res: any, next: any) => {
-        if (err.name === 'ValidationError') {
-          return res.status(err.statusCode).json(err)
+      const validationErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
+        if (err && typeof err === 'object' && 'name' in err && (err as { name: string }).name === 'ValidationError') {
+          return res.status((err as { statusCode: number }).statusCode).json(err)
         }
         next(err)
-      })
+      }
+      app.use(validationErrorHandler)
     })
 
     it('should associate shared service to tenant successfully', async () => {
@@ -3424,12 +3437,13 @@ describe('Tenant API', () => {
         (req, res) => tmsController.getSharedServicesForTenant(req, res),
       )
 
-      app.use((err: any, req: any, res: any, next: any) => {
-        if (err.name === 'ValidationError') {
-          return res.status(err.statusCode).json(err)
+      const validationErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
+        if (err && typeof err === 'object' && 'name' in err && (err as { name: string }).name === 'ValidationError') {
+          return res.status((err as { statusCode: number }).statusCode).json(err)
         }
         next(err)
-      })
+      }
+      app.use(validationErrorHandler)
     })
 
     it('should get shared services for tenant successfully', async () => {
@@ -3675,12 +3689,13 @@ describe('Tenant API', () => {
         (req, res) => tmsController.getUserRoles(req, res),
       )
 
-      app.use((err: any, req: any, res: any, next: any) => {
-        if (err.name === 'ValidationError') {
-          return res.status(err.statusCode).json(err)
+      const validationErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
+        if (err && typeof err === 'object' && 'name' in err && (err as { name: string }).name === 'ValidationError') {
+          return res.status((err as { statusCode: number }).statusCode).json(err)
         }
         next(err)
-      })
+      }
+      app.use(validationErrorHandler)
     })
 
     it('should get user roles successfully', async () => {
@@ -3809,12 +3824,13 @@ describe('Tenant API', () => {
         (req, res) => tmsController.getTenantUser(req, res),
       )
 
-      app.use((err: any, req: any, res: any, next: any) => {
-        if (err.name === 'ValidationError') {
-          return res.status(err.statusCode).json(err)
+      const validationErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
+        if (err && typeof err === 'object' && 'name' in err && (err as { name: string }).name === 'ValidationError') {
+          return res.status((err as { statusCode: number }).statusCode).json(err)
         }
         next(err)
-      })
+      }
+      app.use(validationErrorHandler)
     })
 
     it('should get tenant user with default response (no expand)', async () => {
@@ -4128,12 +4144,13 @@ describe('Tenant API', () => {
         (req, res) => tmsController.removeTenantUser(req, res),
       )
 
-      app.use((err: any, req: any, res: any, next: any) => {
-        if (err.name === 'ValidationError') {
-          return res.status(err.statusCode).json(err)
+      const validationErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
+        if (err && typeof err === 'object' && 'name' in err && (err as { name: string }).name === 'ValidationError') {
+          return res.status((err as { statusCode: number }).statusCode).json(err)
         }
         next(err)
-      })
+      }
+      app.use(validationErrorHandler)
     })
 
     it('should remove tenant user successfully', async () => {
@@ -4276,12 +4293,13 @@ describe('Tenant API', () => {
         (req, res) => tmsController.searchBCGOVSSOUsers(req, res),
       )
 
-      app.use((err: any, req: any, res: any, next: any) => {
-        if (err.name === 'ValidationError') {
-          return res.status(err.statusCode).json(err)
+      const validationErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
+        if (err && typeof err === 'object' && 'name' in err && (err as { name: string }).name === 'ValidationError') {
+          return res.status((err as { statusCode: number }).statusCode).json(err)
         }
         next(err)
-      })
+      }
+      app.use(validationErrorHandler)
     })
 
     it('should search IDIR users by email successfully', async () => {
@@ -4502,12 +4520,13 @@ describe('Tenant API', () => {
         (req, res) => tmsController.searchBCGOVSSOBceidUsers(req, res),
       )
 
-      app.use((err: any, req: any, res: any, next: any) => {
-        if (err.name === 'ValidationError') {
-          return res.status(err.statusCode).json(err)
+      const validationErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
+        if (err && typeof err === 'object' && 'name' in err && (err as { name: string }).name === 'ValidationError') {
+          return res.status((err as { statusCode: number }).statusCode).json(err)
         }
         next(err)
-      })
+      }
+      app.use(validationErrorHandler)
     })
 
     it('should search BCEID users by guid successfully', async () => {

@@ -1,4 +1,4 @@
-import { Request, Response } from 'express'
+import type { Request, Response, NextFunction } from 'express'
 import { RoutesConstants } from '../common/routes.constants'
 import { TMSController } from '../controllers/tms.controller'
 import { TMController } from '../controllers/tm.controller'
@@ -318,20 +318,23 @@ export class Routes {
           this.tmsController.getTenantUser(req, res),
       )
 
-    app.use(function (
+    const errorHandler = (
       error: Error,
-      req: any,
-      res: Response<any, Record<string, any>>,
-      next: any,
-    ) {
+      req: Request,
+      res: Response,
+      next: NextFunction,
+    ): void => {
       if (error instanceof ValidationError) {
-        return res.status(error.statusCode).json(error)
+        res.status(error.statusCode).json(error)
+        return
       }
       if (error instanceof UnauthorizedError) {
-        return res.status(401).json({ error: 'Unauthorized' })
+        res.status(401).json({ error: 'Unauthorized' })
+        return
       }
       console.log(error.message)
       res.status(500).json({ error: 'Internal Server Error' })
-    })
+    }
+    app.use(errorHandler)
   }
 }
