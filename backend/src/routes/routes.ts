@@ -1,4 +1,4 @@
-import type { Request, Response, NextFunction } from 'express'
+import type { Application, Request, Response, NextFunction } from 'express'
 import { RoutesConstants } from '../common/routes.constants'
 import { TMSController } from '../controllers/tms.controller'
 import { TMController } from '../controllers/tm.controller'
@@ -16,7 +16,7 @@ export class Routes {
   public tmsController: TMSController = new TMSController()
   public tmController: TMController = new TMController()
 
-  public routes(app: any) {
+  public routes(app: Application) {
     // Proxy swagger docs endpoints to /v1/docs for access through frontend
     // Frontend proxies /api/v1/docs -> /v1/docs on backend
     app.get('/v1/docs', (req: Request, res: Response) => {
