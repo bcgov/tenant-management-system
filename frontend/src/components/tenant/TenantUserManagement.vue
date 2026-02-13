@@ -77,6 +77,7 @@ const userSearch = ref('')
 const roleDialogVisible = ref(false)
 const modifyingUserIndex = ref<number | null>(null)
 const selectAllGroups = ref(false)
+const selectAllRoles = ref(false)
 const addGroups = ref<boolean[]>([])
 
 // --- Computed Values ---------------------------------------------------------
@@ -224,15 +225,37 @@ function handleCloseRoleDialog(open: boolean) {
   modifyingUserIndex.value = null
 }
 
-watch(selectAllGroups, (selectAll) => {
-  if (selectAll) {
-    addGroups.value = []
-    for (const group of groupStore.groups) {
-      console.log('Adding group:', group.name)
-      addGroups.value.push(true)
+// function updateRoleValue(role: Role, value: boolean) {
+//   console.log("update role value", role, value)
+//   if (value) {
+//     if (!selectedRoles.value.some((r) => r.id === role.id)) {
+//       selectedRoles.value.push(role)
+//     }
+//   } else {
+//     selectedRoles.value = selectedRoles.value.filter((r) => r.id !== role.id)
+//   }
+// }
+
+watch(groupStore.groups, (newGroups) => {
+  addGroups.value = []
+  for (const _ of newGroups) {
+    addGroups.value.push(selectAllGroups.value)
+  }
+})
+
+watch(selectAllGroups, () => {
+  addGroups.value = []
+  for (const _ of groupStore.groups) {
+    addGroups.value.push(selectAllGroups.value)
+  }
+})
+
+watch(selectAllRoles, () => {
+  selectedRoles.value = []
+  for (const role of roles.value) {
+    if (selectAllRoles.value) {
+      selectedRoles.value.push(role)
     }
-  } else {
-    addGroups.value = []
   }
 })
 </script>
@@ -370,17 +393,20 @@ watch(selectAllGroups, (selectAll) => {
           </v-col>
           <v-col cols="6">
             <p class="mb-2 text-body-2">Available Roles:</p>
-            <v-select
+          </v-col>
+          <v-col cols="12">
+            <v-checkbox 
+              v-model="selectAllRoles"
+              class="d-sm-inline-block"
+              label="Select all"
+            />
+            <v-checkbox 
+              v-for="(role, index) in roles" 
+              :key="`role-${index}`"
               v-model="selectedRoles"
-              :items="roles"
-              item-title="description"
-              item-value="id"
-              label="Select roles"
-              chips
-              clearable
-              hide-details
-              multiple
-              return-object
+              :label="role.description"
+              :value="role"
+              class="d-sm-inline-block"
             />
           </v-col>
         </v-row>
@@ -396,9 +422,9 @@ watch(selectAllGroups, (selectAll) => {
               label="Select all"
             />
             <v-checkbox 
-              v-for="group in groupStore.groups" 
+              v-for="(group, index) in groupStore.groups" 
               :key="group.id"
-              v-model="addGroups"
+              v-model="addGroups[index]"
               :label="group.name"
               class="d-sm-inline-block"
             />

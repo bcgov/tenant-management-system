@@ -3,7 +3,7 @@ import { GroupUser } from '../entities/GroupUser'
 import { TenantUser } from '../entities/TenantUser'
 import { Tenant } from '../entities/Tenant'
 import { EntityManager } from 'typeorm'
-import { In, Brackets } from 'typeorm'
+import { In } from 'typeorm'
 import { Request } from 'express'
 import { NotFoundError } from '../errors/NotFoundError'
 import { ConflictError } from '../errors/ConflictError'
@@ -825,23 +825,9 @@ export class TMRepository {
 
     if (expand.includes('groupUsers')) {
       groupQuery
-        .leftJoinAndSelect('group.users', 'groupUsers')
-        .leftJoinAndSelect('groupUsers.tenantUser', 'tenantUser')
+        .leftJoinAndSelect('group.users', 'groupUsers', 'groupUsers.isDeleted = :isDeleted', { isDeleted: false })
+        .leftJoinAndSelect('groupUsers.tenantUser', 'tenantUser', 'tenantUser.isDeleted = :isDeleted', { isDeleted: false })
         .leftJoinAndSelect('tenantUser.ssoUser', 'ssoUser')
-        .andWhere(
-          new Brackets((qb) => {
-            qb.where('groupUsers.isDeleted = :isDeleted', {
-              isDeleted: false,
-            }).orWhere('groupUsers.isDeleted IS NULL')
-          }),
-        )
-        .andWhere(
-          new Brackets((qb) => {
-            qb.where('tenantUser.isDeleted = :isDeleted', {
-              isDeleted: false,
-            }).orWhere('tenantUser.isDeleted IS NULL')
-          }),
-        )
     }
 
     const group: any = await groupQuery.getOne()

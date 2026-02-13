@@ -114,7 +114,8 @@ async function handleUpdateGroup(updatedGroup: GroupDetailFields) {
 onMounted(async () => {
   try {
     await groupStore.fetchGroup(routeTenantId.value, routeGroupId.value)
-  } catch {
+  } catch (error) {
+    console.log('group e', error)
     notification.error('Failed to load group')
   }
 
