@@ -202,7 +202,7 @@ export class TMRepository {
 
   public async getTenantGroups(req: Request) {
     const tenantId: string = req.params.tenantId
-    const ssoUserId: string = req.decodedJwt?.idir_user_guid
+    const ssoUserId = req.decodedJwt?.idir_user_guid
     const TMS_AUDIENCE: string = process.env.TMS_AUDIENCE!
     const jwtAudience: string =
       req.decodedJwt?.aud || req.decodedJwt?.audience || TMS_AUDIENCE

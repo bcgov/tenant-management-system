@@ -8,12 +8,28 @@ import { TMSConstants } from './tms.constants'
 
 const TMS_AUDIENCE = process.env.TMS_AUDIENCE || 'tenant-management-system-6014'
 
+interface DecodedJwt {
+  idir_user_guid?: string
+  bceid_user_guid?: string
+  bceid_business_guid?: string
+  aud?: string
+  audience?: string
+  client_roles?: string[]
+  sub?: string
+  idp?: string
+  identity_provider?: string
+  given_name?: string
+  family_name?: string
+  display_name?: string
+  preferred_username?: string
+  email?: string
+  [key: string]: unknown
+}
+
 declare global {
   namespace Express {
     interface Request {
-      decodedJwt?: {
-        [key: string]: any
-      }
+      decodedJwt?: DecodedJwt
       isSharedServiceAccess?: boolean
       bceidType?: 'bceidbasic' | 'bceidbusiness'
       idpType?: 'idir' | 'bceidbasic' | 'bceidbusiness'
@@ -26,7 +42,7 @@ interface CheckJwtOptions {
 }
 
 const determineBceidType = (
-  decodedJwt: any,
+  decodedJwt: DecodedJwt,
 ): 'bceidbasic' | 'bceidbusiness' => {
   if (decodedJwt.bceid_business_guid) {
     return 'bceidbusiness'
@@ -85,7 +101,7 @@ export const checkJwt = (options: CheckJwtOptions = {}) => {
         req.isSharedServiceAccess = true
 
         if (req.params.ssoUserId) {
-          const tokenUserId: string =
+          const tokenUserId: string | undefined =
             req.decodedJwt?.idir_user_guid || req.decodedJwt?.bceid_user_guid
           const requestedUserId: string = req.params.ssoUserId
 
@@ -185,7 +201,10 @@ export const jwtErrorHandler = (
     logger.error('JWT Validation Error (fallback):', {
       error: err.message,
       code: 'code' in err ? (err as { code?: string }).code : undefined,
-      inner: 'inner' in err ? (err as { inner?: { message?: string } }).inner?.message : undefined,
+      inner:
+        'inner' in err
+          ? (err as { inner?: { message?: string } }).inner?.message
+          : undefined,
     })
 
     return res.status(401).json({
