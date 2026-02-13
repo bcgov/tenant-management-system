@@ -404,8 +404,8 @@ watch(selectAllRoles, () => {
               v-for="(role, index) in roles" 
               :key="`role-${index}`"
               v-model="selectedRoles"
-              :value="role"
               :label="role.description"
+              :value="role"
               class="d-sm-inline-block"
             />
           </v-col>
