@@ -25,3 +25,7 @@ RUN apt-get update && \
 # though it isn't that useful for a dev container. Make Trivy happy.
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD node --version || exit 1
+
+# Explicity run as non-root user to make Trivy happy, although node user already
+# exists in the base image.
+USER node
