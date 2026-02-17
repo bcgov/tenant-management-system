@@ -39,7 +39,7 @@ spec:
             allowPrivilegeEscalation: false
             capabilities:
               drop: [ "ALL" ]
-          image: "{{.Values.global.registry}}/{{.Values.global.repository}}/migrations:{{ .Values.global.tag | default .Chart.AppVersion }}"
+          image: "ghcr.io/{{.Values.global.repository}}/migrations:{{ .Values.global.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ default "Always" .Values.backend.imagePullPolicy }}
           envFrom:
             - secretRef:
@@ -69,7 +69,7 @@ spec:
             allowPrivilegeEscalation: false
             capabilities:
               drop: [ "ALL" ]
-          image: "{{.Values.global.registry}}/{{.Values.global.repository}}/backend:{{ .Values.global.tag | default .Chart.AppVersion }}"
+          image: "ghcr.io/{{.Values.global.repository}}/backend:{{ .Values.global.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ default "Always" .Values.backend.imagePullPolicy }}
           envFrom:
             - secretRef:

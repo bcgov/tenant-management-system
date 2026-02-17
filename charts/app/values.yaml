@@ -10,8 +10,6 @@ global:
     hostName: ~
   #-- the registry where the images are stored. override during runtime for other registry at global level or individual level.
   repository: ~ # provide the repo name from where images will be sourced for example bcgo
-  #-- the registry where the images are stored. override during runtime for other registry at global level or individual level. default is ghcr.io
-  registry: ghcr.io # ghcr.io for directly streaming from github container registry or "artifacts.developer.gov.bc.ca/github-docker-remote" for artifactory, or any other registry.
   # Set to true during CI/static analysis
   staticAnalysis: false
   #-- the tag of the image, it can be latest, 1.0.0 etc..., or the sha256 hash
