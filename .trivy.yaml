@@ -1,12 +1,11 @@
 misconfiguration:
+  config-data:
+    - '.trivy-data.yaml'
   helm:
     set:
       - backend.bcgovSsoApiClientId=trivy-client-id
       - backend.bcgovSsoApiClientSecret=trivy-client-secret
       - global.config.databaseUser=trivy-database-user
       - global.databaseAlias=trivy-database-alias
+      - global.repository=bcgov/tenant-management-system
       - global.staticAnalysis=true
-
-  policy:
-    allowedRegistries:
-      - ghcr.io
