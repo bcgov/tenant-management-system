@@ -79,6 +79,8 @@ spec:
               value: "{{.Values.backend.allowedOrigins}}"
             - name: BCGOV_SSO_API_URL
               value: "{{.Values.backend.bcgovSsoApiUrl}}"
+            - name: BCGOV_SSO_API_URL_BCEID
+              value: "{{.Values.backend.bcgovSsoApiUrlBceid}}"
             - name: BCGOV_TOKEN_URL
               value: "{{.Values.backend.bcgovTokenUrl}}"
             - name: ISSUER
