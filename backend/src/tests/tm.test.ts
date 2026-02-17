@@ -6,6 +6,7 @@ import { TMController } from '../controllers/tm.controller'
 import { validate } from 'express-validation'
 import validator from '../common/tms.validator'
 import { ConflictError } from '../errors/ConflictError'
+import type { Group } from '../entities/Group'
 import { NotFoundError } from '../errors/NotFoundError'
 
 jest.mock('../repositories/tm.repository')
@@ -155,7 +156,7 @@ describe('Tenant Management API', () => {
         updatedDateTime: new Date(),
       }
 
-      mockTMRepository.saveGroup.mockResolvedValue(mockGroup)
+      mockTMRepository.saveGroup.mockResolvedValue(mockGroup as unknown as Group)
 
       const response = await request(app)
         .post(`/v1/tenants/${tenantId}/groups`)
@@ -207,7 +208,7 @@ describe('Tenant Management API', () => {
         updatedBy: 'test-user',
       }
 
-      mockTMRepository.saveGroup.mockResolvedValue(mockGroupWithUser)
+      mockTMRepository.saveGroup.mockResolvedValue(mockGroupWithUser as unknown as Group)
 
       const response = await request(app)
         .post(`/v1/tenants/${tenantId}/groups`)

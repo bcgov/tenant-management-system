@@ -7,6 +7,7 @@ import { TMSController } from '../controllers/tms.controller'
 import { validate } from 'express-validation'
 import validator from '../common/tms.validator'
 import { ConflictError } from '../errors/ConflictError'
+import type { Tenant } from '../entities/Tenant'
 import { NotFoundError } from '../errors/NotFoundError'
 import { BadRequestError } from '../errors/BadRequestError'
 
@@ -151,7 +152,7 @@ describe('Tenant API', () => {
         ],
       }
 
-      mockTMSRepository.saveTenant.mockResolvedValue(mockTenant)
+      mockTMSRepository.saveTenant.mockResolvedValue(mockTenant as unknown as Tenant)
 
       const response = await request(app)
         .post('/v1/tenants')

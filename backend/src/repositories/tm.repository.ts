@@ -31,7 +31,7 @@ export class TMRepository {
     transactionEntityManager = transactionEntityManager
       ? transactionEntityManager
       : this.manager
-    let groupResponse = {}
+    let groupResponse = {} as Group | null
 
     await this.manager.transaction(async (transactionEntityManager) => {
       try {
@@ -97,7 +97,7 @@ export class TMRepository {
             { isDeleted: false },
           )
           .where('group.id = :id', { id: savedGroup.id })
-          .getOne()) as any
+          .getOne()) as Group
       } catch (error: unknown) {
         logger.error(
           'Create group transaction failure - rolling back inserts ',
@@ -109,14 +109,14 @@ export class TMRepository {
 
     if (
       groupResponse &&
-      (groupResponse as any).createdBy &&
-      (groupResponse as any).createdBy !== 'system'
+      (groupResponse as Group).createdBy &&
+      (groupResponse as Group).createdBy !== 'system'
     ) {
-      const creator: any = await this.manager.findOne(SSOUser, {
-        where: { ssoUserId: (groupResponse as any).createdBy },
+      const creator = await this.manager.findOne(SSOUser, {
+        where: { ssoUserId: (groupResponse as Group).createdBy },
       })
-      ;(groupResponse as any).createdBy =
-        creator?.displayName || (groupResponse as any).createdBy
+      ;(groupResponse as Group).createdBy =
+        creator?.displayName || (groupResponse as Group).createdBy
     }
 
     return groupResponse

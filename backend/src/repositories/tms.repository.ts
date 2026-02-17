@@ -16,19 +16,36 @@ import { SharedService } from '../entities/SharedService'
 import { SharedServiceRole } from '../entities/SharedServiceRole'
 import { TenantSharedService } from '../entities/TenantSharedService'
 
+/** Minimal request-like shape for saveTenant when called from saveTenantRequest */
+interface SaveTenantRequestBody {
+  body: {
+    name: string
+    ministryName: string
+    description: string
+    user: {
+      ssoUserId: string
+      firstName: string
+      lastName: string
+      displayName: string
+      userName: string
+      email: string
+    }
+  }
+}
+
 export class TMSRepository {
   constructor(private manager: EntityManager) {
     this.manager = manager
   }
 
   public async saveTenant(
-    req: Request | { body: any },
+    req: Request | SaveTenantRequestBody,
     transactionEntityManager?: EntityManager,
   ) {
     transactionEntityManager = transactionEntityManager
       ? transactionEntityManager
       : this.manager
-    let tenantResponse = {}
+    let tenantResponse: Tenant | null = null
     await this.manager.transaction(async (transactionEntityManager) => {
       try {
         if (
@@ -68,10 +85,7 @@ export class TMSRepository {
           TMSConstants.USER_ADMIN,
         ]
 
-        const roles: Role[] = await this.findRoles(
-          globalTenantRoles,
-          null as any,
-        )
+        const roles: Role[] = await this.findRoles(globalTenantRoles, null)
 
         let savedRoles: Role[]
 
@@ -104,14 +118,14 @@ export class TMSRepository {
         }
         await transactionEntityManager.save(tenantUserRoles)
 
-        tenantResponse = (await transactionEntityManager
+        tenantResponse = await transactionEntityManager
           .createQueryBuilder(Tenant, 'tenant')
           .leftJoinAndSelect('tenant.users', 'tu')
           .leftJoinAndSelect('tu.ssoUser', 'sso')
           .leftJoinAndSelect('tu.roles', 'turoles')
           .leftJoinAndSelect('turoles.role', 'role')
           .where('tenant.id = :id', { id: savedTenant.id })
-          .getOne()) as any
+          .getOne()
       } catch (error: unknown) {
         logger.error(
           'Create tenant transaction failure - rolling back inserts ',
@@ -121,14 +135,14 @@ export class TMSRepository {
       }
     })
 
-    return tenantResponse
+    return tenantResponse!
   }
 
   public async updateTenant(req: Request) {
     const tenantId: string = req.params.tenantId
     const { name, ministryName, description, updatedBy } = req.body
 
-    let tenantResponse: Tenant = null as any
+    let tenantResponse: Tenant | null = null
     await this.manager.transaction(async (transactionEntityManager) => {
       try {
         // REDUNDANT: checkTenantAccess middleware already validates tenant exists and user has access
@@ -163,20 +177,20 @@ export class TMSRepository {
           .where('id = :tenantId', { tenantId })
           .execute()
 
-        const tenant: Tenant = (await transactionEntityManager
+        const tenant = await transactionEntityManager
           .createQueryBuilder(Tenant, 'tenant')
           .where('tenant.id = :id', { id: tenantId })
-          .getOne()) as any
+          .getOne()
 
-        const createdBy: SSOUser = tenant.createdBy
-          ? ((await transactionEntityManager.findOne(SSOUser, {
+        const createdBy: SSOUser | null = tenant?.createdBy
+          ? await transactionEntityManager.findOne(SSOUser, {
               where: { ssoUserId: tenant.createdBy },
-            })) as any)
-          : (null as any)
+            })
+          : null
 
         tenantResponse = {
-          ...tenant,
-          createdBy: createdBy?.userName || tenant.createdBy,
+          ...tenant!,
+          createdBy: createdBy?.userName || tenant!.createdBy,
         }
       } catch (error: unknown) {
         logger.error(
@@ -187,7 +201,7 @@ export class TMSRepository {
       }
     })
 
-    return tenantResponse
+    return tenantResponse!
   }
 
   public async addTenantUsers(
@@ -202,17 +216,17 @@ export class TMSRepository {
     const ssoUserId: string = req.body.user.ssoUserId
     const updatedBy: string = req.decodedJwt?.idir_user_guid || 'system'
 
-    const tenant: Tenant = (await this.getTenantIfUserDoesNotExistForTenant(
+    const tenant = await this.getTenantIfUserDoesNotExistForTenant(
       ssoUserId,
       tenantId,
-    )) as any
+    )
 
     if (!tenant) {
-      const softDeletedUser: TenantUser = (await this.findSoftDeletedTenantUser(
+      const softDeletedUser = await this.findSoftDeletedTenantUser(
         ssoUserId,
         tenantId,
         transactionEntityManager,
-      )) as any
+      )
 
       if (softDeletedUser) {
         softDeletedUser.isDeleted = false
@@ -222,14 +236,13 @@ export class TMSRepository {
         const restoredTenantUser: TenantUser =
           await transactionEntityManager.save(softDeletedUser)
 
-        const restoredTenantUserWithRelations: TenantUser =
-          (await transactionEntityManager
-            .createQueryBuilder(TenantUser, 'tu')
-            .leftJoinAndSelect('tu.ssoUser', 'ssoUser')
-            .where('tu.id = :tenantUserId', {
-              tenantUserId: restoredTenantUser.id,
-            })
-            .getOne()) as any
+        const restoredTenantUserWithRelations = await transactionEntityManager
+          .createQueryBuilder(TenantUser, 'tu')
+          .leftJoinAndSelect('tu.ssoUser', 'ssoUser')
+          .where('tu.id = :tenantUserId', {
+            tenantUserId: restoredTenantUser.id,
+          })
+          .getOne()
 
         const roleAssignments: TenantUserRole[] = await this.assignUserRoles(
           tenantId,
@@ -238,9 +251,10 @@ export class TMSRepository {
           transactionEntityManager,
         )
 
-        delete (restoredTenantUserWithRelations as any).tenant
+        const result = restoredTenantUserWithRelations!
+        delete (result as unknown as Record<string, unknown>).tenant
         return {
-          savedTenantUser: restoredTenantUserWithRelations,
+          savedTenantUser: result,
           roleAssignments,
           tenantUserId: restoredTenantUser.id,
         }
@@ -284,7 +298,7 @@ export class TMSRepository {
       if (user.idpType === 'bceidbasic' || user.idpType === 'bceidbusiness') {
         const serviceUserRole: Role[] = await this.findRoles(
           [TMSConstants.SERVICE_USER],
-          null as any,
+          null,
         )
         if (serviceUserRole.length === 0) {
           throw new NotFoundError('SERVICE_USER role not found')
@@ -299,7 +313,7 @@ export class TMSRepository {
         transactionEntityManager,
       )
 
-      delete (savedTenantUser as any).tenant
+      delete (savedTenantUser as unknown as Record<string, unknown>).tenant
       return {
         savedTenantUser,
         roleAssignments,
@@ -315,9 +329,9 @@ export class TMSRepository {
         const tenantId: string = req.params.tenantId
         const requestRole = req.body.role
 
-        const tenant: Tenant = (await transactionEntityManager.findOne(Tenant, {
+        const tenant = await transactionEntityManager.findOne(Tenant, {
           where: { id: tenantId },
-        })) as any
+        })
         if (!tenant) {
           throw new NotFoundError('Tenant Not Found: ' + tenantId)
         }
@@ -499,7 +513,7 @@ export class TMSRepository {
     const tenantId = req.params.tenantId
     const tenantUserId = req.params.tenantUserId
     const roleId = req.params.roleId
-    const assignedTenantUserRole: TenantUserRole = await this.getTenantUserRole(
+    const assignedTenantUserRole = await this.getTenantUserRole(
       tenantId,
       tenantUserId,
       roleId,
@@ -616,7 +630,7 @@ export class TMSRepository {
       .andWhere('tu.isDeleted = :isDeleted', { isDeleted: false })
       .andWhere('tur.isDeleted = :isDeleted', { isDeleted: false })
 
-    const tenantUser: TenantUser = (await query.getOne()) as any
+    const tenantUser = await query.getOne()
 
     if (!tenantUser) {
       return {
@@ -644,11 +658,12 @@ export class TMSRepository {
     }
   }
 
-  private async getCreatorDisplayName(ssoUserId: string) {
-    const creator: SSOUser = (await this.manager.findOne(SSOUser, {
+  private async getCreatorDisplayName(
+    ssoUserId: string,
+  ): Promise<SSOUser | null> {
+    return this.manager.findOne(SSOUser, {
       where: { ssoUserId },
-    })) as any
-    return creator
+    })
   }
 
   public async getTenant(req: Request) {
@@ -668,17 +683,17 @@ export class TMSRepository {
       tenantQuery.leftJoinAndSelect('tenantUserRole.role', 'role')
       tenantQuery.andWhere('user.isDeleted = :isDeleted', { isDeleted: false })
     }
-    const tenant: Tenant = (await tenantQuery.getOne()) as any
+    const tenant = await tenantQuery.getOne()
 
     if (!tenant) {
       throw new NotFoundError('Tenant Not Found: ' + tenantId)
     }
 
     if (expand.includes('tenantUserRoles') && tenant.users) {
-      tenant.users = tenant.users.map((user: any) => {
+      tenant.users = tenant.users.map((user: TenantUser) => {
         if (user.roles) {
           const activeRoles = user.roles.filter(
-            (tur: any) => !tur.isDeleted && tur.role && !tur.role.isDeleted,
+            (tur: TenantUserRole) => !tur.isDeleted && tur.role,
           )
           return {
             ...user,
@@ -735,7 +750,7 @@ export class TMSRepository {
     tenantUserId: string,
     roleId: string,
   ) {
-    const tenantUserRole: TenantUserRole = (await this.manager
+    return this.manager
       .createQueryBuilder(TenantUserRole, 'tenantUserRole')
       .innerJoin('tenantUserRole.tenantUser', 'tenantUser')
       .innerJoin('tenantUserRole.role', 'role')
@@ -744,8 +759,7 @@ export class TMSRepository {
       .andWhere('tenantUser.id = :tenantUserId', { tenantUserId })
       .andWhere('role.id = :roleId', { roleId })
       .andWhere('tenantUserRole.isDeleted = :isDeleted', { isDeleted: false })
-      .getOne()) as any
-    return tenantUserRole
+      .getOne()
   }
 
   public async checkIfTenantUserExistsForTenant(
@@ -807,13 +821,21 @@ export class TMSRepository {
         .andWhere('tenantUserRole.isDeleted = :isDeleted', { isDeleted: false })
     }
 
-    const tenantUser: any = await tenantUserQuery.getOne()
+    const tenantUser = await tenantUserQuery.getOne()
 
     if (!tenantUser) {
       throw new NotFoundError(`Tenant user not found: ${tenantUserId}`)
     }
 
-    const result: any = {
+    const result: {
+      id: string
+      ssoUser: SSOUser | Record<string, unknown>
+      createdDateTime: Date | string | null
+      updatedDateTime: Date | string | null
+      createdBy: string
+      updatedBy: string
+      roles?: Role[] | Array<Record<string, unknown>>
+    } = {
       id: tenantUser.id,
       ssoUser: tenantUser.ssoUser,
       createdDateTime: tenantUser.createdDateTime,
@@ -824,7 +846,7 @@ export class TMSRepository {
 
     if (expandRoles && tenantUser.roles) {
       result.roles = tenantUser.roles.map(
-        (tenantUserRole: any) => tenantUserRole.role,
+        (tenantUserRole: TenantUserRole) => tenantUserRole.role,
       )
     }
 
@@ -1025,10 +1047,18 @@ export class TMSRepository {
     return softDeletedUser
   }
 
-  public async findRoles(roleNames: string[], tenantId: string) {
-    const whereCondition: any = { name: In(roleNames) }
+  public async findRoles(
+    roleNames: string[],
+    tenantId: string | null,
+  ): Promise<Role[]> {
+    const whereCondition: {
+      name: ReturnType<typeof In>
+      tenant?: { id: string }
+    } = {
+      name: In(roleNames),
+    }
     if (tenantId) {
-      whereCondition['tenant'] = { id: tenantId }
+      whereCondition.tenant = { id: tenantId }
     }
     const roles: Role[] = await this.manager.find(Role, {
       where: whereCondition,
@@ -1045,9 +1075,9 @@ export class TMSRepository {
     email: string,
     idpType?: string,
   ) {
-    let ssoUser: SSOUser = (await this.manager.findOne(SSOUser, {
+    let ssoUser = await this.manager.findOne(SSOUser, {
       where: { ssoUserId: ssoUserId },
-    })) as any
+    })
     if (!ssoUser) {
       ssoUser = new SSOUser()
       ssoUser.firstName = firstName
@@ -1055,7 +1085,7 @@ export class TMSRepository {
       ssoUser.displayName = displayName
       ssoUser.userName = userName
       ssoUser.ssoUserId = ssoUserId
-      ssoUser.email = email || (null as any)
+      ssoUser.email = email ?? ''
       ssoUser.idpType = idpType || 'idir'
       ssoUser.createdBy = ssoUserId
       ssoUser.updatedBy = ssoUserId
