@@ -22,10 +22,8 @@ version: 0.1.0
 # incremented each time you make changes to the application. Versions are not expected to
 # follow Semantic Versioning. They should reflect the version the application is using.
 # It is recommended to use it with quotes.
-appVersion: "1.16.0"
+appVersion: '1.16.0'
 
 maintainers:
-  - name: Om Mishra
-    email: omprakash.2.mishra@gov.bc.ca
-  - name: Derek Roberts
-    email: derek.roberts@gov.bc.ca
+  - name: Walter Moar
+    email: walter.moar@gov.bc.ca
