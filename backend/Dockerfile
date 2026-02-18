@@ -33,6 +33,9 @@ RUN chmod -R 755 /app/tms-api/
 
 USER node
 
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+  CMD curl -f http://localhost:4144/v1/health || exit 1
+
 EXPOSE 4144
 
 ENTRYPOINT [ "sh", "start_api.sh" ]
