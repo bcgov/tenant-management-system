@@ -1,6 +1,4 @@
 misconfiguration:
-  config-data:
-    - '.trivy-data.yaml'
   helm:
     set:
       - backend.bcgovSsoApiClientId=trivy-client-id
@@ -9,3 +7,7 @@ misconfiguration:
       - global.databaseAlias=trivy-database-alias
       - global.repository=bcgov/tenant-management-system
       - global.staticAnalysis=true
+
+rego:
+  data:
+    - .trivy-data.yaml
