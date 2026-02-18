@@ -31,6 +31,8 @@ COPY . .
 # Set proper permissions
 RUN chmod -R 755 /app/tms-api/
 
+USER node
+
 EXPOSE 4144
 
 ENTRYPOINT [ "sh", "start_api.sh" ]
