@@ -1,3 +1,10 @@
 # The recommendation from OpenShift Platform Operations is that CPU limits
 # should not be set. If a container needs a burst of CPU, it will be allowed.
 KSV011
+
+# Trivy complains that containers are running with UID and GID less than 10000.
+# In OpenShift, however, the security context automatically assigns UID
+# and GID values that are greater than 10000. If deploying outside OpenShift,
+# consider setting runAsUser and runAsGroup explicitly in the securityContext.
+KSV020
+KSV021
