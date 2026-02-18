@@ -131,17 +131,23 @@ function handleAddUser() {
     }
   }
   emit('add', selectedUser.value, selectedGroups)
+  selectAllGroups.value = false
+  selectAllRoles.value = false
   toggleSearch()
 }
 
 function handleCancel() {
   emit('cancel')
+  selectAllGroups.value = false
+  selectAllRoles.value = false
   toggleSearch()
 }
 
 function handleClearSearch() {
   selectedUser.value = null
   selectedRoles.value = []
+  selectAllGroups.value = false
+  selectAllRoles.value = false
   emit('clear-search')
 }
 
@@ -400,14 +406,19 @@ watch(selectAllRoles, () => {
               class="d-sm-inline-block"
               label="Select all"
             />
-            <v-checkbox 
-              v-for="(role, index) in roles" 
+            <div
+              v-for="(role, index) in roles"
               :key="`role-${index}`"
-              v-model="selectedRoles"
-              :label="role.description"
-              :value="role"
               class="d-sm-inline-block"
-            />
+            >
+              <v-checkbox 
+                v-if="selectedUser.ssoUser.idpType === 'idir' || index === 0"
+                v-model="selectedRoles"
+                :label="role.description"
+                :value="role"
+                class="d-sm-inline-block"
+              />
+            </div>
           </v-col>
         </v-row>
 
