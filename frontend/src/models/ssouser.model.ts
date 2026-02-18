@@ -34,6 +34,8 @@ export class SsoUser {
    */
   userName?: string
 
+  idpType?: string
+
   /**
    * Creates a new SsoUser instance.
    *
@@ -51,12 +53,14 @@ export class SsoUser {
     lastName: string,
     displayName: string,
     email: string | undefined,
+    idpType?: string | undefined,
   ) {
     this.displayName = displayName
     this.email = email
     this.firstName = firstName
     this.lastName = lastName
     this.userName = userName
+    this.idpType = idpType
     this.ssoUserId = ssoUserId as SSOUserId
   }
 
@@ -79,6 +83,7 @@ export class SsoUser {
     lastName: string
     userName?: string
     ssoUserId: string
+    idpType?: string
   }): SsoUser {
     return new SsoUser(
       apiData.ssoUserId,
@@ -87,6 +92,7 @@ export class SsoUser {
       apiData.lastName,
       apiData.displayName,
       apiData.email,
+      apiData.idpType,
     )
   }
 }

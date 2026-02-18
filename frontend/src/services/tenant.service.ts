@@ -30,6 +30,7 @@ export const tenantService = {
           lastName: user.ssoUser.lastName,
           ssoUserId: user.ssoUser.ssoUserId,
           userName: user.ssoUser.userName,
+          idpType: user.ssoUser.idpType,
         },
       }
 
