@@ -1,0 +1,15 @@
+# Configuration
+env.sample
+eslint.config.mjs
+jest.config.js
+
+# Build artifacts
+.dockerignore
+Dockerfile
+node_modules
+
+# Documentation
+README.md
+
+# Tests
+src/tests
