@@ -54,7 +54,7 @@ jobs:
         name: Setup Node
         with:
           node-version: 24
-          cache: "npm"
+          cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
       - name: Install dependencies
         run: npm ci
@@ -62,7 +62,8 @@ jobs:
       - name: Run Tests
         env:
           CYPRESS_BASE_URL: https://${{ env.PREFIX }}.${{ env.DOMAIN }}/
-          CI: "true"
+          CI: 'true'
+          TERM: xterm
         run: |
           npx cypress run
 
