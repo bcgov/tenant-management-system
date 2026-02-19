@@ -1,36 +1,24 @@
-FROM node:20-alpine
+FROM node:20 AS builder
 
 WORKDIR /app/tms-api
 
-# Install build dependencies with no-cache (Alpine best practice)
-RUN apk add --no-cache \
-    python3 \
-    make \
-    g++ \
-    curl
-
-# Increase Node.js memory limit
-ENV NODE_OPTIONS="--max-old-space-size=4096"
-
-# Configure npm for reliability
-RUN npm config set registry https://registry.npmjs.org/ && \
-    npm config set fetch-retry-maxtimeout 600000 && \
-    npm config set fetch-retry-mintimeout 10000 && \
-    npm config set fetch-timeout 600000
-
-# Copy package files
 COPY package*.json ./
+RUN npm ci --ignore-scripts --omit=dev
 
-# Install dependencies with security flags and verbose logging
-RUN npm config set loglevel verbose && \
-    npm ci --ignore-scripts
+FROM node:20-alpine AS runtime
 
-# Copy application source code
+WORKDIR /app/tms-api
+
+RUN apk add --no-cache curl
+
+COPY --from=builder /app/tms-api/node_modules ./node_modules
 COPY . .
 
-# Set proper permissions
-RUN chmod -R 755 /app/tms-api/
-
 EXPOSE 4144
+
+USER node
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+    CMD curl -f http://localhost:4144/v1/health || exit 1
 
 ENTRYPOINT [ "sh", "start_api.sh" ]
