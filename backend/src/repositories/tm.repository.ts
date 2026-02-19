@@ -871,18 +871,25 @@ export class TMRepository {
     const tenantId = req.params.tenantId
     const groupId = req.params.groupId
 
-    const group: any = await this.manager
+    const groupExists = await this.manager
       .createQueryBuilder(Group, 'group')
       .where('group.id = :groupId', { groupId })
       .andWhere('group.tenant.id = :tenantId', { tenantId })
-      .getOne()
+      .getExists()
 
-    if (!group) {
+    if (!groupExists) {
       throw new NotFoundError(
         `Group not found or does not belong to tenant: ${groupId}`,
       )
     }
 
+    return this.fetchSharedServiceRolesForGroup(tenantId, groupId)
+  }
+
+  private async fetchSharedServiceRolesForGroup(
+    tenantId: string,
+    groupId: string,
+  ) {
     const result = await this.manager
       .createQueryBuilder(SharedServiceRole, 'ssr')
       .leftJoinAndSelect('ssr.sharedService', 'ss')
@@ -1103,7 +1110,7 @@ export class TMRepository {
       }
     })
 
-    return await this.getSharedServiceRolesForGroup(req)
+    return this.fetchSharedServiceRolesForGroup(tenantId, groupId)
   }
 
   public async getUserGroupsWithSharedServiceRoles(
