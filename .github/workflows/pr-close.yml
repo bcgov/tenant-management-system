@@ -36,4 +36,5 @@ jobs:
           oc_namespace: ${{ secrets.oc_namespace }}
           oc_token: ${{ secrets.oc_token }}
           oc_server: ${{ vars.oc_server }}
+          release_name: cstar-db
           values_file: charts/crunchy/values-dev.yml
