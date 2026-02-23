@@ -34,7 +34,8 @@ RUN npm run build
 # Deploy stage: serve static files with Caddy
 FROM caddy:2.10.2-alpine
 
-RUN apk add --no-cache ca-certificates curl
+RUN setcap -r /usr/bin/caddy && \
+    apk add --no-cache ca-certificates curl
 
 # Copy built static files and Caddyfile
 COPY --from=build /app/dist /srv
