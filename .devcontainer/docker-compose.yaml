@@ -36,6 +36,8 @@ services:
     image: postgres:17.0-bookworm
     networks:
       - cstar-net
+    ports:
+      - 5432:5432
     restart: unless-stopped
     volumes:
       - postgres_data:/var/lib/postgresql/data
