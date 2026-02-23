@@ -6,5 +6,6 @@
   "sonarlint.connectedMode.project": {
     "connectionId": "bcgov-sonarcloud",
     "projectKey": "bcgov_tenant-management-system"
-  }
+  },
+  "terminal.integrated.scrollback": 10000
 }
