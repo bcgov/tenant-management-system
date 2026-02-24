@@ -9,6 +9,7 @@ import { TenantRequest } from '../entities/TenantRequest'
 import { Tenant } from '../entities/Tenant'
 import { BadRequestError } from '../errors/BadRequestError'
 import { getErrorMessage } from '../common/error.handler'
+import { TMSMapper } from '../mappers/tms.mapper'
 
 const getRequiredEnv = (key: string): string => {
   const value = process.env[key]
@@ -19,25 +20,28 @@ const getRequiredEnv = (key: string): string => {
 }
 
 export class TMSService {
-  tmsRepository: TMSRepository = new TMSRepository(connection.manager)
-  tmRepository: TMRepository = new TMRepository(
-    connection.manager,
-    this.tmsRepository,
-  )
+  tmsRepository: TMSRepository
+  tmRepository: TMRepository
+  mapper: TMSMapper
+
+  constructor(
+    tmsRepository?: TMSRepository,
+    tmRepository?: TMRepository,
+    mapper?: TMSMapper,
+  ) {
+    this.tmsRepository = tmsRepository || new TMSRepository(connection.manager)
+    this.tmRepository =
+      tmRepository || new TMRepository(connection.manager, this.tmsRepository)
+    this.mapper = mapper || new TMSMapper()
+  }
 
   public async createTenant(req: Request) {
-    const savedTenant: any = await this.tmsRepository.saveTenant(req)
-
-    if (savedTenant?.users) {
-      savedTenant.users = savedTenant.users.map((user: any) => ({
-        ...user,
-        roles: user.roles.map((tur: any) => tur.role),
-      }))
-    }
+    const savedTenant: Tenant = await this.tmsRepository.saveTenant(req)
+    const tenantDto = this.mapper.toTenantDto(savedTenant)
 
     return {
       data: {
-        tenant: savedTenant,
+        tenant: tenantDto,
       },
     }
   }
@@ -95,25 +99,9 @@ export class TMSService {
     const expand =
       typeof req.query.expand === 'string' ? req.query.expand.split(',') : []
     if (expand.includes('tenantUserRoles') && tenants) {
-      const transformedTenants = tenants.map((tenant) => {
-        if (tenant.users) {
-          const transformedUsers = tenant.users.map((user) => {
-            const userRoles = user.roles?.map((tur) => tur.role) || []
-            return {
-              ...user,
-              roles: userRoles,
-            }
-          })
-          return {
-            ...tenant,
-            users: transformedUsers,
-          }
-        }
-        return tenant
-      })
       return {
         data: {
-          tenants: transformedTenants,
+          tenants: this.mapper.toTenantDtos(tenants),
         },
       }
     }
@@ -286,14 +274,12 @@ export class TMSService {
     const expand =
       typeof req.query.expand === 'string' ? req.query.expand.split(',') : []
     if (expand.includes('tenantUserRoles') && tenant?.users) {
-      const transformedUsers = tenant.users.map((user) => {
-        const userRoles = user.roles?.map((tur) => tur.role) || []
-        return {
-          ...user,
-          roles: userRoles,
-        }
-      })
-      ;(tenant as any).users = transformedUsers
+      const tenantDto = this.mapper.toTenantDto(tenant as Tenant)
+      return {
+        data: {
+          tenant: tenantDto,
+        },
+      }
     }
 
     return {
