@@ -28,84 +28,86 @@ export class TMRepository {
     req: Request,
     transactionEntityManager?: EntityManager,
   ) {
-    transactionEntityManager = transactionEntityManager
-      ? transactionEntityManager
-      : this.manager
+    const managerForTransaction = transactionEntityManager || this.manager
     let groupResponse = {} as Group | null
 
-    await this.manager.transaction(async (transactionEntityManager) => {
-      try {
-        const { name, description, tenantUserId } = req.body
-        const tenantId = req.params.tenantId
-        const createdBy =
-          req.body.user?.ssoUserId || req.decodedJwt?.idir_user_guid || 'system'
+    await managerForTransaction.transaction(
+      async (transactionEntityManager) => {
+        try {
+          const { name, description, tenantUserId } = req.body
+          const tenantId = req.params.tenantId
+          const createdBy =
+            req.body.user?.ssoUserId ||
+            req.decodedJwt?.idir_user_guid ||
+            'system'
 
-        // REDUNDANT: checkTenantAccess middleware already validates tenant exists and user has access
-        // if (!await this.tmsRepository.checkIfTenantExists(tenantId, transactionEntityManager)) {
-        //     throw new NotFoundError(`Tenant not found: ${tenantId}`)
-        // }
+          // REDUNDANT: checkTenantAccess middleware already validates tenant exists and user has access
+          // if (!await this.tmsRepository.checkIfTenantExists(tenantId, transactionEntityManager)) {
+          //     throw new NotFoundError(`Tenant not found: ${tenantId}`)
+          // }
 
-        if (
-          await this.checkIfGroupNameExistsInTenant(
-            name,
-            tenantId,
-            transactionEntityManager,
-          )
-        ) {
-          throw new ConflictError(
-            `A group with name '${name}' already exists in this tenant`,
-          )
-        }
-
-        if (tenantUserId) {
           if (
-            !(await this.checkIfTenantUserExists(
-              tenantUserId,
+            await this.checkIfGroupNameExistsInTenant(
+              name,
+              tenantId,
               transactionEntityManager,
-            ))
+            )
           ) {
-            throw new NotFoundError(`Tenant user not found: ${tenantUserId}`)
+            throw new ConflictError(
+              `A group with name '${name}' already exists in this tenant`,
+            )
           }
-        }
 
-        const group: Group = new Group()
-        group.name = name
-        group.description = description
-        group.tenant = { id: tenantId } as Tenant
-        group.createdBy = createdBy
-        group.updatedBy = createdBy
+          if (tenantUserId) {
+            if (
+              !(await this.checkIfTenantUserExists(
+                tenantUserId,
+                transactionEntityManager,
+              ))
+            ) {
+              throw new NotFoundError(`Tenant user not found: ${tenantUserId}`)
+            }
+          }
 
-        const savedGroup: Group = await transactionEntityManager.save(group)
+          const group: Group = new Group()
+          group.name = name
+          group.description = description
+          group.tenant = { id: tenantId } as Tenant
+          group.createdBy = createdBy
+          group.updatedBy = createdBy
 
-        if (tenantUserId) {
-          const groupUser: GroupUser = new GroupUser()
-          groupUser.group = savedGroup
-          groupUser.tenantUser = { id: tenantUserId } as TenantUser
-          groupUser.isDeleted = false
-          groupUser.createdBy = createdBy
-          groupUser.updatedBy = createdBy
+          const savedGroup: Group = await transactionEntityManager.save(group)
 
-          await transactionEntityManager.save(groupUser)
-        }
+          if (tenantUserId) {
+            const groupUser: GroupUser = new GroupUser()
+            groupUser.group = savedGroup
+            groupUser.tenantUser = { id: tenantUserId } as TenantUser
+            groupUser.isDeleted = false
+            groupUser.createdBy = createdBy
+            groupUser.updatedBy = createdBy
 
-        groupResponse = (await transactionEntityManager
-          .createQueryBuilder(Group, 'group')
-          .leftJoinAndSelect(
-            'group.users',
-            'groupUsers',
-            'groupUsers.isDeleted = :isDeleted',
-            { isDeleted: false },
+            await transactionEntityManager.save(groupUser)
+          }
+
+          groupResponse = (await transactionEntityManager
+            .createQueryBuilder(Group, 'group')
+            .leftJoinAndSelect(
+              'group.users',
+              'groupUsers',
+              'groupUsers.isDeleted = :isDeleted',
+              { isDeleted: false },
+            )
+            .where('group.id = :id', { id: savedGroup.id })
+            .getOne()) as Group
+        } catch (error: unknown) {
+          logger.error(
+            'Create group transaction failure - rolling back inserts ',
+            { error: getErrorMessage(error) },
           )
-          .where('group.id = :id', { id: savedGroup.id })
-          .getOne()) as Group
-      } catch (error: unknown) {
-        logger.error(
-          'Create group transaction failure - rolling back inserts ',
-          { error: getErrorMessage(error) },
-        )
-        throw error
-      }
-    })
+          throw error
+        }
+      },
+    )
 
     if (
       groupResponse &&
@@ -365,15 +367,16 @@ export class TMRepository {
               (r: any) => r.id === role.id,
             )
             if (!roleExists) {
-              const {
-                sharedService,
-                isDeleted,
-                createdDateTime,
-                updatedDateTime,
-                createdBy,
-                updatedBy,
-                ...roleWithoutExcludedFields
-              } = role
+              const roleWithoutExcludedFields = { ...role } as Record<
+                string,
+                unknown
+              >
+              delete roleWithoutExcludedFields.sharedService
+              delete roleWithoutExcludedFields.isDeleted
+              delete roleWithoutExcludedFields.createdDateTime
+              delete roleWithoutExcludedFields.updatedDateTime
+              delete roleWithoutExcludedFields.createdBy
+              delete roleWithoutExcludedFields.updatedBy
               serviceEntry.sharedServiceRoles.push(roleWithoutExcludedFields)
             }
           }
@@ -1063,7 +1066,7 @@ export class TMRepository {
       const toDelete: string[] = [] // IDs to soft-delete (isDeleted = true)
 
       for (const sharedService of sharedServices) {
-        const { id: sharedServiceId, sharedServiceRoles: roles } = sharedService
+        const { sharedServiceRoles: roles } = sharedService
 
         for (const role of roles) {
           const { id: sharedServiceRoleId, enabled } = role

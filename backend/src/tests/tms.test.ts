@@ -4547,11 +4547,6 @@ describe('Tenant API', () => {
         },
       }))
 
-      // Re-import to get mocked axios
-      const axios = require('axios')
-      const TMSService = require('../services/tms.service').TMSService
-      const service = new TMSService()
-
       jest
         .spyOn(tmsController.tmsService, 'searchBCGOVSSOUsers')
         .mockResolvedValue(mockSearchResults as any)
