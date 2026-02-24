@@ -5,13 +5,13 @@ export class SsouserIdptypeField1761078430142 implements MigrationInterface {
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
-      `ALTER TABLE "tms"."SSOUser" ADD "idp_type" character varying(20)`,
+      'ALTER TABLE "tms"."SSOUser" ADD "idp_type" character varying(20)',
     )
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
-      `ALTER TABLE "tms"."SSOUser" DROP COLUMN "idp_type"`,
+      'ALTER TABLE "tms"."SSOUser" DROP COLUMN "idp_type"',
     )
   }
 }

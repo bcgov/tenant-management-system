@@ -10,13 +10,13 @@ export const addRequestIdHeader = (
 
   if (requestId && typeof requestId === 'string') {
     const originalSend = res.send
-    res.send = function (body: any) {
+    res.send = function (body: unknown) {
       res.setHeader('X-Request-Id', requestId)
       return originalSend.call(this, body)
     }
 
     const originalJson = res.json
-    res.json = function (body: any) {
+    res.json = function (body: unknown) {
       res.setHeader('X-Request-Id', requestId)
       return originalJson.call(this, body)
     }

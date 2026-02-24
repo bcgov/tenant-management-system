@@ -127,8 +127,18 @@ describe('Tenant Management API', () => {
       (req, res) => tmController.getEffectiveSharedServiceRoles(req, res),
     )
 
-    const validationErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
-      if (err && typeof err === 'object' && 'name' in err && (err as { name: string }).name === 'ValidationError') {
+    const validationErrorHandler: ErrorRequestHandler = (
+      err,
+      req,
+      res,
+      next,
+    ) => {
+      if (
+        err &&
+        typeof err === 'object' &&
+        'name' in err &&
+        (err as { name: string }).name === 'ValidationError'
+      ) {
         return res.status((err as { statusCode: number }).statusCode).json(err)
       }
       next(err)
@@ -156,7 +166,9 @@ describe('Tenant Management API', () => {
         updatedDateTime: new Date(),
       }
 
-      mockTMRepository.saveGroup.mockResolvedValue(mockGroup as unknown as Group)
+      mockTMRepository.saveGroup.mockResolvedValue(
+        mockGroup as unknown as Group,
+      )
 
       const response = await request(app)
         .post(`/v1/tenants/${tenantId}/groups`)
@@ -208,7 +220,9 @@ describe('Tenant Management API', () => {
         updatedBy: 'test-user',
       }
 
-      mockTMRepository.saveGroup.mockResolvedValue(mockGroupWithUser as unknown as Group)
+      mockTMRepository.saveGroup.mockResolvedValue(
+        mockGroupWithUser as unknown as Group,
+      )
 
       const response = await request(app)
         .post(`/v1/tenants/${tenantId}/groups`)
@@ -2595,9 +2609,21 @@ describe('Tenant Management API', () => {
         },
         (req, res) => tmController.getEffectiveSharedServiceRoles(req, res),
       )
-      const validationErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
-        if (err && typeof err === 'object' && 'name' in err && (err as { name: string }).name === 'ValidationError') {
-          return res.status((err as { statusCode: number }).statusCode).json(err)
+      const validationErrorHandler: ErrorRequestHandler = (
+        err,
+        req,
+        res,
+        next,
+      ) => {
+        if (
+          err &&
+          typeof err === 'object' &&
+          'name' in err &&
+          (err as { name: string }).name === 'ValidationError'
+        ) {
+          return res
+            .status((err as { statusCode: number }).statusCode)
+            .json(err)
         }
         next(err)
       }

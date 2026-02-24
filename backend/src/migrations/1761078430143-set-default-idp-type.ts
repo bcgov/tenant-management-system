@@ -5,13 +5,13 @@ export class SetDefaultIdpType1761078430143 implements MigrationInterface {
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
-      `UPDATE "tms"."SSOUser" SET "idp_type" = 'idir' WHERE "idp_type" IS NULL`,
+      'UPDATE "tms"."SSOUser" SET "idp_type" = \'idir\' WHERE "idp_type" IS NULL',
     )
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
-      `UPDATE "tms"."SSOUser" SET "idp_type" = NULL WHERE "idp_type" = 'idir'`,
+      'UPDATE "tms"."SSOUser" SET "idp_type" = NULL WHERE "idp_type" = \'idir\'',
     )
   }
 }

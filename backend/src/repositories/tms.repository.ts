@@ -908,7 +908,8 @@ export class TMSRepository {
     const ssoUserId: string = req.params.ssoUserId
     const expand: string[] =
       typeof req.query.expand === 'string' ? req.query.expand.split(',') : []
-    const TMS_AUDIENCE: string = process.env.TMS_AUDIENCE!
+    const TMS_AUDIENCE: string =
+      process.env.TMS_AUDIENCE || 'tenant-management-system-6014'
     const jwtAudience: string =
       req.decodedJwt?.aud || req.decodedJwt?.audience || TMS_AUDIENCE
 

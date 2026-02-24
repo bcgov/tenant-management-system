@@ -10,6 +10,14 @@ import { Tenant } from '../entities/Tenant'
 import { BadRequestError } from '../errors/BadRequestError'
 import { getErrorMessage } from '../common/error.handler'
 
+const getRequiredEnv = (key: string): string => {
+  const value = process.env[key]
+  if (!value) {
+    throw new Error(`Missing required environment variable: ${key}`)
+  }
+  return value
+}
+
 export class TMSService {
   tmsRepository: TMSRepository = new TMSRepository(connection.manager)
   tmRepository: TMRepository = new TMRepository(
@@ -201,7 +209,7 @@ export class TMSService {
     try {
       const token: string = await this.getToken()
       const queryParams = req.query
-      const response = await axios.get(process.env.BCGOV_SSO_API_URL!, {
+      const response = await axios.get(getRequiredEnv('BCGOV_SSO_API_URL'), {
         headers: { Authorization: `Bearer ${token}` },
         params: queryParams,
       })
@@ -212,16 +220,24 @@ export class TMSService {
         error &&
         typeof error === 'object' &&
         'response' in error &&
-        typeof (error as { response?: { status?: number; data?: { message?: string } } }).response?.status === 'number'
+        typeof (
+          error as {
+            response?: { status?: number; data?: { message?: string } }
+          }
+        ).response?.status === 'number'
       ) {
-        const axiosError = error as { response: { status: number; data?: { message?: string } } }
+        const axiosError = error as {
+          response: { status: number; data?: { message?: string } }
+        }
         if (axiosError.response.status === 400) {
           throw new BadRequestError(
             `BC GOV SSO API returned bad request: ${axiosError.response.data?.message || getErrorMessage(error)}`,
           )
         }
       }
-      throw new Error('Error invoking BC GOV SSO API. ' + getErrorMessage(error))
+      throw new Error(
+        'Error invoking BC GOV SSO API. ' + getErrorMessage(error),
+      )
     }
   }
 
@@ -229,10 +245,13 @@ export class TMSService {
     try {
       const token: string = await this.getToken()
       const queryParams = req.query
-      const response = await axios.get(process.env.BCGOV_SSO_API_URL_BCEID!, {
-        headers: { Authorization: `Bearer ${token}` },
-        params: queryParams,
-      })
+      const response = await axios.get(
+        getRequiredEnv('BCGOV_SSO_API_URL_BCEID'),
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          params: queryParams,
+        },
+      )
       return await response.data
     } catch (error: unknown) {
       logger.error(getErrorMessage(error))
@@ -240,16 +259,24 @@ export class TMSService {
         error &&
         typeof error === 'object' &&
         'response' in error &&
-        typeof (error as { response?: { status?: number; data?: { message?: string } } }).response?.status === 'number'
+        typeof (
+          error as {
+            response?: { status?: number; data?: { message?: string } }
+          }
+        ).response?.status === 'number'
       ) {
-        const axiosError = error as { response: { status: number; data?: { message?: string } } }
+        const axiosError = error as {
+          response: { status: number; data?: { message?: string } }
+        }
         if (axiosError.response.status === 400) {
           throw new BadRequestError(
             `BC GOV SSO BCEID API returned bad request: ${axiosError.response.data?.message || getErrorMessage(error)}`,
           )
         }
       }
-      throw new Error('Error invoking BC GOV SSO BCEID API. ' + getErrorMessage(error))
+      throw new Error(
+        'Error invoking BC GOV SSO BCEID API. ' + getErrorMessage(error),
+      )
     }
   }
 
@@ -383,17 +410,19 @@ export class TMSService {
   private async getToken() {
     try {
       const response = await axios.post(
-        process.env.BCGOV_TOKEN_URL!,
+        getRequiredEnv('BCGOV_TOKEN_URL'),
         new URLSearchParams({
-          client_id: process.env.BCGOV_SSO_API_CLIENT_ID!,
-          client_secret: process.env.BCGOV_SSO_API_CLIENT_SECRET!,
+          client_id: getRequiredEnv('BCGOV_SSO_API_CLIENT_ID'),
+          client_secret: getRequiredEnv('BCGOV_SSO_API_CLIENT_SECRET'),
           grant_type: 'client_credentials',
         }),
         { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } },
       )
       return response.data.access_token
     } catch (error: unknown) {
-      throw new Error('Failed to obtain access token: ' + getErrorMessage(error))
+      throw new Error(
+        'Failed to obtain access token: ' + getErrorMessage(error),
+      )
     }
   }
 

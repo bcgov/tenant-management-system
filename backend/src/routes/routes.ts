@@ -1,4 +1,4 @@
-import { Request, Response } from 'express'
+import { Application, NextFunction, Request, Response } from 'express'
 import { RoutesConstants } from '../common/routes.constants'
 import { TMSController } from '../controllers/tms.controller'
 import { TMController } from '../controllers/tm.controller'
@@ -9,6 +9,7 @@ import { checkTenantAccess } from '../common/tenant-access.mw'
 import { UnauthorizedError } from 'express-jwt'
 import { TMSConstants } from '../common/tms.constants'
 import { checkOperationsAdmin } from '../common/operations-admin.mw'
+import logger from '../common/logger'
 
 require('dotenv').config()
 
@@ -16,7 +17,7 @@ export class Routes {
   public tmsController: TMSController = new TMSController()
   public tmController: TMController = new TMController()
 
-  public routes(app: any) {
+  public routes(app: Application) {
     // Proxy swagger docs endpoints to /v1/docs for access through frontend
     // Frontend proxies /api/v1/docs -> /v1/docs on backend
     app.get('/v1/docs', (req: Request, res: Response) => {
@@ -320,9 +321,9 @@ export class Routes {
 
     app.use(function (
       error: Error,
-      req: any,
-      res: Response<any, Record<string, any>>,
-      next: any,
+      _req: Request,
+      res: Response,
+      _next: NextFunction,
     ) {
       if (error instanceof ValidationError) {
         return res.status(error.statusCode).json(error)
@@ -330,7 +331,7 @@ export class Routes {
       if (error instanceof UnauthorizedError) {
         return res.status(401).json({ error: 'Unauthorized' })
       }
-      console.log(error.message)
+      logger.error('Unhandled route error', { error: error.message })
       res.status(500).json({ error: 'Internal Server Error' })
     })
   }

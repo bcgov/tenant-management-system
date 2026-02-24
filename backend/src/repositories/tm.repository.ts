@@ -203,7 +203,8 @@ export class TMRepository {
   public async getTenantGroups(req: Request) {
     const tenantId: string = req.params.tenantId
     const ssoUserId = req.decodedJwt?.idir_user_guid
-    const TMS_AUDIENCE: string = process.env.TMS_AUDIENCE!
+    const TMS_AUDIENCE: string =
+      process.env.TMS_AUDIENCE || 'tenant-management-system-6014'
     const jwtAudience: string =
       req.decodedJwt?.aud || req.decodedJwt?.audience || TMS_AUDIENCE
 
@@ -825,15 +826,25 @@ export class TMRepository {
 
     if (expand.includes('groupUsers')) {
       groupQuery
-        .leftJoinAndSelect('group.users', 'groupUsers', 'groupUsers.isDeleted = :isDeleted', { isDeleted: false })
-        .leftJoinAndSelect('groupUsers.tenantUser', 'tenantUser', 'tenantUser.isDeleted = :isDeleted', { isDeleted: false })
+        .leftJoinAndSelect(
+          'group.users',
+          'groupUsers',
+          'groupUsers.isDeleted = :isDeleted',
+          { isDeleted: false },
+        )
+        .leftJoinAndSelect(
+          'groupUsers.tenantUser',
+          'tenantUser',
+          'tenantUser.isDeleted = :isDeleted',
+          { isDeleted: false },
+        )
         .leftJoinAndSelect('tenantUser.ssoUser', 'ssoUser')
     }
 
     const group: any = await groupQuery.getOne()
 
     if (!group) {
-      console.log(`Group not found: ${groupId}`)
+      logger.warn(`Group not found: ${groupId}`)
       throw new NotFoundError(`Group not found: ${groupId}`)
     }
 

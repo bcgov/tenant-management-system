@@ -7,6 +7,8 @@ import { RoutesConstants } from './routes.constants'
 import { TMSConstants } from './tms.constants'
 
 const TMS_AUDIENCE = process.env.TMS_AUDIENCE || 'tenant-management-system-6014'
+const JWKS_URI = process.env.JWKS_URI || ''
+const ISSUER = process.env.ISSUER || ''
 
 interface DecodedJwt {
   idir_user_guid?: string
@@ -53,21 +55,25 @@ const determineBceidType = (
 const createJwtMiddleware = (options: CheckJwtOptions = {}) => {
   const { sharedServiceAccess = false } = options
 
+  if (!JWKS_URI || !ISSUER) {
+    throw new Error('Missing required JWT configuration environment variables')
+  }
+
   return jwt({
     secret: jwksRsa.expressJwtSecret({
       cache: true,
-      jwksUri: process.env.JWKS_URI!,
+      jwksUri: JWKS_URI,
       handleSigningKeyError: (err, cb) => {
         logger.error('Error:', { error: err?.message, stack: err?.stack })
         cb(new UnauthorizedError('Error occurred during authentication'))
       },
     }),
-    issuer: process.env.ISSUER!,
+    issuer: ISSUER,
     audience: sharedServiceAccess ? undefined : TMS_AUDIENCE,
     algorithms: ['RS256'],
     requestProperty: 'decodedJwt',
     getToken: function fromHeaderOrQuerystring(req) {
-      const authHeader: string = req.headers.authorization!
+      const authHeader = req.headers.authorization
       if (authHeader && authHeader.split(' ')[0] === 'Bearer') {
         const token = authHeader.split(' ')[1]
         logger.info('Token found:')

@@ -34,7 +34,9 @@ export const checkOperationsAdmin = (
         name: 'User does not have access to this operation and / resource',
       })
     } else {
-      logger.error('Error checking operations admin role', { error: getErrorMessage(error) })
+      logger.error('Error checking operations admin role', {
+        error: getErrorMessage(error),
+      })
       res.status(500).json({
         errorMessage: 'Internal Server Error',
         httpResponseCode: 500,
