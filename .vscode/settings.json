@@ -3,5 +3,8 @@
   "editor.formatOnSave": true,
   "editor.rulers": [80],
   "eslint.validate": ["javascript", "typescript", "vue"],
-  "terminal.integrated.scrollback": 10000
+  "sonarlint.connectedMode.project": {
+    "connectionId": "bcgov-sonarcloud",
+    "projectKey": "bcgov_tenant-management-system_backend"
+  }
 }
