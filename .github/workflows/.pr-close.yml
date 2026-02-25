@@ -5,7 +5,7 @@ on:
     inputs:
       ### Typical / recommended
       cleanup:
-        description: "Type of cleanup; e.g. helm or label"
+        description: 'Type of cleanup; e.g. helm or label'
         required: false
         type: string
       environment:
@@ -13,55 +13,55 @@ on:
         required: false
         type: string
       packages:
-        description: "Space-separated list of packages to promote"
+        description: 'Space-separated list of packages to promote'
         required: false
         type: string
       remove_pvc:
         required: false
         default: data-${{ github.event.repository.name }}-${{ github.event.number }}-bitnami-pg-0
         type: string
-        description: "Comma separated list of PVCs to remove"
+        description: 'Comma separated list of PVCs to remove'
 
       ### Usually a bad idea / not recommended
       merge_branch:
-        description: "Merge target branch"
+        description: 'Merge target branch'
         required: false
         type: string
         default: ${{ github.event.repository.default_branch }}
       cleanup_name:
-        description: "Use if template/cleanup name differs from repo"
+        description: 'Use if template/cleanup name differs from repo'
         type: string
         default: ${{ github.event.repository.name }}
       organization:
-        description: "GitHub organization; e.g. bcgov"
+        description: 'GitHub organization; e.g. bcgov'
         default: ${{ github.repository_owner }}
         required: false
         type: string
       repository:
-        description: "GitHub repository, e.g. quickstart-openshift"
+        description: 'GitHub repository, e.g. quickstart-openshift'
         default: ${{ github.event.repository.name }}
         required: false
         type: string
       tag_promote:
-        description: "Tag to promote to; e.g. latest, test, demo or prod"
+        description: 'Tag to promote to; e.g. latest, test, demo or prod'
         default: latest
         required: false
         type: string
       target:
-        description: "Target; e.g. PR number, test or prod"
+        description: 'Target; e.g. PR number, test or prod'
         default: ${{ github.event.number }}
         required: false
         type: string
 
     secrets:
       oc_namespace:
-        description: "OpenShift namespace"
+        description: 'OpenShift namespace'
         required: false
       oc_token:
-        description: "OpenShift token"
+        description: 'OpenShift token'
         required: false
       oc_server:
-        description: "OpenShift server, defaults to https://api.silver.devops.gov.bc.ca:6443"
+        description: 'OpenShift server, defaults to https://api.silver.devops.gov.bc.ca:6443'
         required: false
 
 permissions: {}
