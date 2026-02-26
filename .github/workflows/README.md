@@ -1,30 +1,34 @@
-## Pull Request-Based Workflows
+# Pull Request-Based Workflows
 
-This repository is based on the [quickstart-openshift](https://github.com/bcgov/quickstart-openshift) repository that provides a template to rapidly deploy a modern web application stack to the BC Government's OpenShift platform using [GitHub Actions](https://github.com/bcgov/tenant-management-system/actions), incorporating best practices for CI/CD, security, and observability. By hitting the ground running we can save weeks-to-months of development time plus receive regular updates and features.
+This repository is based on the [quickstart-openshift](https://github.com/bcgov/quickstart-openshift) repository that provides a template to rapidly deploy a modern web application stack to the BC Government's OpenShift platform. It uses [GitHub Actions](https://github.com/bcgov/tenant-management-system/actions) and incorporates best practices for CI/CD, security, and observability.
 
 Includes:
 
 - Pull Request-based pipeline
 - Sandboxed Pull Request deployments
-- Gated/controlled test and production deployments
+- Gated test and production deployments
 - Container publishing (ghcr.io) and importing (OpenShift)
 - Security, vulnerability, infrastructure, and container scan tools
+<!-- TODO
 - Automatic dependency patching available from [bcgov/renovate-config](https://github.com/bcgov/renovate-config)
+  -->
 - Enforced code reviews and workflow jobs (pass|fail)
 - Helm Package Manager
+<!--TODO
 - Prometheus Metrics export from Backend/Frontend
 - Resource Tuning with Horizontal Pod Autoscaler
+  -->
 - Affinity and anti-affinity for Scheduling on different worker nodes
-- Rolling updates with zero downtime in PROD
+- Rolling updates with zero downtime
 - Pod disruption budgets for high availability
 - Self-healing through probes/checks (startup, readiness, liveness)
 - Point the long-lived DEMO route to PRs by using the `demo` label
 - Sample application stack:
   - Database: Crunchy (Postgres), backups
   - Frontend: TypeScript, Vue.js, Caddy Server
-  - Backend: TypeScript, Express
+  - Backend: TypeScript, Express, Node
 
-# Workflows
+## Workflows
 
 These workflows and actions enforce a pull request based flow.
 
@@ -103,7 +107,7 @@ flowchart TD
     linkStyle default stroke:#757575,stroke-width:1px
 ```
 
-## Pull Request
+### Pull Request
 
 Runs on pull request submission.
 
@@ -115,18 +119,18 @@ Runs on pull request submission.
 - Run tests (e2e, load, integration) when changes are made
 - Other checks and updates as required
 
-![](.github/graphics/pr-open.png)
+![](../graphics/pr-open.png)
 
-## Validation
+### Validation
 
 Runs on pull request submission.
 
 - Enforces conventional commits in PR title
 - Adds greetings/directions to PR descriptions
 
-![](.github/graphics/pr-validate.png)
+![](../graphics/pr-validate.png)
 
-## Analysis
+### Analysis
 
 Runs on pull request submission or merge to the default branch.
 
@@ -134,33 +138,33 @@ Runs on pull request submission or merge to the default branch.
 - CodeQL/GitHub security reporting (now handled as GitHub default!)
 - Trivy password, vulnerability and security scanning
 
-![](.github/graphics/analysis.png)
+![](../graphics/analysis.png)
 
-## Pull Request Closed
+### Pull Request Closed
 
 Runs on pull request close or merge.
 
 - Cleans up OpenShift objects/artifacts
 - Merge retags successful build images as `latest`
 
-![](.github/graphics/pr-close.png)
+![](../graphics/pr-close.png)
 
-## Merge
+### Merge
 
 Runs on merge to main branch.
 
 - Code scanning and reporting to GitHub Security overview
-- Zero-downtime\* DEV deployment
+- Zero-downtime DEV deployment
+<!-- TODO
 - Penetration tests on TEST deployment (optional)
-- Zero-downtime\* TEST deployment
-- Zero-downtime\* PROD deployment
+  -->
+- Zero-downtime TEST deployment
+- Zero-downtime PROD deployment
 - Labels successful deployment images as PROD
 
-\* excludes database changes
+![](../graphics/merge.png)
 
-![](.github/graphics/merge.png)
-
-## Scheduled
+### Scheduled
 
 Runs on scheduled job (cronjob) or workflow dispatch.
 
@@ -168,9 +172,9 @@ Runs on scheduled job (cronjob) or workflow dispatch.
 - Generate SchemaSpy documentation
 - Tests (e2e, load, integration) on TEST deployment
 
-![](.github/graphics/scheduled.png)
+![](../graphics/scheduled.png)
 
-## DEMO Routing
+### DEMO Routing
 
 There is a long-lived custom route available to be assigned to specific Pull Request deployments. Add the label `demo` to that pull request or run the `DEMO Route` workflow.
 
@@ -180,22 +184,78 @@ Typical route: `https://<REPO_NAME>-demo.apps.silver.devops.gov.bc.ca`
 
 Please note that the label must be manually created using GitHub's web interface.
 
-![](.github/graphics/demo-label.png)
+![](../graphics/demo-label.png)
 
-#### Workflow
+## Setup: GitHub Environments, Variables, and Secrets
 
-![](.github/graphics/workflow.png)
+### Environments
 
-## Variables, Secrets, and Environments
+The repository is set up with environments for `DEV`, `TEST`, and `PROD`. These environments are for variables and secrets that have different values depending on their environment.
 
-Workflows use variables and secrets, where variable values are visible in workflows and logs, while secret values are hidden/redacted.
+### Environment-specific Variables
 
-Many workflow variables and secrets come from GitHub, and it's important to understand how GitHub variables, secrets, and environments work together:
+If a value is different in all environments and is not a secret, it it stored in a GitHub Environment Variable.
 
-- _Repository variables_: have the same value in dev, test, and prod. For example: OpenShift DNS name
-- _Environment-specific variables_: have different values in dev, test, and prod. For example: SSO URLs
-- _Repository secrets_: have the same value in dev, test, and prod. For example: SSO client password
-- _Environment-specific secrets_: have different values in dev, test, and prod. For example: OpenShift access tokens
+- `Settings` > `Environments` > `DEV` (for example), then scroll down to `Environment variables`
+
+There is an `Add environment variable` button for creating new variables. Each variable has an edit icon for changing the value.
+
+**`BCGOV_SSO_API_URL`**
+
+The URL for the SSO API to look up IDIR users.
+
+- Consume: `${{ vars.BCGOV_SSO_API_URL }}`
+- DEV Value: `https://api.loginproxy.gov.bc.ca/api/v1/dev/idir/users`
+- TEST Value: `https://api.loginproxy.gov.bc.ca/api/v1/test/idir/users`
+- PROD Value: `https://api.loginproxy.gov.bc.ca/api/v1/idir/users`
+
+**`BCGOV_SSO_API_URL_BCEID`**
+
+The URL for the SSO API to look up BCeID users.
+
+- Consume: `${{ vars.BCGOV_SSO_API_URL_BCeID }}`
+- DEV Value: `https://api.loginproxy.gov.bc.ca/api/v1/dev/bceid/users`
+- TEST Value: `https://api.loginproxy.gov.bc.ca/api/v1/test/bceid/users`
+- PROD Value: `https://api.loginproxy.gov.bc.ca/api/v1/bceid/users`
+
+**`LOGIN_PROXY_HOST_NAME`**
+
+The environment-specific host name of the login proxy server.
+
+- Consume: `${{ vars.LOGIN_PROXY_HOST_NAME }}`
+- DEV Value: `dev.loginproxy.gov.bc.ca`
+- TEST Value: `test.loginproxy.gov.bc.ca`
+- PROD Value: `loginproxy.gov.bc.ca`
+
+### Environment-specific Secrets
+
+If a value is different in all environments and is a secret, it it stored in a GitHub Environment Secret.
+
+- `Settings` > `Environments` > `DEV` (for example), then scroll down to `Environment secrets`
+
+There is an `Add environment secret` button for creating new secrets. Each secret has an edit button for replacing the value. Secrets, once set, are not visible and cannot be edited.
+
+**`OC_NAMESPACE`**
+
+Teams will receive a set of project namespaces, usually DEV (for PRs), TEST and PROD. TOOLS namespaces are not used here. Provided by your OpenShift platform team.
+
+- Consume: `${{ secrets.OC_NAMESPACE }}`
+- E.g.: `abc123-dev`
+
+**`OC_TOKEN`**
+
+OpenShift's service account token, different for every namespace. The OpenShift platform team has provisioned a pipeline account.
+
+- Consume: `${{ secrets.OC_TOKEN }}`
+
+Locate an OpenShift pipeline token:
+
+1. Login to the OpenShift cluster [Silver](https://console.apps.silver.devops.gov.bc.ca/)
+2. Select a namespace, such as DEV
+3. Click `Workloads` > `Secrets` (for Administrator view)
+4. Select `pipeline-token-...` or a similarly privileged token
+5. Under Data, copy `token`
+6. Paste into the GitHub Secret `OC_TOKEN`
 
 ### Repository Variables
 
@@ -205,40 +265,11 @@ If a value is the same in all environments and is not a secret, it it stored in 
 
 There is a `New repository variable` button for creating new variables. Each variable has an edit icon for changing the value.
 
-### Repository Variables
-
-If a value is the same in all environments and is not a secret, it it stored in a GitHub Repository Variable.
-
-- `Settings` > `Secrets and Variables` > `Actions` then in the `Secrets` tab scroll down to `Repository secrets`
-
-There is a `New repository secret` button for creating new secrets. Each secret has an edit button for replacing the value - secrets, once set, are not visible and cannot be edited
-
-### Environments
-
-Environments are variables and secrets that belong to specific environments: `DEV`, `TEST`, and `PROD`.
-
-Environments provide a [number of features](https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment), including:
-
-- Required reviewers
-- Wait timer
-- Limit TEST/PROD values to post-merge workflows
-
-### Repository Variables
-
-The repository variables are:
-
-| Actions Workflow Name        | Description                  |
-| ---------------------------- | ---------------------------- |
-| `vars.BCGOV_TOKEN_URL`       | Common user lookup token URL |
-| `vars.LOGIN_PROXY_CLIENT_ID` | Common login proxy client id |
-| `vars.MSTEAMS_WEBHOOK`       | Common alert webhook         |
-| `vars.OC_SERVER`             | Common server address        |
-
 **`BCGOV_TOKEN_URL`**
 
 The token URL used when calling the SSO API. This needs to be set up in the SSO CSS application.
 
-- Consume: `${{ secrets.BCGOV_TOKEN_URL }}`
+- Consume: `${{ vars.BCGOV_TOKEN_URL }}`
 
 Locate the SSO API token URL:
 
@@ -264,8 +295,6 @@ The client ID for the login proxy server.
 - Consume: `${{ vars.MSTEAMS_WEBHOOK }}`
 - Value: See MS Teams documentation for [webhooks](https://learn.microsoft.com/en-us/microsoftteams/platform/webhooks-and-connectors/how-to/add-incoming-webhook?tabs=newteams%2Cdotnet) and [message cards](https://learn.microsoft.com/en-us/outlook/actionable-messages/message-card-reference)
 
-![https://learn.microsoft.com/en-us/microsoftteams/platform/assets/images/create-incoming-webhook.gif](https://learn.microsoft.com/en-us/microsoftteams/platform/assets/images/create-incoming-webhook.gif)
-
 **`OC_SERVER`**
 
 OpenShift server address.
@@ -275,14 +304,11 @@ OpenShift server address.
 
 ### Repository Secrets
 
-The repository secrets are:
+If a value is the same in all environments and is a secret, it it stored in a GitHub Repository Secret.
 
-| Actions Workflow Name                 | Description                          |
-| ------------------------------------- | ------------------------------------ |
-| `secrets.BCGOV_SSO_API_CLIENT_ID`     | Common Client ID for user lookup     |
-| `secrets.BCGOV_SSO_API_CLIENT_SECRET` | Common Client secret for user lookup |
-| `secrets.SONAR_TOKEN_BACKEND`         | Common Sonar token for backend code  |
-| `secrets.SONAR_TOKEN_FRONTEND`        | Common Sonar token for frontend code |
+- `Settings` > `Secrets and Variables` > `Actions` then in the `Secrets` tab scroll down to `Repository secrets`
+
+There is a `New repository secret` button for creating new secrets. Each secret has an edit button for replacing the valu. Secrets, once set, are not visible and cannot be edited.
 
 **`BCGOV_SSO_API_CLIENT_ID`**
 
@@ -331,65 +357,3 @@ SonarCloud is being used for code quality, and the frontend code has its own tok
 - Consume: `${{ secrets.SONAR_TOKEN_FRONTEND }}`
 
 Unfortunately this token is tied to a user and not the project in SonarCloud.
-
-### Environment-specific Variables
-
-The environment-specific variables are:
-
-| Actions Workflow Name          | Description                   |
-| ------------------------------ | ----------------------------- |
-| `vars.BCGOV_SSO_API_URL`       | DEV user lookup API URL IDIR  |
-| `vars.BCGOV_SSO_API_URL_BCEID` | DEV user lookup API URL BCeID |
-| `vars.LOGIN_PROXY_HOST_NAME`   | DEV login proxy host name     |
-
-**`BCGOV_SSO_API_URL`**
-
-The URL for the SSO API to look up IDIR users.
-
-- Consume: `${{ vars.BCGOV_SSO_API_URL }}`
-- Value: `https://api.loginproxy.gov.bc.ca/api/v1/dev/idir/users`
-
-**`BCGOV_SSO_API_URL_BCEID`**
-
-The URL for the SSO API to look up BCeID users.
-
-- Consume: `${{ vars.BCGOV_SSO_API_URL_BCeID }}`
-- Value: `https://api.loginproxy.gov.bc.ca/api/v1/dev/bceid/users`
-
-**`LOGIN_PROXY_HOST_NAME`**
-
-The environment-specific host name of the login proxy server.
-
-- Consume: `${{ vars.LOGIN_PROXY_HOST_NAME }}`
-- Value: `dev.loginproxy.gov.bc.ca` or `test.loginproxy.gov.bc.ca` or `loginproxy.gov.bc.ca`
-
-### Environment-specific Secrets
-
-The environment-specific secrets are:
-
-| Actions Workflow Name  | Description             |
-| ---------------------- | ----------------------- |
-| `secrets.OC_NAMESPACE` | OpenShift namespace     |
-| `secrets.OC_TOKEN`     | OpenShift service token |
-
-**`OC_NAMESPACE`**
-
-Teams will receive a set of project namespaces, usually DEV (for PRs), TEST and PROD. TOOLS namespaces are not used here. Provided by your OpenShift platform team.
-
-- Consume: `${{ secrets.OC_NAMESPACE }}`
-- E.g.: `abc123-dev`
-
-**`OC_TOKEN`**
-
-OpenShift's service account token, different for every namespace. The OpenShift platform team has provisioned a pipeline account.
-
-- Consume: `${{ secrets.OC_TOKEN }}`
-
-Locate an OpenShift pipeline token:
-
-1. Login to your OpenShift cluster [Silver](https://console.apps.silver.devops.gov.bc.ca/)
-2. Select your DEV namespace
-3. Click Workloads > Secrets (under Workloads for Administrator view)
-4. Select `pipeline-token-...` or a similarly privileged token
-5. Under Data, copy `token`
-6. Paste into the GitHub Secret `OC_TOKEN`
