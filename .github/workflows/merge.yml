@@ -4,16 +4,16 @@ on:
   push:
     branches: [main]
     paths-ignore:
-      - "*.md"
-      - ".github/**"
-      - ".github/graphics/**"
-      - "!.github/workflows/**"
+      - '*.md'
+      - '.github/**'
+      - '.github/graphics/**'
+      - '!.github/workflows/**'
   workflow_dispatch:
     inputs:
       tag:
-        description: "Image tag set to deploy; e.g. PR number or prod"
+        description: 'Image tag set to deploy; e.g. PR number or prod'
         type: string
-        default: "prod"
+        default: 'prod'
 
 concurrency:
   # Do not interrupt previous workflows
