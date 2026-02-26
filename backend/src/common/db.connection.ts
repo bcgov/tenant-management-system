@@ -12,6 +12,14 @@ AppDataSource.initialize()
   .then(async () => {
     console.log(`Connected to database: ${config.host}`)
 
+    // Create the extension for calling uuid_generate_v4() in the migrations.
+    // Note that this extension is not needed because modern PostgreSQL has the
+    // preferred gen_random_uuid() function. We should ideally switch to this
+    // new function.
+    await AppDataSource.query(
+      'CREATE EXTENSION IF NOT EXISTS "uuid-ossp" SCHEMA public',
+    )
+
     // Ensure the schema exists
     await AppDataSource.query(`CREATE SCHEMA IF NOT EXISTS "${config.schema}"`)
 

@@ -1,0 +1,10 @@
+.dockerignore
+.env*
+.git
+
+Dockerfile
+coverage
+dist
+node_modules
+
+src/tests
