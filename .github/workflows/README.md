@@ -34,23 +34,30 @@ These workflows and actions enforce a pull request based flow.
 
 ```mermaid
 flowchart TD
-    A1(PR_Env_1) -->|tests| B
-    A2(PR_Env_2) -->|tests| B
-    A3(PR_Env_3) -->|tests| B
+    A1(PR_1) --> |tests| B(DEV_Env)
+    A2(PR_2) --> |tests| B
+    A3(PR_3) --> |tests| B
     Ad@{ shape: text, label: "..." }
-    An(PR Env n) -->|tests| B
-    B(TEST_Env) -->|tests| C(PROD_Env)
+    An(PR_n) --> |tests| B
+    B --> |tests| C(TEST_Env)
+    C --> D(PROD_Env)
 
     %% Define styles with good contrast for light/dark modes
-    %% PR Environments (using distinct, reasonably bright colors)
-    style A1 fill:#ffeadb,stroke:#ff8c42,stroke-width:2px,color:#5c3d1e  %% Light Orange/Orange
-    style A2 fill:#dbeaff,stroke:#4285f4,stroke-width:2px,color:#1a3f7a  %% Light Blue/Blue
-    style A3 fill:#dfffea,stroke:#34a853,stroke-width:2px,color:#154b24  %% Light Green/Green
-    style An fill:#fce8ff,stroke:#a142f4,stroke-width:2px,color:#4d1e7a  %% Light Purple/Purple
-    %% TEST Environment
-    style B fill:#e6f4ea,stroke:#34a853,stroke-width:3px,color:#154b24  %% Lighter Green/Green
-    %% PROD Environment
-    style C fill:#fff4d8,stroke:#fbbc05,stroke-width:3px,color:#7a5f01  %% Light Gold/Gold
+
+    %% PRs: Faded Grey
+    style A1 fill:#fafaff,stroke:#cbd5e0,stroke-width:1px,color:#718096
+    style A2 fill:#fafaff,stroke:#cbd5e0,stroke-width:1px,color:#718096
+    style A3 fill:#fafaff,stroke:#cbd5e0,stroke-width:1px,color:#718096
+    style An fill:#fafaff,stroke:#cbd5e0,stroke-width:1px,color:#718096
+
+    %% DEV: Fresh Teal
+    style B fill:#e6fffa,stroke:#319795,stroke-width:3px,color:#234e52
+
+    %% TEST: Deep Blue
+    style C fill:#ebf8ff,stroke:#2b6cb0,stroke-width:3px,color:#2a4365
+
+    %% PROD: Steel Metallic
+    style D fill:#e2e8f0,stroke:#4a5568,stroke-width:4px,color:#1a202c
 
     %% Link style
     linkStyle default stroke:#757575,stroke-width:1px
@@ -68,10 +75,11 @@ flowchart TD
     Bd(Code Review)
     C{Verify Results}
     D(Merge)
-    E(Deploy Images to TEST)
+    E(Deploy Images to DEV)
     F{E2E Tests,<br/>Load Tests,<br/>Analysis}
-    G(Deploy Images to PROD)
-    H(Tag Images as PROD)
+    G(Deploy Images to TEST)
+    H(Deploy Images to PROD)
+    I(Tag Images as PROD)
 
     A --> B
     B --> Ba --> C
@@ -81,7 +89,7 @@ flowchart TD
     C -- fail --> A
     C -- pass --> D --> E --> F
     F -- fail --> A
-    F -- pass --> G --> H
+    F -- pass --> G --> H --> I
 
     %% Define styles with good contrast for light/dark modes
     %% Developer & PR Actions (Blue)
@@ -96,12 +104,14 @@ flowchart TD
     %% Decision Points (Purple)
     style C fill:#fce8ff,stroke:#a142f4,stroke-width:2px,color:#4d1e7a
     style F fill:#fce8ff,stroke:#a142f4,stroke-width:2px,color:#4d1e7a
-    %% Merge & TEST Deployment (Green)
-    style D fill:#dfffea,stroke:#34a853,stroke-width:2px,color:#154b24
-    style E fill:#e6f4ea,stroke:#34a853,stroke-width:3px,color:#154b24
-    %% PROD Deployment & Tagging (Gold)
-    style G fill:#fff4d8,stroke:#fbbc05,stroke-width:3px,color:#7a5f01
-    style H fill:#fff4d8,stroke:#fbbc05,stroke-width:3px,color:#7a5f01
+    %% Merge & DEV Deployment (Fresh Teal)
+    style D fill:#e6fffa,stroke:#319795,stroke-width:3px,color:#234e52
+    style E fill:#e6fffa,stroke:#319795,stroke-width:3px,color:#234e52
+    %% TEST Deployment (Deep Blue)
+    style G fill:#ebf8ff,stroke:#2b6cb0,stroke-width:3px,color:#2a4365
+    %% PROD Deployment & Tagging (Steel Metallic)
+    style H fill:#e2e8f0,stroke:#4a5568,stroke-width:4px,color:#1a202c
+    style I fill:#e2e8f0,stroke:#4a5568,stroke-width:4px,color:#1a202c
 
     %% Link style
     linkStyle default stroke:#757575,stroke-width:1px
@@ -115,7 +125,6 @@ Runs on pull request submission.
 - Build action pushes to GitHub Container Registry (ghcr.io)
 - Build triggers select new builds vs reusing builds
 - Deploy only when changes are made
-- Deployment includes curl checks and optional penetration tests
 - Run tests (e2e, load, integration) when changes are made
 - Other checks and updates as required
 
@@ -132,7 +141,7 @@ Runs on pull request submission.
 
 ### Analysis
 
-Runs on pull request submission or merge to the default branch.
+Runs on pull request creation or merge to the default branch.
 
 - Unit tests (should include coverage)
 - CodeQL/GitHub security reporting (now handled as GitHub default!)
@@ -155,9 +164,6 @@ Runs on merge to main branch.
 
 - Code scanning and reporting to GitHub Security overview
 - Zero-downtime DEV deployment
-<!-- TODO
-- Penetration tests on TEST deployment (optional)
-  -->
 - Zero-downtime TEST deployment
 - Zero-downtime PROD deployment
 - Labels successful deployment images as PROD
