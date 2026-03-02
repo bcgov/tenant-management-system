@@ -10,7 +10,6 @@ services:
     # process it can use to show that the database is running.
     command: >
       bash -c "
-        apt-get update && apt-get install -y socat &&
         socat TCP-LISTEN:5432,fork,reuseaddr TCP:postgres:5432 &
         sleep infinity
       "
