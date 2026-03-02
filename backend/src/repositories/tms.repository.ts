@@ -33,6 +33,28 @@ interface SaveTenantRequestBody {
   }
 }
 
+export interface AddTenantUserInputDto {
+  tenantId: string
+  updatedBy: string
+  user: {
+    ssoUserId: string
+    firstName: string
+    lastName: string
+    displayName: string
+    userName?: string
+    email?: string
+    idpType?: 'idir' | 'bceidbasic' | 'bceidbusiness'
+  }
+  roles?: string[]
+  groups?: string[]
+}
+
+export interface AddTenantUserResultDto {
+  savedTenantUser: TenantUser
+  roleAssignments: TenantUserRole[]
+  tenantUserId: string
+}
+
 export class TMSRepository {
   constructor(private manager: EntityManager) {
     this.manager = manager
@@ -206,16 +228,17 @@ export class TMSRepository {
   }
 
   public async addTenantUsers(
-    req: Request,
+    input: AddTenantUserInputDto,
     transactionEntityManager?: EntityManager,
   ) {
     transactionEntityManager = transactionEntityManager
       ? transactionEntityManager
       : this.manager
 
-    const tenantId: string = req.params.tenantId
-    const ssoUserId: string = req.body.user.ssoUserId
-    const updatedBy: string = req.decodedJwt?.idir_user_guid || 'system'
+    const tenantId: string = input.tenantId
+    const user = input.user
+    const ssoUserId: string = user.ssoUserId
+    const updatedBy: string = input.updatedBy
 
     const tenant = await this.getTenantIfUserDoesNotExistForTenant(
       ssoUserId,
@@ -248,7 +271,7 @@ export class TMSRepository {
         const roleAssignments: TenantUserRole[] = await this.assignUserRoles(
           tenantId,
           restoredTenantUser.id,
-          req.body.roles,
+          await this.getRoleIdsToAssign(user.idpType, input.roles),
           transactionEntityManager,
         )
 
@@ -280,14 +303,13 @@ export class TMSRepository {
       tenantUser.tenant = tenant
       tenantUser.createdBy = updatedBy
       tenantUser.updatedBy = updatedBy
-      const user = req.body.user
       const ssoUser: SSOUser = await this.setSSOUser(
         user.ssoUserId,
         user.firstName,
         user.lastName,
         user.displayName,
-        user.userName,
-        user.email,
+        user.userName || '',
+        user.email || '',
         user.idpType,
       )
       tenantUser.ssoUser = ssoUser
@@ -295,22 +317,10 @@ export class TMSRepository {
       const savedTenantUser: TenantUser =
         await transactionEntityManager.save(tenantUser)
 
-      let rolesToAssign = req.body.roles
-      if (user.idpType === 'bceidbasic' || user.idpType === 'bceidbusiness') {
-        const serviceUserRole: Role[] = await this.findRoles(
-          [TMSConstants.SERVICE_USER],
-          null,
-        )
-        if (serviceUserRole.length === 0) {
-          throw new NotFoundError('SERVICE_USER role not found')
-        }
-        rolesToAssign = [serviceUserRole[0].id]
-      }
-
       const roleAssignments = await this.assignUserRoles(
         tenantId,
         savedTenantUser.id,
-        rolesToAssign,
+        await this.getRoleIdsToAssign(user.idpType, input.roles),
         transactionEntityManager,
       )
 
@@ -321,6 +331,23 @@ export class TMSRepository {
         tenantUserId: savedTenantUser.id,
       }
     }
+  }
+
+  private async getRoleIdsToAssign(
+    idpType: 'idir' | 'bceidbasic' | 'bceidbusiness' | undefined,
+    requestedRoles: string[] | undefined,
+  ) {
+    if (idpType === 'bceidbasic' || idpType === 'bceidbusiness') {
+      const serviceUserRole: Role[] = await this.findRoles(
+        [TMSConstants.SERVICE_USER],
+        null,
+      )
+      if (serviceUserRole.length === 0) {
+        throw new NotFoundError('SERVICE_USER role not found')
+      }
+      return [serviceUserRole[0].id]
+    }
+    return requestedRoles || []
   }
 
   public async createRoles(req: Request) {

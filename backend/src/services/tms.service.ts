@@ -7,9 +7,14 @@ import axios from 'axios'
 import logger from '../common/logger'
 import { TenantRequest } from '../entities/TenantRequest'
 import { Tenant } from '../entities/Tenant'
+import { Group } from '../entities/Group'
 import { BadRequestError } from '../errors/BadRequestError'
 import { getErrorMessage } from '../common/error.handler'
-import { TMSMapper } from '../mappers/tms.mapper'
+import { AddTenantUserResponseDto, TMSMapper } from '../mappers/tms.mapper'
+import {
+  AddTenantUserInputDto,
+  AddTenantUserResultDto,
+} from '../repositories/tms.repository'
 
 const getRequiredEnv = (key: string): string => {
   const value = process.env[key]
@@ -47,41 +52,35 @@ export class TMSService {
   }
 
   public async addTenantUser(req: Request) {
-    let response: any = {}
+    let response: AddTenantUserResponseDto | undefined
+    const input: AddTenantUserInputDto = {
+      tenantId: req.params.tenantId,
+      updatedBy: req.decodedJwt?.idir_user_guid || 'system',
+      user: req.body.user,
+      roles: req.body.roles,
+      groups: req.body.groups,
+    }
+
     await connection.manager.transaction(async (transactionEntityManager) => {
       try {
-        const tmsResponse: any = await this.tmsRepository.addTenantUsers(
-          req,
-          transactionEntityManager,
-        )
-        const tenantUserId = tmsResponse.tenantUserId
-        const savedUser: any = tmsResponse.savedTenantUser
-        const roleAssignments: any = tmsResponse.roleAssignments || []
-        const roles: any = roleAssignments.map(
-          (assignment: any) => assignment.role,
-        )
-
-        const groupIds: string[] = req.body.groups || []
-        const updatedBy: string = req.decodedJwt?.idir_user_guid || 'system'
-        const tenantId: string = req.params.tenantId
-        const groups: any = await this.tmRepository.addUserToGroups(
-          tenantUserId,
+        const tmsResponse: AddTenantUserResultDto =
+          await this.tmsRepository.addTenantUsers(
+            input,
+            transactionEntityManager,
+          )
+        const groupIds: string[] = input.groups || []
+        const groups: Group[] = await this.tmRepository.addUserToGroups(
+          tmsResponse.tenantUserId,
           groupIds,
-          tenantId,
-          updatedBy,
+          input.tenantId,
+          input.updatedBy,
           transactionEntityManager,
         )
-
-        response = {
-          data: {
-            user: {
-              ...savedUser,
-              ssoUser: savedUser?.ssoUser,
-              roles: roles,
-              groups: groups,
-            },
-          },
-        }
+        response = this.mapper.toAddTenantUserResponseDto(
+          tmsResponse.savedTenantUser,
+          tmsResponse.roleAssignments,
+          groups,
+        )
       } catch (error: unknown) {
         logger.error(
           'Add user to a tenant transaction failure - rolling back inserts ',
@@ -90,6 +89,9 @@ export class TMSService {
         throw error
       }
     })
+    if (!response) {
+      throw new Error('Failed to create add tenant user response')
+    }
     return response
   }
 

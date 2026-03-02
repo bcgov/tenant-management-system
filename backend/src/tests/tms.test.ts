@@ -384,8 +384,8 @@ describe('Tenant API', () => {
 
       expect(mockTMSRepository.addTenantUsers).toHaveBeenCalled()
       const callArgs = mockTMSRepository.addTenantUsers.mock.calls[0]
-      expect(callArgs[0].params.tenantId).toBe(tenantId)
-      expect(callArgs[0].body.user.ssoUserId).toBe(validUserData.user.ssoUserId)
+      expect(callArgs[0].tenantId).toBe(tenantId)
+      expect(callArgs[0].user.ssoUserId).toBe(validUserData.user.ssoUserId)
     })
 
     it('should fail when role ID does not exist', async () => {

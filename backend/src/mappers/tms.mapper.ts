@@ -3,6 +3,7 @@ import { SSOUser } from '../entities/SSOUser'
 import { Tenant } from '../entities/Tenant'
 import { TenantUser } from '../entities/TenantUser'
 import { TenantUserRole } from '../entities/TenantUserRole'
+import { Group } from '../entities/Group'
 
 export interface RoleDto {
   id: string
@@ -52,6 +53,22 @@ export interface TenantDto {
   users?: TenantUserDto[]
 }
 
+export interface AddTenantUserResponseDto {
+  data: {
+    user: {
+      id: string
+      ssoUser: SSOUserDto | undefined
+      isDeleted: boolean
+      createdDateTime: Date
+      updatedDateTime: Date
+      createdBy: string
+      updatedBy: string
+      roles: RoleDto[]
+      groups: Group[]
+    }
+  }
+}
+
 export class TMSMapper {
   public toTenantDto(tenant: Tenant): TenantDto {
     return {
@@ -71,6 +88,32 @@ export class TMSMapper {
 
   public toTenantDtos(tenants: Tenant[]): TenantDto[] {
     return tenants.map((tenant) => this.toTenantDto(tenant))
+  }
+
+  public toAddTenantUserResponseDto(
+    savedTenantUser: TenantUser,
+    roleAssignments: TenantUserRole[],
+    groups: Group[],
+  ): AddTenantUserResponseDto {
+    return {
+      data: {
+        user: {
+          id: savedTenantUser.id,
+          ssoUser: savedTenantUser.ssoUser
+            ? this.toSSOUserDto(savedTenantUser.ssoUser)
+            : undefined,
+          isDeleted: savedTenantUser.isDeleted,
+          createdDateTime: savedTenantUser.createdDateTime,
+          updatedDateTime: savedTenantUser.updatedDateTime,
+          createdBy: savedTenantUser.createdBy,
+          updatedBy: savedTenantUser.updatedBy,
+          roles: roleAssignments.map((assignment) =>
+            this.toRoleDto(assignment),
+          ),
+          groups,
+        },
+      },
+    }
   }
 
   private toTenantUserDto(user: TenantUser): TenantUserDto {
