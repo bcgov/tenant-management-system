@@ -16,20 +16,17 @@ import { SharedService } from '../entities/SharedService'
 import { SharedServiceRole } from '../entities/SharedServiceRole'
 import { TenantSharedService } from '../entities/TenantSharedService'
 
-/** Minimal request-like shape for saveTenant when called from saveTenantRequest */
-interface SaveTenantRequestBody {
-  body: {
-    name: string
-    ministryName: string
-    description: string
-    user: {
-      ssoUserId: string
-      firstName: string
-      lastName: string
-      displayName: string
-      userName: string
-      email: string
-    }
+export interface CreateTenantInputDto {
+  name: string
+  ministryName: string
+  description?: string
+  user: {
+    ssoUserId: string
+    firstName: string
+    lastName: string
+    displayName: string
+    userName?: string
+    email?: string
   }
 }
 
@@ -61,7 +58,7 @@ export class TMSRepository {
   }
 
   public async saveTenant(
-    req: Request | SaveTenantRequestBody,
+    input: CreateTenantInputDto,
     transactionEntityManager?: EntityManager,
   ) {
     const managerForTransaction = transactionEntityManager || this.manager
@@ -71,32 +68,35 @@ export class TMSRepository {
         try {
           if (
             await this.checkIfTenantNameAndMinistryNameExists(
-              req.body.name,
-              req.body.ministryName,
+              input.name,
+              input.ministryName,
             )
           ) {
             throw new ConflictError(
-              `A tenant with name '${req.body.name}' and ministry name '${req.body.ministryName}' already exists`,
+              `A tenant with name '${input.name}' and ministry name '${input.ministryName}' already exists`,
             )
           }
 
           const tenantUser: TenantUser = new TenantUser()
+          const user = input.user
           const ssoUser: SSOUser = await this.setSSOUser(
-            req.body.user.ssoUserId,
-            req.body.user.firstName,
-            req.body.user.lastName,
-            req.body.user.displayName,
-            req.body.user.userName,
-            req.body.user.email,
+            user.ssoUserId,
+            user.firstName,
+            user.lastName,
+            user.displayName,
+            user.userName || '',
+            user.email || '',
           )
           tenantUser.ssoUser = ssoUser
           const tenant: Tenant = new Tenant()
-          tenant.ministryName = req.body.ministryName
-          tenant.name = req.body.name
+          tenant.ministryName = input.ministryName
+          tenant.name = input.name
           tenant.users = [tenantUser]
-          tenant.description = req.body.description
-          tenant.createdBy = req.body.user.ssoUserId
-          tenant.updatedBy = req.body.user.ssoUserId
+          if (typeof input.description === 'string') {
+            tenant.description = input.description
+          }
+          tenant.createdBy = user.ssoUserId
+          tenant.updatedBy = user.ssoUserId
 
           const savedTenant: Tenant =
             await transactionEntityManager.save(tenant)
@@ -158,7 +158,10 @@ export class TMSRepository {
       },
     )
 
-    return tenantResponse!
+    if (!tenantResponse) {
+      throw new Error('Tenant creation failed')
+    }
+    return tenantResponse
   }
 
   public async updateTenant(req: Request) {
@@ -1244,19 +1247,17 @@ export class TMSRepository {
             )
           }
 
-          const tenantRequestBody = {
-            body: {
-              name: tenantRequest.name,
-              ministryName: tenantRequest.ministryName,
-              description: tenantRequest.description,
-              user: {
-                ssoUserId: tenantRequest.requestedBy.ssoUserId,
-                firstName: tenantRequest.requestedBy.firstName,
-                lastName: tenantRequest.requestedBy.lastName,
-                displayName: tenantRequest.requestedBy.displayName,
-                userName: tenantRequest.requestedBy.userName,
-                email: tenantRequest.requestedBy.email,
-              },
+          const tenantRequestBody: CreateTenantInputDto = {
+            name: tenantRequest.name,
+            ministryName: tenantRequest.ministryName,
+            description: tenantRequest.description,
+            user: {
+              ssoUserId: tenantRequest.requestedBy.ssoUserId,
+              firstName: tenantRequest.requestedBy.firstName,
+              lastName: tenantRequest.requestedBy.lastName,
+              displayName: tenantRequest.requestedBy.displayName,
+              userName: tenantRequest.requestedBy.userName,
+              email: tenantRequest.requestedBy.email,
             },
           }
           const savedTenant: Tenant = (await this.saveTenant(

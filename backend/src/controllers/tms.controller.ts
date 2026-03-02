@@ -28,7 +28,7 @@ export class TMSController {
       if (error instanceof ConflictError) {
         this.errorHandler.generalError(
           res,
-          'Error occurred adding user to the tenant',
+          'Error occurred during tenant creation',
           getErrorMessage(error),
           error.statusCode,
           'Conflict',

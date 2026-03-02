@@ -14,6 +14,7 @@ import { AddTenantUserResponseDto, TMSMapper } from '../mappers/tms.mapper'
 import {
   AddTenantUserInputDto,
   AddTenantUserResultDto,
+  CreateTenantInputDto,
 } from '../repositories/tms.repository'
 
 const getRequiredEnv = (key: string): string => {
@@ -41,7 +42,13 @@ export class TMSService {
   }
 
   public async createTenant(req: Request) {
-    const savedTenant: Tenant = await this.tmsRepository.saveTenant(req)
+    const input: CreateTenantInputDto = {
+      name: req.body.name,
+      ministryName: req.body.ministryName,
+      description: req.body.description,
+      user: req.body.user,
+    }
+    const savedTenant: Tenant = await this.tmsRepository.saveTenant(input)
     const tenantDto = this.mapper.toTenantDto(savedTenant)
 
     return {

@@ -49,7 +49,6 @@ paths:
               required:
                 - name
                 - ministryName
-                - description
                 - user
               properties:
                 name:
