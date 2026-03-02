@@ -15,7 +15,8 @@ import {
   AddTenantUserInputDto,
   AddTenantUserResultDto,
   CreateTenantInputDto,
-} from '../repositories/tms.repository'
+  RemoveTenantUserInputDto,
+} from '../dtos/tms.dto'
 
 const getRequiredEnv = (key: string): string => {
   const value = process.env[key]
@@ -375,21 +376,21 @@ export class TMSService {
   }
 
   public async removeTenantUser(req: Request) {
-    const tenantId: string = req.params.tenantId
-    const tenantUserId: string = req.params.tenantUserId
-    const deletedBy: string = req.decodedJwt?.idir_user_guid || 'system'
+    const input: RemoveTenantUserInputDto = {
+      tenantId: req.params.tenantId,
+      tenantUserId: req.params.tenantUserId,
+      deletedBy: req.decodedJwt?.idir_user_guid || 'system',
+    }
 
     await connection.manager.transaction(async (transactionEntityManager) => {
       try {
         await this.tmsRepository.removeTenantUser(
-          tenantUserId,
-          tenantId,
-          deletedBy,
+          input,
           transactionEntityManager,
         )
         await this.tmRepository.removeUserFromAllGroups(
-          tenantUserId,
-          deletedBy,
+          input.tenantUserId,
+          input.deletedBy,
           transactionEntityManager,
         )
       } catch (error: unknown) {

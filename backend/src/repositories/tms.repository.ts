@@ -15,42 +15,12 @@ import { TenantRequest } from '../entities/TenantRequest'
 import { SharedService } from '../entities/SharedService'
 import { SharedServiceRole } from '../entities/SharedServiceRole'
 import { TenantSharedService } from '../entities/TenantSharedService'
-
-export interface CreateTenantInputDto {
-  name: string
-  ministryName: string
-  description?: string
-  user: {
-    ssoUserId: string
-    firstName: string
-    lastName: string
-    displayName: string
-    userName?: string
-    email?: string
-  }
-}
-
-export interface AddTenantUserInputDto {
-  tenantId: string
-  updatedBy: string
-  user: {
-    ssoUserId: string
-    firstName: string
-    lastName: string
-    displayName: string
-    userName?: string
-    email?: string
-    idpType?: 'idir' | 'bceidbasic' | 'bceidbusiness'
-  }
-  roles?: string[]
-  groups?: string[]
-}
-
-export interface AddTenantUserResultDto {
-  savedTenantUser: TenantUser
-  roleAssignments: TenantUserRole[]
-  tenantUserId: string
-}
+import {
+  AddTenantUserResultDto,
+  AddTenantUserInputDto,
+  CreateTenantInputDto,
+  RemoveTenantUserInputDto,
+} from '../dtos/tms.dto'
 
 export class TMSRepository {
   constructor(private manager: EntityManager) {
@@ -1757,14 +1727,15 @@ export class TMSRepository {
   }
 
   public async removeTenantUser(
-    tenantUserId: string,
-    tenantId: string,
-    deletedBy: string,
+    input: RemoveTenantUserInputDto,
     transactionEntityManager?: EntityManager,
   ) {
     transactionEntityManager = transactionEntityManager
       ? transactionEntityManager
       : this.manager
+    const tenantUserId = input.tenantUserId
+    const tenantId = input.tenantId
+    const deletedBy = input.deletedBy
 
     const tenantUser: TenantUser = (await transactionEntityManager
       .createQueryBuilder(TenantUser, 'tu')

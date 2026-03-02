@@ -1,0 +1,44 @@
+import { TenantUser } from '../entities/TenantUser'
+import { TenantUserRole } from '../entities/TenantUserRole'
+
+export interface CreateTenantInputDto {
+  name: string
+  ministryName: string
+  description?: string
+  user: {
+    ssoUserId: string
+    firstName: string
+    lastName: string
+    displayName: string
+    userName?: string
+    email?: string
+  }
+}
+
+export interface AddTenantUserInputDto {
+  tenantId: string
+  updatedBy: string
+  user: {
+    ssoUserId: string
+    firstName: string
+    lastName: string
+    displayName: string
+    userName?: string
+    email?: string
+    idpType?: 'idir' | 'bceidbasic' | 'bceidbusiness'
+  }
+  roles?: string[]
+  groups?: string[]
+}
+
+export interface AddTenantUserResultDto {
+  savedTenantUser: TenantUser
+  roleAssignments: TenantUserRole[]
+  tenantUserId: string
+}
+
+export interface RemoveTenantUserInputDto {
+  tenantUserId: string
+  tenantId: string
+  deletedBy: string
+}
