@@ -3,9 +3,10 @@ import { computed, ref, watch } from 'vue'
 
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
-import type { User } from '@/models'
+import { type User } from '@/models'
 import { type IdirSearchType, IDIR_SEARCH_TYPE } from '@/utils/constants'
 import type { ItemSlotBase, DataTableItem } from 'vuetify/lib/components/VDataTable/types.mjs';
+import { convertIDPToDisplay } from '@/utils/display'
 
 // --- Component Interface -----------------------------------------------------
 
@@ -168,6 +169,7 @@ function handleSearch() {
           { title: 'First Name', key: 'ssoUser.firstName', align: 'start' },
           { title: 'Last Name', key: 'ssoUser.lastName', align: 'start' },
           { title: 'Email', key: 'ssoUser.email', align: 'start' },
+          { title: 'Identity Provider', key: 'ssoUser.idpType', align: 'start' },
           {
             title: '',
             key: 'actions',
@@ -188,15 +190,18 @@ function handleSearch() {
         <template #no-data>
           <v-alert type="info">No matching users found</v-alert>
         </template>
+        <template #[`item.ssoUser.idpType`]="{ item }">
+           {{ convertIDPToDisplay(item.ssoUser.idpType) }}
+        </template>
         <template  #[`item.actions`]>
           <v-btn
             class="pa-0 ma-0"
             density="compact"
             size="x-large"
-            style="width: 24px; height: 24px; min-width: 24px;"
-          >
-            +
-          </v-btn>
+            icon="mdi-plus-box"
+            color="primary"
+            variant="text"
+          />
         </template>
       </v-data-table>
     </v-col>
