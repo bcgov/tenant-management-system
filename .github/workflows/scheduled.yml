@@ -1,7 +1,7 @@
 name: Scheduled
 
 on:
-  schedule: [cron: "0 11 * * 6"] # 3 AM PST = 12 PM UDT, Saturdays
+  schedule: [cron: '0 11 * * 6'] # 3 AM PST = 12 PM UDT, Saturdays
   workflow_dispatch:
   workflow_call:
 
@@ -16,7 +16,7 @@ jobs:
     name: PR Deployment Purge
     env:
       # https://tecadmin.net/getting-yesterdays-date-in-bash/
-      CUTOFF: "1 week ago"
+      CUTOFF: '1 week ago'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -82,6 +82,6 @@ jobs:
         with:
           allow_issue_writing: true
           artifact_name: ${{ matrix.name }}
-          issue_title: "ZAP Security Report: ${{ matrix.name }}"
+          issue_title: 'ZAP Security Report: ${{ matrix.name }}'
           token: ${{ secrets.GITHUB_TOKEN }}
           target: https://cstar-dev.apps.silver.devops.gov.bc.ca/${{ matrix.path }}
