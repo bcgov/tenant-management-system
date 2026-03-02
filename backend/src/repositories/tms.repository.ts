@@ -248,7 +248,12 @@ export class TMSRepository {
           transactionEntityManager,
         )
 
-        const result = restoredTenantUserWithRelations!
+        if (!restoredTenantUserWithRelations) {
+          throw new Error(
+            `Failed to load restored tenant user: ${restoredTenantUser.id}`,
+          )
+        }
+        const result = restoredTenantUserWithRelations
         delete (result as unknown as Record<string, unknown>).tenant
         return {
           savedTenantUser: result,
@@ -1737,14 +1742,14 @@ export class TMSRepository {
     const tenantId = input.tenantId
     const deletedBy = input.deletedBy
 
-    const tenantUser: TenantUser = (await transactionEntityManager
+    const tenantUser = await transactionEntityManager
       .createQueryBuilder(TenantUser, 'tu')
       .leftJoinAndSelect('tu.roles', 'tur')
       .leftJoinAndSelect('tur.role', 'role')
       .where('tu.id = :tenantUserId', { tenantUserId })
       .andWhere('tu.tenant.id = :tenantId', { tenantId })
       .andWhere('tu.isDeleted = :isDeleted', { isDeleted: false })
-      .getOne()) as any
+      .getOne()
 
     if (!tenantUser) {
       throw new NotFoundError(

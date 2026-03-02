@@ -491,6 +491,65 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/InternalServerErrorResponse'
+    delete:
+      summary: Remove tenant user
+      description: Removes a tenant user from a tenant. Soft-deletes the tenant user and role assignments, and removes the user from all groups. Prevents removing the last tenant owner. Requires JWT authentication and TENANT_OWNER or USER_ADMIN role.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: tenantId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The unique identifier of the tenant
+        - name: tenantUserId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The unique identifier of the tenant user
+      responses:
+        '204':
+          description: Tenant user removed successfully
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        '403':
+          description: Forbidden - User does not have required roles (TENANT_OWNER or USER_ADMIN)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        '404':
+          description: Tenant user not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+        '409':
+          description: Conflict - Cannot remove the last tenant owner
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConflictErrorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
 
   /v1/users/{ssoUserId}/tenants:
     get:
