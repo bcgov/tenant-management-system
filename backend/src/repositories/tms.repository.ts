@@ -254,7 +254,6 @@ export class TMSRepository {
           )
         }
         const result = restoredTenantUserWithRelations
-        delete (result as unknown as Record<string, unknown>).tenant
         return {
           savedTenantUser: result,
           roleAssignments,
@@ -302,7 +301,6 @@ export class TMSRepository {
         transactionEntityManager,
       )
 
-      delete (savedTenantUser as unknown as Record<string, unknown>).tenant
       return {
         savedTenantUser,
         roleAssignments,
