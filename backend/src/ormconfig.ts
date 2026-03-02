@@ -1,4 +1,6 @@
 import * as dotenv from 'dotenv'
+import path from 'node:path'
+
 dotenv.config()
 
 const dbConfig = {
@@ -11,9 +13,9 @@ const dbConfig = {
   schema: 'tms',
   synchronize: false,
   logging: true,
-  entities: ['src/entities/**/*.ts'],
-  migrations: ['./src/migrations/*.ts'],
-  subscribers: ['src/subscriber/**/*.ts'],
+  entities: [path.join(__dirname, 'entities/**/*.{js,ts}')],
+  migrations: [path.join(__dirname, 'migrations/**/*.{js,ts}')],
+  subscribers: [path.join(__dirname, 'subscriber/**/*.{js,ts}')],
   cli: {
     entitiesDir: 'src/entities',
     migrationsDir: 'src/migration',

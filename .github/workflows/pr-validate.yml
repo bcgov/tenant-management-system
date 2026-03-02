@@ -13,7 +13,6 @@ permissions: {}
 jobs:
   validate:
     name: Validate PR
-    if: (! github.event.pull_request.draft)
     permissions:
       pull-requests: write
     uses: bcgov/quickstart-openshift-helpers/.github/workflows/.pr-validate.yml@6d695dd755fa9255ea4bde335890516beb6f95e4 # v1.0.1
