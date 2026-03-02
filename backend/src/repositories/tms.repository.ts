@@ -19,6 +19,7 @@ import {
   AddTenantUserResultDto,
   AddTenantUserInputDto,
   CreateTenantInputDto,
+  GetUserTenantsInputDto,
   RemoveTenantUserInputDto,
 } from '../dtos/tms.dto'
 
@@ -908,14 +909,12 @@ export class TMSRepository {
     return tenantExists
   }
 
-  public async getTenantsForUser(req: Request) {
-    const ssoUserId: string = req.params.ssoUserId
-    const expand: string[] =
-      typeof req.query.expand === 'string' ? req.query.expand.split(',') : []
+  public async getTenantsForUser(input: GetUserTenantsInputDto) {
+    const ssoUserId: string = input.ssoUserId
+    const expand: string[] = input.expand
     const TMS_AUDIENCE: string =
       process.env.TMS_AUDIENCE || 'tenant-management-system-6014'
-    const jwtAudience: string =
-      req.decodedJwt?.aud || req.decodedJwt?.audience || TMS_AUDIENCE
+    const jwtAudience: string = input.jwtAudience || TMS_AUDIENCE
 
     const tenantQuery = this.manager
       .createQueryBuilder(Tenant, 't')

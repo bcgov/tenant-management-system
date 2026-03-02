@@ -42,3 +42,9 @@ export interface RemoveTenantUserInputDto {
   tenantId: string
   deletedBy: string
 }
+
+export interface GetUserTenantsInputDto {
+  ssoUserId: string
+  expand: string[]
+  jwtAudience?: string
+}

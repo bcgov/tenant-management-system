@@ -554,7 +554,11 @@ paths:
   /v1/users/{ssoUserId}/tenants:
     get:
       summary: Get tenants for a user
-      description: Retrieves all tenants associated with a specific user. Requires JWT authentication.
+      description: |
+        Retrieves all tenants associated with a specific user. Requires JWT authentication.
+        Response shape depends on `expand`:
+        - without `expand`: returns basic tenant fields
+        - with `expand=tenantUserRoles`: includes tenant users and their roles
       security:
         - bearerAuth: []
       parameters:
@@ -587,7 +591,9 @@ paths:
                       tenants:
                         type: array
                         items:
-                          $ref: '#/components/schemas/TenantWithUsers'
+                          oneOf:
+                            - $ref: '#/components/schemas/Tenant'
+                            - $ref: '#/components/schemas/TenantWithUsers'
         '400':
           description: Invalid input
           content:
@@ -600,12 +606,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/UnauthorizedErrorResponse'
-        '404':
-          description: User not found
+        '403':
+          description: Forbidden - Requested user does not match token user
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/NotFoundErrorResponse'
+                $ref: '#/components/schemas/AccessDeniedResponse'
         '500':
           description: Internal Server Error
           content:
@@ -2872,6 +2878,19 @@ components:
         errorMessage:
           type: string
           example: 'Forbidden'
+
+    AccessDeniedResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          example: 'Forbidden'
+        message:
+          type: string
+          example: 'Access denied - the requested user does not match the token user'
+        statusCode:
+          type: integer
+          example: 403
 
     NotFoundErrorResponse:
       type: object

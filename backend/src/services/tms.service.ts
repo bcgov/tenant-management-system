@@ -15,6 +15,7 @@ import {
   AddTenantUserInputDto,
   AddTenantUserResultDto,
   CreateTenantInputDto,
+  GetUserTenantsInputDto,
   RemoveTenantUserInputDto,
 } from '../dtos/tms.dto'
 
@@ -104,10 +105,17 @@ export class TMSService {
   }
 
   public async getTenantsForUser(req: Request) {
-    const tenants = await this.tmsRepository.getTenantsForUser(req)
-
     const expand =
       typeof req.query.expand === 'string' ? req.query.expand.split(',') : []
+    const tmsAudience: string =
+      process.env.TMS_AUDIENCE || 'tenant-management-system-6014'
+    const input: GetUserTenantsInputDto = {
+      ssoUserId: req.params.ssoUserId,
+      expand,
+      jwtAudience: req.decodedJwt?.aud || req.decodedJwt?.audience || tmsAudience,
+    }
+    const tenants = await this.tmsRepository.getTenantsForUser(input)
+
     if (expand.includes('tenantUserRoles') && tenants) {
       return {
         data: {
