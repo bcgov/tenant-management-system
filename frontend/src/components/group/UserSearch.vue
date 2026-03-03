@@ -125,12 +125,12 @@ function handleSelectUser(user: User) {
         </template>
         <template #[`item.actions`]="{ item }">
           <v-btn
-            icon="mdi-plus"
+            icon="mdi-plus-box"
             color="primary"
             size="large"
             variant="text"
             @click="handleSelectUser(item)"
-          >test</v-btn>
+          />
         </template>
         <template #no-data>
           <v-alert type="info">No matching users found</v-alert>

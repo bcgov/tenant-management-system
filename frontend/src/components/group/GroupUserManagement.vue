@@ -116,7 +116,7 @@ function toggleSearch() {
               align: 'start',
             },
             { title: 'Email', key: 'user.ssoUser.email', align: 'start' },
-            { title: 'Identity Provider', key: 'ssoUser.idpType', align: 'start' },
+            { title: 'Identity Provider', key: 'user.ssoUser.idpType', align: 'start' },
             {
               title: 'Actions',
               key: 'actions',
@@ -131,8 +131,8 @@ function toggleSearch() {
           fixed-header
           hover
         >
-          <template #[`item.ssoUser.idpType`]="{ item }">
-           {{ convertIDPToDisplay(item.ssoUser.idpType) }}
+          <template #[`item.user.ssoUser.idpType`]="{ item }">
+           {{ convertIDPToDisplay(item?.user?.ssoUser?.idpType) }}
           </template>
           <template #[`item.actions`]="{ item }">
             <v-btn
