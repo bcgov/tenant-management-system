@@ -16,6 +16,7 @@ import {
   AddTenantUserInputDto,
   AddTenantUserResultDto,
   CreateTenantInputDto,
+  CreateTenantRequestInputDto,
   GetRolesForSsoUserInputDto,
   GetTenantInputDto,
   GetTenantUsersInputDto,
@@ -361,8 +362,14 @@ export class TMSService {
   }
 
   public async createTenantRequest(req: Request) {
+    const input: CreateTenantRequestInputDto = {
+      name: req.body.name,
+      ministryName: req.body.ministryName,
+      description: req.body.description,
+      user: req.body.user,
+    }
     const tenantRequest = (await this.tmsRepository.saveTenantRequest(
-      req,
+      input,
     )) as TenantRequest
     return {
       data: {

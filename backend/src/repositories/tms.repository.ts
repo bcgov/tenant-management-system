@@ -20,6 +20,7 @@ import {
   AddTenantUserResultDto,
   AddTenantUserInputDto,
   CreateTenantInputDto,
+  CreateTenantRequestInputDto,
   GetRolesForSsoUserInputDto,
   GetTenantInputDto,
   GetTenantUsersInputDto,
@@ -1138,35 +1139,37 @@ export class TMSRepository {
       .getOne()
   }
 
-  public async saveTenantRequest(req: Request) {
+  public async saveTenantRequest(input: CreateTenantRequestInputDto) {
     let tenantRequestResponse = {}
     await this.manager.transaction(async (transactionEntityManager) => {
       try {
         if (
           await this.checkIfTenantNameAndMinistryNameExists(
-            req.body.name,
-            req.body.ministryName,
+            input.name,
+            input.ministryName,
           )
         ) {
           throw new ConflictError(
-            `A tenant with name '${req.body.name}' and ministry name '${req.body.ministryName}' already exists`,
+            `A tenant with name '${input.name}' and ministry name '${input.ministryName}' already exists`,
           )
         }
         const tenantRequest: TenantRequest = new TenantRequest()
-        tenantRequest.name = req.body.name
-        tenantRequest.ministryName = req.body.ministryName
-        tenantRequest.description = req.body.description
+        tenantRequest.name = input.name
+        tenantRequest.ministryName = input.ministryName
+        if (input.description !== undefined) {
+          tenantRequest.description = input.description
+        }
         tenantRequest.status = 'NEW'
         tenantRequest.requestedBy = await this.setSSOUser(
-          req.body.user.ssoUserId,
-          req.body.user.firstName,
-          req.body.user.lastName,
-          req.body.user.displayName,
-          req.body.user.userName,
-          req.body.user.email,
+          input.user.ssoUserId,
+          input.user.firstName,
+          input.user.lastName,
+          input.user.displayName,
+          input.user.userName || '',
+          input.user.email || '',
         )
-        tenantRequest.createdBy = req.body.user.ssoUserId
-        tenantRequest.updatedBy = req.body.user.ssoUserId
+        tenantRequest.createdBy = input.user.ssoUserId
+        tenantRequest.updatedBy = input.user.ssoUserId
 
         const savedTenantRequest: TenantRequest =
           await transactionEntityManager.save(tenantRequest)
