@@ -16,6 +16,7 @@ import { SharedService } from '../entities/SharedService'
 import { SharedServiceRole } from '../entities/SharedServiceRole'
 import { TenantSharedService } from '../entities/TenantSharedService'
 import {
+  AssignUserRolesInputDto,
   AddTenantUserResultDto,
   AddTenantUserInputDto,
   CreateTenantInputDto,
@@ -495,6 +496,18 @@ export class TMSRepository {
       )
       throw error
     }
+  }
+
+  public async assignUserRolesForUser(
+    input: AssignUserRolesInputDto,
+    transactionEntityManager?: EntityManager,
+  ) {
+    return this.assignUserRoles(
+      input.tenantId,
+      input.tenantUserId,
+      input.roleIds,
+      transactionEntityManager,
+    )
   }
 
   public async getTenantRoles(req: Request) {

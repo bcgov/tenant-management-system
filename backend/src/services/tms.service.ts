@@ -12,6 +12,7 @@ import { BadRequestError } from '../errors/BadRequestError'
 import { getErrorMessage } from '../common/error.handler'
 import { AddTenantUserResponseDto, TMSMapper } from '../mappers/tms.mapper'
 import {
+  AssignUserRolesInputDto,
   AddTenantUserInputDto,
   AddTenantUserResultDto,
   CreateTenantInputDto,
@@ -113,7 +114,8 @@ export class TMSService {
     const input: GetUserTenantsInputDto = {
       ssoUserId: req.params.ssoUserId,
       expand,
-      jwtAudience: req.decodedJwt?.aud || req.decodedJwt?.audience || tmsAudience,
+      jwtAudience:
+        req.decodedJwt?.aud || req.decodedJwt?.audience || tmsAudience,
     }
     const tenants = await this.tmsRepository.getTenantsForUser(input)
 
@@ -174,16 +176,12 @@ export class TMSService {
     const { tenantId, tenantUserId } = req.params
     const { roles } = req.body
 
-    if (!Array.isArray(roles) || roles.length === 0) {
-      throw new Error('roles must be a non-empty array')
-    }
-
-    const data = await this.tmsRepository.assignUserRoles(
+    const input: AssignUserRolesInputDto = {
       tenantId,
       tenantUserId,
-      roles,
-      null as any,
-    )
+      roleIds: roles,
+    }
+    const data = await this.tmsRepository.assignUserRolesForUser(input)
     return {
       data: {
         roles: data.map((assignment) => assignment.role),

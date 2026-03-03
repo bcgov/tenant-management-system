@@ -54,3 +54,9 @@ export interface GetTenantUsersInputDto {
   groupIds?: string[]
   sharedServiceRoleIds?: string[]
 }
+
+export interface AssignUserRolesInputDto {
+  tenantId: string
+  tenantUserId: string
+  roleIds: string[]
+}
