@@ -64,3 +64,8 @@ export interface AssignUserRolesInputDto {
 export interface GetTenantRolesInputDto {
   tenantId: string
 }
+
+export interface GetUserRolesInputDto {
+  tenantId: string
+  tenantUserId: string
+}

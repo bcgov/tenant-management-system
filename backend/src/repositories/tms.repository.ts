@@ -22,6 +22,7 @@ import {
   CreateTenantInputDto,
   GetTenantUsersInputDto,
   GetTenantRolesInputDto,
+  GetUserRolesInputDto,
   GetUserTenantsInputDto,
   RemoveTenantUserInputDto,
 } from '../dtos/tms.dto'
@@ -517,8 +518,9 @@ export class TMSRepository {
     return roles
   }
 
-  public async getUserRoles(req: Request) {
-    const tenantUserId = req.params.tenantUserId
+  public async getUserRoles(input: GetUserRolesInputDto) {
+    const tenantUserId = input.tenantUserId
+    void input.tenantId
     // REDUNDANT: checkTenantAccess middleware already validates tenant user exists and user has access
     // if(!await this.checkIfTenantUserExistsForTenant(tenantId,tenantUserId) ) {
     //     throw new NotFoundError("Tenant or Tenant user not found: Tenant: "+tenantId+" Tenant User: "+tenantUserId)
