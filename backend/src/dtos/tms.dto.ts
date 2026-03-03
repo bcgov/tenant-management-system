@@ -82,6 +82,14 @@ export interface GetTenantInputDto {
   expand: string[]
 }
 
+export interface UpdateTenantInputDto {
+  tenantId: string
+  name?: string
+  ministryName?: string
+  description?: string
+  updatedBy: string
+}
+
 export interface GetRolesForSsoUserInputDto {
   tenantId: string
   ssoUserId: string

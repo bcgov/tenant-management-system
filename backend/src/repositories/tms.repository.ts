@@ -27,6 +27,7 @@ import {
   GetUserRolesInputDto,
   GetUserTenantsInputDto,
   RemoveTenantUserInputDto,
+  UpdateTenantInputDto,
   UnassignUserRolesInputDto,
 } from '../dtos/tms.dto'
 
@@ -142,29 +143,35 @@ export class TMSRepository {
     return tenantResponse
   }
 
-  public async updateTenant(req: Request) {
-    const tenantId: string = req.params.tenantId
-    const { name, ministryName, description } = req.body
+  public async updateTenant(input: UpdateTenantInputDto) {
+    const tenantId: string = input.tenantId
+    const { name, ministryName, description, updatedBy } = input
 
     let tenantResponse: Tenant | null = null
     await this.manager.transaction(async (transactionEntityManager) => {
       try {
-        // REDUNDANT: checkTenantAccess middleware already validates tenant exists and user has access
-        // if (!await this.checkIfTenantExists(tenantId, transactionEntityManager)) {
-        //     throw new NotFoundError(`Tenant not found: ${tenantId}`)
-        // }
+        const currentTenant = await transactionEntityManager
+          .createQueryBuilder(Tenant, 'tenant')
+          .where('tenant.id = :tenantId', { tenantId })
+          .getOne()
 
         if (name || ministryName) {
+          const effectiveName = name ?? currentTenant?.name ?? ''
+          const effectiveMinistryName =
+            ministryName ?? currentTenant?.ministryName ?? ''
+
           const existingTenant = await transactionEntityManager
             .createQueryBuilder(Tenant, 't')
-            .where('t.name = :name', { name })
-            .andWhere('t.ministry_name = :ministryName', { ministryName })
+            .where('t.name = :name', { name: effectiveName })
+            .andWhere('t.ministry_name = :ministryName', {
+              ministryName: effectiveMinistryName,
+            })
             .andWhere('t.id != :tenantId', { tenantId })
             .getOne()
 
           if (existingTenant) {
             throw new ConflictError(
-              `A tenant with name '${name}' and ministry name '${ministryName}' already exists`,
+              `A tenant with name '${effectiveName}' and ministry name '${effectiveMinistryName}' already exists`,
             )
           }
         }
@@ -173,10 +180,10 @@ export class TMSRepository {
           .createQueryBuilder()
           .update(Tenant)
           .set({
-            ...(name && { name }),
-            ...(ministryName && { ministryName }),
-            ...(description && { description }),
-            updatedBy: req.decodedJwt?.idir_user_guid || 'system',
+            ...(name !== undefined && { name }),
+            ...(ministryName !== undefined && { ministryName }),
+            ...(description !== undefined && { description }),
+            updatedBy,
           })
           .where('id = :tenantId', { tenantId })
           .execute()

@@ -23,6 +23,7 @@ import {
   GetUserRolesInputDto,
   GetUserTenantsInputDto,
   RemoveTenantUserInputDto,
+  UpdateTenantInputDto,
   UnassignUserRolesInputDto,
 } from '../dtos/tms.dto'
 
@@ -330,7 +331,14 @@ export class TMSService {
   }
 
   public async updateTenant(req: Request) {
-    const updatedTenant = await this.tmsRepository.updateTenant(req)
+    const input: UpdateTenantInputDto = {
+      tenantId: req.params.tenantId,
+      name: req.body.name,
+      ministryName: req.body.ministryName,
+      description: req.body.description,
+      updatedBy: req.decodedJwt?.idir_user_guid || 'system',
+    }
+    const updatedTenant = await this.tmsRepository.updateTenant(input)
 
     return {
       data: {
