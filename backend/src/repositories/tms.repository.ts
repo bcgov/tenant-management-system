@@ -19,6 +19,7 @@ import {
   AddTenantUserResultDto,
   AddTenantUserInputDto,
   CreateTenantInputDto,
+  GetTenantUsersInputDto,
   GetUserTenantsInputDto,
   RemoveTenantUserInputDto,
 } from '../dtos/tms.dto'
@@ -963,11 +964,10 @@ export class TMSRepository {
     return tenants
   }
 
-  public async getUsersForTenant(
-    tenantId: string,
-    groupIds?: string[],
-    sharedServiceRoleIds?: string[],
-  ) {
+  public async getUsersForTenant(input: GetTenantUsersInputDto) {
+    const tenantId = input.tenantId
+    const groupIds = input.groupIds
+    const sharedServiceRoleIds = input.sharedServiceRoleIds
     const query = this.manager
       .createQueryBuilder(TenantUser, 'tu')
       .innerJoinAndSelect('tu.ssoUser', 'su')

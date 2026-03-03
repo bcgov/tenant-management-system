@@ -15,6 +15,7 @@ import {
   AddTenantUserInputDto,
   AddTenantUserResultDto,
   CreateTenantInputDto,
+  GetTenantUsersInputDto,
   GetUserTenantsInputDto,
   RemoveTenantUserInputDto,
 } from '../dtos/tms.dto'
@@ -147,11 +148,12 @@ export class TMSService {
             .filter((id) => id.length > 0)
         : undefined
 
-    const users = await this.tmsRepository.getUsersForTenant(
-      req.params.tenantId,
+    const input: GetTenantUsersInputDto = {
+      tenantId: req.params.tenantId,
       groupIds,
       sharedServiceRoleIds,
-    )
+    }
+    const users = await this.tmsRepository.getUsersForTenant(input)
     return {
       data: {
         users,

@@ -48,3 +48,9 @@ export interface GetUserTenantsInputDto {
   expand: string[]
   jwtAudience?: string
 }
+
+export interface GetTenantUsersInputDto {
+  tenantId: string
+  groupIds?: string[]
+  sharedServiceRoleIds?: string[]
+}
