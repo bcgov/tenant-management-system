@@ -81,3 +81,8 @@ export interface GetTenantInputDto {
   tenantId: string
   expand: string[]
 }
+
+export interface GetRolesForSsoUserInputDto {
+  tenantId: string
+  ssoUserId: string
+}

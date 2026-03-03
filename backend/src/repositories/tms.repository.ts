@@ -20,6 +20,7 @@ import {
   AddTenantUserResultDto,
   AddTenantUserInputDto,
   CreateTenantInputDto,
+  GetRolesForSsoUserInputDto,
   GetTenantInputDto,
   GetTenantUsersInputDto,
   GetTenantRolesInputDto,
@@ -735,9 +736,9 @@ export class TMSRepository {
     return tenant
   }
 
-  public async getRolesForSSOUser(req: Request) {
-    const tenantId: string = req.params.tenantId
-    const ssoUserId: string = req.params.ssoUserId
+  public async getRolesForSSOUser(input: GetRolesForSsoUserInputDto) {
+    const tenantId: string = input.tenantId
+    const ssoUserId: string = input.ssoUserId
 
     if (!(await this.checkIfTenantExists(tenantId))) {
       throw new NotFoundError('Tenant Not Found: ' + tenantId)
