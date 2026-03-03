@@ -69,3 +69,10 @@ export interface GetUserRolesInputDto {
   tenantId: string
   tenantUserId: string
 }
+
+export interface UnassignUserRolesInputDto {
+  tenantId: string
+  tenantUserId: string
+  roleId: string
+  updatedBy: string
+}

@@ -21,6 +21,7 @@ import {
   GetUserRolesInputDto,
   GetUserTenantsInputDto,
   RemoveTenantUserInputDto,
+  UnassignUserRolesInputDto,
 } from '../dtos/tms.dto'
 
 const getRequiredEnv = (key: string): string => {
@@ -217,7 +218,13 @@ export class TMSService {
   }
 
   public async unassignUserRoles(req: Request) {
-    await this.tmsRepository.unassignUserRoles(req)
+    const input: UnassignUserRolesInputDto = {
+      tenantId: req.params.tenantId,
+      tenantUserId: req.params.tenantUserId,
+      roleId: req.params.roleId,
+      updatedBy: req.decodedJwt?.idir_user_guid || 'system',
+    }
+    await this.tmsRepository.unassignUserRoles(input)
   }
 
   public async searchBCGOVSSOUsers(req: Request) {

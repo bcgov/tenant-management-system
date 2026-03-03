@@ -25,6 +25,7 @@ import {
   GetUserRolesInputDto,
   GetUserTenantsInputDto,
   RemoveTenantUserInputDto,
+  UnassignUserRolesInputDto,
 } from '../dtos/tms.dto'
 
 export class TMSRepository {
@@ -531,10 +532,10 @@ export class TMSRepository {
     // }
   }
 
-  public async unassignUserRoles(req: Request) {
-    const tenantId = req.params.tenantId
-    const tenantUserId = req.params.tenantUserId
-    const roleId = req.params.roleId
+  public async unassignUserRoles(input: UnassignUserRolesInputDto) {
+    const tenantId = input.tenantId
+    const tenantUserId = input.tenantUserId
+    const roleId = input.roleId
     const assignedTenantUserRole = await this.getTenantUserRole(
       tenantId,
       tenantUserId,
@@ -598,7 +599,7 @@ export class TMSRepository {
       },
       {
         isDeleted: true,
-        updatedBy: req.body.updatedBy || 'system',
+        updatedBy: input.updatedBy,
       },
     )
   }
