@@ -8,6 +8,7 @@ import SimpleDialog from '@/components/ui/SimpleDialog.vue'
 import type { Group, GroupUser, Tenant, User } from '@/models'
 import { type IdirSearchType, ROLES } from '@/utils/constants'
 import { currentUserHasRole } from '@/utils/permissions'
+import { convertIDPToDisplay } from '@/utils/display'
 
 // --- Component Interface -----------------------------------------------------
 
@@ -115,6 +116,7 @@ function toggleSearch() {
               align: 'start',
             },
             { title: 'Email', key: 'user.ssoUser.email', align: 'start' },
+            { title: 'Identity Provider', key: 'user.ssoUser.idpType', align: 'start' },
             {
               title: 'Actions',
               key: 'actions',
@@ -129,6 +131,9 @@ function toggleSearch() {
           fixed-header
           hover
         >
+          <template #[`item.user.ssoUser.idpType`]="{ item }">
+           {{ convertIDPToDisplay(item?.user?.ssoUser?.idpType) }}
+          </template>
           <template #[`item.actions`]="{ item }">
             <v-btn
               v-if="isUserAdmin"
