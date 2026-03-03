@@ -1,19 +1,14 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { useAuthStore, useTenantStore } from '@/stores'
+import { useAuthStore } from '@/stores'
 
 import { currentUserIsOperationsAdmin } from '@/utils/permissions'
-import { storeToRefs } from 'pinia'
 
 // --- Store and Composable Setup ----------------------------------------------
 
 const route = useRoute()
 const authStore = useAuthStore()
-const tenantStore = useTenantStore()
-
-//Refs
-const { tenants } = storeToRefs(tenantStore)
 
 // --- Computed Values ---------------------------------------------------------
 

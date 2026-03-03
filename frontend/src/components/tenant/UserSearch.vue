@@ -196,10 +196,10 @@ function handleSearch() {
         <template  #[`item.actions`]>
           <v-btn
             class="pa-0 ma-0"
-            density="compact"
-            size="x-large"
-            icon="mdi-plus-box"
             color="primary"
+            density="compact"
+            icon="mdi-plus-box"
+            size="x-large"
             variant="text"
           />
         </template>

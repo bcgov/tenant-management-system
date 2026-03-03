@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 
-import FloatingActionButton from '@/components/ui/FloatingActionButton.vue'
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import type { User } from '@/models'
 import { type IdirSearchType, IDIR_SEARCH_TYPE } from '@/utils/constants'
@@ -125,8 +124,8 @@ function handleSelectUser(user: User) {
         </template>
         <template #[`item.actions`]="{ item }">
           <v-btn
-            icon="mdi-plus-box"
             color="primary"
+            icon="mdi-plus-box"
             size="large"
             variant="text"
             @click="handleSelectUser(item)"
