@@ -20,6 +20,7 @@ import {
   AddTenantUserResultDto,
   AddTenantUserInputDto,
   CreateTenantInputDto,
+  GetTenantInputDto,
   GetTenantUsersInputDto,
   GetTenantRolesInputDto,
   GetUserRolesInputDto,
@@ -689,10 +690,9 @@ export class TMSRepository {
     })
   }
 
-  public async getTenant(req: Request) {
-    const tenantId: string = req.params.tenantId
-    const expand: string[] =
-      typeof req.query.expand === 'string' ? req.query.expand.split(',') : []
+  public async getTenant(input: GetTenantInputDto) {
+    const tenantId: string = input.tenantId
+    const expand: string[] = input.expand
 
     const tenantQuery = this.manager
       .createQueryBuilder(Tenant, 'tenant')

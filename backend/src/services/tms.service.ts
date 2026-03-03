@@ -16,6 +16,7 @@ import {
   AddTenantUserInputDto,
   AddTenantUserResultDto,
   CreateTenantInputDto,
+  GetTenantInputDto,
   GetTenantUsersInputDto,
   GetTenantRolesInputDto,
   GetUserRolesInputDto,
@@ -303,10 +304,14 @@ export class TMSService {
   }
 
   public async getTenant(req: Request) {
-    const tenant = await this.tmsRepository.getTenant(req)
-
     const expand =
       typeof req.query.expand === 'string' ? req.query.expand.split(',') : []
+    const input: GetTenantInputDto = {
+      tenantId: req.params.tenantId,
+      expand,
+    }
+    const tenant = await this.tmsRepository.getTenant(input)
+
     if (expand.includes('tenantUserRoles') && tenant?.users) {
       const tenantDto = this.mapper.toTenantDto(tenant as Tenant)
       return {

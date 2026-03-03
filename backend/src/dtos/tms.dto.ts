@@ -76,3 +76,8 @@ export interface UnassignUserRolesInputDto {
   roleId: string
   updatedBy: string
 }
+
+export interface GetTenantInputDto {
+  tenantId: string
+  expand: string[]
+}
