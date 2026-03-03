@@ -2,6 +2,7 @@ name: PR
 
 on:
   pull_request:
+    types: [labeled, opened, reopened, synchronize]
 
 concurrency:
   # Cancel in progress for PR open and close
@@ -53,9 +54,33 @@ jobs:
     needs: [deploys]
     uses: ./.github/workflows/.tests.yml
 
+  zap:
+    name: ZAP Security Scan
+    needs: [deploys]
+    if: |
+      contains(github.event.pull_request.labels.*.name, 'zap') &&
+      needs.deploys.outputs.triggered == 'true'
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        name: [backend, frontend]
+        include:
+          - name: backend
+            path: api
+          - name: frontend
+            path: ''
+    steps:
+      - name: ZAP Scan
+        uses: zaproxy/action-full-scan@3c58388149901b9a03b7718852c5ba889646c27c
+        with:
+          allow_issue_writing: false
+          artifact_name: zap-${{ matrix.name }}-pr${{ github.event.number }}
+          target: https://cstar-pr-${{ github.event.number }}.apps.silver.devops.gov.bc.ca/${{ matrix.path }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
   results:
     name: PR Results
-    needs: [builds, deploys, tests]
+    needs: [builds, deploys, tests, zap]
     if: always()
     runs-on: ubuntu-24.04
     steps:
