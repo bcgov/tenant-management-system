@@ -6,6 +6,12 @@
   "editor.formatOnSave": true,
   "editor.rulers": [80],
   "eslint.validate": ["javascript", "typescript", "vue"],
+  "files.watcherExclude": {
+    "**/.git/objects/**": true,
+    "**/.git/subtree-cache/**": true,
+    "**/.hg/store/**": true,
+    "**/node_modules/**": true
+  },
   "sonarlint.connectedMode.project": {
     "connectionId": "bcgov-sonarcloud",
     "projectKey": "bcgov_tenant-management-system_backend"
