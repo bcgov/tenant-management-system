@@ -60,3 +60,7 @@ export interface AssignUserRolesInputDto {
   tenantUserId: string
   roleIds: string[]
 }
+
+export interface GetTenantRolesInputDto {
+  tenantId: string
+}

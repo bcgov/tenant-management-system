@@ -21,6 +21,7 @@ import {
   AddTenantUserInputDto,
   CreateTenantInputDto,
   GetTenantUsersInputDto,
+  GetTenantRolesInputDto,
   GetUserTenantsInputDto,
   RemoveTenantUserInputDto,
 } from '../dtos/tms.dto'
@@ -510,8 +511,8 @@ export class TMSRepository {
     )
   }
 
-  public async getTenantRoles(req: Request) {
-    void req
+  public async getTenantRoles(input: GetTenantRolesInputDto) {
+    void input
     const roles: Role[] = await this.findTenantRoles()
     return roles
   }
