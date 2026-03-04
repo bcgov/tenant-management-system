@@ -18,10 +18,13 @@ permissions: {}
 jobs:
   integration-tests:
     name: Integration
+    permissions:
+      checks: write
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v6
+
       - id: cache-npm
         uses: actions/cache@v5
         with:
@@ -35,7 +38,24 @@ jobs:
       - run: |
           cd tests/integration
           npm ci
-          npx bru run --env default --noproxy --env-var baseUrl=https://$PREFIX.$DOMAIN/
+          npx bru run \
+              --env default \
+              --env-var baseUrl=https://$PREFIX.$DOMAIN/api \
+              --noproxy \
+              --reporter-junit results.xml
+
+      - uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: Integration Tests
+          path: tests/integration/results.xml
+          reporter: java-junit
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bruno-test-results
+          path: tests/integration/results.xml
 
   e2e-tests:
     name: E2E
