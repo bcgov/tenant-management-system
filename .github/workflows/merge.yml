@@ -45,6 +45,8 @@ jobs:
   tests:
     name: Tests
     needs: [deploy-dev]
+    permissions:
+      checks: write
     uses: ./.github/workflows/.tests.yml
     with:
       target: dev
