@@ -6,6 +6,7 @@
   "customizations": {
     "vscode": {
       "extensions": [
+        "bruno-api-client.bruno",
         "cweijan.vscode-postgresql-client2",
         "dbaeumer.vscode-eslint",
         "editorconfig.editorconfig",
