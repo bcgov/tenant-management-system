@@ -19,7 +19,7 @@ jobs:
   integration-tests:
     name: Integration
     runs-on: ubuntu-24.04
-    timeout-minutes: 1
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v6
       - id: cache-npm
@@ -32,13 +32,10 @@ jobs:
             ${{ runner.os }}-build-
             ${{ runner.os }}-
 
-      - env:
-          API_NAME: express
-          BASE_URL: https://${{ env.PREFIX }}.${{ env.DOMAIN }}
-        run: |
+      - run: |
           cd tests/integration
           npm ci
-          node src/main.js
+          npx bru run --env default --noproxy --env-var baseUrl=https://$PREFIX.$DOMAIN/
 
   e2e-tests:
     name: E2E
