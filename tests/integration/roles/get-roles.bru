@@ -1,0 +1,26 @@
+meta {
+  name: Get Roles
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/v1/roles
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+tests {
+  test('status is 200', function () {
+    expect(res.getStatus()).to.equal(200)
+  })
+
+  test('response has roles array', function () {
+    const body = res.getBody()
+    expect(body.data.roles).to.be.an('array')
+  })
+}

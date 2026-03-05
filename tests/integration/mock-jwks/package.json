@@ -1,0 +1,14 @@
+{
+  "description": "Mock JWKS server for local and CI testing",
+  "devDependencies": {
+    "express": "^4.18.2",
+    "jose": "^5.2.0"
+  },
+  "main": "server.js",
+  "name": "mock-jwks",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "type": "module",
+  "version": "1.0.0"
+}

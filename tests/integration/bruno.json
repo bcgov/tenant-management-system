@@ -1,4 +1,5 @@
 {
+  "ignore": ["mock-jwks", "node_modules"],
   "name": "integration-tests",
   "type": "collection",
   "version": "1"

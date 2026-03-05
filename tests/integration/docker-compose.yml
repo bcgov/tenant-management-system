@@ -1,39 +1,58 @@
 services:
-  db:
-    image: postgres:17
-    environment:
-      POSTGRES_USER: app
-      POSTGRES_PASSWORD: app
-      POSTGRES_DB: app
-    healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U app']
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
   api:
-    image: ghcr.io/bcgov/tenant-management-system/backend:${IMAGE_TAG}
     depends_on:
       db:
         condition: service_healthy
+      mock-jwks:
+        condition: service_healthy
     environment:
+      ISSUER: http://mock-jwks:3001
+      JWKS_URI: http://mock-jwks:3001/certs
+      NODE_ENV: test
+      POSTGRES_DATABASE: app
       POSTGRES_HOST: db
+      POSTGRES_PASSWORD: app
       POSTGRES_PORT: 5432
       POSTGRES_USER: app
-      POSTGRES_PASSWORD: app
-      POSTGRES_DATABASE: app
-      ISSUER: http://localhost:3001
-      JWKS_URI: http://localhost:3001/certs
-      NODE_ENV: test
-    ports:
-      - '4144:4144'
+      TMS_AUDIENCE: cstar
     healthcheck:
+      interval: 10s
+      retries: 5
+      start_period: 30s
       test:
         [
           'CMD-SHELL',
           'wget --no-verbose --tries=1 --spider http://localhost:4144/v1/health || exit 1',
         ]
-      interval: 10s
       timeout: 5s
+    image: ghcr.io/bcgov/tenant-management-system/backend:${IMAGE_TAG}
+    ports:
+      - '4144:4144'
+
+  db:
+    environment:
+      POSTGRES_DB: app
+      POSTGRES_PASSWORD: app
+      POSTGRES_USER: app
+    healthcheck:
+      interval: 5s
       retries: 5
-      start_period: 30s
+      test: ['CMD-SHELL', 'pg_isready -U app']
+      timeout: 5s
+    image: postgres:17.7
+
+  mock-jwks:
+    build:
+      context: ./tests/integration/mock-jwks
+    environment:
+      ISSUER: http://mock-jwks:3001
+      TMS_AUDIENCE: cstar
+    healthcheck:
+      interval: 5s
+      retries: 5
+      test:
+        [
+          'CMD-SHELL',
+          'wget --no-verbose --tries=1 --spider http://localhost:3001/certs || exit 1',
+        ]
+      timeout: 5s
