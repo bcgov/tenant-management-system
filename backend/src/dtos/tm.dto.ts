@@ -19,13 +19,6 @@ export interface AddGroupUserInputDto {
   groupId: string
   tenantUserId: string
   updatedBy: string
-  params: {
-    tenantId: string
-    groupId: string
-  }
-  body: {
-    tenantUserId: string
-  }
 }
 
 export interface AddGroupUserResultDto {
@@ -52,24 +45,12 @@ export interface RemoveGroupUserInputDto {
   groupId: string
   groupUserId: string
   updatedBy: string
-  params: {
-    tenantId: string
-    groupId: string
-    groupUserId: string
-  }
 }
 
 export interface GetGroupInputDto {
   tenantId: string
   groupId: string
   expand: string[]
-  params: {
-    tenantId: string
-    groupId: string
-  }
-  query?: {
-    expand?: string
-  }
 }
 
 export interface GetGroupResultDto {
@@ -94,4 +75,11 @@ export interface GetGroupResultDto {
       updatedBy?: string
     }
   }>
+}
+
+export interface GetTenantGroupsInputDto {
+  tenantId: string
+  ssoUserId?: string
+  jwtAudience: string
+  tmsAudience: string
 }

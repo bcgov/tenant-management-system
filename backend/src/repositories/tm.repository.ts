@@ -20,6 +20,7 @@ import {
   CreateGroupInputDto,
   GetGroupInputDto,
   GetGroupResultDto,
+  GetTenantGroupsInputDto,
   RemoveGroupUserInputDto,
   UpdateGroupInputDto,
 } from '../dtos/tm.dto'
@@ -203,13 +204,11 @@ export class TMRepository {
     return !!tenantUser
   }
 
-  public async getTenantGroups(req: Request) {
-    const tenantId: string = req.params.tenantId
-    const ssoUserId = req.decodedJwt?.idir_user_guid
-    const TMS_AUDIENCE: string =
-      process.env.TMS_AUDIENCE || 'tenant-management-system-6014'
-    const jwtAudience: string =
-      req.decodedJwt?.aud || req.decodedJwt?.audience || TMS_AUDIENCE
+  public async getTenantGroups(input: GetTenantGroupsInputDto) {
+    const tenantId: string = input.tenantId
+    const ssoUserId = input.ssoUserId
+    const TMS_AUDIENCE: string = input.tmsAudience
+    const jwtAudience: string = input.jwtAudience
 
     // REDUNDANT: checkTenantAccess middleware already validates tenant exists and user has access
     // if (!await this.tmsRepository.checkIfTenantExists(tenantId)) {

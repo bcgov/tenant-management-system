@@ -11,6 +11,7 @@ import {
   CreateGroupInputDto,
   GetGroupInputDto,
   GetGroupResultDto,
+  GetTenantGroupsInputDto,
   RemoveGroupUserInputDto,
   UpdateGroupInputDto,
 } from '../dtos/tm.dto'
@@ -68,13 +69,6 @@ export class TMService {
           groupId,
           tenantUserId: tenantUser.id,
           updatedBy,
-          params: {
-            tenantId,
-            groupId,
-          },
-          body: {
-            tenantUserId: tenantUser.id,
-          },
         }
         savedGroupUser = await this.tmRepository.addGroupUser(
           input,
@@ -119,11 +113,6 @@ export class TMService {
       groupId: req.params.groupId,
       groupUserId: req.params.groupUserId,
       updatedBy: req.decodedJwt?.idir_user_guid || 'system',
-      params: {
-        tenantId: req.params.tenantId,
-        groupId: req.params.groupId,
-        groupUserId: req.params.groupUserId,
-      },
     }
     await this.tmRepository.removeGroupUser(input)
 
@@ -141,11 +130,6 @@ export class TMService {
       tenantId: req.params.tenantId,
       groupId: req.params.groupId,
       expand: expandParam ? expandParam.split(',') : [],
-      params: {
-        tenantId: req.params.tenantId,
-        groupId: req.params.groupId,
-      },
-      query: expandParam ? { expand: expandParam } : undefined,
     }
     const group: GetGroupResultDto = await this.tmRepository.getGroup(input)
 
@@ -157,7 +141,15 @@ export class TMService {
   }
 
   public async getTenantGroups(req: Request) {
-    const groups: any = await this.tmRepository.getTenantGroups(req)
+    const tmsAudience =
+      process.env.TMS_AUDIENCE || 'tenant-management-system-6014'
+    const input: GetTenantGroupsInputDto = {
+      tenantId: req.params.tenantId,
+      ssoUserId: req.decodedJwt?.idir_user_guid,
+      jwtAudience: req.decodedJwt?.aud || req.decodedJwt?.audience || tmsAudience,
+      tmsAudience,
+    }
+    const groups = await this.tmRepository.getTenantGroups(input)
 
     return {
       data: {
