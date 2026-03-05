@@ -14,12 +14,13 @@ import type { Group, Role, Tenant, User } from '@/models'
 import { type IdirSearchType, ROLES } from '@/utils/constants'
 import { currentUserHasRole } from '@/utils/permissions'
 import { useGroupStore } from '@/stores'
+import { convertIDPToDisplay } from '@/utils/display'
 
 
 // --- Stores ----------------------------------------------------------------
 const groupStore = useGroupStore()
 
-// --- Component Interface -----------------------------------------------------
+// --- Component Interface ----------------------------------------------------
 
 const props = defineProps<{
   loadingSearch: boolean
@@ -306,6 +307,7 @@ watch(selectAllRoles, () => {
               sortable: false,
             },
             { title: 'Email', key: 'ssoUser.email', align: 'start' },
+            { title: 'Identity Provider', key: 'ssoUser.idpType', align: 'start' },
             { title: '', key: 'actions', sortable: false, align: 'center' },
           ]"
           :items="tenant.users"
@@ -350,6 +352,10 @@ watch(selectAllRoles, () => {
             </div>
           </template>
 
+          <template #[`item.ssoUser.idpType`]="{ item }">
+           {{ convertIDPToDisplay(item.ssoUser.idpType) }}
+          </template>
+
           <template #[`item.actions`]="{ item }">
             <v-btn
               v-if="isUserAdmin && (moreThanOneTenantOwner || !item.roles.some((r: Role) => r.name === 'Tenant Owner'))"
@@ -383,7 +389,7 @@ watch(selectAllRoles, () => {
         <p class="mb-2 mt-8">
           1. Search for a user based on the selection criteria below:
         </p>
-
+        
         <UserSearch
           :current-users="tenant.users"
           :loading="loadingSearch"

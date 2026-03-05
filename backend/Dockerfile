@@ -1,4 +1,4 @@
-FROM node:20.20.0-trixie AS build
+FROM node:22.22.0-trixie AS build
 
 WORKDIR /app/tms-api
 
@@ -11,12 +11,12 @@ COPY src ./src
 COPY tsconfig.json ./
 
 RUN npm run build && \
-    mkdir -p dist/docs && \
-    cp src/docs/openapi.yaml dist/docs
+  mkdir -p dist/docs && \
+  cp src/docs/openapi.yaml dist/docs
 
 # -----------------------------------------------------------------------------
 
-FROM node:20.20.0-alpine3.23
+FROM node:22.22.0-alpine3.23
 WORKDIR /app/tms-api
 
 COPY package*.json ./

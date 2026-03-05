@@ -4,6 +4,7 @@ import { computed, ref, watch } from 'vue'
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import type { User } from '@/models'
 import { type IdirSearchType, IDIR_SEARCH_TYPE } from '@/utils/constants'
+import { convertIDPToDisplay } from '@/utils/display'
 
 // --- Component Interface -----------------------------------------------------
 
@@ -104,6 +105,7 @@ function handleSelectUser(user: User) {
           { title: 'First Name', key: 'ssoUser.firstName', align: 'start' },
           { title: 'Last Name', key: 'ssoUser.lastName', align: 'start' },
           { title: 'Email', key: 'ssoUser.email', align: 'start' },
+          { title: 'Identity Provider', key: 'ssoUser.idpType', align: 'start' },
           {
             title: '',
             key: 'actions',
@@ -117,11 +119,14 @@ function handleSelectUser(user: User) {
         :sort-by="defaultSort"
         striped="even"
       >
+        <template #[`item.ssoUser.idpType`]="{ item }">
+          {{ convertIDPToDisplay(item.ssoUser.idpType) }}
+        </template>
         <template #[`item.actions`]="{ item }">
           <v-btn
             color="primary"
             icon="mdi-plus-box"
-            size="x-large"
+            size="large"
             variant="text"
             @click="handleSelectUser(item)"
           />
