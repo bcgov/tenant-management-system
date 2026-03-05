@@ -55,6 +55,8 @@ jobs:
     permissions:
       checks: write
     uses: ./.github/workflows/.tests.yml
+    with:
+      image_tag: ${{ github.event.number }}
 
   zap:
     name: ZAP Security Scan
