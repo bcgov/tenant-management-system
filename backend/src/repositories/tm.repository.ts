@@ -14,6 +14,7 @@ import { GroupSharedServiceRole } from '../entities/GroupSharedServiceRole'
 import { SharedServiceRole } from '../entities/SharedServiceRole'
 import { TenantSharedService } from '../entities/TenantSharedService'
 import { SSOUser } from '../entities/SSOUser'
+import { CreateGroupInputDto } from '../dtos/tm.dto'
 
 export class TMRepository {
   constructor(
@@ -25,7 +26,7 @@ export class TMRepository {
   }
 
   public async saveGroup(
-    req: Request,
+    input: CreateGroupInputDto,
     transactionEntityManager?: EntityManager,
   ) {
     const managerForTransaction = transactionEntityManager || this.manager
@@ -34,12 +35,7 @@ export class TMRepository {
     await managerForTransaction.transaction(
       async (transactionEntityManager) => {
         try {
-          const { name, description, tenantUserId } = req.body
-          const tenantId = req.params.tenantId
-          const createdBy =
-            req.body.user?.ssoUserId ||
-            req.decodedJwt?.idir_user_guid ||
-            'system'
+          const { name, description, tenantUserId, tenantId, createdBy } = input
 
           // REDUNDANT: checkTenantAccess middleware already validates tenant exists and user has access
           // if (!await this.tmsRepository.checkIfTenantExists(tenantId, transactionEntityManager)) {
@@ -71,7 +67,9 @@ export class TMRepository {
 
           const group: Group = new Group()
           group.name = name
-          group.description = description
+          if (description !== undefined) {
+            group.description = description
+          }
           group.tenant = { id: tenantId } as Tenant
           group.createdBy = createdBy
           group.updatedBy = createdBy
@@ -109,19 +107,14 @@ export class TMRepository {
       },
     )
 
-    if (
-      groupResponse &&
-      (groupResponse as Group).createdBy &&
-      (groupResponse as Group).createdBy !== 'system'
-    ) {
-      const creator = await this.manager.findOne(SSOUser, {
-        where: { ssoUserId: (groupResponse as Group).createdBy },
-      })
-      ;(groupResponse as Group).createdBy =
-        creator?.displayName || (groupResponse as Group).createdBy
-    }
+    return groupResponse as Group
+  }
 
-    return groupResponse
+  public async getSsoUserDisplayName(ssoUserId: string) {
+    const creator = await this.manager.findOne(SSOUser, {
+      where: { ssoUserId },
+    })
+    return creator?.displayName
   }
 
   public async checkIfGroupNameExistsInTenant(

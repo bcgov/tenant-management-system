@@ -6,6 +6,8 @@ import logger from '../common/logger'
 import { getErrorMessage } from '../common/error.handler'
 import { UnauthorizedError } from '../errors/UnauthorizedError'
 import { NotFoundError } from '../errors/NotFoundError'
+import { CreateGroupInputDto } from '../dtos/tm.dto'
+import { Group } from '../entities/Group'
 
 export class TMService {
   tmsRepository: TMSRepository = new TMSRepository(connection.manager)
@@ -15,7 +17,21 @@ export class TMService {
   )
 
   public async createGroup(req: Request) {
-    const savedGroup: any = await this.tmRepository.saveGroup(req)
+    const input: CreateGroupInputDto = {
+      tenantId: req.params.tenantId,
+      name: req.body.name,
+      description: req.body.description,
+      tenantUserId: req.body.tenantUserId,
+      createdBy:
+        req.body.user?.ssoUserId || req.decodedJwt?.idir_user_guid || 'system',
+    }
+    const savedGroup: Group = await this.tmRepository.saveGroup(input)
+    if (savedGroup?.createdBy && savedGroup.createdBy !== 'system') {
+      const creatorDisplayName = await this.tmRepository.getSsoUserDisplayName(
+        savedGroup.createdBy,
+      )
+      savedGroup.createdBy = creatorDisplayName || savedGroup.createdBy
+    }
 
     return {
       data: {

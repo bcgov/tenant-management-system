@@ -247,7 +247,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ForbiddenErrorResponse'
         '404':
-          description: Tenant not found
+          description: Tenant or tenant user not found
           content:
             application/json:
               schema:
