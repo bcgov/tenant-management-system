@@ -58,3 +58,40 @@ export interface RemoveGroupUserInputDto {
     groupUserId: string
   }
 }
+
+export interface GetGroupInputDto {
+  tenantId: string
+  groupId: string
+  expand: string[]
+  params: {
+    tenantId: string
+    groupId: string
+  }
+  query?: {
+    expand?: string
+  }
+}
+
+export interface GetGroupResultDto {
+  id: string
+  name: string
+  description?: string | null
+  createdDateTime: Date
+  updatedDateTime: Date
+  users?: Array<{
+    id: string
+    isDeleted: boolean
+    createdDateTime: Date
+    updatedDateTime: Date
+    createdBy: string
+    updatedBy: string
+    user: {
+      id?: string
+      ssoUser?: unknown
+      createdDateTime?: Date
+      updatedDateTime?: Date
+      createdBy?: string
+      updatedBy?: string
+    }
+  }>
+}

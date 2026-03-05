@@ -18,6 +18,8 @@ import {
   AddGroupUserInputDto,
   AddGroupUserResultDto,
   CreateGroupInputDto,
+  GetGroupInputDto,
+  GetGroupResultDto,
   RemoveGroupUserInputDto,
   UpdateGroupInputDto,
 } from '../dtos/tm.dto'
@@ -811,21 +813,20 @@ export class TMRepository {
     })
   }
 
-  public async getGroup(req: Request) {
-    const groupId: string = req.params.groupId
-    const tenantId: string = req.params.tenantId
-    const expand: string[] =
-      typeof req.query.expand === 'string' ? req.query.expand.split(',') : []
+  public async getGroup(input: GetGroupInputDto) {
+    const groupId: string = input.groupId
+    const tenantId: string = input.tenantId
+    const expand: string[] = input.expand
 
     // REDUNDANT: checkTenantAccess middleware already validates tenant exists and user has access
     // if (!await this.tmsRepository.checkIfTenantExists(tenantId)) {
     //     throw new NotFoundError(`Tenant not found: ${tenantId}`)
     // }
 
-    const existingGroup: Group = (await this.checkIfGroupExistsInTenant(
+    const existingGroup = await this.checkIfGroupExistsInTenant(
       groupId,
       tenantId,
-    )) as any
+    )
     if (!existingGroup) {
       throw new NotFoundError(`Group not found: ${groupId}`)
     }
@@ -851,22 +852,23 @@ export class TMRepository {
         .leftJoinAndSelect('tenantUser.ssoUser', 'ssoUser')
     }
 
-    const group: any = await groupQuery.getOne()
+    const group: Group | null = await groupQuery.getOne()
 
     if (!group) {
       logger.warn(`Group not found: ${groupId}`)
       throw new NotFoundError(`Group not found: ${groupId}`)
     }
 
-    if (group.createdBy) {
-      const creator: any = await this.manager.findOne(SSOUser, {
-        where: { ssoUserId: group.createdBy },
-      })
-      group.createdBy = creator?.userName || group.createdBy
+    const groupResponse: GetGroupResultDto = {
+      id: group.id,
+      name: group.name,
+      description: group.description,
+      createdDateTime: group.createdDateTime,
+      updatedDateTime: group.updatedDateTime,
     }
 
     if (expand.includes('groupUsers') && group.users) {
-      const transformedUsers = group.users.map((groupUser: any) => ({
+      const transformedUsers = group.users.map((groupUser) => ({
         id: groupUser.id,
         isDeleted: groupUser.isDeleted,
         createdDateTime: groupUser.createdDateTime,
@@ -882,10 +884,10 @@ export class TMRepository {
           updatedBy: groupUser.tenantUser?.updatedBy,
         },
       }))
-      group.users = transformedUsers
+      groupResponse.users = transformedUsers
     }
 
-    return group
+    return groupResponse
   }
 
   public async getSharedServiceRolesForGroup(req: Request) {

@@ -9,6 +9,8 @@ import {
   AddGroupUserInputDto,
   AddGroupUserResultDto,
   CreateGroupInputDto,
+  GetGroupInputDto,
+  GetGroupResultDto,
   RemoveGroupUserInputDto,
   UpdateGroupInputDto,
 } from '../dtos/tm.dto'
@@ -133,7 +135,19 @@ export class TMService {
   }
 
   public async getGroup(req: Request) {
-    const group: any = await this.tmRepository.getGroup(req)
+    const expandParam =
+      typeof req.query.expand === 'string' ? req.query.expand : undefined
+    const input: GetGroupInputDto = {
+      tenantId: req.params.tenantId,
+      groupId: req.params.groupId,
+      expand: expandParam ? expandParam.split(',') : [],
+      params: {
+        tenantId: req.params.tenantId,
+        groupId: req.params.groupId,
+      },
+      query: expandParam ? { expand: expandParam } : undefined,
+    }
+    const group: GetGroupResultDto = await this.tmRepository.getGroup(input)
 
     return {
       data: {
