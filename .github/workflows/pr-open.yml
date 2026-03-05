@@ -55,6 +55,8 @@ jobs:
     permissions:
       checks: write
     uses: ./.github/workflows/.tests.yml
+    with:
+      image_tag: ${{ github.event.number }}
 
   zap:
     name: ZAP Security Scan
@@ -77,7 +79,7 @@ jobs:
         with:
           allow_issue_writing: false
           artifact_name: zap-${{ matrix.name }}-pr${{ github.event.number }}
-          target: https://cstar-pr-${{ github.event.number }}.apps.silver.devops.gov.bc.ca/${{ matrix.path }}
+          target: https://cstar-${{ github.event.number }}.apps.silver.devops.gov.bc.ca/${{ matrix.path }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
   results:
