@@ -6,3 +6,10 @@ export interface CreateGroupInputDto {
   createdBy: string
 }
 
+export interface UpdateGroupInputDto {
+  tenantId: string
+  groupId: string
+  name?: string
+  description?: string
+  updatedBy: string
+}

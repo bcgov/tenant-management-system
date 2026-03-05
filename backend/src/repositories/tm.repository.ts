@@ -14,7 +14,7 @@ import { GroupSharedServiceRole } from '../entities/GroupSharedServiceRole'
 import { SharedServiceRole } from '../entities/SharedServiceRole'
 import { TenantSharedService } from '../entities/TenantSharedService'
 import { SSOUser } from '../entities/SSOUser'
-import { CreateGroupInputDto } from '../dtos/tm.dto'
+import { CreateGroupInputDto, UpdateGroupInputDto } from '../dtos/tm.dto'
 
 export class TMRepository {
   constructor(
@@ -107,7 +107,7 @@ export class TMRepository {
       },
     )
 
-    return groupResponse as Group
+    return groupResponse!
   }
 
   public async getSsoUserDisplayName(ssoUserId: string) {
@@ -679,12 +679,12 @@ export class TMRepository {
     return groupUserResponse
   }
 
-  public async updateGroup(req: Request) {
-    const groupId: string = req.params.groupId
-    const tenantId: string = req.params.tenantId
-    const { name, description } = req.body
+  public async updateGroup(input: UpdateGroupInputDto) {
+    const groupId: string = input.groupId
+    const tenantId: string = input.tenantId
+    const { name, description, updatedBy } = input
 
-    let groupResponse: Group = null as any
+    let groupResponse: Group | null = null
     await this.manager.transaction(async (transactionEntityManager) => {
       try {
         // REDUNDANT: checkTenantAccess middleware already validates tenant exists and user has access
@@ -720,18 +720,18 @@ export class TMRepository {
           .createQueryBuilder()
           .update(Group)
           .set({
-            ...(name && { name }),
-            ...(description && { description }),
-            updatedBy: req.decodedJwt?.idir_user_guid || 'system',
+            ...(name !== undefined && { name }),
+            ...(description !== undefined && { description }),
+            updatedBy,
           })
           .where('id = :groupId', { groupId })
           .execute()
 
-        groupResponse = (await transactionEntityManager
+        groupResponse = await transactionEntityManager
           .createQueryBuilder(Group, 'group')
           .leftJoinAndSelect('group.tenant', 'tenant')
           .where('group.id = :id', { id: groupId })
-          .getOne()) as any
+          .getOne()
       } catch (error: unknown) {
         logger.error(
           'Update group transaction failure - rolling back changes',
@@ -741,7 +741,7 @@ export class TMRepository {
       }
     })
 
-    return groupResponse
+    return groupResponse!
   }
 
   public async removeGroupUser(req: Request) {

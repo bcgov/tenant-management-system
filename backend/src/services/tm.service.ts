@@ -6,7 +6,7 @@ import logger from '../common/logger'
 import { getErrorMessage } from '../common/error.handler'
 import { UnauthorizedError } from '../errors/UnauthorizedError'
 import { NotFoundError } from '../errors/NotFoundError'
-import { CreateGroupInputDto } from '../dtos/tm.dto'
+import { CreateGroupInputDto, UpdateGroupInputDto } from '../dtos/tm.dto'
 import { Group } from '../entities/Group'
 
 export class TMService {
@@ -89,7 +89,14 @@ export class TMService {
   }
 
   public async updateGroup(req: Request) {
-    const updatedGroup: any = await this.tmRepository.updateGroup(req)
+    const input: UpdateGroupInputDto = {
+      tenantId: req.params.tenantId,
+      groupId: req.params.groupId,
+      name: req.body.name,
+      description: req.body.description,
+      updatedBy: req.decodedJwt?.idir_user_guid || 'system',
+    }
+    const updatedGroup: Group = await this.tmRepository.updateGroup(input)
 
     return {
       data: {
