@@ -1351,7 +1351,7 @@ paths:
                 roles:
                   type: array
                   minItems: 1
-                  maxItems: 10
+                  maxItems: 50
                   items:
                     type: object
                     required:
@@ -2379,7 +2379,7 @@ paths:
                         example: ['idir']
                         description: 'List of identity providers allowed to access this role. If null or empty, all identity providers are allowed.'
                   minItems: 1
-                  maxItems: 10
+                  maxItems: 50
                   example:
                     - name: 'New Admin Role'
                       description: 'New administrator role for the shared service'
@@ -3188,7 +3188,7 @@ components:
         roles:
           type: array
           minItems: 1
-          maxItems: 10
+          maxItems: 50
           items:
             type: object
             required:

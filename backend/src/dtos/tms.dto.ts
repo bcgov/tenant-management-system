@@ -29,6 +29,21 @@ export interface CreateTenantRequestInputDto {
   }
 }
 
+export interface CreateSharedServiceInputDto {
+  name: string
+  clientIdentifier: string
+  description?: string
+  isActive?: boolean
+  roles: Array<{
+    name: string
+    description?: string
+    allowedIdentityProviders?: Array<
+      'idir' | 'azureidir' | 'bceidbasic' | 'bceidbusiness'
+    > | null
+  }>
+  updatedBy: string
+}
+
 export interface UpdateTenantRequestStatusInputDto {
   requestId: string
   status: 'APPROVED' | 'REJECTED'

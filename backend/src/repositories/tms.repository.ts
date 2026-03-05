@@ -21,6 +21,7 @@ import {
   AddTenantUserInputDto,
   CreateTenantInputDto,
   CreateTenantRequestInputDto,
+  CreateSharedServiceInputDto,
   GetTenantRequestsInputDto,
   UpdateTenantRequestStatusResultDto,
   UpdateTenantRequestStatusInputDto,
@@ -1478,8 +1479,9 @@ export class TMSRepository {
     }
   }
 
-  public async saveSharedService(req: Request) {
-    const { name, clientIdentifier, description, isActive, roles } = req.body
+  public async saveSharedService(input: CreateSharedServiceInputDto) {
+    const { name, clientIdentifier, description, isActive, roles, updatedBy } =
+      input
     let sharedServiceResponse = {}
     await this.manager.transaction(async (transactionEntityManager) => {
       try {
@@ -1502,10 +1504,12 @@ export class TMSRepository {
         const sharedService: SharedService = new SharedService()
         sharedService.name = name
         sharedService.clientIdentifier = clientIdentifier
-        sharedService.description = description
+        if (description !== undefined) {
+          sharedService.description = description
+        }
         sharedService.isActive = isActive !== undefined ? isActive : true
-        sharedService.createdBy = req.decodedJwt?.idir_user_guid || 'system'
-        sharedService.updatedBy = req.decodedJwt?.idir_user_guid || 'system'
+        sharedService.createdBy = updatedBy
+        sharedService.updatedBy = updatedBy
 
         const savedSharedService: SharedService =
           await transactionEntityManager.save(sharedService)
@@ -1514,17 +1518,17 @@ export class TMSRepository {
         for (const role of roles) {
           const sharedServiceRole: SharedServiceRole = new SharedServiceRole()
           sharedServiceRole.name = role.name
-          sharedServiceRole.description = role.description
+          if (role.description !== undefined) {
+            sharedServiceRole.description = role.description
+          }
           sharedServiceRole.allowedIdentityProviders =
             role.allowedIdentityProviders &&
             role.allowedIdentityProviders.length > 0
               ? role.allowedIdentityProviders
               : null
           sharedServiceRole.sharedService = savedSharedService
-          sharedServiceRole.createdBy =
-            req.decodedJwt?.idir_user_guid || 'system'
-          sharedServiceRole.updatedBy =
-            req.decodedJwt?.idir_user_guid || 'system'
+          sharedServiceRole.createdBy = updatedBy
+          sharedServiceRole.updatedBy = updatedBy
           sharedServiceRoles.push(sharedServiceRole)
         }
         await transactionEntityManager.save(sharedServiceRoles)
