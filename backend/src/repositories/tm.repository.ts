@@ -14,7 +14,12 @@ import { GroupSharedServiceRole } from '../entities/GroupSharedServiceRole'
 import { SharedServiceRole } from '../entities/SharedServiceRole'
 import { TenantSharedService } from '../entities/TenantSharedService'
 import { SSOUser } from '../entities/SSOUser'
-import { CreateGroupInputDto, UpdateGroupInputDto } from '../dtos/tm.dto'
+import {
+  AddGroupUserInputDto,
+  AddGroupUserResultDto,
+  CreateGroupInputDto,
+  UpdateGroupInputDto,
+} from '../dtos/tm.dto'
 
 export class TMRepository {
   constructor(
@@ -595,17 +600,17 @@ export class TMRepository {
   }
 
   public async addGroupUser(
-    req: Request,
+    input: AddGroupUserInputDto,
     transactionEntityManager?: EntityManager,
   ) {
     transactionEntityManager = transactionEntityManager
       ? transactionEntityManager
       : this.manager
 
-    const tenantId: string = req.params.tenantId
-    const groupId: string = req.params.groupId
-    const tenantUserId: string = req.body.tenantUserId
-    const updatedBy: string = req.decodedJwt?.idir_user_guid || 'system'
+    const tenantId: string = input.tenantId
+    const groupId: string = input.groupId
+    const tenantUserId: string = input.tenantUserId
+    const updatedBy: string = input.updatedBy
 
     const group = await this.checkIfGroupExistsInTenant(
       groupId,
@@ -650,7 +655,7 @@ export class TMRepository {
       savedGroupUser = await transactionEntityManager.save(groupUser)
     }
 
-    let groupUserResponse: any = await transactionEntityManager
+    const groupUserEntity: GroupUser | null = await transactionEntityManager
       .createQueryBuilder(GroupUser, 'groupUser')
       .leftJoinAndSelect('groupUser.tenantUser', 'tenantUser')
       .leftJoinAndSelect('tenantUser.ssoUser', 'ssoUser')
@@ -659,24 +664,32 @@ export class TMRepository {
       .where('groupUser.id = :id', { id: savedGroupUser.id })
       .getOne()
 
-    if (groupUserResponse) {
+    let groupUserResponse: AddGroupUserResultDto | null = null
+    if (groupUserEntity) {
       const activeRoles =
-        groupUserResponse.tenantUser.roles?.filter(
-          (tur: any) => !tur.isDeleted,
-        ) || []
-      const userRoles = activeRoles.map((tur: any) => tur.role) || []
+        groupUserEntity.tenantUser.roles?.filter((tur) => !tur.isDeleted) || []
+      const userRoles = activeRoles.map((tur) => tur.role) || []
       groupUserResponse = {
-        ...groupUserResponse,
+        id: groupUserEntity.id,
+        isDeleted: groupUserEntity.isDeleted,
+        createdDateTime: groupUserEntity.createdDateTime,
+        updatedDateTime: groupUserEntity.updatedDateTime,
+        createdBy: groupUserEntity.createdBy,
+        updatedBy: groupUserEntity.updatedBy,
         user: {
-          ...groupUserResponse.tenantUser,
-          ssoUser: groupUserResponse.tenantUser.ssoUser,
+          id: groupUserEntity.tenantUser.id,
+          isDeleted: groupUserEntity.tenantUser.isDeleted,
+          ssoUser: groupUserEntity.tenantUser.ssoUser,
+          createdDateTime: groupUserEntity.tenantUser.createdDateTime,
+          updatedDateTime: groupUserEntity.tenantUser.updatedDateTime,
+          createdBy: groupUserEntity.tenantUser.createdBy,
+          updatedBy: groupUserEntity.tenantUser.updatedBy,
           roles: userRoles,
         },
       }
-      delete groupUserResponse.tenantUser
     }
 
-    return groupUserResponse
+    return groupUserResponse!
   }
 
   public async updateGroup(input: UpdateGroupInputDto) {

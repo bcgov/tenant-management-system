@@ -5,8 +5,12 @@ import { connection } from '../common/db.connection'
 import logger from '../common/logger'
 import { getErrorMessage } from '../common/error.handler'
 import { UnauthorizedError } from '../errors/UnauthorizedError'
-import { NotFoundError } from '../errors/NotFoundError'
-import { CreateGroupInputDto, UpdateGroupInputDto } from '../dtos/tm.dto'
+import {
+  AddGroupUserInputDto,
+  AddGroupUserResultDto,
+  CreateGroupInputDto,
+  UpdateGroupInputDto,
+} from '../dtos/tm.dto'
 import { Group } from '../entities/Group'
 
 export class TMService {
@@ -41,7 +45,7 @@ export class TMService {
   }
 
   public async addGroupUser(req: Request) {
-    let savedGroupUser: any = null
+    let savedGroupUser: AddGroupUserResultDto | null = null
 
     await connection.manager.transaction(async (transactionEntityManager) => {
       try {
@@ -50,26 +54,27 @@ export class TMService {
         const { user } = req.body
         const updatedBy: string = req.decodedJwt?.idir_user_guid || 'system'
 
-        const group = await this.tmRepository.checkIfGroupExistsInTenant(
-          groupId,
-          tenantId,
-          transactionEntityManager,
-        )
-        if (!group) {
-          throw new NotFoundError(
-            `Group not found or does not exist for tenant: ${tenantId}`,
-          )
-        }
-
         const tenantUser = await this.tmsRepository.ensureTenantUserExists(
           user,
           tenantId,
           updatedBy,
           transactionEntityManager,
         )
-        req.body.tenantUserId = tenantUser.id
+        const input: AddGroupUserInputDto = {
+          tenantId,
+          groupId,
+          tenantUserId: tenantUser.id,
+          updatedBy,
+          params: {
+            tenantId,
+            groupId,
+          },
+          body: {
+            tenantUserId: tenantUser.id,
+          },
+        }
         savedGroupUser = await this.tmRepository.addGroupUser(
-          req,
+          input,
           transactionEntityManager,
         )
       } catch (error: unknown) {
@@ -83,7 +88,7 @@ export class TMService {
 
     return {
       data: {
-        groupUser: savedGroupUser,
+        groupUser: savedGroupUser!,
       },
     }
   }
