@@ -1,0 +1,15 @@
+meta {
+  name: Not Found
+  seq: 1
+  type: http
+}
+
+get {
+  url: {{baseUrl}}/v1/does-not-exist
+  auth: none
+  body: none
+}
+
+assert {
+  res.status: eq 404
+}
