@@ -17,6 +17,9 @@ import {
   AddTenantUserResultDto,
   CreateTenantInputDto,
   CreateTenantRequestInputDto,
+  UpdateTenantRequestStatusResponseDto,
+  UpdateTenantRequestStatusResultDto,
+  UpdateTenantRequestStatusInputDto,
   GetRolesForSsoUserInputDto,
   GetTenantInputDto,
   GetTenantUsersInputDto,
@@ -472,19 +475,40 @@ export class TMSService {
   }
 
   public async updateTenantRequestStatus(req: Request) {
-    const response = (await this.tmsRepository.updateTenantRequestStatus(
-      req,
-    )) as { tenantRequest: TenantRequest; tenant?: Tenant }
-    const formattedResponse: { data: { tenantRequest: any; tenant?: Tenant } } =
-      {
-        data: {
-          tenantRequest: {
-            ...response.tenantRequest,
-            requestedBy: response.tenantRequest.requestedBy?.displayName,
-            decisionedBy: response.tenantRequest.decisionedBy?.displayName,
-          },
+    const input: UpdateTenantRequestStatusInputDto = {
+      requestId: req.params.requestId,
+      status: req.body.status,
+      rejectionReason: req.body.rejectionReason,
+      tenantName: req.body.tenantName,
+      updatedBy: req.decodedJwt?.idir_user_guid || 'system',
+      decisionedByUser: {
+        ssoUserId: req.decodedJwt?.idir_user_guid || 'system',
+        firstName: req.decodedJwt?.given_name || 'System',
+        lastName: req.decodedJwt?.family_name || 'User',
+        displayName: req.decodedJwt?.display_name || 'System User',
+        userName: req.decodedJwt?.preferred_username || 'system',
+        email: req.decodedJwt?.email || 'system@gov.bc.ca',
+      },
+    }
+    const response: UpdateTenantRequestStatusResultDto =
+      await this.tmsRepository.updateTenantRequestStatus(input)
+    const formattedResponse: UpdateTenantRequestStatusResponseDto = {
+      data: {
+        tenantRequest: {
+          id: response.tenantRequest.id,
+          name: response.tenantRequest.name,
+          ministryName: response.tenantRequest.ministryName,
+          description: response.tenantRequest.description,
+          status: response.tenantRequest.status,
+          requestedBy: response.tenantRequest.requestedBy?.displayName,
+          decisionedBy: response.tenantRequest.decisionedBy?.displayName,
+          decisionedAt: response.tenantRequest.decisionedAt,
+          rejectionReason: response.tenantRequest.rejectionReason,
+          createdBy: response.tenantRequest.createdBy,
+          updatedBy: response.tenantRequest.updatedBy,
         },
-      }
+      },
+    }
 
     if (response.tenant) {
       formattedResponse.data.tenant = response.tenant

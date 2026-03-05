@@ -29,6 +29,77 @@ export interface CreateTenantRequestInputDto {
   }
 }
 
+export interface UpdateTenantRequestStatusInputDto {
+  requestId: string
+  status: 'APPROVED' | 'REJECTED'
+  rejectionReason?: string
+  tenantName?: string
+  updatedBy: string
+  decisionedByUser: {
+    ssoUserId: string
+    firstName: string
+    lastName: string
+    displayName: string
+    userName: string
+    email: string
+  }
+}
+
+export interface UpdateTenantRequestTenantResultDto {
+  id: string
+  name: string
+  ministryName: string
+  description?: string
+  createdBy: string
+  updatedBy: string
+}
+
+export interface UpdateTenantRequestStatusResultDto {
+  tenantRequest: {
+    id: string
+    name?: string
+    ministryName?: string
+    description?: string
+    status: 'NEW' | 'APPROVED' | 'REJECTED'
+    requestedBy?: {
+      id?: string
+      displayName?: string
+      email?: string
+    }
+    decisionedBy?: {
+      id?: string
+      displayName?: string
+      email?: string
+    }
+    decisionedAt?: Date
+    rejectionReason?: string | null
+    createdBy?: string
+    updatedBy?: string
+  }
+  tenant?: UpdateTenantRequestTenantResultDto
+}
+
+export interface UpdateTenantRequestStatusResponseTenantRequestDto {
+  id: string
+  name?: string
+  ministryName?: string
+  description?: string
+  status: 'NEW' | 'APPROVED' | 'REJECTED'
+  requestedBy?: string
+  decisionedBy?: string
+  decisionedAt?: Date
+  rejectionReason?: string | null
+  createdBy?: string
+  updatedBy?: string
+}
+
+export interface UpdateTenantRequestStatusResponseDto {
+  data: {
+    tenantRequest: UpdateTenantRequestStatusResponseTenantRequestDto
+    tenant?: UpdateTenantRequestTenantResultDto
+  }
+}
+
 export interface AddTenantUserInputDto {
   tenantId: string
   updatedBy: string

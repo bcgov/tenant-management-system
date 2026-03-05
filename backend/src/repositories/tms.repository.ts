@@ -21,6 +21,9 @@ import {
   AddTenantUserInputDto,
   CreateTenantInputDto,
   CreateTenantRequestInputDto,
+  UpdateTenantRequestStatusResultDto,
+  UpdateTenantRequestStatusInputDto,
+  UpdateTenantRequestTenantResultDto,
   GetRolesForSsoUserInputDto,
   GetTenantInputDto,
   GetTenantUsersInputDto,
@@ -1205,10 +1208,12 @@ export class TMSRepository {
     return tenantRequestResponse
   }
 
-  public async updateTenantRequestStatus(req: Request) {
-    const requestId: string = req.params.requestId
-    const { status, rejectionReason, tenantName } = req.body
-    let response = {}
+  public async updateTenantRequestStatus(
+    input: UpdateTenantRequestStatusInputDto,
+  ) {
+    const requestId: string = input.requestId
+    const { status, rejectionReason, tenantName } = input
+    let response: Partial<UpdateTenantRequestStatusResultDto> = {}
 
     await this.manager.transaction(async (transactionEntityManager) => {
       try {
@@ -1265,7 +1270,7 @@ export class TMSRepository {
             transactionEntityManager,
           )) as Tenant
 
-          const basicTenantInfo = {
+          const basicTenantInfo: UpdateTenantRequestTenantResultDto = {
             id: savedTenant.id,
             name: savedTenant.name,
             ministryName: savedTenant.ministryName,
@@ -1277,12 +1282,12 @@ export class TMSRepository {
         }
 
         let opsAdminSSOUser: SSOUser = await this.setSSOUser(
-          req.decodedJwt?.idir_user_guid || 'system',
-          req.decodedJwt?.given_name || 'System',
-          req.decodedJwt?.family_name || 'User',
-          req.decodedJwt?.display_name || 'System User',
-          req.decodedJwt?.preferred_username || 'system',
-          req.decodedJwt?.email || 'system@gov.bc.ca',
+          input.decisionedByUser.ssoUserId,
+          input.decisionedByUser.firstName,
+          input.decisionedByUser.lastName,
+          input.decisionedByUser.displayName,
+          input.decisionedByUser.userName,
+          input.decisionedByUser.email,
         )
 
         opsAdminSSOUser = await transactionEntityManager.save(opsAdminSSOUser)
@@ -1290,9 +1295,10 @@ export class TMSRepository {
         tenantRequest.status = status
         tenantRequest.decisionedBy = opsAdminSSOUser
         tenantRequest.decisionedAt = new Date()
-        tenantRequest.rejectionReason =
+        tenantRequest.rejectionReason = (
           status === 'REJECTED' ? rejectionReason : null
-        tenantRequest.updatedBy = req.decodedJwt?.idir_user_guid || 'system'
+        ) as any
+        tenantRequest.updatedBy = input.updatedBy
 
         const updatedRequest =
           await transactionEntityManager.save(tenantRequest)
@@ -1310,7 +1316,11 @@ export class TMSRepository {
       }
     })
 
-    return response
+    if (!response.tenantRequest) {
+      throw new Error('Tenant request status update failed')
+    }
+
+    return response as UpdateTenantRequestStatusResultDto
   }
 
   public async getTenantRequests(status?: string) {
