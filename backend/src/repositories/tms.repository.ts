@@ -17,6 +17,7 @@ import { SharedServiceRole } from '../entities/SharedServiceRole'
 import { TenantSharedService } from '../entities/TenantSharedService'
 import {
   AssignUserRolesInputDto,
+  AddSharedServiceRolesInputDto,
   AddTenantUserResultDto,
   AddTenantUserInputDto,
   CreateTenantInputDto,
@@ -1564,17 +1565,16 @@ export class TMSRepository {
       .getOne()
   }
 
-  public async addSharedServiceRoles(req: Request) {
-    const sharedServiceId: string = req.params.sharedServiceId
-    const { roles } = req.body
-    const ssoUserId: string = req.decodedJwt?.idir_user_guid || 'system'
+  public async addSharedServiceRoles(input: AddSharedServiceRolesInputDto) {
+    const sharedServiceId: string = input.sharedServiceId
+    const { roles, updatedBy } = input
 
     await this.manager.transaction(async (transactionEntityManager) => {
-      const sharedService: SharedService = (await transactionEntityManager
+      const sharedService: SharedService | null = await transactionEntityManager
         .createQueryBuilder(SharedService, 'ss')
         .where('ss.id = :id', { id: sharedServiceId })
         .andWhere('ss.isActive = :isActive', { isActive: true })
-        .getOne()) as any
+        .getOne()
 
       if (!sharedService) {
         throw new NotFoundError(
@@ -1583,12 +1583,13 @@ export class TMSRepository {
       }
 
       for (const role of roles) {
-        const existingRole: SharedServiceRole = (await transactionEntityManager
+        const existingRole: SharedServiceRole | null =
+          await transactionEntityManager
           .createQueryBuilder(SharedServiceRole, 'ssr')
           .where('ssr.sharedService.id = :sharedServiceId', { sharedServiceId })
           .andWhere('ssr.name = :name', { name: role.name })
           .andWhere('ssr.isDeleted = :isDeleted', { isDeleted: false })
-          .getOne()) as any
+          .getOne()
 
         if (existingRole) {
           throw new ConflictError(
@@ -1601,7 +1602,9 @@ export class TMSRepository {
       for (const role of roles) {
         const sharedServiceRole: SharedServiceRole = new SharedServiceRole()
         sharedServiceRole.name = role.name
-        sharedServiceRole.description = role.description
+        if (role.description !== undefined) {
+          sharedServiceRole.description = role.description
+        }
         sharedServiceRole.allowedIdentityProviders =
           role.allowedIdentityProviders &&
           role.allowedIdentityProviders.length > 0
@@ -1609,8 +1612,8 @@ export class TMSRepository {
             : null
         sharedServiceRole.sharedService = sharedService
         sharedServiceRole.isDeleted = false
-        sharedServiceRole.createdBy = ssoUserId
-        sharedServiceRole.updatedBy = ssoUserId
+        sharedServiceRole.createdBy = updatedBy
+        sharedServiceRole.updatedBy = updatedBy
         sharedServiceRoles.push(sharedServiceRole)
       }
 

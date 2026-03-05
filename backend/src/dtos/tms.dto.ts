@@ -44,6 +44,18 @@ export interface CreateSharedServiceInputDto {
   updatedBy: string
 }
 
+export interface AddSharedServiceRolesInputDto {
+  sharedServiceId: string
+  roles: Array<{
+    name: string
+    description?: string
+    allowedIdentityProviders?: Array<
+      'idir' | 'azureidir' | 'bceidbasic' | 'bceidbusiness'
+    > | null
+  }>
+  updatedBy: string
+}
+
 export interface UpdateTenantRequestStatusInputDto {
   requestId: string
   status: 'APPROVED' | 'REJECTED'
