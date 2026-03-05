@@ -15,16 +15,6 @@ services:
       POSTGRES_PORT: 5432
       POSTGRES_USER: app
       TMS_AUDIENCE: cstar
-    healthcheck:
-      interval: 10s
-      retries: 5
-      start_period: 30s
-      test:
-        [
-          'CMD-SHELL',
-          'wget --no-verbose --tries=1 --spider http://localhost:4144/v1/health || exit 1',
-        ]
-      timeout: 5s
     image: ghcr.io/bcgov/tenant-management-system/backend:${IMAGE_TAG}
     ports:
       - '4144:4144'
@@ -43,16 +33,7 @@ services:
 
   mock-jwks:
     build:
-      context: ./tests/integration/mock-jwks
+      context: ./mock-jwks
     environment:
       ISSUER: http://mock-jwks:3001
       TMS_AUDIENCE: cstar
-    healthcheck:
-      interval: 5s
-      retries: 5
-      test:
-        [
-          'CMD-SHELL',
-          'wget --no-verbose --tries=1 --spider http://localhost:3001/certs || exit 1',
-        ]
-      timeout: 5s
