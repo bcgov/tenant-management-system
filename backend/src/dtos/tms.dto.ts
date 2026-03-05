@@ -134,6 +134,10 @@ export interface GetUserTenantsInputDto {
   jwtAudience?: string
 }
 
+export interface GetTenantRequestsInputDto {
+  status?: 'NEW' | 'APPROVED' | 'REJECTED'
+}
+
 export interface GetTenantUsersInputDto {
   tenantId: string
   groupIds?: string[]

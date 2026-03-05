@@ -21,6 +21,7 @@ import {
   AddTenantUserInputDto,
   CreateTenantInputDto,
   CreateTenantRequestInputDto,
+  GetTenantRequestsInputDto,
   UpdateTenantRequestStatusResultDto,
   UpdateTenantRequestStatusInputDto,
   UpdateTenantRequestTenantResultDto,
@@ -1323,7 +1324,8 @@ export class TMSRepository {
     return response as UpdateTenantRequestStatusResultDto
   }
 
-  public async getTenantRequests(status?: string) {
+  public async getTenantRequests(input: GetTenantRequestsInputDto) {
+    const status = input.status
     const queryBuilder = this.manager
       .createQueryBuilder(TenantRequest, 'tenantRequest')
       .leftJoinAndSelect('tenantRequest.requestedBy', 'requestedBy')
@@ -1335,14 +1337,6 @@ export class TMSRepository {
     }
 
     const tenantRequests: TenantRequest[] = await queryBuilder.getMany()
-
-    tenantRequests.forEach((request) => {
-      if (request.requestedBy && request.requestedBy.displayName) {
-        request.createdBy = request.requestedBy.displayName
-      } else {
-        request.createdBy = 'system'
-      }
-    })
 
     return tenantRequests
   }

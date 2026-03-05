@@ -22,6 +22,7 @@ import {
   UpdateTenantRequestStatusInputDto,
   GetRolesForSsoUserInputDto,
   GetTenantInputDto,
+  GetTenantRequestsInputDto,
   GetTenantUsersInputDto,
   GetTenantRolesInputDto,
   GetUserRolesInputDto,
@@ -518,11 +519,13 @@ export class TMSService {
   }
 
   public async getTenantRequests(req: Request) {
-    const status = req.query.status as string
-    const tenantRequests = await this.tmsRepository.getTenantRequests(status)
+    const status = req.query.status as 'NEW' | 'APPROVED' | 'REJECTED' | undefined
+    const input: GetTenantRequestsInputDto = { status }
+    const tenantRequests = await this.tmsRepository.getTenantRequests(input)
 
     const formattedRequests = tenantRequests.map((request) => ({
       ...request,
+      createdBy: request.requestedBy?.displayName || 'system',
       requestedBy: request.requestedBy?.displayName,
       decisionedBy: request.decisionedBy?.displayName,
     }))
