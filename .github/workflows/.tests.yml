@@ -4,8 +4,12 @@ on:
   workflow_call:
     inputs:
       ### Required
+      image_tag:
+        description: Image tag for containerized integration tests
+        required: true
+        type: string
       target:
-        description: PR number, test or prod
+        description: PR number, dev, test or prod
         default: ${{ github.event.number }}
         type: string
 
@@ -35,7 +39,15 @@ jobs:
             ${{ runner.os }}-build-
             ${{ runner.os }}-
 
-      - run: |
+      - name: Start test services
+        env:
+          IMAGE_TAG: ${{ inputs.image_tag }}
+        run: |
+          cd tests/integration
+          docker compose -f docker-compose.yml up -d --wait
+
+      - name: Run tests
+        run: |
           cd tests/integration
           npm ci
           npx bru run \
@@ -43,6 +55,12 @@ jobs:
               --env-var baseUrl=https://$PREFIX.$DOMAIN/api \
               --noproxy \
               --reporter-junit results.xml
+
+      - name: Stop test services
+        if: always()
+        run: |
+          cd tests/integration
+          docker compose -f docker-compose.yml down
 
       - uses: dorny/test-reporter@v1
         if: always()

@@ -49,6 +49,7 @@ jobs:
       checks: write
     uses: ./.github/workflows/.tests.yml
     with:
+      image_tag: ${{ needs.deploy-dev.outputs.tag }}
       target: dev
 
   deploy-test:
