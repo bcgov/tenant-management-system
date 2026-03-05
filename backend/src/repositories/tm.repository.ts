@@ -18,6 +18,7 @@ import {
   AddGroupUserInputDto,
   AddGroupUserResultDto,
   CreateGroupInputDto,
+  RemoveGroupUserInputDto,
   UpdateGroupInputDto,
 } from '../dtos/tm.dto'
 
@@ -757,10 +758,10 @@ export class TMRepository {
     return groupResponse!
   }
 
-  public async removeGroupUser(req: Request) {
-    const groupUserId: string = req.params.groupUserId
-    const groupId: string = req.params.groupId
-    const tenantId: string = req.params.tenantId
+  public async removeGroupUser(input: RemoveGroupUserInputDto) {
+    const groupUserId: string = input.groupUserId
+    const groupId: string = input.groupId
+    const tenantId: string = input.tenantId
 
     await this.manager.transaction(async (transactionEntityManager) => {
       try {
@@ -769,23 +770,23 @@ export class TMRepository {
         //     throw new NotFoundError(`Tenant not found: ${tenantId}`)
         // }
 
-        const group: Group = (await this.checkIfGroupExistsInTenant(
+        const group = await this.checkIfGroupExistsInTenant(
           groupId,
           tenantId,
           transactionEntityManager,
-        )) as any
+        )
         if (!group) {
           throw new NotFoundError(`Group not found: ${groupId}`)
         }
 
-        const groupUser: GroupUser = (await transactionEntityManager
+        const groupUser: GroupUser | null = await transactionEntityManager
           .createQueryBuilder(GroupUser, 'groupUser')
           .leftJoin('groupUser.group', 'group')
           .where('groupUser.id = :groupUserId', { groupUserId })
           .andWhere('groupUser.group.id = :groupId', { groupId })
           .andWhere('group.tenant.id = :tenantId', { tenantId })
           .andWhere('groupUser.isDeleted = :isDeleted', { isDeleted: false })
-          .getOne()) as any
+          .getOne()
 
         if (!groupUser) {
           throw new NotFoundError(`Group user not found: ${groupUserId}`)
@@ -796,7 +797,7 @@ export class TMRepository {
           .update(GroupUser)
           .set({
             isDeleted: true,
-            updatedBy: req.decodedJwt?.idir_user_guid || 'system',
+            updatedBy: input.updatedBy,
           })
           .where('id = :groupUserId', { groupUserId })
           .execute()

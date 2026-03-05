@@ -46,3 +46,15 @@ export interface AddGroupUserResultDto {
   createdBy: string
   updatedBy: string
 }
+
+export interface RemoveGroupUserInputDto {
+  tenantId: string
+  groupId: string
+  groupUserId: string
+  updatedBy: string
+  params: {
+    tenantId: string
+    groupId: string
+    groupUserId: string
+  }
+}

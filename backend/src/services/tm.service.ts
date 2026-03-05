@@ -9,6 +9,7 @@ import {
   AddGroupUserInputDto,
   AddGroupUserResultDto,
   CreateGroupInputDto,
+  RemoveGroupUserInputDto,
   UpdateGroupInputDto,
 } from '../dtos/tm.dto'
 import { Group } from '../entities/Group'
@@ -111,7 +112,18 @@ export class TMService {
   }
 
   public async removeGroupUser(req: Request) {
-    await this.tmRepository.removeGroupUser(req)
+    const input: RemoveGroupUserInputDto = {
+      tenantId: req.params.tenantId,
+      groupId: req.params.groupId,
+      groupUserId: req.params.groupUserId,
+      updatedBy: req.decodedJwt?.idir_user_guid || 'system',
+      params: {
+        tenantId: req.params.tenantId,
+        groupId: req.params.groupId,
+        groupUserId: req.params.groupUserId,
+      },
+    }
+    await this.tmRepository.removeGroupUser(input)
 
     return {
       data: {
