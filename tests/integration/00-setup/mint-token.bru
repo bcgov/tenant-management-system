@@ -22,3 +22,9 @@ body:json {
 script:post-response {
   bru.setEnvVar('authToken', res.getBody().token)
 }
+
+tests {
+  test('mint token succeeds', function () {
+    expect(res.getStatus()).to.equal(200)
+  })
+}
