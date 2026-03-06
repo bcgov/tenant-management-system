@@ -33,55 +33,7 @@ const user = computed<User | null>(() => {
   return null
 })
 const dialogVisible = defineModel<boolean>()
-
-const items = ref<Array<{ role: string; description: string; value: boolean }>>(
-  [
-    { role: t('roles.owner'), description: t('roles.ownerDesc'), value: false },
-    { role: t('roles.admin'), description: t('roles.adminDesc'), value: false },
-    { role: t('roles.user'), description: t('roles.userDesc'), value: false },
-  ],
-)
 const defaultValues = ref<Array<boolean>>([false, false, false])
-
-//catch user prop changes and update defaults / state
-
-const updateState = (newUser: User | null) => {
-  items.value[0].value = false
-  defaultValues.value[0] = false
-  items.value[1].value = false
-  defaultValues.value[1] = false
-  items.value[2].value = false
-  defaultValues.value[2] = false
-  if (newUser && newUser?.roles) {
-    for (const role of newUser.roles) {
-      if (role.name === ROLES.TENANT_OWNER.value) {
-        items.value[0].value = true
-        defaultValues.value[0] = true
-      } else if (role.name === ROLES.USER_ADMIN.value) {
-        items.value[1].value = true
-        defaultValues.value[1] = true
-      } else if (role.name === ROLES.SERVICE_USER.value) {
-        items.value[2].value = true
-        defaultValues.value[2] = true
-      }
-    }
-  }
-}
-
-watch(
-  () => props.userIndex,
-  (newIndex) => {
-    if (
-      props.tenant &&
-      newIndex !== null &&
-      newIndex >= 0 &&
-      newIndex < props.tenant.users.length
-    ) {
-      const newUser = props.tenant.users[newIndex]
-      updateState(newUser)
-    }
-  },
-)
 
 //computed
 const ROLE_LOOKUP = computed(() => [
@@ -108,6 +60,79 @@ const atLeastOneRole = computed(() => {
   }
   return false
 })
+
+const isBCeIDUser = ref<boolean>(false)
+
+const items = ref<Array<{ role: string; description: string; value: boolean }>>(
+  isBCeIDUser.value
+  ? [
+      { role: t('roles.serviceUser'), description: t('roles.serviceUserDesc'), value: false },
+    ]
+  : [
+    { role: t('roles.owner'), description: t('roles.ownerDesc'), value: false },
+    { role: t('roles.admin'), description: t('roles.adminDesc'), value: false },
+    { role: t('roles.user'), description: t('roles.userDesc'), value: false },
+  ],
+)
+
+//catch user prop changes and update defaults / state
+
+const updateState = (newUser: User | null) => {
+  isBCeIDUser.value = false
+  defaultValues.value = []
+  if (newUser && newUser?.ssoUser && newUser?.ssoUser?.idpType) {
+    isBCeIDUser.value = newUser.ssoUser.idpType.toLowerCase().includes('bceid');
+  }
+
+  items.value = isBCeIDUser.value
+  ? [
+      { role: t('roles.user'), description: t('roles.userDesc'), value: false },
+    ]
+  : [
+      { role: t('roles.owner'), description: t('roles.ownerDesc'), value: false },
+      { role: t('roles.admin'), description: t('roles.adminDesc'), value: false },
+      { role: t('roles.user'), description: t('roles.userDesc'), value: false },
+    ]
+  items.value[0].value = false
+  defaultValues.value[0] = false
+
+  if (items.value.length > 2) {
+    items.value[1].value = false
+    defaultValues.value[1] = false
+    items.value[2].value = false
+    defaultValues.value[2] = false
+  }
+  if (newUser && newUser?.roles) {
+    for (const role of newUser.roles) {
+      if (role.name === ROLES.TENANT_OWNER.value && !isBCeIDUser.value) {
+        items.value[0].value = true
+        defaultValues.value[0] = true
+      } else if (role.name === ROLES.USER_ADMIN.value && !isBCeIDUser.value) {
+        items.value[1].value = true
+        defaultValues.value[1] = true
+      } else if (role.name === ROLES.SERVICE_USER.value) {
+        const ind = isBCeIDUser.value ? 0 : 2
+        items.value[ind].value = true
+        defaultValues.value[ind] = true
+      }
+    }
+  }
+}
+
+watch(
+  () => props.userIndex,
+  (newIndex) => {
+    if (
+      props.tenant &&
+      newIndex !== null &&
+      newIndex >= 0 &&
+      newIndex < props.tenant.users.length
+    ) {
+      const newUser = props.tenant.users[newIndex]
+      updateState(newUser)
+    }
+  },
+)
 
 // emit when dialog is closed/opened
 const emit = defineEmits(['update:openDialog'])
@@ -175,20 +200,24 @@ const handleSave = async () => {
 <template>
   <v-dialog
     :model-value="dialogVisible"
-    height="600px"
-    width="550px"
+    height="777px"
+    width="627px"
     persistent
   >
-    <v-card class="px-5 py-10">
-      <v-card-title class="mb-4">
+    <v-card class="px-10 py-10">
+      <v-card-title class="mb-4 border-b-sm">
         <v-row justify="end">
           <v-btn variant="plain" @click="$emit('update:openDialog', false)">
             <v-icon>mdi-close</v-icon>
           </v-btn>
         </v-row>
-        <v-row> {{ $t('tenants.tenant', 1) }} {{ $t('roles.role', 1) }} </v-row>
+        <v-row> {{ $t('general.edit') }} {{ $t('tenants.tenant', 1) }} {{ $t('roles.role', 1) }} </v-row>
       </v-card-title>
       <v-card-text class="pa-0">
+        <div class="my-4">
+          <p>Editing User:</p>
+          <h3 class="text-bold">{{ user?.ssoUser.displayName }}</h3>
+        </div>
         <p class="mb-4">
           <a href=""
             >{{ $t('tenants.learnMore') }} {{ $t('tenants.tenant', 1) }}
