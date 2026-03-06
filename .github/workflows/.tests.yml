@@ -52,7 +52,9 @@ jobs:
           npm ci
           npx bru run \
               --env default \
-              --env-var baseUrl=https://$PREFIX.$DOMAIN/api \
+              --env-var baseUrl=http://localhost:4144 \
+              --env-var mockJwksUrl=http://localhost:3001 \
+              --env-var tmsAudience=cstar \
               --noproxy \
               --reporter-junit results.xml
 
