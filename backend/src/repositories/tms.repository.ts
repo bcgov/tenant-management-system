@@ -390,11 +390,24 @@ export class TMSRepository {
       //     throw new NotFoundError(`Tenant user not found for tenant: ${tenantId}`)
       // }
 
+      const tenantUser: TenantUser = (await transactionEntityManager.findOne(
+          TenantUser,
+          { where: { id: tenantUserId, isDeleted: false } },
+        )) as any
+
       const existingRoles: Role[] = await this.getExistingRolesForUser(
         tenantUserId,
         transactionEntityManager,
       )
+
+      const trWhere: any = { tenant: { id: tenantId } }
+
+      const tenantRoles: Role[] = await this.manager.find(Role, trWhere)
       const existingRoleIds: string[] = existingRoles.map((role) => role.id)
+
+      const bceidAllowedRoleIds: string[] = tenantRoles
+        .filter((role) => role.name === TMSConstants.SERVICE_USER)
+        .map((role) => role.id)
 
       // Check for soft-deleted role assignments that can be restored
       const softDeletedRoleAssignments: TenantUserRole[] =
@@ -411,18 +424,21 @@ export class TMSRepository {
 
       // Separate roles that can be restored vs need new assignments
       for (const roleId of roleIds) {
-        const softDeletedAssignment = softDeletedRoleAssignments.find(
-          (tur) => tur.role.id === roleId,
-        )
-        if (softDeletedAssignment) {
-          // Restore the soft-deleted assignment
-          softDeletedAssignment.isDeleted = false
-          softDeletedAssignment.updatedBy = 'system'
-          softDeletedAssignment.updatedDateTime = new Date()
-          rolesToRestore.push(softDeletedAssignment)
-        } else if (!existingRoleIds.includes(roleId)) {
-          // Create new assignment (role doesn't exist for this user)
-          rolesToCreate.push(roleId)
+        //prevent bceid users from having anything other than service user role
+        if ((tenantUser.ssoUser.idpType.toLowerCase() === 'idir') || (bceidAllowedRoleIds.indexOf(roleId) !== -1)){
+          const softDeletedAssignment = softDeletedRoleAssignments.find(
+            (tur) => tur.role.id === roleId,
+          )
+          if (softDeletedAssignment) {
+            // Restore the soft-deleted assignment
+            softDeletedAssignment.isDeleted = false
+            softDeletedAssignment.updatedBy = 'system'
+            softDeletedAssignment.updatedDateTime = new Date()
+            rolesToRestore.push(softDeletedAssignment)
+          } else if (!existingRoleIds.includes(roleId)) {
+            // Create new assignment (role doesn't exist for this user)
+            rolesToCreate.push(roleId)
+          }
         }
       }
 
@@ -446,10 +462,6 @@ export class TMSRepository {
           throw new NotFoundError('Role(s) not found')
         }
 
-        const tenantUser: TenantUser = (await transactionEntityManager.findOne(
-          TenantUser,
-          { where: { id: tenantUserId, isDeleted: false } },
-        )) as any
         const newAssignments: TenantUserRole[] = validRoles.map((role) => {
           const tenantUserRole: TenantUserRole = new TenantUserRole()
           tenantUserRole.tenantUser = tenantUser
