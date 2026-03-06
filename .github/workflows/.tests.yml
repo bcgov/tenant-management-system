@@ -52,7 +52,6 @@ jobs:
           npm ci
           npx bru run \
               --env default \
-              --env-var baseUrl=https://$PREFIX.$DOMAIN/api \
               --noproxy \
               --reporter-junit results.xml
 

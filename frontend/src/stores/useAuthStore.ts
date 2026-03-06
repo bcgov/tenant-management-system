@@ -170,7 +170,9 @@ export const useAuthStore = defineStore('auth', {
           this.token = this.keycloak.token ?? ''
           this.loggedOut = false
           this.user = this.parseUserFromToken()
-          this.userSource = this.keycloak.tokenParsed?.identity_provider?.toLowerCase().includes('idir')
+          this.userSource = this.keycloak.tokenParsed?.identity_provider
+            ?.toLowerCase()
+            .includes('idir')
             ? UserSource.IDIR
             : UserSource.BCeID
           this.scheduleTokenRefresh()
@@ -234,9 +236,9 @@ export const useAuthStore = defineStore('auth', {
       )
 
       const source = parsed.identity_provider?.toLowerCase().includes('idir')
-            ? UserSource.IDIR
-            : UserSource.BCeID
-      
+        ? UserSource.IDIR
+        : UserSource.BCeID
+
       if (source === UserSource.BCeID) {
         ssoUser = new SsoUser(
           parsed.bceid_user_guid,
@@ -248,7 +250,13 @@ export const useAuthStore = defineStore('auth', {
         )
       }
 
-      return new User(source === UserSource.IDIR ? parsed.idir_user_guid : parsed.bceid_user_guid, ssoUser, [])
+      return new User(
+        source === UserSource.IDIR
+          ? parsed.idir_user_guid
+          : parsed.bceid_user_guid,
+        ssoUser,
+        [],
+      )
     },
 
     /**
@@ -280,7 +288,7 @@ export const useAuthStore = defineStore('auth', {
             this.user = null
             this.authenticated = false
             logger.error('Failed to refresh token', error)
-            window.location.href='/'
+            window.location.href = '/'
           })
           .finally(() => {
             this.scheduleTokenRefresh()

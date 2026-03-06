@@ -1,0 +1,30 @@
+meta {
+  name: Mint Token
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{mockJwksUrl}}/mint
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "aud": "{{tmsAudience}}",
+    "identity_provider": "idir",
+    "idir_user_guid": "test-user",
+    "sub": "test-user"
+  }
+}
+
+script:post-response {
+  bru.setEnvVar('authToken', res.getBody().token)
+}
+
+tests {
+  test('mint token succeeds', function () {
+    expect(res.getStatus()).to.equal(200)
+  })
+}
