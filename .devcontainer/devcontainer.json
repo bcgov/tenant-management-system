@@ -3,23 +3,23 @@
     "HOME": "/home/node"
   },
 
-  // Configure tool-specific properties.
   "customizations": {
     "vscode": {
       "extensions": [
-        "cweijan.vscode-postgresql-client2", // PostgreSQL Client
-        "dbaeumer.vscode-eslint", // Integrates ESLint JavaScript
-        "editorconfig.editorconfig", // EditorConfig Support
-        "esbenp.prettier-vscode", // Code formatter using prettier
-        "SonarSource.sonarlint-vscode", // Linter to detect & fix coding issues
-        "vitest.explorer", // Vite-native testing framework
-        "vue.volar" // Language Support for Vue
+        "bruno-api-client.bruno",
+        "cweijan.vscode-postgresql-client2",
+        "dbaeumer.vscode-eslint",
+        "editorconfig.editorconfig",
+        "esbenp.prettier-vscode",
+        "SonarSource.sonarlint-vscode",
+        "vitest.explorer",
+        "vue.volar"
       ],
       "settings": {
         "database-client.telemetry.usesOnlineServices": false,
         "editor.defaultFormatter": "esbenp.prettier-vscode",
         "editor.formatOnSave": true,
-        "sonarlint.ls.javaHome": "/usr/lib/jvm/java-17-openjdk-amd64"
+        "sonarlint.ls.javaHome": "/usr/lib/jvm/java-21-openjdk-amd64"
       }
     }
   },
@@ -27,15 +27,12 @@
   "dockerComposeFile": ["docker-compose.yaml"],
 
   "features": {
-    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "moby": false
+    }
   },
 
-  // Ports forwarded from the container so they are available locally.
-  "forwardPorts": [
-    4144, // CSTAR Backend
-    5173, // CSTAR Frontend
-    5432 // Postgres Database
-  ],
+  "forwardPorts": [4144, 5173, 5432],
 
   "name": "cstar",
 
@@ -51,7 +48,6 @@
     }
   },
 
-  // Use 'postCreateCommand' to run commands after the container is created.
   "postCreateCommand": "bash ./.devcontainer/post-install.sh",
 
   "remoteUser": "node",

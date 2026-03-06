@@ -4,8 +4,12 @@ on:
   workflow_call:
     inputs:
       ### Required
+      image_tag:
+        description: Image tag for containerized integration tests
+        required: true
+        type: string
       target:
-        description: PR number, test or prod
+        description: PR number, dev, test or prod
         default: ${{ github.event.number }}
         type: string
 
@@ -18,10 +22,13 @@ permissions: {}
 jobs:
   integration-tests:
     name: Integration
+    permissions:
+      checks: write
     runs-on: ubuntu-24.04
-    timeout-minutes: 1
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v6
+
       - id: cache-npm
         uses: actions/cache@v5
         with:
@@ -32,13 +39,41 @@ jobs:
             ${{ runner.os }}-build-
             ${{ runner.os }}-
 
-      - env:
-          API_NAME: express
-          BASE_URL: https://${{ env.PREFIX }}.${{ env.DOMAIN }}
+      - name: Start test services
+        env:
+          IMAGE_TAG: ${{ inputs.image_tag }}
+        run: |
+          cd tests/integration
+          docker compose -f docker-compose.yml up -d --wait
+
+      - name: Run tests
         run: |
           cd tests/integration
           npm ci
-          node src/main.js
+          npx bru run \
+              --env default \
+              --env-var baseUrl=https://$PREFIX.$DOMAIN/api \
+              --noproxy \
+              --reporter-junit results.xml
+
+      - name: Stop test services
+        if: always()
+        run: |
+          cd tests/integration
+          docker compose -f docker-compose.yml down
+
+      - uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: Integration Tests
+          path: tests/integration/results.xml
+          reporter: java-junit
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bruno-test-results
+          path: tests/integration/results.xml
 
   e2e-tests:
     name: E2E

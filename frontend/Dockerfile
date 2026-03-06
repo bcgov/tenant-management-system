@@ -1,50 +1,34 @@
-# Build stage: build static files with Node
-FROM node:22.21.1-trixie-slim AS build
+FROM node:22.22.0-trixie AS build
 
 WORKDIR /app
 
-# Install curl for healthcheck and other dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    ca-certificates \
-    curl \
-    g++ \
-    make \
-    python3 \
-    && rm -rf /var/lib/apt/lists/*
-
-# Increase Node.js memory limit for large builds
-ENV NODE_OPTIONS="--max-old-space-size=4096"
-
-# Configure npm for reliability
-RUN npm config set registry https://registry.npmjs.org/ && \
-    npm config set fetch-retry-maxtimeout 600000 && \
-    npm config set fetch-retry-mintimeout 10000 && \
-    npm config set fetch-timeout 600000
-
-# First copy package files and install dependencies
+# Copy package files and install dependencies
 COPY package*.json ./
-
-# Install dependencies (including devDependencies for build)
 RUN npm ci --ignore-scripts
 
-# Then copy source code and build
-COPY . ./
+# Copy configuration files and application source
+COPY env.d.ts index.html tsconfig*.json vite.config.ts ./
+COPY public ./public
+COPY src ./src
+
 RUN npm run build
 
-# Deploy stage: serve static files with Caddy
+# -----------------------------------------------------------------------------
+
 FROM caddy:2.10.2-alpine
 
-RUN setcap -r /usr/bin/caddy && \
-    apk add --no-cache ca-certificates curl
+RUN setcap -r /usr/bin/caddy
 
-# Copy built static files and Caddyfile
-COPY --from=build /app/dist /srv
+WORKDIR /srv
+
+COPY --from=build /app/dist .
 COPY Caddyfile /etc/caddy/Caddyfile
 RUN caddy fmt --overwrite /etc/caddy/Caddyfile
 
+USER caddy
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:3001/health || \
+    exit 1
+
 EXPOSE 3000 3001
-
-HEALTHCHECK --interval=30s --timeout=3s CMD curl -f http://localhost:3001/health
-
-# Use non-root user for security
-USER 1001
