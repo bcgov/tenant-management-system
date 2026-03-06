@@ -20,5 +20,5 @@ body:json {
 }
 
 script:post-response {
-  bru.setVar('authToken', res.getBody().token)
+  bru.setEnvVar('authToken', res.getBody().token)
 }
