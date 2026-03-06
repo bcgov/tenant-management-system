@@ -83,3 +83,29 @@ export interface GetTenantGroupsInputDto {
   jwtAudience: string
   tmsAudience: string
 }
+
+export interface GetSharedServiceRolesForGroupInputDto {
+  tenantId: string
+  groupId: string
+}
+
+export interface GetSharedServiceRoleForGroupResultDto {
+  id: string
+  name: string
+  description: string | null
+  enabled: boolean
+  createdDateTime: Date
+  createdBy: string
+}
+
+export interface GetSharedServiceForGroupResultDto {
+  id: string
+  name: string
+  clientIdentifier: string
+  description: string | null
+  createdDateTime: Date
+  updatedDateTime: Date
+  createdBy: string
+  updatedBy: string
+  sharedServiceRoles: GetSharedServiceRoleForGroupResultDto[]
+}

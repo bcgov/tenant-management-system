@@ -11,6 +11,8 @@ import {
   CreateGroupInputDto,
   GetGroupInputDto,
   GetGroupResultDto,
+  GetSharedServiceForGroupResultDto,
+  GetSharedServiceRolesForGroupInputDto,
   GetTenantGroupsInputDto,
   RemoveGroupUserInputDto,
   UpdateGroupInputDto,
@@ -159,8 +161,12 @@ export class TMService {
   }
 
   public async getSharedServiceRolesForGroup(req: Request) {
-    const sharedServices =
-      await this.tmRepository.getSharedServiceRolesForGroup(req)
+    const input: GetSharedServiceRolesForGroupInputDto = {
+      tenantId: req.params.tenantId,
+      groupId: req.params.groupId,
+    }
+    const sharedServices: GetSharedServiceForGroupResultDto[] =
+      await this.tmRepository.getSharedServiceRolesForGroup(input)
 
     return {
       data: {

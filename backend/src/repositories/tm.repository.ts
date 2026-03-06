@@ -20,6 +20,8 @@ import {
   CreateGroupInputDto,
   GetGroupInputDto,
   GetGroupResultDto,
+  GetSharedServiceForGroupResultDto,
+  GetSharedServiceRolesForGroupInputDto,
   GetTenantGroupsInputDto,
   RemoveGroupUserInputDto,
   UpdateGroupInputDto,
@@ -889,9 +891,10 @@ export class TMRepository {
     return groupResponse
   }
 
-  public async getSharedServiceRolesForGroup(req: Request) {
-    const tenantId = req.params.tenantId
-    const groupId = req.params.groupId
+  public async getSharedServiceRolesForGroup(
+    input: GetSharedServiceRolesForGroupInputDto,
+  ) {
+    const { tenantId, groupId } = input
 
     const groupExists = await this.manager
       .createQueryBuilder(Group, 'group')
@@ -937,7 +940,7 @@ export class TMRepository {
       .addOrderBy('ssr.name', 'ASC')
       .getRawAndEntities()
 
-    const sharedServicesMap = new Map()
+    const sharedServicesMap = new Map<string, GetSharedServiceForGroupResultDto>()
 
     result.entities.forEach((ssr, index) => {
       const raw = result.raw[index]
@@ -958,14 +961,16 @@ export class TMRepository {
       }
 
       const sharedService = sharedServicesMap.get(sharedServiceId)
-      sharedService.sharedServiceRoles.push({
-        id: ssr.id,
-        name: ssr.name,
-        description: ssr.description,
-        enabled: raw.enabled === 'true' || raw.enabled === true,
-        createdDateTime: ssr.createdDateTime,
-        createdBy: ssr.createdBy,
-      })
+      if (sharedService) {
+        sharedService.sharedServiceRoles.push({
+          id: ssr.id,
+          name: ssr.name,
+          description: ssr.description,
+          enabled: raw.enabled === 'true' || raw.enabled === true,
+          createdDateTime: ssr.createdDateTime,
+          createdBy: ssr.createdBy,
+        })
+      }
     })
 
     const sharedServices = Array.from(sharedServicesMap.values())
