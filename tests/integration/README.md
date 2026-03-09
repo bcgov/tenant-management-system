@@ -22,8 +22,8 @@ scope for these tests.
 These tests can be run locally:
 
 - run `npm ci`
-- start the backend (`Run and Debug` in Activity Bar > `CSTAR` or
-  `CSTAR Backend`)
+- start the backend and mock JWKS server (`Run and Debug` in Activity Bar >
+  `Integration Testing`)
 - run `npm test`
 
 ## Running in GitHub Actions

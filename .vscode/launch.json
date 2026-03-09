@@ -3,6 +3,13 @@
     {
       "configurations": ["CSTAR Backend", "CSTAR Frontend"],
       "name": "CSTAR"
+    },
+    {
+      "configurations": [
+        "Integration Testing Backend",
+        "Integration Testing JWKS"
+      ],
+      "name": "Integration Testing"
     }
   ],
   "configurations": [
@@ -21,6 +28,33 @@
       "outputCapture": "std",
       "request": "launch",
       "runtimeArgs": ["run", "dev"],
+      "runtimeExecutable": "npm",
+      "type": "node"
+    },
+    {
+      "cwd": "${workspaceFolder}/backend",
+      "env": {
+        "ISSUER": "http://localhost:3001",
+        "JWKS_URI": "http://localhost:3001/certs",
+        "TMS_AUDIENCE": "cstar"
+      },
+      "name": "Integration Testing Backend",
+      "outputCapture": "std",
+      "request": "launch",
+      "runtimeArgs": ["run", "dev"],
+      "runtimeExecutable": "npm",
+      "type": "node"
+    },
+    {
+      "cwd": "${workspaceFolder}/tests/integration/mock-jwks",
+      "env": {
+        "ISSUER": "http://localhost:3001",
+        "TMS_AUDIENCE": "cstar"
+      },
+      "name": "Integration Testing JWKS",
+      "outputCapture": "std",
+      "request": "launch",
+      "runtimeArgs": ["start"],
       "runtimeExecutable": "npm",
       "type": "node"
     }
