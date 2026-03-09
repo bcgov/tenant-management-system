@@ -397,6 +397,7 @@ export default {
               .required(),
           }),
         )
+        .min(1)
         .required(),
     }).options({ abortEarly: false, convert: false }),
   },

@@ -15,6 +15,7 @@ import {
   GetSharedServiceRolesForGroupInputDto,
   GetTenantGroupsInputDto,
   RemoveGroupUserInputDto,
+  UpdateSharedServiceRolesForGroupInputDto,
   UpdateGroupInputDto,
 } from '../dtos/tm.dto'
 import { Group } from '../entities/Group'
@@ -176,8 +177,14 @@ export class TMService {
   }
 
   public async updateSharedServiceRolesForGroup(req: Request) {
+    const input: UpdateSharedServiceRolesForGroupInputDto = {
+      tenantId: req.params.tenantId,
+      groupId: req.params.groupId,
+      updatedBy: req.decodedJwt?.idir_user_guid || 'system',
+      sharedServices: req.body.sharedServices,
+    }
     const sharedServices =
-      await this.tmRepository.updateSharedServiceRolesForGroup(req)
+      await this.tmRepository.updateSharedServiceRolesForGroup(input)
 
     return {
       data: {

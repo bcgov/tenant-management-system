@@ -24,6 +24,7 @@ import {
   GetSharedServiceRolesForGroupInputDto,
   GetTenantGroupsInputDto,
   RemoveGroupUserInputDto,
+  UpdateSharedServiceRolesForGroupInputDto,
   UpdateGroupInputDto,
 } from '../dtos/tm.dto'
 
@@ -979,14 +980,13 @@ export class TMRepository {
     return sharedServices
   }
 
-  public async updateSharedServiceRolesForGroup(req: Request) {
-    const tenantId = req.params.tenantId
-    const groupId = req.params.groupId
-    const { sharedServices } = req.body
-    const ssoUserId = req.decodedJwt?.idir_user_guid || 'system'
+  public async updateSharedServiceRolesForGroup(
+    input: UpdateSharedServiceRolesForGroupInputDto,
+  ) {
+    const { tenantId, groupId, sharedServices, updatedBy } = input
 
     await this.manager.transaction(async (transactionEntityManager) => {
-      const group: any = await transactionEntityManager
+      const group: Group | null = await transactionEntityManager
         .createQueryBuilder(Group, 'group')
         .where('group.id = :groupId', { groupId })
         .andWhere('group.tenant.id = :tenantId', { tenantId })
@@ -998,12 +998,12 @@ export class TMRepository {
         )
       }
 
-      const sharedServiceIds: string[] = sharedServices.map((ss: any) => ss.id)
+      const sharedServiceIds: string[] = sharedServices.map((ss) => ss.id)
       const sharedServiceRoleIds: string[] = []
       const roleToServiceMap = new Map<string, string>() // roleId -> serviceId
 
-      sharedServices.forEach((ss: any) => {
-        ss.sharedServiceRoles.forEach((role: any) => {
+      sharedServices.forEach((ss) => {
+        ss.sharedServiceRoles.forEach((role) => {
           sharedServiceRoleIds.push(role.id)
           roleToServiceMap.set(role.id, ss.id)
         })
@@ -1019,7 +1019,7 @@ export class TMRepository {
         .andWhere('tss.isDeleted = :isDeleted', { isDeleted: false })
         .getMany()
 
-      const tenantSharedServiceMap = new Map<string, any>()
+      const tenantSharedServiceMap = new Map<string, TenantSharedService>()
       tenantSharedServices.forEach((tss) => {
         if (tss.sharedService) {
           tenantSharedServiceMap.set(tss.sharedService.id, tss)
@@ -1041,7 +1041,7 @@ export class TMRepository {
         .andWhere('ssr.isDeleted = :isDeleted', { isDeleted: false })
         .getMany()
 
-      const sharedServiceRoleMap = new Map<string, any>()
+      const sharedServiceRoleMap = new Map<string, SharedServiceRole>()
       sharedServiceRoles.forEach((ssr) => {
         sharedServiceRoleMap.set(ssr.id, ssr)
       })
@@ -1067,7 +1067,7 @@ export class TMRepository {
         })
         .getMany()
 
-      const existingAssignmentMap = new Map<string, any>()
+      const existingAssignmentMap = new Map<string, GroupSharedServiceRole>()
       existingAssignments.forEach((gssr) => {
         if (gssr.sharedServiceRole) {
           existingAssignmentMap.set(gssr.sharedServiceRole.id, gssr)
@@ -1089,13 +1089,15 @@ export class TMRepository {
           if (enabled) {
             if (!existingAssignment) {
               const newAssignment = new GroupSharedServiceRole()
-              newAssignment.group = { id: groupId } as any
-              newAssignment.sharedServiceRole = {
-                id: sharedServiceRoleId,
-              } as any
+              const groupRef = new Group()
+              groupRef.id = groupId
+              newAssignment.group = groupRef
+              const sharedServiceRoleRef = new SharedServiceRole()
+              sharedServiceRoleRef.id = sharedServiceRoleId
+              newAssignment.sharedServiceRole = sharedServiceRoleRef
               newAssignment.isDeleted = false
-              newAssignment.createdBy = ssoUserId
-              newAssignment.updatedBy = ssoUserId
+              newAssignment.createdBy = updatedBy
+              newAssignment.updatedBy = updatedBy
               toCreate.push(newAssignment)
             } else if (existingAssignment.isDeleted) {
               toRestore.push(existingAssignment.id)
@@ -1118,7 +1120,7 @@ export class TMRepository {
           .update('GroupSharedServiceRole')
           .set({
             isDeleted: false,
-            updatedBy: ssoUserId,
+            updatedBy: updatedBy,
           })
           .where('id IN (:...ids)', { ids: toRestore })
           .execute()
@@ -1130,7 +1132,7 @@ export class TMRepository {
           .update('GroupSharedServiceRole')
           .set({
             isDeleted: true,
-            updatedBy: ssoUserId,
+            updatedBy: updatedBy,
           })
           .where('id IN (:...ids)', { ids: toDelete })
           .execute()

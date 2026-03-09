@@ -109,3 +109,20 @@ export interface GetSharedServiceForGroupResultDto {
   updatedBy: string
   sharedServiceRoles: GetSharedServiceRoleForGroupResultDto[]
 }
+
+export interface UpdateSharedServiceRolesForGroupRoleInputDto {
+  id: string
+  enabled: boolean
+}
+
+export interface UpdateSharedServiceRolesForGroupSharedServiceInputDto {
+  id: string
+  sharedServiceRoles: UpdateSharedServiceRolesForGroupRoleInputDto[]
+}
+
+export interface UpdateSharedServiceRolesForGroupInputDto {
+  tenantId: string
+  groupId: string
+  updatedBy: string
+  sharedServices: UpdateSharedServiceRolesForGroupSharedServiceInputDto[]
+}
