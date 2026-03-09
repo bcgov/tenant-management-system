@@ -26,6 +26,8 @@ import {
   GetRolesForSsoUserInputDto,
   GetSharedServicesForTenantInputDto,
   GetTenantInputDto,
+  GetTenantUserInputDto,
+  GetTenantUserResultDto,
   GetTenantRequestsInputDto,
   GetTenantUsersInputDto,
   GetTenantRolesInputDto,
@@ -562,11 +564,17 @@ export class TMSService {
   }
 
   public async getTenantUser(req: Request) {
-    const tenantUser: any = await this.tmsRepository.getTenantUser(req)
     const expand: string[] =
       typeof req.query.expand === 'string'
         ? req.query.expand.split(',').map((v) => v.trim())
         : []
+    const input: GetTenantUserInputDto = {
+      tenantId: req.params.tenantId,
+      tenantUserId: req.params.tenantUserId,
+      expand,
+    }
+    const tenantUser: GetTenantUserResultDto =
+      await this.tmsRepository.getTenantUser(input)
 
     if (expand.includes('groups')) {
       tenantUser.groups = await this.tmRepository.getTenantUserGroups(

@@ -31,6 +31,8 @@ import {
   GetRolesForSsoUserInputDto,
   GetSharedServicesForTenantInputDto,
   GetTenantInputDto,
+  GetTenantUserInputDto,
+  GetTenantUserResultDto,
   GetTenantUsersInputDto,
   GetTenantRolesInputDto,
   GetUserRolesInputDto,
@@ -837,13 +839,10 @@ export class TMSRepository {
     return roles
   }
 
-  public async getTenantUser(req: Request) {
-    const tenantId: string = req.params.tenantId
-    const tenantUserId: string = req.params.tenantUserId
-    const expand: string[] =
-      typeof req.query.expand === 'string'
-        ? req.query.expand.split(',').map((v) => v.trim())
-        : []
+  public async getTenantUser(input: GetTenantUserInputDto) {
+    const tenantId: string = input.tenantId
+    const tenantUserId: string = input.tenantUserId
+    const expand: string[] = input.expand
     const expandRoles = expand.includes('roles')
 
     const tenantUserQuery = this.manager
@@ -867,15 +866,7 @@ export class TMSRepository {
       throw new NotFoundError(`Tenant user not found: ${tenantUserId}`)
     }
 
-    const result: {
-      id: string
-      ssoUser: SSOUser | Record<string, unknown>
-      createdDateTime: Date | string | null
-      updatedDateTime: Date | string | null
-      createdBy: string
-      updatedBy: string
-      roles?: Role[] | Array<Record<string, unknown>>
-    } = {
+    const result: GetTenantUserResultDto = {
       id: tenantUser.id,
       ssoUser: tenantUser.ssoUser,
       createdDateTime: tenantUser.createdDateTime,

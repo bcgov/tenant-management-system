@@ -220,3 +220,21 @@ export interface GetRolesForSsoUserInputDto {
 export interface GetSharedServicesForTenantInputDto {
   tenantId: string
 }
+
+export interface GetTenantUserInputDto {
+  tenantId: string
+  tenantUserId: string
+  expand: string[]
+}
+
+export interface GetTenantUserResultDto {
+  id: string
+  ssoUser: unknown
+  createdDateTime: Date | string | null
+  updatedDateTime: Date | string | null
+  createdBy: string
+  updatedBy: string
+  roles?: unknown[]
+  groups?: unknown[]
+  sharedServices?: unknown[]
+}
