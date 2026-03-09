@@ -25,6 +25,9 @@ import {
   GetSharedServiceForGroupResultDto,
   GetSharedServiceRolesForGroupInputDto,
   GetTenantGroupsInputDto,
+  GetUserGroupsWithSharedServiceRolesInputDto,
+  GetUserGroupsWithSharedServiceRoleResultDto,
+  GetUserGroupsWithSharedServiceRolesResultDto,
   RemoveGroupUserInputDto,
   UpdateSharedServiceRolesForGroupInputDto,
   UpdateGroupInputDto,
@@ -1145,12 +1148,9 @@ export class TMRepository {
   }
 
   public async getUserGroupsWithSharedServiceRoles(
-    req: Request,
-    audience: string,
+    input: GetUserGroupsWithSharedServiceRolesInputDto,
   ) {
-    const tenantId: string = req.params.tenantId
-    const ssoUserId: string = req.params.ssoUserId
-    const idpType: string = req.idpType!
+    const { tenantId, ssoUserId, audience, idpType } = input
 
     const tenantUser: TenantUser =
       await this.tmsRepository.getTenantUserBySsoId(ssoUserId, tenantId)
@@ -1184,7 +1184,17 @@ export class TMRepository {
       .addOrderBy('ssr.name', 'ASC')
       .getMany()
 
-    const groupsMap = new Map()
+    const groupsMap = new Map<
+      string,
+      {
+        id: string
+        name: string
+        description: string | null
+        createdDateTime: Date
+        updatedDateTime: Date
+        sharedServiceRoles: GetUserGroupsWithSharedServiceRoleResultDto[]
+      }
+    >()
 
     result.forEach((gu) => {
       const groupId = gu.group.id
@@ -1192,13 +1202,16 @@ export class TMRepository {
         groupsMap.set(groupId, {
           id: gu.group.id,
           name: gu.group.name,
+          description: gu.group.description,
+          createdDateTime: gu.group.createdDateTime,
+          updatedDateTime: gu.group.updatedDateTime,
           sharedServiceRoles: [],
         })
       }
       const group = groupsMap.get(groupId)
 
       if (gu.group.sharedServiceRoles) {
-        gu.group.sharedServiceRoles.forEach((gssr: any) => {
+        gu.group.sharedServiceRoles.forEach((gssr) => {
           if (
             gssr.sharedServiceRole &&
             gssr.sharedServiceRole.sharedService &&
@@ -1208,16 +1221,27 @@ export class TMRepository {
             !gssr.isDeleted &&
             !gssr.sharedServiceRole.isDeleted
           ) {
-            group.sharedServiceRoles.push({
-              name: gssr.sharedServiceRole.name,
-              enabled: true,
-            })
+            if (group) {
+              group.sharedServiceRoles.push({
+                id: gssr.sharedServiceRole.id,
+                name: gssr.sharedServiceRole.name,
+                description: gssr.sharedServiceRole.description,
+                allowedIdentityProviders:
+                  gssr.sharedServiceRole.allowedIdentityProviders,
+                isDeleted: gssr.sharedServiceRole.isDeleted,
+                createdDateTime: gssr.sharedServiceRole.createdDateTime,
+                updatedDateTime: gssr.sharedServiceRole.updatedDateTime,
+                createdBy: gssr.sharedServiceRole.createdBy,
+                updatedBy: gssr.sharedServiceRole.updatedBy,
+              })
+            }
           }
         })
       }
     })
 
-    const groups = Array.from(groupsMap.values())
+    const groups: GetUserGroupsWithSharedServiceRolesResultDto['groups'] =
+      Array.from(groupsMap.values())
     groups.sort((a, b) => a.name.localeCompare(b.name))
 
     return { groups }

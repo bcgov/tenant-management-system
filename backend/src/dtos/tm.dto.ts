@@ -146,3 +146,35 @@ export interface GetEffectiveSharedServiceRoleResultDto {
   allowedIdentityProviders: string[] | null
   groups: GetEffectiveSharedServiceRoleGroupResultDto[]
 }
+
+export interface GetUserGroupsWithSharedServiceRolesInputDto {
+  tenantId: string
+  ssoUserId: string
+  audience: string
+  idpType: string
+}
+
+export interface GetUserGroupsWithSharedServiceRoleResultDto {
+  id: string
+  name: string
+  description: string | null
+  allowedIdentityProviders: string[] | null
+  isDeleted: boolean
+  createdDateTime: Date
+  updatedDateTime: Date
+  createdBy: string
+  updatedBy: string
+}
+
+export interface GetUserGroupsWithSharedServiceGroupResultDto {
+  id: string
+  name: string
+  description: string | null
+  createdDateTime: Date
+  updatedDateTime: Date
+  sharedServiceRoles: GetUserGroupsWithSharedServiceRoleResultDto[]
+}
+
+export interface GetUserGroupsWithSharedServiceRolesResultDto {
+  groups: GetUserGroupsWithSharedServiceGroupResultDto[]
+}
