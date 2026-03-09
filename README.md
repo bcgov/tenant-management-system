@@ -134,29 +134,15 @@ Don't forget to add your team members!
 
 # App Stack
 
-Frontend (TypeScript)
-
-[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system_frontend&metric=bugs)](https://sonarcloud.io/summary/new_code?id=bcgov_tenant-management-system_frontend)
-[![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system_frontend&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=bcgov_tenant-management-system_frontend)
-[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system_frontend&metric=coverage)](https://sonarcloud.io/summary/new_code?id=bcgov_tenant-management-system_frontend)
-[![Duplicated Lines](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system_frontend&metric=duplicated_lines_density)](https://sonarcloud.io/summary/new_code?id=bcgov_tenant-management-system_frontend)
-[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system_frontend&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=bcgov_tenant-management-system_frontend)
-[![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system_frontend&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=bcgov_tenant-management-system_frontend)
-[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system_frontend&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=bcgov_tenant-management-system_frontend)
-[![Technical Debt](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system_frontend&metric=sqale_index)](https://sonarcloud.io/summary/new_code?id=bcgov_tenant-management-system_frontend)
-[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system_frontend&metric=vulnerabilities)](https://sonarcloud.io/summary/new_code?id=bcgov_tenant-management-system_frontend)
-
-Backend (TypeScript)
-
-[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system_backend&metric=bugs)](https://sonarcloud.io/summary/new_code?id=bcgov_tenant-management-system_backend)
-[![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system_backend&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=bcgov_tenant-management-system_backend)
-[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system_backend&metric=coverage)](https://sonarcloud.io/summary/new_code?id=bcgov_tenant-management-system_backend)
-[![Duplicated Lines](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system_backend&metric=duplicated_lines_density)](https://sonarcloud.io/summary/new_code?id=bcgov_tenant-management-system_backend)
-[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system_backend&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=bcgov_tenant-management-system_backend)
-[![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system_backend&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=bcgov_tenant-management-system_backend)
-[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system_backend&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=bcgov_tenant-management-system_backend)
-[![Technical Debt](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system_backend&metric=sqale_index)](https://sonarcloud.io/summary/new_code?id=bcgov_tenant-management-system_backend)
-[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system_backend&metric=vulnerabilities)](https://sonarcloud.io/summary/new_code?id=bcgov_tenant-management-system_backend)
+[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system&metric=bugs)](https://sonarcloud.io/summary/new_code?id=bcgov_tenant-management-system)
+[![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=bcgov_tenant-management-system)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system&metric=coverage)](https://sonarcloud.io/summary/new_code?id=bcgov_tenant-management-system)
+[![Duplicated Lines](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system&metric=duplicated_lines_density)](https://sonarcloud.io/summary/new_code?id=bcgov_tenant-management-system)
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=bcgov_tenant-management-system)
+[![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=bcgov_tenant-management-system)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=bcgov_tenant-management-system)
+[![Technical Debt](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system&metric=sqale_index)](https://sonarcloud.io/summary/new_code?id=bcgov_tenant-management-system)
+[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system&metric=vulnerabilities)](https://sonarcloud.io/summary/new_code?id=bcgov_tenant-management-system)
 
 ## Stack
 
