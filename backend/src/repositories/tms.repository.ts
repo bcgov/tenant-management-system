@@ -16,6 +16,7 @@ import { SharedService } from '../entities/SharedService'
 import { SharedServiceRole } from '../entities/SharedServiceRole'
 import { TenantSharedService } from '../entities/TenantSharedService'
 import {
+  AssociateSharedServiceToTenantInputDto,
   AssignUserRolesInputDto,
   AddSharedServiceRolesInputDto,
   AddTenantUserResultDto,
@@ -1653,10 +1654,10 @@ export class TMSRepository {
     return sharedServiceExists
   }
 
-  public async associateSharedServiceToTenant(req: Request) {
-    const tenantId: string = req.params.tenantId
-    const sharedServiceId: string = req.body.sharedServiceId
-    const ssoUserId: string = req.decodedJwt?.idir_user_guid || 'system'
+  public async associateSharedServiceToTenant(
+    input: AssociateSharedServiceToTenantInputDto,
+  ) {
+    const { tenantId, sharedServiceId, updatedBy } = input
 
     await this.manager.transaction(async (transactionEntityManager) => {
       try {
@@ -1665,10 +1666,10 @@ export class TMSRepository {
         //     throw new NotFoundError(`Tenant not found: ${tenantId}`)
         // }
 
-        const sharedService: SharedService = (await transactionEntityManager
+        const sharedService = await transactionEntityManager
           .createQueryBuilder(SharedService, 'sharedService')
           .where('sharedService.id = :id', { id: sharedServiceId })
-          .getOne()) as any
+          .getOne()
 
         if (!sharedService) {
           throw new NotFoundError(
@@ -1682,15 +1683,14 @@ export class TMSRepository {
           )
         }
 
-        const existingAssociation: TenantSharedService =
-          (await transactionEntityManager
-            .createQueryBuilder(TenantSharedService, 'tss')
-            .where('tss.tenant.id = :tenantId', { tenantId })
-            .andWhere('tss.sharedService.id = :sharedServiceId', {
-              sharedServiceId,
-            })
-            .andWhere('tss.isDeleted = :isDeleted', { isDeleted: false })
-            .getOne()) as any
+        const existingAssociation = await transactionEntityManager
+          .createQueryBuilder(TenantSharedService, 'tss')
+          .where('tss.tenant.id = :tenantId', { tenantId })
+          .andWhere('tss.sharedService.id = :sharedServiceId', {
+            sharedServiceId,
+          })
+          .andWhere('tss.isDeleted = :isDeleted', { isDeleted: false })
+          .getOne()
 
         if (existingAssociation) {
           throw new ConflictError(
@@ -1698,18 +1698,21 @@ export class TMSRepository {
           )
         }
 
-        const tenant: Tenant = (await transactionEntityManager
+        const tenant = await transactionEntityManager
           .createQueryBuilder(Tenant, 'tenant')
           .where('tenant.id = :id', { id: tenantId })
-          .getOne()) as any
+          .getOne()
 
-        const tenantSharedService: TenantSharedService =
-          new TenantSharedService()
+        if (!tenant) {
+          throw new NotFoundError(`Tenant not found: ${tenantId}`)
+        }
+
+        const tenantSharedService = new TenantSharedService()
         tenantSharedService.tenant = tenant
         tenantSharedService.sharedService = sharedService
         tenantSharedService.isDeleted = false
-        tenantSharedService.createdBy = ssoUserId
-        tenantSharedService.updatedBy = ssoUserId
+        tenantSharedService.createdBy = updatedBy
+        tenantSharedService.updatedBy = updatedBy
 
         await transactionEntityManager.save(tenantSharedService)
       } catch (error: unknown) {

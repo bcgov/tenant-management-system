@@ -56,6 +56,12 @@ export interface AddSharedServiceRolesInputDto {
   updatedBy: string
 }
 
+export interface AssociateSharedServiceToTenantInputDto {
+  tenantId: string
+  sharedServiceId: string
+  updatedBy: string
+}
+
 export interface UpdateTenantRequestStatusInputDto {
   requestId: string
   status: 'APPROVED' | 'REJECTED'

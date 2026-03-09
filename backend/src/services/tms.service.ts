@@ -12,6 +12,7 @@ import { BadRequestError } from '../errors/BadRequestError'
 import { getErrorMessage } from '../common/error.handler'
 import { AddTenantUserResponseDto, TMSMapper } from '../mappers/tms.mapper'
 import {
+  AssociateSharedServiceToTenantInputDto,
   AssignUserRolesInputDto,
   AddTenantUserInputDto,
   AddTenantUserResultDto,
@@ -420,7 +421,12 @@ export class TMSService {
   }
 
   public async associateSharedServiceToTenant(req: Request) {
-    await this.tmsRepository.associateSharedServiceToTenant(req)
+    const input: AssociateSharedServiceToTenantInputDto = {
+      tenantId: req.params.tenantId,
+      sharedServiceId: req.body.sharedServiceId,
+      updatedBy: req.decodedJwt?.idir_user_guid || 'system',
+    }
+    await this.tmsRepository.associateSharedServiceToTenant(input)
   }
 
   public async getAllActiveSharedServices() {
