@@ -17,6 +17,7 @@ import {
   AddTenantUserInputDto,
   AddTenantUserResultDto,
   AddSharedServiceRolesInputDto,
+  CreateTenantRolesInputDto,
   CreateTenantInputDto,
   CreateTenantRequestInputDto,
   CreateSharedServiceInputDto,
@@ -181,7 +182,11 @@ export class TMSService {
   }
 
   public async createRoles(req: Request) {
-    const roles = await this.tmsRepository.createRoles(req)
+    const input: CreateTenantRolesInputDto = {
+      tenantId: req.params.tenantId,
+      role: req.body.role,
+    }
+    const roles = await this.tmsRepository.createRoles(input)
     return {
       data: {
         role: roles,

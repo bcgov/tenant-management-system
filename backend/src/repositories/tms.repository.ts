@@ -4,7 +4,6 @@ import { SSOUser } from '../entities/SSOUser'
 import { Role } from '../entities/Role'
 import { EntityManager } from 'typeorm'
 import { In } from 'typeorm'
-import { Request } from 'express'
 import { TMSConstants } from '../common/tms.constants'
 import { TenantUserRole } from '../entities/TenantUserRole'
 import { NotFoundError } from '../errors/NotFoundError'
@@ -21,6 +20,7 @@ import {
   AddSharedServiceRolesInputDto,
   AddTenantUserResultDto,
   AddTenantUserInputDto,
+  CreateTenantRolesInputDto,
   CreateTenantInputDto,
   CreateTenantRequestInputDto,
   CreateSharedServiceInputDto,
@@ -352,12 +352,12 @@ export class TMSRepository {
     return requestedRoles || []
   }
 
-  public async createRoles(req: Request) {
+  public async createRoles(input: CreateTenantRolesInputDto) {
     let response = {}
     await this.manager.transaction(async (transactionEntityManager) => {
       try {
-        const tenantId: string = req.params.tenantId
-        const requestRole = req.body.role
+        const tenantId: string = input.tenantId
+        const requestRole = input.role
 
         const tenant = await transactionEntityManager.findOne(Tenant, {
           where: { id: tenantId },
