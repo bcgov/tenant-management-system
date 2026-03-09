@@ -217,7 +217,10 @@ function showRoleDialog(user: User, index: number) {
   if (!isUserAdmin.value) {
     return
   }
-  modifyingUserIndex.value = index
+
+  const indexToUse = props.tenant.users.findIndex((u) => u.id === user.id)
+
+  modifyingUserIndex.value = indexToUse !== -1 ? indexToUse : index
   roleDialogVisible.value = true
 }
 
