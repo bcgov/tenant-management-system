@@ -239,13 +239,13 @@ export class TMService {
     }
   }
 
-  public async getTenantUser(req: Request) {
-    const tenantUser: any = await this.tmRepository.getTenantUser(req)
+  // public async getTenantUser(req: Request) {
+  //   const tenantUser: any = await this.tmRepository.getTenantUser(req)
 
-    return {
-      data: {
-        tenantUser: tenantUser,
-      },
-    }
-  }
+  //   return {
+  //     data: {
+  //       tenantUser: tenantUser,
+  //     },
+  //   }
+  // }
 }
