@@ -216,3 +216,7 @@ export interface GetRolesForSsoUserInputDto {
   tenantId: string
   ssoUserId: string
 }
+
+export interface GetSharedServicesForTenantInputDto {
+  tenantId: string
+}

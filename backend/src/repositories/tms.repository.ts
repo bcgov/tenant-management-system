@@ -29,6 +29,7 @@ import {
   UpdateTenantRequestStatusInputDto,
   UpdateTenantRequestTenantResultDto,
   GetRolesForSsoUserInputDto,
+  GetSharedServicesForTenantInputDto,
   GetTenantInputDto,
   GetTenantUsersInputDto,
   GetTenantRolesInputDto,
@@ -1735,8 +1736,11 @@ export class TMSRepository {
       .getMany()
   }
 
-  public async getSharedServicesForTenant(tenantId: string) {
-    return await this.manager
+  public async getSharedServicesForTenant(
+    input: GetSharedServicesForTenantInputDto,
+  ) {
+    const { tenantId } = input
+    const tenantSharedServices = await this.manager
       .createQueryBuilder(TenantSharedService, 'tss')
       .leftJoinAndSelect('tss.sharedService', 'sharedService')
       .leftJoinAndSelect('sharedService.roles', 'roles')
@@ -1745,9 +1749,8 @@ export class TMSRepository {
       .andWhere('roles.isDeleted = :rolesDeleted', { rolesDeleted: false })
       .orderBy('sharedService.name', 'ASC')
       .getMany()
-      .then((tenantSharedServices) =>
-        tenantSharedServices.map((tss) => tss.sharedService),
-      )
+
+    return tenantSharedServices.map((tss) => tss.sharedService)
   }
 
   public async checkIfTenantHasSharedServiceAccess(

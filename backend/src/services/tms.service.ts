@@ -24,6 +24,7 @@ import {
   UpdateTenantRequestStatusResultDto,
   UpdateTenantRequestStatusInputDto,
   GetRolesForSsoUserInputDto,
+  GetSharedServicesForTenantInputDto,
   GetTenantInputDto,
   GetTenantRequestsInputDto,
   GetTenantUsersInputDto,
@@ -439,9 +440,11 @@ export class TMSService {
   }
 
   public async getSharedServicesForTenant(req: Request) {
-    const tenantId = req.params.tenantId
+    const input: GetSharedServicesForTenantInputDto = {
+      tenantId: req.params.tenantId,
+    }
     const sharedServices =
-      await this.tmsRepository.getSharedServicesForTenant(tenantId)
+      await this.tmsRepository.getSharedServicesForTenant(input)
     return {
       data: {
         sharedServices,
