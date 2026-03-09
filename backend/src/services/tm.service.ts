@@ -9,6 +9,8 @@ import {
   AddGroupUserInputDto,
   AddGroupUserResultDto,
   CreateGroupInputDto,
+  GetEffectiveSharedServiceRoleResultDto,
+  GetEffectiveSharedServiceRolesInputDto,
   GetGroupInputDto,
   GetGroupResultDto,
   GetSharedServiceForGroupResultDto,
@@ -215,8 +217,14 @@ export class TMService {
       throw new UnauthorizedError('Missing audience in JWT token')
     }
 
-    const sharedServiceRoles =
-      await this.tmRepository.getEffectiveSharedServiceRoles(req, audience)
+    const input: GetEffectiveSharedServiceRolesInputDto = {
+      tenantId: req.params.tenantId,
+      ssoUserId: req.params.ssoUserId,
+      audience,
+      idpType: req.idpType!,
+    }
+    const sharedServiceRoles: GetEffectiveSharedServiceRoleResultDto[] =
+      await this.tmRepository.getEffectiveSharedServiceRoles(input)
 
     return {
       data: {

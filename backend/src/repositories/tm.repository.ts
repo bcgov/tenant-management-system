@@ -18,6 +18,8 @@ import {
   AddGroupUserInputDto,
   AddGroupUserResultDto,
   CreateGroupInputDto,
+  GetEffectiveSharedServiceRoleResultDto,
+  GetEffectiveSharedServiceRolesInputDto,
   GetGroupInputDto,
   GetGroupResultDto,
   GetSharedServiceForGroupResultDto,
@@ -1221,10 +1223,10 @@ export class TMRepository {
     return { groups }
   }
 
-  public async getEffectiveSharedServiceRoles(req: Request, audience: string) {
-    const tenantId: string = req.params.tenantId
-    const ssoUserId: string = req.params.ssoUserId
-    const idpType: string = req.idpType!
+  public async getEffectiveSharedServiceRoles(
+    input: GetEffectiveSharedServiceRolesInputDto,
+  ) {
+    const { tenantId, ssoUserId, audience, idpType } = input
 
     const tenantUser: TenantUser =
       await this.tmsRepository.getTenantUserBySsoId(ssoUserId, tenantId)
@@ -1255,11 +1257,11 @@ export class TMRepository {
       )
       .getMany()
 
-    const rolesMap = new Map()
+    const rolesMap = new Map<string, GetEffectiveSharedServiceRoleResultDto>()
 
-    result.forEach((gu: any) => {
+    result.forEach((gu) => {
       if (gu.group?.sharedServiceRoles) {
-        gu.group.sharedServiceRoles.forEach((gssr: any) => {
+        gu.group.sharedServiceRoles.forEach((gssr) => {
           if (
             gssr.sharedServiceRole &&
             gssr.sharedServiceRole.sharedService &&
@@ -1281,14 +1283,14 @@ export class TMRepository {
               })
             }
             const role = rolesMap.get(roleId)
-            const groupExists = role.groups.some(
-              (g: any) => g.id === gu.group.id,
-            )
-            if (!groupExists) {
-              role.groups.push({
-                id: gu.group.id,
-                name: gu.group.name,
-              })
+            if (role) {
+              const groupExists = role.groups.some((g) => g.id === gu.group.id)
+              if (!groupExists) {
+                role.groups.push({
+                  id: gu.group.id,
+                  name: gu.group.name,
+                })
+              }
             }
           }
         })
