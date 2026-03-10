@@ -21,6 +21,8 @@ permissions: {}
 
 jobs:
   integration-tests:
+    env:
+      IMAGE_TAG: ${{ inputs.image_tag }}
     name: Integration
     permissions:
       checks: write
@@ -40,11 +42,8 @@ jobs:
             ${{ runner.os }}-
 
       - name: Start test services
-        env:
-          IMAGE_TAG: ${{ inputs.image_tag }}
-        run: |
-          docker compose -f docker-compose.yml up -d --quiet-pull --wait
-          working-directory: tests/integration
+        run: docker compose -f docker-compose.yml up -d --quiet-pull --wait
+        working-directory: tests/integration
 
       - name: Dump logs on failure
         if: failure()
