@@ -1,0 +1,8 @@
+name: localhost
+variables:
+  - name: baseUrl
+    value: http://localhost:4144/v1
+  - name: mockJwksUrl
+    value: http://localhost:3001
+  - name: tmsAudience
+    value: cstar

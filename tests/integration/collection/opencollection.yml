@@ -1,0 +1,33 @@
+opencollection: 1.0.0
+
+info:
+  name: cstar-integration-tests
+config:
+  proxy:
+    inherit: true
+    config:
+      protocol: http
+      hostname: ''
+      port: ''
+      auth:
+        username: ''
+        password: ''
+      bypassProxy: ''
+
+request:
+  scripts:
+    - type: before-request
+      code: |-
+        // Run the token-minting endpoint if the token isn't set.
+        if (!bru.getVar('token') && req.getName() !== 'mint-token') {
+          await bru.runRequest('_setup/mint-token')
+        }
+bundled: false
+extensions:
+  bruno:
+    ignore:
+      - node_modules
+    presets:
+      request:
+        type: http
+        url: '{{baseUrl}}/'
