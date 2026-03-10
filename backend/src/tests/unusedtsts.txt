@@ -21,7 +21,7 @@ beforeAll(async () => {
     }
   }
   try {
-    console.log('Starting PostgreSQL container...')
+    console.warn('Starting PostgreSQL container...')
     container = await new PostgreSqlContainer()
       .withUsername('testuser')
       .withPassword('testpassword')
@@ -32,13 +32,13 @@ beforeAll(async () => {
       })
       .start()
 
-    console.log('Container started...')
+    console.warn('Container started...')
 
     dataSource = new DataSource(dbConfig)
     await dataSource.initialize()
-    console.log('Database connection initialized successfully')
+    console.warn('Database connection initialized successfully')
 
-    console.log('Running migrations...')
+    console.warn('Running migrations...')
     await dataSource.runMigrations()
 
     App = require('../app').default
@@ -53,7 +53,7 @@ afterAll(async () => {
   try {
     if (dataSource && dataSource.isInitialized) {
       await dataSource.destroy()
-      console.log('Database connection closed')
+      console.warn('Database connection closed')
     }
 
     if (container) {
@@ -61,16 +61,16 @@ afterAll(async () => {
         removeVolumes: true,
         force: true,
       })
-      console.log('Container stopped')
+      console.warn('Container stopped')
     }
   } catch (error) {
     console.error('Error in afterAll:', error)
   } finally {
-    console.log('Test completed, cleaning up...')
+    console.warn('Test completed, cleaning up...')
   }
 })
 
-console.log('Running tests...')
+console.warn('Running tests...')
 
 let tenantId: string, roleId: string, tenantUserId: string
 const initialSSOUserId: string = 'fd33f1cef7ca4b19a71104d4ecf7066b'

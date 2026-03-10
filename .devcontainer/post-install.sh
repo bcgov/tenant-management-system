@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euxo pipefail
+#set -euxo pipefail
 
 # Root of the repo inside the container
 REPOSITORY_ROOT="$(pwd)"

@@ -3,8 +3,26 @@ import { TMRepository } from '../repositories/tm.repository'
 import { TMSRepository } from '../repositories/tms.repository'
 import { connection } from '../common/db.connection'
 import logger from '../common/logger'
+import { getErrorMessage } from '../common/error.handler'
 import { UnauthorizedError } from '../errors/UnauthorizedError'
-import { NotFoundError } from '../errors/NotFoundError'
+import {
+  AddGroupUserInputDto,
+  AddGroupUserResultDto,
+  CreateGroupInputDto,
+  GetEffectiveSharedServiceRoleResultDto,
+  GetEffectiveSharedServiceRolesInputDto,
+  GetGroupInputDto,
+  GetGroupResultDto,
+  GetSharedServiceForGroupResultDto,
+  GetSharedServiceRolesForGroupInputDto,
+  GetTenantGroupsInputDto,
+  GetUserGroupsWithSharedServiceRolesInputDto,
+  GetUserGroupsWithSharedServiceRolesResultDto,
+  RemoveGroupUserInputDto,
+  UpdateSharedServiceRolesForGroupInputDto,
+  UpdateGroupInputDto,
+} from '../dtos/tm.dto'
+import { Group } from '../entities/Group'
 
 export class TMService {
   tmsRepository: TMSRepository = new TMSRepository(connection.manager)
@@ -14,7 +32,21 @@ export class TMService {
   )
 
   public async createGroup(req: Request) {
-    const savedGroup: any = await this.tmRepository.saveGroup(req)
+    const input: CreateGroupInputDto = {
+      tenantId: req.params.tenantId,
+      name: req.body.name,
+      description: req.body.description,
+      tenantUserId: req.body.tenantUserId,
+      createdBy:
+        req.body.user?.ssoUserId || req.decodedJwt?.idir_user_guid || 'system',
+    }
+    const savedGroup: Group = await this.tmRepository.saveGroup(input)
+    if (savedGroup?.createdBy && savedGroup.createdBy !== 'system') {
+      const creatorDisplayName = await this.tmRepository.getSsoUserDisplayName(
+        savedGroup.createdBy,
+      )
+      savedGroup.createdBy = creatorDisplayName || savedGroup.createdBy
+    }
 
     return {
       data: {
@@ -24,7 +56,7 @@ export class TMService {
   }
 
   public async addGroupUser(req: Request) {
-    let savedGroupUser: any = null
+    let savedGroupUser: AddGroupUserResultDto | null = null
 
     await connection.manager.transaction(async (transactionEntityManager) => {
       try {
@@ -33,32 +65,26 @@ export class TMService {
         const { user } = req.body
         const updatedBy: string = req.decodedJwt?.idir_user_guid || 'system'
 
-        const group = await this.tmRepository.checkIfGroupExistsInTenant(
-          groupId,
-          tenantId,
-          transactionEntityManager,
-        )
-        if (!group) {
-          throw new NotFoundError(
-            `Group not found or does not exist for tenant: ${tenantId}`,
-          )
-        }
-
         const tenantUser = await this.tmsRepository.ensureTenantUserExists(
           user,
           tenantId,
           updatedBy,
           transactionEntityManager,
         )
-        req.body.tenantUserId = tenantUser.id
+        const input: AddGroupUserInputDto = {
+          tenantId,
+          groupId,
+          tenantUserId: tenantUser!.id,
+          updatedBy,
+        }
         savedGroupUser = await this.tmRepository.addGroupUser(
-          req,
+          input,
           transactionEntityManager,
         )
-      } catch (error: any) {
+      } catch (error: unknown) {
         logger.error(
           'Add user to group transaction failure - rolling back inserts ',
-          error,
+          { error: getErrorMessage(error) },
         )
         throw error
       }
@@ -66,13 +92,20 @@ export class TMService {
 
     return {
       data: {
-        groupUser: savedGroupUser,
+        groupUser: savedGroupUser!,
       },
     }
   }
 
   public async updateGroup(req: Request) {
-    const updatedGroup: any = await this.tmRepository.updateGroup(req)
+    const input: UpdateGroupInputDto = {
+      tenantId: req.params.tenantId,
+      groupId: req.params.groupId,
+      name: req.body.name,
+      description: req.body.description,
+      updatedBy: req.decodedJwt?.idir_user_guid || 'system',
+    }
+    const updatedGroup: Group = await this.tmRepository.updateGroup(input)
 
     return {
       data: {
@@ -82,7 +115,13 @@ export class TMService {
   }
 
   public async removeGroupUser(req: Request) {
-    await this.tmRepository.removeGroupUser(req)
+    const input: RemoveGroupUserInputDto = {
+      tenantId: req.params.tenantId,
+      groupId: req.params.groupId,
+      groupUserId: req.params.groupUserId,
+      updatedBy: req.decodedJwt?.idir_user_guid || 'system',
+    }
+    await this.tmRepository.removeGroupUser(input)
 
     return {
       data: {
@@ -92,7 +131,14 @@ export class TMService {
   }
 
   public async getGroup(req: Request) {
-    const group: any = await this.tmRepository.getGroup(req)
+    const expandParam =
+      typeof req.query.expand === 'string' ? req.query.expand : undefined
+    const input: GetGroupInputDto = {
+      tenantId: req.params.tenantId,
+      groupId: req.params.groupId,
+      expand: expandParam ? expandParam.split(',') : [],
+    }
+    const group: GetGroupResultDto = await this.tmRepository.getGroup(input)
 
     return {
       data: {
@@ -102,7 +148,15 @@ export class TMService {
   }
 
   public async getTenantGroups(req: Request) {
-    const groups: any = await this.tmRepository.getTenantGroups(req)
+    const tmsAudience =
+      process.env.TMS_AUDIENCE || 'tenant-management-system-6014'
+    const input: GetTenantGroupsInputDto = {
+      tenantId: req.params.tenantId,
+      ssoUserId: req.decodedJwt?.idir_user_guid,
+      jwtAudience: req.decodedJwt?.aud || req.decodedJwt?.audience || tmsAudience,
+      tmsAudience,
+    }
+    const groups = await this.tmRepository.getTenantGroups(input)
 
     return {
       data: {
@@ -112,8 +166,12 @@ export class TMService {
   }
 
   public async getSharedServiceRolesForGroup(req: Request) {
-    const sharedServices =
-      await this.tmRepository.getSharedServiceRolesForGroup(req)
+    const input: GetSharedServiceRolesForGroupInputDto = {
+      tenantId: req.params.tenantId,
+      groupId: req.params.groupId,
+    }
+    const sharedServices: GetSharedServiceForGroupResultDto[] =
+      await this.tmRepository.getSharedServiceRolesForGroup(input)
 
     return {
       data: {
@@ -123,8 +181,14 @@ export class TMService {
   }
 
   public async updateSharedServiceRolesForGroup(req: Request) {
+    const input: UpdateSharedServiceRolesForGroupInputDto = {
+      tenantId: req.params.tenantId,
+      groupId: req.params.groupId,
+      updatedBy: req.decodedJwt?.idir_user_guid || 'system',
+      sharedServices: req.body.sharedServices,
+    }
     const sharedServices =
-      await this.tmRepository.updateSharedServiceRolesForGroup(req)
+      await this.tmRepository.updateSharedServiceRolesForGroup(input)
 
     return {
       data: {
@@ -139,10 +203,14 @@ export class TMService {
       throw new UnauthorizedError('Missing audience in JWT token')
     }
 
-    const result = await this.tmRepository.getUserGroupsWithSharedServiceRoles(
-      req,
+    const input: GetUserGroupsWithSharedServiceRolesInputDto = {
+      tenantId: req.params.tenantId,
+      ssoUserId: req.params.ssoUserId,
       audience,
-    )
+      idpType: req.idpType!,
+    }
+    const result: GetUserGroupsWithSharedServiceRolesResultDto =
+      await this.tmRepository.getUserGroupsWithSharedServiceRoles(input)
 
     return {
       data: result,
@@ -155,8 +223,14 @@ export class TMService {
       throw new UnauthorizedError('Missing audience in JWT token')
     }
 
-    const sharedServiceRoles =
-      await this.tmRepository.getEffectiveSharedServiceRoles(req, audience)
+    const input: GetEffectiveSharedServiceRolesInputDto = {
+      tenantId: req.params.tenantId,
+      ssoUserId: req.params.ssoUserId,
+      audience,
+      idpType: req.idpType!,
+    }
+    const sharedServiceRoles: GetEffectiveSharedServiceRoleResultDto[] =
+      await this.tmRepository.getEffectiveSharedServiceRoles(input)
 
     return {
       data: {
@@ -165,13 +239,13 @@ export class TMService {
     }
   }
 
-  public async getTenantUser(req: Request) {
-    const tenantUser: any = await this.tmRepository.getTenantUser(req)
+  // public async getTenantUser(req: Request) {
+  //   const tenantUser: any = await this.tmRepository.getTenantUser(req)
 
-    return {
-      data: {
-        tenantUser: tenantUser,
-      },
-    }
-  }
+  //   return {
+  //     data: {
+  //       tenantUser: tenantUser,
+  //     },
+  //   }
+  // }
 }

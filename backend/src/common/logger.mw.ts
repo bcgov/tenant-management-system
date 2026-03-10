@@ -2,6 +2,8 @@ import { Request, Response, NextFunction } from 'express'
 import logger from '../common/logger'
 import { RoutesConstants } from './routes.constants'
 
+type ResponseWithLoggingFlag = Response & { _loggedResponse?: boolean }
+
 export const requestLoggingMiddleware = (
   req: Request,
   res: Response,
@@ -31,11 +33,13 @@ export const requestLoggingMiddleware = (
     })
   }
 
-  if (!(res as any)._loggedResponse) {
+  const responseWithFlag = res as ResponseWithLoggingFlag
+
+  if (!responseWithFlag._loggedResponse) {
     const originalSend = res.send
 
-    res.send = function (body) {
-      if (!(res as any)._loggedResponse) {
+    res.send = function (body: unknown) {
+      if (!responseWithFlag._loggedResponse) {
         const responseTime = Date.now() - startTime
 
         if (logger.isLevelEnabled('info')) {
@@ -46,7 +50,8 @@ export const requestLoggingMiddleware = (
             responseTime: `${responseTime}ms`,
           })
         }
-        ;(res as any)._loggedResponse = true // Set flag to prevent duplicate logging
+        // Set flag to prevent duplicate logging
+        responseWithFlag._loggedResponse = true
       }
 
       return originalSend.call(this, body)

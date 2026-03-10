@@ -7,104 +7,140 @@ import axios from 'axios'
 import logger from '../common/logger'
 import { TenantRequest } from '../entities/TenantRequest'
 import { Tenant } from '../entities/Tenant'
+import { Group } from '../entities/Group'
 import { BadRequestError } from '../errors/BadRequestError'
+import { getErrorMessage } from '../common/error.handler'
+import { AddTenantUserResponseDto, TMSMapper } from '../mappers/tms.mapper'
+import {
+  AssociateSharedServiceToTenantInputDto,
+  AssignUserRolesInputDto,
+  AddTenantUserInputDto,
+  AddTenantUserResultDto,
+  AddSharedServiceRolesInputDto,
+  CreateTenantRolesInputDto,
+  CreateTenantInputDto,
+  CreateTenantRequestInputDto,
+  CreateSharedServiceInputDto,
+  UpdateTenantRequestStatusResponseDto,
+  UpdateTenantRequestStatusResultDto,
+  UpdateTenantRequestStatusInputDto,
+  GetRolesForSsoUserInputDto,
+  GetSharedServicesForTenantInputDto,
+  GetTenantInputDto,
+  GetTenantUserInputDto,
+  GetTenantUserResultDto,
+  GetTenantRequestsInputDto,
+  GetTenantUsersInputDto,
+  GetTenantRolesInputDto,
+  GetUserRolesInputDto,
+  GetUserTenantsInputDto,
+  RemoveTenantUserInputDto,
+  UpdateTenantInputDto,
+  UnassignUserRolesInputDto,
+} from '../dtos/tms.dto'
+
+const getRequiredEnv = (key: string): string => {
+  const value = process.env[key]
+  if (!value) {
+    throw new Error(`Missing required environment variable: ${key}`)
+  }
+  return value
+}
 
 export class TMSService {
-  tmsRepository: TMSRepository = new TMSRepository(connection.manager)
-  tmRepository: TMRepository = new TMRepository(
-    connection.manager,
-    this.tmsRepository,
-  )
+  tmsRepository: TMSRepository
+  tmRepository: TMRepository
+  mapper: TMSMapper
+
+  constructor(
+    tmsRepository?: TMSRepository,
+    tmRepository?: TMRepository,
+    mapper?: TMSMapper,
+  ) {
+    this.tmsRepository = tmsRepository || new TMSRepository(connection.manager)
+    this.tmRepository =
+      tmRepository || new TMRepository(connection.manager, this.tmsRepository)
+    this.mapper = mapper || new TMSMapper()
+  }
 
   public async createTenant(req: Request) {
-    const savedTenant: any = await this.tmsRepository.saveTenant(req)
-
-    if (savedTenant?.users) {
-      savedTenant.users = savedTenant.users.map((user: any) => ({
-        ...user,
-        roles: user.roles.map((tur: any) => tur.role),
-      }))
+    const input: CreateTenantInputDto = {
+      name: req.body.name,
+      ministryName: req.body.ministryName,
+      description: req.body.description,
+      user: req.body.user,
     }
+    const savedTenant: Tenant = await this.tmsRepository.saveTenant(input)
+    const tenantDto = this.mapper.toTenantDto(savedTenant)
 
     return {
       data: {
-        tenant: savedTenant,
+        tenant: tenantDto,
       },
     }
   }
 
   public async addTenantUser(req: Request) {
-    let response: any = {}
+    let response: AddTenantUserResponseDto | undefined
+    const input: AddTenantUserInputDto = {
+      tenantId: req.params.tenantId,
+      updatedBy: req.decodedJwt?.idir_user_guid || 'system',
+      user: req.body.user,
+      roles: req.body.roles,
+      groups: req.body.groups,
+    }
+
     await connection.manager.transaction(async (transactionEntityManager) => {
       try {
-        const tmsResponse: any = await this.tmsRepository.addTenantUsers(
-          req,
-          transactionEntityManager,
-        )
-        const tenantUserId = tmsResponse.tenantUserId
-        const savedUser: any = tmsResponse.savedTenantUser
-        const roleAssignments: any = tmsResponse.roleAssignments || []
-        const roles: any = roleAssignments.map(
-          (assignment: any) => assignment.role,
-        )
-
-        const groupIds: string[] = req.body.groups || []
-        const updatedBy: string = req.decodedJwt?.idir_user_guid || 'system'
-        const tenantId: string = req.params.tenantId
-        const groups: any = await this.tmRepository.addUserToGroups(
-          tenantUserId,
+        const tmsResponse: AddTenantUserResultDto =
+          await this.tmsRepository.addTenantUsers(
+            input,
+            transactionEntityManager,
+          )
+        const groupIds: string[] = input.groups || []
+        const groups: Group[] = await this.tmRepository.addUserToGroups(
+          tmsResponse.tenantUserId,
           groupIds,
-          tenantId,
-          updatedBy,
+          input.tenantId,
+          input.updatedBy,
           transactionEntityManager,
         )
-
-        response = {
-          data: {
-            user: {
-              ...savedUser,
-              ssoUser: savedUser?.ssoUser,
-              roles: roles,
-              groups: groups,
-            },
-          },
-        }
-      } catch (error: any) {
+        response = this.mapper.toAddTenantUserResponseDto(
+          tmsResponse.savedTenantUser,
+          tmsResponse.roleAssignments,
+          groups,
+        )
+      } catch (error: unknown) {
         logger.error(
           'Add user to a tenant transaction failure - rolling back inserts ',
-          error,
+          { error: getErrorMessage(error) },
         )
         throw error
       }
     })
+    if (!response) {
+      throw new Error('Failed to create add tenant user response')
+    }
     return response
   }
 
   public async getTenantsForUser(req: Request) {
-    const tenants = await this.tmsRepository.getTenantsForUser(req)
-
     const expand =
       typeof req.query.expand === 'string' ? req.query.expand.split(',') : []
+    const tmsAudience: string =
+      process.env.TMS_AUDIENCE || 'tenant-management-system-6014'
+    const input: GetUserTenantsInputDto = {
+      ssoUserId: req.params.ssoUserId,
+      expand,
+      jwtAudience:
+        req.decodedJwt?.aud || req.decodedJwt?.audience || tmsAudience,
+    }
+    const tenants = await this.tmsRepository.getTenantsForUser(input)
+
     if (expand.includes('tenantUserRoles') && tenants) {
-      const transformedTenants = tenants.map((tenant) => {
-        if (tenant.users) {
-          const transformedUsers = tenant.users.map((user) => {
-            const userRoles = user.roles?.map((tur) => tur.role) || []
-            return {
-              ...user,
-              roles: userRoles,
-            }
-          })
-          return {
-            ...tenant,
-            users: transformedUsers,
-          }
-        }
-        return tenant
-      })
       return {
         data: {
-          tenants: transformedTenants,
+          tenants: this.mapper.toTenantDtos(tenants),
         },
       }
     }
@@ -132,11 +168,12 @@ export class TMSService {
             .filter((id) => id.length > 0)
         : undefined
 
-    const users = await this.tmsRepository.getUsersForTenant(
-      req.params.tenantId,
+    const input: GetTenantUsersInputDto = {
+      tenantId: req.params.tenantId,
       groupIds,
       sharedServiceRoleIds,
-    )
+    }
+    const users = await this.tmsRepository.getUsersForTenant(input)
     return {
       data: {
         users,
@@ -145,7 +182,11 @@ export class TMSService {
   }
 
   public async createRoles(req: Request) {
-    const roles = await this.tmsRepository.createRoles(req)
+    const input: CreateTenantRolesInputDto = {
+      tenantId: req.params.tenantId,
+      role: req.body.role,
+    }
+    const roles = await this.tmsRepository.createRoles(input)
     return {
       data: {
         role: roles,
@@ -157,16 +198,12 @@ export class TMSService {
     const { tenantId, tenantUserId } = req.params
     const { roles } = req.body
 
-    if (!Array.isArray(roles) || roles.length === 0) {
-      throw new Error('roles must be a non-empty array')
-    }
-
-    const data = await this.tmsRepository.assignUserRoles(
+    const input: AssignUserRolesInputDto = {
       tenantId,
       tenantUserId,
-      roles,
-      null as any,
-    )
+      roleIds: roles,
+    }
+    const data = await this.tmsRepository.assignUserRolesForUser(input)
     return {
       data: {
         roles: data.map((assignment) => assignment.role),
@@ -175,7 +212,10 @@ export class TMSService {
   }
 
   public async getTenantRoles(req: Request) {
-    const roles = await this.tmsRepository.getTenantRoles(req)
+    const input: GetTenantRolesInputDto = {
+      tenantId: req.params.tenantId,
+    }
+    const roles = await this.tmsRepository.getTenantRoles(input)
     return {
       data: {
         roles,
@@ -184,7 +224,11 @@ export class TMSService {
   }
 
   public async getUserRoles(req: Request) {
-    const roles = await this.tmsRepository.getUserRoles(req)
+    const input: GetUserRolesInputDto = {
+      tenantId: req.params.tenantId,
+      tenantUserId: req.params.tenantUserId,
+    }
+    const roles = await this.tmsRepository.getUserRoles(input)
     return {
       data: {
         roles,
@@ -193,26 +237,48 @@ export class TMSService {
   }
 
   public async unassignUserRoles(req: Request) {
-    await this.tmsRepository.unassignUserRoles(req)
+    const input: UnassignUserRolesInputDto = {
+      tenantId: req.params.tenantId,
+      tenantUserId: req.params.tenantUserId,
+      roleId: req.params.roleId,
+      updatedBy: req.decodedJwt?.idir_user_guid || 'system',
+    }
+    await this.tmsRepository.unassignUserRoles(input)
   }
 
   public async searchBCGOVSSOUsers(req: Request) {
     try {
       const token: string = await this.getToken()
       const queryParams = req.query
-      const response = await axios.get(process.env.BCGOV_SSO_API_URL!, {
+      const response = await axios.get(getRequiredEnv('BCGOV_SSO_API_URL'), {
         headers: { Authorization: `Bearer ${token}` },
         params: queryParams,
       })
       return await response.data
-    } catch (error: any) {
-      logger.error(error)
-      if (error.response?.status === 400) {
-        throw new BadRequestError(
-          `BC GOV SSO API returned bad request: ${error.response.data?.message || error.message}`,
-        )
+    } catch (error: unknown) {
+      logger.error(getErrorMessage(error))
+      if (
+        error &&
+        typeof error === 'object' &&
+        'response' in error &&
+        typeof (
+          error as {
+            response?: { status?: number; data?: { message?: string } }
+          }
+        ).response?.status === 'number'
+      ) {
+        const axiosError = error as {
+          response: { status: number; data?: { message?: string } }
+        }
+        if (axiosError.response.status === 400) {
+          throw new BadRequestError(
+            `BC GOV SSO API returned bad request: ${axiosError.response.data?.message || getErrorMessage(error)}`,
+          )
+        }
       }
-      throw new Error('Error invoking BC GOV SSO API. ' + error)
+      throw new Error(
+        'Error invoking BC GOV SSO API. ' + getErrorMessage(error),
+      )
     }
   }
 
@@ -220,36 +286,57 @@ export class TMSService {
     try {
       const token: string = await this.getToken()
       const queryParams = req.query
-      const response = await axios.get(process.env.BCGOV_SSO_API_URL_BCEID!, {
-        headers: { Authorization: `Bearer ${token}` },
-        params: queryParams,
-      })
+      const response = await axios.get(
+        getRequiredEnv('BCGOV_SSO_API_URL_BCEID'),
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          params: queryParams,
+        },
+      )
       return await response.data
-    } catch (error: any) {
-      logger.error(error)
-      if (error.response?.status === 400) {
-        throw new BadRequestError(
-          `BC GOV SSO BCEID API returned bad request: ${error.response.data?.message || error.message}`,
-        )
+    } catch (error: unknown) {
+      logger.error(getErrorMessage(error))
+      if (
+        error &&
+        typeof error === 'object' &&
+        'response' in error &&
+        typeof (
+          error as {
+            response?: { status?: number; data?: { message?: string } }
+          }
+        ).response?.status === 'number'
+      ) {
+        const axiosError = error as {
+          response: { status: number; data?: { message?: string } }
+        }
+        if (axiosError.response.status === 400) {
+          throw new BadRequestError(
+            `BC GOV SSO BCEID API returned bad request: ${axiosError.response.data?.message || getErrorMessage(error)}`,
+          )
+        }
       }
-      throw new Error('Error invoking BC GOV SSO BCEID API. ' + error)
+      throw new Error(
+        'Error invoking BC GOV SSO BCEID API. ' + getErrorMessage(error),
+      )
     }
   }
 
   public async getTenant(req: Request) {
-    const tenant = await this.tmsRepository.getTenant(req)
-
     const expand =
       typeof req.query.expand === 'string' ? req.query.expand.split(',') : []
+    const input: GetTenantInputDto = {
+      tenantId: req.params.tenantId,
+      expand,
+    }
+    const tenant = await this.tmsRepository.getTenant(input)
+
     if (expand.includes('tenantUserRoles') && tenant?.users) {
-      const transformedUsers = tenant.users.map((user) => {
-        const userRoles = user.roles?.map((tur) => tur.role) || []
-        return {
-          ...user,
-          roles: userRoles,
-        }
-      })
-      ;(tenant as any).users = transformedUsers
+      const tenantDto = this.mapper.toTenantDto(tenant as Tenant)
+      return {
+        data: {
+          tenant: tenantDto,
+        },
+      }
     }
 
     return {
@@ -260,7 +347,14 @@ export class TMSService {
   }
 
   public async updateTenant(req: Request) {
-    const updatedTenant = await this.tmsRepository.updateTenant(req)
+    const input: UpdateTenantInputDto = {
+      tenantId: req.params.tenantId,
+      name: req.body.name,
+      ministryName: req.body.ministryName,
+      description: req.body.description,
+      updatedBy: req.decodedJwt?.idir_user_guid || 'system',
+    }
+    const updatedTenant = await this.tmsRepository.updateTenant(input)
 
     return {
       data: {
@@ -270,7 +364,11 @@ export class TMSService {
   }
 
   public async getRolesForSSOUser(req: Request) {
-    const roles = await this.tmsRepository.getRolesForSSOUser(req)
+    const input: GetRolesForSsoUserInputDto = {
+      tenantId: req.params.tenantId,
+      ssoUserId: req.params.ssoUserId,
+    }
+    const roles = await this.tmsRepository.getRolesForSSOUser(input)
     return {
       data: {
         roles,
@@ -279,8 +377,14 @@ export class TMSService {
   }
 
   public async createTenantRequest(req: Request) {
+    const input: CreateTenantRequestInputDto = {
+      name: req.body.name,
+      ministryName: req.body.ministryName,
+      description: req.body.description,
+      user: req.body.user,
+    }
     const tenantRequest = (await this.tmsRepository.saveTenantRequest(
-      req,
+      input,
     )) as TenantRequest
     return {
       data: {
@@ -293,7 +397,15 @@ export class TMSService {
   }
 
   public async createSharedService(req: Request) {
-    const savedSharedService = await this.tmsRepository.saveSharedService(req)
+    const input: CreateSharedServiceInputDto = {
+      name: req.body.name,
+      clientIdentifier: req.body.clientIdentifier,
+      description: req.body.description,
+      isActive: req.body.isActive,
+      roles: req.body.roles,
+      updatedBy: req.decodedJwt?.idir_user_guid || 'system',
+    }
+    const savedSharedService = await this.tmsRepository.saveSharedService(input)
     return {
       data: {
         sharedService: savedSharedService,
@@ -302,8 +414,13 @@ export class TMSService {
   }
 
   public async addSharedServiceRoles(req: Request) {
+    const input: AddSharedServiceRolesInputDto = {
+      sharedServiceId: req.params.sharedServiceId,
+      roles: req.body.roles,
+      updatedBy: req.decodedJwt?.idir_user_guid || 'system',
+    }
     const updatedSharedService =
-      await this.tmsRepository.addSharedServiceRoles(req)
+      await this.tmsRepository.addSharedServiceRoles(input)
     return {
       data: {
         sharedService: updatedSharedService,
@@ -312,10 +429,15 @@ export class TMSService {
   }
 
   public async associateSharedServiceToTenant(req: Request) {
-    await this.tmsRepository.associateSharedServiceToTenant(req)
+    const input: AssociateSharedServiceToTenantInputDto = {
+      tenantId: req.params.tenantId,
+      sharedServiceId: req.body.sharedServiceId,
+      updatedBy: req.decodedJwt?.idir_user_guid || 'system',
+    }
+    await this.tmsRepository.associateSharedServiceToTenant(input)
   }
 
-  public async getAllActiveSharedServices(req: Request) {
+  public async getAllActiveSharedServices() {
     const sharedServices = await this.tmsRepository.getAllActiveSharedServices()
     return {
       data: {
@@ -325,9 +447,11 @@ export class TMSService {
   }
 
   public async getSharedServicesForTenant(req: Request) {
-    const tenantId = req.params.tenantId
+    const input: GetSharedServicesForTenantInputDto = {
+      tenantId: req.params.tenantId,
+    }
     const sharedServices =
-      await this.tmsRepository.getSharedServicesForTenant(tenantId)
+      await this.tmsRepository.getSharedServicesForTenant(input)
     return {
       data: {
         sharedServices,
@@ -336,27 +460,27 @@ export class TMSService {
   }
 
   public async removeTenantUser(req: Request) {
-    const tenantId: string = req.params.tenantId
-    const tenantUserId: string = req.params.tenantUserId
-    const deletedBy: string = req.decodedJwt?.idir_user_guid || 'system'
+    const input: RemoveTenantUserInputDto = {
+      tenantId: req.params.tenantId,
+      tenantUserId: req.params.tenantUserId,
+      deletedBy: req.decodedJwt?.idir_user_guid || 'system',
+    }
 
     await connection.manager.transaction(async (transactionEntityManager) => {
       try {
         await this.tmsRepository.removeTenantUser(
-          tenantUserId,
-          tenantId,
-          deletedBy,
+          input,
           transactionEntityManager,
         )
         await this.tmRepository.removeUserFromAllGroups(
-          tenantUserId,
-          deletedBy,
+          input.tenantUserId,
+          input.deletedBy,
           transactionEntityManager,
         )
-      } catch (error) {
+      } catch (error: unknown) {
         logger.error(
           'Remove tenant user transaction failure - rolling back changes',
-          error as any,
+          { error: getErrorMessage(error) },
         )
         throw error
       }
@@ -366,34 +490,57 @@ export class TMSService {
   private async getToken() {
     try {
       const response = await axios.post(
-        process.env.BCGOV_TOKEN_URL!,
+        getRequiredEnv('BCGOV_TOKEN_URL'),
         new URLSearchParams({
-          client_id: process.env.BCGOV_SSO_API_CLIENT_ID!,
-          client_secret: process.env.BCGOV_SSO_API_CLIENT_SECRET!,
+          client_id: getRequiredEnv('BCGOV_SSO_API_CLIENT_ID'),
+          client_secret: getRequiredEnv('BCGOV_SSO_API_CLIENT_SECRET'),
           grant_type: 'client_credentials',
         }),
         { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } },
       )
       return response.data.access_token
-    } catch (error) {
-      throw new Error('Failed to obtain access token: ' + error)
+    } catch (error: unknown) {
+      throw new Error(
+        'Failed to obtain access token: ' + getErrorMessage(error),
+      )
     }
   }
 
   public async updateTenantRequestStatus(req: Request) {
-    const response = (await this.tmsRepository.updateTenantRequestStatus(
-      req,
-    )) as { tenantRequest: TenantRequest; tenant?: Tenant }
-    const formattedResponse: { data: { tenantRequest: any; tenant?: Tenant } } =
-      {
-        data: {
-          tenantRequest: {
-            ...response.tenantRequest,
-            requestedBy: response.tenantRequest.requestedBy?.displayName,
-            decisionedBy: response.tenantRequest.decisionedBy?.displayName,
-          },
+    const input: UpdateTenantRequestStatusInputDto = {
+      requestId: req.params.requestId,
+      status: req.body.status,
+      rejectionReason: req.body.rejectionReason,
+      tenantName: req.body.tenantName,
+      updatedBy: req.decodedJwt?.idir_user_guid || 'system',
+      decisionedByUser: {
+        ssoUserId: req.decodedJwt?.idir_user_guid || 'system',
+        firstName: req.decodedJwt?.given_name || 'System',
+        lastName: req.decodedJwt?.family_name || 'User',
+        displayName: req.decodedJwt?.display_name || 'System User',
+        userName: req.decodedJwt?.preferred_username || 'system',
+        email: req.decodedJwt?.email || 'system@gov.bc.ca',
+      },
+    }
+    const response: UpdateTenantRequestStatusResultDto =
+      await this.tmsRepository.updateTenantRequestStatus(input)
+    const formattedResponse: UpdateTenantRequestStatusResponseDto = {
+      data: {
+        tenantRequest: {
+          id: response.tenantRequest.id,
+          name: response.tenantRequest.name,
+          ministryName: response.tenantRequest.ministryName,
+          description: response.tenantRequest.description,
+          status: response.tenantRequest.status,
+          requestedBy: response.tenantRequest.requestedBy?.displayName,
+          decisionedBy: response.tenantRequest.decisionedBy?.displayName,
+          decisionedAt: response.tenantRequest.decisionedAt,
+          rejectionReason: response.tenantRequest.rejectionReason,
+          createdBy: response.tenantRequest.createdBy,
+          updatedBy: response.tenantRequest.updatedBy,
         },
-      }
+      },
+    }
 
     if (response.tenant) {
       formattedResponse.data.tenant = response.tenant
@@ -403,11 +550,13 @@ export class TMSService {
   }
 
   public async getTenantRequests(req: Request) {
-    const status = req.query.status as string
-    const tenantRequests = await this.tmsRepository.getTenantRequests(status)
+    const status = req.query.status as 'NEW' | 'APPROVED' | 'REJECTED' | undefined
+    const input: GetTenantRequestsInputDto = { status }
+    const tenantRequests = await this.tmsRepository.getTenantRequests(input)
 
     const formattedRequests = tenantRequests.map((request) => ({
       ...request,
+      createdBy: request.requestedBy?.displayName || 'system',
       requestedBy: request.requestedBy?.displayName,
       decisionedBy: request.decisionedBy?.displayName,
     }))
@@ -420,11 +569,17 @@ export class TMSService {
   }
 
   public async getTenantUser(req: Request) {
-    const tenantUser: any = await this.tmsRepository.getTenantUser(req)
     const expand: string[] =
       typeof req.query.expand === 'string'
         ? req.query.expand.split(',').map((v) => v.trim())
         : []
+    const input: GetTenantUserInputDto = {
+      tenantId: req.params.tenantId,
+      tenantUserId: req.params.tenantUserId,
+      expand,
+    }
+    const tenantUser: GetTenantUserResultDto =
+      await this.tmsRepository.getTenantUser(input)
 
     if (expand.includes('groups')) {
       tenantUser.groups = await this.tmRepository.getTenantUserGroups(

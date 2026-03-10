@@ -49,7 +49,6 @@ paths:
               required:
                 - name
                 - ministryName
-                - description
                 - user
               properties:
                 name:
@@ -248,7 +247,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ForbiddenErrorResponse'
         '404':
-          description: Tenant not found
+          description: Tenant or tenant user not found
           content:
             application/json:
               schema:
@@ -492,11 +491,74 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/InternalServerErrorResponse'
+    delete:
+      summary: Remove tenant user
+      description: Removes a tenant user from a tenant. Soft-deletes the tenant user and role assignments, and removes the user from all groups. Prevents removing the last tenant owner. Requires JWT authentication and TENANT_OWNER or USER_ADMIN role.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: tenantId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The unique identifier of the tenant
+        - name: tenantUserId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The unique identifier of the tenant user
+      responses:
+        '204':
+          description: Tenant user removed successfully
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        '403':
+          description: Forbidden - User does not have required roles (TENANT_OWNER or USER_ADMIN)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        '404':
+          description: Tenant user not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+        '409':
+          description: Conflict - Cannot remove the last tenant owner
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConflictErrorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
 
   /v1/users/{ssoUserId}/tenants:
     get:
       summary: Get tenants for a user
-      description: Retrieves all tenants associated with a specific user. Requires JWT authentication.
+      description: |
+        Retrieves all tenants associated with a specific user. Requires JWT authentication.
+        Response shape depends on `expand`:
+        - without `expand`: returns basic tenant fields
+        - with `expand=tenantUserRoles`: includes tenant users and their roles
       security:
         - bearerAuth: []
       parameters:
@@ -529,7 +591,9 @@ paths:
                       tenants:
                         type: array
                         items:
-                          $ref: '#/components/schemas/TenantWithUsers'
+                          oneOf:
+                            - $ref: '#/components/schemas/Tenant'
+                            - $ref: '#/components/schemas/TenantWithUsers'
         '400':
           description: Invalid input
           content:
@@ -542,12 +606,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/UnauthorizedErrorResponse'
-        '404':
-          description: User not found
+        '403':
+          description: Forbidden - Requested user does not match token user
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/NotFoundErrorResponse'
+                $ref: '#/components/schemas/AccessDeniedResponse'
         '500':
           description: Internal Server Error
           content:
@@ -1287,7 +1351,7 @@ paths:
                 roles:
                   type: array
                   minItems: 1
-                  maxItems: 10
+                  maxItems: 50
                   items:
                     type: object
                     required:
@@ -2315,7 +2379,7 @@ paths:
                         example: ['idir']
                         description: 'List of identity providers allowed to access this role. If null or empty, all identity providers are allowed.'
                   minItems: 1
-                  maxItems: 10
+                  maxItems: 50
                   example:
                     - name: 'New Admin Role'
                       description: 'New administrator role for the shared service'
@@ -2815,6 +2879,19 @@ components:
           type: string
           example: 'Forbidden'
 
+    AccessDeniedResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          example: 'Forbidden'
+        message:
+          type: string
+          example: 'Access denied - the requested user does not match the token user'
+        statusCode:
+          type: integer
+          example: 403
+
     NotFoundErrorResponse:
       type: object
       properties:
@@ -3111,7 +3188,7 @@ components:
         roles:
           type: array
           minItems: 1
-          maxItems: 10
+          maxItems: 50
           items:
             type: object
             required:

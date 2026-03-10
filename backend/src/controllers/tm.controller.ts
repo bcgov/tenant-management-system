@@ -1,6 +1,6 @@
 import { Request, Response } from 'express'
 import { TMService } from '../services/tm.service'
-import { ErrorHandler } from '../common/error.handler'
+import { ErrorHandler, getErrorMessage } from '../common/error.handler'
 import { NotFoundError } from '../errors/NotFoundError'
 import { ConflictError } from '../errors/ConflictError'
 import { UnauthorizedError } from '../errors/UnauthorizedError'
@@ -14,14 +14,14 @@ export class TMController {
     try {
       const groupResponse = await this.tmService.createGroup(req)
       res.status(201).send(groupResponse)
-    } catch (error: any) {
-      logger.error(error)
+    } catch (error: unknown) {
+      logger.error(getErrorMessage(error))
       if (error instanceof ConflictError) {
         this.errorHandler.generalError(
           res,
           'Error occurred creating group',
-          (error as any).message,
-          (error as any).statusCode,
+          error.message,
+          error.statusCode,
           'Conflict',
         )
       } else if (error instanceof NotFoundError) {
@@ -36,7 +36,7 @@ export class TMController {
         this.errorHandler.generalError(
           res,
           'Error occurred creating group',
-          error.message,
+          getErrorMessage(error),
           500,
           'Internal Server Error',
         )
@@ -48,8 +48,8 @@ export class TMController {
     try {
       const groupUserResponse = await this.tmService.addGroupUser(req)
       res.status(201).send(groupUserResponse)
-    } catch (error: any) {
-      logger.error(error)
+    } catch (error: unknown) {
+      logger.error(getErrorMessage(error))
       if (error instanceof ConflictError) {
         this.errorHandler.generalError(
           res,
@@ -70,7 +70,7 @@ export class TMController {
         this.errorHandler.generalError(
           res,
           'Error occurred adding user to group',
-          error.message,
+          getErrorMessage(error),
           500,
           'Internal Server Error',
         )
@@ -82,8 +82,8 @@ export class TMController {
     try {
       const groupResponse = await this.tmService.updateGroup(req)
       res.status(200).send(groupResponse)
-    } catch (error: any) {
-      logger.error(error)
+    } catch (error: unknown) {
+      logger.error(getErrorMessage(error))
       if (error instanceof ConflictError) {
         this.errorHandler.generalError(
           res,
@@ -104,7 +104,7 @@ export class TMController {
         this.errorHandler.generalError(
           res,
           'Error occurred updating group',
-          error.message,
+          getErrorMessage(error),
           500,
           'Internal Server Error',
         )
@@ -116,8 +116,8 @@ export class TMController {
     try {
       await this.tmService.removeGroupUser(req)
       res.status(204).send()
-    } catch (error: any) {
-      logger.error(error)
+    } catch (error: unknown) {
+      logger.error(getErrorMessage(error))
       if (error instanceof ConflictError) {
         this.errorHandler.generalError(
           res,
@@ -138,7 +138,7 @@ export class TMController {
         this.errorHandler.generalError(
           res,
           'Error occurred removing user from group',
-          error.message,
+          getErrorMessage(error),
           500,
           'Internal Server Error',
         )
@@ -150,8 +150,8 @@ export class TMController {
     try {
       const groupResponse = await this.tmService.getGroup(req)
       res.status(200).send(groupResponse)
-    } catch (error: any) {
-      logger.error(error)
+    } catch (error: unknown) {
+      logger.error(getErrorMessage(error))
       if (error instanceof NotFoundError) {
         this.errorHandler.generalError(
           res,
@@ -164,7 +164,7 @@ export class TMController {
         this.errorHandler.generalError(
           res,
           'Error occurred getting a group',
-          error.message,
+          getErrorMessage(error),
           500,
           'Internal Server Error',
         )
@@ -176,8 +176,8 @@ export class TMController {
     try {
       const groupsResponse = await this.tmService.getTenantGroups(req)
       res.status(200).send(groupsResponse)
-    } catch (error: any) {
-      logger.error(error)
+    } catch (error: unknown) {
+      logger.error(getErrorMessage(error))
       if (error instanceof NotFoundError) {
         this.errorHandler.generalError(
           res,
@@ -190,7 +190,7 @@ export class TMController {
         this.errorHandler.generalError(
           res,
           'Error occurred getting tenant groups',
-          error.message,
+          getErrorMessage(error),
           500,
           'Internal Server Error',
         )
@@ -203,8 +203,8 @@ export class TMController {
       const sharedServiceRolesResponse =
         await this.tmService.getSharedServiceRolesForGroup(req)
       res.status(200).send(sharedServiceRolesResponse)
-    } catch (error: any) {
-      logger.error(error)
+    } catch (error: unknown) {
+      logger.error(getErrorMessage(error))
       if (error instanceof NotFoundError) {
         this.errorHandler.generalError(
           res,
@@ -217,7 +217,7 @@ export class TMController {
         this.errorHandler.generalError(
           res,
           'Error occurred getting shared service roles for group',
-          error.message,
+          getErrorMessage(error),
           500,
           'Internal Server Error',
         )
@@ -230,8 +230,8 @@ export class TMController {
       const sharedServiceRolesResponse =
         await this.tmService.updateSharedServiceRolesForGroup(req)
       res.status(200).send(sharedServiceRolesResponse)
-    } catch (error: any) {
-      logger.error(error)
+    } catch (error: unknown) {
+      logger.error(getErrorMessage(error))
       if (error instanceof NotFoundError) {
         this.errorHandler.generalError(
           res,
@@ -252,7 +252,7 @@ export class TMController {
         this.errorHandler.generalError(
           res,
           'Error occurred updating shared service roles for group',
-          error.message,
+          getErrorMessage(error),
           500,
           'Internal Server Error',
         )
@@ -268,8 +268,8 @@ export class TMController {
       const result =
         await this.tmService.getUserGroupsWithSharedServiceRoles(req)
       res.status(200).send(result)
-    } catch (error: any) {
-      logger.error(error)
+    } catch (error: unknown) {
+      logger.error(getErrorMessage(error))
       if (error instanceof NotFoundError) {
         this.errorHandler.generalError(
           res,
@@ -290,7 +290,7 @@ export class TMController {
         this.errorHandler.generalError(
           res,
           'Error occurred getting user groups with shared services',
-          error.message,
+          getErrorMessage(error),
           500,
           'Internal Server Error',
         )
@@ -302,8 +302,8 @@ export class TMController {
     try {
       const result = await this.tmService.getEffectiveSharedServiceRoles(req)
       res.status(200).send(result)
-    } catch (error: any) {
-      logger.error(error)
+    } catch (error: unknown) {
+      logger.error(getErrorMessage(error))
       if (error instanceof NotFoundError) {
         this.errorHandler.generalError(
           res,
@@ -324,7 +324,7 @@ export class TMController {
         this.errorHandler.generalError(
           res,
           'Error occurred getting effective shared service roles',
-          error.message,
+          getErrorMessage(error),
           500,
           'Internal Server Error',
         )

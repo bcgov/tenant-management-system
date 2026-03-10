@@ -5,13 +5,13 @@ export class TenantDescription1748393596089 implements MigrationInterface {
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
-      `ALTER TABLE "tms"."Tenant" ADD "description" character varying(500) DEFAULT 'Default Tenant Description'`,
+      'ALTER TABLE "tms"."Tenant" ADD "description" character varying(500) DEFAULT \'Default Tenant Description\'',
     )
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
-      `ALTER TABLE "tms"."Tenant" DROP COLUMN "description"`,
+      'ALTER TABLE "tms"."Tenant" DROP COLUMN "description"',
     )
   }
 }

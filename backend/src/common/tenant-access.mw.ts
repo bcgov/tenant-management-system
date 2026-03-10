@@ -3,6 +3,7 @@ import { TMSRepository } from '../repositories/tms.repository'
 import { connection } from './db.connection'
 import { ForbiddenError } from '../errors/ForbiddenError'
 import logger from './logger'
+import { getErrorMessage } from './error.handler'
 import { ErrorHandler } from './error.handler'
 
 const errorHandler: ErrorHandler = new ErrorHandler()
@@ -15,7 +16,7 @@ export const checkTenantAccess = (requiredRoles?: string[]) => {
       const tmsRepository: TMSRepository = new TMSRepository(connection.manager)
 
       if (req.isSharedServiceAccess) {
-        const clientIdentifier: string = req.decodedJwt?.aud
+        const clientIdentifier = req.decodedJwt?.aud
         if (!tenantId || !clientIdentifier) {
           throw new ForbiddenError('Missing tenant ID or client identifier')
         }
@@ -34,7 +35,7 @@ export const checkTenantAccess = (requiredRoles?: string[]) => {
         }
       }
 
-      const ssoUserId: string =
+      const ssoUserId =
         req.decodedJwt?.idir_user_guid || req.decodedJwt?.bceid_user_guid
       if (!tenantId || !ssoUserId) {
         throw new ForbiddenError('Missing tenant ID or user ID')
@@ -52,8 +53,10 @@ export const checkTenantAccess = (requiredRoles?: string[]) => {
       }
 
       next()
-    } catch (error) {
-      logger.error('Tenant access check failed:', error as any)
+    } catch (error: unknown) {
+      logger.error('Tenant access check failed:', {
+        error: getErrorMessage(error),
+      })
       if (error instanceof ForbiddenError) {
         errorHandler.generalError(
           res,

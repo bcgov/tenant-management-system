@@ -1,11 +1,12 @@
 import request from 'supertest'
-import express from 'express'
+import express, { type ErrorRequestHandler } from 'express'
 import { TMRepository } from '../repositories/tm.repository'
 import { TMSRepository } from '../repositories/tms.repository'
 import { TMController } from '../controllers/tm.controller'
 import { validate } from 'express-validation'
 import validator from '../common/tms.validator'
 import { ConflictError } from '../errors/ConflictError'
+import type { Group } from '../entities/Group'
 import { NotFoundError } from '../errors/NotFoundError'
 
 jest.mock('../repositories/tm.repository')
@@ -126,12 +127,23 @@ describe('Tenant Management API', () => {
       (req, res) => tmController.getEffectiveSharedServiceRoles(req, res),
     )
 
-    app.use((err: any, req: any, res: any, next: any) => {
-      if (err.name === 'ValidationError') {
-        return res.status(err.statusCode).json(err)
+    const validationErrorHandler: ErrorRequestHandler = (
+      err,
+      req,
+      res,
+      next,
+    ) => {
+      if (
+        err &&
+        typeof err === 'object' &&
+        'name' in err &&
+        (err as { name: string }).name === 'ValidationError'
+      ) {
+        return res.status((err as { statusCode: number }).statusCode).json(err)
       }
       next(err)
-    })
+    }
+    app.use(validationErrorHandler)
   })
 
   describe('POST /v1/tenants/:tenantId/groups', () => {
@@ -154,7 +166,9 @@ describe('Tenant Management API', () => {
         updatedDateTime: new Date(),
       }
 
-      mockTMRepository.saveGroup.mockResolvedValue(mockGroup)
+      mockTMRepository.saveGroup.mockResolvedValue(
+        mockGroup as unknown as Group,
+      )
 
       const response = await request(app)
         .post(`/v1/tenants/${tenantId}/groups`)
@@ -206,7 +220,9 @@ describe('Tenant Management API', () => {
         updatedBy: 'test-user',
       }
 
-      mockTMRepository.saveGroup.mockResolvedValue(mockGroupWithUser)
+      mockTMRepository.saveGroup.mockResolvedValue(
+        mockGroupWithUser as unknown as Group,
+      )
 
       const response = await request(app)
         .post(`/v1/tenants/${tenantId}/groups`)
@@ -676,9 +692,9 @@ describe('Tenant Management API', () => {
 
       expect(mockTMRepository.addGroupUser).toHaveBeenCalled()
       const callArgs = mockTMRepository.addGroupUser.mock.calls[0]
-      expect(callArgs[0].params.tenantId).toBe(tenantId)
-      expect(callArgs[0].params.groupId).toBe(groupId)
-      expect(callArgs[0].body.tenantUserId).toBe(mockTenantUser.id)
+      expect(callArgs[0].tenantId).toBe(tenantId)
+      expect(callArgs[0].groupId).toBe(groupId)
+      expect(callArgs[0].tenantUserId).toBe(mockTenantUser.id)
       expect(callArgs.length).toBeGreaterThanOrEqual(2)
     })
 
@@ -2593,12 +2609,25 @@ describe('Tenant Management API', () => {
         },
         (req, res) => tmController.getEffectiveSharedServiceRoles(req, res),
       )
-      appWithoutAudience.use((err: any, req: any, res: any, next: any) => {
-        if (err.name === 'ValidationError') {
-          return res.status(err.statusCode).json(err)
+      const validationErrorHandler: ErrorRequestHandler = (
+        err,
+        req,
+        res,
+        next,
+      ) => {
+        if (
+          err &&
+          typeof err === 'object' &&
+          'name' in err &&
+          (err as { name: string }).name === 'ValidationError'
+        ) {
+          return res
+            .status((err as { statusCode: number }).statusCode)
+            .json(err)
         }
         next(err)
-      })
+      }
+      appWithoutAudience.use(validationErrorHandler)
 
       const response = await request(appWithoutAudience).get(
         `/v1/tenants/${tenantId}/ssousers/${ssoUserId}/shared-service-roles`,
