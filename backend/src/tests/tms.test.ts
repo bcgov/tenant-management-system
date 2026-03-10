@@ -191,12 +191,22 @@ describe('Tenant API', () => {
 
       expect(mockTMSRepository.saveTenant).toHaveBeenCalledWith(
         expect.objectContaining({
-          body: validTenantData,
+          name: validTenantData.name,
+          ministryName: validTenantData.ministryName,
+          description: validTenantData.description,
+          user: validTenantData.user,
         }),
       )
 
       const actualCall = mockTMSRepository.saveTenant.mock.calls[0][0]
-      expect(actualCall.body).toEqual(validTenantData)
+      expect(actualCall).toEqual(
+        expect.objectContaining({
+          name: validTenantData.name,
+          ministryName: validTenantData.ministryName,
+          description: validTenantData.description,
+          user: validTenantData.user,
+        }),
+      )
     })
 
     it('should fail when tenant name and ministry name combination already exists', async () => {

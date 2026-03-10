@@ -692,9 +692,9 @@ describe('Tenant Management API', () => {
 
       expect(mockTMRepository.addGroupUser).toHaveBeenCalled()
       const callArgs = mockTMRepository.addGroupUser.mock.calls[0]
-      expect(callArgs[0].params.tenantId).toBe(tenantId)
-      expect(callArgs[0].params.groupId).toBe(groupId)
-      expect(callArgs[0].body.tenantUserId).toBe(mockTenantUser.id)
+      expect(callArgs[0].tenantId).toBe(tenantId)
+      expect(callArgs[0].groupId).toBe(groupId)
+      expect(callArgs[0].tenantUserId).toBe(mockTenantUser.id)
       expect(callArgs.length).toBeGreaterThanOrEqual(2)
     })
 

@@ -74,7 +74,7 @@ export class TMService {
         const input: AddGroupUserInputDto = {
           tenantId,
           groupId,
-          tenantUserId: tenantUser.id,
+          tenantUserId: tenantUser!.id,
           updatedBy,
         }
         savedGroupUser = await this.tmRepository.addGroupUser(

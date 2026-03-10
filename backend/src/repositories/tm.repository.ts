@@ -1152,7 +1152,7 @@ export class TMRepository {
   ) {
     const { tenantId, ssoUserId, audience, idpType } = input
 
-    const tenantUser: TenantUser =
+    const tenantUser =
       await this.tmsRepository.getTenantUserBySsoId(ssoUserId, tenantId)
     if (!tenantUser) {
       throw new NotFoundError(`Tenant user not found: ${ssoUserId}`)
@@ -1252,7 +1252,7 @@ export class TMRepository {
   ) {
     const { tenantId, ssoUserId, audience, idpType } = input
 
-    const tenantUser: TenantUser =
+    const tenantUser =
       await this.tmsRepository.getTenantUserBySsoId(ssoUserId, tenantId)
     if (!tenantUser) {
       throw new NotFoundError(`Tenant user not found: ${ssoUserId}`)

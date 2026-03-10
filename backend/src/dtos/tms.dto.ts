@@ -246,3 +246,31 @@ export interface GetTenantUserResultDto {
   groups?: unknown[]
   sharedServices?: unknown[]
 }
+
+export interface SaveTenantRequestResultDto {
+  id?: string
+  name?: string
+  ministryName?: string
+  description?: string
+  status?: string
+  requestedBy?: {
+    displayName?: string
+  }
+  createdBy?: string
+  updatedBy?: string
+  createdDateTime?: Date
+  updatedDateTime?: Date
+}
+
+export interface SaveSharedServiceResultDto {
+  id?: string
+  name?: string
+  clientIdentifier?: string
+  description?: string | null
+  isActive?: boolean
+  sharedServiceRoles?: unknown[]
+  createdDateTime?: Date
+  updatedDateTime?: Date
+  createdBy?: string
+  updatedBy?: string
+}
