@@ -1,0 +1,23 @@
+info:
+  name: token other issuer
+  type: http
+  seq: 5
+
+http:
+  method: GET
+  url: "{{baseUrl}}/roles"
+  auth:
+    type: bearer
+    token: "{{token-other-issuer}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "401"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
