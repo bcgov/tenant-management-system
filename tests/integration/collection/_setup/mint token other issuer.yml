@@ -1,0 +1,54 @@
+info:
+  name: mint token other issuer
+  type: http
+  seq: 4
+
+http:
+  method: POST
+  url: "{{mockJwksUrl}}/mint"
+  body:
+    type: json
+    data: |-
+      {
+        "claims": {
+          "aud": "{{audience}}",
+          "identity_provider": "idir",
+          "idir_user_guid": "8BADF00DCAFEBABE4ACE8BEEDEADBEEF",
+          "sub": "8badf00dcafebabe4ace8beedeadbeef@azureidir"
+        },
+        "issuer": "other-issuer"
+      }
+  auth: inherit
+
+runtime:
+  assertions:
+    - expression: res.body.claims.aud
+      operator: eq
+      value: "{{audience}}"
+    - expression: res.body.claims.identity_provider
+      operator: eq
+      value: idir
+    - expression: res.body.claims.idir_user_guid
+      operator: eq
+      value: 8BADF00DCAFEBABE4ACE8BEEDEADBEEF
+    - expression: res.body.claims.sub
+      operator: eq
+      value: 8badf00dcafebabe4ace8beedeadbeef@azureidir
+    - expression: res.status
+      operator: eq
+      value: "200"
+  actions:
+    - type: set-variable
+      phase: after-response
+      selector:
+        expression: res.body.token
+        method: jsonq
+      variable:
+        name: token-other-issuer
+        scope: runtime
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

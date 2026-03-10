@@ -1,43 +1,38 @@
 info:
-  name: mint-token
+  name: mint token other audience
   type: http
-  seq: 1
+  seq: 3
 
 http:
   method: POST
   url: "{{mockJwksUrl}}/mint"
   body:
     type: json
-    data: |
+    data: |-
       {
-        "aud": "{{tmsAudience}}",
-        "identity_provider": "idir",
-        "idir_user_guid": "test-user",
-        "sub": "test-user"
+        "claims": {
+          "aud": "other-audience",
+          "identity_provider": "idir",
+          "idir_user_guid": "8BADF00DCAFEBABE4ACE8BEEDEADBEEF",
+          "sub": "8badf00dcafebabe4ace8beedeadbeef@azureidir"
+        }
       }
   auth: inherit
 
 runtime:
-  scripts:
-    - type: before-request
-      code: |-
-        if (req.getExecutionMode() === 'runner') {
-          console.log('skipping')
-          bru.runner.skipRequest()
-        }
   assertions:
     - expression: res.body.claims.aud
       operator: eq
-      value: "{{tmsAudience}}"
+      value: other-audience
     - expression: res.body.claims.identity_provider
       operator: eq
       value: idir
     - expression: res.body.claims.idir_user_guid
       operator: eq
-      value: test-user
+      value: 8BADF00DCAFEBABE4ACE8BEEDEADBEEF
     - expression: res.body.claims.sub
       operator: eq
-      value: test-user
+      value: 8badf00dcafebabe4ace8beedeadbeef@azureidir
     - expression: res.status
       operator: eq
       value: "200"
@@ -48,7 +43,7 @@ runtime:
         expression: res.body.token
         method: jsonq
       variable:
-        name: token
+        name: token-other-audience
         scope: runtime
 
 settings:

@@ -7,21 +7,12 @@ config:
     inherit: true
     config:
       protocol: http
-      hostname: ''
-      port: ''
+      hostname: ""
+      port: ""
       auth:
-        username: ''
-        password: ''
-      bypassProxy: ''
-
-request:
-  scripts:
-    - type: before-request
-      code: |-
-        // Run the token-minting endpoint if the token isn't set.
-        if (!bru.getVar('token') && req.getName() !== 'mint-token') {
-          await bru.runRequest('_setup/mint-token')
-        }
+        username: ""
+        password: ""
+      bypassProxy: ""
 bundled: false
 extensions:
   bruno:
@@ -30,4 +21,4 @@ extensions:
     presets:
       request:
         type: http
-        url: '{{baseUrl}}/'
+        url: "{{baseUrl}}/"

@@ -1,12 +1,14 @@
 info:
-  name: roles - no auth
+  name: token other audience
   type: http
-  seq: 1
+  seq: 4
 
 http:
   method: GET
   url: "{{baseUrl}}/roles"
-  auth: inherit
+  auth:
+    type: bearer
+    token: "{{token-other-audience}}"
 
 runtime:
   assertions:

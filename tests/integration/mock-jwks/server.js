@@ -2,6 +2,9 @@ import express from 'express'
 import { exportJWK, importPKCS8, SignJWT } from 'jose'
 import crypto from 'node:crypto'
 
+const ALG = 'RS256'
+const VALID_FOR = '24h'
+
 const app = express()
 app.disable('x-powered-by')
 app.use(express.json())
@@ -17,14 +20,14 @@ async function init() {
 
   privateKey = await importPKCS8(
     pk.export({ type: 'pkcs8', format: 'pem' }).toString(),
-    'RS256',
+    ALG,
   )
 
   // Export the public key as a JWK and annotate it for the same RS256 signature
   // verification used by Keycloak/SSO.
   publicJwk = {
     ...(await exportJWK(publicKey)),
-    alg: 'RS256',
+    alg: ALG,
     kid: 'test-key-1',
     use: 'sig',
   }
@@ -38,12 +41,15 @@ app.get('/certs', (_req, res) => {
 // Bruno pre-request scripts POST here to get a signed test token. The request
 // body is used as the claims (sub, idp, idir_user_guid, etc.)
 app.post('/mint', async (req, res) => {
-  const claims = req.body ?? {}
+  const claims = req.body.claims ?? {}
+  const issuer = req.body.issuer ?? process.env.ISSUER
+  const validFor = req.body.validFor ?? VALID_FOR
+
   const token = await new SignJWT(claims)
-    .setExpirationTime('1h')
+    .setExpirationTime(validFor)
     .setIssuedAt()
-    .setIssuer(process.env.ISSUER)
-    .setProtectedHeader({ alg: 'RS256', kid: 'test-key-1' })
+    .setIssuer(issuer)
+    .setProtectedHeader({ alg: ALG, kid: 'test-key-1' })
     .sign(privateKey)
 
   console.log('Minted token with claims:', JSON.stringify(claims, null, 2))
