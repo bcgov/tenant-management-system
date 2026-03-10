@@ -29,10 +29,8 @@ These tests can be run locally:
 ## Running in GitHub Actions
 
 When these tests run for a pull request, they run against a containerized API
-and a new empty database. The best way to view the results is in the CodeQL
-section of the checks:
-
-![Bruno Output](./images/codeql_bruno.png)
+and a new empty database.
 
 These tests also always run after merge, again against the containerize API
 image and an empty database. If they fail they will block deployment to `test`.
+Q: is there value in running the tests a second time (A: no).
