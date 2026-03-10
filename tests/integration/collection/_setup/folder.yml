@@ -1,0 +1,7 @@
+info:
+  name: _setup
+  type: folder
+  seq: 1
+
+request:
+  auth: inherit
