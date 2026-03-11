@@ -100,7 +100,7 @@ jobs:
         package: ${{ fromJson(needs.vars.outputs.packages) }}
     timeout-minutes: 1
     steps:
-      - uses: shrink/actions-docker-registry-tag@f04afd0559f66b288586792eb150f45136a927fa # v4
+      - uses: shrink/actions-docker-registry-tag@f04afd0559f66b288586792eb150f45136a927fa # v4.0.0
         with:
           registry: ghcr.io
           repository: ${{ inputs.organization }}/${{ inputs.repository }}/${{ matrix.package }}
