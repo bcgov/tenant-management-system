@@ -57,7 +57,7 @@
     "build": "tsc",
     "prod:migrate": "typeorm migration:run -d dist/common/db.connection.js",
     "prod:start": "npm run prod:migrate && node dist/index.js",
-    "test": "jest --config jest.config.js --detectOpenHandles --forceExit",
+    "test": "node ./node_modules/jest/bin/jest.js --config jest.config.js --detectOpenHandles --forceExit --runInBand",
     "test:cov": "jest --config jest.config.js --coverage --detectOpenHandles --forceExit",
     "test:watch": "jest --watch"
   },

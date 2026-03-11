@@ -583,8 +583,7 @@ export class TMSController {
 
   public async getAllActiveSharedServices(_req: Request, res: Response) {
     try {
-      const sharedServices =
-        await this.tmsService.getAllActiveSharedServices()
+      const sharedServices = await this.tmsService.getAllActiveSharedServices()
       res.status(200).send(sharedServices)
     } catch (error: unknown) {
       logger.error(getErrorMessage(error))

@@ -550,7 +550,11 @@ export class TMSService {
   }
 
   public async getTenantRequests(req: Request) {
-    const status = req.query.status as 'NEW' | 'APPROVED' | 'REJECTED' | undefined
+    const status = req.query.status as
+      | 'NEW'
+      | 'APPROVED'
+      | 'REJECTED'
+      | undefined
     const input: GetTenantRequestsInputDto = { status }
     const tenantRequests = await this.tmsRepository.getTenantRequests(input)
 

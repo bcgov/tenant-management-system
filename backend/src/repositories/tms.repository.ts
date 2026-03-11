@@ -1141,9 +1141,7 @@ export class TMSRepository {
       .getOne()
   }
 
-  public async saveTenantRequest(
-    input: CreateTenantRequestInputDto,
-  ) {
+  public async saveTenantRequest(input: CreateTenantRequestInputDto) {
     let tenantRequestResponse!: SaveTenantRequestResultDto
     await this.manager.transaction(async (transactionEntityManager) => {
       try {
@@ -1464,9 +1462,7 @@ export class TMSRepository {
     }
   }
 
-  public async saveSharedService(
-    input: CreateSharedServiceInputDto,
-  ) {
+  public async saveSharedService(input: CreateSharedServiceInputDto) {
     const { name, clientIdentifier, description, isActive, roles, updatedBy } =
       input
     let sharedServiceResponse!: SaveSharedServiceResultDto

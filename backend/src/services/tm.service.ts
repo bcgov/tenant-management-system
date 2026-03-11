@@ -153,7 +153,8 @@ export class TMService {
     const input: GetTenantGroupsInputDto = {
       tenantId: req.params.tenantId,
       ssoUserId: req.decodedJwt?.idir_user_guid,
-      jwtAudience: req.decodedJwt?.aud || req.decodedJwt?.audience || tmsAudience,
+      jwtAudience:
+        req.decodedJwt?.aud || req.decodedJwt?.audience || tmsAudience,
       tmsAudience,
     }
     const groups = await this.tmRepository.getTenantGroups(input)
