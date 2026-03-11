@@ -1,22 +1,18 @@
 info:
-  name: roles - auth
+  name: not found
   type: http
-  seq: 2
+  seq: 1
 
 http:
   method: GET
-  url: "{{baseUrl}}/roles"
-  auth:
-    type: bearer
-    token: "{{token}}"
+  url: "{{baseUrl}}/not-found"
+  auth: inherit
 
 runtime:
   assertions:
     - expression: res.status
       operator: eq
-      value: "200"
-    - expression: res.body.data.roles
-      operator: isArray
+      value: "404"
 
 settings:
   encodeUrl: true
