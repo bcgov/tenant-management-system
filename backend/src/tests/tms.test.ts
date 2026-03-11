@@ -728,6 +728,84 @@ describe('Tenant API', () => {
 
       expect([201, 400, 404]).toContain(response.status)
     })
+
+    it('should allow bceidbasic user without roles', async () => {
+      const bceidUserData = {
+        user: {
+          ...validUserData.user,
+          idpType: 'bceidbasic',
+          displayName: 'Basic BCEID User',
+        },
+      }
+      const mockResponse = {
+        savedTenantUser: {
+          id: '123e4567-e89b-12d3-a456-426614174001',
+          displayName: bceidUserData.user.displayName,
+          ssoUserId: validUserData.user.ssoUserId,
+        },
+        roleAssignments: [
+          {
+            role: {
+              id: '123e4567-e89b-12d3-a456-426614174002',
+              name: TMSConstants.SERVICE_USER,
+            },
+          },
+        ],
+        tenantUserId: '123e4567-e89b-12d3-a456-426614174001',
+      }
+
+      mockTMSRepository.addTenantUsers.mockResolvedValue(
+        mockResponse as unknown as AddTenantUsersResult,
+      )
+      mockTMRepository.addUserToGroups.mockResolvedValue([])
+
+      const response = await request(app)
+        .post(`/v1/tenants/${tenantId}/users`)
+        .send(bceidUserData)
+
+      expect(response.status).toBe(201)
+      const callArgs = mockTMSRepository.addTenantUsers.mock.calls[0]
+      expect(callArgs[0].user.idpType).toBe('bceidbasic')
+    })
+
+    it('should allow bceidbusiness user without roles', async () => {
+      const bceidUserData = {
+        user: {
+          ...validUserData.user,
+          idpType: 'bceidbusiness',
+          displayName: 'Business BCEID User',
+        },
+      }
+      const mockResponse = {
+        savedTenantUser: {
+          id: '123e4567-e89b-12d3-a456-426614174001',
+          displayName: bceidUserData.user.displayName,
+          ssoUserId: validUserData.user.ssoUserId,
+        },
+        roleAssignments: [
+          {
+            role: {
+              id: '123e4567-e89b-12d3-a456-426614174002',
+              name: TMSConstants.SERVICE_USER,
+            },
+          },
+        ],
+        tenantUserId: '123e4567-e89b-12d3-a456-426614174001',
+      }
+
+      mockTMSRepository.addTenantUsers.mockResolvedValue(
+        mockResponse as unknown as AddTenantUsersResult,
+      )
+      mockTMRepository.addUserToGroups.mockResolvedValue([])
+
+      const response = await request(app)
+        .post(`/v1/tenants/${tenantId}/users`)
+        .send(bceidUserData)
+
+      expect(response.status).toBe(201)
+      const callArgs = mockTMSRepository.addTenantUsers.mock.calls[0]
+      expect(callArgs[0].user.idpType).toBe('bceidbusiness')
+    })
   })
 
   describe('GET /v1/users/:ssoUserId/tenants', () => {
@@ -4446,6 +4524,24 @@ describe('Tenant API', () => {
       expect(response.status).toBe(500)
       expect(response.body.message).toBe('Database connection failed')
     })
+
+    it('should return 400 when service throws bad request error', async () => {
+      mockTMSRepository.getTenantUser.mockRejectedValue(
+        new BadRequestError('Invalid tenant user request'),
+      )
+
+      const response = await request(app).get(
+        `/v1/tenants/${tenantId}/users/${tenantUserId}`,
+      )
+
+      expect(response.status).toBe(400)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Bad Request',
+        httpResponseCode: 400,
+        message: 'Invalid tenant user request',
+        name: 'Error occurred getting tenant user',
+      })
+    })
   })
 
   describe('DELETE /v1/tenants/:tenantId/users/:tenantUserId', () => {
@@ -4609,6 +4705,24 @@ describe('Tenant API', () => {
       })
       expect(mockTMSRepository.removeTenantUser).toHaveBeenCalled()
       expect(mockTMRepository.removeUserFromAllGroups).toHaveBeenCalled()
+    })
+
+    it('should return 400 when service throws bad request error', async () => {
+      mockTMSRepository.removeTenantUser.mockRejectedValue(
+        new BadRequestError('Tenant user cannot be removed'),
+      )
+
+      const response = await request(app).delete(
+        `/v1/tenants/${tenantId}/users/${tenantUserId}`,
+      )
+
+      expect(response.status).toBe(400)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Bad Request',
+        httpResponseCode: 400,
+        message: 'Tenant user cannot be removed',
+        name: 'Error occurred removing tenant user',
+      })
     })
   })
 
