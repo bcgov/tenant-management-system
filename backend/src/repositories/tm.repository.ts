@@ -32,6 +32,37 @@ import {
   UpdateSharedServiceRolesForGroupInputDto,
   UpdateGroupInputDto,
 } from '../dtos/tm.dto'
+import { GetTenantUserResultDto } from '../dtos/tms.dto'
+
+type TenantUserGroupResult = {
+  id: string
+  name: string
+  description: string
+  createdDateTime: Date
+  updatedDateTime: Date
+  createdBy: string
+  updatedBy: string
+}
+
+type SharedServiceRoleResult = Omit<
+  SharedServiceRole,
+  | 'sharedService'
+  | 'groupAssignments'
+  | 'isDeleted'
+  | 'createdDateTime'
+  | 'updatedDateTime'
+  | 'createdBy'
+  | 'updatedBy'
+>
+
+type SharedServiceResult = {
+  id: string
+  name: string
+  description: string | null
+  clientIdentifier: string
+  isActive: boolean
+  sharedServiceRoles: SharedServiceRoleResult[]
+}
 
 export class TMRepository {
   constructor(
@@ -288,11 +319,11 @@ export class TMRepository {
   }
 
   public async getGroupById(groupId: string) {
-    const group: Group = (await this.manager
+    const group = await this.manager
       .createQueryBuilder(Group, 'group')
       .leftJoinAndSelect('group.tenant', 'tenant')
       .where('group.id = :groupId', { groupId })
-      .getOne()) as any
+      .getOne()
 
     if (!group) {
       throw new NotFoundError(`Group not found: ${groupId}`)
@@ -309,15 +340,17 @@ export class TMRepository {
       .andWhere('groupUser.isDeleted = :isDeleted', { isDeleted: false })
       .getMany()
 
-    return groupUsers.map((groupUser: any) => ({
-      id: groupUser.group.id,
-      name: groupUser.group.name,
-      description: groupUser.group.description,
-      createdDateTime: groupUser.group.createdDateTime,
-      updatedDateTime: groupUser.group.updatedDateTime,
-      createdBy: groupUser.group.createdBy,
-      updatedBy: groupUser.group.updatedBy,
-    }))
+    return groupUsers.map(
+      (groupUser): TenantUserGroupResult => ({
+        id: groupUser.group.id,
+        name: groupUser.group.name,
+        description: groupUser.group.description,
+        createdDateTime: groupUser.group.createdDateTime,
+        updatedDateTime: groupUser.group.updatedDateTime,
+        createdBy: groupUser.group.createdBy,
+        updatedBy: groupUser.group.updatedBy,
+      }),
+    )
   }
 
   public async getTenantUserSharedServiceRoles(tenantUserId: string) {
@@ -339,21 +372,11 @@ export class TMRepository {
       })
       .getMany()
 
-    const sharedServiceMap = new Map<
-      string,
-      {
-        id: string
-        name: string
-        description: string | null
-        clientIdentifier: string
-        isActive: boolean
-        sharedServiceRoles: any[]
-      }
-    >()
+    const sharedServiceMap = new Map<string, SharedServiceResult>()
 
-    sharedServiceRoles.forEach((groupUser: any) => {
+    sharedServiceRoles.forEach((groupUser) => {
       if (groupUser.group?.sharedServiceRoles) {
-        groupUser.group.sharedServiceRoles.forEach((gssr: any) => {
+        groupUser.group.sharedServiceRoles.forEach((gssr) => {
           if (gssr.sharedServiceRole?.sharedService) {
             const sharedService = gssr.sharedServiceRole.sharedService
             const role = gssr.sharedServiceRole
@@ -372,19 +395,15 @@ export class TMRepository {
 
             const serviceEntry = sharedServiceMap.get(serviceId)!
             const roleExists = serviceEntry.sharedServiceRoles.some(
-              (r: any) => r.id === role.id,
+              (existingRole) => existingRole.id === role.id,
             )
             if (!roleExists) {
-              const roleWithoutExcludedFields = { ...role } as Record<
-                string,
-                unknown
-              >
-              delete roleWithoutExcludedFields.sharedService
-              delete roleWithoutExcludedFields.isDeleted
-              delete roleWithoutExcludedFields.createdDateTime
-              delete roleWithoutExcludedFields.updatedDateTime
-              delete roleWithoutExcludedFields.createdBy
-              delete roleWithoutExcludedFields.updatedBy
+              const roleWithoutExcludedFields: SharedServiceRoleResult = {
+                id: role.id,
+                name: role.name,
+                description: role.description,
+                allowedIdentityProviders: role.allowedIdentityProviders,
+              }
               serviceEntry.sharedServiceRoles.push(roleWithoutExcludedFields)
             }
           }
@@ -715,11 +734,11 @@ export class TMRepository {
         //     throw new NotFoundError(`Tenant not found: ${tenantId}`)
         // }
 
-        const existingGroup: Group = (await this.checkIfGroupExistsInTenant(
+        const existingGroup = await this.checkIfGroupExistsInTenant(
           groupId,
           tenantId,
           transactionEntityManager,
-        )) as any
+        )
         if (!existingGroup) {
           throw new NotFoundError(`Group not found: ${groupId}`)
         }
@@ -1352,13 +1371,13 @@ export class TMRepository {
         .andWhere('role.isDeleted = :isDeleted', { isDeleted: false })
     }
 
-    const tenantUser = (await tenantUserQuery.getOne()) as any
+    const tenantUser = await tenantUserQuery.getOne()
 
     if (!tenantUser) {
       throw new NotFoundError(`Tenant user not found: ${tenantUserId}`)
     }
 
-    const result: any = {
+    const result: GetTenantUserResultDto = {
       id: tenantUser.id,
       ssoUser: tenantUser.ssoUser,
       createdDateTime: tenantUser.createdDateTime,
@@ -1373,7 +1392,7 @@ export class TMRepository {
 
     if (expandRoles && tenantUser.roles) {
       result.roles = tenantUser.roles.map(
-        (tenantUserRole: any) => tenantUserRole.role,
+        (tenantUserRole) => tenantUserRole.role,
       )
     }
 
