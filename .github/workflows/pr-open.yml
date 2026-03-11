@@ -75,7 +75,7 @@ jobs:
             path: ''
     steps:
       - name: ZAP Scan
-        uses: zaproxy/action-full-scan@3c58388149901b9a03b7718852c5ba889646c27c
+        uses: zaproxy/action-full-scan@3c58388149901b9a03b7718852c5ba889646c27c # v0.13.0
         with:
           allow_issue_writing: false
           artifact_name: zap-${{ matrix.name }}-pr${{ github.event.number }}
