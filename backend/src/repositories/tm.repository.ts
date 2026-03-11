@@ -965,7 +965,10 @@ export class TMRepository {
       .addOrderBy('ssr.name', 'ASC')
       .getRawAndEntities()
 
-    const sharedServicesMap = new Map<string, GetSharedServiceForGroupResultDto>()
+    const sharedServicesMap = new Map<
+      string,
+      GetSharedServiceForGroupResultDto
+    >()
 
     result.entities.forEach((ssr, index) => {
       const raw = result.raw[index]
@@ -1171,8 +1174,10 @@ export class TMRepository {
   ) {
     const { tenantId, ssoUserId, audience, idpType } = input
 
-    const tenantUser =
-      await this.tmsRepository.getTenantUserBySsoId(ssoUserId, tenantId)
+    const tenantUser = await this.tmsRepository.getTenantUserBySsoId(
+      ssoUserId,
+      tenantId,
+    )
     if (!tenantUser) {
       throw new NotFoundError(`Tenant user not found: ${ssoUserId}`)
     }
@@ -1271,8 +1276,10 @@ export class TMRepository {
   ) {
     const { tenantId, ssoUserId, audience, idpType } = input
 
-    const tenantUser =
-      await this.tmsRepository.getTenantUserBySsoId(ssoUserId, tenantId)
+    const tenantUser = await this.tmsRepository.getTenantUserBySsoId(
+      ssoUserId,
+      tenantId,
+    )
     if (!tenantUser) {
       throw new NotFoundError(`Tenant user not found: ${ssoUserId}`)
     }
