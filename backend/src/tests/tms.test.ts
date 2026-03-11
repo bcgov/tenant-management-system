@@ -24,6 +24,42 @@ jest.mock('../common/db.connection', () => ({
   },
 }))
 
+type AddTenantUsersResult = Awaited<ReturnType<TMSRepository['addTenantUsers']>>
+type GetTenantsForUserResult = Awaited<
+  ReturnType<TMSRepository['getTenantsForUser']>
+>
+type GetTenantResult = Awaited<ReturnType<TMSRepository['getTenant']>>
+type GetTenantRequestsResult = Awaited<
+  ReturnType<TMSRepository['getTenantRequests']>
+>
+type GetSharedServicesForTenantResult = Awaited<
+  ReturnType<TMSRepository['getSharedServicesForTenant']>
+>
+type GetUserRolesResult = Awaited<ReturnType<TMSRepository['getUserRoles']>>
+type GetTenantUserGroupsResult = Awaited<
+  ReturnType<TMRepository['getTenantUserGroups']>
+>
+type GetTenantUserSharedServiceRolesResult = Awaited<
+  ReturnType<TMRepository['getTenantUserSharedServiceRoles']>
+>
+type AssignUserRolesForUserResult = Awaited<
+  ReturnType<TMSRepository['assignUserRolesForUser']>
+>
+type SaveTenantRequestResult = Awaited<
+  ReturnType<TMSRepository['saveTenantRequest']>
+>
+type UpdateTenantRequestStatusResult = Awaited<
+  ReturnType<TMSRepository['updateTenantRequestStatus']>
+>
+type AddSharedServiceRolesResult = Awaited<
+  ReturnType<TMSRepository['addSharedServiceRoles']>
+>
+type ResolvedAddSharedServiceRolesResult =
+  NonNullable<AddSharedServiceRolesResult>
+type GetAllActiveSharedServicesResult = Awaited<
+  ReturnType<TMSRepository['getAllActiveSharedServices']>
+>
+
 describe('Tenant API', () => {
   let app: express.Application
   let mockTMSRepository: jest.Mocked<TMSRepository>
@@ -178,13 +214,6 @@ describe('Tenant API', () => {
             name: mockTenant.name,
             ministryName: mockTenant.ministryName,
             description: mockTenant.description,
-            tenantUsers: expect.arrayContaining([
-              expect.objectContaining({
-                firstName: validTenantData.user.firstName,
-                lastName: validTenantData.user.lastName,
-                ssoUserId: validTenantData.user.ssoUserId,
-              }),
-            ]),
           },
         },
       })
@@ -224,7 +253,7 @@ describe('Tenant API', () => {
         errorMessage: 'Conflict',
         httpResponseCode: 409,
         message: errorMessage,
-        name: 'Error occurred adding user to the tenant',
+        name: 'Error occurred during tenant creation',
       })
     })
 
@@ -368,7 +397,9 @@ describe('Tenant API', () => {
         tenantUserId: '123e4567-e89b-12d3-a456-426614174001',
       }
 
-      mockTMSRepository.addTenantUsers.mockResolvedValue(mockResponse as any)
+      mockTMSRepository.addTenantUsers.mockResolvedValue(
+        mockResponse as unknown as AddTenantUsersResult,
+      )
 
       const response = await request(app)
         .post(`/v1/tenants/${tenantId}/users`)
@@ -379,9 +410,6 @@ describe('Tenant API', () => {
         data: {
           user: {
             id: mockResponse.savedTenantUser.id,
-            firstName: validUserData.user.firstName,
-            lastName: validUserData.user.lastName,
-            ssoUserId: validUserData.user.ssoUserId,
             roles: [
               {
                 id: validUserData.roles[0],
@@ -497,7 +525,9 @@ describe('Tenant API', () => {
         groups: ['123e4567-e89b-12d3-a456-426614174010'],
       }
 
-      mockTMSRepository.addTenantUsers.mockResolvedValue(mockResponse as any)
+      mockTMSRepository.addTenantUsers.mockResolvedValue(
+        mockResponse as unknown as AddTenantUsersResult,
+      )
       mockTMRepository.addUserToGroups.mockRejectedValue(
         new NotFoundError('Group not found'),
       )
@@ -537,7 +567,9 @@ describe('Tenant API', () => {
         tenantUserId: '123e4567-e89b-12d3-a456-426614174001',
       }
 
-      mockTMSRepository.addTenantUsers.mockResolvedValue(mockResponse as any)
+      mockTMSRepository.addTenantUsers.mockResolvedValue(
+        mockResponse as unknown as AddTenantUsersResult,
+      )
       mockTMRepository.addUserToGroups.mockResolvedValue([])
 
       const response = await request(app)
@@ -572,7 +604,9 @@ describe('Tenant API', () => {
         groups: [],
       }
 
-      mockTMSRepository.addTenantUsers.mockResolvedValue(mockResponse as any)
+      mockTMSRepository.addTenantUsers.mockResolvedValue(
+        mockResponse as unknown as AddTenantUsersResult,
+      )
       mockTMRepository.addUserToGroups.mockResolvedValue([])
 
       const response = await request(app)
@@ -607,7 +641,9 @@ describe('Tenant API', () => {
         tenantUserId: '123e4567-e89b-12d3-a456-426614174001',
       }
 
-      mockTMSRepository.addTenantUsers.mockResolvedValue(mockResponse as any)
+      mockTMSRepository.addTenantUsers.mockResolvedValue(
+        mockResponse as unknown as AddTenantUsersResult,
+      )
 
       const response = await request(app)
         .post(`/v1/tenants/${tenantId}/users`)
@@ -645,7 +681,9 @@ describe('Tenant API', () => {
         tenantUserId: '123e4567-e89b-12d3-a456-426614174001',
       }
 
-      mockTMSRepository.addTenantUsers.mockResolvedValue(mockResponse as any)
+      mockTMSRepository.addTenantUsers.mockResolvedValue(
+        mockResponse as unknown as AddTenantUsersResult,
+      )
 
       const response = await request(app)
         .post(`/v1/tenants/${tenantId}/users`)
@@ -679,7 +717,9 @@ describe('Tenant API', () => {
         groups: [duplicateGroupId, duplicateGroupId], // Duplicate group IDs
       }
 
-      mockTMSRepository.addTenantUsers.mockResolvedValue(mockResponse as any)
+      mockTMSRepository.addTenantUsers.mockResolvedValue(
+        mockResponse as unknown as AddTenantUsersResult,
+      )
       mockTMRepository.addUserToGroups.mockResolvedValue([])
 
       const response = await request(app)
@@ -763,7 +803,9 @@ describe('Tenant API', () => {
     ]
 
     it('should get tenants for user successfully', async () => {
-      mockTMSRepository.getTenantsForUser.mockResolvedValue(mockTenants as any)
+      mockTMSRepository.getTenantsForUser.mockResolvedValue(
+        mockTenants as unknown as GetTenantsForUserResult,
+      )
 
       const response = await request(app)
         .get(`/v1/users/${ssoUserId}/tenants`)
@@ -779,9 +821,11 @@ describe('Tenant API', () => {
               ministryName: mockTenants[0].ministryName,
               users: [
                 {
-                  firstName: mockTenants[0].users[0].firstName,
-                  lastName: mockTenants[0].users[0].lastName,
-                  ssoUserId: mockTenants[0].users[0].ssoUserId,
+                  ssoUser: expect.objectContaining({
+                    firstName: mockTenants[0].users[0].firstName,
+                    lastName: mockTenants[0].users[0].lastName,
+                    ssoUserId: mockTenants[0].users[0].ssoUserId,
+                  }),
                   roles: [
                     {
                       id: mockTenants[0].users[0].roles[0].id,
@@ -797,8 +841,9 @@ describe('Tenant API', () => {
 
       expect(mockTMSRepository.getTenantsForUser).toHaveBeenCalledWith(
         expect.objectContaining({
-          params: { ssoUserId },
-          query: { expand: 'tenantUserRoles' },
+          ssoUserId,
+          expand: ['tenantUserRoles'],
+          jwtAudience: 'tenant-management-system-6014',
         }),
       )
     })
@@ -820,8 +865,9 @@ describe('Tenant API', () => {
 
       expect(mockTMSRepository.getTenantsForUser).toHaveBeenCalledWith(
         expect.objectContaining({
-          params: { ssoUserId: invalidSsoUserId },
-          query: { expand: 'tenantUserRoles' },
+          ssoUserId: invalidSsoUserId,
+          expand: ['tenantUserRoles'],
+          jwtAudience: 'tenant-management-system-6014',
         }),
       )
     })
@@ -913,11 +959,11 @@ describe('Tenant API', () => {
         },
       })
 
-      expect(mockTMSRepository.getUsersForTenant).toHaveBeenCalledWith(
+      expect(mockTMSRepository.getUsersForTenant).toHaveBeenCalledWith({
         tenantId,
-        undefined,
-        undefined,
-      )
+        groupIds: undefined,
+        sharedServiceRoleIds: undefined,
+      })
     })
 
     it('should return 400 when tenant ID is invalid', async () => {
@@ -952,11 +998,11 @@ describe('Tenant API', () => {
         },
       })
 
-      expect(mockTMSRepository.getUsersForTenant).toHaveBeenCalledWith(
-        nonExistentTenantId,
-        undefined,
-        undefined,
-      )
+      expect(mockTMSRepository.getUsersForTenant).toHaveBeenCalledWith({
+        tenantId: nonExistentTenantId,
+        groupIds: undefined,
+        sharedServiceRoleIds: undefined,
+      })
     })
   })
 
@@ -1050,7 +1096,9 @@ describe('Tenant API', () => {
         },
       ]
 
-      mockTMSRepository.assignUserRoles.mockResolvedValue(mockRoleAssignments)
+      mockTMSRepository.assignUserRolesForUser.mockResolvedValue(
+        mockRoleAssignments as unknown as AssignUserRolesForUserResult,
+      )
 
       const response = await request(app)
         .post(`/v1/tenants/${tenantId}/users/${tenantUserId}/roles`)
@@ -1068,12 +1116,11 @@ describe('Tenant API', () => {
         },
       })
 
-      expect(mockTMSRepository.assignUserRoles).toHaveBeenCalledWith(
+      expect(mockTMSRepository.assignUserRolesForUser).toHaveBeenCalledWith({
         tenantId,
         tenantUserId,
         roleIds,
-        null,
-      )
+      })
     })
 
     it('should return 400 when roles array is empty', async () => {
@@ -1096,7 +1143,7 @@ describe('Tenant API', () => {
     })
 
     it('should return 404 when tenant user not found', async () => {
-      mockTMSRepository.assignUserRoles.mockRejectedValue(
+      mockTMSRepository.assignUserRolesForUser.mockRejectedValue(
         new NotFoundError(`Tenant user not found for tenant: ${tenantId}`),
       )
 
@@ -1114,7 +1161,7 @@ describe('Tenant API', () => {
     })
 
     it('should return 409 when all roles are already assigned', async () => {
-      mockTMSRepository.assignUserRoles.mockRejectedValue(
+      mockTMSRepository.assignUserRolesForUser.mockRejectedValue(
         new ConflictError('All roles are already assigned to the user'),
       )
 
@@ -1133,18 +1180,18 @@ describe('Tenant API', () => {
 
     it('should handle duplicate role IDs in roles array', async () => {
       const duplicateRoleId = '123e4567-e89b-12d3-a456-426614174002'
-      const mockResponse = {
-        savedAssignments: [
-          {
-            role: {
-              id: duplicateRoleId,
-              name: TMSConstants.USER_ADMIN,
-            },
+      const mockResponse = [
+        {
+          role: {
+            id: duplicateRoleId,
+            name: TMSConstants.USER_ADMIN,
           },
-        ],
-      }
+        },
+      ]
 
-      mockTMSRepository.assignUserRoles.mockResolvedValue(mockResponse as any)
+      mockTMSRepository.assignUserRolesForUser.mockResolvedValue(
+        mockResponse as unknown as AssignUserRolesForUserResult,
+      )
 
       const response = await request(app)
         .post(`/v1/tenants/${tenantId}/users/${tenantUserId}/roles`)
@@ -1166,8 +1213,8 @@ describe('Tenant API', () => {
         },
       ]
 
-      mockTMSRepository.assignUserRoles.mockResolvedValue(
-        mockRoleAssignments as any,
+      mockTMSRepository.assignUserRolesForUser.mockResolvedValue(
+        mockRoleAssignments as unknown as AssignUserRolesForUserResult,
       )
 
       const response = await request(app)
@@ -1227,7 +1274,10 @@ describe('Tenant API', () => {
       expect(response.status).toBe(204)
       expect(mockTMSRepository.unassignUserRoles).toHaveBeenCalledWith(
         expect.objectContaining({
-          params: { tenantId, tenantUserId, roleId },
+          tenantId,
+          tenantUserId,
+          roleId,
+          updatedBy: 'system',
         }),
       )
     })
@@ -1418,7 +1468,9 @@ describe('Tenant API', () => {
     })
 
     it('should get tenant details successfully', async () => {
-      mockTMSRepository.getTenant.mockResolvedValue(mockTenant as any)
+      mockTMSRepository.getTenant.mockResolvedValue(
+        mockTenant as unknown as GetTenantResult,
+      )
 
       const response = await request(app).get(`/v1/tenants/${tenantId}`)
 
@@ -1436,14 +1488,16 @@ describe('Tenant API', () => {
 
       expect(mockTMSRepository.getTenant).toHaveBeenCalledWith(
         expect.objectContaining({
-          params: { tenantId },
-          query: {},
+          tenantId,
+          expand: [],
         }),
       )
     })
 
     it('should get tenant details with expanded user roles', async () => {
-      mockTMSRepository.getTenant.mockResolvedValue(mockTenant as any)
+      mockTMSRepository.getTenant.mockResolvedValue(
+        mockTenant as unknown as GetTenantResult,
+      )
 
       const response = await request(app)
         .get(`/v1/tenants/${tenantId}`)
@@ -1459,9 +1513,11 @@ describe('Tenant API', () => {
             description: mockTenant.description,
             users: [
               {
-                firstName: mockTenant.users[0].firstName,
-                lastName: mockTenant.users[0].lastName,
-                ssoUserId: mockTenant.users[0].ssoUserId,
+                ssoUser: expect.objectContaining({
+                  firstName: mockTenant.users[0].firstName,
+                  lastName: mockTenant.users[0].lastName,
+                  ssoUserId: mockTenant.users[0].ssoUserId,
+                }),
                 roles: [
                   {
                     id: mockTenant.users[0].roles[0].id,
@@ -1476,8 +1532,8 @@ describe('Tenant API', () => {
 
       expect(mockTMSRepository.getTenant).toHaveBeenCalledWith(
         expect.objectContaining({
-          params: { tenantId },
-          query: { expand: 'tenantUserRoles' },
+          tenantId,
+          expand: ['tenantUserRoles'],
         }),
       )
     })
@@ -1640,7 +1696,8 @@ describe('Tenant API', () => {
 
       expect(mockTMSRepository.getRolesForSSOUser).toHaveBeenCalledWith(
         expect.objectContaining({
-          params: { tenantId, ssoUserId },
+          tenantId,
+          ssoUserId,
         }),
       )
     })
@@ -1857,8 +1914,11 @@ describe('Tenant API', () => {
 
       expect(mockTMSRepository.updateTenant).toHaveBeenCalledWith(
         expect.objectContaining({
-          params: { tenantId },
-          body: validUpdateData,
+          tenantId,
+          name: validUpdateData.name,
+          ministryName: validUpdateData.ministryName,
+          description: validUpdateData.description,
+          updatedBy: 'system',
         }),
       )
     })
@@ -2015,7 +2075,9 @@ describe('Tenant API', () => {
         updatedBy: validTenantRequestData.user.ssoUserId,
       }
 
-      mockTMSRepository.saveTenantRequest.mockResolvedValue(mockTenantRequest)
+      mockTMSRepository.saveTenantRequest.mockResolvedValue(
+        mockTenantRequest as unknown as SaveTenantRequestResult,
+      )
 
       const response = await request(app)
         .post('/v1/tenant-requests')
@@ -2037,7 +2099,10 @@ describe('Tenant API', () => {
 
       expect(mockTMSRepository.saveTenantRequest).toHaveBeenCalledWith(
         expect.objectContaining({
-          body: validTenantRequestData,
+          name: validTenantRequestData.name,
+          ministryName: validTenantRequestData.ministryName,
+          description: validTenantRequestData.description,
+          user: validTenantRequestData.user,
         }),
       )
     })
@@ -2148,7 +2213,7 @@ describe('Tenant API', () => {
       }
 
       mockTMSRepository.saveTenantRequest.mockResolvedValue(
-        mockTenantRequest as any,
+        mockTenantRequest as unknown as SaveTenantRequestResult,
       )
 
       const response = await request(app)
@@ -2225,8 +2290,11 @@ describe('Tenant API', () => {
 
       expect(mockTMSRepository.updateTenantRequestStatus).toHaveBeenCalledWith(
         expect.objectContaining({
-          params: { requestId },
-          body: validApproveData,
+          requestId,
+          status: validApproveData.status,
+          rejectionReason: undefined,
+          tenantName: undefined,
+          updatedBy: 'system',
         }),
       )
     })
@@ -2279,8 +2347,11 @@ describe('Tenant API', () => {
 
       expect(mockTMSRepository.updateTenantRequestStatus).toHaveBeenCalledWith(
         expect.objectContaining({
-          params: { requestId },
-          body: validRejectData,
+          requestId,
+          status: validRejectData.status,
+          rejectionReason: validRejectData.rejectionReason,
+          tenantName: undefined,
+          updatedBy: 'system',
         }),
       )
     })
@@ -2316,8 +2387,11 @@ describe('Tenant API', () => {
 
       expect(mockTMSRepository.updateTenantRequestStatus).toHaveBeenCalledWith(
         expect.objectContaining({
-          params: { requestId },
-          body: validApproveData,
+          requestId,
+          status: validApproveData.status,
+          rejectionReason: undefined,
+          tenantName: undefined,
+          updatedBy: 'system',
         }),
       )
     })
@@ -2365,8 +2439,11 @@ describe('Tenant API', () => {
 
       expect(mockTMSRepository.updateTenantRequestStatus).toHaveBeenCalledWith(
         expect.objectContaining({
-          params: { requestId },
-          body: validApproveData,
+          requestId,
+          status: validApproveData.status,
+          rejectionReason: undefined,
+          tenantName: undefined,
+          updatedBy: 'system',
         }),
       )
     })
@@ -2404,8 +2481,11 @@ describe('Tenant API', () => {
 
       expect(mockTMSRepository.updateTenantRequestStatus).toHaveBeenCalledWith(
         expect.objectContaining({
-          params: { requestId },
-          body: validApproveData,
+          requestId,
+          status: validApproveData.status,
+          rejectionReason: undefined,
+          tenantName: undefined,
+          updatedBy: 'system',
         }),
       )
     })
@@ -2466,7 +2546,7 @@ describe('Tenant API', () => {
       }
 
       mockTMSRepository.updateTenantRequestStatus.mockResolvedValue(
-        mockResponse as any,
+        mockResponse as unknown as UpdateTenantRequestStatusResult,
       )
 
       const response = await request(app)
@@ -2517,15 +2597,18 @@ describe('Tenant API', () => {
 
       expect(mockTMSRepository.updateTenantRequestStatus).toHaveBeenCalledWith(
         expect.objectContaining({
-          params: { requestId },
-          body: validApproveData,
+          requestId,
+          status: validApproveData.status,
+          rejectionReason: undefined,
+          tenantName: undefined,
+          updatedBy: 'system',
         }),
       )
     })
   })
 
   describe('GET /v1/tenant-requests', () => {
-    const mockTenantRequests: any[] = [
+    const mockTenantRequests = [
       {
         id: '123e4567-e89b-12d3-a456-426614174000',
         name: 'Test Tenant',
@@ -2546,7 +2629,7 @@ describe('Tenant API', () => {
         createdBy: '123e4567e89b12d3a456426614174001',
         updatedBy: '123e4567e89b12d3a456426614174001',
       },
-    ]
+    ] as unknown as GetTenantRequestsResult
 
     beforeEach(() => {
       app.get(
@@ -2597,9 +2680,7 @@ describe('Tenant API', () => {
         },
       })
 
-      expect(mockTMSRepository.getTenantRequests).toHaveBeenCalledWith(
-        undefined,
-      )
+      expect(mockTMSRepository.getTenantRequests).toHaveBeenCalledWith({})
     })
 
     it('should get tenant requests filtered by NEW status', async () => {
@@ -2621,7 +2702,9 @@ describe('Tenant API', () => {
         },
       })
 
-      expect(mockTMSRepository.getTenantRequests).toHaveBeenCalledWith('NEW')
+      expect(mockTMSRepository.getTenantRequests).toHaveBeenCalledWith({
+        status: 'NEW',
+      })
     })
 
     it('should return 400 when status parameter is invalid', async () => {
@@ -2659,9 +2742,7 @@ describe('Tenant API', () => {
         name: 'Error occurred getting tenant requests',
       })
 
-      expect(mockTMSRepository.getTenantRequests).toHaveBeenCalledWith(
-        undefined,
-      )
+      expect(mockTMSRepository.getTenantRequests).toHaveBeenCalledWith({})
     })
   })
 
@@ -2769,7 +2850,12 @@ describe('Tenant API', () => {
 
       expect(mockTMSRepository.saveSharedService).toHaveBeenCalledWith(
         expect.objectContaining({
-          body: validSharedServiceData,
+          name: validSharedServiceData.name,
+          clientIdentifier: validSharedServiceData.clientIdentifier,
+          description: validSharedServiceData.description,
+          isActive: validSharedServiceData.isActive,
+          roles: validSharedServiceData.roles,
+          updatedBy: 'system',
         }),
       )
     })
@@ -2954,7 +3040,7 @@ describe('Tenant API', () => {
     })
 
     it('should add roles to shared service successfully', async () => {
-      const mockUpdatedSharedService: any = {
+      const mockUpdatedSharedService = {
         id: sharedServiceId,
         name: 'Test Shared Service',
         clientIdentifier: 'test-service-client',
@@ -2984,7 +3070,7 @@ describe('Tenant API', () => {
         updatedDateTime: new Date(),
         createdBy: '123e4567e89b12d3a456426614174001',
         updatedBy: '123e4567e89b12d3a456426614174001',
-      }
+      } as unknown as ResolvedAddSharedServiceRolesResult
 
       mockTMSRepository.addSharedServiceRoles.mockResolvedValue(
         mockUpdatedSharedService,
@@ -3017,8 +3103,9 @@ describe('Tenant API', () => {
 
       expect(mockTMSRepository.addSharedServiceRoles).toHaveBeenCalledWith(
         expect.objectContaining({
-          params: { sharedServiceId },
-          body: validRolesData,
+          sharedServiceId,
+          roles: validRolesData.roles,
+          updatedBy: 'system',
         }),
       )
     })
@@ -3032,7 +3119,7 @@ describe('Tenant API', () => {
         ],
       }
 
-      const mockUpdatedSharedService: any = {
+      const mockUpdatedSharedService = {
         id: sharedServiceId,
         name: 'Test Shared Service',
         clientIdentifier: 'test-service-client',
@@ -3050,7 +3137,7 @@ describe('Tenant API', () => {
         updatedDateTime: new Date(),
         createdBy: '123e4567e89b12d3a456426614174001',
         updatedBy: '123e4567e89b12d3a456426614174001',
-      }
+      } as unknown as ResolvedAddSharedServiceRolesResult
 
       mockTMSRepository.addSharedServiceRoles.mockResolvedValue(
         mockUpdatedSharedService,
@@ -3187,7 +3274,7 @@ describe('Tenant API', () => {
     })
 
     it('should get all active shared services successfully', async () => {
-      const mockSharedServices: any = [
+      const mockSharedServices = [
         {
           id: '123e4567-e89b-12d3-a456-426614174000',
           name: 'Service A',
@@ -3232,7 +3319,7 @@ describe('Tenant API', () => {
           createdBy: '123e4567e89b12d3a456426614174001',
           updatedBy: '123e4567e89b12d3a456426614174001',
         },
-      ]
+      ] as unknown as GetAllActiveSharedServicesResult
 
       mockTMSRepository.getAllActiveSharedServices.mockResolvedValue(
         mockSharedServices,
@@ -3301,7 +3388,7 @@ describe('Tenant API', () => {
     })
 
     it('should return shared services sorted alphabetically by name', async () => {
-      const mockSharedServices: any = [
+      const mockSharedServices = [
         {
           id: '123e4567-e89b-12d3-a456-426614174000',
           name: 'Alpha Service',
@@ -3316,7 +3403,7 @@ describe('Tenant API', () => {
           isActive: true,
           roles: [],
         },
-      ]
+      ] as unknown as GetAllActiveSharedServicesResult
 
       mockTMSRepository.getAllActiveSharedServices.mockResolvedValue(
         mockSharedServices,
@@ -3331,7 +3418,7 @@ describe('Tenant API', () => {
     })
 
     it('should exclude inactive shared services', async () => {
-      const mockSharedServices: any = [
+      const mockSharedServices = [
         {
           id: '123e4567-e89b-12d3-a456-426614174000',
           name: 'Active Service',
@@ -3339,7 +3426,7 @@ describe('Tenant API', () => {
           isActive: true,
           roles: [],
         },
-      ]
+      ] as unknown as GetAllActiveSharedServicesResult
 
       mockTMSRepository.getAllActiveSharedServices.mockResolvedValue(
         mockSharedServices,
@@ -3353,7 +3440,7 @@ describe('Tenant API', () => {
     })
 
     it('should exclude deleted roles from shared services', async () => {
-      const mockSharedServices: any = [
+      const mockSharedServices = [
         {
           id: '123e4567-e89b-12d3-a456-426614174000',
           name: 'Test Service',
@@ -3373,7 +3460,7 @@ describe('Tenant API', () => {
           createdBy: '123e4567e89b12d3a456426614174001',
           updatedBy: '123e4567e89b12d3a456426614174001',
         },
-      ]
+      ] as unknown as GetAllActiveSharedServicesResult
 
       mockTMSRepository.getAllActiveSharedServices.mockResolvedValue(
         mockSharedServices,
@@ -3456,8 +3543,9 @@ describe('Tenant API', () => {
         mockTMSRepository.associateSharedServiceToTenant,
       ).toHaveBeenCalledWith(
         expect.objectContaining({
-          params: { tenantId },
-          body: validRequestData,
+          tenantId,
+          sharedServiceId: validRequestData.sharedServiceId,
+          updatedBy: 'system',
         }),
       )
     })
@@ -3626,7 +3714,7 @@ describe('Tenant API', () => {
     })
 
     it('should get shared services for tenant successfully', async () => {
-      const mockSharedServices: any = [
+      const mockSharedServices = [
         {
           id: '123e4567-e89b-12d3-a456-426614174001',
           name: 'Service A',
@@ -3671,7 +3759,7 @@ describe('Tenant API', () => {
           createdBy: '123e4567e89b12d3a456426614174001',
           updatedBy: '123e4567e89b12d3a456426614174001',
         },
-      ]
+      ] as unknown as GetSharedServicesForTenantResult
 
       mockTMSRepository.getSharedServicesForTenant.mockResolvedValue(
         mockSharedServices,
@@ -3720,7 +3808,9 @@ describe('Tenant API', () => {
       })
 
       expect(mockTMSRepository.getSharedServicesForTenant).toHaveBeenCalledWith(
-        tenantId,
+        {
+          tenantId,
+        },
       )
     })
 
@@ -3739,12 +3829,14 @@ describe('Tenant API', () => {
       })
 
       expect(mockTMSRepository.getSharedServicesForTenant).toHaveBeenCalledWith(
-        tenantId,
+        {
+          tenantId,
+        },
       )
     })
 
     it('should return shared services sorted alphabetically by name', async () => {
-      const mockSharedServices: any = [
+      const mockSharedServices = [
         {
           id: '123e4567-e89b-12d3-a456-426614174000',
           name: 'Alpha Service',
@@ -3759,7 +3851,7 @@ describe('Tenant API', () => {
           isActive: true,
           roles: [],
         },
-      ]
+      ] as unknown as GetSharedServicesForTenantResult
 
       mockTMSRepository.getSharedServicesForTenant.mockResolvedValue(
         mockSharedServices,
@@ -3776,7 +3868,7 @@ describe('Tenant API', () => {
     })
 
     it('should exclude deleted roles from shared services', async () => {
-      const mockSharedServices: any = [
+      const mockSharedServices = [
         {
           id: '123e4567-e89b-12d3-a456-426614174000',
           name: 'Test Service',
@@ -3796,7 +3888,7 @@ describe('Tenant API', () => {
           createdBy: '123e4567e89b12d3a456426614174001',
           updatedBy: '123e4567e89b12d3a456426614174001',
         },
-      ]
+      ] as unknown as GetSharedServicesForTenantResult
 
       mockTMSRepository.getSharedServicesForTenant.mockResolvedValue(
         mockSharedServices,
@@ -3903,7 +3995,9 @@ describe('Tenant API', () => {
         },
       ]
 
-      mockTMSRepository.getUserRoles.mockResolvedValue(mockRoles as any)
+      mockTMSRepository.getUserRoles.mockResolvedValue(
+        mockRoles as unknown as GetUserRolesResult,
+      )
 
       const response = await request(app).get(
         `/v1/tenants/${tenantId}/users/${tenantUserId}/roles`,
@@ -3926,7 +4020,8 @@ describe('Tenant API', () => {
       })
       expect(mockTMSRepository.getUserRoles).toHaveBeenCalledWith(
         expect.objectContaining({
-          params: { tenantId, tenantUserId },
+          tenantId,
+          tenantUserId,
         }),
       )
     })
@@ -4063,8 +4158,9 @@ describe('Tenant API', () => {
       expect(response.body.data.tenantUser).toEqual(mockTenantUser)
       expect(mockTMSRepository.getTenantUser).toHaveBeenCalledWith(
         expect.objectContaining({
-          params: { tenantId, tenantUserId },
-          query: {},
+          tenantId,
+          tenantUserId,
+          expand: [],
         }),
       )
     })
@@ -4086,13 +4182,13 @@ describe('Tenant API', () => {
         updatedBy: 'system',
       }
 
-      const mockGroups = [
+      const mockGroups: GetTenantUserGroupsResult = [
         {
           id: 'group-1',
           name: 'Test Group',
           description: 'Test Group Description',
-          createdDateTime: '2024-01-01',
-          updatedDateTime: '2024-01-01',
+          createdDateTime: new Date('2024-01-01'),
+          updatedDateTime: new Date('2024-01-01'),
           createdBy: 'system',
           updatedBy: 'system',
         },
@@ -4106,11 +4202,18 @@ describe('Tenant API', () => {
       )
 
       expect(response.status).toBe(200)
-      expect(response.body.data.tenantUser.groups).toEqual(mockGroups)
+      expect(response.body.data.tenantUser.groups).toEqual([
+        expect.objectContaining({
+          ...mockGroups[0],
+          createdDateTime: mockGroups[0].createdDateTime.toISOString(),
+          updatedDateTime: mockGroups[0].updatedDateTime.toISOString(),
+        }),
+      ])
       expect(mockTMSRepository.getTenantUser).toHaveBeenCalledWith(
         expect.objectContaining({
-          params: { tenantId, tenantUserId },
-          query: { expand: 'groups' },
+          tenantId,
+          tenantUserId,
+          expand: ['groups'],
         }),
       )
       expect(mockTMRepository.getTenantUserGroups).toHaveBeenCalledWith(
@@ -4153,8 +4256,9 @@ describe('Tenant API', () => {
       expect(response.body.data.tenantUser.roles).toEqual(mockTenantUser.roles)
       expect(mockTMSRepository.getTenantUser).toHaveBeenCalledWith(
         expect.objectContaining({
-          params: { tenantId, tenantUserId },
-          query: { expand: 'roles' },
+          tenantId,
+          tenantUserId,
+          expand: ['roles'],
         }),
       )
     })
@@ -4176,7 +4280,7 @@ describe('Tenant API', () => {
         updatedBy: 'system',
       }
 
-      const mockSharedServices = [
+      const mockSharedServices: GetTenantUserSharedServiceRolesResult = [
         {
           id: 'ss-1',
           name: 'Test Service',
@@ -4188,7 +4292,7 @@ describe('Tenant API', () => {
               id: 'ssr-1',
               name: 'ADMIN',
               description: 'Admin Role',
-              isDeleted: false,
+              allowedIdentityProviders: null,
             },
           ],
         },
@@ -4209,8 +4313,9 @@ describe('Tenant API', () => {
       )
       expect(mockTMSRepository.getTenantUser).toHaveBeenCalledWith(
         expect.objectContaining({
-          params: { tenantId, tenantUserId },
-          query: { expand: 'sharedServices' },
+          tenantId,
+          tenantUserId,
+          expand: ['sharedServices'],
         }),
       )
       expect(
@@ -4243,13 +4348,13 @@ describe('Tenant API', () => {
         updatedBy: 'system',
       }
 
-      const mockGroups = [
+      const mockGroups: GetTenantUserGroupsResult = [
         {
           id: 'group-1',
           name: 'Test Group',
           description: 'Test Group Description',
-          createdDateTime: '2024-01-01',
-          updatedDateTime: '2024-01-01',
+          createdDateTime: new Date('2024-01-01'),
+          updatedDateTime: new Date('2024-01-01'),
           createdBy: 'system',
           updatedBy: 'system',
         },
@@ -4263,12 +4368,19 @@ describe('Tenant API', () => {
       )
 
       expect(response.status).toBe(200)
-      expect(response.body.data.tenantUser.groups).toEqual(mockGroups)
+      expect(response.body.data.tenantUser.groups).toEqual([
+        expect.objectContaining({
+          ...mockGroups[0],
+          createdDateTime: mockGroups[0].createdDateTime.toISOString(),
+          updatedDateTime: mockGroups[0].updatedDateTime.toISOString(),
+        }),
+      ])
       expect(response.body.data.tenantUser.roles).toEqual(mockTenantUser.roles)
       expect(mockTMSRepository.getTenantUser).toHaveBeenCalledWith(
         expect.objectContaining({
-          params: { tenantId, tenantUserId },
-          query: { expand: 'groups,roles' },
+          tenantId,
+          tenantUserId,
+          expand: ['groups', 'roles'],
         }),
       )
       expect(mockTMRepository.getTenantUserGroups).toHaveBeenCalledWith(
@@ -4559,7 +4671,7 @@ describe('Tenant API', () => {
 
       jest
         .spyOn(tmsController.tmsService, 'searchBCGOVSSOUsers')
-        .mockResolvedValue(mockSearchResults as any)
+        .mockResolvedValue(mockSearchResults as unknown)
 
       const response = await request(app)
         .get('/v1/users/bcgovssousers/idir/search')
@@ -4584,7 +4696,7 @@ describe('Tenant API', () => {
 
       jest
         .spyOn(tmsController.tmsService, 'searchBCGOVSSOUsers')
-        .mockResolvedValue(mockSearchResults as any)
+        .mockResolvedValue(mockSearchResults as unknown)
 
       const response = await request(app)
         .get('/v1/users/bcgovssousers/idir/search')
@@ -4609,7 +4721,7 @@ describe('Tenant API', () => {
 
       jest
         .spyOn(tmsController.tmsService, 'searchBCGOVSSOUsers')
-        .mockResolvedValue(mockSearchResults as any)
+        .mockResolvedValue(mockSearchResults as unknown)
 
       const response = await request(app)
         .get('/v1/users/bcgovssousers/idir/search')
@@ -4634,7 +4746,7 @@ describe('Tenant API', () => {
 
       jest
         .spyOn(tmsController.tmsService, 'searchBCGOVSSOUsers')
-        .mockResolvedValue(mockSearchResults as any)
+        .mockResolvedValue(mockSearchResults as unknown)
 
       const response = await request(app)
         .get('/v1/users/bcgovssousers/idir/search')
@@ -4649,7 +4761,7 @@ describe('Tenant API', () => {
 
       jest
         .spyOn(tmsController.tmsService, 'searchBCGOVSSOUsers')
-        .mockResolvedValue(mockSearchResults as any)
+        .mockResolvedValue(mockSearchResults as unknown)
 
       const response = await request(app)
         .get('/v1/users/bcgovssousers/idir/search')
@@ -4777,7 +4889,7 @@ describe('Tenant API', () => {
 
       jest
         .spyOn(tmsController.tmsService, 'searchBCGOVSSOBceidUsers')
-        .mockResolvedValue(mockSearchResults as any)
+        .mockResolvedValue(mockSearchResults as unknown)
 
       const response = await request(app)
         .get('/v1/users/bcgovssousers/bceid/search')
@@ -4801,7 +4913,7 @@ describe('Tenant API', () => {
 
       jest
         .spyOn(tmsController.tmsService, 'searchBCGOVSSOBceidUsers')
-        .mockResolvedValue(mockSearchResults as any)
+        .mockResolvedValue(mockSearchResults as unknown)
 
       const response = await request(app)
         .get('/v1/users/bcgovssousers/bceid/search')
@@ -4825,7 +4937,7 @@ describe('Tenant API', () => {
 
       jest
         .spyOn(tmsController.tmsService, 'searchBCGOVSSOBceidUsers')
-        .mockResolvedValue(mockSearchResults as any)
+        .mockResolvedValue(mockSearchResults as unknown)
 
       const response = await request(app)
         .get('/v1/users/bcgovssousers/bceid/search')
@@ -4840,7 +4952,7 @@ describe('Tenant API', () => {
 
       jest
         .spyOn(tmsController.tmsService, 'searchBCGOVSSOBceidUsers')
-        .mockResolvedValue(mockSearchResults as any)
+        .mockResolvedValue(mockSearchResults as unknown)
 
       const response = await request(app)
         .get('/v1/users/bcgovssousers/bceid/search')

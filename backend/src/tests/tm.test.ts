@@ -27,6 +27,29 @@ jest.mock('../common/db.connection', () => ({
   },
 }))
 
+type SaveGroupResult = Awaited<ReturnType<TMRepository['saveGroup']>>
+type UpdateGroupResult = Awaited<ReturnType<TMRepository['updateGroup']>>
+type AddGroupUserResult = Awaited<ReturnType<TMRepository['addGroupUser']>>
+type GetGroupResult = Awaited<ReturnType<TMRepository['getGroup']>>
+type GetTenantGroupsResult = Awaited<
+  ReturnType<TMRepository['getTenantGroups']>
+>
+type GetSharedServiceRolesForGroupResult = Awaited<
+  ReturnType<TMRepository['getSharedServiceRolesForGroup']>
+>
+type UpdateSharedServiceRolesForGroupResult = Awaited<
+  ReturnType<TMRepository['updateSharedServiceRolesForGroup']>
+>
+type GetUserGroupsWithSharedServiceRolesResult = Awaited<
+  ReturnType<TMRepository['getUserGroupsWithSharedServiceRoles']>
+>
+type GetEffectiveSharedServiceRolesResult = Awaited<
+  ReturnType<TMRepository['getEffectiveSharedServiceRoles']>
+>
+type EnsureTenantUserExistsResult = NonNullable<
+  Awaited<ReturnType<TMSRepository['ensureTenantUserExists']>>
+>
+
 describe('Tenant Management API', () => {
   let app: express.Application
   let mockTMRepository: jest.Mocked<TMRepository>
@@ -167,7 +190,7 @@ describe('Tenant Management API', () => {
       }
 
       mockTMRepository.saveGroup.mockResolvedValue(
-        mockGroup as unknown as Group,
+        mockGroup as unknown as unknown as Group,
       )
 
       const response = await request(app)
@@ -188,8 +211,11 @@ describe('Tenant Management API', () => {
 
       expect(mockTMRepository.saveGroup).toHaveBeenCalledWith(
         expect.objectContaining({
-          params: { tenantId },
-          body: validGroupData,
+          tenantId,
+          name: validGroupData.name,
+          description: validGroupData.description,
+          tenantUserId: undefined,
+          createdBy: 'system',
         }),
       )
     })
@@ -221,7 +247,7 @@ describe('Tenant Management API', () => {
       }
 
       mockTMRepository.saveGroup.mockResolvedValue(
-        mockGroupWithUser as unknown as Group,
+        mockGroupWithUser as unknown as unknown as Group,
       )
 
       const response = await request(app)
@@ -245,8 +271,11 @@ describe('Tenant Management API', () => {
 
       expect(mockTMRepository.saveGroup).toHaveBeenCalledWith(
         expect.objectContaining({
-          params: { tenantId },
-          body: groupDataWithUser,
+          tenantId,
+          name: groupDataWithUser.name,
+          description: groupDataWithUser.description,
+          tenantUserId,
+          createdBy: 'system',
         }),
       )
     })
@@ -410,7 +439,9 @@ describe('Tenant Management API', () => {
         tenant: { id: tenantId },
       }
 
-      mockTMRepository.saveGroup.mockResolvedValue(mockGroup as any)
+      mockTMRepository.saveGroup.mockResolvedValue(
+        mockGroup as unknown as SaveGroupResult,
+      )
 
       const response = await request(app)
         .post(`/v1/tenants/${tenantId}/groups`)
@@ -441,7 +472,9 @@ describe('Tenant Management API', () => {
         updatedDateTime: new Date(),
       }
 
-      mockTMRepository.updateGroup.mockResolvedValue(mockUpdatedGroup as any)
+      mockTMRepository.updateGroup.mockResolvedValue(
+        mockUpdatedGroup as unknown as UpdateGroupResult,
+      )
 
       const response = await request(app)
         .put(`/v1/tenants/${tenantId}/groups/${groupId}`)
@@ -461,8 +494,11 @@ describe('Tenant Management API', () => {
 
       expect(mockTMRepository.updateGroup).toHaveBeenCalledWith(
         expect.objectContaining({
-          params: { tenantId, groupId },
-          body: validUpdateData,
+          tenantId,
+          groupId,
+          name: validUpdateData.name,
+          description: validUpdateData.description,
+          updatedBy: 'system',
         }),
       )
     })
@@ -482,7 +518,9 @@ describe('Tenant Management API', () => {
         updatedBy: 'test-user',
       }
 
-      mockTMRepository.updateGroup.mockResolvedValue(mockUpdatedGroup as any)
+      mockTMRepository.updateGroup.mockResolvedValue(
+        mockUpdatedGroup as unknown as UpdateGroupResult,
+      )
 
       const response = await request(app)
         .put(`/v1/tenants/${tenantId}/groups/${groupId}`)
@@ -515,7 +553,9 @@ describe('Tenant Management API', () => {
         updatedBy: 'test-user',
       }
 
-      mockTMRepository.updateGroup.mockResolvedValue(mockUpdatedGroup as any)
+      mockTMRepository.updateGroup.mockResolvedValue(
+        mockUpdatedGroup as unknown as UpdateGroupResult,
+      )
 
       const response = await request(app)
         .put(`/v1/tenants/${tenantId}/groups/${groupId}`)
@@ -663,12 +703,14 @@ describe('Tenant Management API', () => {
       }
 
       mockTMRepository.checkIfGroupExistsInTenant.mockResolvedValue(
-        mockGroup as any,
+        mockGroup as unknown as Group,
       )
       mockTMSRepository.ensureTenantUserExists.mockResolvedValue(
-        mockTenantUser as any,
+        mockTenantUser as unknown as EnsureTenantUserExistsResult,
       )
-      mockTMRepository.addGroupUser.mockResolvedValue(mockGroupUser as any)
+      mockTMRepository.addGroupUser.mockResolvedValue(
+        mockGroupUser as unknown as AddGroupUserResult,
+      )
 
       const response = await request(app)
         .post(`/v1/tenants/${tenantId}/groups/${groupId}/users`)
@@ -726,12 +768,14 @@ describe('Tenant Management API', () => {
       }
 
       mockTMRepository.checkIfGroupExistsInTenant.mockResolvedValue(
-        mockGroup as any,
+        mockGroup as unknown as Group,
       )
       mockTMSRepository.ensureTenantUserExists.mockResolvedValue(
-        mockTenantUser as any,
+        mockTenantUser as unknown as EnsureTenantUserExistsResult,
       )
-      mockTMRepository.addGroupUser.mockResolvedValue(mockGroupUser as any)
+      mockTMRepository.addGroupUser.mockResolvedValue(
+        mockGroupUser as unknown as AddGroupUserResult,
+      )
 
       const response = await request(app)
         .post(`/v1/tenants/${tenantId}/groups/${groupId}/users`)
@@ -753,8 +797,14 @@ describe('Tenant Management API', () => {
     })
 
     it('should fail when group does not exist', async () => {
-      const errorMessage = `Group not found or does not exist for tenant: ${tenantId}`
-      mockTMRepository.checkIfGroupExistsInTenant.mockResolvedValue(null)
+      const errorMessage = `Group not found: ${groupId}`
+      const mockTenantUser = { id: '123e4567-e89b-12d3-a456-426614174003' }
+      mockTMSRepository.ensureTenantUserExists.mockResolvedValue(
+        mockTenantUser as unknown as EnsureTenantUserExistsResult,
+      )
+      mockTMRepository.addGroupUser.mockRejectedValue(
+        new NotFoundError(errorMessage),
+      )
 
       const response = await request(app)
         .post(`/v1/tenants/${tenantId}/groups/${groupId}/users`)
@@ -774,10 +824,10 @@ describe('Tenant Management API', () => {
       const mockTenantUser = { id: '123e4567-e89b-12d3-a456-426614174003' }
       const errorMessage = 'User is already a member of this group'
       mockTMRepository.checkIfGroupExistsInTenant.mockResolvedValue(
-        mockGroup as any,
+        mockGroup as unknown as Group,
       )
       mockTMSRepository.ensureTenantUserExists.mockResolvedValue(
-        mockTenantUser as any,
+        mockTenantUser as unknown as EnsureTenantUserExistsResult,
       )
       mockTMRepository.addGroupUser.mockRejectedValue(
         new ConflictError(errorMessage),
@@ -801,10 +851,10 @@ describe('Tenant Management API', () => {
       const mockTenantUser = { id: '123e4567-e89b-12d3-a456-426614174003' }
       const errorMessage = 'Database connection failed'
       mockTMRepository.checkIfGroupExistsInTenant.mockResolvedValue(
-        mockGroup as any,
+        mockGroup as unknown as Group,
       )
       mockTMSRepository.ensureTenantUserExists.mockResolvedValue(
-        mockTenantUser as any,
+        mockTenantUser as unknown as EnsureTenantUserExistsResult,
       )
       mockTMRepository.addGroupUser.mockRejectedValue(new Error(errorMessage))
 
@@ -860,10 +910,10 @@ describe('Tenant Management API', () => {
       const mockTenantUser = { id: '123e4567-e89b-12d3-a456-426614174003' }
 
       mockTMRepository.checkIfGroupExistsInTenant.mockResolvedValue(
-        mockGroup as any,
+        mockGroup as unknown as Group,
       )
       mockTMSRepository.ensureTenantUserExists.mockResolvedValue(
-        mockTenantUser as any,
+        mockTenantUser as unknown as EnsureTenantUserExistsResult,
       )
       mockTMRepository.addGroupUser.mockRejectedValue(
         new Error('Database error during group user creation'),
@@ -880,17 +930,11 @@ describe('Tenant Management API', () => {
         message: 'Database error during group user creation',
         name: 'Error occurred adding user to group',
       })
-      expect(mockTMRepository.checkIfGroupExistsInTenant).toHaveBeenCalled()
       expect(mockTMSRepository.ensureTenantUserExists).toHaveBeenCalled()
       expect(mockTMRepository.addGroupUser).toHaveBeenCalled()
     })
 
     it('should handle transaction rollback when ensureTenantUserExists fails', async () => {
-      const mockGroup = { id: groupId, name: 'Test Group' }
-
-      mockTMRepository.checkIfGroupExistsInTenant.mockResolvedValue(
-        mockGroup as any,
-      )
       mockTMSRepository.ensureTenantUserExists.mockRejectedValue(
         new Error('Database error during tenant user creation'),
       )
@@ -906,7 +950,6 @@ describe('Tenant Management API', () => {
         message: 'Database error during tenant user creation',
         name: 'Error occurred adding user to group',
       })
-      expect(mockTMRepository.checkIfGroupExistsInTenant).toHaveBeenCalled()
       expect(mockTMSRepository.ensureTenantUserExists).toHaveBeenCalled()
       expect(mockTMRepository.addGroupUser).not.toHaveBeenCalled()
     })
@@ -929,12 +972,14 @@ describe('Tenant Management API', () => {
       }
 
       mockTMRepository.checkIfGroupExistsInTenant.mockResolvedValue(
-        mockGroup as any,
+        mockGroup as unknown as Group,
       )
       mockTMSRepository.ensureTenantUserExists.mockResolvedValue(
-        mockTenantUser as any,
+        mockTenantUser as unknown as EnsureTenantUserExistsResult,
       )
-      mockTMRepository.addGroupUser.mockResolvedValue(mockGroupUser as any)
+      mockTMRepository.addGroupUser.mockResolvedValue(
+        mockGroupUser as unknown as AddGroupUserResult,
+      )
 
       const response = await request(app)
         .post(`/v1/tenants/${tenantId}/groups/${groupId}/users`)
@@ -964,12 +1009,14 @@ describe('Tenant Management API', () => {
       }
 
       mockTMRepository.checkIfGroupExistsInTenant.mockResolvedValue(
-        mockGroup as any,
+        mockGroup as unknown as Group,
       )
       mockTMSRepository.ensureTenantUserExists.mockResolvedValue(
-        mockRestoredTenantUser as any,
+        mockRestoredTenantUser as unknown as EnsureTenantUserExistsResult,
       )
-      mockTMRepository.addGroupUser.mockResolvedValue(mockGroupUser as any)
+      mockTMRepository.addGroupUser.mockResolvedValue(
+        mockGroupUser as unknown as AddGroupUserResult,
+      )
 
       const response = await request(app)
         .post(`/v1/tenants/${tenantId}/groups/${groupId}/users`)
@@ -1007,12 +1054,14 @@ describe('Tenant Management API', () => {
       }
 
       mockTMRepository.checkIfGroupExistsInTenant.mockResolvedValue(
-        mockGroup as any,
+        mockGroup as unknown as Group,
       )
       mockTMSRepository.ensureTenantUserExists.mockResolvedValue(
-        mockTenantUser as any,
+        mockTenantUser as unknown as EnsureTenantUserExistsResult,
       )
-      mockTMRepository.addGroupUser.mockResolvedValue(mockGroupUser as any)
+      mockTMRepository.addGroupUser.mockResolvedValue(
+        mockGroupUser as unknown as AddGroupUserResult,
+      )
 
       const response = await request(app)
         .post(`/v1/tenants/${tenantId}/groups/${groupId}/users`)
@@ -1048,12 +1097,14 @@ describe('Tenant Management API', () => {
       }
 
       mockTMRepository.checkIfGroupExistsInTenant.mockResolvedValue(
-        mockGroup as any,
+        mockGroup as unknown as Group,
       )
       mockTMSRepository.ensureTenantUserExists.mockResolvedValue(
-        mockTenantUser as any,
+        mockTenantUser as unknown as EnsureTenantUserExistsResult,
       )
-      mockTMRepository.addGroupUser.mockResolvedValue(mockGroupUser as any)
+      mockTMRepository.addGroupUser.mockResolvedValue(
+        mockGroupUser as unknown as AddGroupUserResult,
+      )
 
       const response = await request(app)
         .post(`/v1/tenants/${tenantId}/groups/${groupId}/users`)
@@ -1080,7 +1131,10 @@ describe('Tenant Management API', () => {
 
       expect(mockTMRepository.removeGroupUser).toHaveBeenCalledWith(
         expect.objectContaining({
-          params: { tenantId, groupId, groupUserId },
+          tenantId,
+          groupId,
+          groupUserId,
+          updatedBy: 'system',
         }),
       )
     })
@@ -1207,7 +1261,9 @@ describe('Tenant Management API', () => {
         updatedDateTime: new Date(),
       }
 
-      mockTMRepository.getGroup.mockResolvedValue(mockGroup as any)
+      mockTMRepository.getGroup.mockResolvedValue(
+        mockGroup as unknown as GetGroupResult,
+      )
 
       const response = await request(app).get(
         `/v1/tenants/${tenantId}/groups/${groupId}`,
@@ -1227,7 +1283,9 @@ describe('Tenant Management API', () => {
 
       expect(mockTMRepository.getGroup).toHaveBeenCalledWith(
         expect.objectContaining({
-          params: { tenantId, groupId },
+          tenantId,
+          groupId,
+          expand: [],
         }),
       )
     })
@@ -1269,7 +1327,9 @@ describe('Tenant Management API', () => {
         updatedBy: 'test-user',
       }
 
-      mockTMRepository.getGroup.mockResolvedValue(mockGroupWithUsers as any)
+      mockTMRepository.getGroup.mockResolvedValue(
+        mockGroupWithUsers as unknown as GetGroupResult,
+      )
 
       const response = await request(app)
         .get(`/v1/tenants/${tenantId}/groups/${groupId}`)
@@ -1309,8 +1369,9 @@ describe('Tenant Management API', () => {
 
       expect(mockTMRepository.getGroup).toHaveBeenCalledWith(
         expect.objectContaining({
-          params: { tenantId, groupId },
-          query: { expand: 'groupUsers' },
+          tenantId,
+          groupId,
+          expand: ['groupUsers'],
         }),
       )
     })
@@ -1410,7 +1471,9 @@ describe('Tenant Management API', () => {
         },
       ]
 
-      mockTMRepository.getTenantGroups.mockResolvedValue(mockGroups as any)
+      mockTMRepository.getTenantGroups.mockResolvedValue(
+        mockGroups as unknown as GetTenantGroupsResult,
+      )
 
       const response = await request(app).get(`/v1/tenants/${tenantId}/groups`)
 
@@ -1436,13 +1499,16 @@ describe('Tenant Management API', () => {
 
       expect(mockTMRepository.getTenantGroups).toHaveBeenCalledWith(
         expect.objectContaining({
-          params: { tenantId },
+          tenantId,
+          ssoUserId: undefined,
+          jwtAudience: 'tenant-management-system-6014',
+          tmsAudience: 'tenant-management-system-6014',
         }),
       )
     })
 
     it('should return empty array when tenant has no groups', async () => {
-      const mockEmptyGroups: any[] = []
+      const mockEmptyGroups: GetTenantGroupsResult = []
 
       mockTMRepository.getTenantGroups.mockResolvedValue(mockEmptyGroups)
 
@@ -1480,7 +1546,9 @@ describe('Tenant Management API', () => {
         },
       ]
 
-      mockTMRepository.getTenantGroups.mockResolvedValue(mockGroups as any)
+      mockTMRepository.getTenantGroups.mockResolvedValue(
+        mockGroups as unknown as GetTenantGroupsResult,
+      )
 
       const response = await request(app).get(`/v1/tenants/${tenantId}/groups`)
 
@@ -1581,7 +1649,7 @@ describe('Tenant Management API', () => {
       ]
 
       mockTMRepository.getSharedServiceRolesForGroup.mockResolvedValue(
-        mockSharedServices as any,
+        mockSharedServices as unknown as GetSharedServiceRolesForGroupResult,
       )
 
       const response = await request(app).get(
@@ -1636,13 +1704,14 @@ describe('Tenant Management API', () => {
         mockTMRepository.getSharedServiceRolesForGroup,
       ).toHaveBeenCalledWith(
         expect.objectContaining({
-          params: { tenantId, groupId },
+          tenantId,
+          groupId,
         }),
       )
     })
 
     it('should return empty array when group has no shared service roles', async () => {
-      const mockEmptySharedServices: any[] = []
+      const mockEmptySharedServices: GetSharedServiceRolesForGroupResult = []
 
       mockTMRepository.getSharedServiceRolesForGroup.mockResolvedValue(
         mockEmptySharedServices,
@@ -1681,7 +1750,7 @@ describe('Tenant Management API', () => {
       ]
 
       mockTMRepository.getSharedServiceRolesForGroup.mockResolvedValue(
-        mockSharedServices as any,
+        mockSharedServices as unknown as GetSharedServiceRolesForGroupResult,
       )
 
       const response = await request(app).get(
@@ -1824,7 +1893,7 @@ describe('Tenant Management API', () => {
       ]
 
       mockTMRepository.updateSharedServiceRolesForGroup.mockResolvedValue(
-        mockUpdatedSharedServices as any,
+        mockUpdatedSharedServices as unknown as UpdateSharedServiceRolesForGroupResult,
       )
 
       const response = await request(app)
@@ -1872,8 +1941,10 @@ describe('Tenant Management API', () => {
         mockTMRepository.updateSharedServiceRolesForGroup,
       ).toHaveBeenCalledWith(
         expect.objectContaining({
-          params: { tenantId, groupId },
-          body: updateData,
+          tenantId,
+          groupId,
+          updatedBy: 'system',
+          sharedServices: updateData.sharedServices,
         }),
       )
     })
@@ -1912,7 +1983,7 @@ describe('Tenant Management API', () => {
       ]
 
       mockTMRepository.updateSharedServiceRolesForGroup.mockResolvedValue(
-        mockUpdatedSharedServices as any,
+        mockUpdatedSharedServices as unknown as UpdateSharedServiceRolesForGroupResult,
       )
 
       const response = await request(app)
@@ -2197,9 +2268,9 @@ describe('Tenant Management API', () => {
         },
       ]
 
-      mockTMRepository.getUserGroupsWithSharedServiceRoles.mockResolvedValue(
-        mockUserGroups as any,
-      )
+      mockTMRepository.getUserGroupsWithSharedServiceRoles.mockResolvedValue({
+        groups: mockUserGroups,
+      } as unknown as GetUserGroupsWithSharedServiceRolesResult)
 
       const response = await request(app).get(
         `/v1/tenants/${tenantId}/users/${ssoUserId}/groups/shared-service-roles`,
@@ -2207,80 +2278,84 @@ describe('Tenant Management API', () => {
 
       expect(response.status).toBe(200)
       expect(response.body).toMatchObject({
-        data: [
-          {
-            id: '123e4567-e89b-12d3-a456-426614174001',
-            name: 'Admin Group',
-            description: 'Administrator group',
-            sharedServiceRoles: [
-              {
-                id: '123e4567-e89b-12d3-a456-426614174002',
-                enabled: true,
-                sharedService: {
-                  id: '123e4567-e89b-12d3-a456-426614174003',
-                  name: 'Test Service 1',
-                  clientIdentifier: 'test-service-1',
-                  isActive: true,
+        data: {
+          groups: [
+            {
+              id: '123e4567-e89b-12d3-a456-426614174001',
+              name: 'Admin Group',
+              description: 'Administrator group',
+              sharedServiceRoles: [
+                {
+                  id: '123e4567-e89b-12d3-a456-426614174002',
+                  enabled: true,
+                  sharedService: {
+                    id: '123e4567-e89b-12d3-a456-426614174003',
+                    name: 'Test Service 1',
+                    clientIdentifier: 'test-service-1',
+                    isActive: true,
+                  },
+                  sharedServiceRole: {
+                    id: '123e4567-e89b-12d3-a456-426614174004',
+                    name: 'Admin Role',
+                  },
                 },
-                sharedServiceRole: {
-                  id: '123e4567-e89b-12d3-a456-426614174004',
-                  name: 'Admin Role',
+                {
+                  id: '123e4567-e89b-12d3-a456-426614174005',
+                  enabled: false,
+                  sharedService: {
+                    id: '123e4567-e89b-12d3-a456-426614174006',
+                    name: 'Test Service 2',
+                    clientIdentifier: 'test-service-2',
+                    isActive: true,
+                  },
+                  sharedServiceRole: {
+                    id: '123e4567-e89b-12d3-a456-426614174007',
+                    name: 'User Role',
+                  },
                 },
-              },
-              {
-                id: '123e4567-e89b-12d3-a456-426614174005',
-                enabled: false,
-                sharedService: {
-                  id: '123e4567-e89b-12d3-a456-426614174006',
-                  name: 'Test Service 2',
-                  clientIdentifier: 'test-service-2',
-                  isActive: true,
+              ],
+            },
+            {
+              id: '123e4567-e89b-12d3-a456-426614174008',
+              name: 'User Group',
+              description: 'Regular user group',
+              sharedServiceRoles: [
+                {
+                  id: '123e4567-e89b-12d3-a456-426614174009',
+                  enabled: true,
+                  sharedService: {
+                    id: '123e4567-e89b-12d3-a456-426614174003',
+                    name: 'Test Service 1',
+                    clientIdentifier: 'test-service-1',
+                    isActive: true,
+                  },
+                  sharedServiceRole: {
+                    id: '123e4567-e89b-12d3-a456-426614174010',
+                    name: 'Viewer Role',
+                  },
                 },
-                sharedServiceRole: {
-                  id: '123e4567-e89b-12d3-a456-426614174007',
-                  name: 'User Role',
-                },
-              },
-            ],
-          },
-          {
-            id: '123e4567-e89b-12d3-a456-426614174008',
-            name: 'User Group',
-            description: 'Regular user group',
-            sharedServiceRoles: [
-              {
-                id: '123e4567-e89b-12d3-a456-426614174009',
-                enabled: true,
-                sharedService: {
-                  id: '123e4567-e89b-12d3-a456-426614174003',
-                  name: 'Test Service 1',
-                  clientIdentifier: 'test-service-1',
-                  isActive: true,
-                },
-                sharedServiceRole: {
-                  id: '123e4567-e89b-12d3-a456-426614174010',
-                  name: 'Viewer Role',
-                },
-              },
-            ],
-          },
-        ],
+              ],
+            },
+          ],
+        },
       })
 
       expect(
         mockTMRepository.getUserGroupsWithSharedServiceRoles,
       ).toHaveBeenCalledWith(
         expect.objectContaining({
-          params: { tenantId, ssoUserId },
+          tenantId,
+          ssoUserId,
+          audience: 'test-service-client',
+          idpType: undefined,
         }),
-        'test-service-client',
       )
     })
 
     it('should return empty array when user has no groups', async () => {
-      mockTMRepository.getUserGroupsWithSharedServiceRoles.mockResolvedValue(
-        [] as any,
-      )
+      mockTMRepository.getUserGroupsWithSharedServiceRoles.mockResolvedValue({
+        groups: [],
+      } as GetUserGroupsWithSharedServiceRolesResult)
 
       const response = await request(app).get(
         `/v1/tenants/${tenantId}/users/${ssoUserId}/groups/shared-service-roles`,
@@ -2288,7 +2363,9 @@ describe('Tenant Management API', () => {
 
       expect(response.status).toBe(200)
       expect(response.body).toMatchObject({
-        data: [],
+        data: {
+          groups: [],
+        },
       })
     })
 
@@ -2308,9 +2385,9 @@ describe('Tenant Management API', () => {
         },
       ]
 
-      mockTMRepository.getUserGroupsWithSharedServiceRoles.mockResolvedValue(
-        mockUserGroups as any,
-      )
+      mockTMRepository.getUserGroupsWithSharedServiceRoles.mockResolvedValue({
+        groups: mockUserGroups,
+      } as unknown as GetUserGroupsWithSharedServiceRolesResult)
 
       const response = await request(app).get(
         `/v1/tenants/${tenantId}/users/${ssoUserId}/groups/shared-service-roles`,
@@ -2318,18 +2395,20 @@ describe('Tenant Management API', () => {
 
       expect(response.status).toBe(200)
       expect(response.body).toMatchObject({
-        data: [
-          {
-            id: '123e4567-e89b-12d3-a456-426614174001',
-            name: 'Admin Group',
-            sharedServiceRoles: [],
-          },
-          {
-            id: '123e4567-e89b-12d3-a456-426614174008',
-            name: 'User Group',
-            sharedServiceRoles: [],
-          },
-        ],
+        data: {
+          groups: [
+            {
+              id: '123e4567-e89b-12d3-a456-426614174001',
+              name: 'Admin Group',
+              sharedServiceRoles: [],
+            },
+            {
+              id: '123e4567-e89b-12d3-a456-426614174008',
+              name: 'User Group',
+              sharedServiceRoles: [],
+            },
+          ],
+        },
       })
     })
 
@@ -2349,18 +2428,18 @@ describe('Tenant Management API', () => {
         },
       ]
 
-      mockTMRepository.getUserGroupsWithSharedServiceRoles.mockResolvedValue(
-        mockUserGroups as any,
-      )
+      mockTMRepository.getUserGroupsWithSharedServiceRoles.mockResolvedValue({
+        groups: mockUserGroups,
+      } as unknown as GetUserGroupsWithSharedServiceRolesResult)
 
       const response = await request(app).get(
         `/v1/tenants/${tenantId}/users/${ssoUserId}/groups/shared-service-roles`,
       )
 
       expect(response.status).toBe(200)
-      expect(response.body.data).toHaveLength(2)
-      expect(response.body.data[0].name).toBe('User Group')
-      expect(response.body.data[1].name).toBe('Admin Group')
+      expect(response.body.data.groups).toHaveLength(2)
+      expect(response.body.data.groups[0].name).toBe('User Group')
+      expect(response.body.data.groups[1].name).toBe('Admin Group')
     })
 
     it('should fail when tenant does not exist', async () => {
@@ -2466,7 +2545,7 @@ describe('Tenant Management API', () => {
       ]
 
       mockTMRepository.getEffectiveSharedServiceRoles.mockResolvedValue(
-        mockSharedServiceRoles as any,
+        mockSharedServiceRoles as unknown as GetEffectiveSharedServiceRolesResult,
       )
 
       const response = await request(app).get(
@@ -2513,15 +2592,17 @@ describe('Tenant Management API', () => {
         mockTMRepository.getEffectiveSharedServiceRoles,
       ).toHaveBeenCalledWith(
         expect.objectContaining({
-          params: { tenantId, ssoUserId },
+          tenantId,
+          ssoUserId,
+          audience: 'test-service-client',
+          idpType: 'idir',
         }),
-        'test-service-client',
       )
     })
 
     it('should return empty array when user has no shared service roles', async () => {
       mockTMRepository.getEffectiveSharedServiceRoles.mockResolvedValue(
-        [] as any,
+        [] as unknown as GetEffectiveSharedServiceRolesResult,
       )
 
       const response = await request(app).get(
@@ -2558,7 +2639,7 @@ describe('Tenant Management API', () => {
       ]
 
       mockTMRepository.getEffectiveSharedServiceRoles.mockResolvedValue(
-        mockSharedServiceRoles as any,
+        mockSharedServiceRoles as unknown as GetEffectiveSharedServiceRolesResult,
       )
 
       const response = await request(app).get(
