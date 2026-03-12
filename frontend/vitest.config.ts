@@ -18,9 +18,15 @@ export default mergeConfig(
         reporter: ['html', 'lcov', 'text'],
         reportsDirectory: './coverage',
       },
+      css: true,
       environment: 'jsdom',
       exclude: [...configDefaults.exclude, 'e2e/**'],
       root: fileURLToPath(new URL('./', import.meta.url)),
+      server: {
+        deps: {
+          inline: ['vuetify'],
+        },
+      },
     },
   }),
 )
