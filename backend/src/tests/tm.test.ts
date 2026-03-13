@@ -123,6 +123,7 @@ describe('Tenant Management API', () => {
           idir_user_guid: 'F45AFBBD68C51D6F956BA3A1DE1878A2',
         }
         req.isSharedServiceAccess = true
+        req.idpType = 'idir'
         next()
       },
       (req, res, next) => {
@@ -183,14 +184,15 @@ describe('Tenant Management API', () => {
         description: validGroupData.description,
         tenant: { id: tenantId },
         users: [],
+        sharedServiceRoles: [],
         createdBy: 'test-user',
         updatedBy: 'test-user',
         createdDateTime: new Date(),
         updatedDateTime: new Date(),
       }
 
-      mockTMRepository.saveGroup.mockResolvedValue(
-        mockGroup as unknown as unknown as Group,
+      ;(mockTMRepository.saveGroup as jest.Mock).mockImplementation(
+        async () => mockGroup as unknown as Group,
       )
 
       const response = await request(app)
@@ -242,12 +244,13 @@ describe('Tenant Management API', () => {
             updatedBy: 'test-user',
           },
         ],
+        sharedServiceRoles: [],
         createdBy: 'test-user',
         updatedBy: 'test-user',
       }
 
-      mockTMRepository.saveGroup.mockResolvedValue(
-        mockGroupWithUser as unknown as unknown as Group,
+      ;(mockTMRepository.saveGroup as jest.Mock).mockImplementation(
+        async () => mockGroupWithUser as unknown as Group,
       )
 
       const response = await request(app)
@@ -2347,7 +2350,7 @@ describe('Tenant Management API', () => {
           tenantId,
           ssoUserId,
           audience: 'test-service-client',
-          idpType: undefined,
+          idpType: 'idir',
         }),
       )
     })

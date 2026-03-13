@@ -1972,7 +1972,9 @@ describe('Tenant API', () => {
         users: [],
       }
 
-      mockTMSRepository.updateTenant.mockResolvedValue(mockUpdatedTenant)
+      ;(mockTMSRepository.updateTenant as jest.Mock).mockImplementation(
+        async () => mockUpdatedTenant as Tenant,
+      )
 
       const response = await request(app)
         .put(`/v1/tenants/${tenantId}`)
