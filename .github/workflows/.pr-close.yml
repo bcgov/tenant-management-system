@@ -100,7 +100,7 @@ jobs:
         package: ${{ fromJson(needs.vars.outputs.packages) }}
     timeout-minutes: 1
     steps:
-      - uses: shrink/actions-docker-registry-tag@f04afd0559f66b288586792eb150f45136a927fa # v4
+      - uses: shrink/actions-docker-registry-tag@f04afd0559f66b288586792eb150f45136a927fa # v4.0.0
         with:
           registry: ghcr.io
           repository: ${{ inputs.organization }}/${{ inputs.repository }}/${{ matrix.package }}
@@ -119,7 +119,7 @@ jobs:
         env:
           release: ${{ inputs.cleanup_name }}-${{ inputs.target }}
         if: inputs.cleanup == 'helm'
-        uses: bcgov/action-oc-runner@f900830adadd4d9eef3ca6ff80103e839ba8b7c0 # v1.3.0
+        uses: bcgov/action-oc-runner@d2fc921aaa9d70684c186dbb7754e6985d44d86f # v1.4.1
         with:
           oc_namespace: ${{ secrets.oc_namespace }}
           oc_token: ${{ secrets.oc_token }}
@@ -133,7 +133,7 @@ jobs:
 
       - name: OC Template (label) Cleanup
         if: inputs.cleanup == 'label'
-        uses: bcgov/action-oc-runner@f900830adadd4d9eef3ca6ff80103e839ba8b7c0 # v1.3.0
+        uses: bcgov/action-oc-runner@d2fc921aaa9d70684c186dbb7754e6985d44d86f # v1.4.1
         with:
           oc_namespace: ${{ secrets.oc_namespace }}
           oc_token: ${{ secrets.oc_token }}
@@ -146,7 +146,7 @@ jobs:
 
       - name: Remove PVCs
         if: inputs.remove_pvc
-        uses: bcgov/action-oc-runner@f900830adadd4d9eef3ca6ff80103e839ba8b7c0 # v1.3.0
+        uses: bcgov/action-oc-runner@d2fc921aaa9d70684c186dbb7754e6985d44d86f # v1.4.1
         with:
           oc_namespace: ${{ secrets.oc_namespace }}
           oc_token: ${{ secrets.oc_token }}
