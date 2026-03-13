@@ -5,6 +5,8 @@ import { connection } from '../common/db.connection'
 import logger from '../common/logger'
 import { getErrorMessage } from '../common/error.handler'
 import { UnauthorizedError } from '../errors/UnauthorizedError'
+import { NotFoundError } from '../errors/NotFoundError'
+import { UnexpectedStateError } from '../errors/UnexpectedStateError'
 import {
   AddGroupUserInputDto,
   AddGroupUserResultDto,
@@ -71,10 +73,17 @@ export class TMService {
           updatedBy,
           transactionEntityManager,
         )
+
+        if (!tenantUser) {
+          throw new NotFoundError(
+            `Tenant user not found for tenant: ${tenantId}`,
+          )
+        }
+
         const input: AddGroupUserInputDto = {
           tenantId,
           groupId,
-          tenantUserId: tenantUser!.id,
+          tenantUserId: tenantUser.id,
           updatedBy,
         }
         savedGroupUser = await this.tmRepository.addGroupUser(
@@ -90,9 +99,13 @@ export class TMService {
       }
     })
 
+    if (!savedGroupUser) {
+      throw new UnexpectedStateError('Group user creation failed')
+    }
+
     return {
       data: {
-        groupUser: savedGroupUser!,
+        groupUser: savedGroupUser,
       },
     }
   }
@@ -203,12 +216,15 @@ export class TMService {
     if (!audience) {
       throw new UnauthorizedError('Missing audience in JWT token')
     }
+    if (!req.idpType) {
+      throw new UnauthorizedError('Missing identity provider type in request')
+    }
 
     const input: GetUserGroupsWithSharedServiceRolesInputDto = {
       tenantId: req.params.tenantId,
       ssoUserId: req.params.ssoUserId,
       audience,
-      idpType: req.idpType!,
+      idpType: req.idpType,
     }
     const result: GetUserGroupsWithSharedServiceRolesResultDto =
       await this.tmRepository.getUserGroupsWithSharedServiceRoles(input)
@@ -223,12 +239,15 @@ export class TMService {
     if (!audience) {
       throw new UnauthorizedError('Missing audience in JWT token')
     }
+    if (!req.idpType) {
+      throw new UnauthorizedError('Missing identity provider type in request')
+    }
 
     const input: GetEffectiveSharedServiceRolesInputDto = {
       tenantId: req.params.tenantId,
       ssoUserId: req.params.ssoUserId,
       audience,
-      idpType: req.idpType!,
+      idpType: req.idpType,
     }
     const sharedServiceRoles: GetEffectiveSharedServiceRoleResultDto[] =
       await this.tmRepository.getEffectiveSharedServiceRoles(input)

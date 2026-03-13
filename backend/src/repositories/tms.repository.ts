@@ -8,6 +8,7 @@ import { TMSConstants } from '../common/tms.constants'
 import { TenantUserRole } from '../entities/TenantUserRole'
 import { NotFoundError } from '../errors/NotFoundError'
 import { ConflictError } from '../errors/ConflictError'
+import { UnexpectedStateError } from '../errors/UnexpectedStateError'
 import logger from '../common/logger'
 import { getErrorMessage } from '../common/error.handler'
 import { TenantRequest } from '../entities/TenantRequest'
@@ -150,7 +151,7 @@ export class TMSRepository {
     )
 
     if (!tenantResponse) {
-      throw new Error('Tenant creation failed')
+      throw new UnexpectedStateError('Tenant creation failed')
     }
     return tenantResponse
   }
@@ -205,15 +206,19 @@ export class TMSRepository {
           .where('tenant.id = :id', { id: tenantId })
           .getOne()
 
-        const createdBy: SSOUser | null = tenant?.createdBy
+        if (!tenant) {
+          throw new UnexpectedStateError('Tenant update failed')
+        }
+
+        const createdBy: SSOUser | null = tenant.createdBy
           ? await transactionEntityManager.findOne(SSOUser, {
               where: { ssoUserId: tenant.createdBy },
             })
           : null
 
         tenantResponse = {
-          ...tenant!,
-          createdBy: createdBy?.userName || tenant!.createdBy,
+          ...tenant,
+          createdBy: createdBy?.userName || tenant.createdBy,
         }
       } catch (error: unknown) {
         logger.error(
@@ -224,7 +229,11 @@ export class TMSRepository {
       }
     })
 
-    return tenantResponse!
+    if (!tenantResponse) {
+      throw new UnexpectedStateError('Tenant update failed')
+    }
+
+    return tenantResponse
   }
 
   public async addTenantUsers(
@@ -276,7 +285,7 @@ export class TMSRepository {
         )
 
         if (!restoredTenantUserWithRelations) {
-          throw new Error(
+          throw new UnexpectedStateError(
             `Failed to load restored tenant user: ${restoredTenantUser.id}`,
           )
         }
@@ -1304,7 +1313,7 @@ export class TMSRepository {
     })
 
     if (!response.tenantRequest) {
-      throw new Error('Tenant request status update failed')
+      throw new UnexpectedStateError('Tenant request status update failed')
     }
 
     return response as UpdateTenantRequestStatusResultDto

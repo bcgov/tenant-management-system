@@ -7,6 +7,7 @@ import { In } from 'typeorm'
 import { Request } from 'express'
 import { NotFoundError } from '../errors/NotFoundError'
 import { ConflictError } from '../errors/ConflictError'
+import { UnexpectedStateError } from '../errors/UnexpectedStateError'
 import logger from '../common/logger'
 import { getErrorMessage } from '../common/error.handler'
 import { TMSRepository } from './tms.repository'
@@ -78,7 +79,7 @@ export class TMRepository {
     transactionEntityManager?: EntityManager,
   ) {
     const managerForTransaction = transactionEntityManager || this.manager
-    let groupResponse = {} as Group | null
+    let groupResponse: Group | null = null
 
     await managerForTransaction.transaction(
       async (transactionEntityManager) => {
@@ -155,7 +156,11 @@ export class TMRepository {
       },
     )
 
-    return groupResponse!
+    if (!groupResponse) {
+      throw new UnexpectedStateError('Group creation failed')
+    }
+
+    return groupResponse
   }
 
   public async getSsoUserDisplayName(ssoUserId: string) {
@@ -693,32 +698,33 @@ export class TMRepository {
       .where('groupUser.id = :id', { id: savedGroupUser.id })
       .getOne()
 
-    let groupUserResponse: AddGroupUserResultDto | null = null
-    if (groupUserEntity) {
-      const activeRoles =
-        groupUserEntity.tenantUser.roles?.filter((tur) => !tur.isDeleted) || []
-      const userRoles = activeRoles.map((tur) => tur.role) || []
-      groupUserResponse = {
-        id: groupUserEntity.id,
-        isDeleted: groupUserEntity.isDeleted,
-        createdDateTime: groupUserEntity.createdDateTime,
-        updatedDateTime: groupUserEntity.updatedDateTime,
-        createdBy: groupUserEntity.createdBy,
-        updatedBy: groupUserEntity.updatedBy,
-        user: {
-          id: groupUserEntity.tenantUser.id,
-          isDeleted: groupUserEntity.tenantUser.isDeleted,
-          ssoUser: groupUserEntity.tenantUser.ssoUser,
-          createdDateTime: groupUserEntity.tenantUser.createdDateTime,
-          updatedDateTime: groupUserEntity.tenantUser.updatedDateTime,
-          createdBy: groupUserEntity.tenantUser.createdBy,
-          updatedBy: groupUserEntity.tenantUser.updatedBy,
-          roles: userRoles,
-        },
-      }
+    if (!groupUserEntity) {
+      throw new UnexpectedStateError('Group user creation failed')
     }
 
-    return groupUserResponse!
+    const activeRoles =
+      groupUserEntity.tenantUser.roles?.filter((tur) => !tur.isDeleted) || []
+    const userRoles = activeRoles.map((tur) => tur.role) || []
+    const groupUserResponse: AddGroupUserResultDto = {
+      id: groupUserEntity.id,
+      isDeleted: groupUserEntity.isDeleted,
+      createdDateTime: groupUserEntity.createdDateTime,
+      updatedDateTime: groupUserEntity.updatedDateTime,
+      createdBy: groupUserEntity.createdBy,
+      updatedBy: groupUserEntity.updatedBy,
+      user: {
+        id: groupUserEntity.tenantUser.id,
+        isDeleted: groupUserEntity.tenantUser.isDeleted,
+        ssoUser: groupUserEntity.tenantUser.ssoUser,
+        createdDateTime: groupUserEntity.tenantUser.createdDateTime,
+        updatedDateTime: groupUserEntity.tenantUser.updatedDateTime,
+        createdBy: groupUserEntity.tenantUser.createdBy,
+        updatedBy: groupUserEntity.tenantUser.updatedBy,
+        roles: userRoles,
+      },
+    }
+
+    return groupUserResponse
   }
 
   public async updateGroup(input: UpdateGroupInputDto) {
@@ -783,7 +789,11 @@ export class TMRepository {
       }
     })
 
-    return groupResponse!
+    if (!groupResponse) {
+      throw new UnexpectedStateError('Group update failed')
+    }
+
+    return groupResponse
   }
 
   public async removeGroupUser(input: RemoveGroupUserInputDto) {
