@@ -132,14 +132,20 @@ export class TMSRepository {
           }
           await transactionEntityManager.save(tenantUserRoles)
 
-          tenantResponse = (await transactionEntityManager
+          const savedTenantWithRelations = await transactionEntityManager
             .createQueryBuilder(Tenant, 'tenant')
             .leftJoinAndSelect('tenant.users', 'tu')
             .leftJoinAndSelect('tu.ssoUser', 'sso')
             .leftJoinAndSelect('tu.roles', 'turoles')
             .leftJoinAndSelect('turoles.role', 'role')
             .where('tenant.id = :id', { id: savedTenant.id })
-            .getOne())!
+            .getOne()
+
+          if (!savedTenantWithRelations) {
+            throw new UnexpectedStateError('Tenant creation failed')
+          }
+
+          tenantResponse = savedTenantWithRelations
         } catch (error: unknown) {
           logger.error(
             'Create tenant transaction failure - rolling back inserts ',
@@ -1184,10 +1190,14 @@ export class TMSRepository {
 
         const savedTenantRequest: TenantRequest =
           await transactionEntityManager.save(tenantRequest)
-        tenantRequestResponse = (await this.getTenantRequestById(
+        const savedTenantRequestWithRelations = await this.getTenantRequestById(
           transactionEntityManager,
           savedTenantRequest.id,
-        ))!
+        )
+        if (!savedTenantRequestWithRelations) {
+          throw new UnexpectedStateError('Tenant request creation failed')
+        }
+        tenantRequestResponse = savedTenantRequestWithRelations
         if (tenantRequestResponse.requestedBy?.displayName) {
           tenantRequestResponse.createdBy =
             tenantRequestResponse.requestedBy.displayName
@@ -1525,10 +1535,17 @@ export class TMSRepository {
         }
         await transactionEntityManager.save(sharedServiceRoles)
 
-        sharedServiceResponse = (await this.getSharedServiceWithRoles(
-          savedSharedService.id,
-          transactionEntityManager,
-        ))!
+        const savedSharedServiceWithRoles =
+          await this.getSharedServiceWithRoles(
+            savedSharedService.id,
+            transactionEntityManager,
+          )
+        if (!savedSharedServiceWithRoles) {
+          throw new UnexpectedStateError(
+            `Shared service load failed after update: ${savedSharedService.id}`,
+          )
+        }
+        sharedServiceResponse = savedSharedServiceWithRoles
       } catch (error: unknown) {
         logger.error(
           'Create shared service transaction failure - rolling back inserts ',

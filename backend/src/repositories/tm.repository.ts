@@ -398,7 +398,12 @@ export class TMRepository {
               })
             }
 
-            const serviceEntry = sharedServiceMap.get(serviceId)!
+            const serviceEntry = sharedServiceMap.get(serviceId)
+            if (!serviceEntry) {
+              throw new UnexpectedStateError(
+                `Shared service aggregation failed for service: ${serviceId}`,
+              )
+            }
             const roleExists = serviceEntry.sharedServiceRoles.some(
               (existingRole) => existingRole.id === role.id,
             )
