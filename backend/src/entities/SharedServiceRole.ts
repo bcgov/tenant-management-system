@@ -8,12 +8,14 @@ import {
   JoinColumn,
   Unique,
   OneToMany,
+  Index,
 } from 'typeorm'
 import { SharedService } from './SharedService'
 import { GroupSharedServiceRole } from './GroupSharedServiceRole'
 
 @Entity('SharedServiceRole', { schema: 'tms' })
 @Unique(['name', 'sharedService'])
+@Index('idx_sharedservicerole_service_access', ['sharedService', 'isDeleted'])
 export class SharedServiceRole {
   @PrimaryGeneratedColumn('uuid', { name: 'id' })
   id!: string

@@ -7,12 +7,14 @@ import {
   ManyToOne,
   JoinColumn,
   Unique,
+  Index,
 } from 'typeorm'
 import { Tenant } from './Tenant'
 import { SharedService } from './SharedService'
 
 @Entity('TenantSharedService', { schema: 'tms' })
 @Unique(['tenant', 'sharedService'])
+@Index('idx_tenantsharedservice_tenant_access', ['tenant', 'isDeleted'])
 export class TenantSharedService {
   @PrimaryGeneratedColumn('uuid', { name: 'id' })
   id!: string
