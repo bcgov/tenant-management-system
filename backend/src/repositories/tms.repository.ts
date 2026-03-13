@@ -8,6 +8,7 @@ import { TMSConstants } from '../common/tms.constants'
 import { TenantUserRole } from '../entities/TenantUserRole'
 import { NotFoundError } from '../errors/NotFoundError'
 import { ConflictError } from '../errors/ConflictError'
+import { UnexpectedStateError } from '../errors/UnexpectedStateError'
 import logger from '../common/logger'
 import { getErrorMessage } from '../common/error.handler'
 import { TenantRequest } from '../entities/TenantRequest'
@@ -131,14 +132,20 @@ export class TMSRepository {
           }
           await transactionEntityManager.save(tenantUserRoles)
 
-          tenantResponse = (await transactionEntityManager
+          const savedTenantWithRelations = await transactionEntityManager
             .createQueryBuilder(Tenant, 'tenant')
             .leftJoinAndSelect('tenant.users', 'tu')
             .leftJoinAndSelect('tu.ssoUser', 'sso')
             .leftJoinAndSelect('tu.roles', 'turoles')
             .leftJoinAndSelect('turoles.role', 'role')
             .where('tenant.id = :id', { id: savedTenant.id })
-            .getOne())!
+            .getOne()
+
+          if (!savedTenantWithRelations) {
+            throw new UnexpectedStateError('Tenant creation failed')
+          }
+
+          tenantResponse = savedTenantWithRelations
         } catch (error: unknown) {
           logger.error(
             'Create tenant transaction failure - rolling back inserts ',
@@ -150,7 +157,7 @@ export class TMSRepository {
     )
 
     if (!tenantResponse) {
-      throw new Error('Tenant creation failed')
+      throw new UnexpectedStateError('Tenant creation failed')
     }
     return tenantResponse
   }
@@ -205,15 +212,19 @@ export class TMSRepository {
           .where('tenant.id = :id', { id: tenantId })
           .getOne()
 
-        const createdBy: SSOUser | null = tenant?.createdBy
+        if (!tenant) {
+          throw new UnexpectedStateError('Tenant update failed')
+        }
+
+        const createdBy: SSOUser | null = tenant.createdBy
           ? await transactionEntityManager.findOne(SSOUser, {
               where: { ssoUserId: tenant.createdBy },
             })
           : null
 
         tenantResponse = {
-          ...tenant!,
-          createdBy: createdBy?.userName || tenant!.createdBy,
+          ...tenant,
+          createdBy: createdBy?.userName || tenant.createdBy,
         }
       } catch (error: unknown) {
         logger.error(
@@ -224,7 +235,11 @@ export class TMSRepository {
       }
     })
 
-    return tenantResponse!
+    if (!tenantResponse) {
+      throw new UnexpectedStateError('Tenant update failed')
+    }
+
+    return tenantResponse
   }
 
   public async addTenantUsers(
@@ -276,7 +291,7 @@ export class TMSRepository {
         )
 
         if (!restoredTenantUserWithRelations) {
-          throw new Error(
+          throw new UnexpectedStateError(
             `Failed to load restored tenant user: ${restoredTenantUser.id}`,
           )
         }
@@ -1175,10 +1190,14 @@ export class TMSRepository {
 
         const savedTenantRequest: TenantRequest =
           await transactionEntityManager.save(tenantRequest)
-        tenantRequestResponse = (await this.getTenantRequestById(
+        const savedTenantRequestWithRelations = await this.getTenantRequestById(
           transactionEntityManager,
           savedTenantRequest.id,
-        ))!
+        )
+        if (!savedTenantRequestWithRelations) {
+          throw new UnexpectedStateError('Tenant request creation failed')
+        }
+        tenantRequestResponse = savedTenantRequestWithRelations
         if (tenantRequestResponse.requestedBy?.displayName) {
           tenantRequestResponse.createdBy =
             tenantRequestResponse.requestedBy.displayName
@@ -1304,7 +1323,7 @@ export class TMSRepository {
     })
 
     if (!response.tenantRequest) {
-      throw new Error('Tenant request status update failed')
+      throw new UnexpectedStateError('Tenant request status update failed')
     }
 
     return response as UpdateTenantRequestStatusResultDto
@@ -1516,10 +1535,17 @@ export class TMSRepository {
         }
         await transactionEntityManager.save(sharedServiceRoles)
 
-        sharedServiceResponse = (await this.getSharedServiceWithRoles(
-          savedSharedService.id,
-          transactionEntityManager,
-        ))!
+        const savedSharedServiceWithRoles =
+          await this.getSharedServiceWithRoles(
+            savedSharedService.id,
+            transactionEntityManager,
+          )
+        if (!savedSharedServiceWithRoles) {
+          throw new UnexpectedStateError(
+            `Shared service load failed after update: ${savedSharedService.id}`,
+          )
+        }
+        sharedServiceResponse = savedSharedServiceWithRoles
       } catch (error: unknown) {
         logger.error(
           'Create shared service transaction failure - rolling back inserts ',
