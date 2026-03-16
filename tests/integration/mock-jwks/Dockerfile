@@ -7,12 +7,12 @@ RUN npm ci
 
 COPY server.js ./
 
-HEALTHCHECK --interval=5s --timeout=5s --retries=5 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:3001/certs || \
+HEALTHCHECK --interval=5s --retries=5 --timeout=5s \
+    CMD wget --no-verbose --spider --tries=1 http://localhost:7002/certs || \
     exit 1
 
 USER node
 
-EXPOSE 3001
+EXPOSE 7002
 
 CMD ["node", "server.js"]

@@ -3,13 +3,6 @@
     {
       "configurations": ["CSTAR Backend", "CSTAR Frontend"],
       "name": "CSTAR"
-    },
-    {
-      "configurations": [
-        "Integration Testing Backend",
-        "Integration Testing JWKS"
-      ],
-      "name": "Integration Testing"
     }
   ],
   "configurations": [
@@ -34,28 +27,23 @@
     {
       "cwd": "${workspaceFolder}/backend",
       "env": {
-        "ISSUER": "http://localhost:3001",
-        "JWKS_URI": "http://localhost:3001/certs",
+        "ISSUER": "http://localhost:7002",
+        "JWKS_URI": "http://localhost:7002/certs",
+        "PORT": "7001",
+        "POSTGRES_DATABASE": "tmsdb",
+        "POSTGRES_HOST": "localhost",
+        "POSTGRES_PASSWORD": "testsecretpassword",
+        "POSTGRES_PORT": "7003",
+        "POSTGRES_USER": "tms",
         "TMS_AUDIENCE": "cstar"
       },
-      "name": "Integration Testing Backend",
+      "name": "Integration Tests Backend",
       "outputCapture": "std",
+      "postDebugTask": "Integration Tests - Stop Dependencies",
+      "preLaunchTask": "Integration Tests - Start Dependencies",
       "request": "launch",
+      "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev"],
-      "runtimeExecutable": "npm",
-      "type": "node"
-    },
-    {
-      "cwd": "${workspaceFolder}/tests/integration/mock-jwks",
-      "env": {
-        "ISSUER": "http://localhost:3001",
-        "TMS_AUDIENCE": "cstar"
-      },
-      "name": "Integration Testing JWKS",
-      "outputCapture": "std",
-      "request": "launch",
-      "runtimeArgs": ["start"],
-      "runtimeExecutable": "npm",
       "type": "node"
     }
   ],
