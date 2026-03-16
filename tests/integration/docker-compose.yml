@@ -6,38 +6,64 @@ services:
       mock-jwks:
         condition: service_healthy
     environment:
-      ISSUER: http://mock-jwks:3001
-      JWKS_URI: http://mock-jwks:3001/certs
+      ISSUER: http://localhost:7002
+      JWKS_URI: http://mock-jwks:7002/certs
       NODE_ENV: test
-      POSTGRES_DATABASE: app
+      PORT: 7001
+      POSTGRES_DATABASE: tmsdb
       POSTGRES_HOST: db
-      POSTGRES_PASSWORD: app
+      POSTGRES_PASSWORD: testsecretpassword
       POSTGRES_PORT: 5432
-      POSTGRES_USER: app
+      POSTGRES_USER: tms
       TMS_AUDIENCE: cstar
-    image: ghcr.io/bcgov/tenant-management-system/backend:${IMAGE_TAG}
-    ports:
-      - '4144:4144'
-
-  db:
-    environment:
-      POSTGRES_DB: app
-      POSTGRES_PASSWORD: app
-      POSTGRES_USER: app
     healthcheck:
       interval: 5s
       retries: 5
-      test: ['CMD-SHELL', 'pg_isready -U app']
+      test:
+        [
+          'CMD',
+          'wget',
+          '--no-verbose',
+          '--spider',
+          '--tries=1',
+          'http://localhost:7001/v1/health',
+        ]
+      timeout: 5s
+    image: ghcr.io/bcgov/tenant-management-system/backend:${IMAGE_TAG}
+    ports:
+      - '7001:7001'
+
+  db:
+    environment:
+      POSTGRES_DB: tmsdb
+      POSTGRES_PASSWORD: testsecretpassword
+      POSTGRES_USER: tms
+    healthcheck:
+      interval: 5s
+      retries: 5
+      test: ['CMD-SHELL', 'pg_isready -U tms']
       timeout: 5s
     image: postgres:17.7
+    ports:
+      - '7003:5432'
     volumes:
       - ./initdb:/docker-entrypoint-initdb.d
 
   mock-jwks:
     build:
       context: ./mock-jwks
-    environment:
-      ISSUER: http://mock-jwks:3001
-      TMS_AUDIENCE: cstar
+    healthcheck:
+      interval: 5s
+      retries: 5
+      test:
+        [
+          'CMD',
+          'wget',
+          '--no-verbose',
+          '--spider',
+          '--tries=1',
+          'http://localhost:7002/certs',
+        ]
+      timeout: 5s
     ports:
-      - '3001:3001'
+      - '7002:7002'

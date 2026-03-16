@@ -3,6 +3,6 @@ variables:
   - name: audience
     value: cstar
   - name: baseUrl
-    value: http://localhost:4144/v1
+    value: http://localhost:7001/v1
   - name: mockJwksUrl
-    value: http://localhost:3001
+    value: http://localhost:7002

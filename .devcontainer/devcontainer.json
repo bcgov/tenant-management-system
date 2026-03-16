@@ -6,7 +6,6 @@
   "customizations": {
     "vscode": {
       "extensions": [
-        "bruno-api-client.bruno",
         "cweijan.vscode-postgresql-client2",
         "dbaeumer.vscode-eslint",
         "editorconfig.editorconfig",
@@ -32,19 +31,25 @@
     }
   },
 
-  "forwardPorts": [4144, 5173, 5432],
+  "forwardPorts": [4144, 5173, 5432, 7001, 7002],
 
   "name": "cstar",
 
   "portsAttributes": {
     "4144": {
-      "label": "CSTAR Backend"
+      "label": "Backend"
     },
     "5173": {
-      "label": "CSTAR Frontend"
+      "label": "Frontend"
     },
     "5432": {
-      "label": "Postgres Database"
+      "label": "Postgres"
+    },
+    "7001": {
+      "label": "Integration Tests - Backend"
+    },
+    "7002": {
+      "label": "Integration Tests - JWKS"
     }
   },
 
