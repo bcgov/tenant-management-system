@@ -12,6 +12,8 @@ import { TenantUser } from './TenantUser'
 import { Group } from './Group'
 
 @Entity('GroupUser', { schema: 'tms' })
+@Index('idx_groupuser_tenantuser_access', ['tenantUser', 'isDeleted'])
+@Index('idx_groupuser_group_access', ['group', 'isDeleted'])
 export class GroupUser {
   @PrimaryGeneratedColumn('uuid', { name: 'id' })
   id!: string
