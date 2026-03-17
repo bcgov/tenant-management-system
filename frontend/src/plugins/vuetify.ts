@@ -1,7 +1,5 @@
 import * as tokens from '@bcgov/design-tokens/js-prefixed'
 import { createVuetify, type ThemeDefinition } from 'vuetify'
-import * as components from 'vuetify/components'
-import * as directives from 'vuetify/directives'
 import { aliases, mdi } from 'vuetify/iconsets/mdi'
 import 'vuetify/styles'
 
@@ -46,10 +44,6 @@ const bcgovLight: ThemeDefinition = {
 
 // Create a Vuetify instance with custom settings.
 const vuetify = createVuetify({
-  // Tree shake the components and directives.
-  components,
-  directives,
-
   // Use the Material Design Icons (MDI) icon set.
   icons: {
     aliases,

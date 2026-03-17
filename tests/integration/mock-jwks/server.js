@@ -3,7 +3,10 @@ import { exportJWK, importPKCS8, SignJWT } from 'jose'
 import crypto from 'node:crypto'
 
 const ALG = 'RS256'
+const PORT = 7002
 const VALID_FOR = '24h'
+
+const ISSUER = `http://localhost:${PORT}`
 
 const app = express()
 app.disable('x-powered-by')
@@ -42,7 +45,7 @@ app.get('/certs', (_req, res) => {
 // body is used as the claims (sub, idp, idir_user_guid, etc.)
 app.post('/mint', async (req, res) => {
   const claims = req.body.claims ?? {}
-  const issuer = req.body.issuer ?? process.env.ISSUER
+  const issuer = req.body.issuer ?? ISSUER
   const validFor = req.body.validFor ?? VALID_FOR
 
   const token = await new SignJWT(claims)
@@ -59,6 +62,6 @@ app.post('/mint', async (req, res) => {
 })
 
 await init()
-app.listen(3001, () =>
-  console.log(`mock-jwks listening on :3001, issuer: ${process.env.ISSUER}`),
+app.listen(PORT, () =>
+  console.log(`mock-jwks listening on :${PORT}, issuer: ${ISSUER}`),
 )

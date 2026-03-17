@@ -59,6 +59,11 @@ jobs:
               --reporter-junit results.xml
         working-directory: tests/integration
 
+      - name: Dump logs on failure
+        if: failure()
+        run: docker compose -f docker-compose.yml logs
+        working-directory: tests/integration
+
       - name: Stop test services
         if: always()
         run: |
