@@ -42,8 +42,8 @@
       "postDebugTask": "Integration Tests - Stop Dependencies",
       "preLaunchTask": "Integration Tests - Start Dependencies",
       "request": "launch",
-      "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev"],
+      "runtimeExecutable": "npm",
       "type": "node"
     }
   ],
