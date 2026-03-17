@@ -1,6 +1,6 @@
-# Frontend
+# Frontend Code
 
-The Tenant Management System frontend has:
+The `/frontend` code provides the application. It has:
 
 - Authentication provided by Keycloak
 - Vue.js 3 composition components in a Container ("smart") and Presentation
@@ -93,13 +93,10 @@ must:
 
 ## Configuration
 
-The Tenant Management System frontend requires configuration so that it can
-authenticate in the Keycloak standard realm. Clients are created in the
-[SSO Application](https://bcgov.github.io/sso-requests).
+To configure the frontend for local development, copy the `frontend/.env.sample`
+file to `frontend/.env`.
 
 ### Required .env variables
-
-Copy the `frontend/.env.sample` file to `frontend/.env`. Its settings are:
 
 | Name                        | Description                                          | Example                                                                              |
 | --------------------------- | ---------------------------------------------------- | ------------------------------------------------------------------------------------ |
@@ -110,105 +107,34 @@ Copy the `frontend/.env.sample` file to `frontend/.env`. Its settings are:
 | VITE_KEYCLOAK_REALM         | The realm in the keycloak instance                   | standard                                                                             |
 | VITE_KEYCLOAK_URL           | This is the authorization URL for the keycloak realm | https://dev.loginproxy.gov.bc.ca/auth                                                |
 
-### Project setup
+## Running the Frontend
 
-```sh
-npm install
-```
+In the Activity Bar select the `Run and Debug` item, and then from the dropdown
+list at the top select `CSTAR Frontend`, or select `CSTAR` to start both the
+backend and the frontend. Then click the green `Start Debugging` icon.
 
-> Note: in the devcontainer this is done automatically when the container is
-> built
+In the `Ports` tab of the Panel is a link to the frontend running at
+`http://localhost:5173`.
 
-### Compiles and hot-reloads for development
+Changes to the code are automatically deployed when the file is saved, so there
+is no need to restart the server.
 
-```sh
-npm run serve
-```
+## Frontend Logs
 
-> Note: in VSCode this is done automatically when starting the app from
-> "Run and Debug" in the Activity Bar
+Logs appear in the `Debug Console` tab of the Panel. Use the dropdown list to
+select `CSTAR Frontend`. Note that the logs are from the web server, not the
+application. Application logs appear in the browser console.
 
-### Compiles and minifies for production
+## Running Tasks
 
-```sh
-npm run build
-```
+Builds and tests are set up as Tasks. Go to `Terminal` > `Run Task...` to run:
 
-> Note: in VSCode this is done using the task "Frontend - Build"
+- `Frontend: Build`: run the build process. Building is not needed for local
+  development, but it is useful to test changes to the build process
+- `Frontend: Lint`: run eslint against the code
+- `Frontend: Unit Tests`: run the unit tests
+- `Frontend: Unit Tests (Coverage)`: run the unit tests with a code coverage
+  report. The report appears in `backend/coverage/lcov-report/index.html`
 
-### Lints and fixes files
-
-```sh
-npm run lint
-```
-
-> Note: in VSCode this is done using the task "Frontend - Lint"
-
-### Openshift Deployment
-
-#### Create secrets in OpenShift
-
-```sh
-oc create secret generic tms-frontend-secrets --from-literal=VITE_KEYCLOAK_URL=https://dev.loginproxy.gov.bc.ca/auth --from-literal=VITE_KEYCLOAK_REALM=standard --from-literal=VITE_KEYCLOAK_CLIENT_ID=my-client-id   --from-literal=VITE_KEYCLOAK_LOGOUT_URL=https://dev.loginproxy.gov.bc.ca/auth/realms/standard/protocol/openid-connect/logout --from-literal=VITE_API_BASE_URL=localhost:4144
-```
-
-#### Build and push the Docker image
-
-Create an ImageStream
-
-```sh
-oc create imagestream tms-frontend
-```
-
-Get the registry info
-
-```sh
-oc registry info
-```
-
-Get your password, example output (sha256~123456...)
-
-```sh
-oc whoami -t
-```
-
-Log in to the container registry. Replace REGISTRY_INFO with the earlier obtained registry. Replace YOUR_EMAIL with your email. Replace PASSWORD with the earlier obtained password.
-
-```sh
-docker login REGISTRY_INFO -u YOUR_EMAIL -p PASSWORD
-```
-
-Build and push the image. Replace REGISTRY_INFO with the earlier obtained registry. Replace NAMESPACE with your OpenShift namespace.
-
-```sh
-docker build -t REGISTRY_INFO/NAMESPACE/tms-frontend:latest .
-docker push REGISTRY_INFO/NAMESPACE/tms-frontend:latest
-```
-
-Tag the image
-
-```sh
-oc tag NAMESPACE/tms-frontend:latest tms-frontend:latest
-```
-
-#### Deploy to Openshift
-
-Package the Helm chart into a .tgz file
-
-```sh
-helm package devops/chart
-```
-
-Deploy to Openshift, replace NAMESPACE-LICENSEPLATE and replace mycustomdockerhubusername with your DockerHub username. Replace REGISTRY_INFO with the earlier obtained registry. Replace NAMESPACE with your OpenShift namespace
-
-```sh
-helm install tms-frontend ./tms-frontend-0.1.0.tgz --namespace NAMESPACE --set image.repository=REGISTRY_INFO/NAMESPACE/tms-frontend
-```
-
-#### Updating the application
-
-Build and push the Docker image, then upgrade the chart.
-
-```sh
-helm upgrade --install tms-frontend devops/chart --namespace NAMESPACE --set image.repository=REGISTRY_INFO/NAMESPACE/tms-frontend
-```
+The above tests are all run when a Pull Request is created, so it is a good idea
+to run them locally before committing changes.
