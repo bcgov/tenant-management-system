@@ -34,18 +34,18 @@ const emit = defineEmits<{
 const { t } = useI18n()
 
 const computedUsers = computed((): User[] => {
-  const u = props.users as unknown
+  const u = props.users
   if (!Array.isArray(u)) return []
-  const arr = u as []
-  if (arr.length === 0) return []
+  if (u.length === 0) return []
+  const first = u[0]
   // If items look like GroupUser (have a `user` property), map to the inner User
-  if (arr[0] && typeof arr[0] === 'object' && 'user' in arr[0]) {
-    return (arr as GroupUser[]).map((g) => g.user)
+  if ((first as GroupUser).user !== undefined) {
+    return (u as GroupUser[]).map((g) => g.user)
   }
-  return arr as User[]
+  return u as User[]
 })
 
-const selectedUser = ref<User[] | null>(null)
+const selectedUser = ref<User | null>(null)
 
 const isUserAdmin = computed(() => {
   // A tenant owner, by default, is also a user admin - even if they don't have
@@ -70,7 +70,14 @@ const sortKey = computed(() => {
   return [{key: 'ssoUser.displayName'}]
 })
 
-const headers = [
+type TableHeaderItem = {
+  title: string
+  key: string
+  align?: 'start' | 'center' | 'end'
+  sortable?: boolean
+}
+
+const headers: TableHeaderItem[] = [
   {
     title: t('users.firstName'),
     key: 'ssoUser.firstName',
@@ -171,13 +178,12 @@ const actionItems = computed(() => {
 })
 
 const colorRowItem = (item: ItemSlotBase<User>) => {
-  const index = selectedUser?.value?.findIndex((u) => u?.id === item?.item?.id) ?? -1
+  const selectedId = selectedUser.value?.id
 
-  if (index > -1) {
-    return {
-      class: 'selected-user'
-    }
+  if (selectedId && item?.item?.id && selectedId === item.item.id) {
+    return { class: 'selected-user' }
   }
+
   return {}
 }
 
@@ -265,9 +271,9 @@ const colorRowItem = (item: ItemSlotBase<User>) => {
     <template #[`item.actions`]="{ item }">
 
       <v-menu>
-            <template #activator="{ menuProps }">
-              <v-btn icon="mdi-dots-vertical" variant="text" v-bind="menuProps"></v-btn>
-            </template>
+                    <template #activator="{ props: activatorProps }">
+                    <v-btn icon="mdi-dots-vertical" variant="text" v-bind="activatorProps"></v-btn>
+                  </template>
 
             <v-list>
               <v-list-item

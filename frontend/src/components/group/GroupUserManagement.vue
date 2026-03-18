@@ -101,7 +101,7 @@ function toggleSearch() {
 <template>
   <v-container class="px-0" fluid>
     <v-row>
-      <v-col cols="12">
+      <v-col :cols="12">
         <h4 class="mb-6 mt-12">Group Members</h4>
         <UserTable
           :show-actions="isUserAdmin"
@@ -134,7 +134,7 @@ function toggleSearch() {
         />
 
         <v-row class="mt-8">
-          <v-col class="d-flex justify-start" cols="12">
+          <v-col :cols="12" class="d-flex justify-start">
             <ButtonSecondary class="me-4" text="Cancel" @click="handleCancel" />
           </v-col>
         </v-row>
@@ -144,7 +144,7 @@ function toggleSearch() {
     <SimpleDialog
       v-model="showDeleteDialog"
       :buttons="deleteDialogButtons"
-      max-width="650"
+      :max-width="650"
       message="This will only take them out of this group - it won't remove them
         from the tenant. Removing membership from a group is permanent and
         cannot be undone. Please confirm before proceeding."
