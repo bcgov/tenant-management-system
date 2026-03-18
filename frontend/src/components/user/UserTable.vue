@@ -156,13 +156,13 @@ const canRemoveRole = function (item: User, role: Role): boolean {
 
 const actionItems = computed(() => {
   const rv = []
-  rv.push({
-    title: t('users.viewUserDetailsAction'),
-    action: props.showOffboardDialog,
-    disabledCondition: () => {
-      return false
-    },
-  })
+  // rv.push({
+  //   title: t('users.viewUserDetailsAction'),
+  //   action: props.showOffboardDialog,
+  //   disabledCondition: () => {
+  //     return false
+  //   },
+  // })
   if (isUserAdmin.value && props.showOffboardDialog) {
     rv.push({
       title: t('users.offboardUserAction'),
