@@ -77,8 +77,8 @@ type TableHeaderItem = {
   sortable?: boolean
 }
 
-const headers: TableHeaderItem = computed(() => {
-  const rv: TableHeaderItem = [
+const headers: TableHeaderItem[] = computed(() => {
+  const rv: TableHeaderItem[] = [
     {
       title: t('users.displayName'),
       key: 'ssoUser.displayName',
