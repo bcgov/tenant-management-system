@@ -6,7 +6,6 @@ import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
 import { type User, type Tenant } from '@/models'
 import { type IdirSearchType, IDIR_SEARCH_TYPE } from '@/utils/constants'
 import type { ItemSlotBase, DataTableItem } from 'vuetify/lib/components/VDataTable/types.mjs';
-import { convertIDPToDisplay } from '@/utils/display'
 import UserTable from '@/components/user/UserTable.vue'
 
 // --- Component Interface -----------------------------------------------------
@@ -152,13 +151,13 @@ function handleSearch() {
       <h4 class="my-6">Search Results</h4>
 
       <UserTable
+        :enable-select="true"
+        :select-user="selectUser"
+        :show-add="true"
+        :sort-by="defaultSort"
         :tenant="tenant"
         :users="searchResults || []"
         where="tenant"
-        :show-add="true"
-        :enable-select="true"
-        :select-user="selectUser"
-        :sort-by="defaultSort"
       />
 
     </v-col>

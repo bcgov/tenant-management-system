@@ -4,7 +4,6 @@ import { computed, ref, watch } from 'vue'
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import type { Tenant, User } from '@/models'
 import { type IdirSearchType, IDIR_SEARCH_TYPE } from '@/utils/constants'
-import { convertIDPToDisplay } from '@/utils/display'
 import UserTable from '../user/UserTable.vue'
 
 // --- Component Interface -----------------------------------------------------
@@ -100,12 +99,12 @@ function handleSelectUser(user: User) {
       <h4 class="my-6">Search Results</h4>
 
       <UserTable
+        :enable-select="true"
+        :show-add="true"
+        :sort-by="defaultSort"
         :tenant="tenant"
         :users="searchResults || []"
         where="group"
-        :show-add="true"
-        :enable-select="true"
-        :sort-by="defaultSort"
         @add-clicked="(item) => handleSelectUser(item)"
       />
     </v-col>

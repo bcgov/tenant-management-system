@@ -3,12 +3,10 @@ import { computed, ref } from 'vue'
 
 import UserSearch from '@/components/group/UserSearch.vue'
 import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
-import FloatingActionButton from '@/components/ui/FloatingActionButton.vue'
 import SimpleDialog from '@/components/ui/SimpleDialog.vue'
 import type { Group, GroupUser, Tenant, User } from '@/models'
 import { type IdirSearchType, ROLES } from '@/utils/constants'
 import { currentUserHasRole } from '@/utils/permissions'
-import { convertIDPToDisplay } from '@/utils/display'
 import UserTable from '../user/UserTable.vue'
 import { GroupUser as GroupUserModel } from '@/models'
 
@@ -106,11 +104,11 @@ function toggleSearch() {
       <v-col cols="12">
         <h4 class="mb-6 mt-12">Group Members</h4>
         <UserTable
+          :show-actions="isUserAdmin"
+          :show-offboard-dialog="handleDeleteClick"
           :tenant="tenant"
           :users="group.groupUsers"
           where="group"
-          :show-actions="isUserAdmin"
-          :show-offboard-dialog="handleDeleteClick"
           @add-first-clicked="toggleSearch"
         />
       </v-col>
@@ -127,9 +125,9 @@ function toggleSearch() {
         </p>
 
         <UserSearch
-          :tenant="tenant"
           :loading="loadingSearch"
           :search-results="searchResults"
+          :tenant="tenant"
           @clear-search="handleClearSearch"
           @search="handleSearch"
           @select="handleAddUser"
@@ -146,12 +144,12 @@ function toggleSearch() {
     <SimpleDialog
       v-model="showDeleteDialog"
       :buttons="deleteDialogButtons"
+      max-width="650"
       message="This will only take them out of this group - it won't remove them
         from the tenant. Removing membership from a group is permanent and
         cannot be undone. Please confirm before proceeding."
       title="You're about to permanently remove this user from this group"
       @button-click="handleDeleteDialogAction"
-      max-width="650"
     />
   </v-container>
 </template>

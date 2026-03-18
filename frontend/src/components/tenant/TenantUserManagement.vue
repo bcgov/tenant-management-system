@@ -15,7 +15,6 @@ import type { Group, Role, Tenant, User } from '@/models'
 import { type IdirSearchType, ROLES } from '@/utils/constants'
 import { currentUserHasRole } from '@/utils/permissions'
 import { useGroupStore } from '@/stores'
-import { convertIDPToDisplay } from '@/utils/display'
 
 
 // --- Stores ----------------------------------------------------------------
@@ -91,11 +90,6 @@ const isUserAdmin = computed(() => {
     currentUserHasRole(props.tenant, ROLES.TENANT_OWNER.value) ||
     currentUserHasRole(props.tenant, ROLES.USER_ADMIN.value)
   )
-})
-
-const moreThanOneTenantOwner = computed(() => {
-  const owners = props.tenant.getOwners()
-  return owners.length > 1
 })
 
 const roles = computed(() => props.possibleRoles ?? [])
@@ -214,14 +208,6 @@ function showInfo(message: string) {
   infoDialogVisible.value = true
 }
 
-function showRoleDialog(user: User, index: number) {
-  if (!isUserAdmin.value) {
-    return
-  }
-  modifyingUserIndex.value = index
-  roleDialogVisible.value = true
-}
-
 function showOffboardDialog(user: User) {
   pendingUser.value = user
   confirmOffboardDialog.value.message = t('users.offboardUserMessage')
@@ -296,14 +282,14 @@ watch(selectAllRoles, () => {
     <v-row>
       <v-col cols="12">
         <UserTable
+          :filter="userSearch"
+          :handle-remove-role="handleRemoveRole"
+          :show-actions="true"
+          :show-offboard-dialog="showOffboardDialog"
+          :show-roles="true"
           :tenant="tenant"
           :users="tenant.users"
           where="tenant"
-          :filter="userSearch"
-          :show-offboard-dialog="showOffboardDialog"
-          :handle-remove-role="handleRemoveRole"
-          :show-actions="true"
-          :show-roles="true"
         />
       </v-col>
     </v-row>
@@ -333,10 +319,10 @@ watch(selectAllRoles, () => {
           :current-users="tenant.users"
           :loading="loadingSearch"
           :search-results="searchResults"
+          :tenant="tenant"
           @clear-search="handleClearSearch"
           @search="handleSearch"
           @select="handleUserSelected"
-          :tenant="tenant"
         />
 
         <v-row v-if="selectedUser" class="mt-4">

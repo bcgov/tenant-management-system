@@ -36,7 +36,7 @@ const { t } = useI18n()
 const computedUsers = computed((): User[] => {
   const u = props.users as unknown
   if (!Array.isArray(u)) return []
-  const arr = u as any[]
+  const arr = u as []
   if (arr.length === 0) return []
   // If items look like GroupUser (have a `user` property), map to the inner User
   if (arr[0] && typeof arr[0] === 'object' && 'user' in arr[0]) {
@@ -95,7 +95,7 @@ const headers = [
     align: 'start',
     sortable: false,
   },
-] as unknown as any[]
+]
 
 if (props.showRoles) {
   headers.push(
@@ -185,22 +185,22 @@ const colorRowItem = (item: ItemSlotBase<User>) => {
 
 <template>
   <v-data-table
+    v-model="selectedUser"
     :header-props="{
       class: headerClass,
     }"
-    v-model="selectedUser"
     :headers="headers"
+    :hide-default-footer="computedUsers.length === 0"
     :items="computedUsers"
+    :row-props="colorRowItem"
     :search="filter"
     :sort-by="sortKey"
     item-value="id"
+    select-strategy="single"
     striped="even"
     fixed-header
     hover
-    select-strategy="single"
     return-object
-    :row-props="colorRowItem"
-    :hide-default-footer="computedUsers.length === 0"
     @click:row="(e: Event, r: RowPropsType) => enableSelect && selectUser?.(e, r)"
   >
     <template #no-data>
@@ -217,16 +217,16 @@ const colorRowItem = (item: ItemSlotBase<User>) => {
         <v-btn
           v-if="!showAdd && isUserAdmin"
           class="mt-4"
-          variant="text"
           color="primary"
+          variant="text"
           @click="emit('add-first-clicked')"
           >
-            <v-icon left icon="mdi-plus-box" size="x-large" style="transform: scale(1.5)" class="mr-2" />
+            <v-icon class="mr-2" icon="mdi-plus-box" size="x-large" style="transform: scale(1.5)" left />
             {{ $t('users.noUsersAdd', { where }) }}
           </v-btn>
       </div>
     </template>
-    <template #[`item.roles`]="{ item, index }">
+    <template #[`item.roles`]="{ item }">
       <div class="d-flex flex-wrap" style="gap: 8px; margin-block: 4px">
         <v-chip
           v-for="role in item.roles"
@@ -265,8 +265,8 @@ const colorRowItem = (item: ItemSlotBase<User>) => {
     <template #[`item.actions`]="{ item }">
 
       <v-menu>
-            <template v-slot:activator="{ props }">
-              <v-btn icon="mdi-dots-vertical" variant="text" v-bind="props"></v-btn>
+            <template #activator="{ menuProps }">
+              <v-btn icon="mdi-dots-vertical" variant="text" v-bind="menuProps"></v-btn>
             </template>
 
             <v-list>
