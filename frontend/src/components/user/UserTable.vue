@@ -77,7 +77,7 @@ type TableHeaderItem = {
   sortable?: boolean
 }
 
-const headers: TableHeaderItem[] = computed(() => {
+const headers: ComputedRef<TableHeaderItem[]> = computed(() => {
   const rv: TableHeaderItem[] = [
     {
       title: t('users.displayName'),
