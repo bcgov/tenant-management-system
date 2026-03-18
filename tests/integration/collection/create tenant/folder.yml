@@ -1,7 +1,7 @@
 info:
-  name: auth
+  name: create tenant
   type: folder
-  seq: 3
+  seq: 7
 
 request:
   auth: inherit

@@ -1,0 +1,17 @@
+info:
+  name: tenant get users
+  type: folder
+  seq: 10
+
+request:
+  auth: inherit
+  scripts:
+    - type: before-request
+      code: |-
+        // Setup variables for the tests in this directory are:
+        //
+        //  - tenantId: String for the tenant.id UUID
+        //
+
+        const tenantResponse = await bru.runRequest('_fixtures/create tenant with service user')
+        // Side effect of the above is setting the tenantId

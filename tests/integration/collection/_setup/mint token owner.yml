@@ -1,7 +1,7 @@
 info:
-  name: mint token expired
+  name: mint token owner
   type: http
-  seq: 5
+  seq: 4
   tags:
     - setup
 
@@ -10,15 +10,19 @@ http:
   url: "{{mockJwksUrl}}/mint"
   body:
     type: json
-    data: |-
+    data: |
       {
         "claims": {
           "aud": "{{audience}}",
+          "display_name": "Orwell, Odysseus CITZ:EX",
+          "email": "Odysseus.Orwell@gov.bc.ca",
+          "family_name": "Orwell",
+          "given_name": "Odysseus",
           "identity_provider": "idir",
-          "idir_user_guid": "645963C37CB84B0BA1566C4EE35E8371",
-          "sub": "645963c37cb84b0ba1566c4ee35e8371@azureidir"
-        },
-        "validFor": "-1h"
+          "idir_user_guid": "820D17EA8C90438A9A74925B442CE775",
+          "idir_username": "OORWELL",
+          "sub": "820d17ea8c90438a9a74925b442ce775@azureidir"
+        }
       }
   auth: inherit
 
@@ -32,10 +36,10 @@ runtime:
       value: idir
     - expression: res.body.claims.idir_user_guid
       operator: eq
-      value: 645963C37CB84B0BA1566C4EE35E8371
+      value: 820D17EA8C90438A9A74925B442CE775
     - expression: res.body.claims.sub
       operator: eq
-      value: 645963c37cb84b0ba1566c4ee35e8371@azureidir
+      value: 820d17ea8c90438a9a74925b442ce775@azureidir
     - expression: res.status
       operator: eq
       value: "200"

@@ -13,6 +13,15 @@ config:
         username: ""
         password: ""
       bypassProxy: ""
+
+request:
+  scripts:
+    - type: before-request
+      code: |-
+        // Create a timestamp that can be used anywhere a unique value is
+        // needed, such as the name of a Tenant.
+        const moment = require('moment')
+        bru.setVar("timestamp", moment().format('HHmmssSSS'))
 bundled: false
 extensions:
   bruno:

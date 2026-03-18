@@ -5,3 +5,10 @@ info:
 
 request:
   auth: inherit
+  scripts:
+    - type: before-request
+      code: |-
+        // Skip the JWT minting calls in this folder, as they're for setting up tokens.
+        if (req.getTags().includes('setup') && req.getExecutionMode() === 'runner') {
+          bru.runner.skipRequest()
+        }

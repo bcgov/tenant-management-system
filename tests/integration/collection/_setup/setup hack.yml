@@ -1,0 +1,46 @@
+info:
+  name: setup hack
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{baseUrl}}/tenants"
+  body:
+    type: json
+    data: |
+      {
+        "ministryName": "Ministry of Citizens' Services",
+        "name": "tenant-hack-{{timestamp}}",
+        "user": {
+          "displayName": "Orwell, Osysseus CITZ:EX",
+          "email": "Odysseus.Orwell@gov.bc.ca",
+          "firstName": "Odysseus",
+          "lastName": "Orwell",
+          "ssoUserId": "820D17EA8C90438A9A74925B442CE775",
+          "userName": "OORWELL"
+        }
+      }
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        const tokenResponse = await bru.runRequest('_setup/mint token admin')
+        bru.setVar('token', tokenResponse.data.token)
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "201"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |
+  Workaround for the `Role`s - they aren't created until the first `Tenant` is created, so they are causing all kinds of problems. Will fix later with a data seed migration but for now this will do.
