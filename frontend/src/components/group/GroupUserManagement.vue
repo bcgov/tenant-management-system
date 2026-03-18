@@ -9,6 +9,8 @@ import type { Group, GroupUser, Tenant, User } from '@/models'
 import { type IdirSearchType, ROLES } from '@/utils/constants'
 import { currentUserHasRole } from '@/utils/permissions'
 import { convertIDPToDisplay } from '@/utils/display'
+import UserTable from '../user/UserTable.vue'
+import { GroupUser as GroupUserModel } from '@/models'
 
 // --- Component Interface -----------------------------------------------------
 
@@ -72,7 +74,10 @@ function handleClearSearch() {
   emit('clear-search')
 }
 
-function handleDeleteClick(groupUser: GroupUser) {
+function handleDeleteClick(user: User) {
+
+  const groupUser = new GroupUserModel('1', user)
+
   showDeleteDialog.value = true
   groupUserToDelete.value = groupUser
 }
@@ -100,63 +105,13 @@ function toggleSearch() {
     <v-row>
       <v-col cols="12">
         <h4 class="mb-6 mt-12">Group Members</h4>
-        <v-data-table
-          :header-props="{
-            class: 'text-body-1 font-weight-bold bg-surface-light',
-          }"
-          :headers="[
-            {
-              title: 'First Name',
-              key: 'user.ssoUser.firstName',
-              align: 'start',
-            },
-            {
-              title: 'Last Name',
-              key: 'user.ssoUser.lastName',
-              align: 'start',
-            },
-            { title: 'Email', key: 'user.ssoUser.email', align: 'start' },
-            { title: 'Identity Provider', key: 'user.ssoUser.idpType', align: 'start' },
-            {
-              title: 'Actions',
-              key: 'actions',
-              align: 'center',
-              sortable: false,
-            },
-          ]"
-          :items="group.groupUsers"
-          :sort-by="[{ key: 'user.ssoUser.firstName' }]"
-          item-value="id"
-          striped="even"
-          fixed-header
-          hover
-        >
-          <template #[`item.user.ssoUser.idpType`]="{ item }">
-           {{ convertIDPToDisplay(item?.user?.ssoUser?.idpType) }}
-          </template>
-          <template #[`item.actions`]="{ item }">
-            <v-btn
-              v-if="isUserAdmin"
-              icon="mdi-delete-outline"
-              size="x-large"
-              variant="text"
-              @click="handleDeleteClick(item)"
-            />
-          </template>
-
-          <template #no-data>
-            <v-alert type="info">You have no users in this group</v-alert>
-          </template>
-        </v-data-table>
-      </v-col>
-    </v-row>
-
-    <v-row v-if="isUserAdmin && !showSearch" class="mt-4">
-      <v-col class="d-flex justify-start" cols="12">
-        <FloatingActionButton
-          icon="mdi-plus-box"
-          text="Add User to Group"
-          @click="toggleSearch"
+        <UserTable
+          :tenant="tenant"
+          :users="group.groupUsers"
+          where="group"
+          :show-actions="isUserAdmin"
+          :show-offboard-dialog="handleDeleteClick"
+          @add-first-clicked="toggleSearch"
         />
       </v-col>
     </v-row>
@@ -172,6 +127,7 @@ function toggleSearch() {
         </p>
 
         <UserSearch
+          :tenant="tenant"
           :loading="loadingSearch"
           :search-results="searchResults"
           @clear-search="handleClearSearch"
@@ -195,6 +151,7 @@ function toggleSearch() {
         cannot be undone. Please confirm before proceeding."
       title="You're about to permanently remove this user from this group"
       @button-click="handleDeleteDialogAction"
+      max-width="650"
     />
   </v-container>
 </template>

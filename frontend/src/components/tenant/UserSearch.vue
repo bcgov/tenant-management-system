@@ -3,10 +3,11 @@ import { computed, ref, watch } from 'vue'
 
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
-import { type User } from '@/models'
+import { type User, type Tenant } from '@/models'
 import { type IdirSearchType, IDIR_SEARCH_TYPE } from '@/utils/constants'
 import type { ItemSlotBase, DataTableItem } from 'vuetify/lib/components/VDataTable/types.mjs';
 import { convertIDPToDisplay } from '@/utils/display'
+import UserTable from '@/components/user/UserTable.vue'
 
 // --- Component Interface -----------------------------------------------------
 
@@ -14,6 +15,7 @@ const props = defineProps<{
   loading?: boolean
   searchResults: User[] | null
   currentUsers: User[] | null
+  tenant: Tenant
 }>()
 
 const emit = defineEmits<{
@@ -21,17 +23,6 @@ const emit = defineEmits<{
   (event: 'search', searchType: IdirSearchType, searchText: string): void
   (event: 'select', user: User): void
 }>()
-
-const colorRowItem = (item: ItemSlotBase<User>) => {
-  const index = selectedUser.value.findIndex((u) => u?.id === item?.item?.id)
-
-  if (index > -1) {
-    return {
-      class: 'selected-user'
-    }
-  }
-  return {}
-}
 
 // --- Component State ---------------------------------------------------------
 
@@ -160,50 +151,16 @@ function handleSearch() {
     <v-col cols="12">
       <h4 class="my-6">Search Results</h4>
 
-      <v-data-table
-        v-model="selectedUser"
-        :header-props="{
-          class: 'text-body-1 font-weight-bold bg-surface-light',
-        }"
-        :headers="[
-          { title: 'First Name', key: 'ssoUser.firstName', align: 'start' },
-          { title: 'Last Name', key: 'ssoUser.lastName', align: 'start' },
-          { title: 'Email', key: 'ssoUser.email', align: 'start' },
-          { title: 'Identity Provider', key: 'ssoUser.idpType', align: 'start' },
-          {
-            title: '',
-            key: 'actions',
-            sortable: false,
-            align: 'center',
-            width: '80px',
-          },
-        ]"
-        :items="searchResults || []"
-        :loading="loading"
-        :row-props="colorRowItem"
+      <UserTable
+        :tenant="tenant"
+        :users="searchResults || []"
+        where="tenant"
+        :show-add="true"
+        :enable-select="true"
+        :select-user="selectUser"
         :sort-by="defaultSort"
-        select-strategy="single"
-        striped="even"
-        return-object
-        @click:row="(e: Event, r: RowPropsType) => selectUser(e, r)"
-      >
-        <template #no-data>
-          <v-alert type="info">No matching users found</v-alert>
-        </template>
-        <template #[`item.ssoUser.idpType`]="{ item }">
-           {{ convertIDPToDisplay(item.ssoUser.idpType) }}
-        </template>
-        <template  #[`item.actions`]>
-          <v-btn
-            class="pa-0 ma-0"
-            color="primary"
-            density="compact"
-            icon="mdi-plus-box"
-            size="x-large"
-            variant="text"
-          />
-        </template>
-      </v-data-table>
+      />
+
     </v-col>
   </v-row>
 </template>

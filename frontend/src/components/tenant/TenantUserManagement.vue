@@ -10,6 +10,7 @@ import FloatingActionButton from '@/components/ui/FloatingActionButton.vue'
 import SimpleDialog from '@/components/ui/SimpleDialog.vue'
 import UserSearch from '@/components/tenant/UserSearch.vue'
 import RoleDialog from '@/components/tenant/RoleDialog.vue'
+import UserTable from '@/components/user/UserTable.vue'
 import type { Group, Role, Tenant, User } from '@/models'
 import { type IdirSearchType, ROLES } from '@/utils/constants'
 import { currentUserHasRole } from '@/utils/permissions'
@@ -294,78 +295,16 @@ watch(selectAllRoles, () => {
 
     <v-row>
       <v-col cols="12">
-        <v-data-table
-          :header-props="{
-            class: 'text-body-1 font-weight-bold bg-surface-light',
-          }"
-          :headers="[
-            { title: 'Name', key: 'ssoUser.displayName', align: 'start' },
-            {
-              title: 'TMS Roles',
-              key: 'roles',
-              align: 'start',
-              sortable: false,
-            },
-            { title: 'Email', key: 'ssoUser.email', align: 'start' },
-            { title: 'Identity Provider', key: 'ssoUser.idpType', align: 'start' },
-            { title: '', key: 'actions', sortable: false, align: 'center' },
-          ]"
-          :items="tenant.users"
-          :search="userSearch"
-          :sort-by="[{ key: 'ssoUser.displayName' }]"
-          item-value="id"
-          striped="even"
-          fixed-header
-          hover
-        >
-          <template #no-data>
-            <v-alert type="info">{{
-              userSearch
-                ? 'No users match your search criteria'
-                : 'You have no users in this tenant'
-            }}</v-alert>
-          </template>
-          <template #[`item.roles`]="{ item, index }">
-            <div class="d-flex flex-wrap" style="gap: 8px; margin-block: 4px">
-              <v-btn
-                v-if="isUserAdmin"
-                class="default-radius"
-                icon="mdi-plus"
-                size="x-small"
-                @click="showRoleDialog(item, index)"
-              />
-              <v-chip
-                v-for="role in item.roles"
-                :key="role.id"
-                class="d-inline-flex align-center"
-                color="primary"
-              >
-                {{ role.description }}
-                <v-icon
-                  v-if="isUserAdmin"
-                  class="ml-1 cursor-pointer"
-                  icon="mdi-close"
-                  size="small"
-                  @click.stop="handleRemoveRole(item, role)"
-                />
-              </v-chip>
-            </div>
-          </template>
-
-          <template #[`item.ssoUser.idpType`]="{ item }">
-           {{ convertIDPToDisplay(item.ssoUser.idpType) }}
-          </template>
-
-          <template #[`item.actions`]="{ item }">
-            <v-btn
-              v-if="isUserAdmin && (moreThanOneTenantOwner || !item.roles.some((r: Role) => r.name === 'Tenant Owner'))"
-              icon="mdi-trash-can-outline"
-              size="x-small"
-              variant="text"
-              @click="showOffboardDialog(item)"
-            />
-          </template>
-        </v-data-table>
+        <UserTable
+          :tenant="tenant"
+          :users="tenant.users"
+          where="tenant"
+          :filter="userSearch"
+          :show-offboard-dialog="showOffboardDialog"
+          :handle-remove-role="handleRemoveRole"
+          :show-actions="true"
+          :show-roles="true"
+        />
       </v-col>
     </v-row>
 
@@ -397,6 +336,7 @@ watch(selectAllRoles, () => {
           @clear-search="handleClearSearch"
           @search="handleSearch"
           @select="handleUserSelected"
+          :tenant="tenant"
         />
 
         <v-row v-if="selectedUser" class="mt-4">
