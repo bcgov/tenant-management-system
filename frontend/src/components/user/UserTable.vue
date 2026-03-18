@@ -68,7 +68,7 @@ const sortKey = computed(() => {
   if (props.sortBy && props.sortBy.length > 0) {
     return props.sortBy
   }
-  return [{ key: 'ssoUser.displayName' }]
+  return [{ key: 'ssoUser.firstName' }]
 })
 
 type TableHeaderItem = {
@@ -80,12 +80,6 @@ type TableHeaderItem = {
 
 const headers: ComputedRef<TableHeaderItem[]> = computed(() => {
   const rv: TableHeaderItem[] = [
-    {
-      title: t('users.displayName'),
-      key: 'ssoUser.displayName',
-      align: 'start',
-      sortable: true,
-    },
     {
       title: t('users.firstName'),
       key: 'ssoUser.firstName',
