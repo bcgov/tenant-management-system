@@ -112,5 +112,3 @@ const iconType = computed(() => {
     </v-card>
   </v-dialog>
 </template>
-
-<style scoped></style>

@@ -16,7 +16,6 @@ import { type IdirSearchType, ROLES } from '@/utils/constants'
 import { currentUserHasRole } from '@/utils/permissions'
 import { useGroupStore } from '@/stores'
 
-
 // --- Stores ----------------------------------------------------------------
 const groupStore = useGroupStore()
 
@@ -219,17 +218,6 @@ function handleCloseRoleDialog(open: boolean) {
   modifyingUserIndex.value = null
 }
 
-// function updateRoleValue(role: Role, value: boolean) {
-//   console.log("update role value", role, value)
-//   if (value) {
-//     if (!selectedRoles.value.some((r) => r.id === role.id)) {
-//       selectedRoles.value.push(role)
-//     }
-//   } else {
-//     selectedRoles.value = selectedRoles.value.filter((r) => r.id !== role.id)
-//   }
-// }
-
 watch(groupStore.groups, (newGroups) => {
   addGroups.value = []
   for (const _ of newGroups) {
@@ -314,7 +302,7 @@ watch(selectAllRoles, () => {
         <p class="mb-2 mt-8">
           1. Search for a user based on the selection criteria below:
         </p>
-        
+
         <UserSearch
           :current-users="tenant.users"
           :loading="loadingSearch"
@@ -333,7 +321,7 @@ watch(selectAllRoles, () => {
             <p class="mb-2 text-body-2">Available Roles:</p>
           </v-col>
           <v-col cols="12">
-            <v-checkbox 
+            <v-checkbox
               v-model="selectAllRoles"
               class="d-sm-inline-block"
               label="Select all"
@@ -343,7 +331,7 @@ watch(selectAllRoles, () => {
               :key="`role-${index}`"
               class="d-sm-inline-block"
             >
-              <v-checkbox 
+              <v-checkbox
                 v-if="selectedUser.ssoUser.idpType === 'idir' || index === 0"
                 v-model="selectedRoles"
                 :label="role.description"
@@ -354,18 +342,25 @@ watch(selectAllRoles, () => {
           </v-col>
         </v-row>
 
-        <v-row v-if="selectedUser && groupStore.groups.length && groupStore.groups.length > 0" class="mt-4">
+        <v-row
+          v-if="
+            selectedUser &&
+            groupStore.groups.length &&
+            groupStore.groups.length > 0
+          "
+          class="mt-4"
+        >
           <v-col cols="12">
             <p class="mb-2">3. Assign group(s) to this user:</p>
           </v-col>
           <v-col cols="12">
-            <v-checkbox 
+            <v-checkbox
               v-model="selectAllGroups"
               class="d-sm-inline-block"
               label="Select all"
             />
-            <v-checkbox 
-              v-for="(group, index) in groupStore.groups" 
+            <v-checkbox
+              v-for="(group, index) in groupStore.groups"
               :key="group.id"
               v-model="addGroups[index]"
               :label="group.name"
