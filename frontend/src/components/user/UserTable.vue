@@ -46,7 +46,7 @@ const computedUsers = computed((): User[] => {
   if ((first as GroupUser).user !== undefined) {
     return (u as GroupUser[]).map((g) => {
       const user = g.user
-      user.id = g.id
+      user.id = g.id as UserId
       return user
     })
   }
