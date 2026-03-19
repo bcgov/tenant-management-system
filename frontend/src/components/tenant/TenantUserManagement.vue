@@ -218,6 +218,16 @@ function handleCloseRoleDialog(open: boolean) {
   modifyingUserIndex.value = null
 }
 
+function showChangeRoles(user: User) {
+  const uIndex = props.tenant.users.findIndex((u: User) => {
+    return u.id === user.id
+  })
+  if (uIndex !== -1) {
+    modifyingUserIndex.value = uIndex
+    roleDialogVisible.value = true
+  }
+}
+
 watch(groupStore.groups, (newGroups) => {
   addGroups.value = []
   for (const _ of newGroups) {
@@ -270,9 +280,11 @@ watch(selectAllRoles, () => {
     <v-row>
       <v-col cols="12">
         <UserTable
+          :add-user-role="showChangeRoles"
           :filter="userSearch"
           :handle-remove-role="handleRemoveRole"
           :show-actions="true"
+          :show-add-roles="true"
           :show-offboard-dialog="showOffboardDialog"
           :show-roles="true"
           :tenant="tenant"

@@ -9,6 +9,7 @@ import { type IdirSearchType, ROLES } from '@/utils/constants'
 import { currentUserHasRole } from '@/utils/permissions'
 import UserTable from '../user/UserTable.vue'
 import { GroupUser as GroupUserModel } from '@/models'
+import FloatingActionButton from '@/components/ui/FloatingActionButton.vue'
 
 // --- Component Interface -----------------------------------------------------
 
@@ -73,14 +74,15 @@ function handleClearSearch() {
 }
 
 function handleDeleteClick(user: User) {
-
-  const groupUser = new GroupUserModel('1', user)
+  console.log('hdc', user)
+  const groupUser = new GroupUserModel(user.id, user)
 
   showDeleteDialog.value = true
   groupUserToDelete.value = groupUser
 }
 
 function handleDeleteDialogAction(action: string) {
+  console.log('deldel', groupUserToDelete.value)
   if (action === 'confirm' && groupUserToDelete.value) {
     emit('delete', groupUserToDelete.value.id)
   }
@@ -110,6 +112,19 @@ function toggleSearch() {
           :users="group.groupUsers"
           where="group"
           @add-first-clicked="toggleSearch"
+        />
+      </v-col>
+    </v-row>
+
+    <v-row
+      v-if="isUserAdmin && !showSearch && group?.groupUsers?.length > 0"
+      class="mt-4"
+    >
+      <v-col class="d-flex justify-start" cols="12">
+        <FloatingActionButton
+          icon="mdi-plus-box"
+          text="Add User to Group"
+          @click="toggleSearch"
         />
       </v-col>
     </v-row>

@@ -22,8 +22,10 @@ const props = defineProps<{
   showOffboardDialog?: (user: User) => void
   showActions?: boolean
   showAdd?: boolean
+  showAddRoles?: boolean
   showRoles?: boolean
   enableSelect?: boolean
+  addUserRole?: (user: User) => void
   selectUser?: (e: Event | null, r: RowPropsType) => boolean
   sortBy?: Array<{ key: string; order?: 'asc' | 'desc' }>
 }>()
@@ -42,7 +44,11 @@ const computedUsers = computed((): User[] => {
   const first = u[0]
   // If items look like GroupUser (have a `user` property), map to the inner User
   if ((first as GroupUser).user !== undefined) {
-    return (u as GroupUser[]).map((g) => g.user)
+    return (u as GroupUser[]).map((g) => {
+      const user = g.user
+      user.id = g.id
+      return user
+    })
   }
   return u as User[]
 })
@@ -157,17 +163,21 @@ const canRemoveRole = function (item: User, role: Role): boolean {
 
 const actionItems = computed(() => {
   const rv = []
-  // rv.push({
-  //   title: t('users.viewUserDetailsAction'),
-  //   action: props.showOffboardDialog,
-  //   disabledCondition: () => {
-  //     return false
-  //   },
-  // })
+  if (props.showAddRoles && props.addUserRole) {
+    rv.push({
+      title: t('users.addRoleAction'),
+      icon: 'mdi-plus',
+      action: props.addUserRole,
+      disabledCondition: () => {
+        return false
+      },
+    })
+  }
   if (isUserAdmin.value && props.showOffboardDialog) {
     rv.push({
       title: t('users.offboardUserAction'),
       action: props.showOffboardDialog,
+      icon: 'mdi-delete-outline',
       disabledCondition: (item: User) => {
         return !(
           moreThanOneTenantOwner.value ||
@@ -208,6 +218,7 @@ const selectRowItem = (e: Event, r: RowPropsType) => {
     :row-props="colorRowItem"
     :search="filter"
     :sort-by="sortKey"
+    class="cursor-none"
     item-value="id"
     select-strategy="single"
     striped="even"
@@ -307,6 +318,9 @@ const selectRowItem = (e: Event, r: RowPropsType) => {
                     v-bind="tooltipProps"
                     class="text-body-2 text-disabled cursor-default"
                   >
+                    <v-icon v-if="actionItem.icon !== ''">{{
+                      actionItem.icon
+                    }}</v-icon>
                     {{ actionItem.title }}
                   </v-list-item-title>
                 </template>
@@ -316,8 +330,12 @@ const selectRowItem = (e: Event, r: RowPropsType) => {
             <template v-else>
               <v-list-item-title
                 @click="actionItem.action && actionItem.action(item)"
-                >{{ actionItem.title }}</v-list-item-title
               >
+                <v-icon v-if="actionItem.icon !== ''">{{
+                  actionItem.icon
+                }}</v-icon>
+                {{ actionItem.title }}
+              </v-list-item-title>
             </template>
           </v-list-item>
         </v-list>
