@@ -61,13 +61,11 @@ const handleGroupCreate = async (
   let group: Group
 
   try {
-    console.log(groupDetails, 'group details')
     group = await groupStore.addGroup(
       props.tenant.id,
       groupDetails.name,
       groupDetails.description,
     )
-    console.log('3')
 
     isDuplicateName.value = false
     notification.success('Group Created Successfully')
@@ -81,10 +79,8 @@ const handleGroupCreate = async (
       // For any other API Domain Error, display the user message that comes
       // from the API. This should not happen but is useful if there are
       // business rules in the API that are not implemented in the UI.
-      console.log('domain error', error)
       notification.error(error.userMessage)
     } else if (error instanceof ServerError) {
-      console.log('server error', error)
       notification.error(error.userMessage ?? 'Failed to create the new group')
     } else {
       // Otherwise display a generic error message.

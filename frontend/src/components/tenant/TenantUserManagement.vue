@@ -10,12 +10,11 @@ import FloatingActionButton from '@/components/ui/FloatingActionButton.vue'
 import SimpleDialog from '@/components/ui/SimpleDialog.vue'
 import UserSearch from '@/components/tenant/UserSearch.vue'
 import RoleDialog from '@/components/tenant/RoleDialog.vue'
+import UserTable from '@/components/user/UserTable.vue'
 import type { Group, Role, Tenant, User } from '@/models'
 import { type IdirSearchType, ROLES } from '@/utils/constants'
 import { currentUserHasRole } from '@/utils/permissions'
 import { useGroupStore } from '@/stores'
-import { convertIDPToDisplay } from '@/utils/display'
-
 
 // --- Stores ----------------------------------------------------------------
 const groupStore = useGroupStore()
@@ -90,11 +89,6 @@ const isUserAdmin = computed(() => {
     currentUserHasRole(props.tenant, ROLES.TENANT_OWNER.value) ||
     currentUserHasRole(props.tenant, ROLES.USER_ADMIN.value)
   )
-})
-
-const moreThanOneTenantOwner = computed(() => {
-  const owners = props.tenant.getOwners()
-  return owners.length > 1
 })
 
 const roles = computed(() => props.possibleRoles ?? [])
@@ -204,24 +198,13 @@ function handleSearch(searchType: IdirSearchType, searchText: string) {
   emit('search', searchType, searchText)
 }
 
-function handleUserSelected(user: User) {
+function handleUserSelected(user: User | null) {
   selectedUser.value = user
 }
 
 function showInfo(message: string) {
   infoDialog.value.message = message
   infoDialogVisible.value = true
-}
-
-function showRoleDialog(user: User, index: number) {
-  if (!isUserAdmin.value) {
-    return
-  }
-
-  const indexToUse = props.tenant.users.findIndex((u) => u.id === user.id)
-
-  modifyingUserIndex.value = indexToUse !== -1 ? indexToUse : index
-  roleDialogVisible.value = true
 }
 
 function showOffboardDialog(user: User) {
@@ -235,16 +218,15 @@ function handleCloseRoleDialog(open: boolean) {
   modifyingUserIndex.value = null
 }
 
-// function updateRoleValue(role: Role, value: boolean) {
-//   console.log("update role value", role, value)
-//   if (value) {
-//     if (!selectedRoles.value.some((r) => r.id === role.id)) {
-//       selectedRoles.value.push(role)
-//     }
-//   } else {
-//     selectedRoles.value = selectedRoles.value.filter((r) => r.id !== role.id)
-//   }
-// }
+function showChangeRoles(user: User) {
+  const uIndex = props.tenant.users.findIndex((u: User) => {
+    return u.id === user.id
+  })
+  if (uIndex !== -1) {
+    modifyingUserIndex.value = uIndex
+    roleDialogVisible.value = true
+  }
+}
 
 watch(groupStore.groups, (newGroups) => {
   addGroups.value = []
@@ -297,82 +279,26 @@ watch(selectAllRoles, () => {
 
     <v-row>
       <v-col cols="12">
-        <v-data-table
-          :header-props="{
-            class: 'text-body-1 font-weight-bold bg-surface-light',
-          }"
-          :headers="[
-            { title: 'Name', key: 'ssoUser.displayName', align: 'start' },
-            {
-              title: 'TMS Roles',
-              key: 'roles',
-              align: 'start',
-              sortable: false,
-            },
-            { title: 'Email', key: 'ssoUser.email', align: 'start' },
-            { title: 'Identity Provider', key: 'ssoUser.idpType', align: 'start' },
-            { title: '', key: 'actions', sortable: false, align: 'center' },
-          ]"
-          :items="tenant.users"
-          :search="userSearch"
-          :sort-by="[{ key: 'ssoUser.displayName' }]"
-          item-value="id"
-          striped="even"
-          fixed-header
-          hover
-        >
-          <template #no-data>
-            <v-alert type="info">{{
-              userSearch
-                ? 'No users match your search criteria'
-                : 'You have no users in this tenant'
-            }}</v-alert>
-          </template>
-          <template #[`item.roles`]="{ item, index }">
-            <div class="d-flex flex-wrap" style="gap: 8px; margin-block: 4px">
-              <v-btn
-                v-if="isUserAdmin"
-                class="default-radius"
-                icon="mdi-plus"
-                size="x-small"
-                @click="showRoleDialog(item, index)"
-              />
-              <v-chip
-                v-for="role in item.roles"
-                :key="role.id"
-                class="d-inline-flex align-center"
-                color="primary"
-              >
-                {{ role.description }}
-                <v-icon
-                  v-if="isUserAdmin"
-                  class="ml-1 cursor-pointer"
-                  icon="mdi-close"
-                  size="small"
-                  @click.stop="handleRemoveRole(item, role)"
-                />
-              </v-chip>
-            </div>
-          </template>
-
-          <template #[`item.ssoUser.idpType`]="{ item }">
-           {{ convertIDPToDisplay(item.ssoUser.idpType) }}
-          </template>
-
-          <template #[`item.actions`]="{ item }">
-            <v-btn
-              v-if="isUserAdmin && (moreThanOneTenantOwner || !item.roles.some((r: Role) => r.name === 'Tenant Owner'))"
-              icon="mdi-trash-can-outline"
-              size="x-small"
-              variant="text"
-              @click="showOffboardDialog(item)"
-            />
-          </template>
-        </v-data-table>
+        <UserTable
+          :add-user-role="showChangeRoles"
+          :filter="userSearch"
+          :handle-remove-role="handleRemoveRole"
+          :show-actions="true"
+          :show-add-roles="true"
+          :show-offboard-dialog="showOffboardDialog"
+          :show-roles="true"
+          :tenant="tenant"
+          :users="tenant.users"
+          where="tenant"
+          @add-first-clicked="showSearch = true"
+        />
       </v-col>
     </v-row>
 
-    <v-row v-if="isUserAdmin && !showSearch" class="mt-4">
+    <v-row
+      v-if="isUserAdmin && !showSearch && tenant.users.length !== 0"
+      class="mt-4"
+    >
       <v-col class="d-flex justify-start" cols="12">
         <FloatingActionButton
           :text="$t('tenants.addAnotherUser', tenant.users.length)"
@@ -392,11 +318,12 @@ watch(selectAllRoles, () => {
         <p class="mb-2 mt-8">
           1. Search for a user based on the selection criteria below:
         </p>
-        
+
         <UserSearch
           :current-users="tenant.users"
           :loading="loadingSearch"
           :search-results="searchResults"
+          :tenant="tenant"
           @clear-search="handleClearSearch"
           @search="handleSearch"
           @select="handleUserSelected"
@@ -410,7 +337,7 @@ watch(selectAllRoles, () => {
             <p class="mb-2 text-body-2">Available Roles:</p>
           </v-col>
           <v-col cols="12">
-            <v-checkbox 
+            <v-checkbox
               v-model="selectAllRoles"
               class="d-sm-inline-block"
               label="Select all"
@@ -420,8 +347,8 @@ watch(selectAllRoles, () => {
               :key="`role-${index}`"
               class="d-sm-inline-block"
             >
-              <v-checkbox 
-                v-if="selectedUser.ssoUser.idpType === 'idir' || index === 0"
+              <v-checkbox
+                v-if="selectedUser?.ssoUser?.idpType === 'idir' || index === 0"
                 v-model="selectedRoles"
                 :label="role.description"
                 :value="role"
@@ -431,18 +358,25 @@ watch(selectAllRoles, () => {
           </v-col>
         </v-row>
 
-        <v-row v-if="selectedUser && groupStore.groups.length && groupStore.groups.length > 0" class="mt-4">
+        <v-row
+          v-if="
+            selectedUser &&
+            groupStore.groups.length &&
+            groupStore.groups.length > 0
+          "
+          class="mt-4"
+        >
           <v-col cols="12">
             <p class="mb-2">3. Assign group(s) to this user:</p>
           </v-col>
           <v-col cols="12">
-            <v-checkbox 
+            <v-checkbox
               v-model="selectAllGroups"
               class="d-sm-inline-block"
               label="Select all"
             />
-            <v-checkbox 
-              v-for="(group, index) in groupStore.groups" 
+            <v-checkbox
+              v-for="(group, index) in groupStore.groups"
               :key="group.id"
               v-model="addGroups[index]"
               :label="group.name"

@@ -3,12 +3,13 @@ import { computed, ref } from 'vue'
 
 import UserSearch from '@/components/group/UserSearch.vue'
 import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
-import FloatingActionButton from '@/components/ui/FloatingActionButton.vue'
 import SimpleDialog from '@/components/ui/SimpleDialog.vue'
 import type { Group, GroupUser, Tenant, User } from '@/models'
 import { type IdirSearchType, ROLES } from '@/utils/constants'
 import { currentUserHasRole } from '@/utils/permissions'
-import { convertIDPToDisplay } from '@/utils/display'
+import UserTable from '../user/UserTable.vue'
+import { GroupUser as GroupUserModel } from '@/models'
+import FloatingActionButton from '@/components/ui/FloatingActionButton.vue'
 
 // --- Component Interface -----------------------------------------------------
 
@@ -72,7 +73,9 @@ function handleClearSearch() {
   emit('clear-search')
 }
 
-function handleDeleteClick(groupUser: GroupUser) {
+function handleDeleteClick(user: User) {
+  const groupUser = new GroupUserModel(user.id, user)
+
   showDeleteDialog.value = true
   groupUserToDelete.value = groupUser
 }
@@ -98,60 +101,23 @@ function toggleSearch() {
 <template>
   <v-container class="px-0" fluid>
     <v-row>
-      <v-col cols="12">
+      <v-col :cols="12">
         <h4 class="mb-6 mt-12">Group Members</h4>
-        <v-data-table
-          :header-props="{
-            class: 'text-body-1 font-weight-bold bg-surface-light',
-          }"
-          :headers="[
-            {
-              title: 'First Name',
-              key: 'user.ssoUser.firstName',
-              align: 'start',
-            },
-            {
-              title: 'Last Name',
-              key: 'user.ssoUser.lastName',
-              align: 'start',
-            },
-            { title: 'Email', key: 'user.ssoUser.email', align: 'start' },
-            { title: 'Identity Provider', key: 'user.ssoUser.idpType', align: 'start' },
-            {
-              title: 'Actions',
-              key: 'actions',
-              align: 'center',
-              sortable: false,
-            },
-          ]"
-          :items="group.groupUsers"
-          :sort-by="[{ key: 'user.ssoUser.firstName' }]"
-          item-value="id"
-          striped="even"
-          fixed-header
-          hover
-        >
-          <template #[`item.user.ssoUser.idpType`]="{ item }">
-           {{ convertIDPToDisplay(item?.user?.ssoUser?.idpType) }}
-          </template>
-          <template #[`item.actions`]="{ item }">
-            <v-btn
-              v-if="isUserAdmin"
-              icon="mdi-delete-outline"
-              size="x-large"
-              variant="text"
-              @click="handleDeleteClick(item)"
-            />
-          </template>
-
-          <template #no-data>
-            <v-alert type="info">You have no users in this group</v-alert>
-          </template>
-        </v-data-table>
+        <UserTable
+          :show-actions="isUserAdmin"
+          :show-offboard-dialog="handleDeleteClick"
+          :tenant="tenant"
+          :users="group.groupUsers"
+          where="group"
+          @add-first-clicked="toggleSearch"
+        />
       </v-col>
     </v-row>
 
-    <v-row v-if="isUserAdmin && !showSearch" class="mt-4">
+    <v-row
+      v-if="isUserAdmin && !showSearch && group?.groupUsers?.length > 0"
+      class="mt-4"
+    >
       <v-col class="d-flex justify-start" cols="12">
         <FloatingActionButton
           icon="mdi-plus-box"
@@ -174,13 +140,14 @@ function toggleSearch() {
         <UserSearch
           :loading="loadingSearch"
           :search-results="searchResults"
+          :tenant="tenant"
           @clear-search="handleClearSearch"
           @search="handleSearch"
           @select="handleAddUser"
         />
 
         <v-row class="mt-8">
-          <v-col class="d-flex justify-start" cols="12">
+          <v-col :cols="12" class="d-flex justify-start">
             <ButtonSecondary class="me-4" text="Cancel" @click="handleCancel" />
           </v-col>
         </v-row>
@@ -190,6 +157,7 @@ function toggleSearch() {
     <SimpleDialog
       v-model="showDeleteDialog"
       :buttons="deleteDialogButtons"
+      :max-width="650"
       message="This will only take them out of this group - it won't remove them
         from the tenant. Removing membership from a group is permanent and
         cannot be undone. Please confirm before proceeding."
