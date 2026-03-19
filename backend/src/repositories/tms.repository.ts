@@ -2,7 +2,7 @@ import { Tenant } from '../entities/Tenant'
 import { TenantUser } from '../entities/TenantUser'
 import { SSOUser } from '../entities/SSOUser'
 import { Role } from '../entities/Role'
-import { EntityManager } from 'typeorm'
+import { EntityManager, FindManyOptions } from 'typeorm'
 import { In } from 'typeorm'
 import { TMSConstants } from '../common/tms.constants'
 import { TenantUserRole } from '../entities/TenantUserRole'
@@ -451,17 +451,21 @@ export class TMSRepository {
       //     throw new NotFoundError(`Tenant user not found for tenant: ${tenantId}`)
       // }
 
-      const tenantUser: TenantUser = (await transactionEntityManager.findOne(
-          TenantUser,
-          { where: { id: tenantUserId, isDeleted: false } },
-        )) as any
+      const tenantUser = await transactionEntityManager.findOne(TenantUser, {
+        where: { id: tenantUserId, isDeleted: false },
+      })
+      if (!tenantUser) {
+        throw new NotFoundError(`Tenant user not found: ${tenantUserId}`)
+      }
 
       const existingRoles: Role[] = await this.getExistingRolesForUser(
         tenantUserId,
         transactionEntityManager,
       )
 
-      const trWhere: any = { tenant: { id: tenantId } }
+      const trWhere: FindManyOptions<Role> = {
+        tenant: { id: tenantId },
+      } as FindManyOptions<Role>
 
       const tenantRoles: Role[] = await this.manager.find(Role, trWhere)
       const existingRoleIds: string[] = existingRoles.map((role) => role.id)
@@ -486,7 +490,10 @@ export class TMSRepository {
       // Separate roles that can be restored vs need new assignments
       for (const roleId of roleIds) {
         //prevent bceid users from having anything other than service user role
-        if ((tenantUser.ssoUser.idpType.toLowerCase() === 'idir') || (bceidAllowedRoleIds.indexOf(roleId) !== -1)){
+        if (
+          tenantUser.ssoUser.idpType.toLowerCase() === 'idir' ||
+          bceidAllowedRoleIds.indexOf(roleId) !== -1
+        ) {
           const softDeletedAssignment = softDeletedRoleAssignments.find(
             (tur) => tur.role.id === roleId,
           )
@@ -523,12 +530,6 @@ export class TMSRepository {
           throw new NotFoundError('Role(s) not found')
         }
 
-        const tenantUser = await transactionEntityManager.findOne(TenantUser, {
-          where: { id: tenantUserId, isDeleted: false },
-        })
-        if (!tenantUser) {
-          throw new NotFoundError(`Tenant user not found: ${tenantUserId}`)
-        }
         const newAssignments: TenantUserRole[] = validRoles.map((role) => {
           const tenantUserRole: TenantUserRole = new TenantUserRole()
           tenantUserRole.tenantUser = tenantUser
