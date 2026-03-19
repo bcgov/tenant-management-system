@@ -74,7 +74,6 @@ function handleClearSearch() {
 }
 
 function handleDeleteClick(user: User) {
-  console.log('hdc', user)
   const groupUser = new GroupUserModel(user.id, user)
 
   showDeleteDialog.value = true
@@ -82,7 +81,6 @@ function handleDeleteClick(user: User) {
 }
 
 function handleDeleteDialogAction(action: string) {
-  console.log('deldel', groupUserToDelete.value)
   if (action === 'confirm' && groupUserToDelete.value) {
     emit('delete', groupUserToDelete.value.id)
   }

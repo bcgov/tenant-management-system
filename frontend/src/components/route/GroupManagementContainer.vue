@@ -115,7 +115,6 @@ onMounted(async () => {
   try {
     await groupStore.fetchGroup(routeTenantId.value, routeGroupId.value)
   } catch (error) {
-    console.log('group e', error)
     notification.error('Failed to load group')
   }
 
