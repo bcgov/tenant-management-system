@@ -4,6 +4,7 @@ import type { ComputedRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import type { User, Tenant, Role, GroupUser } from '@/models'
+import type { UserId } from '@/models/user.model'
 import type { ItemSlotBase } from 'vuetify/lib/components/VDataTable/types.mjs'
 
 import { convertIDPToDisplay } from '@/utils/display'
@@ -46,7 +47,7 @@ const computedUsers = computed((): User[] => {
   return u as User[]
 })
 
-const selectedUser = ref<User | null>(null)
+const selectedUser = ref<User[] | null>(null)
 
 const isUserAdmin = computed(() => {
   // A tenant owner, by default, is also a user admin - even if they don't have
@@ -179,7 +180,7 @@ const actionItems = computed(() => {
 })
 
 const colorRowItem = (item: ItemSlotBase<User>) => {
-  const selectedId = selectedUser.value?.[0]?.id
+  const selectedId: UserId | undefined = selectedUser.value?.[0]?.id
 
   if (selectedId && item?.item?.id && selectedId === item.item.id) {
     return { class: 'selected-user' }

@@ -198,7 +198,7 @@ function handleSearch(searchType: IdirSearchType, searchText: string) {
   emit('search', searchType, searchText)
 }
 
-function handleUserSelected(user: User) {
+function handleUserSelected(user: User | null) {
   selectedUser.value = user
 }
 

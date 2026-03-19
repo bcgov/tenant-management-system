@@ -23,7 +23,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (event: 'clear-search'): void
   (event: 'search', searchType: IdirSearchType, searchText: string): void
-  (event: 'select', user: User): void
+  (event: 'select', user: User | null): void
 }>()
 
 // --- Component State ---------------------------------------------------------
