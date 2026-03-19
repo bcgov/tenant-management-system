@@ -523,15 +523,12 @@ export class TMSRepository {
           throw new NotFoundError('Role(s) not found')
         }
 
-<<<<<<< fix-bceid_roles
-=======
         const tenantUser = await transactionEntityManager.findOne(TenantUser, {
           where: { id: tenantUserId, isDeleted: false },
         })
         if (!tenantUser) {
           throw new NotFoundError(`Tenant user not found: ${tenantUserId}`)
         }
->>>>>>> main
         const newAssignments: TenantUserRole[] = validRoles.map((role) => {
           const tenantUserRole: TenantUserRole = new TenantUserRole()
           tenantUserRole.tenantUser = tenantUser
