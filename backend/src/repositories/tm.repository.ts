@@ -273,7 +273,7 @@ export class TMRepository {
         .innerJoin(
           TenantSharedService,
           'tss',
-          'tss.tenant_id = ten.id AND tss.is_deleted = false',
+          'tss.tenant.id = ten.id AND tss.isDeleted = false',
         )
         .innerJoin(
           'tss.sharedService',
@@ -284,15 +284,12 @@ export class TMRepository {
         .innerJoin(
           GroupSharedServiceRole,
           'gssr',
-          `
-      gssr.group_id = grp.id
-      AND gssr.shared_service_role_id IN (
-        SELECT ssr.id FROM shared_service_role ssr
-        WHERE ssr.shared_service_id = ss.id
-        AND ssr.is_deleted = false
-      )
-      AND gssr.is_deleted = false
-      `,
+          'gssr.group.id = grp.id AND gssr.isDeleted = false',
+        )
+        .innerJoin(
+          SharedServiceRole,
+          'ssr',
+          'ssr.id = gssr.sharedServiceRole.id AND ssr.sharedService.id = ss.id AND ssr.isDeleted = false',
         )
     }
 
