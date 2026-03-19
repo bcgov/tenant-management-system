@@ -261,41 +261,44 @@ export class TMRepository {
 
     const groupsQuery = this.manager
       .createQueryBuilder(Group, 'grp')
-      .leftJoin('grp.tenant', 'ten')
-      .leftJoin(TenantSharedService, 'tss', 'tss.tenant_id = ten.id')
-      .leftJoin('tss.sharedService', 'ss')
-      .where('grp.tenant.id = :tenantId', { tenantId })
-      .andWhere(
-        ':jwtAudience = :tmsAudience OR (:jwtAudience != :tmsAudience AND ss.clientIdentifier = :jwtAudience AND tss.isDeleted = :tssDeleted AND ss.isActive = :ssActive)',
-        {
-          jwtAudience,
-          tmsAudience: TMS_AUDIENCE,
-          tssDeleted: false,
-          ssActive: true,
-        },
-      )
+      .innerJoin('grp.tenant', 'ten')
+      .innerJoin('ten.users', 'tu')
+      .innerJoin('tu.ssoUser', 'su')
+      .where('ten.id = :tenantId', { tenantId })
+      .andWhere('su.ssoUserId = :ssoUserId', { ssoUserId })
+      .andWhere('tu.isDeleted = false')
 
-    if (jwtAudience === TMS_AUDIENCE && ssoUserId) {
+    if (jwtAudience !== TMS_AUDIENCE) {
       groupsQuery
-        .innerJoin('ten.users', 'tu')
-        .innerJoin('tu.ssoUser', 'su')
-        .andWhere('su.ssoUserId = :ssoUserId', { ssoUserId })
-        .andWhere('tu.isDeleted = :isDeleted', { isDeleted: false })
-    } else {
-      groupsQuery
-        .leftJoin('ss.roles', 'ssr')
-        .leftJoin(
+        .innerJoin(
+          TenantSharedService,
+          'tss',
+          'tss.tenant_id = ten.id AND tss.is_deleted = false',
+        )
+        .innerJoin(
+          'tss.sharedService',
+          'ss',
+          'ss.clientIdentifier = :jwtAudience AND ss.isActive = true',
+          { jwtAudience },
+        )
+        .innerJoin(
           GroupSharedServiceRole,
           'gssr',
-          'gssr.group_id = grp.id AND gssr.shared_service_role_id = ssr.id',
+          `
+      gssr.group_id = grp.id
+      AND gssr.shared_service_role_id IN (
+        SELECT ssr.id FROM shared_service_role ssr
+        WHERE ssr.shared_service_id = ss.id
+        AND ssr.is_deleted = false
+      )
+      AND gssr.is_deleted = false
+      `,
         )
-        .andWhere('gssr.isDeleted = :gssrDeleted', { gssrDeleted: false })
-        .andWhere('ssr.isDeleted = :ssrDeleted', { ssrDeleted: false })
-        .distinct(true)
     }
 
-    const groups: Group[] = await groupsQuery.getMany()
+    groupsQuery.groupBy('grp.id')
 
+    const groups = await groupsQuery.getMany()
     const uniqueCreatedByIds: string[] = [
       ...new Set(
         groups
