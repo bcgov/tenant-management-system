@@ -23,6 +23,7 @@ const props = withDefaults(
     }[]
     hasClose?: boolean
     dialogType?: string | null
+    maxWidth?: number
   }>(),
   {
     title: '',
@@ -30,6 +31,7 @@ const props = withDefaults(
     buttons: () => [],
     hasClose: false,
     dialogType: null,
+    maxWidth: 500,
   },
 )
 
@@ -63,8 +65,8 @@ const iconType = computed(() => {
 
 <template>
   <v-dialog
+    :max-width="maxWidth ? maxWidth : 500"
     :model-value="modelValue"
-    max-width="500"
     @update:model-value="$emit('update:modelValue', $event)"
   >
     <v-card>
@@ -110,5 +112,3 @@ const iconType = computed(() => {
     </v-card>
   </v-dialog>
 </template>
-
-<style scoped></style>

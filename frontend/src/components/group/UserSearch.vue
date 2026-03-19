@@ -2,14 +2,15 @@
 import { computed, ref, watch } from 'vue'
 
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
-import type { User } from '@/models'
+import type { Tenant, User } from '@/models'
 import { type IdirSearchType, IDIR_SEARCH_TYPE } from '@/utils/constants'
-import { convertIDPToDisplay } from '@/utils/display'
+import UserTable from '../user/UserTable.vue'
 
 // --- Component Interface -----------------------------------------------------
 
 defineProps<{
   loading?: boolean
+  tenant: Tenant
   searchResults: User[] | null
 }>()
 
@@ -97,44 +98,15 @@ function handleSelectUser(user: User) {
     <v-col cols="12">
       <h4 class="my-6">Search Results</h4>
 
-      <v-data-table
-        :header-props="{
-          class: 'text-body-1 font-weight-bold bg-surface-light',
-        }"
-        :headers="[
-          { title: 'First Name', key: 'ssoUser.firstName', align: 'start' },
-          { title: 'Last Name', key: 'ssoUser.lastName', align: 'start' },
-          { title: 'Email', key: 'ssoUser.email', align: 'start' },
-          { title: 'Identity Provider', key: 'ssoUser.idpType', align: 'start' },
-          {
-            title: '',
-            key: 'actions',
-            sortable: false,
-            align: 'center',
-            width: '80px',
-          },
-        ]"
-        :items="searchResults || []"
-        :loading="loading"
+      <UserTable
+        :enable-select="true"
+        :show-add="true"
         :sort-by="defaultSort"
-        striped="even"
-      >
-        <template #[`item.ssoUser.idpType`]="{ item }">
-          {{ convertIDPToDisplay(item.ssoUser.idpType) }}
-        </template>
-        <template #[`item.actions`]="{ item }">
-          <v-btn
-            color="primary"
-            icon="mdi-plus-box"
-            size="large"
-            variant="text"
-            @click="handleSelectUser(item)"
-          />
-        </template>
-        <template #no-data>
-          <v-alert type="info">No matching users found</v-alert>
-        </template>
-      </v-data-table>
+        :tenant="tenant"
+        :users="searchResults || []"
+        where="group"
+        @add-clicked="(item) => handleSelectUser(item)"
+      />
     </v-col>
   </v-row>
 </template>
