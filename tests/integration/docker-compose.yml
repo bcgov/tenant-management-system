@@ -1,39 +1,69 @@
 services:
-  db:
-    image: postgres:17
-    environment:
-      POSTGRES_USER: app
-      POSTGRES_PASSWORD: app
-      POSTGRES_DB: app
-    healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U app']
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
   api:
-    image: ghcr.io/bcgov/tenant-management-system/backend:${IMAGE_TAG}
     depends_on:
       db:
         condition: service_healthy
+      mock-jwks:
+        condition: service_healthy
     environment:
-      POSTGRES_HOST: db
-      POSTGRES_PORT: 5432
-      POSTGRES_USER: app
-      POSTGRES_PASSWORD: app
-      POSTGRES_DATABASE: app
-      ISSUER: http://localhost:3001
-      JWKS_URI: http://localhost:3001/certs
+      ISSUER: http://localhost:7002
+      JWKS_URI: http://mock-jwks:7002/certs
       NODE_ENV: test
-    ports:
-      - '4144:4144'
+      PORT: 7001
+      POSTGRES_DATABASE: tmsdb
+      POSTGRES_HOST: db
+      POSTGRES_PASSWORD: testsecretpassword
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: tms
+      TMS_AUDIENCE: cstar
     healthcheck:
+      interval: 5s
+      retries: 5
       test:
         [
-          'CMD-SHELL',
-          'wget --no-verbose --tries=1 --spider http://localhost:4144/v1/health || exit 1',
+          'CMD',
+          'wget',
+          '--no-verbose',
+          '--spider',
+          '--tries=1',
+          'http://localhost:7001/v1/health',
         ]
-      interval: 10s
       timeout: 5s
+    image: ghcr.io/bcgov/tenant-management-system/backend:${IMAGE_TAG}
+    ports:
+      - '7001:7001'
+
+  db:
+    environment:
+      POSTGRES_DB: tmsdb
+      POSTGRES_PASSWORD: testsecretpassword
+      POSTGRES_USER: tms
+    healthcheck:
+      interval: 5s
       retries: 5
-      start_period: 30s
+      test: ['CMD-SHELL', 'pg_isready -U tms']
+      timeout: 5s
+    image: postgres:17.7
+    ports:
+      - '7003:5432'
+    volumes:
+      - ./initdb:/docker-entrypoint-initdb.d
+
+  mock-jwks:
+    build:
+      context: ./mock-jwks
+    healthcheck:
+      interval: 5s
+      retries: 5
+      test:
+        [
+          'CMD',
+          'wget',
+          '--no-verbose',
+          '--spider',
+          '--tries=1',
+          'http://localhost:7002/certs',
+        ]
+      timeout: 5s
+    ports:
+      - '7002:7002'

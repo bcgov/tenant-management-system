@@ -7,13 +7,31 @@ import { RoutesConstants } from './routes.constants'
 import { TMSConstants } from './tms.constants'
 
 const TMS_AUDIENCE = process.env.TMS_AUDIENCE || 'tenant-management-system-6014'
+const JWKS_URI = process.env.JWKS_URI || ''
+const ISSUER = process.env.ISSUER || ''
+
+interface DecodedJwt {
+  idir_user_guid?: string
+  bceid_user_guid?: string
+  bceid_business_guid?: string
+  aud?: string
+  audience?: string
+  client_roles?: string[]
+  sub?: string
+  idp?: string
+  identity_provider?: string
+  given_name?: string
+  family_name?: string
+  display_name?: string
+  preferred_username?: string
+  email?: string
+  [key: string]: unknown
+}
 
 declare global {
   namespace Express {
     interface Request {
-      decodedJwt?: {
-        [key: string]: any
-      }
+      decodedJwt?: DecodedJwt
       isSharedServiceAccess?: boolean
       bceidType?: 'bceidbasic' | 'bceidbusiness'
       idpType?: 'idir' | 'bceidbasic' | 'bceidbusiness'
@@ -26,7 +44,7 @@ interface CheckJwtOptions {
 }
 
 const determineBceidType = (
-  decodedJwt: any,
+  decodedJwt: DecodedJwt,
 ): 'bceidbasic' | 'bceidbusiness' => {
   if (decodedJwt.bceid_business_guid) {
     return 'bceidbusiness'
@@ -37,21 +55,25 @@ const determineBceidType = (
 const createJwtMiddleware = (options: CheckJwtOptions = {}) => {
   const { sharedServiceAccess = false } = options
 
+  if (!JWKS_URI || !ISSUER) {
+    throw new Error('Missing required JWT configuration environment variables')
+  }
+
   return jwt({
     secret: jwksRsa.expressJwtSecret({
       cache: true,
-      jwksUri: process.env.JWKS_URI!,
+      jwksUri: JWKS_URI,
       handleSigningKeyError: (err, cb) => {
         logger.error('Error:', { error: err?.message, stack: err?.stack })
         cb(new UnauthorizedError('Error occurred during authentication'))
       },
     }),
-    issuer: process.env.ISSUER!,
+    issuer: ISSUER,
     audience: sharedServiceAccess ? undefined : TMS_AUDIENCE,
     algorithms: ['RS256'],
     requestProperty: 'decodedJwt',
     getToken: function fromHeaderOrQuerystring(req) {
-      const authHeader: string = req.headers.authorization!
+      const authHeader = req.headers.authorization
       if (authHeader && authHeader.split(' ')[0] === 'Bearer') {
         const token = authHeader.split(' ')[1]
         logger.info('Token found:')
@@ -85,7 +107,7 @@ export const checkJwt = (options: CheckJwtOptions = {}) => {
         req.isSharedServiceAccess = true
 
         if (req.params.ssoUserId) {
-          const tokenUserId: string =
+          const tokenUserId: string | undefined =
             req.decodedJwt?.idir_user_guid || req.decodedJwt?.bceid_user_guid
           const requestedUserId: string = req.params.ssoUserId
 
@@ -176,16 +198,19 @@ export const extractOidcSub = (
 }
 
 export const jwtErrorHandler = (
-  err: any,
+  err: unknown,
   req: Request,
   res: Response,
   next: NextFunction,
 ) => {
-  if (err.name === 'UnauthorizedError') {
+  if (err instanceof Error && err.name === 'UnauthorizedError') {
     logger.error('JWT Validation Error (fallback):', {
       error: err.message,
-      code: err.code,
-      inner: err.inner?.message,
+      code: 'code' in err ? (err as { code?: string }).code : undefined,
+      inner:
+        'inner' in err
+          ? (err as { inner?: { message?: string } }).inner?.message
+          : undefined,
     })
 
     return res.status(401).json({

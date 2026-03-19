@@ -4,16 +4,45 @@ import { SSOUser } from '../entities/SSOUser'
 import { Role } from '../entities/Role'
 import { EntityManager } from 'typeorm'
 import { In } from 'typeorm'
-import { Request } from 'express'
 import { TMSConstants } from '../common/tms.constants'
 import { TenantUserRole } from '../entities/TenantUserRole'
 import { NotFoundError } from '../errors/NotFoundError'
 import { ConflictError } from '../errors/ConflictError'
+import { UnexpectedStateError } from '../errors/UnexpectedStateError'
 import logger from '../common/logger'
+import { getErrorMessage } from '../common/error.handler'
 import { TenantRequest } from '../entities/TenantRequest'
 import { SharedService } from '../entities/SharedService'
 import { SharedServiceRole } from '../entities/SharedServiceRole'
 import { TenantSharedService } from '../entities/TenantSharedService'
+import {
+  AssociateSharedServiceToTenantInputDto,
+  AssignUserRolesInputDto,
+  AddSharedServiceRolesInputDto,
+  AddTenantUserInputDto,
+  CreateTenantRolesInputDto,
+  CreateTenantInputDto,
+  CreateTenantRequestInputDto,
+  CreateSharedServiceInputDto,
+  GetTenantRequestsInputDto,
+  UpdateTenantRequestStatusResultDto,
+  UpdateTenantRequestStatusInputDto,
+  UpdateTenantRequestTenantResultDto,
+  GetRolesForSsoUserInputDto,
+  GetSharedServicesForTenantInputDto,
+  GetTenantInputDto,
+  SaveSharedServiceResultDto,
+  SaveTenantRequestResultDto,
+  GetTenantUserInputDto,
+  GetTenantUserResultDto,
+  GetTenantUsersInputDto,
+  GetTenantRolesInputDto,
+  GetUserRolesInputDto,
+  GetUserTenantsInputDto,
+  RemoveTenantUserInputDto,
+  UpdateTenantInputDto,
+  UnassignUserRolesInputDto,
+} from '../dtos/tms.dto'
 
 export class TMSRepository {
   constructor(private manager: EntityManager) {
@@ -21,131 +50,147 @@ export class TMSRepository {
   }
 
   public async saveTenant(
-    req: Request | { body: any },
+    input: CreateTenantInputDto,
     transactionEntityManager?: EntityManager,
   ) {
-    transactionEntityManager = transactionEntityManager
-      ? transactionEntityManager
-      : this.manager
-    let tenantResponse = {}
-    await this.manager.transaction(async (transactionEntityManager) => {
-      try {
-        if (
-          await this.checkIfTenantNameAndMinistryNameExists(
-            req.body.name,
-            req.body.ministryName,
-          )
-        ) {
-          throw new ConflictError(
-            `A tenant with name '${req.body.name}' and ministry name '${req.body.ministryName}' already exists`,
-          )
-        }
-
-        const tenantUser: TenantUser = new TenantUser()
-        const ssoUser: SSOUser = await this.setSSOUser(
-          req.body.user.ssoUserId,
-          req.body.user.firstName,
-          req.body.user.lastName,
-          req.body.user.displayName,
-          req.body.user.userName,
-          req.body.user.email,
-        )
-        tenantUser.ssoUser = ssoUser
-        const tenant: Tenant = new Tenant()
-        tenant.ministryName = req.body.ministryName
-        tenant.name = req.body.name
-        tenant.users = [tenantUser]
-        tenant.description = req.body.description
-        tenant.createdBy = req.body.user.ssoUserId
-        tenant.updatedBy = req.body.user.ssoUserId
-
-        const savedTenant: Tenant = await transactionEntityManager.save(tenant)
-
-        const globalTenantRoles = [
-          TMSConstants.SERVICE_USER,
-          TMSConstants.TENANT_OWNER,
-          TMSConstants.USER_ADMIN,
-        ]
-
-        const roles: Role[] = await this.findRoles(
-          globalTenantRoles,
-          null as any,
-        )
-
-        let savedRoles: Role[]
-
-        if (roles?.length === 0) {
-          const newRoles: Role[] = []
-          for (const role of globalTenantRoles) {
-            const tempRole: Role = new Role()
-            tempRole.name = role
-            tempRole.description =
-              role === TMSConstants.TENANT_OWNER
-                ? 'Tenant Owner'
-                : role === TMSConstants.SERVICE_USER
-                  ? 'Service User'
-                  : role === TMSConstants.USER_ADMIN
-                    ? 'User Admin'
-                    : ''
-            newRoles.push(tempRole)
+    const managerForTransaction = transactionEntityManager || this.manager
+    let tenantResponse!: Tenant
+    await managerForTransaction.transaction(
+      async (transactionEntityManager) => {
+        try {
+          if (
+            await this.checkIfTenantNameAndMinistryNameExists(
+              input.name,
+              input.ministryName,
+            )
+          ) {
+            throw new ConflictError(
+              `A tenant with name '${input.name}' and ministry name '${input.ministryName}' already exists`,
+            )
           }
-          savedRoles = await transactionEntityManager.save(newRoles)
-        } else {
-          savedRoles = roles
+
+          const tenantUser: TenantUser = new TenantUser()
+          const user = input.user
+          const ssoUser: SSOUser = await this.setSSOUser(
+            user.ssoUserId,
+            user.firstName,
+            user.lastName,
+            user.displayName,
+            user.userName || '',
+            user.email || '',
+          )
+          tenantUser.ssoUser = ssoUser
+          const tenant: Tenant = new Tenant()
+          tenant.ministryName = input.ministryName
+          tenant.name = input.name
+          tenant.users = [tenantUser]
+          if (typeof input.description === 'string') {
+            tenant.description = input.description
+          }
+          tenant.createdBy = user.ssoUserId
+          tenant.updatedBy = user.ssoUserId
+
+          const savedTenant: Tenant =
+            await transactionEntityManager.save(tenant)
+
+          const globalTenantRoles = [
+            TMSConstants.SERVICE_USER,
+            TMSConstants.TENANT_OWNER,
+            TMSConstants.USER_ADMIN,
+          ]
+
+          const roles: Role[] = await this.findRoles(globalTenantRoles, null)
+
+          let savedRoles: Role[]
+
+          if (roles?.length === 0) {
+            const newRoles: Role[] = []
+            for (const role of globalTenantRoles) {
+              const tempRole: Role = new Role()
+              tempRole.name = role
+              tempRole.description =
+                role === TMSConstants.TENANT_OWNER
+                  ? 'Tenant Owner'
+                  : role === TMSConstants.SERVICE_USER
+                    ? 'Service User'
+                    : role === TMSConstants.USER_ADMIN
+                      ? 'User Admin'
+                      : ''
+              newRoles.push(tempRole)
+            }
+            savedRoles = await transactionEntityManager.save(newRoles)
+          } else {
+            savedRoles = roles
+          }
+
+          const tenantUserRoles: TenantUserRole[] = []
+          for (const role of savedRoles) {
+            const tenantUserRole: TenantUserRole = new TenantUserRole()
+            tenantUserRole.role = role
+            tenantUserRole.tenantUser = savedTenant.users[0]
+            tenantUserRoles.push(tenantUserRole)
+          }
+          await transactionEntityManager.save(tenantUserRoles)
+
+          const savedTenantWithRelations = await transactionEntityManager
+            .createQueryBuilder(Tenant, 'tenant')
+            .leftJoinAndSelect('tenant.users', 'tu')
+            .leftJoinAndSelect('tu.ssoUser', 'sso')
+            .leftJoinAndSelect('tu.roles', 'turoles')
+            .leftJoinAndSelect('turoles.role', 'role')
+            .where('tenant.id = :id', { id: savedTenant.id })
+            .getOne()
+
+          if (!savedTenantWithRelations) {
+            throw new UnexpectedStateError('Tenant creation failed')
+          }
+
+          tenantResponse = savedTenantWithRelations
+        } catch (error: unknown) {
+          logger.error(
+            'Create tenant transaction failure - rolling back inserts ',
+            { error: getErrorMessage(error) },
+          )
+          throw error
         }
+      },
+    )
 
-        const tenantUserRoles: TenantUserRole[] = []
-        for (const role of savedRoles) {
-          const tenantUserRole: TenantUserRole = new TenantUserRole()
-          tenantUserRole.role = role
-          tenantUserRole.tenantUser = savedTenant.users[0]
-          tenantUserRoles.push(tenantUserRole)
-        }
-        await transactionEntityManager.save(tenantUserRoles)
-
-        tenantResponse = (await transactionEntityManager
-          .createQueryBuilder(Tenant, 'tenant')
-          .leftJoinAndSelect('tenant.users', 'tu')
-          .leftJoinAndSelect('tu.ssoUser', 'sso')
-          .leftJoinAndSelect('tu.roles', 'turoles')
-          .leftJoinAndSelect('turoles.role', 'role')
-          .where('tenant.id = :id', { id: savedTenant.id })
-          .getOne()) as any
-      } catch (error: any) {
-        logger.error(
-          'Create tenant transaction failure - rolling back inserts ',
-          error,
-        )
-        throw error
-      }
-    })
-
+    if (!tenantResponse) {
+      throw new UnexpectedStateError('Tenant creation failed')
+    }
     return tenantResponse
   }
 
-  public async updateTenant(req: Request) {
-    const tenantId: string = req.params.tenantId
-    const { name, ministryName, description, updatedBy } = req.body
+  public async updateTenant(input: UpdateTenantInputDto) {
+    const tenantId: string = input.tenantId
+    const { name, ministryName, description, updatedBy } = input
 
-    let tenantResponse: Tenant = null as any
+    let tenantResponse: Tenant | null = null
     await this.manager.transaction(async (transactionEntityManager) => {
       try {
-        // REDUNDANT: checkTenantAccess middleware already validates tenant exists and user has access
-        // if (!await this.checkIfTenantExists(tenantId, transactionEntityManager)) {
-        //     throw new NotFoundError(`Tenant not found: ${tenantId}`)
-        // }
+        const currentTenant = await transactionEntityManager
+          .createQueryBuilder(Tenant, 'tenant')
+          .where('tenant.id = :tenantId', { tenantId })
+          .getOne()
 
         if (name || ministryName) {
+          const effectiveName = name ?? currentTenant?.name ?? ''
+          const effectiveMinistryName =
+            ministryName ?? currentTenant?.ministryName ?? ''
+
           const existingTenant = await transactionEntityManager
             .createQueryBuilder(Tenant, 't')
-            .where('t.name = :name', { name })
-            .andWhere('t.ministry_name = :ministryName', { ministryName })
+            .where('t.name = :name', { name: effectiveName })
+            .andWhere('t.ministry_name = :ministryName', {
+              ministryName: effectiveMinistryName,
+            })
             .andWhere('t.id != :tenantId', { tenantId })
             .getOne()
 
           if (existingTenant) {
             throw new ConflictError(
-              `A tenant with name '${name}' and ministry name '${ministryName}' already exists`,
+              `A tenant with name '${effectiveName}' and ministry name '${effectiveMinistryName}' already exists`,
             )
           }
         }
@@ -154,64 +199,73 @@ export class TMSRepository {
           .createQueryBuilder()
           .update(Tenant)
           .set({
-            ...(name && { name }),
-            ...(ministryName && { ministryName }),
-            ...(description && { description }),
-            updatedBy: req.decodedJwt?.idir_user_guid || 'system',
+            ...(name !== undefined && { name }),
+            ...(ministryName !== undefined && { ministryName }),
+            ...(description !== undefined && { description }),
+            updatedBy,
           })
           .where('id = :tenantId', { tenantId })
           .execute()
 
-        const tenant: Tenant = (await transactionEntityManager
+        const tenant = await transactionEntityManager
           .createQueryBuilder(Tenant, 'tenant')
           .where('tenant.id = :id', { id: tenantId })
-          .getOne()) as any
+          .getOne()
 
-        const createdBy: SSOUser = tenant.createdBy
-          ? ((await transactionEntityManager.findOne(SSOUser, {
+        if (!tenant) {
+          throw new UnexpectedStateError('Tenant update failed')
+        }
+
+        const createdBy: SSOUser | null = tenant.createdBy
+          ? await transactionEntityManager.findOne(SSOUser, {
               where: { ssoUserId: tenant.createdBy },
-            })) as any)
-          : (null as any)
+            })
+          : null
 
         tenantResponse = {
           ...tenant,
           createdBy: createdBy?.userName || tenant.createdBy,
         }
-      } catch (error) {
+      } catch (error: unknown) {
         logger.error(
           'Update tenant transaction failure - rolling back changes',
-          error as any,
+          { error: getErrorMessage(error) },
         )
         throw error
       }
     })
 
+    if (!tenantResponse) {
+      throw new UnexpectedStateError('Tenant update failed')
+    }
+
     return tenantResponse
   }
 
   public async addTenantUsers(
-    req: Request,
+    input: AddTenantUserInputDto,
     transactionEntityManager?: EntityManager,
   ) {
     transactionEntityManager = transactionEntityManager
       ? transactionEntityManager
       : this.manager
 
-    const tenantId: string = req.params.tenantId
-    const ssoUserId: string = req.body.user.ssoUserId
-    const updatedBy: string = req.decodedJwt?.idir_user_guid || 'system'
+    const tenantId: string = input.tenantId
+    const user = input.user
+    const ssoUserId: string = user.ssoUserId
+    const updatedBy: string = input.updatedBy
 
-    const tenant: Tenant = (await this.getTenantIfUserDoesNotExistForTenant(
+    const tenant = await this.getTenantIfUserDoesNotExistForTenant(
       ssoUserId,
       tenantId,
-    )) as any
+    )
 
     if (!tenant) {
-      const softDeletedUser: TenantUser = (await this.findSoftDeletedTenantUser(
+      const softDeletedUser = await this.findSoftDeletedTenantUser(
         ssoUserId,
         tenantId,
         transactionEntityManager,
-      )) as any
+      )
 
       if (softDeletedUser) {
         softDeletedUser.isDeleted = false
@@ -221,25 +275,29 @@ export class TMSRepository {
         const restoredTenantUser: TenantUser =
           await transactionEntityManager.save(softDeletedUser)
 
-        const restoredTenantUserWithRelations: TenantUser =
-          (await transactionEntityManager
-            .createQueryBuilder(TenantUser, 'tu')
-            .leftJoinAndSelect('tu.ssoUser', 'ssoUser')
-            .where('tu.id = :tenantUserId', {
-              tenantUserId: restoredTenantUser.id,
-            })
-            .getOne()) as any
+        const restoredTenantUserWithRelations = await transactionEntityManager
+          .createQueryBuilder(TenantUser, 'tu')
+          .leftJoinAndSelect('tu.ssoUser', 'ssoUser')
+          .where('tu.id = :tenantUserId', {
+            tenantUserId: restoredTenantUser.id,
+          })
+          .getOne()
 
         const roleAssignments: TenantUserRole[] = await this.assignUserRoles(
           tenantId,
           restoredTenantUser.id,
-          req.body.roles,
+          await this.getRoleIdsToAssign(user.idpType, input.roles),
           transactionEntityManager,
         )
 
-        delete (restoredTenantUserWithRelations as any).tenant
+        if (!restoredTenantUserWithRelations) {
+          throw new UnexpectedStateError(
+            `Failed to load restored tenant user: ${restoredTenantUser.id}`,
+          )
+        }
+        const result = restoredTenantUserWithRelations
         return {
-          savedTenantUser: restoredTenantUserWithRelations,
+          savedTenantUser: result,
           roleAssignments,
           tenantUserId: restoredTenantUser.id,
         }
@@ -264,14 +322,13 @@ export class TMSRepository {
       tenantUser.tenant = tenant
       tenantUser.createdBy = updatedBy
       tenantUser.updatedBy = updatedBy
-      const user = req.body.user
       const ssoUser: SSOUser = await this.setSSOUser(
         user.ssoUserId,
         user.firstName,
         user.lastName,
         user.displayName,
-        user.userName,
-        user.email,
+        user.userName || '',
+        user.email || '',
         user.idpType,
       )
       tenantUser.ssoUser = ssoUser
@@ -279,26 +336,13 @@ export class TMSRepository {
       const savedTenantUser: TenantUser =
         await transactionEntityManager.save(tenantUser)
 
-      let rolesToAssign = req.body.roles
-      if (user.idpType === 'bceidbasic' || user.idpType === 'bceidbusiness') {
-        const serviceUserRole: Role[] = await this.findRoles(
-          [TMSConstants.SERVICE_USER],
-          null as any,
-        )
-        if (serviceUserRole.length === 0) {
-          throw new NotFoundError('SERVICE_USER role not found')
-        }
-        rolesToAssign = [serviceUserRole[0].id]
-      }
-
       const roleAssignments = await this.assignUserRoles(
         tenantId,
         savedTenantUser.id,
-        rolesToAssign,
+        await this.getRoleIdsToAssign(user.idpType, input.roles),
         transactionEntityManager,
       )
 
-      delete (savedTenantUser as any).tenant
       return {
         savedTenantUser,
         roleAssignments,
@@ -307,16 +351,33 @@ export class TMSRepository {
     }
   }
 
-  public async createRoles(req: Request) {
+  private async getRoleIdsToAssign(
+    idpType: 'idir' | 'bceidbasic' | 'bceidbusiness' | undefined,
+    requestedRoles: string[] | undefined,
+  ) {
+    if (idpType === 'bceidbasic' || idpType === 'bceidbusiness') {
+      const serviceUserRole: Role[] = await this.findRoles(
+        [TMSConstants.SERVICE_USER],
+        null,
+      )
+      if (serviceUserRole.length === 0) {
+        throw new NotFoundError('SERVICE_USER role not found')
+      }
+      return [serviceUserRole[0].id]
+    }
+    return requestedRoles || []
+  }
+
+  public async createRoles(input: CreateTenantRolesInputDto) {
     let response = {}
     await this.manager.transaction(async (transactionEntityManager) => {
       try {
-        const tenantId: string = req.params.tenantId
-        const requestRole = req.body.role
+        const tenantId: string = input.tenantId
+        const requestRole = input.role
 
-        const tenant: Tenant = (await transactionEntityManager.findOne(Tenant, {
+        const tenant = await transactionEntityManager.findOne(Tenant, {
           where: { id: tenantId },
-        })) as any
+        })
         if (!tenant) {
           throw new NotFoundError('Tenant Not Found: ' + tenantId)
         }
@@ -342,10 +403,10 @@ export class TMSRepository {
         const savedRole = await transactionEntityManager.save(role)
         //  delete savedRole.tenant
         response = savedRole
-      } catch (error) {
+      } catch (error: unknown) {
         logger.error(
           'Create Role for tenant transaction failure - rolling back inserts ',
-          error as any,
+          { error: getErrorMessage(error) },
         )
         throw error
       }
@@ -361,14 +422,14 @@ export class TMSRepository {
     transactionEntityManager = transactionEntityManager
       ? transactionEntityManager
       : this.manager
-    const tenantUser: TenantUser = (await transactionEntityManager
+    const tenantUser: TenantUser | null = await transactionEntityManager
       .createQueryBuilder(TenantUser, 'tenantUser')
       .leftJoinAndSelect('tenantUser.roles', 'tenantUserRole')
       .leftJoinAndSelect('tenantUserRole.role', 'role')
       .where('tenantUser.id = :tenantUserId', { tenantUserId })
       .andWhere('tenantUser.isDeleted = :isDeleted', { isDeleted: false })
       .andWhere('tenantUserRole.is_deleted = :isDeleted', { isDeleted: false })
-      .getOne()) as any
+      .getOne()
 
     return tenantUser?.roles?.map((tur) => tur.role) || []
   }
@@ -462,6 +523,15 @@ export class TMSRepository {
           throw new NotFoundError('Role(s) not found')
         }
 
+<<<<<<< fix-bceid_roles
+=======
+        const tenantUser = await transactionEntityManager.findOne(TenantUser, {
+          where: { id: tenantUserId, isDeleted: false },
+        })
+        if (!tenantUser) {
+          throw new NotFoundError(`Tenant user not found: ${tenantUserId}`)
+        }
+>>>>>>> main
         const newAssignments: TenantUserRole[] = validRoles.map((role) => {
           const tenantUserRole: TenantUserRole = new TenantUserRole()
           tenantUserRole.tenantUser = tenantUser
@@ -479,23 +549,36 @@ export class TMSRepository {
       }
 
       return savedAssignments
-    } catch (error) {
+    } catch (error: unknown) {
       logger.error(
         'Assign roles to user transaction failure - rolling back inserts',
-        error as any,
+        { error: getErrorMessage(error) },
       )
       throw error
     }
   }
 
-  public async getTenantRoles(req: Request) {
+  public async assignUserRolesForUser(
+    input: AssignUserRolesInputDto,
+    transactionEntityManager?: EntityManager,
+  ) {
+    return this.assignUserRoles(
+      input.tenantId,
+      input.tenantUserId,
+      input.roleIds,
+      transactionEntityManager,
+    )
+  }
+
+  public async getTenantRoles(input: GetTenantRolesInputDto) {
+    void input
     const roles: Role[] = await this.findTenantRoles()
     return roles
   }
 
-  public async getUserRoles(req: Request) {
-    const tenantId = req.params.tenantId
-    const tenantUserId = req.params.tenantUserId
+  public async getUserRoles(input: GetUserRolesInputDto) {
+    const tenantUserId = input.tenantUserId
+    void input.tenantId
     // REDUNDANT: checkTenantAccess middleware already validates tenant user exists and user has access
     // if(!await this.checkIfTenantUserExistsForTenant(tenantId,tenantUserId) ) {
     //     throw new NotFoundError("Tenant or Tenant user not found: Tenant: "+tenantId+" Tenant User: "+tenantUserId)
@@ -506,11 +589,11 @@ export class TMSRepository {
     // }
   }
 
-  public async unassignUserRoles(req: Request) {
-    const tenantId = req.params.tenantId
-    const tenantUserId = req.params.tenantUserId
-    const roleId = req.params.roleId
-    const assignedTenantUserRole: TenantUserRole = await this.getTenantUserRole(
+  public async unassignUserRoles(input: UnassignUserRolesInputDto) {
+    const tenantId = input.tenantId
+    const tenantUserId = input.tenantUserId
+    const roleId = input.roleId
+    const assignedTenantUserRole = await this.getTenantUserRole(
       tenantId,
       tenantUserId,
       roleId,
@@ -573,7 +656,7 @@ export class TMSRepository {
       },
       {
         isDeleted: true,
-        updatedBy: req.body.updatedBy || 'system',
+        updatedBy: input.updatedBy,
       },
     )
   }
@@ -627,7 +710,7 @@ export class TMSRepository {
       .andWhere('tu.isDeleted = :isDeleted', { isDeleted: false })
       .andWhere('tur.isDeleted = :isDeleted', { isDeleted: false })
 
-    const tenantUser: TenantUser = (await query.getOne()) as any
+    const tenantUser = await query.getOne()
 
     if (!tenantUser) {
       return {
@@ -655,17 +738,17 @@ export class TMSRepository {
     }
   }
 
-  private async getCreatorDisplayName(ssoUserId: string) {
-    const creator: SSOUser = (await this.manager.findOne(SSOUser, {
+  private async getCreatorDisplayName(
+    ssoUserId: string,
+  ): Promise<SSOUser | null> {
+    return this.manager.findOne(SSOUser, {
       where: { ssoUserId },
-    })) as any
-    return creator
+    })
   }
 
-  public async getTenant(req: Request) {
-    const tenantId: string = req.params.tenantId
-    const expand: string[] =
-      typeof req.query.expand === 'string' ? req.query.expand.split(',') : []
+  public async getTenant(input: GetTenantInputDto) {
+    const tenantId: string = input.tenantId
+    const expand: string[] = input.expand
 
     const tenantQuery = this.manager
       .createQueryBuilder(Tenant, 'tenant')
@@ -679,17 +762,17 @@ export class TMSRepository {
       tenantQuery.leftJoinAndSelect('tenantUserRole.role', 'role')
       tenantQuery.andWhere('user.isDeleted = :isDeleted', { isDeleted: false })
     }
-    const tenant: Tenant = (await tenantQuery.getOne()) as any
+    const tenant = await tenantQuery.getOne()
 
     if (!tenant) {
       throw new NotFoundError('Tenant Not Found: ' + tenantId)
     }
 
     if (expand.includes('tenantUserRoles') && tenant.users) {
-      tenant.users = tenant.users.map((user: any) => {
+      tenant.users = tenant.users.map((user: TenantUser) => {
         if (user.roles) {
           const activeRoles = user.roles.filter(
-            (tur: any) => !tur.isDeleted && tur.role && !tur.role.isDeleted,
+            (tur: TenantUserRole) => !tur.isDeleted && tur.role,
           )
           return {
             ...user,
@@ -708,9 +791,9 @@ export class TMSRepository {
     return tenant
   }
 
-  public async getRolesForSSOUser(req: Request) {
-    const tenantId: string = req.params.tenantId
-    const ssoUserId: string = req.params.ssoUserId
+  public async getRolesForSSOUser(input: GetRolesForSsoUserInputDto) {
+    const tenantId: string = input.tenantId
+    const ssoUserId: string = input.ssoUserId
 
     if (!(await this.checkIfTenantExists(tenantId))) {
       throw new NotFoundError('Tenant Not Found: ' + tenantId)
@@ -746,7 +829,7 @@ export class TMSRepository {
     tenantUserId: string,
     roleId: string,
   ) {
-    const tenantUserRole: TenantUserRole = (await this.manager
+    return this.manager
       .createQueryBuilder(TenantUserRole, 'tenantUserRole')
       .innerJoin('tenantUserRole.tenantUser', 'tenantUser')
       .innerJoin('tenantUserRole.role', 'role')
@@ -755,8 +838,7 @@ export class TMSRepository {
       .andWhere('tenantUser.id = :tenantUserId', { tenantUserId })
       .andWhere('role.id = :roleId', { roleId })
       .andWhere('tenantUserRole.isDeleted = :isDeleted', { isDeleted: false })
-      .getOne()) as any
-    return tenantUserRole
+      .getOne()
   }
 
   public async checkIfTenantUserExistsForTenant(
@@ -794,13 +876,10 @@ export class TMSRepository {
     return roles
   }
 
-  public async getTenantUser(req: Request) {
-    const tenantId: string = req.params.tenantId
-    const tenantUserId: string = req.params.tenantUserId
-    const expand: string[] =
-      typeof req.query.expand === 'string'
-        ? req.query.expand.split(',').map((v) => v.trim())
-        : []
+  public async getTenantUser(input: GetTenantUserInputDto) {
+    const tenantId: string = input.tenantId
+    const tenantUserId: string = input.tenantUserId
+    const expand: string[] = input.expand
     const expandRoles = expand.includes('roles')
 
     const tenantUserQuery = this.manager
@@ -818,13 +897,13 @@ export class TMSRepository {
         .andWhere('tenantUserRole.isDeleted = :isDeleted', { isDeleted: false })
     }
 
-    const tenantUser: any = await tenantUserQuery.getOne()
+    const tenantUser = await tenantUserQuery.getOne()
 
     if (!tenantUser) {
       throw new NotFoundError(`Tenant user not found: ${tenantUserId}`)
     }
 
-    const result: any = {
+    const result: GetTenantUserResultDto = {
       id: tenantUser.id,
       ssoUser: tenantUser.ssoUser,
       createdDateTime: tenantUser.createdDateTime,
@@ -835,7 +914,7 @@ export class TMSRepository {
 
     if (expandRoles && tenantUser.roles) {
       result.roles = tenantUser.roles.map(
-        (tenantUserRole: any) => tenantUserRole.role,
+        (tenantUserRole: TenantUserRole) => tenantUserRole.role,
       )
     }
 
@@ -893,13 +972,12 @@ export class TMSRepository {
     return tenantExists
   }
 
-  public async getTenantsForUser(req: Request) {
-    const ssoUserId: string = req.params.ssoUserId
-    const expand: string[] =
-      typeof req.query.expand === 'string' ? req.query.expand.split(',') : []
-    const TMS_AUDIENCE: string = process.env.TMS_AUDIENCE!
-    const jwtAudience: string =
-      req.decodedJwt?.aud || req.decodedJwt?.audience || TMS_AUDIENCE
+  public async getTenantsForUser(input: GetUserTenantsInputDto) {
+    const ssoUserId: string = input.ssoUserId
+    const expand: string[] = input.expand
+    const TMS_AUDIENCE: string =
+      process.env.TMS_AUDIENCE || 'tenant-management-system-6014'
+    const jwtAudience: string = input.jwtAudience || TMS_AUDIENCE
 
     const tenantQuery = this.manager
       .createQueryBuilder(Tenant, 't')
@@ -948,11 +1026,10 @@ export class TMSRepository {
     return tenants
   }
 
-  public async getUsersForTenant(
-    tenantId: string,
-    groupIds?: string[],
-    sharedServiceRoleIds?: string[],
-  ) {
+  public async getUsersForTenant(input: GetTenantUsersInputDto) {
+    const tenantId = input.tenantId
+    const groupIds = input.groupIds
+    const sharedServiceRoleIds = input.sharedServiceRoleIds
     const query = this.manager
       .createQueryBuilder(TenantUser, 'tu')
       .innerJoinAndSelect('tu.ssoUser', 'su')
@@ -1036,10 +1113,18 @@ export class TMSRepository {
     return softDeletedUser
   }
 
-  public async findRoles(roleNames: string[], tenantId: string) {
-    const whereCondition: any = { name: In(roleNames) }
+  public async findRoles(
+    roleNames: string[],
+    tenantId: string | null,
+  ): Promise<Role[]> {
+    const whereCondition: {
+      name: ReturnType<typeof In>
+      tenant?: { id: string }
+    } = {
+      name: In(roleNames),
+    }
     if (tenantId) {
-      whereCondition['tenant'] = { id: tenantId }
+      whereCondition.tenant = { id: tenantId }
     }
     const roles: Role[] = await this.manager.find(Role, {
       where: whereCondition,
@@ -1056,9 +1141,9 @@ export class TMSRepository {
     email: string,
     idpType?: string,
   ) {
-    let ssoUser: SSOUser = (await this.manager.findOne(SSOUser, {
+    let ssoUser = await this.manager.findOne(SSOUser, {
       where: { ssoUserId: ssoUserId },
-    })) as any
+    })
     if (!ssoUser) {
       ssoUser = new SSOUser()
       ssoUser.firstName = firstName
@@ -1066,7 +1151,7 @@ export class TMSRepository {
       ssoUser.displayName = displayName
       ssoUser.userName = userName
       ssoUser.ssoUserId = ssoUserId
-      ssoUser.email = email || (null as any)
+      ssoUser.email = email ?? ''
       ssoUser.idpType = idpType || 'idir'
       ssoUser.createdBy = ssoUserId
       ssoUser.updatedBy = ssoUserId
@@ -1090,81 +1175,77 @@ export class TMSRepository {
       .getOne()
   }
 
-  public async saveTenantRequest(req: Request) {
-    let tenantRequestResponse = {}
+  public async saveTenantRequest(input: CreateTenantRequestInputDto) {
+    let tenantRequestResponse!: SaveTenantRequestResultDto
     await this.manager.transaction(async (transactionEntityManager) => {
       try {
         if (
           await this.checkIfTenantNameAndMinistryNameExists(
-            req.body.name,
-            req.body.ministryName,
+            input.name,
+            input.ministryName,
           )
         ) {
           throw new ConflictError(
-            `A tenant with name '${req.body.name}' and ministry name '${req.body.ministryName}' already exists`,
+            `A tenant with name '${input.name}' and ministry name '${input.ministryName}' already exists`,
           )
         }
         const tenantRequest: TenantRequest = new TenantRequest()
-        tenantRequest.name = req.body.name
-        tenantRequest.ministryName = req.body.ministryName
-        tenantRequest.description = req.body.description
+        tenantRequest.name = input.name
+        tenantRequest.ministryName = input.ministryName
+        if (input.description !== undefined) {
+          tenantRequest.description = input.description
+        }
         tenantRequest.status = 'NEW'
         tenantRequest.requestedBy = await this.setSSOUser(
-          req.body.user.ssoUserId,
-          req.body.user.firstName,
-          req.body.user.lastName,
-          req.body.user.displayName,
-          req.body.user.userName,
-          req.body.user.email,
+          input.user.ssoUserId,
+          input.user.firstName,
+          input.user.lastName,
+          input.user.displayName,
+          input.user.userName || '',
+          input.user.email || '',
         )
-        tenantRequest.createdBy = req.body.user.ssoUserId
-        tenantRequest.updatedBy = req.body.user.ssoUserId
+        tenantRequest.createdBy = input.user.ssoUserId
+        tenantRequest.updatedBy = input.user.ssoUserId
 
         const savedTenantRequest: TenantRequest =
           await transactionEntityManager.save(tenantRequest)
-        tenantRequestResponse = (await this.getTenantRequestById(
+        const savedTenantRequestWithRelations = await this.getTenantRequestById(
           transactionEntityManager,
           savedTenantRequest.id,
-        )) as any
-      } catch (error) {
+        )
+        if (!savedTenantRequestWithRelations) {
+          throw new UnexpectedStateError('Tenant request creation failed')
+        }
+        tenantRequestResponse = savedTenantRequestWithRelations
+        if (tenantRequestResponse.requestedBy?.displayName) {
+          tenantRequestResponse.createdBy =
+            tenantRequestResponse.requestedBy.displayName
+        }
+      } catch (error: unknown) {
         logger.error(
           'Create tenant request transaction failure - rolling back inserts ',
-          error as any,
+          { error: getErrorMessage(error) },
         )
         throw error
       }
     })
 
-    if (
-      tenantRequestResponse &&
-      (tenantRequestResponse as any).requestedBy?.displayName
-    ) {
-      ;(tenantRequestResponse as any).createdBy = (
-        tenantRequestResponse as any
-      ).requestedBy.displayName
-    } else if (
-      (tenantRequestResponse as any).createdBy &&
-      (tenantRequestResponse as any).createdBy !== 'system'
-    ) {
-      ;(tenantRequestResponse as any).createdBy = (
-        tenantRequestResponse as any
-      ).createdBy
-    }
-
     return tenantRequestResponse
   }
 
-  public async updateTenantRequestStatus(req: Request) {
-    const requestId: string = req.params.requestId
-    const { status, rejectionReason, tenantName } = req.body
-    let response = {}
+  public async updateTenantRequestStatus(
+    input: UpdateTenantRequestStatusInputDto,
+  ) {
+    const requestId: string = input.requestId
+    const { status, rejectionReason, tenantName } = input
+    let response: Partial<UpdateTenantRequestStatusResultDto> = {}
 
     await this.manager.transaction(async (transactionEntityManager) => {
       try {
-        const tenantRequest: TenantRequest = (await this.getTenantRequestById(
+        const tenantRequest = await this.getTenantRequestById(
           transactionEntityManager,
           requestId,
-        )) as any
+        )
         if (!tenantRequest) {
           throw new NotFoundError(`Tenant request not found: ${requestId}`)
         }
@@ -1196,19 +1277,17 @@ export class TMSRepository {
             )
           }
 
-          const tenantRequestBody = {
-            body: {
-              name: tenantRequest.name,
-              ministryName: tenantRequest.ministryName,
-              description: tenantRequest.description,
-              user: {
-                ssoUserId: tenantRequest.requestedBy.ssoUserId,
-                firstName: tenantRequest.requestedBy.firstName,
-                lastName: tenantRequest.requestedBy.lastName,
-                displayName: tenantRequest.requestedBy.displayName,
-                userName: tenantRequest.requestedBy.userName,
-                email: tenantRequest.requestedBy.email,
-              },
+          const tenantRequestBody: CreateTenantInputDto = {
+            name: tenantRequest.name,
+            ministryName: tenantRequest.ministryName,
+            description: tenantRequest.description,
+            user: {
+              ssoUserId: tenantRequest.requestedBy.ssoUserId,
+              firstName: tenantRequest.requestedBy.firstName,
+              lastName: tenantRequest.requestedBy.lastName,
+              displayName: tenantRequest.requestedBy.displayName,
+              userName: tenantRequest.requestedBy.userName,
+              email: tenantRequest.requestedBy.email,
             },
           }
           const savedTenant: Tenant = (await this.saveTenant(
@@ -1216,7 +1295,7 @@ export class TMSRepository {
             transactionEntityManager,
           )) as Tenant
 
-          const basicTenantInfo = {
+          const basicTenantInfo: UpdateTenantRequestTenantResultDto = {
             id: savedTenant.id,
             name: savedTenant.name,
             ministryName: savedTenant.ministryName,
@@ -1228,12 +1307,12 @@ export class TMSRepository {
         }
 
         let opsAdminSSOUser: SSOUser = await this.setSSOUser(
-          req.decodedJwt?.idir_user_guid || 'system',
-          req.decodedJwt?.given_name || 'System',
-          req.decodedJwt?.family_name || 'User',
-          req.decodedJwt?.display_name || 'System User',
-          req.decodedJwt?.preferred_username || 'system',
-          req.decodedJwt?.email || 'system@gov.bc.ca',
+          input.decisionedByUser.ssoUserId,
+          input.decisionedByUser.firstName,
+          input.decisionedByUser.lastName,
+          input.decisionedByUser.displayName,
+          input.decisionedByUser.userName,
+          input.decisionedByUser.email,
         )
 
         opsAdminSSOUser = await transactionEntityManager.save(opsAdminSSOUser)
@@ -1241,9 +1320,10 @@ export class TMSRepository {
         tenantRequest.status = status
         tenantRequest.decisionedBy = opsAdminSSOUser
         tenantRequest.decisionedAt = new Date()
-        tenantRequest.rejectionReason =
-          status === 'REJECTED' ? rejectionReason : null
-        tenantRequest.updatedBy = req.decodedJwt?.idir_user_guid || 'system'
+        const nextRejectionReason: string | null =
+          status === 'REJECTED' ? rejectionReason || null : null
+        tenantRequest.rejectionReason = nextRejectionReason as unknown as string
+        tenantRequest.updatedBy = input.updatedBy
 
         const updatedRequest =
           await transactionEntityManager.save(tenantRequest)
@@ -1252,19 +1332,24 @@ export class TMSRepository {
           ...updatedRequest,
         }
         response = { ...response, tenantRequest: tenantRequestResponse }
-      } catch (error) {
+      } catch (error: unknown) {
         logger.error(
           'Update tenant request status transaction failure - rolling back changes',
-          error as any,
+          { error: getErrorMessage(error) },
         )
         throw error
       }
     })
 
-    return response
+    if (!response.tenantRequest) {
+      throw new UnexpectedStateError('Tenant request status update failed')
+    }
+
+    return response as UpdateTenantRequestStatusResultDto
   }
 
-  public async getTenantRequests(status?: string) {
+  public async getTenantRequests(input: GetTenantRequestsInputDto) {
+    const status = input.status
     const queryBuilder = this.manager
       .createQueryBuilder(TenantRequest, 'tenantRequest')
       .leftJoinAndSelect('tenantRequest.requestedBy', 'requestedBy')
@@ -1276,14 +1361,6 @@ export class TMSRepository {
     }
 
     const tenantRequests: TenantRequest[] = await queryBuilder.getMany()
-
-    tenantRequests.forEach((request) => {
-      if (request.requestedBy && request.requestedBy.displayName) {
-        request.createdBy = request.requestedBy.displayName
-      } else {
-        request.createdBy = 'system'
-      }
-    })
 
     return tenantRequests
   }
@@ -1297,13 +1374,13 @@ export class TMSRepository {
       ? transactionEntityManager
       : this.manager
 
-    const tenantUser: TenantUser = (await transactionEntityManager
+    const tenantUser = await transactionEntityManager
       .createQueryBuilder(TenantUser, 'tenantUser')
       .leftJoinAndSelect('tenantUser.ssoUser', 'ssoUser')
       .where('tenantUser.tenant.id = :tenantId', { tenantId })
       .andWhere('ssoUser.ssoUserId = :ssoUserId', { ssoUserId })
       .andWhere('tenantUser.isDeleted = :isDeleted', { isDeleted: false })
-      .getOne()) as any
+      .getOne()
 
     return tenantUser
   }
@@ -1319,7 +1396,7 @@ export class TMSRepository {
 
     const serviceUserRole: Role[] = await this.findRoles(
       [TMSConstants.SERVICE_USER],
-      null as any,
+      null,
     )
     if (serviceUserRole.length === 0) {
       throw new NotFoundError('SERVICE_USER role not found')
@@ -1334,7 +1411,7 @@ export class TMSRepository {
   }
 
   public async ensureTenantUserExists(
-    user: any,
+    user: AddTenantUserInputDto['user'],
     tenantId: string,
     updatedBy: string,
     transactionEntityManager?: EntityManager,
@@ -1343,26 +1420,24 @@ export class TMSRepository {
       ? transactionEntityManager
       : this.manager
 
-    const existingTenant: Tenant =
-      (await this.getTenantIfUserDoesNotExistForTenant(
-        user.ssoUserId,
-        tenantId,
-      )) as any
+    const existingTenant = await this.getTenantIfUserDoesNotExistForTenant(
+      user.ssoUserId,
+      tenantId,
+    )
 
     if (!existingTenant) {
-      let existingTenantUser: TenantUser = (await this.getTenantUserBySsoId(
+      let existingTenantUser = await this.getTenantUserBySsoId(
         user.ssoUserId,
         tenantId,
         transactionEntityManager,
-      )) as any
+      )
 
       if (!existingTenantUser) {
-        const softDeletedUser: TenantUser =
-          (await this.findSoftDeletedTenantUser(
-            user.ssoUserId,
-            tenantId,
-            transactionEntityManager,
-          )) as any
+        const softDeletedUser = await this.findSoftDeletedTenantUser(
+          user.ssoUserId,
+          tenantId,
+          transactionEntityManager,
+        )
 
         if (softDeletedUser) {
           softDeletedUser.isDeleted = false
@@ -1374,7 +1449,7 @@ export class TMSRepository {
 
           const serviceUserRole = await this.findRoles(
             [TMSConstants.SERVICE_USER],
-            null as any,
+            null,
           )
           if (serviceUserRole.length > 0) {
             await this.assignUserRoles(
@@ -1390,7 +1465,7 @@ export class TMSRepository {
     } else {
       const serviceUserRole = await this.findRoles(
         [TMSConstants.SERVICE_USER],
-        null as any,
+        null,
       )
       if (serviceUserRole.length === 0) {
         throw new NotFoundError('Service User role not found')
@@ -1405,8 +1480,8 @@ export class TMSRepository {
         user.firstName,
         user.lastName,
         user.displayName,
-        user.userName,
-        user.email,
+        user.userName || '',
+        user.email || '',
         user.idpType,
       )
       tenantUser.ssoUser = ssoUser
@@ -1425,9 +1500,10 @@ export class TMSRepository {
     }
   }
 
-  public async saveSharedService(req: Request) {
-    const { name, clientIdentifier, description, isActive, roles } = req.body
-    let sharedServiceResponse = {}
+  public async saveSharedService(input: CreateSharedServiceInputDto) {
+    const { name, clientIdentifier, description, isActive, roles, updatedBy } =
+      input
+    let sharedServiceResponse!: SaveSharedServiceResultDto
     await this.manager.transaction(async (transactionEntityManager) => {
       try {
         if (await this.checkIfSharedServiceNameExists(name)) {
@@ -1449,10 +1525,12 @@ export class TMSRepository {
         const sharedService: SharedService = new SharedService()
         sharedService.name = name
         sharedService.clientIdentifier = clientIdentifier
-        sharedService.description = description
+        if (description !== undefined) {
+          sharedService.description = description
+        }
         sharedService.isActive = isActive !== undefined ? isActive : true
-        sharedService.createdBy = req.decodedJwt?.idir_user_guid || 'system'
-        sharedService.updatedBy = req.decodedJwt?.idir_user_guid || 'system'
+        sharedService.createdBy = updatedBy
+        sharedService.updatedBy = updatedBy
 
         const savedSharedService: SharedService =
           await transactionEntityManager.save(sharedService)
@@ -1461,29 +1539,36 @@ export class TMSRepository {
         for (const role of roles) {
           const sharedServiceRole: SharedServiceRole = new SharedServiceRole()
           sharedServiceRole.name = role.name
-          sharedServiceRole.description = role.description
+          if (role.description !== undefined) {
+            sharedServiceRole.description = role.description
+          }
           sharedServiceRole.allowedIdentityProviders =
             role.allowedIdentityProviders &&
             role.allowedIdentityProviders.length > 0
               ? role.allowedIdentityProviders
               : null
           sharedServiceRole.sharedService = savedSharedService
-          sharedServiceRole.createdBy =
-            req.decodedJwt?.idir_user_guid || 'system'
-          sharedServiceRole.updatedBy =
-            req.decodedJwt?.idir_user_guid || 'system'
+          sharedServiceRole.createdBy = updatedBy
+          sharedServiceRole.updatedBy = updatedBy
           sharedServiceRoles.push(sharedServiceRole)
         }
         await transactionEntityManager.save(sharedServiceRoles)
 
-        sharedServiceResponse = (await this.getSharedServiceWithRoles(
-          savedSharedService.id,
-          transactionEntityManager,
-        )) as any
-      } catch (error) {
+        const savedSharedServiceWithRoles =
+          await this.getSharedServiceWithRoles(
+            savedSharedService.id,
+            transactionEntityManager,
+          )
+        if (!savedSharedServiceWithRoles) {
+          throw new UnexpectedStateError(
+            `Shared service load failed after update: ${savedSharedService.id}`,
+          )
+        }
+        sharedServiceResponse = savedSharedServiceWithRoles
+      } catch (error: unknown) {
         logger.error(
           'Create shared service transaction failure - rolling back inserts ',
-          error as any,
+          { error: getErrorMessage(error) },
         )
         throw error
       }
@@ -1507,17 +1592,16 @@ export class TMSRepository {
       .getOne()
   }
 
-  public async addSharedServiceRoles(req: Request) {
-    const sharedServiceId: string = req.params.sharedServiceId
-    const { roles } = req.body
-    const ssoUserId: string = req.decodedJwt?.idir_user_guid || 'system'
+  public async addSharedServiceRoles(input: AddSharedServiceRolesInputDto) {
+    const sharedServiceId: string = input.sharedServiceId
+    const { roles, updatedBy } = input
 
     await this.manager.transaction(async (transactionEntityManager) => {
-      const sharedService: SharedService = (await transactionEntityManager
+      const sharedService: SharedService | null = await transactionEntityManager
         .createQueryBuilder(SharedService, 'ss')
         .where('ss.id = :id', { id: sharedServiceId })
         .andWhere('ss.isActive = :isActive', { isActive: true })
-        .getOne()) as any
+        .getOne()
 
       if (!sharedService) {
         throw new NotFoundError(
@@ -1526,12 +1610,15 @@ export class TMSRepository {
       }
 
       for (const role of roles) {
-        const existingRole: SharedServiceRole = (await transactionEntityManager
-          .createQueryBuilder(SharedServiceRole, 'ssr')
-          .where('ssr.sharedService.id = :sharedServiceId', { sharedServiceId })
-          .andWhere('ssr.name = :name', { name: role.name })
-          .andWhere('ssr.isDeleted = :isDeleted', { isDeleted: false })
-          .getOne()) as any
+        const existingRole: SharedServiceRole | null =
+          await transactionEntityManager
+            .createQueryBuilder(SharedServiceRole, 'ssr')
+            .where('ssr.sharedService.id = :sharedServiceId', {
+              sharedServiceId,
+            })
+            .andWhere('ssr.name = :name', { name: role.name })
+            .andWhere('ssr.isDeleted = :isDeleted', { isDeleted: false })
+            .getOne()
 
         if (existingRole) {
           throw new ConflictError(
@@ -1544,7 +1631,9 @@ export class TMSRepository {
       for (const role of roles) {
         const sharedServiceRole: SharedServiceRole = new SharedServiceRole()
         sharedServiceRole.name = role.name
-        sharedServiceRole.description = role.description
+        if (role.description !== undefined) {
+          sharedServiceRole.description = role.description
+        }
         sharedServiceRole.allowedIdentityProviders =
           role.allowedIdentityProviders &&
           role.allowedIdentityProviders.length > 0
@@ -1552,8 +1641,8 @@ export class TMSRepository {
             : null
         sharedServiceRole.sharedService = sharedService
         sharedServiceRole.isDeleted = false
-        sharedServiceRole.createdBy = ssoUserId
-        sharedServiceRole.updatedBy = ssoUserId
+        sharedServiceRole.createdBy = updatedBy
+        sharedServiceRole.updatedBy = updatedBy
         sharedServiceRoles.push(sharedServiceRole)
       }
 
@@ -1593,10 +1682,10 @@ export class TMSRepository {
     return sharedServiceExists
   }
 
-  public async associateSharedServiceToTenant(req: Request) {
-    const tenantId: string = req.params.tenantId
-    const sharedServiceId: string = req.body.sharedServiceId
-    const ssoUserId: string = req.decodedJwt?.idir_user_guid || 'system'
+  public async associateSharedServiceToTenant(
+    input: AssociateSharedServiceToTenantInputDto,
+  ) {
+    const { tenantId, sharedServiceId, updatedBy } = input
 
     await this.manager.transaction(async (transactionEntityManager) => {
       try {
@@ -1605,10 +1694,10 @@ export class TMSRepository {
         //     throw new NotFoundError(`Tenant not found: ${tenantId}`)
         // }
 
-        const sharedService: SharedService = (await transactionEntityManager
+        const sharedService = await transactionEntityManager
           .createQueryBuilder(SharedService, 'sharedService')
           .where('sharedService.id = :id', { id: sharedServiceId })
-          .getOne()) as any
+          .getOne()
 
         if (!sharedService) {
           throw new NotFoundError(
@@ -1622,15 +1711,14 @@ export class TMSRepository {
           )
         }
 
-        const existingAssociation: TenantSharedService =
-          (await transactionEntityManager
-            .createQueryBuilder(TenantSharedService, 'tss')
-            .where('tss.tenant.id = :tenantId', { tenantId })
-            .andWhere('tss.sharedService.id = :sharedServiceId', {
-              sharedServiceId,
-            })
-            .andWhere('tss.isDeleted = :isDeleted', { isDeleted: false })
-            .getOne()) as any
+        const existingAssociation = await transactionEntityManager
+          .createQueryBuilder(TenantSharedService, 'tss')
+          .where('tss.tenant.id = :tenantId', { tenantId })
+          .andWhere('tss.sharedService.id = :sharedServiceId', {
+            sharedServiceId,
+          })
+          .andWhere('tss.isDeleted = :isDeleted', { isDeleted: false })
+          .getOne()
 
         if (existingAssociation) {
           throw new ConflictError(
@@ -1638,24 +1726,27 @@ export class TMSRepository {
           )
         }
 
-        const tenant: Tenant = (await transactionEntityManager
+        const tenant = await transactionEntityManager
           .createQueryBuilder(Tenant, 'tenant')
           .where('tenant.id = :id', { id: tenantId })
-          .getOne()) as any
+          .getOne()
 
-        const tenantSharedService: TenantSharedService =
-          new TenantSharedService()
+        if (!tenant) {
+          throw new NotFoundError(`Tenant not found: ${tenantId}`)
+        }
+
+        const tenantSharedService = new TenantSharedService()
         tenantSharedService.tenant = tenant
         tenantSharedService.sharedService = sharedService
         tenantSharedService.isDeleted = false
-        tenantSharedService.createdBy = ssoUserId
-        tenantSharedService.updatedBy = ssoUserId
+        tenantSharedService.createdBy = updatedBy
+        tenantSharedService.updatedBy = updatedBy
 
         await transactionEntityManager.save(tenantSharedService)
-      } catch (error) {
+      } catch (error: unknown) {
         logger.error(
           'Associate shared service to tenant transaction failure - rolling back inserts',
-          error as any,
+          { error: getErrorMessage(error) },
         )
         throw error
       }
@@ -1672,8 +1763,11 @@ export class TMSRepository {
       .getMany()
   }
 
-  public async getSharedServicesForTenant(tenantId: string) {
-    return await this.manager
+  public async getSharedServicesForTenant(
+    input: GetSharedServicesForTenantInputDto,
+  ) {
+    const { tenantId } = input
+    const tenantSharedServices = await this.manager
       .createQueryBuilder(TenantSharedService, 'tss')
       .leftJoinAndSelect('tss.sharedService', 'sharedService')
       .leftJoinAndSelect('sharedService.roles', 'roles')
@@ -1682,9 +1776,8 @@ export class TMSRepository {
       .andWhere('roles.isDeleted = :rolesDeleted', { rolesDeleted: false })
       .orderBy('sharedService.name', 'ASC')
       .getMany()
-      .then((tenantSharedServices) =>
-        tenantSharedServices.map((tss) => tss.sharedService),
-      )
+
+    return tenantSharedServices.map((tss) => tss.sharedService)
   }
 
   public async checkIfTenantHasSharedServiceAccess(
@@ -1708,23 +1801,24 @@ export class TMSRepository {
   }
 
   public async removeTenantUser(
-    tenantUserId: string,
-    tenantId: string,
-    deletedBy: string,
+    input: RemoveTenantUserInputDto,
     transactionEntityManager?: EntityManager,
   ) {
     transactionEntityManager = transactionEntityManager
       ? transactionEntityManager
       : this.manager
+    const tenantUserId = input.tenantUserId
+    const tenantId = input.tenantId
+    const deletedBy = input.deletedBy
 
-    const tenantUser: TenantUser = (await transactionEntityManager
+    const tenantUser = await transactionEntityManager
       .createQueryBuilder(TenantUser, 'tu')
       .leftJoinAndSelect('tu.roles', 'tur')
       .leftJoinAndSelect('tur.role', 'role')
       .where('tu.id = :tenantUserId', { tenantUserId })
       .andWhere('tu.tenant.id = :tenantId', { tenantId })
       .andWhere('tu.isDeleted = :isDeleted', { isDeleted: false })
-      .getOne()) as any
+      .getOne()
 
     if (!tenantUser) {
       throw new NotFoundError(

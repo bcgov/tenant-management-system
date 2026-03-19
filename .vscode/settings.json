@@ -14,6 +14,6 @@
   },
   "sonarlint.connectedMode.project": {
     "connectionId": "bcgov-sonarcloud",
-    "projectKey": "bcgov_tenant-management-system_backend"
+    "projectKey": "bcgov_tenant-management-system_frontend"
   }
 }

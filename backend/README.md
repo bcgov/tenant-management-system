@@ -1,50 +1,62 @@
-Tenant Management System API
+# Backend Code
 
-There are two ways to run this API locally.
+The `/backend` code provides the ReST API used by the application. It has:
 
-1. Use docker-compose (ensure docker-compose is installed and available) - refer to the end of the file for docker-compose debugging steps
+- Authentication provided by Keycloak
+- A route / controller / service / ORM layered design
+- ORM provided by TypeORM
+- TypeScript with strict type checking
 
-   Update docker-compose.yaml to point to the correct SSO api credentials
+This repository is set up for using a VS Code Dev Container. The two goals are
+to have as little setup as possible, and to have all developers working with the
+same dependencies and configuration.
 
-   cd <CLONE_FOLDER>/api/tms
+## Configuration
 
-   docker-compose up --build
+To configure the backend for local development:
 
-   Verify that API and databases are up:
-   1. API: http://localhost:4144/v1/health
-   2. Database: connect via pgadmin to port 5454
+1. Copy `backend/.env.sample` to `backend/.env`
+1. Use values from the dev environment Secret `cstar-dev-backend` to set the
+   `.env` parameters `BCGOV_SSO_API_CLIENT_ID`, `BCGOV_SSO_API_CLIENT_SECRET`,
+   and `BCGOV_SSO_API_URL_BCEID`
 
-2. Use without docker - call the run script directly
+## Database Migrations
 
-   Start a postgres container - command with sample credentials below.
+Database migrations are automatically run when the dev container is built, so
+the least-effort migration strategy is to rebuild the container.
 
-   docker run -d --name tms-postgres -p 5432:5432 -e POSTGRES_USER=tms -e POSTGRES_PASSWORD=mysecretpassword -e POSTGRES_DB=tmsdb postgres
+Otherwise, migrations are run with `npm migrate` and `npm migrate:down`.
 
-   Copy env.sample to env and update the .env to the correct database parameters as above
-   Update .env to include the correct SSO api credentials
+## Running the Backend
 
-   cd <CLONE_FOLDER>/api/tms
+In the Activity Bar select the `Run and Debug` item, and then from the dropdown
+list at the top select `CSTAR Backend`, or select `CSTAR` to start both the
+backend and the frontend. Then click the green `Start Debugging` icon.
 
-   npm install
+In the `Ports` tab of the Panel is a link to the backend running at
+`http://localhost:4144`.
 
-   Run pre-requisite database migrations via cmd: (install npx if not available)
+Changes to the code are automatically deployed when the file is saved, so there
+is no need to restart the server.
 
-   npx typeorm-ts-node-commonjs migration:run -d ./src/common/db.connection.ts
+## Backend Logs
 
-   Verify tables are created and available
+Logs appear in the `Debug Console` tab of the Panel. Use the dropdown list to
+select `CSTAR Backend`.
 
-   npm run dev
+## Running Tasks
 
-   Verify API is up via: http://localhost:4144/v1/health
+Builds and tests are set up as Tasks. Go to `Terminal` > `Run Task...` to run:
 
-3. DEBUGGING STEPS - docker-compose:
+- `Backend: Build`: run the build process. Building is not needed for local
+  development, but it is useful to test changes to the build process
+- `Backend: Lint`: run eslint against the code
+- `Backend: Unit Tests`: run the unit tests
+- `Backend: Unit Tests (Coverage)`: run the unit tests with a code coverage
+  report. The report appears in `backend/coverage/lcov-report/index.html`
 
-   To clear the existing docker-compose images and configurations, run the following commands in sequence:
-   1. docker compose down --volumes --remove-orphans
-   2. docker compose down --rmi all
-   3. docker volume prune -f
+Integration tests are found in the `tests/integration` directory. See the
+README file there for details.
 
-   4. docker compose up --build
-
-4. Generate migration after entity changes:
-   1. npx typeorm-ts-node-commonjs migration:generate -d ./src/common/db.connection.ts ./src/migrations/<name>
+The above tests are all run when a Pull Request is created, so it is a good idea
+to run them locally before committing changes.

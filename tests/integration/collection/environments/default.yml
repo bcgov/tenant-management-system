@@ -1,0 +1,8 @@
+name: localhost
+variables:
+  - name: audience
+    value: cstar
+  - name: baseUrl
+    value: http://localhost:7001/v1
+  - name: mockJwksUrl
+    value: http://localhost:7002

@@ -10,7 +10,7 @@ export const connection = AppDataSource
 
 AppDataSource.initialize()
   .then(async () => {
-    console.log(`Connected to database: ${config.host}`)
+    console.warn(`Connected to database: ${config.host}`)
 
     // Create the extension for calling uuid_generate_v4() in the migrations.
     // Note that this extension is not needed because modern PostgreSQL has the
@@ -26,7 +26,7 @@ AppDataSource.initialize()
     // Set the search path to always use tms schema first
     await AppDataSource.query(`SET search_path TO "${config.schema}", public`)
 
-    console.log(`Using schema: ${config.schema}`)
+    console.warn(`Using schema: ${config.schema}`)
   })
   .catch((err) => {
     console.error('Error during Data Source initialization', err)

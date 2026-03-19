@@ -11,6 +11,7 @@ import {
 import { SSOUser } from './SSOUser'
 
 @Entity('TenantRequest', { schema: 'tms' })
+@Index('idx_tenantrequest_status_requestedat', ['status', 'requestedAt'])
 export class TenantRequest {
   @PrimaryGeneratedColumn('uuid', { name: 'id' })
   id!: string

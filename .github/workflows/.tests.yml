@@ -21,6 +21,8 @@ permissions: {}
 
 jobs:
   integration-tests:
+    env:
+      IMAGE_TAG: ${{ inputs.image_tag }}
     name: Integration
     permissions:
       checks: write
@@ -40,40 +42,46 @@ jobs:
             ${{ runner.os }}-
 
       - name: Start test services
-        env:
-          IMAGE_TAG: ${{ inputs.image_tag }}
-        run: |
-          cd tests/integration
-          docker compose -f docker-compose.yml up -d --wait
+        run: docker compose -f docker-compose.yml up -d --quiet-pull --wait
+        working-directory: tests/integration
+
+      - name: Dump logs on failure
+        if: failure()
+        run: docker compose -f docker-compose.yml logs
+        working-directory: tests/integration
 
       - name: Run tests
         run: |
-          cd tests/integration
-          npm ci
-          npx bru run \
+          npm ci --ignore-scripts
+          cd collection && npx bru run \
               --env default \
-              --env-var baseUrl=https://$PREFIX.$DOMAIN/api \
               --noproxy \
               --reporter-junit results.xml
+        working-directory: tests/integration
+
+      - name: Dump logs on failure
+        if: failure()
+        run: docker compose -f docker-compose.yml logs
+        working-directory: tests/integration
 
       - name: Stop test services
         if: always()
         run: |
-          cd tests/integration
           docker compose -f docker-compose.yml down
+        working-directory: tests/integration
 
-      - uses: dorny/test-reporter@v1
+      - uses: dorny/test-reporter@3d76b34a4535afbd0600d347b09a6ee5deb3ed7f # v2.6.0
         if: always()
         with:
           name: Integration Tests
-          path: tests/integration/results.xml
+          path: tests/integration/collection/results.xml
           reporter: java-junit
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         if: always()
         with:
           name: bruno-test-results
-          path: tests/integration/results.xml
+          path: tests/integration/collection/results.xml
 
   e2e-tests:
     name: E2E

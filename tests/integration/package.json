@@ -2,7 +2,7 @@
   "name": "integration-tests",
   "version": "1.0.0",
   "scripts": {
-    "test": "npx bru run --env default --noproxy"
+    "test": "cd collection && npx bru run --env default --noproxy"
   },
   "devDependencies": {
     "@usebruno/cli": "^3.1.3"

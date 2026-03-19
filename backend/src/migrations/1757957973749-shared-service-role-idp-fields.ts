@@ -5,13 +5,13 @@ export class SharedServiceRoleIdpFields1757957973749 implements MigrationInterfa
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
-      `ALTER TABLE "tms"."SharedServiceRole" ADD "allowed_identity_providers" text array`,
+      'ALTER TABLE "tms"."SharedServiceRole" ADD "allowed_identity_providers" text array',
     )
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
-      `ALTER TABLE "tms"."SharedServiceRole" DROP COLUMN "allowed_identity_providers"`,
+      'ALTER TABLE "tms"."SharedServiceRole" DROP COLUMN "allowed_identity_providers"',
     )
   }
 }
