@@ -281,6 +281,7 @@ export class TMRepository {
           'ss.clientIdentifier = :jwtAudience AND ss.isActive = true',
           { jwtAudience },
         )
+        // removed raw sql subquery
         .innerJoin(
           GroupSharedServiceRole,
           'gssr',
