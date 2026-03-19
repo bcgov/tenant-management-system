@@ -5,7 +5,10 @@ import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
 import { type User, type Tenant } from '@/models'
 import { type IdirSearchType, IDIR_SEARCH_TYPE } from '@/utils/constants'
-import type { ItemSlotBase, DataTableItem } from 'vuetify/lib/components/VDataTable/types.mjs';
+import type {
+  ItemSlotBase,
+  DataTableItem,
+} from 'vuetify/lib/components/VDataTable/types.mjs'
 import UserTable from '@/components/user/UserTable.vue'
 
 // --- Component Interface -----------------------------------------------------
@@ -41,7 +44,6 @@ const SEARCH_TYPES = [
 
 const searchText = ref('')
 const searchType = ref<IdirSearchType>(IDIR_SEARCH_TYPE.FIRST_NAME.value)
-const selectedUser = ref<User[]>([])
 const conflict = ref(false)
 const internalItem = ref<DataTableItem<User>>({} as DataTableItem<User>)
 
@@ -51,19 +53,12 @@ watch([searchText, searchType], () => {
   emit('clear-search')
 })
 
-watch(selectedUser, (selection) => {
-  
-  if (selection?.length) {
-    emit('select', selection[0])
-  }
-})
-
-type RowPropsType = ItemSlotBase<User>;
+type RowPropsType = ItemSlotBase<User>
 
 const selectUser = (e: Event | null, r: RowPropsType) => {
   conflict.value = false
   const index = props.currentUsers?.findIndex(
-    (u: User) => u.ssoUser.ssoUserId === r.item?.ssoUser.ssoUserId
+    (u: User) => u.ssoUser.ssoUserId === r.item?.ssoUser.ssoUserId,
   )
   if (index !== -1) {
     //remove the user from the selection
@@ -71,12 +66,13 @@ const selectUser = (e: Event | null, r: RowPropsType) => {
     if (internalItem.value) {
       internalItem.value = {} as DataTableItem<User>
       r.toggleSelect(internalItem.value)
-
     }
-    return
+    emit('select', null)
+    return false
   }
   internalItem.value = r.internalItem
-  r.toggleSelect(r.internalItem)
+  emit('select', r.internalItem.value)
+  return true
 }
 
 // --- Computed Values ---------------------------------------------------------
@@ -99,10 +95,7 @@ function handleSearch() {
 
 <template>
   <v-row>
-    <v-dialog
-      v-model="conflict"
-      width="auto"
-    >
+    <v-dialog v-model="conflict" width="auto">
       <v-card>
         <v-card-title class="text-h6 border-b-sm">
           <v-icon color="warning" size="xsmall">mdi-alert</v-icon>
@@ -114,10 +107,7 @@ function handleSearch() {
         </v-card-text>
         <v-card-actions class="border-t-sm">
           <v-spacer></v-spacer>
-          <ButtonSecondary
-            text="OK"
-            @click="conflict = false"
-          />
+          <ButtonSecondary text="OK" @click="conflict = false" />
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -159,14 +149,13 @@ function handleSearch() {
         :users="searchResults || []"
         where="tenant"
       />
-
     </v-col>
   </v-row>
 </template>
 
 <style>
-  .selected-user {
-    background-color: #F6FFF8;
-    border-color: #42814A;
-  }
+.selected-user {
+  background-color: #f6fff8;
+  border-color: #42814a;
+}
 </style>

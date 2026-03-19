@@ -23,7 +23,7 @@ const props = defineProps<{
   showAdd?: boolean
   showRoles?: boolean
   enableSelect?: boolean
-  selectUser?: (e: Event | null, r: RowPropsType) => void
+  selectUser?: (e: Event | null, r: RowPropsType) => boolean
   sortBy?: Array<{ key: string; order?: 'asc' | 'desc' }>
 }>()
 
@@ -156,6 +156,13 @@ const canRemoveRole = function (item: User, role: Role): boolean {
 
 const actionItems = computed(() => {
   const rv = []
+  // rv.push({
+  //   title: t('users.viewUserDetailsAction'),
+  //   action: props.showOffboardDialog,
+  //   disabledCondition: () => {
+  //     return false
+  //   },
+  // })
   if (isUserAdmin.value && props.showOffboardDialog) {
     rv.push({
       title: t('users.offboardUserAction'),
@@ -172,13 +179,19 @@ const actionItems = computed(() => {
 })
 
 const colorRowItem = (item: ItemSlotBase<User>) => {
-  const selectedId = selectedUser.value?.id
+  const selectedId = selectedUser.value?.[0]?.id
 
   if (selectedId && item?.item?.id && selectedId === item.item.id) {
     return { class: 'selected-user' }
   }
 
   return {}
+}
+
+const selectRowItem = (e: Event, r: RowPropsType) => {
+  if (props.selectUser?.(e, r)) {
+    r.toggleSelect(r.internalItem)
+  }
 }
 </script>
 
@@ -201,7 +214,7 @@ const colorRowItem = (item: ItemSlotBase<User>) => {
     hover
     return-object
     @click:row="
-      (e: Event, r: RowPropsType) => enableSelect && selectUser?.(e, r)
+      (e: Event, r: RowPropsType) => enableSelect && selectRowItem(e, r)
     "
   >
     <template #no-data>

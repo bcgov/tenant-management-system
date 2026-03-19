@@ -278,11 +278,15 @@ watch(selectAllRoles, () => {
           :tenant="tenant"
           :users="tenant.users"
           where="tenant"
+          @add-first-clicked="showSearch = true"
         />
       </v-col>
     </v-row>
 
-    <v-row v-if="isUserAdmin && !showSearch" class="mt-4">
+    <v-row
+      v-if="isUserAdmin && !showSearch && tenant.users.length !== 0"
+      class="mt-4"
+    >
       <v-col class="d-flex justify-start" cols="12">
         <FloatingActionButton
           :text="$t('tenants.addAnotherUser', tenant.users.length)"
@@ -332,7 +336,7 @@ watch(selectAllRoles, () => {
               class="d-sm-inline-block"
             >
               <v-checkbox
-                v-if="selectedUser.ssoUser.idpType === 'idir' || index === 0"
+                v-if="selectedUser?.ssoUser?.idpType === 'idir' || index === 0"
                 v-model="selectedRoles"
                 :label="role.description"
                 :value="role"
