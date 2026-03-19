@@ -250,7 +250,6 @@ export class TMRepository {
 
   public async getTenantGroups(input: GetTenantGroupsInputDto) {
     const tenantId: string = input.tenantId
-    const ssoUserId = input.ssoUserId
     const TMS_AUDIENCE: string = input.tmsAudience
     const jwtAudience: string = input.jwtAudience
 
@@ -262,11 +261,8 @@ export class TMRepository {
     const groupsQuery = this.manager
       .createQueryBuilder(Group, 'grp')
       .innerJoin('grp.tenant', 'ten')
-      .innerJoin('ten.users', 'tu')
-      .innerJoin('tu.ssoUser', 'su')
       .where('ten.id = :tenantId', { tenantId })
-      .andWhere('su.ssoUserId = :ssoUserId', { ssoUserId })
-      .andWhere('tu.isDeleted = false')
+      .distinct(true)
 
     if (jwtAudience !== TMS_AUDIENCE) {
       groupsQuery
@@ -292,8 +288,6 @@ export class TMRepository {
           'ssr.id = gssr.sharedServiceRole.id AND ssr.sharedService.id = ss.id AND ssr.isDeleted = false',
         )
     }
-
-    groupsQuery.groupBy('grp.id')
 
     const groups = await groupsQuery.getMany()
     const uniqueCreatedByIds: string[] = [
