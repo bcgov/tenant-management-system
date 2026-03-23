@@ -17,8 +17,7 @@
       "settings": {
         "database-client.telemetry.usesOnlineServices": false,
         "editor.defaultFormatter": "esbenp.prettier-vscode",
-        "editor.formatOnSave": true,
-        "sonarlint.ls.javaHome": "/usr/lib/jvm/java-21-openjdk-amd64"
+        "editor.formatOnSave": true
       }
     }
   },
