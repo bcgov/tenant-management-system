@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { mdiMagnify } from '@mdi/js'
 import { computed, ref } from 'vue'
 
 import type { Service, Tenant } from '@/models'
@@ -64,7 +65,7 @@ function handleAddService() {
       <v-col cols="4">
         <v-text-field
           v-model="search"
-          append-inner-icon="mdi-magnify"
+          :append-inner-icon="mdiMagnify"
           label="Search"
           variant="outlined"
           clearable
@@ -115,10 +116,14 @@ function handleAddService() {
       <v-row class="mt-6">
         <v-col cols="12">
           <v-divider class="mb-12" />
-          <h4 class="my-4">Add an available {{ $t('general.servicesLabelLower', 2) }} to this Tenant</h4>
+          <h4 class="my-4">
+            Add an available {{ $t('general.servicesLabelLower', 2) }} to this
+            Tenant
+          </h4>
           <p>
-            To add an available {{ $t('general.servicesLabelLower', 2) }} to this tenant, choose one from
-            the dropdown and click 'Add Service' to confirm.
+            To add an available {{ $t('general.servicesLabelLower', 2) }} to
+            this tenant, choose one from the dropdown and click 'Add Service' to
+            confirm.
           </p>
         </v-col>
       </v-row>

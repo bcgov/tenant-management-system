@@ -1,9 +1,11 @@
 <script setup lang="ts">
 //imports
-import type { Tenant, User } from '@/models'
+import { mdiClose } from '@mdi/js'
 import { watch, ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 const { t } = useI18n()
+
+import type { Tenant, User } from '@/models'
 import { ROLES } from '@/utils/constants'
 import { useTenantStore, useRoleStore } from '@/stores'
 import { useNotification } from '@/composables'
@@ -65,14 +67,30 @@ const isBCeIDUser = ref<boolean>(false)
 
 const items = ref<Array<{ role: string; description: string; value: boolean }>>(
   isBCeIDUser.value
-  ? [
-      { role: t('roles.serviceUser'), description: t('roles.serviceUserDesc'), value: false },
-    ]
-  : [
-    { role: t('roles.owner'), description: t('roles.ownerDesc'), value: false },
-    { role: t('roles.admin'), description: t('roles.adminDesc'), value: false },
-    { role: t('roles.user'), description: t('roles.userDesc'), value: false },
-  ],
+    ? [
+        {
+          role: t('roles.serviceUser'),
+          description: t('roles.serviceUserDesc'),
+          value: false,
+        },
+      ]
+    : [
+        {
+          role: t('roles.owner'),
+          description: t('roles.ownerDesc'),
+          value: false,
+        },
+        {
+          role: t('roles.admin'),
+          description: t('roles.adminDesc'),
+          value: false,
+        },
+        {
+          role: t('roles.user'),
+          description: t('roles.userDesc'),
+          value: false,
+        },
+      ],
 )
 
 //catch user prop changes and update defaults / state
@@ -81,18 +99,34 @@ const updateState = (newUser: User | null) => {
   isBCeIDUser.value = false
   defaultValues.value = []
   if (newUser && newUser?.ssoUser && newUser?.ssoUser?.idpType) {
-    isBCeIDUser.value = newUser.ssoUser.idpType.toLowerCase().includes('bceid');
+    isBCeIDUser.value = newUser.ssoUser.idpType.toLowerCase().includes('bceid')
   }
 
   items.value = isBCeIDUser.value
-  ? [
-      { role: t('roles.user'), description: t('roles.userDesc'), value: false },
-    ]
-  : [
-      { role: t('roles.owner'), description: t('roles.ownerDesc'), value: false },
-      { role: t('roles.admin'), description: t('roles.adminDesc'), value: false },
-      { role: t('roles.user'), description: t('roles.userDesc'), value: false },
-    ]
+    ? [
+        {
+          role: t('roles.user'),
+          description: t('roles.userDesc'),
+          value: false,
+        },
+      ]
+    : [
+        {
+          role: t('roles.owner'),
+          description: t('roles.ownerDesc'),
+          value: false,
+        },
+        {
+          role: t('roles.admin'),
+          description: t('roles.adminDesc'),
+          value: false,
+        },
+        {
+          role: t('roles.user'),
+          description: t('roles.userDesc'),
+          value: false,
+        },
+      ]
   items.value[0].value = false
   defaultValues.value[0] = false
 
@@ -208,10 +242,13 @@ const handleSave = async () => {
       <v-card-title class="mb-4 border-b-sm">
         <v-row justify="end">
           <v-btn variant="plain" @click="$emit('update:openDialog', false)">
-            <v-icon>mdi-close</v-icon>
+            <v-icon :icon="mdiClose" />
           </v-btn>
         </v-row>
-        <v-row> {{ $t('general.edit') }} {{ $t('tenants.tenant', 1) }} {{ $t('roles.role', 1) }} </v-row>
+        <v-row>
+          {{ $t('general.edit') }} {{ $t('tenants.tenant', 1) }}
+          {{ $t('roles.role', 1) }}
+        </v-row>
       </v-card-title>
       <v-card-text class="pa-0">
         <div class="my-4">

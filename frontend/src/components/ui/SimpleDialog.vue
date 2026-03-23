@@ -1,5 +1,12 @@
 <script setup lang="ts">
+import {
+  mdiAlertOctagonOutline,
+  mdiAlertOutline,
+  mdiCheckCircleOutline,
+  mdiClose,
+} from '@mdi/js'
 import { computed } from 'vue'
+
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
 
@@ -52,11 +59,11 @@ function handleButtonClick(action: string) {
 const iconType = computed(() => {
   switch (props.dialogType) {
     case 'warning':
-      return 'mdi-alert-outline'
+      return mdiAlertOutline
     case 'error':
-      return 'mdi-alert-octagon-outline'
+      return mdiAlertOctagonOutline
     case 'success':
-      return 'mdi-check-circle-outline'
+      return mdiCheckCircleOutline
     default:
       return ''
   }
@@ -76,11 +83,10 @@ const iconType = computed(() => {
             <v-icon
               v-if="dialogType !== null"
               :color="dialogType"
+              :icon="iconType"
               class="ma-2"
               size="small"
-            >
-              {{ iconType }}
-            </v-icon>
+            />
             {{ title }}
           </v-col>
           <v-spacer />
@@ -92,7 +98,7 @@ const iconType = computed(() => {
             icon
             @click="$emit('update:modelValue', false)"
           >
-            <v-icon>mdi-close</v-icon>
+            <v-icon :icon="mdiClose"></v-icon>
           </v-btn>
         </v-row>
       </v-card-title>

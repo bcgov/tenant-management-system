@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { mdiChevronRight } from '@mdi/js'
+
 // --- Types & Interfaces ------------------------------------------------------
 
 interface Breadcrumb {
@@ -17,7 +19,7 @@ defineProps<{
 <template>
   <v-breadcrumbs :items="items" color="primary">
     <template #divider>
-      <v-icon icon="mdi-chevron-right"></v-icon>
+      <v-icon :icon="mdiChevronRight" />
     </template>
   </v-breadcrumbs>
 </template>

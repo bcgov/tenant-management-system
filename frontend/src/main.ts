@@ -1,5 +1,4 @@
 import '@bcgov/design-tokens/css-prefixed/variables.css'
-import '@mdi/font/css/materialdesignicons.css'
 
 import '@/assets/styles/global.css'
 

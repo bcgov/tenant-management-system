@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { mdiArrowLeft } from '@mdi/js'
 import { computed, ref } from 'vue'
 
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
@@ -145,8 +146,8 @@ const handleSubmit = () => {
         <v-divider class="mb-4" />
         <div class="d-flex justify-start">
           <v-btn
+            :prepend-icon="mdiArrowLeft"
             color="primary"
-            prepend-icon="mdi-arrow-left"
             variant="text"
             @click="handleBack"
           >

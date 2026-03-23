@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { mdiMagnify } from '@mdi/js'
 import { computed, onMounted, ref, type Ref } from 'vue'
 
 import TenantRequestDisplay from '@/components/tenantrequest/TenantRequestDisplay.vue'
@@ -64,19 +65,18 @@ const handleApproved = async (name: string) => {
     handleBackToList()
   } catch (error) {
     if (error instanceof DuplicateEntityError) {
-      if (error.userMessage && error.userMessage.includes('Cannot update tenant request with status')) {
+      if (
+        error.userMessage &&
+        error.userMessage.includes('Cannot update tenant request with status')
+      ) {
         // If the API says that this name exists already, then show the name
         // duplicated validation error.
-        notification.error(
-          t('tenants.errors.nonNewStatusChange')
-        )
+        notification.error(t('tenants.errors.nonNewStatusChange'))
         return
       }
       // If the API says that this name exists already, then show the name
       // duplicated validation error.
-      notification.error(
-        t('tenants.errors.nameExists'),
-      )
+      notification.error(t('tenants.errors.nameExists'))
       erroredApproving.value = true
     } else if (error instanceof DomainError && error.userMessage) {
       // For any other API Domain Error, display the user message that comes
@@ -155,7 +155,7 @@ onMounted(async () => {
         <v-col cols="4">
           <v-text-field
             v-model="search"
-            append-inner-icon="mdi-magnify"
+            :append-inner-icon="mdiMagnify"
             label="Search"
             variant="outlined"
             clearable
