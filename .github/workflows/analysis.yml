@@ -51,7 +51,7 @@ jobs:
             -Dsonar.projectName=tenant-management-system
             -Dsonar.sources=backend/src
             -Dsonar.test.inclusions=**/*spec.ts
-            -Dsonar.javascript.lcov.reportPaths=./coverage/lcov.info
+            -Dsonar.javascript.lcov.reportPaths=./backend/coverage/lcov.info
           sonar_token: ${{ env.SONAR_TOKEN }}
           supply_scan: true
           triggers: ('backend/')
@@ -80,7 +80,7 @@ jobs:
             -Dsonar.projectName=tenant-management-system
             -Dsonar.sources=frontend/src
             -Dsonar.test.inclusions=**/*test.ts
-            -Dsonar.javascript.lcov.reportPaths=./coverage/lcov.info
+            -Dsonar.javascript.lcov.reportPaths=./frontend/coverage/lcov.info
           sonar_token: ${{ env.SONAR_TOKEN }}
           supply_scan: true
           triggers: ('frontend/')
