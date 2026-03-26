@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { mdiPlusBox } from '@mdi/js'
 import { computed, ref } from 'vue'
 
 import UserSearch from '@/components/group/UserSearch.vue'
@@ -120,7 +121,7 @@ function toggleSearch() {
     >
       <v-col class="d-flex justify-start" cols="12">
         <FloatingActionButton
-          icon="mdi-plus-box"
+          :icon="mdiPlusBox"
           text="Add User to Group"
           @click="toggleSearch"
         />

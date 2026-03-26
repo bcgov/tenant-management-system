@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import { mdiAccountOutline, mdiLogout } from '@mdi/js'
 import { computed } from 'vue'
+
 import type { User } from '@/models'
 import { useAuthStore } from '@/stores'
 
@@ -25,10 +27,10 @@ const logoutURL = computed(() => authStore.logout())
     </v-toolbar-title>
 
     <div v-if="user" class="d-flex align-center user-info">
-      <v-icon icon="mdi-account-outline" size="large" />
+      <v-icon :icon="mdiAccountOutline" size="large" />
       <span class="text-no-wrap ms-1 me-4">{{ user.ssoUser.displayName }}</span>
       <v-btn :href="logoutURL" class="logout-btn">
-        <v-icon class="me-1" icon="mdi-logout" size="x-large" />
+        <v-icon :icon="mdiLogout" class="me-1" size="x-large" />
         Logout
       </v-btn>
     </div>

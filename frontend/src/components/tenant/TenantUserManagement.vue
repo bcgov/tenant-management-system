@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { mdiMagnify, mdiPlusBox } from '@mdi/js'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 const { t } = useI18n()
@@ -267,7 +268,7 @@ watch(selectAllRoles, () => {
       <v-col cols="4">
         <v-text-field
           v-model="userSearch"
-          append-inner-icon="mdi-magnify"
+          :append-inner-icon="mdiMagnify"
           label="Search"
           variant="outlined"
           clearable
@@ -301,9 +302,9 @@ watch(selectAllRoles, () => {
     >
       <v-col class="d-flex justify-start" cols="12">
         <FloatingActionButton
+          :icon="mdiPlusBox"
           :text="$t('tenants.addAnotherUser', tenant.users.length)"
           class="no-transform"
-          icon="mdi-plus-box"
           @click="toggleSearch"
         />
       </v-col>
