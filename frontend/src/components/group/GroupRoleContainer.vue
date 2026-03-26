@@ -329,8 +329,6 @@ const dialogButtons = computed(() => {
   </v-container>
 </template>
 
-<style></style>
-
 <style scoped>
 .darkened {
   background: rgb(var(--v-theme-surface-light-gray));
