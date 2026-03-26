@@ -62,9 +62,7 @@ export const tenantService = {
    */
   async removeUser(tenantId: string, userId: string) {
     try {
-      console.log('remove user')
       const response = await api.delete(`/tenants/${tenantId}/users/${userId}`)
-      console.log('response', response)
 
       return response
     } catch (error: unknown) {

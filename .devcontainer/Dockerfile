@@ -3,7 +3,6 @@ FROM node:22.22.0-trixie
 # Install some extras such as vim for interactive rebases. Also some
 # Cypress prerequisites for running in Debian containers:
 # https://docs.cypress.io/app/get-started/install-cypress#UbuntuDebian
-# and we set up k6 for performance testing
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     libasound2 \
@@ -13,7 +12,6 @@ RUN apt-get update && \
     libnss3 \
     libxss1 \
     libxtst6 \
-    openjdk-21-jre-headless \
     postgresql-client \
     socat \
     sudo \
