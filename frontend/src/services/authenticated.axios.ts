@@ -11,18 +11,14 @@ import { useAuthStore } from '@/stores/useAuthStore'
  * @returns {import('axios').AxiosInstance} An Axios instance.
  */
 export function authenticatedAxios(timeout = 60000) {
-  const axiosOptions = {
-    baseURL: config.api.baseUrl,
-    timeout: timeout,
-  }
-
-  const instance = axios.create(axiosOptions)
+  const instance = axios.create({ timeout })
 
   instance.interceptors.request.use(
     (cfg) => {
-      const authStore = useAuthStore()
+      cfg.baseURL = config.api.baseUrl
 
       // If the user is authenticated, add the bearer token to the request.
+      const authStore = useAuthStore()
       if (authStore.authenticated) {
         cfg.headers.Authorization = `Bearer ${authStore.keycloak?.token}`
       }
@@ -34,13 +30,15 @@ export function authenticatedAxios(timeout = 60000) {
     // representation and preserve the original.
     (error) => {
       const authStore = useAuthStore()
-      if (error && error.code && error.code === "ERR_NETWORK") {
+      if (error && error.code && error.code === 'ERR_NETWORK') {
         authStore.loggedOut = true
         authStore.authenticated = false
         authStore.token = ''
         authStore.user = null
-        window.location.href='/'
-        return Promise.reject(new Error('Network Error: Unable to reach the API server'))
+        window.location.href = '/'
+        return Promise.reject(
+          new Error('Network Error: Unable to reach the API server'),
+        )
       }
       return Promise.reject(
         error instanceof Error
