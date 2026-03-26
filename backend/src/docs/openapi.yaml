@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
-  title: Tenant Management System API
-  description: API for managing tenants in the Tenant Management System
+  title: Connected Services Team Access and Roles API
+  description: API for managing tenants in Connected Services Team Access and Roles
   version: 1.0.0
 servers:
   - url: http://localhost:4144
