@@ -30,12 +30,12 @@ export function authenticatedAxios(timeout = 60000) {
     // representation and preserve the original.
     (error) => {
       const authStore = useAuthStore()
-      if (error && error.code && error.code === 'ERR_NETWORK') {
+      if (error?.code === 'ERR_NETWORK') {
         authStore.loggedOut = true
         authStore.authenticated = false
         authStore.token = ''
         authStore.user = null
-        window.location.href = '/'
+        globalThis.location.href = '/'
         return Promise.reject(
           new Error('Network Error: Unable to reach the API server'),
         )
