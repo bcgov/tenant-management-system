@@ -6,9 +6,9 @@ info:
 servers:
   - url: http://localhost:4144
     description: Local dev server
-  - url: https://tenant-management-system-dev-backend.apps.silver.devops.gov.bc.ca
-    description: CSTAR Dev API
-  - url: https://tenant-management-system-test-frontend.apps.silver.devops.gov.bc.ca/api/
+  - url: https://cstar-dev.apps.silver.devops.gov.bc.ca/api
+    description: DEV env api
+  - url: https://cstar-test.apps.silver.devops.gov.bc.ca/api
     description: TEST env api
 
 paths:
