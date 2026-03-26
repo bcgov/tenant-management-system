@@ -280,7 +280,7 @@ const dialogButtons = computed(() => {
                 v-model="roleValues[serviceIndex][roleIndex]"
                 :color="editing ? 'primary' : ''"
                 :disabled="!editing || !canMakeChanges"
-                :label="role.description"
+                :label="role.name"
                 class="noBackground"
               >
               </v-checkbox>
