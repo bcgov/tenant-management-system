@@ -27,8 +27,13 @@
         }` 200
     }
 
+    # Silence sitemap requests without a 404 error
+    handle /sitemap.xml {
+        respond "" 204
+    }
+
     @spa_router {
-        not path /api* /config* /docs*
+        not path /api* /config* /docs* /sitemap.xml
         file {
             try_files {path} /index.html
         }
@@ -49,9 +54,26 @@
         }
     }
 
+    # Cache-control overrides
+    
+    # Vite-hashed files: cache forever since file changes cause filename changes
+    @static_forever {
+        path /assets/*
+    }
+    header @static_forever Cache-Control "immutable, max-age=31536000, no-transform, public"
+
+    # Everything else: No cache
+    @no_cache {
+        not path /assets/*
+    }
+    header @no_cache {
+        Cache-Control "must-revalidate, no-cache, no-store, private"
+        Expires "0"
+        Pragma "no-cache"
+    }
+
     header {
         -Server
-        Cache-Control "no-cache, must-revalidate"
         Content-Security-Policy "base-uri 'self';
             connect-src 'self'
                 https://dev.loginproxy.gov.bc.ca/
