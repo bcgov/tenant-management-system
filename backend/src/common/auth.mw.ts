@@ -5,10 +5,7 @@ import logger from './logger'
 import { UnauthorizedError } from '../errors/UnauthorizedError'
 import { RoutesConstants } from './routes.constants'
 import { TMSConstants } from './tms.constants'
-
-const TMS_AUDIENCE = process.env.TMS_AUDIENCE || 'tenant-management-system-6014'
-const JWKS_URI = process.env.JWKS_URI || ''
-const ISSUER = process.env.ISSUER || ''
+import { config } from '../services/config.service'
 
 interface DecodedJwt {
   idir_user_guid?: string
@@ -55,21 +52,17 @@ const determineBceidType = (
 const createJwtMiddleware = (options: CheckJwtOptions = {}) => {
   const { sharedServiceAccess = false } = options
 
-  if (!JWKS_URI || !ISSUER) {
-    throw new Error('Missing required JWT configuration environment variables')
-  }
-
   return jwt({
     secret: jwksRsa.expressJwtSecret({
       cache: true,
-      jwksUri: JWKS_URI,
+      jwksUri: config.oidc.jwksUri,
       handleSigningKeyError: (err, cb) => {
         logger.error('Error:', { error: err?.message, stack: err?.stack })
         cb(new UnauthorizedError('Error occurred during authentication'))
       },
     }),
-    issuer: ISSUER,
-    audience: sharedServiceAccess ? undefined : TMS_AUDIENCE,
+    issuer: config.oidc.issuer,
+    audience: sharedServiceAccess ? undefined : config.oidc.tmsAudience,
     algorithms: ['RS256'],
     requestProperty: 'decodedJwt',
     getToken: function fromHeaderOrQuerystring(req) {
