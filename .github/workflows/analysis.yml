@@ -44,13 +44,13 @@ jobs:
           dir: backend
           node_version: '22'
           sonar_args: >
-            -Dsonar.exclusions=**/coverage/**,**/node_modules/**,**/*spec.ts
+            -Dsonar.exclusions=**/coverage/**,**/node_modules/**,**/src/tests/**
             -Dsonar.organization=bcgov-sonarcloud
             -Dsonar.projectBaseDir=.
             -Dsonar.projectKey=bcgov_tenant-management-system
             -Dsonar.projectName=tenant-management-system
             -Dsonar.sources=backend/src
-            -Dsonar.test.inclusions=**/*spec.ts
+            -Dsonar.test.inclusions=**/*test.ts
             -Dsonar.javascript.lcov.reportPaths=./backend/coverage/lcov.info
           sonar_token: ${{ env.SONAR_TOKEN }}
           supply_scan: true

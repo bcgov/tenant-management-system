@@ -25,6 +25,7 @@ import {
   UpdateGroupInputDto,
 } from '../dtos/tm.dto'
 import { Group } from '../entities/Group'
+import { config } from '../services/config.service'
 
 export class TMService {
   tmsRepository: TMSRepository = new TMSRepository(connection.manager)
@@ -161,14 +162,14 @@ export class TMService {
   }
 
   public async getTenantGroups(req: Request) {
-    const tmsAudience =
-      process.env.TMS_AUDIENCE || 'tenant-management-system-6014'
     const input: GetTenantGroupsInputDto = {
       tenantId: req.params.tenantId,
       ssoUserId: req.decodedJwt?.idir_user_guid,
       jwtAudience:
-        req.decodedJwt?.aud || req.decodedJwt?.audience || tmsAudience,
-      tmsAudience,
+        req.decodedJwt?.aud ||
+        req.decodedJwt?.audience ||
+        config.oidc.tmsAudience,
+      tmsAudience: config.oidc.tmsAudience,
     }
     const groups = await this.tmRepository.getTenantGroups(input)
 

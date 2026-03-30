@@ -3,6 +3,7 @@ module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
   moduleFileExtensions: ['ts', 'js'],
+  setupFiles: ['<rootDir>/src/tests/jest.setup.ts'],
   transform: {
     '^.+\\.ts$': 'ts-jest',
   },

@@ -43,6 +43,7 @@ import {
   UpdateTenantInputDto,
   UnassignUserRolesInputDto,
 } from '../dtos/tms.dto'
+import { config } from '../services/config.service'
 
 export class TMSRepository {
   constructor(private manager: EntityManager) {
@@ -973,9 +974,7 @@ export class TMSRepository {
   public async getTenantsForUser(input: GetUserTenantsInputDto) {
     const ssoUserId: string = input.ssoUserId
     const expand: string[] = input.expand
-    const TMS_AUDIENCE: string =
-      process.env.TMS_AUDIENCE || 'tenant-management-system-6014'
-    const jwtAudience: string = input.jwtAudience || TMS_AUDIENCE
+    const jwtAudience: string = input.jwtAudience || config.oidc.tmsAudience
 
     const tenantQuery = this.manager
       .createQueryBuilder(Tenant, 't')
@@ -992,7 +991,7 @@ export class TMSRepository {
         return `EXISTS (${subQuery})`
       })
 
-    if (jwtAudience !== TMS_AUDIENCE) {
+    if (jwtAudience !== config.oidc.tmsAudience) {
       tenantQuery.andWhere((qb) => {
         const subQuery = qb
           .subQuery()

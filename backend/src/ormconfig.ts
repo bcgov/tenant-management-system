@@ -1,15 +1,17 @@
-import * as dotenv from 'dotenv'
 import path from 'node:path'
+import { config, loadConfig } from './services/config.service'
 
-dotenv.config()
+// Load the configuration when running for migrations. When running as part of
+// the app this does nothing as main.ts has already loaded the configuration.
+loadConfig()
 
 const dbConfig = {
   type: 'postgres',
-  host: process.env.POSTGRES_HOST || 'localhost',
-  port: parseInt(process.env.POSTGRES_PORT || '5432', 10),
-  username: process.env.POSTGRES_USER || 'postgres',
-  password: process.env.POSTGRES_PASSWORD || 'mysecretpassword',
-  database: process.env.POSTGRES_DATABASE || 'postgres',
+  host: config.postgres.host,
+  port: config.postgres.port,
+  username: config.postgres.user,
+  password: config.postgres.password,
+  database: config.postgres.database,
   schema: 'tms',
   synchronize: false,
   logging: true,

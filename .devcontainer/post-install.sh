@@ -17,7 +17,7 @@ cd "$REPOSITORY_ROOT/backend"
 npm ci --ignore-scripts
 
 echo "==> Running database migrations"
-npx typeorm-ts-node-commonjs migration:run -d ./src/common/db.connection.ts
+npm run migrate
 
 echo "==> Installing frontend dependencies"
 cd "$REPOSITORY_ROOT/frontend"

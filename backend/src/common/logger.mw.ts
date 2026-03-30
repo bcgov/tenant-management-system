@@ -23,15 +23,13 @@ export const requestLoggingMiddleware = (
     return next()
   }
 
-  if (logger.isLevelEnabled('info')) {
-    logger.info('Incoming request', {
-      method: req.method,
-      url: req.url,
-      params: req.params,
-      query: req.query,
-      body: req.method !== 'GET' ? req.body : undefined,
-    })
-  }
+  logger.info('Incoming request', {
+    method: req.method,
+    url: req.url,
+    params: req.params,
+    query: req.query,
+    body: req.method !== 'GET' ? req.body : undefined,
+  })
 
   const responseWithFlag = res as ResponseWithLoggingFlag
 
@@ -42,14 +40,13 @@ export const requestLoggingMiddleware = (
       if (!responseWithFlag._loggedResponse) {
         const responseTime = Date.now() - startTime
 
-        if (logger.isLevelEnabled('info')) {
-          logger.info('Outgoing response', {
-            method: req.method,
-            url: req.url,
-            statusCode: res.statusCode,
-            responseTime: `${responseTime}ms`,
-          })
-        }
+        logger.info('Outgoing response', {
+          method: req.method,
+          url: req.url,
+          statusCode: res.statusCode,
+          responseTime: `${responseTime}ms`,
+        })
+
         // Set flag to prevent duplicate logging
         responseWithFlag._loggedResponse = true
       }
