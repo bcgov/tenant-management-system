@@ -1,4 +1,11 @@
 <script setup lang="ts">
+import {
+  mdiClose,
+  mdiDeleteOutline,
+  mdiDotsVertical,
+  mdiPlus,
+  mdiPlusBox,
+} from '@mdi/js'
 import { computed, ref } from 'vue'
 import type { ComputedRef } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -167,7 +174,7 @@ const actionItems = computed(() => {
   if (props.showAddRoles && props.addUserRole) {
     rv.push({
       title: t('users.addRoleAction'),
-      icon: 'mdi-plus',
+      icon: mdiPlus,
       action: props.addUserRole,
       disabledCondition: () => {
         return false
@@ -178,7 +185,7 @@ const actionItems = computed(() => {
     rv.push({
       title: t('users.offboardUserAction'),
       action: props.showOffboardDialog,
-      icon: 'mdi-delete-outline',
+      icon: mdiDeleteOutline,
       disabledCondition: (item: User) => {
         return !(
           moreThanOneTenantOwner.value ||
@@ -246,8 +253,8 @@ const selectRowItem = (e: Event, r: RowPropsType) => {
           @click="emit('add-first-clicked')"
         >
           <v-icon
+            :icon="mdiPlusBox"
             class="mr-2"
-            icon="mdi-plus-box"
             size="x-large"
             style="transform: scale(1.5)"
             left
@@ -267,8 +274,8 @@ const selectRowItem = (e: Event, r: RowPropsType) => {
           {{ role.description }}
           <v-icon
             v-if="canRemoveRole(item, role) && handleRemoveRole"
+            :icon="mdiClose"
             class="ml-1 cursor-pointer"
-            icon="mdi-close"
             size="small"
             @click.stop="handleRemoveRole(item, role)"
           />
@@ -282,10 +289,10 @@ const selectRowItem = (e: Event, r: RowPropsType) => {
 
     <template #[`item.add`]="{ item }">
       <v-btn
+        :icon="mdiPlusBox"
         class="pa-0 ma-0"
         color="primary"
         density="compact"
-        icon="mdi-plus-box"
         size="x-large"
         variant="text"
         @click="emit('add-clicked', item)"
@@ -296,7 +303,7 @@ const selectRowItem = (e: Event, r: RowPropsType) => {
       <v-menu>
         <template #activator="{ props: activatorProps }">
           <v-btn
-            icon="mdi-dots-vertical"
+            :icon="mdiDotsVertical"
             variant="text"
             v-bind="activatorProps"
           ></v-btn>
@@ -319,9 +326,7 @@ const selectRowItem = (e: Event, r: RowPropsType) => {
                     v-bind="tooltipProps"
                     class="text-body-2 text-disabled cursor-default"
                   >
-                    <v-icon v-if="actionItem.icon !== ''">{{
-                      actionItem.icon
-                    }}</v-icon>
+                    <v-icon v-if="actionItem.icon" :icon="actionItem.icon" />
                     {{ actionItem.title }}
                   </v-list-item-title>
                 </template>
@@ -332,9 +337,7 @@ const selectRowItem = (e: Event, r: RowPropsType) => {
               <v-list-item-title
                 @click="actionItem.action && actionItem.action(item)"
               >
-                <v-icon v-if="actionItem.icon !== ''">{{
-                  actionItem.icon
-                }}</v-icon>
+                <v-icon v-if="actionItem.icon" :icon="actionItem.icon" />
                 {{ actionItem.title }}
               </v-list-item-title>
             </template>

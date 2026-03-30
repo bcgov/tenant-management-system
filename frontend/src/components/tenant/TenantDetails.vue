@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { mdiClose, mdiDotsVertical } from '@mdi/js'
 import { computed, nextTick, ref, watch } from 'vue'
 import { VForm } from 'vuetify/components'
 
@@ -218,7 +219,7 @@ function toggleEdit() {
         icon
         @click="handleCancel"
       >
-        <v-icon>mdi-close</v-icon>
+        <v-icon :icon="mdiClose" />
       </v-btn>
 
       <v-menu v-else>
@@ -230,7 +231,7 @@ function toggleEdit() {
             icon
             v-bind="slotProps"
           >
-            <v-icon>mdi-dots-vertical</v-icon>
+            <v-icon :icon="mdiDotsVertical" />
           </v-btn>
         </template>
         <v-list>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { mdiAlert, mdiClose } from '@mdi/js'
 import { computed, ref, watch } from 'vue'
 
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
@@ -98,9 +99,9 @@ function handleSearch() {
     <v-dialog v-model="conflict" width="auto">
       <v-card>
         <v-card-title class="text-h6 border-b-sm">
-          <v-icon color="warning" size="xsmall">mdi-alert</v-icon>
+          <v-icon :icon="mdiAlert" color="warning" size="xsmall" />
           {{ $t('general.duplicate') }}
-          <v-icon class="float-right" size="xsmall">mdi-close</v-icon>
+          <v-icon :icon="mdiClose" class="float-right" size="xsmall" />
         </v-card-title>
         <v-card-text>
           The selected user is already added to this tenant.

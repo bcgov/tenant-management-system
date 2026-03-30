@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 import { ref } from 'vue'
 
 import type { Tenant } from '@/models'
@@ -61,9 +62,7 @@ function toggleDetail() {
           icon
           @click="toggleDetail"
         >
-          <v-icon>
-            {{ showDetail ? 'mdi-chevron-up' : 'mdi-chevron-down' }}
-          </v-icon>
+          <v-icon :icon="showDetail ? mdiChevronUp : mdiChevronDown" />
         </v-btn>
       </v-col>
     </v-row>

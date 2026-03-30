@@ -1,6 +1,6 @@
 import * as tokens from '@bcgov/design-tokens/js-prefixed'
 import { createVuetify, type ThemeDefinition } from 'vuetify'
-import { aliases, mdi } from 'vuetify/iconsets/mdi'
+import { aliases, mdi } from 'vuetify/iconsets/mdi-svg'
 import 'vuetify/styles'
 
 // Define a custom Vuetify theme that uses the BC Government design tokens.
