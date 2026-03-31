@@ -44,7 +44,7 @@ jobs:
   
   tests:
     name: Tests
-    if: needs.deploys.outputs.triggered == 'true'
+    if: needs.deploys-silver-dev.outputs.triggered == 'true'
     needs: [deploys-silver-dev]
     permissions:
       checks: write
@@ -57,7 +57,7 @@ jobs:
     needs: [deploys-silver-dev]
     if: |
       contains(github.event.pull_request.labels.*.name, 'zap') &&
-      needs.deploys.outputs.triggered == 'true'
+      needs.deploys-silver-dev.outputs.triggered == 'true'
     runs-on: ubuntu-24.04
     strategy:
       matrix:
