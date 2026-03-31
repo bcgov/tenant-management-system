@@ -1,0 +1,43 @@
+---
+name: Deploy Dev (Silver)
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Image tag set to deploy; e.g. PR number or prod'
+        type: string
+        default: 'latest'
+      db_user:
+        description: "database user; e.g. PR number or approxy"
+        required: false
+        type: string
+        default: "appproxy"
+  workflow_call:
+    inputs:
+      tag:
+        description: 'Image tag set to deploy; e.g. PR number or prod'
+        type: string
+        default: 'latest'
+      db_user:
+        description: "database user; e.g. PR number or appproxy"
+        required: false
+        type: string
+        default: "appproxy"
+jobs:
+  deploy-silver-dev:
+    name: Deploys Dev (Silver)
+    environment: silver-dev
+    uses: ./.github/workflows/.deployer.yml
+    secrets:
+      bcgov_sso_api_client_id: ${{ secrets.BCGOV_SSO_API_CLIENT_ID }}
+      bcgov_sso_api_client_secret: ${{ secrets.BCGOV_SSO_API_CLIENT_SECRET }}
+      oc_namespace: ${{ secrets.OC_NAMESPACE }}
+      oc_token: ${{ secrets.OC_TOKEN }}
+    with:
+      autoscaling: false
+      tag: ${{ inputs.tag }}
+      db_user: {{ inputs.db_user  }}
+      params: --set backend.service.targetPort=4144 --set global.secrets.persist=false
+      triggers: ('backend/' 'frontend/' 'migrations/' 'charts/' '.github/workflows/.deployer.yml')
+      db_triggers: ('charts/crunchy/')
