@@ -49,7 +49,7 @@ jobs:
     uses: ./.github/workflows/.deployer.yml
     secrets: inherit
     with:
-      environment: dev
+      environment: silver-dev
       db_user: appproxy # appproxy is the user which works with pgbouncer.
       params: --set backend.deploymentStrategy=RollingUpdate
         --set frontend.deploymentStrategy=RollingUpdate
