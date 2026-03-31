@@ -5,9 +5,9 @@ import { ForbiddenError } from '../errors/ForbiddenError'
 import logger from './logger'
 import { getErrorMessage } from './error.handler'
 import { ErrorHandler } from './error.handler'
+import { config } from '../services/config.service'
 
 const errorHandler: ErrorHandler = new ErrorHandler()
-const TMS_AUDIENCE = process.env.TMS_AUDIENCE || 'tenant-management-system-6014'
 
 export const checkTenantAccess = (requiredRoles?: string[]) => {
   return async (req: Request, res: Response, next: NextFunction) => {
@@ -21,7 +21,7 @@ export const checkTenantAccess = (requiredRoles?: string[]) => {
           throw new ForbiddenError('Missing tenant ID or client identifier')
         }
 
-        if (clientIdentifier !== TMS_AUDIENCE) {
+        if (clientIdentifier !== config.oidc.tmsAudience) {
           const hasServiceAccess: boolean =
             await tmsRepository.checkIfTenantHasSharedServiceAccess(
               tenantId,

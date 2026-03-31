@@ -38,14 +38,7 @@ import {
   UpdateTenantInputDto,
   UnassignUserRolesInputDto,
 } from '../dtos/tms.dto'
-
-const getRequiredEnv = (key: string): string => {
-  const value = process.env[key]
-  if (!value) {
-    throw new Error(`Missing required environment variable: ${key}`)
-  }
-  return value
-}
+import { config } from '../services/config.service'
 
 export class TMSService {
   tmsRepository: TMSRepository
@@ -127,13 +120,13 @@ export class TMSService {
   public async getTenantsForUser(req: Request) {
     const expand =
       typeof req.query.expand === 'string' ? req.query.expand.split(',') : []
-    const tmsAudience: string =
-      process.env.TMS_AUDIENCE || 'tenant-management-system-6014'
     const input: GetUserTenantsInputDto = {
       ssoUserId: req.params.ssoUserId,
       expand,
       jwtAudience:
-        req.decodedJwt?.aud || req.decodedJwt?.audience || tmsAudience,
+        req.decodedJwt?.aud ||
+        req.decodedJwt?.audience ||
+        config.oidc.tmsAudience,
     }
     const tenants = await this.tmsRepository.getTenantsForUser(input)
 
@@ -250,7 +243,7 @@ export class TMSService {
     try {
       const token: string = await this.getToken()
       const queryParams = req.query
-      const response = await axios.get(getRequiredEnv('BCGOV_SSO_API_URL'), {
+      const response = await axios.get(config.bcgovSsoApi.url, {
         headers: { Authorization: `Bearer ${token}` },
         params: queryParams,
       })
@@ -286,13 +279,10 @@ export class TMSService {
     try {
       const token: string = await this.getToken()
       const queryParams = req.query
-      const response = await axios.get(
-        getRequiredEnv('BCGOV_SSO_API_URL_BCEID'),
-        {
-          headers: { Authorization: `Bearer ${token}` },
-          params: queryParams,
-        },
-      )
+      const response = await axios.get(config.bcgovSsoApi.urlBceid, {
+        headers: { Authorization: `Bearer ${token}` },
+        params: queryParams,
+      })
       return await response.data
     } catch (error: unknown) {
       logger.error(getErrorMessage(error))
@@ -490,10 +480,10 @@ export class TMSService {
   private async getToken() {
     try {
       const response = await axios.post(
-        getRequiredEnv('BCGOV_TOKEN_URL'),
+        config.bcgovSsoApi.tokenUrl,
         new URLSearchParams({
-          client_id: getRequiredEnv('BCGOV_SSO_API_CLIENT_ID'),
-          client_secret: getRequiredEnv('BCGOV_SSO_API_CLIENT_SECRET'),
+          client_id: config.bcgovSsoApi.clientId,
+          client_secret: config.bcgovSsoApi.clientSecret,
           grant_type: 'client_credentials',
         }),
         { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } },

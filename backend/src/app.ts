@@ -1,6 +1,7 @@
 import cors from 'cors'
 import express from 'express'
 import { Routes } from './routes/routes'
+import { config, loadConfig } from './services/config.service'
 import rTracer from 'cls-rtracer'
 import { requestLoggingMiddleware } from './common/logger.mw'
 import { addRequestIdHeader } from './common/request-id-header.mw'
@@ -9,17 +10,17 @@ import logger from './common/logger'
 import swaggerUi from 'swagger-ui-express'
 import YAML from 'yamljs'
 import path from 'path'
-require('dotenv').config()
 
 export default class App {
   public app: express.Application
   public routes: Routes = new Routes()
 
   constructor() {
+    loadConfig()
+    logger.info(`Logger initialized with level: ${config.logLevel}`)
+
     this.app = express()
-    const allowedOrigins = process.env.ALLOWED_ORIGINS
-      ? process.env.ALLOWED_ORIGINS.split(',')
-      : ['*']
+    const allowedOrigins = config.allowedOrigins
 
     this.app.use(rTracer.expressMiddleware())
     this.app.use(addRequestIdHeader)

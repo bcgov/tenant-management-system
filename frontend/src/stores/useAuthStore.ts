@@ -2,11 +2,11 @@ import Keycloak from 'keycloak-js'
 import { defineStore } from 'pinia'
 
 import { SsoUser, User } from '@/models'
-import { config, configLoaded } from '@/services/config.service'
+import { config } from '@/services/config.service'
 import { logger } from '@/utils/logger'
 import { ROLES } from '@/utils/constants'
 
-let refreshTimer: number | undefined
+let refreshTimer: ReturnType<typeof setTimeout> | undefined
 
 enum UserSource {
   IDIR = 'IDIR',
@@ -138,19 +138,12 @@ export const useAuthStore = defineStore('auth', {
      */
     async initKeycloak(): Promise<void> {
       try {
-        if (!configLoaded.value) {
-          logger.error('Configuration not loaded yet')
-          throw new Error('Configuration not loaded')
-        }
-
-        // TODO - not sure why this was committed, but it needs to be fixed.
-        if (!this.keycloak) {
-          this.keycloak = new Keycloak({
-            clientId: config.oidc.clientId,
-            realm: config.oidc.realm,
-            url: config.oidc.serverUrl,
-          })
-        }
+        // TODO - when the TODO above is fixed, keycloak will never be null.
+        this.keycloak ??= new Keycloak({
+          clientId: config.oidc.clientId,
+          realm: config.oidc.realm,
+          url: config.oidc.serverUrl,
+        })
 
         const authenticated = await this.keycloak.init({
           // onLoad: 'login-required',
@@ -160,17 +153,14 @@ export const useAuthStore = defineStore('auth', {
           checkLoginIframe: false,
         })
 
-        // if (!authenticated) {
-        //   logger.warning('User not authenticated')
-        //   throw new Error('User not authenticated')
-        // }
-
         this.authenticated = authenticated
         if (authenticated) {
           this.token = this.keycloak.token ?? ''
           this.loggedOut = false
           this.user = this.parseUserFromToken()
-          this.userSource = this.keycloak.tokenParsed?.identity_provider?.toLowerCase().includes('idir')
+          this.userSource = this.keycloak.tokenParsed?.identity_provider
+            ?.toLowerCase()
+            .includes('idir')
             ? UserSource.IDIR
             : UserSource.BCeID
           this.scheduleTokenRefresh()
@@ -234,9 +224,9 @@ export const useAuthStore = defineStore('auth', {
       )
 
       const source = parsed.identity_provider?.toLowerCase().includes('idir')
-            ? UserSource.IDIR
-            : UserSource.BCeID
-      
+        ? UserSource.IDIR
+        : UserSource.BCeID
+
       if (source === UserSource.BCeID) {
         ssoUser = new SsoUser(
           parsed.bceid_user_guid,
@@ -248,7 +238,13 @@ export const useAuthStore = defineStore('auth', {
         )
       }
 
-      return new User(source === UserSource.IDIR ? parsed.idir_user_guid : parsed.bceid_user_guid, ssoUser, [])
+      return new User(
+        source === UserSource.IDIR
+          ? parsed.idir_user_guid
+          : parsed.bceid_user_guid,
+        ssoUser,
+        [],
+      )
     },
 
     /**
@@ -263,7 +259,7 @@ export const useAuthStore = defineStore('auth', {
         clearTimeout(refreshTimer)
       }
 
-      refreshTimer = window.setTimeout(() => {
+      refreshTimer = globalThis.setTimeout(() => {
         this.keycloak
           ?.updateToken(30)
           .then((refreshed) => {
@@ -280,7 +276,7 @@ export const useAuthStore = defineStore('auth', {
             this.user = null
             this.authenticated = false
             logger.error('Failed to refresh token', error)
-            window.location.href='/'
+            globalThis.location.href = '/'
           })
           .finally(() => {
             this.scheduleTokenRefresh()

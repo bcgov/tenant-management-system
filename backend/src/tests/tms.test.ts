@@ -921,7 +921,7 @@ describe('Tenant API', () => {
         expect.objectContaining({
           ssoUserId,
           expand: ['tenantUserRoles'],
-          jwtAudience: 'tenant-management-system-6014',
+          jwtAudience: 'test-audience',
         }),
       )
     })
@@ -945,7 +945,7 @@ describe('Tenant API', () => {
         expect.objectContaining({
           ssoUserId: invalidSsoUserId,
           expand: ['tenantUserRoles'],
-          jwtAudience: 'tenant-management-system-6014',
+          jwtAudience: 'test-audience',
         }),
       )
     })

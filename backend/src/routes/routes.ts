@@ -11,8 +11,6 @@ import { TMSConstants } from '../common/tms.constants'
 import { checkOperationsAdmin } from '../common/operations-admin.mw'
 import logger from '../common/logger'
 
-require('dotenv').config()
-
 export class Routes {
   public tmsController: TMSController = new TMSController()
   public tmController: TMController = new TMController()
