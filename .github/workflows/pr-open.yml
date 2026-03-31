@@ -35,9 +35,11 @@ jobs:
 
   deploys-silver-dev:
     name: Deploys (${{ github.event.number }})
-    environment: DEV
     needs: [builds]
     uses: ./.github/workflows/silver-dev.yml
+    with:
+      tag: ${{ github.event.number }}
+      db_user: app-${{ github.event.number }}
   
   tests:
     name: Tests
