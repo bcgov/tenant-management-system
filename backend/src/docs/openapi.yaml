@@ -421,6 +421,9 @@ paths:
                                     name:
                                       type: string
                                       example: 'Connected Service 3'
+                                    displayName:
+                                      type: string
+                                      example: 'Connected Service 3'
                                     description:
                                       type: string
                                       nullable: true
@@ -428,6 +431,10 @@ paths:
                                     clientIdentifier:
                                       type: string
                                       example: 'chefs-frontend-5299'
+                                    landingPageUrl:
+                                      type: string
+                                      format: uri
+                                      example: 'https://chefs.gov.bc.ca'
                                     isActive:
                                       type: boolean
                                       example: true
@@ -1320,7 +1327,9 @@ paths:
               type: object
               required:
                 - name
+                - displayName
                 - clientIdentifier
+                - landingPageUrl
                 - roles
               properties:
                 name:
@@ -1332,12 +1341,23 @@ paths:
                     Name must be 1-30 characters, cannot start or end with whitespace.
                     Pattern ensures no leading/trailing whitespace.
                   example: 'Email Service'
+                displayName:
+                  type: string
+                  minLength: 1
+                  maxLength: 100
+                  pattern: '^\S.*\S$'
+                  example: 'Common Document Generation Service (CDOGS)'
                 clientIdentifier:
                   type: string
                   minLength: 1
                   maxLength: 55
                   pattern: '^\S.*\S$'
                   example: 'email-service-client'
+                landingPageUrl:
+                  type: string
+                  maxLength: 500
+                  format: uri
+                  example: 'https://cdogs.gov.bc.ca'
                 description:
                   type: string
                   maxLength: 500
@@ -2085,9 +2105,16 @@ paths:
                             name:
                               type: string
                               example: 'Email Service'
+                            displayName:
+                              type: string
+                              example: 'Common Document Generation Service (CDOGS)'
                             clientIdentifier:
                               type: string
                               example: 'email-service-client'
+                            landingPageUrl:
+                              type: string
+                              format: uri
+                              example: 'https://cdogs.gov.bc.ca'
                             description:
                               type: string
                               example: 'Email service for tenant communications'
@@ -2249,9 +2276,16 @@ paths:
                             name:
                               type: string
                               example: 'Email Service'
+                            displayName:
+                              type: string
+                              example: 'Common Document Generation Service (CDOGS)'
                             clientIdentifier:
                               type: string
                               example: 'email-service-client'
+                            landingPageUrl:
+                              type: string
+                              format: uri
+                              example: 'https://cdogs.gov.bc.ca'
                             description:
                               type: string
                               example: 'Email service for tenant communications'
@@ -3171,11 +3205,21 @@ components:
           minLength: 1
           maxLength: 30
           example: 'Email Service'
+        displayName:
+          type: string
+          minLength: 1
+          maxLength: 100
+          example: 'Common Document Generation Service (CDOGS)'
         clientIdentifier:
           type: string
           minLength: 1
           maxLength: 55
           example: 'email-service-client'
+        landingPageUrl:
+          type: string
+          maxLength: 500
+          format: uri
+          example: 'https://cdogs.gov.bc.ca'
         description:
           type: string
           maxLength: 500
@@ -3217,11 +3261,21 @@ components:
           minLength: 1
           maxLength: 30
           example: 'Email Service'
+        displayName:
+          type: string
+          minLength: 1
+          maxLength: 100
+          example: 'Common Document Generation Service (CDOGS)'
         clientIdentifier:
           type: string
           minLength: 1
           maxLength: 55
           example: 'email-service-client'
+        landingPageUrl:
+          type: string
+          maxLength: 500
+          format: uri
+          example: 'https://cdogs.gov.bc.ca'
         description:
           type: string
           maxLength: 500
