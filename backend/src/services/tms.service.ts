@@ -389,7 +389,9 @@ export class TMSService {
   public async createSharedService(req: Request) {
     const input: CreateSharedServiceInputDto = {
       name: req.body.name,
+      displayName: req.body.displayName,
       clientIdentifier: req.body.clientIdentifier,
+      landingPageUrl: req.body.landingPageUrl,
       description: req.body.description,
       isActive: req.body.isActive,
       roles: req.body.roles,
