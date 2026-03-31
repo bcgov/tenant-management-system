@@ -29,15 +29,17 @@ jobs:
     name: Deploys Dev (Silver)
     environment: silver-dev
     uses: ./.github/workflows/.deployer.yml
-    secrets:
-      bcgov_sso_api_client_id: ${{ secrets.BCGOV_SSO_API_CLIENT_ID }}
-      bcgov_sso_api_client_secret: ${{ secrets.BCGOV_SSO_API_CLIENT_SECRET }}
-      oc_namespace: ${{ secrets.OC_NAMESPACE }}
-      oc_token: ${{ secrets.OC_TOKEN }}
+    secrets: inherit
     with:
-      autoscaling: false
+      environment: dev
+      db_user: appproxy # appproxy is the user which works with pgbouncer.
+      params: --set backend.deploymentStrategy=RollingUpdate
+        --set frontend.deploymentStrategy=RollingUpdate
+        --set global.autoscaling=true
+        --set frontend.pdb.enabled=true
+        --set frontend.pdb.minAvailable=2
+        --set frontend.replicaCount=3
+        --set backend.pdb.enabled=true
+        --set backend.pdb.minAvailable=2
+        --set backend.replicaCount=3
       tag: ${{ inputs.tag }}
-      db_user: {{ inputs.db_user  }}
-      params: --set backend.service.targetPort=4144 --set global.secrets.persist=false
-      triggers: ('backend/' 'frontend/' 'migrations/' 'charts/' '.github/workflows/.deployer.yml')
-      db_triggers: ('charts/crunchy/')
