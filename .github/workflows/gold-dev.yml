@@ -1,5 +1,5 @@
 ---
-name: Deploy Dev (Silver)
+name: Deploy Dev (Gold)
 
 on:
   workflow_dispatch:
@@ -44,12 +44,31 @@ on:
         required: false
         type: string
 jobs:
-  deploy-silver-dev:
-    name: Deploys Dev (Silver)
+  deploy-gold-dev:
+    name: Deploys Dev (Gold)
     uses: ./.github/workflows/.deployer.yml
     secrets: inherit
     with:
-      environment: silver-dev
+      environment: gold-dev
+      db_user: appproxy # appproxy is the user which works with pgbouncer.
+      params: --set backend.deploymentStrategy=RollingUpdate
+        --set frontend.deploymentStrategy=RollingUpdate
+        --set global.autoscaling=${{ inputs.autoscaling }}
+        --set frontend.pdb.enabled=true
+        --set frontend.pdb.minAvailable=2
+        --set frontend.replicaCount=3
+        --set backend.pdb.enabled=true
+        --set backend.pdb.minAvailable=2
+        --set backend.replicaCount=3
+        ${{ inputs.params }}
+      tag: ${{ inputs.tag }}
+
+  deploy-golddr-dev:
+    name: Deploys Dev (Golddr)
+    uses: ./.github/workflows/.deployer.yml
+    secrets: inherit
+    with:
+      environment: golddr-dev
       db_user: appproxy # appproxy is the user which works with pgbouncer.
       params: --set backend.deploymentStrategy=RollingUpdate
         --set frontend.deploymentStrategy=RollingUpdate
