@@ -10,25 +10,14 @@ import vuetify from '@/plugins/vuetify'
 import router from '@/router'
 import { i18n } from '@/i18n'
 import { useAuthStore } from '@/stores/useAuthStore'
-import { loadConfig, configLoaded } from './services/config.service'
+import { ConfigError, loadConfig } from './services/config.service'
 import { logger } from '@/utils/logger'
 
-// Helper function to wait until a condition is met
-function waitUntil(condition: () => boolean, interval = 100): Promise<void> {
-  return new Promise<void>((resolve) => {
-    const check = () => {
-      if (condition()) {
-        resolve()
-      } else {
-        setTimeout(check, interval)
-      }
-    }
-    check()
-  })
-}
-
-async function initializeApp() {
+export async function initializeApp() {
   logger.info('Starting application initialization...')
+
+  await loadConfig()
+  logger.info('Configuration loaded successfully')
 
   // Create app and pinia first so we can use the store
   const app = createApp(App)
@@ -41,64 +30,46 @@ async function initializeApp() {
 
   const authStore = useAuthStore()
 
-  try {
-    // Step 1: Load configuration
-    logger.info('Starting configuration loading...')
-    loadConfig().catch((error) => {
-      logger.error('Initial config loading attempt failed:', error)
-    })
+  await authStore.initKeycloak()
+  logger.info('Keycloak initialized successfully')
 
-    // Wait for config to load with a timeout
-    const configTimeoutPromise = new Promise<void>((_, reject) => {
-      setTimeout(() => {
-        reject(new Error('Configuration loading timed out after 15 seconds'))
-      }, 15000)
-    })
+  app.mount('#app')
+}
 
-    await Promise.race([
-      waitUntil(() => configLoaded.value),
-      configTimeoutPromise,
-    ])
+export function handleInitError(error: unknown) {
+  logger.error('Application initialization failed', error)
 
-    logger.info('Configuration loaded successfully')
+  // Show appropriate error message based on where it failed
+  let errorMessage = 'An unexpected error occurred'
+  let errorTitle = 'Application Error'
 
-    // Step 2: Initialize Keycloak
-    logger.info('Initializing Keycloak...')
-    await authStore.initKeycloak()
-    logger.info('Keycloak initialized successfully')
+  if (error instanceof ConfigError) {
+    errorTitle = 'Configuration Error'
+    errorMessage = 'The application configuration could not be loaded'
+  } else if (error instanceof Error && error.message.includes('Keycloak')) {
+    errorTitle = 'Authentication Error'
+    errorMessage =
+      'There was a problem connecting to the authentication service.'
+  }
 
-    // Step 3: Mount the app
-    logger.info('Mounting the application')
-    app.mount('#app')
-  } catch (error) {
-    logger.error('Application initialization failed:', error)
-
-    // Show appropriate error message based on where it failed
-    let errorMessage = 'An unexpected error occurred'
-    let errorTitle = 'Application Error'
-
-    if (error instanceof Error) {
-      if (error.message.includes('Configuration loading timed out')) {
-        errorTitle = 'Configuration Error'
-        errorMessage =
-          'The application configuration is taking too long to load.'
-      } else if (error.message.includes('Keycloak')) {
-        errorTitle = 'Authentication Error'
-        errorMessage =
-          'There was a problem connecting to the authentication service.'
-      }
-    }
-
-    document.body.innerHTML = `
+  document.body.innerHTML = `
       <div style="padding: 20px; text-align: center;">
         <h2>${errorTitle}</h2>
         <p>${errorMessage}</p>
-        <p>Please try refreshing the page or contact support if the problem persists.</p>
+        <p>
+          Please try refreshing the page or contact support if the problem
+          persists.
+        </p>
         <button onclick="window.location.reload()">Refresh</button>
       </div>
     `
-  }
 }
 
-// Start the app initialization
-initializeApp()
+// Start the app initialization unless running the unit tests.
+if (import.meta.env.MODE !== 'test') {
+  try {
+    await initializeApp()
+  } catch (error) {
+    handleInitError(error)
+  }
+}

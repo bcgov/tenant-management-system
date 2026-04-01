@@ -1,19 +1,15 @@
 <script setup lang="ts">
 import { computed, watchEffect } from 'vue'
 import { useRouter } from 'vue-router'
-import { config, configLoaded } from '@/services/config.service'
+import { config } from '@/services/config.service'
 import { useAuthStore } from '@/stores'
 
 const authStore = useAuthStore()
 const router = useRouter()
 
-const idirHint = computed(() => (configLoaded.value ? config.idirBroker : ''))
-const basicBceidHint = computed(() =>
-  configLoaded.value ? config.basicBceidBroker : '',
-)
-const businessBceidHint = computed(() =>
-  configLoaded.value ? config.businessBceidBroker : '',
-)
+const idirHint = computed(() => config.idirBroker)
+const basicBceidHint = computed(() => config.basicBceidBroker)
+const businessBceidHint = computed(() => config.businessBceidBroker)
 
 watchEffect(() => {
   if (authStore.isAuthenticated) {

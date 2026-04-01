@@ -1504,8 +1504,8 @@ describe('Tenant Management API', () => {
         expect.objectContaining({
           tenantId,
           ssoUserId: undefined,
-          jwtAudience: 'tenant-management-system-6014',
-          tmsAudience: 'tenant-management-system-6014',
+          jwtAudience: 'test-audience',
+          tmsAudience: 'test-audience',
         }),
       )
     })

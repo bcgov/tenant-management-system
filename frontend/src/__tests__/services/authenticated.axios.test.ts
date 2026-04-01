@@ -56,10 +56,7 @@ describe('authenticatedAxios', () => {
 
     authenticatedAxios()
 
-    expect(spy).toHaveBeenCalledWith({
-      baseURL: 'https://api.example.com',
-      timeout: 60000,
-    })
+    expect(spy).toHaveBeenCalledWith({ timeout: 60000 })
   })
 
   it('creates an instance with a custom timeout', () => {
@@ -67,22 +64,15 @@ describe('authenticatedAxios', () => {
 
     authenticatedAxios(5000)
 
-    expect(spy).toHaveBeenCalledWith({
-      baseURL: 'https://api.example.com',
-      timeout: 5000,
-    })
+    expect(spy).toHaveBeenCalledWith({ timeout: 5000 })
   })
 })
 
 describe('request interceptor (success)', () => {
   it('sets baseURL from config', async () => {
-    const spy = vi.spyOn(axios, 'create')
+    const cfg = await getSuccessInterceptor()({ headers: new AxiosHeaders() })
 
-    authenticatedAxios()
-
-    expect(spy).toHaveBeenCalledWith(
-      expect.objectContaining({ baseURL: 'https://api.example.com' }),
-    )
+    expect(cfg.baseURL).toBe('https://api.example.com')
   })
 
   it('does not set Authorization when not authenticated', async () => {

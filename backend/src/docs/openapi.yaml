@@ -1,14 +1,14 @@
 openapi: 3.0.3
 info:
-  title: Tenant Management System API
-  description: API for managing tenants in the Tenant Management System
+  title: Connected Services Team Access and Roles API
+  description: API for managing tenants in Connected Services Team Access and Roles
   version: 1.0.0
 servers:
   - url: http://localhost:4144
     description: Local dev server
-  - url: https://tenant-management-system-dev-backend.apps.silver.devops.gov.bc.ca
-    description: CSTAR Dev API
-  - url: https://tenant-management-system-test-frontend.apps.silver.devops.gov.bc.ca/api/
+  - url: https://cstar-dev.apps.silver.devops.gov.bc.ca/api
+    description: DEV env api
+  - url: https://cstar-test.apps.silver.devops.gov.bc.ca/api
     description: TEST env api
 
 paths:
@@ -995,8 +995,6 @@ paths:
                     - lastName
                     - displayName
                     - ssoUserId
-                    - userName
-                    - email
                   properties:
                     firstName:
                       type: string
@@ -1669,7 +1667,7 @@ paths:
       description: |
         Retrieves groups for a tenant with different behavior based on access type:
 
-        **TMS Users**: Returns ALL groups in the tenant where the user is a member.
+        **TMS Users**: Returns ALL groups in the tenant.
 
         **External Services**: Returns ONLY groups that have at least one enabled 
         shared service role belonging to the requesting service.
@@ -2729,7 +2727,6 @@ components:
           example: 'fd33f1cef7ca4b19a71104d4ecf7066b'
         ssoUserId:
           type: string
-          format: uuid
           example: 'fd33f1cef7ca4b19a71104d4ecf7066b'
         firstName:
           type: string
@@ -3029,8 +3026,6 @@ components:
             - lastName
             - displayName
             - ssoUserId
-            - userName
-            - email
           properties:
             firstName:
               type: string
@@ -3119,6 +3114,10 @@ components:
               type: string
               format: date-time
               example: '2024-03-21T10:00:00Z'
+            roles:
+              type: array
+              items:
+                $ref: '#/components/schemas/Role'
             createdBy:
               type: string
               example: 'system'
@@ -3190,20 +3189,7 @@ components:
           minItems: 1
           maxItems: 50
           items:
-            type: object
-            required:
-              - name
-            properties:
-              name:
-                type: string
-                minLength: 1
-                maxLength: 30
-                pattern: '^\S.*\S$'
-                example: 'Email User'
-              description:
-                type: string
-                maxLength: 255
-                example: 'Can send emails through the service'
+            $ref: '#/components/schemas/SharedServiceRole'
         createdDateTime:
           type: string
           format: date-time
