@@ -1,28 +1,32 @@
 <script setup lang="ts">
 import { mdiMagnify } from '@mdi/js'
 import { computed, onMounted, ref, type Ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 import TenantRequestDisplay from '@/components/tenantrequest/TenantRequestDisplay.vue'
-import { useNotification } from '@/composables'
-import { DomainError, DuplicateEntityError } from '@/errors'
-import type { TenantRequest } from '@/models'
-import { useTenantRequestStore, useAuthStore, useTenantStore } from '@/stores'
+import { useNotification } from '@/composables/useNotification'
+import { DomainError } from '@/errors/domain/DomainError'
+import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
+import type { TenantRequest } from '@/models/tenantrequest.model'
+import { useAuthStore } from '@/stores/useAuthStore'
+import { useTenantRequestStore } from '@/stores/useTenantRequestStore'
+import { useTenantStore } from '@/stores/useTenantStore'
 import { TENANT_REQUEST_STATUS } from '@/utils/constants'
-import { useI18n } from 'vue-i18n'
+
 const { t } = useI18n()
 
 // --- Store and Composable Setup ----------------------------------------------
 
+const authStore = useAuthStore()
 const notification = useNotification()
 const tenantRequestStore = useTenantRequestStore()
-const authStore = useAuthStore()
 const tenantStore = useTenantStore()
 
 // --- Component State ---------------------------------------------------------
 
+const erroredApproving = ref(false)
 const search = ref('')
 const selectedTenantRequest: Ref<TenantRequest | null> = ref(null)
-const erroredApproving = ref(false)
 
 // --- Computed Values ---------------------------------------------------------
 

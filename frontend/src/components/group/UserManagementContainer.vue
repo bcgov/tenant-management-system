@@ -2,10 +2,13 @@
 import { ref } from 'vue'
 
 import GroupUserManagement from '@/components/group/GroupUserManagement.vue'
-import { useNotification } from '@/composables'
-import { DuplicateEntityError } from '@/errors'
-import { Group, Tenant, User } from '@/models'
-import { useGroupStore, useUserStore } from '@/stores'
+import { useNotification } from '@/composables/useNotification'
+import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
+import { Group } from '@/models/group.model'
+import { Tenant } from '@/models/tenant.model'
+import { User } from '@/models/user.model'
+import { useGroupStore } from '@/stores/useGroupStore'
+import { useUserStore } from '@/stores/useUserStore'
 import { type IdirSearchType, IDIR_SEARCH_TYPE } from '@/utils/constants'
 
 // --- Component Interface -----------------------------------------------------

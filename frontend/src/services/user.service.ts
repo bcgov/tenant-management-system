@@ -1,5 +1,5 @@
-import { authenticatedAxios } from './authenticated.axios'
-import { logApiError } from './utils'
+import { authenticatedAxios } from '@/services/authenticated.axios'
+import { logApiError } from '@/services/utils'
 import {
   type IdirSearchType,
   IDIR_SEARCH_TYPE,

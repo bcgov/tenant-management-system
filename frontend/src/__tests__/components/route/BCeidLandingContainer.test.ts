@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import BceidLandingContainer from '@/components/route/BCeidLandingContainer.vue'
 
@@ -12,7 +12,7 @@ vi.mock('vue-i18n', () => ({
 const MOCK_LOGOUT_URL = 'https://example.com/logout'
 const mockLogout = vi.fn().mockReturnValue(MOCK_LOGOUT_URL)
 
-vi.mock('@/stores', () => ({
+vi.mock('@/stores/useAuthStore', () => ({
   useAuthStore: () => ({
     logout: mockLogout,
   }),

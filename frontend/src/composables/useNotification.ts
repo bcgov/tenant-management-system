@@ -1,7 +1,8 @@
 import { v4 as uuidv4 } from 'uuid'
 import { reactive } from 'vue'
 
-import { type Notification, NotificationType } from '@/types'
+import { type Notification } from '@/types/Notification'
+import { NotificationType } from '@/types/NotificationType'
 
 /**
  * Reactive state container for managing notification items

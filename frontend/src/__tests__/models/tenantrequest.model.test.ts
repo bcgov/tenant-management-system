@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { TenantRequest } from '@/models'
+import { TenantRequest } from '@/models/tenantrequest.model'
 
 describe('TenantRequest model', () => {
   it('constructor assigns properties correctly and sets rejectionReason to empty string', () => {

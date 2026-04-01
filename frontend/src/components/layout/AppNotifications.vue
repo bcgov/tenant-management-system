@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useNotification } from '@/composables'
+import { useNotification } from '@/composables/useNotification'
 
 // --- Store and Composable Setup ----------------------------------------------
 

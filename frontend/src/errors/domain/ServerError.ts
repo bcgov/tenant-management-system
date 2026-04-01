@@ -1,4 +1,4 @@
-import { DomainError } from './DomainError'
+import { DomainError } from '@/errors/domain/DomainError'
 
 /**
  * Error indicating that the operation failed due to a server error.

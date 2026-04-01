@@ -2,7 +2,7 @@
 import { mdiHumanGreeting } from '@mdi/js'
 import { computed } from 'vue'
 
-import { useAuthStore } from '@/stores'
+import { useAuthStore } from '@/stores/useAuthStore'
 
 const authStore = useAuthStore()
 const logoutURL = computed(() => authStore.logout())

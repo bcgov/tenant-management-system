@@ -2,8 +2,8 @@
 import { mdiAccountOutline, mdiLogout } from '@mdi/js'
 import { computed } from 'vue'
 
-import type { User } from '@/models'
-import { useAuthStore } from '@/stores'
+import type { User } from '@/models/user.model'
+import { useAuthStore } from '@/stores/useAuthStore'
 
 // --- Component Interface -----------------------------------------------------
 

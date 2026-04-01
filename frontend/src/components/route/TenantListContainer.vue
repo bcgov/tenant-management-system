@@ -7,10 +7,14 @@ import TenantList from '@/components/tenant/TenantList.vue'
 import TenantRequestDialog from '@/components/tenantrequest/TenantRequestDialog.vue'
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import LoadingWrapper from '@/components/ui/LoadingWrapper.vue'
-import { useNotification } from '@/composables'
-import { DomainError, DuplicateEntityError } from '@/errors'
-import { Tenant, type TenantRequestDetailFields } from '@/models'
-import { useAuthStore, useTenantRequestStore, useTenantStore } from '@/stores'
+import { useNotification } from '@/composables/useNotification'
+import { DomainError } from '@/errors/domain/DomainError'
+import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
+import { Tenant } from '@/models/tenant.model'
+import { type TenantRequestDetailFields } from '@/models/tenantrequest.model'
+import { useAuthStore } from '@/stores/useAuthStore'
+import { useTenantRequestStore } from '@/stores/useTenantRequestStore'
+import { useTenantStore } from '@/stores/useTenantStore'
 
 // --- Store and Composable Setup ----------------------------------------------
 

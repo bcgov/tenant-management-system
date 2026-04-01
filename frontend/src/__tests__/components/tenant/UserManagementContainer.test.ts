@@ -4,18 +4,20 @@ import { nextTick } from 'vue'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import TenantUserManagementContainer from '@/components/tenant/UserManagementContainer.vue'
-import { useNotification } from '@/composables'
-import { DuplicateEntityError } from '@/errors'
-import { Group, Role, SsoUser, Tenant, User } from '@/models'
-import {
-  useGroupStore,
-  useRoleStore,
-  useTenantStore,
-  useUserStore,
-} from '@/stores'
+import { useNotification } from '@/composables/useNotification'
+import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
+import { Group } from '@/models/group.model'
+import { Role } from '@/models/role.model'
+import { SsoUser } from '@/models/ssouser.model'
+import { Tenant } from '@/models/tenant.model'
+import { User } from '@/models/user.model'
+import { useGroupStore } from '@/stores/useGroupStore'
+import { useRoleStore } from '@/stores/useRoleStore'
+import { useTenantStore } from '@/stores/useTenantStore'
+import { useUserStore } from '@/stores/useUserStore'
 import { IDIR_SEARCH_TYPE } from '@/utils/constants'
 
-vi.mock('@/composables', () => ({
+vi.mock('@/composables/useNotification', () => ({
   useNotification: vi.fn(),
 }))
 
@@ -55,6 +57,10 @@ function makeRole(id = 'r1') {
 
 // --- Setup -------------------------------------------------------------------
 
+function child(wrapper: ReturnType<typeof mountComponent>) {
+  return wrapper.getComponent({ name: 'TenantUserManagement' })
+}
+
 function mountComponent(tenant = makeTenant()) {
   return mount(TenantUserManagementContainer, {
     props: { tenant },
@@ -89,10 +95,6 @@ describe('TenantUserManagementContainer', () => {
     // Default no-op for onMounted fetchRoles
     roleStore.fetchRoles = vi.fn().mockResolvedValue(undefined)
   })
-
-  function child(wrapper: ReturnType<typeof mountComponent>) {
-    return wrapper.getComponent({ name: 'TenantUserManagement' })
-  }
 
   // --- onMounted -------------------------------------------------------------
 

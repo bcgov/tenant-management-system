@@ -1,23 +1,25 @@
 <script lang="ts" setup>
-import { watch, ref, computed, type Ref } from 'vue'
 import { storeToRefs } from 'pinia'
+import { computed, type Ref, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-
-import { useServiceStore, useGroupStore } from '@/stores'
-import { useNotification } from '@/composables'
-import type { Tenant, Group, GroupServiceRoles } from '@/models'
-import {
-  SharedServicesArray,
-  SharedServiceRoles,
-} from '@/models/groupserviceroles.model'
 
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
 import SimpleDialog, {
   type DialogButton,
 } from '@/components/ui/SimpleDialog.vue'
-import { currentUserHasRole } from '@/utils/permissions'
+import { useNotification } from '@/composables/useNotification'
+import type { Group } from '@/models/group.model'
+import {
+  type GroupServiceRoles,
+  SharedServicesArray,
+  SharedServiceRoles,
+} from '@/models/groupserviceroles.model'
+import type { Tenant } from '@/models/tenant.model'
+import { useGroupStore } from '@/stores/useGroupStore'
+import { useServiceStore } from '@/stores/useServiceStore'
 import { ROLES } from '@/utils/constants'
+import { currentUserHasRole } from '@/utils/permissions'
 
 // Props
 const props = defineProps<{

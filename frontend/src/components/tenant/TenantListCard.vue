@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import type { Tenant } from '@/models'
+import type { Tenant } from '@/models/tenant.model'
 
 // --- Component Interface -----------------------------------------------------
 

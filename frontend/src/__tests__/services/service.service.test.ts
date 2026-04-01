@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
-  SharedServicesArray,
   GroupServiceRoles,
   SharedServiceRoles,
-} from '@/models'
+  SharedServicesArray,
+} from '@/models/groupserviceroles.model'
 
 import * as utils from '@/services/utils'
 

@@ -22,7 +22,7 @@ const mockLogin = vi.fn()
 const mockIsAuthenticated = { value: false }
 const mockUserSource = { value: '' }
 
-vi.mock('@/stores', () => ({
+vi.mock('@/stores/useAuthStore', () => ({
   useAuthStore: () => ({
     login: mockLogin,
     get isAuthenticated() {
