@@ -27,7 +27,7 @@ describe('Group model', () => {
     const groupUsers: GroupUser[] = []
     groupUsers.push(
       new GroupUser('user1', new User('user1', fakeSsoUser)),
-      new GroupUser('user2', new User('user2', fakeSsoUser))
+      new GroupUser('user2', new User('user2', fakeSsoUser)),
     )
 
     const group = new Group(

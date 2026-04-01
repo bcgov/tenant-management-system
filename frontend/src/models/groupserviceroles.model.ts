@@ -1,4 +1,6 @@
-export declare type SharedServiceRoleId = string & { readonly __brand: 'SharedServiceRoleId' }
+export declare type SharedServiceRoleId = string & {
+  readonly __brand: 'SharedServiceRoleId'
+}
 
 export class SharedServiceRoles {
   id: SharedServiceRoleId

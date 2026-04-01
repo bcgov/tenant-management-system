@@ -79,6 +79,57 @@ describe('User model', () => {
     expect(user.roles).toEqual([])
   })
 
+  it('fromSearchData sets type to bceidbusiness when username includes bceidbusiness', () => {
+    const searchData = {
+      email: 'business@example.com',
+      firstName: 'Business',
+      lastName: 'User',
+      username: String.raw`bceidbusiness\someuser`,
+      attributes: {
+        bceid_user_guid: ['businessGuid'],
+        display_name: ['Business Display'],
+      },
+    }
+
+    const user = User.fromSearchData(searchData)
+
+    expect(user.ssoUser.idpType).toBe('bceidbusiness')
+    expect(user.id).toBe('businessGuid')
+  })
+
+  it('fromSearchData sets type to bceidbasic when username does not include bceidbusiness', () => {
+    const searchData = {
+      email: 'basic@example.com',
+      firstName: 'Basic',
+      lastName: 'User',
+      username: String.raw`bceidbasic\someuser`,
+      attributes: {
+        bceid_user_guid: ['basicGuid'],
+        display_name: ['Basic Display'],
+      },
+    }
+
+    const user = User.fromSearchData(searchData)
+
+    expect(user.ssoUser.idpType).toBe('bceidbasic')
+    expect(user.id).toBe('basicGuid')
+  })
+
+  it('fromSearchData sets type to bceidbasic when username is undefined', () => {
+    const searchData = {
+      email: 'nousername@example.com',
+      firstName: 'No',
+      lastName: 'Username',
+      attributes: {
+        bceid_user_guid: ['noUsernameGuid'],
+        display_name: ['No Username Display'],
+      },
+    }
+
+    const user = User.fromSearchData(searchData)
+    expect(user.ssoUser.idpType).toBe('bceidbasic')
+  })
+
   it('fromSearchData creates User correctly with roles empty', () => {
     const searchData = {
       email: 'search@example.com',

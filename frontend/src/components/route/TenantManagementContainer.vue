@@ -117,7 +117,6 @@ onMounted(async () => {
         </v-tabs>
 
         <v-window v-model="tab">
-
           <v-window-item :value="0">
             <UserManagementContainer :tenant="tenant!" />
           </v-window-item>

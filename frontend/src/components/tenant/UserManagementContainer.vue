@@ -5,7 +5,12 @@ import TenantUserManagement from '@/components/tenant/TenantUserManagement.vue'
 import { useNotification } from '@/composables'
 import { DuplicateEntityError } from '@/errors'
 import { Group, Tenant, User } from '@/models'
-import { useRoleStore, useTenantStore, useUserStore, useGroupStore } from '@/stores'
+import {
+  useRoleStore,
+  useTenantStore,
+  useUserStore,
+  useGroupStore,
+} from '@/stores'
 import { type IdirSearchType, IDIR_SEARCH_TYPE } from '@/utils/constants'
 
 // --- Component Interface -----------------------------------------------------
@@ -33,7 +38,7 @@ const roles = computed(() => roleStore.roles)
 
 // --- Component Methods -------------------------------------------------------
 
-async function handleAddUser(user: User, groups : Group[]) {
+async function handleAddUser(user: User, groups: Group[]) {
   let addToGroups = true
   try {
     await tenantStore.addTenantUser(props.tenant, user)
@@ -61,7 +66,10 @@ async function handleAddUser(user: User, groups : Group[]) {
     }
     //only show alert if user was added to at least one group
     if (groups.length > 0) {
-      notification.success('New user succesfully added to groups', 'User Added to Groups')
+      notification.success(
+        'New user succesfully added to groups',
+        'User Added to Groups',
+      )
     }
   } catch {
     notification.error('Failed to add user to groups')
@@ -103,13 +111,19 @@ async function handleUserSearch(
   try {
     if (searchType === IDIR_SEARCH_TYPE.FIRST_NAME.value) {
       searchResults.value = await userStore.searchIdirFirstName(searchText)
-      searchResults.value = searchResults.value.concat(await userStore.searchBCeIDDisplayName(searchText))
+      searchResults.value = searchResults.value.concat(
+        await userStore.searchBCeIDDisplayName(searchText),
+      )
     } else if (searchType === IDIR_SEARCH_TYPE.LAST_NAME.value) {
       searchResults.value = await userStore.searchIdirLastName(searchText)
-      searchResults.value = searchResults.value.concat(await userStore.searchBCeIDDisplayName(searchText))
+      searchResults.value = searchResults.value.concat(
+        await userStore.searchBCeIDDisplayName(searchText),
+      )
     } else if (searchType === IDIR_SEARCH_TYPE.EMAIL.value) {
       searchResults.value = await userStore.searchIdirEmail(searchText)
-      searchResults.value = searchResults.value.concat(await userStore.searchBCeIDEmail(searchText))
+      searchResults.value = searchResults.value.concat(
+        await userStore.searchBCeIDEmail(searchText),
+      )
     } else {
       throw new Error('Invalid search type')
     }
