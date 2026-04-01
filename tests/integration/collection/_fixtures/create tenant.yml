@@ -1,0 +1,62 @@
+info:
+  name: create tenant
+  type: http
+  seq: 2
+  tags:
+    - fixture
+
+http:
+  method: POST
+  url: "{{baseUrl}}/tenants"
+  body:
+    type: json
+    data: |
+      {
+        "ministryName": "Ministry of Citizens' Services",
+        "name": "tenant-{{timestamp}}",
+        "user": {
+          "displayName": "Orwell, Odysseus CITZ:EX",
+          "email": "Odysseus.Orwell@gov.bc.ca",
+          "firstName": "Odysseus",
+          "lastName": "Orwell",
+          "ssoUserId": "820D17EA8C90438A9A74925B442CE775",
+          "userName": "OORWELL"
+        }
+      }
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        const tokenResponse = await bru.runRequest('_setup/mint token admin')
+        bru.setVar('token', tokenResponse.data.token)
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "201"
+  actions:
+    - type: set-variable
+      phase: after-response
+      selector:
+        expression: res.body.data.tenant.id
+        method: jsonq
+      variable:
+        name: tenantId
+        scope: runtime
+    - type: set-variable
+      phase: after-response
+      selector:
+        expression: "{{tenantId}}"
+        method: jsonq
+      variable:
+        name: ""
+        scope: runtime
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

@@ -1,7 +1,9 @@
 info:
   name: mint token
   type: http
-  seq: 1
+  seq: 2
+  tags:
+    - setup
 
 http:
   method: POST
@@ -13,8 +15,8 @@ http:
         "claims": {
           "aud": "{{audience}}",
           "identity_provider": "idir",
-          "idir_user_guid": "8BADF00DCAFEBABE4ACE8BEEDEADBEEF",
-          "sub": "8badf00dcafebabe4ace8beedeadbeef@azureidir"
+          "idir_user_guid": "2363A17E91694DC1B8312794946417C3",
+          "sub": "2363a17e91694dc1b8312794946417c3@azureidir"
         }
       }
   auth: inherit
@@ -29,22 +31,13 @@ runtime:
       value: idir
     - expression: res.body.claims.idir_user_guid
       operator: eq
-      value: 8BADF00DCAFEBABE4ACE8BEEDEADBEEF
+      value: 2363A17E91694DC1B8312794946417C3
     - expression: res.body.claims.sub
       operator: eq
-      value: 8badf00dcafebabe4ace8beedeadbeef@azureidir
+      value: 2363a17e91694dc1b8312794946417c3@azureidir
     - expression: res.status
       operator: eq
       value: "200"
-  actions:
-    - type: set-variable
-      phase: after-response
-      selector:
-        expression: res.body.token
-        method: jsonq
-      variable:
-        name: token
-        scope: runtime
 
 settings:
   encodeUrl: true

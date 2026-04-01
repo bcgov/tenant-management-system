@@ -1,0 +1,77 @@
+info:
+  name: create tenant
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{baseUrl}}/tenants"
+  body:
+    type: json
+    data: |
+      {
+        "ministryName": "Ministry of Citizens' Services",
+        "name": "tenant-{{timestamp}}",
+        "user": {
+          "displayName": "Orwell, Odysseus CITZ:EX",
+          "email": "Odysseus.Orwell@gov.bc.ca",
+          "firstName": "Odysseus",
+          "lastName": "Orwell",
+          "ssoUserId": "820D17EA8C90438A9A74925B442CE775",
+          "userName": "OORWELL"
+        }
+      }
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        const tokenResponse = await bru.runRequest('_setup/mint token admin')
+        bru.setVar('token', tokenResponse.data.token)
+    - type: tests
+      code: |-
+        test('roles to be only TMS.SERVICE_USER, TMS.TENANT_OWNER, TMS.USER_ADMIN', () => {
+          const roles = res.getBody().data.tenant.users[0].roles
+          const roleNames = roles.map(role => role.name)
+
+          expect(roles).to.have.lengthOf(3)
+          expect(roleNames).to.include.members([
+            'TMS.SERVICE_USER',
+            'TMS.TENANT_OWNER',
+            'TMS.USER_ADMIN'
+          ])
+        })
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "201"
+    - expression: res.body.data.tenant.name
+      operator: eq
+      value: tenant-{{timestamp}}
+    - expression: res.body.data.tenant.createdBy
+      operator: eq
+      value: 820D17EA8C90438A9A74925B442CE775
+    - expression: res.body.data.tenant.updatedBy
+      operator: eq
+      value: 820D17EA8C90438A9A74925B442CE775
+    - expression: res.body.data.tenant.users
+      operator: length
+      value: "1"
+    - expression: res.body.data.tenant.users[0].ssoUser.ssoUserId
+      operator: eq
+      value: 820D17EA8C90438A9A74925B442CE775
+    - expression: res.body.data.tenant.users[0].ssoUser.firstName
+      operator: eq
+      value: Odysseus
+    - expression: res.body.data.tenant.users[0].ssoUser.lastName
+      operator: eq
+      value: Orwell
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

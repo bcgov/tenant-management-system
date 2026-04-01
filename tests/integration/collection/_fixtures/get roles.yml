@@ -1,7 +1,9 @@
 info:
-  name: auth
+  name: get roles
   type: http
   seq: 1
+  tags:
+    - fixture
 
 http:
   method: GET
@@ -16,6 +18,19 @@ runtime:
       code: |-
         const tokenResponse = await bru.runRequest('_setup/mint token')
         bru.setVar('token', tokenResponse.data.token)
+    - type: tests
+      code: |-
+        test('roles to be only TMS.SERVICE_USER, TMS.TENANT_OWNER, TMS.USER_ADMIN', () => {
+          const roles = res.getBody().data.roles
+          const roleNames = roles.map(r => r.name)
+
+          expect(roles).to.have.lengthOf(3)
+          expect(roleNames).to.include.members([
+            'TMS.SERVICE_USER',
+            'TMS.TENANT_OWNER',
+            'TMS.USER_ADMIN'
+          ])
+        })
   assertions:
     - expression: res.status
       operator: eq

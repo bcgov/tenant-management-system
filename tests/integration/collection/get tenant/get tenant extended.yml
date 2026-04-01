@@ -1,0 +1,59 @@
+info:
+  name: get tenant extended
+  type: http
+  seq: 3
+
+http:
+  method: GET
+  url: "{{baseUrl}}/tenants/{{tenantId}}?expand=tenantUserRoles"
+  params:
+    - name: expand
+      value: tenantUserRoles
+      type: query
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        const tokenResponse = await bru.runRequest('_setup/mint token owner')
+        bru.setVar('token', tokenResponse.data.token)
+    - type: tests
+      code: |-
+        test('roles to be TMS.SERVICE_USER, TMS.TENANT_OWNER, TMS.USER_ADMIN', () => {
+          const roles = res.getBody().data.tenant.users[0].roles
+          const roleNames = roles.map(role => role.name)
+
+          expect(roleNames).to.include.members([
+            'TMS.SERVICE_USER',
+            'TMS.TENANT_OWNER',
+            'TMS.USER_ADMIN'
+          ])
+        })
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+    - expression: res.body.data.tenant.id
+      operator: eq
+      value: "{{tenantId}}"
+    - expression: res.body.data.tenant.ministryName
+      operator: eq
+      value: Ministry of Citizens' Services
+    - expression: res.body.data.tenant.name
+      operator: eq
+      value: "{{tenantName}}"
+    - expression: res.body.data.tenant.users
+      operator: length
+      value: "1"
+    - expression: res.body.data.tenant.users[0].roles
+      operator: length
+      value: "3"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

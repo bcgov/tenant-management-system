@@ -1,0 +1,55 @@
+info:
+  name: create tenant with service user
+  type: http
+  seq: 3
+  tags:
+    - fixture
+
+http:
+  method: POST
+  url: "{{baseUrl}}/tenants/{{tenantId}}/users"
+  body:
+    type: json
+    data: |
+      {
+        "roles": [
+          "{{roleServiceUser.id}}"
+        ],
+        "user": {
+          "displayName": "Saramago, Salman CITZ:EX",
+          "email": "Salman.Saramago@gov.bc.ca",
+          "firstName": "Salman",
+          "lastName": "Saramago",
+          "ssoUserId": "23BCA2E3B9C6408595322A138F9EF5CA",
+          "userName": "SSARAMAG"
+        }
+      }
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        const tokenResponse = await bru.runRequest('_setup/mint token owner')
+
+        const tenantResponse = await bru.runRequest('_fixtures/create tenant')
+
+        const rolesResponse = await bru.runRequest('_fixtures/get roles')
+        const roles = rolesResponse.data.data.roles
+
+        // Prevent variable stomping by setting at the end
+        bru.setVar('token', tokenResponse.data.token)
+        bru.setVar('tenantId', tenantResponse.data.data.tenant.id)
+        bru.setVar('roleServiceUser', roles.find(r => r.name === 'TMS.SERVICE_USER'))
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "201"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

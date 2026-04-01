@@ -1,7 +1,7 @@
 info:
   name: roles
   type: folder
-  seq: 5
+  seq: 6
 
 request:
   auth: inherit

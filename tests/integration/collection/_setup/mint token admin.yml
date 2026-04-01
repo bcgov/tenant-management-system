@@ -1,7 +1,7 @@
 info:
-  name: mint token expired
+  name: mint token admin
   type: http
-  seq: 5
+  seq: 3
   tags:
     - setup
 
@@ -10,15 +10,17 @@ http:
   url: "{{mockJwksUrl}}/mint"
   body:
     type: json
-    data: |-
+    data: |
       {
         "claims": {
           "aud": "{{audience}}",
+          "client_roles": [
+            "TMS.OPERATIONS_ADMIN"
+          ],
           "identity_provider": "idir",
-          "idir_user_guid": "645963C37CB84B0BA1566C4EE35E8371",
-          "sub": "645963c37cb84b0ba1566c4ee35e8371@azureidir"
-        },
-        "validFor": "-1h"
+          "idir_user_guid": "3C0DF8A59F8C42D0A103CE765B00452B",
+          "sub": "3c0df8a59f8c42d0a103ce765b00452b@azureidir"
+        }
       }
   auth: inherit
 
@@ -32,10 +34,10 @@ runtime:
       value: idir
     - expression: res.body.claims.idir_user_guid
       operator: eq
-      value: 645963C37CB84B0BA1566C4EE35E8371
+      value: 3C0DF8A59F8C42D0A103CE765B00452B
     - expression: res.body.claims.sub
       operator: eq
-      value: 645963c37cb84b0ba1566c4ee35e8371@azureidir
+      value: 3c0df8a59f8c42d0a103ce765b00452b@azureidir
     - expression: res.status
       operator: eq
       value: "200"
