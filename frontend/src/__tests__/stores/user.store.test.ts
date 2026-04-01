@@ -48,10 +48,9 @@ vi.mock('@/utils/constants', () => ({
 }))
 
 import { useUserStore } from '@/stores/useUserStore'
-let userStore: Store; 
+let userStore: Store
 
 describe('useUserStore', () => {
-
   const fakeIdirUsers = [
     {
       ssoUserId: '123',
@@ -62,7 +61,7 @@ describe('useUserStore', () => {
       userName: 'JDOE',
       attributes: {
         idir_use_guid: '123',
-      }
+      },
     },
     {
       ssoUserId: '124',
@@ -73,7 +72,7 @@ describe('useUserStore', () => {
       userName: 'JSMITH',
       attributes: {
         idir_use_guid: '124',
-      }
+      },
     },
   ]
 
@@ -87,7 +86,7 @@ describe('useUserStore', () => {
       userName: 'BJOHNSON',
       attributes: {
         idir_use_guid: '125',
-      }
+      },
     },
     {
       ssoUserId: '457',
@@ -98,7 +97,7 @@ describe('useUserStore', () => {
       userName: 'AWILSON',
       attributes: {
         idir_use_guid: '126',
-      }
+      },
     },
   ]
 
@@ -276,7 +275,6 @@ describe('useUserStore', () => {
     })
   })
 
-
   //bceid searches
   describe('searchBCeIDDisplayName', () => {
     it('should search BCeID users by display name', async () => {
@@ -288,9 +286,12 @@ describe('useUserStore', () => {
 
       expect(result).toHaveLength(1)
       expect(result[0].ssoUser.email).toBe(filteredUsers[0].email)
-      expect(mockGet).toHaveBeenCalledWith('/users/bcgovssousers/bceid/search', {
-        params: { displayName: displayName, bceidType: 'both'},
-      })
+      expect(mockGet).toHaveBeenCalledWith(
+        '/users/bcgovssousers/bceid/search',
+        {
+          params: { displayName: displayName, bceidType: 'both' },
+        },
+      )
     })
 
     it('should handle case-insensitive searches', async () => {
@@ -301,9 +302,12 @@ describe('useUserStore', () => {
 
       expect(result).toHaveLength(fakeBceidUsers.length)
       expect(result[0].ssoUser.email).toBe(fakeBceidUsers[0].email)
-      expect(mockGet).toHaveBeenCalledWith('/users/bcgovssousers/bceid/search', {
-        params: { displayName: displayName, bceidType: 'both' },
-      })
+      expect(mockGet).toHaveBeenCalledWith(
+        '/users/bcgovssousers/bceid/search',
+        {
+          params: { displayName: displayName, bceidType: 'both' },
+        },
+      )
     })
 
     it('should handle partial name searches', async () => {
@@ -314,9 +318,12 @@ describe('useUserStore', () => {
 
       expect(result).toHaveLength(fakeBceidUsers.length)
       expect(result[0].ssoUser.email).toBe(fakeBceidUsers[0].email)
-      expect(mockGet).toHaveBeenCalledWith('/users/bcgovssousers/bceid/search', {
-        params: { displayName: partialName, bceidType: 'both' },
-      })
+      expect(mockGet).toHaveBeenCalledWith(
+        '/users/bcgovssousers/bceid/search',
+        {
+          params: { displayName: partialName, bceidType: 'both' },
+        },
+      )
     })
 
     it('should return empty array for no matches', async () => {
@@ -333,9 +340,9 @@ describe('useUserStore', () => {
       const error = new Error('Search failed')
       mockGet.mockRejectedValueOnce(error)
 
-      await expect(userStore.searchBCeIDDisplayName(displayName)).rejects.toThrow(
-        error,
-      )
+      await expect(
+        userStore.searchBCeIDDisplayName(displayName),
+      ).rejects.toThrow(error)
     })
   })
 
@@ -348,24 +355,28 @@ describe('useUserStore', () => {
 
       expect(result).toHaveLength(1)
       expect(result[0].ssoUser.email).toBe(fakeBceidUsers[0].email)
-      expect(mockGet).toHaveBeenCalledWith('/users/bcgovssousers/bceid/search', {
-        params: { email: searchValue, bceidType: 'both' },
-      })
+      expect(mockGet).toHaveBeenCalledWith(
+        '/users/bcgovssousers/bceid/search',
+        {
+          params: { email: searchValue, bceidType: 'both' },
+        },
+      )
     })
 
     it('should return bceid users for displayName search', async () => {
       const searchValue = 'Bob'
       mockGet.mockResolvedValueOnce({ data: { data: [fakeBceidUsers[0]] } })
 
-      const result = await userStore.searchBCeIDDisplayName(
-        searchValue,
-      )
+      const result = await userStore.searchBCeIDDisplayName(searchValue)
 
       expect(result).toHaveLength(1)
       expect(result[0].ssoUser.email).toBe(fakeBceidUsers[0].email)
-      expect(mockGet).toHaveBeenCalledWith('/users/bcgovssousers/bceid/search', {
-        params: { displayName: searchValue, bceidType: 'both' },
-      })
+      expect(mockGet).toHaveBeenCalledWith(
+        '/users/bcgovssousers/bceid/search',
+        {
+          params: { displayName: searchValue, bceidType: 'both' },
+        },
+      )
     })
 
     it('should return empty array when no users found', async () => {
@@ -375,9 +386,12 @@ describe('useUserStore', () => {
       const result = await userStore.searchBCeIDEmail(searchValue)
 
       expect(result).toEqual([])
-      expect(mockGet).toHaveBeenCalledWith('/users/bcgovssousers/bceid/search', {
-        params: { email: searchValue, bceidType: 'both'  },
-      })
+      expect(mockGet).toHaveBeenCalledWith(
+        '/users/bcgovssousers/bceid/search',
+        {
+          params: { email: searchValue, bceidType: 'both' },
+        },
+      )
     })
 
     it('should log and rethrow errors', async () => {
@@ -385,9 +399,9 @@ describe('useUserStore', () => {
       const error = new Error('Search failed')
       mockGet.mockRejectedValueOnce(error)
 
-      await expect(
-        userStore.searchBCeIDEmail(searchValue),
-      ).rejects.toThrow(error)
+      await expect(userStore.searchBCeIDEmail(searchValue)).rejects.toThrow(
+        error,
+      )
 
       expect(mockedUtils.logApiError).toHaveBeenCalledWith(
         'Error searching BCeID users:',
@@ -395,5 +409,4 @@ describe('useUserStore', () => {
       )
     })
   })
-
 })

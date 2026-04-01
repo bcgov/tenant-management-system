@@ -318,7 +318,6 @@ describe('userService', () => {
     })
   })
 
-
   //bceid searches
   describe('searchBCeIDDisplayName', () => {
     it('should search BCeID users by display name', async () => {
@@ -329,9 +328,12 @@ describe('userService', () => {
       const result = await userService.searchBCeIDDisplayName(displayName)
 
       expect(result).toEqual(filteredUsers)
-      expect(mockGet).toHaveBeenCalledWith('/users/bcgovssousers/bceid/search', {
-        params: { displayName: displayName, bceidType: 'both'},
-      })
+      expect(mockGet).toHaveBeenCalledWith(
+        '/users/bcgovssousers/bceid/search',
+        {
+          params: { displayName: displayName, bceidType: 'both' },
+        },
+      )
     })
 
     it('should handle case-insensitive searches', async () => {
@@ -341,9 +343,12 @@ describe('userService', () => {
       const result = await userService.searchBCeIDDisplayName(displayName)
 
       expect(result).toEqual(fakeBceidUsers)
-      expect(mockGet).toHaveBeenCalledWith('/users/bcgovssousers/bceid/search', {
-        params: { displayName: displayName, bceidType: 'both' },
-      })
+      expect(mockGet).toHaveBeenCalledWith(
+        '/users/bcgovssousers/bceid/search',
+        {
+          params: { displayName: displayName, bceidType: 'both' },
+        },
+      )
     })
 
     it('should handle partial name searches', async () => {
@@ -353,9 +358,12 @@ describe('userService', () => {
       const result = await userService.searchBCeIDDisplayName(partialName)
 
       expect(result).toEqual(fakeBceidUsers)
-      expect(mockGet).toHaveBeenCalledWith('/users/bcgovssousers/bceid/search', {
-        params: { displayName: partialName, bceidType: 'both' },
-      })
+      expect(mockGet).toHaveBeenCalledWith(
+        '/users/bcgovssousers/bceid/search',
+        {
+          params: { displayName: partialName, bceidType: 'both' },
+        },
+      )
     })
 
     it('should return empty array for no matches', async () => {
@@ -372,9 +380,9 @@ describe('userService', () => {
       const error = new Error('Search failed')
       mockGet.mockRejectedValueOnce(error)
 
-      await expect(userService.searchBCeIDDisplayName(displayName)).rejects.toThrow(
-        error,
-      )
+      await expect(
+        userService.searchBCeIDDisplayName(displayName),
+      ).rejects.toThrow(error)
     })
   })
 
@@ -386,9 +394,12 @@ describe('userService', () => {
       const result = await userService._searchBceidUsers('email', searchValue)
 
       expect(result).toEqual(fakeBceidUsers)
-      expect(mockGet).toHaveBeenCalledWith('/users/bcgovssousers/bceid/search', {
-        params: { email: searchValue, bceidType: 'both' },
-      })
+      expect(mockGet).toHaveBeenCalledWith(
+        '/users/bcgovssousers/bceid/search',
+        {
+          params: { email: searchValue, bceidType: 'both' },
+        },
+      )
     })
 
     it('should return bceid users for displayName search', async () => {
@@ -401,9 +412,12 @@ describe('userService', () => {
       )
 
       expect(result).toEqual(fakeBceidUsers)
-      expect(mockGet).toHaveBeenCalledWith('/users/bcgovssousers/bceid/search', {
-        params: { displayName: searchValue, bceidType: 'both' },
-      })
+      expect(mockGet).toHaveBeenCalledWith(
+        '/users/bcgovssousers/bceid/search',
+        {
+          params: { displayName: searchValue, bceidType: 'both' },
+        },
+      )
     })
 
     it('should return empty array when no users found', async () => {
@@ -413,9 +427,12 @@ describe('userService', () => {
       const result = await userService._searchBceidUsers('email', searchValue)
 
       expect(result).toEqual([])
-      expect(mockGet).toHaveBeenCalledWith('/users/bcgovssousers/bceid/search', {
-        params: { email: searchValue, bceidType: 'both'  },
-      })
+      expect(mockGet).toHaveBeenCalledWith(
+        '/users/bcgovssousers/bceid/search',
+        {
+          params: { email: searchValue, bceidType: 'both' },
+        },
+      )
     })
 
     it('should log and rethrow errors', async () => {
@@ -433,5 +450,4 @@ describe('userService', () => {
       )
     })
   })
-
 })

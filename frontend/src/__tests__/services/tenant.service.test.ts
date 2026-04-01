@@ -395,9 +395,9 @@ describe('tenantService', () => {
       const error = new Error('User not found')
       mockDelete.mockRejectedValueOnce(error)
 
-      await expect(
-        tenantService.removeUser(tenantId, userId),
-      ).rejects.toThrow(error)
+      await expect(tenantService.removeUser(tenantId, userId)).rejects.toThrow(
+        error,
+      )
 
       expect(mockedUtils.logApiError).toHaveBeenCalledWith(
         'Error adding user to tenant',

@@ -12,22 +12,11 @@ const isDev = process.env.NODE_ENV !== 'production'
  */
 const logError = (message: string, error?: unknown) => {
   if (isDev) {
-    if (error !== undefined) {
-      console.error(message, error)
-    } else {
+    if (error === undefined) {
       console.error(message)
+    } else {
+      console.error(message, error)
     }
-  }
-}
-
-/**
- * Logs an info message to the console (in non-production environments).
- *
- * @param message - A short description of what happened.
- */
-const logInfo = (message: string) => {
-  if (isDev) {
-    console.log(message)
   }
 }
 
@@ -42,4 +31,4 @@ const logWarning = (message: string) => {
   }
 }
 
-export const logger = { error: logError, info: logInfo, warning: logWarning }
+export const logger = { error: logError, warning: logWarning }

@@ -15,7 +15,7 @@ const baseRules = {
   'prefer-promise-reject-errors': 'error',
 
   // General best practices
-  //'no-console': ['warn', { allow: ['warn', 'error'] }], TODO: enable later
+  'no-console': ['warn', { allow: ['warn', 'error'] }],
   'no-debugger': 'warn',
   'no-var': 'error',
   'prefer-const': 'error',
@@ -186,8 +186,7 @@ const config = [
     files: ['**/*.{ts,tsx,vue,js,jsx}'],
     plugins: { prettier: require('eslint-plugin-prettier') },
     rules: {
-      // 'prettier/prettier': 'error', TODO: enable later
-      'prettier/prettier': 'off',
+      'prettier/prettier': 'error',
     },
   },
 ]

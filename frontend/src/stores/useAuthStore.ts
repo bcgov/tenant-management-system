@@ -164,7 +164,6 @@ export const useAuthStore = defineStore('auth', {
             ? UserSource.IDIR
             : UserSource.BCeID
           this.scheduleTokenRefresh()
-          logger.info('Keycloak authenticated')
         }
       } catch (error) {
         logger.error('Keycloak init failed', error)
@@ -266,7 +265,6 @@ export const useAuthStore = defineStore('auth', {
             if (refreshed) {
               this.token = this.keycloak?.token ?? ''
               this.user = this.parseUserFromToken()
-              logger.info('Token successfully refreshed')
               this.loggedOut = false
             }
           })
