@@ -44,7 +44,6 @@ jobs:
   
   tests:
     name: Tests
-    if: needs.deploys-silver-dev.outputs.triggered == 'true'
     needs: [deploys-silver-dev]
     permissions:
       checks: write
