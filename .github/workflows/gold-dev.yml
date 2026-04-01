@@ -60,6 +60,7 @@ jobs:
         --set backend.pdb.enabled=true
         --set backend.pdb.minAvailable=2
         --set backend.replicaCount=3
+        --set global.domain="apps.gold.devops.gov.bc.ca"
         ${{ inputs.params }}
       tag: ${{ inputs.tag }}
 
@@ -79,5 +80,6 @@ jobs:
         --set backend.pdb.enabled=true
         --set backend.pdb.minAvailable=2
         --set backend.replicaCount=3
+        --set global.domain="apps.golddr.devops.gov.bc.ca"
         ${{ inputs.params }}
       tag: ${{ inputs.tag }}
