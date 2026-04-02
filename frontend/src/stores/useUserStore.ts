@@ -1,8 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
-import { User } from '@/models'
-import { userService } from '@/services'
+import { User } from '@/models/user.model'
+import { userService } from '@/services/user.service'
 import {
   type BCeIDSearchType,
   type IdirSearchType,

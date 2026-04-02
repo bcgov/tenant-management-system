@@ -1,8 +1,9 @@
-import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { Role, SsoUser, Tenant, User } from '@/models'
-import type { TenantId } from '@/models/tenant.model'
-import type { UserId } from '@/models/user.model'
+import { Role } from '@/models/role.model'
+import { SsoUser } from '@/models/ssouser.model'
+import { Tenant, type TenantId } from '@/models/tenant.model'
+import { User, type UserId } from '@/models/user.model'
 import { ROLES } from '@/utils/constants'
 
 describe('Tenant model', () => {

@@ -1,7 +1,8 @@
 import Keycloak from 'keycloak-js'
 import { defineStore } from 'pinia'
 
-import { SsoUser, User } from '@/models'
+import { SsoUser } from '@/models/ssouser.model'
+import { User } from '@/models/user.model'
 import { config } from '@/services/config.service'
 import { logger } from '@/utils/logger'
 import { ROLES } from '@/utils/constants'

@@ -2,15 +2,15 @@
 import { computed, onMounted, ref } from 'vue'
 
 import TenantUserManagement from '@/components/tenant/TenantUserManagement.vue'
-import { useNotification } from '@/composables'
-import { DuplicateEntityError } from '@/errors'
-import { Group, Tenant, User } from '@/models'
-import {
-  useRoleStore,
-  useTenantStore,
-  useUserStore,
-  useGroupStore,
-} from '@/stores'
+import { useNotification } from '@/composables/useNotification'
+import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
+import { Group } from '@/models/group.model'
+import { Tenant } from '@/models/tenant.model'
+import { User } from '@/models/user.model'
+import { useGroupStore } from '@/stores/useGroupStore'
+import { useRoleStore } from '@/stores/useRoleStore'
+import { useTenantStore } from '@/stores/useTenantStore'
+import { useUserStore } from '@/stores/useUserStore'
 import { type IdirSearchType, IDIR_SEARCH_TYPE } from '@/utils/constants'
 
 // --- Component Interface -----------------------------------------------------

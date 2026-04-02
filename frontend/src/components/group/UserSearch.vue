@@ -2,9 +2,10 @@
 import { computed, ref, watch } from 'vue'
 
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
-import type { Tenant, User } from '@/models'
+import UserTable from '@/components/user/UserTable.vue'
+import type { Tenant } from '@/models/tenant.model'
+import type { User } from '@/models/user.model'
 import { type IdirSearchType, IDIR_SEARCH_TYPE } from '@/utils/constants'
-import UserTable from '../user/UserTable.vue'
 
 // --- Component Interface -----------------------------------------------------
 

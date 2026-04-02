@@ -1,6 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { Group, GroupUser, SsoUser, User } from '@/models'
-import type { GroupId } from '@/models/group.model'
+
+import { Group, type GroupId } from '@/models/group.model'
+import { GroupUser } from '@/models/groupuser.model'
+import { SsoUser } from '@/models/ssouser.model'
+import { User } from '@/models/user.model'
 
 describe('Group model', () => {
   beforeEach(() => {

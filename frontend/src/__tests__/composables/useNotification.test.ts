@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { useNotification } from '@/composables'
-import { NotificationType } from '@/types'
+import { useNotification } from '@/composables/useNotification'
+import { NotificationType } from '@/types/NotificationType'
 
 vi.mock('uuid', () => ({
   v4: () => 'test-uuid-123',

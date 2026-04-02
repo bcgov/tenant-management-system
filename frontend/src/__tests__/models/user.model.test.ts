@@ -1,7 +1,8 @@
-import { describe, it, expect } from 'vitest'
-import { Role, SsoUser, User } from '@/models'
-import type { UserId } from '@/models/user.model'
-import type { RoleId } from '@/models/role.model'
+import { describe, expect, it } from 'vitest'
+
+import { Role, type RoleId } from '@/models/role.model'
+import { SsoUser } from '@/models/ssouser.model'
+import { User, type UserId } from '@/models/user.model'
 
 describe('User model', () => {
   it('constructor assigns properties correctly', () => {

@@ -9,10 +9,11 @@ import TenantHeader from '@/components/tenant/TenantHeader.vue'
 import UserManagementContainer from '@/components/tenant/UserManagementContainer.vue'
 import BreadcrumbBar from '@/components/ui/BreadcrumbBar.vue'
 import LoadingWrapper from '@/components/ui/LoadingWrapper.vue'
-import { useNotification } from '@/composables'
-import { DomainError, DuplicateEntityError } from '@/errors'
-import { type TenantDetailFields } from '@/models'
-import { useTenantStore } from '@/stores'
+import { useNotification } from '@/composables/useNotification'
+import { DomainError } from '@/errors/domain/DomainError'
+import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
+import { type TenantDetailFields } from '@/models/tenant.model'
+import { useTenantStore } from '@/stores/useTenantStore'
 
 // --- Store and Composable Setup ----------------------------------------------
 

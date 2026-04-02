@@ -1,7 +1,12 @@
-import { authenticatedAxios } from './authenticated.axios'
-import { isDuplicateEntityError, isValidationError, logApiError } from './utils'
-import { DuplicateEntityError, ValidationError } from '@/errors'
-import { User } from '@/models'
+import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
+import { ValidationError } from '@/errors/domain/ValidationError'
+import { User } from '@/models/user.model'
+import { authenticatedAxios } from '@/services/authenticated.axios'
+import {
+  isDuplicateEntityError,
+  isValidationError,
+  logApiError,
+} from '@/services/utils'
 
 const api = authenticatedAxios()
 

@@ -1,16 +1,20 @@
 import { mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
-import GroupUserManagementContainer from '@/components/group/UserManagementContainer.vue'
-import { useNotification } from '@/composables'
-import { DuplicateEntityError } from '@/errors'
-import { Group, SsoUser, Tenant, User } from '@/models'
-import { useGroupStore, useUserStore } from '@/stores'
-import { IDIR_SEARCH_TYPE } from '@/utils/constants'
 import { nextTick } from 'vue'
 
-vi.mock('@/composables', () => ({
+import GroupUserManagementContainer from '@/components/group/UserManagementContainer.vue'
+import { useNotification } from '@/composables/useNotification'
+import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
+import { Group } from '@/models/group.model'
+import { SsoUser } from '@/models/ssouser.model'
+import { Tenant } from '@/models/tenant.model'
+import { User } from '@/models/user.model'
+import { useGroupStore } from '@/stores/useGroupStore'
+import { useUserStore } from '@/stores/useUserStore'
+import { IDIR_SEARCH_TYPE } from '@/utils/constants'
+
+vi.mock('@/composables/useNotification', () => ({
   useNotification: vi.fn(),
 }))
 

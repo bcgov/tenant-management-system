@@ -1,8 +1,12 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
-import { TenantRequest, type TenantRequestDetailFields, User } from '@/models'
-import { tenantRequestService } from '@/services'
+import {
+  TenantRequest,
+  type TenantRequestDetailFields,
+} from '@/models/tenantrequest.model'
+import { User } from '@/models/user.model'
+import { tenantRequestService } from '@/services/tenantrequest.service'
 
 /**
  * Pinia store for managing tenant requests and their statuses.

@@ -1,9 +1,9 @@
-// router.test.ts
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { mount, VueWrapper } from '@vue/test-utils'
-import { createRouter, createWebHistory } from 'vue-router'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ComponentPublicInstance } from 'vue'
-import router from '@/router' // adjust path as needed
+import { createRouter, createWebHistory } from 'vue-router'
+
+import router from '@/router'
 
 // Mock the components since we're testing routes, not component functionality
 vi.mock('@/components/route/GroupManagementContainer.vue', () => ({
@@ -34,6 +34,14 @@ const TestApp = {
   template: '<router-view />',
 }
 
+const initWrapper = function () {
+  return mount(TestApp, {
+    global: {
+      plugins: [router],
+    },
+  })
+}
+
 describe('Vue Router', () => {
   let wrapper: VueWrapper<ComponentPublicInstance> | null = null
 
@@ -48,14 +56,6 @@ describe('Vue Router', () => {
       wrapper = null
     }
   })
-
-  const initWrapper = function () {
-    return mount(TestApp, {
-      global: {
-        plugins: [router],
-      },
-    })
-  }
 
   it('loads landing page', async () => {
     wrapper = initWrapper()

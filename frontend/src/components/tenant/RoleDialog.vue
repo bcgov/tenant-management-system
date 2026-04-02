@@ -5,10 +5,12 @@ import { watch, ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 const { t } = useI18n()
 
-import type { Tenant, User } from '@/models'
+import { useNotification } from '@/composables/useNotification'
+import type { Tenant } from '@/models/tenant.model'
+import type { User } from '@/models/user.model'
 import { ROLES } from '@/utils/constants'
-import { useTenantStore, useRoleStore } from '@/stores'
-import { useNotification } from '@/composables'
+import { useTenantStore } from '@/stores/useTenantStore'
+import { useRoleStore } from '@/stores/useRoleStore'
 
 //stores
 const tenantStore = useTenantStore()

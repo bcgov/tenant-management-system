@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import TenantListCard from '@/components/tenant/TenantListCard.vue'
-import type { Tenant } from '@/models'
+import type { Tenant } from '@/models/tenant.model'
 
 // --- Component Interface -----------------------------------------------------
 

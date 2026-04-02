@@ -1,16 +1,18 @@
 <script setup lang="ts">
 import { mdiAlert, mdiClose } from '@mdi/js'
 import { computed, ref, watch } from 'vue'
-
-import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
-import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
-import { type User, type Tenant } from '@/models'
-import { type IdirSearchType, IDIR_SEARCH_TYPE } from '@/utils/constants'
+// TODO: sus
 import type {
   ItemSlotBase,
   DataTableItem,
 } from 'vuetify/lib/components/VDataTable/types.mjs'
+
+import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
+import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
 import UserTable from '@/components/user/UserTable.vue'
+import { type Tenant } from '@/models/tenant.model'
+import { type User } from '@/models/user.model'
+import { type IdirSearchType, IDIR_SEARCH_TYPE } from '@/utils/constants'
 
 // --- Component Interface -----------------------------------------------------
 

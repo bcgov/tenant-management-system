@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest'
+
 import {
   GroupServiceRoles,
-  SharedServicesArray,
   SharedServiceRoles,
-} from '@/models'
+  SharedServicesArray,
+} from '@/models/groupserviceroles.model'
 
 const sharedServicesRole: SharedServiceRoles = new SharedServiceRoles(
   'role1',

@@ -5,17 +5,20 @@ import { useI18n } from 'vue-i18n'
 const { t } = useI18n()
 
 import GroupListContainer from '@/components/group/GroupListContainer.vue'
+import RoleDialog from '@/components/tenant/RoleDialog.vue'
+import UserSearch from '@/components/tenant/UserSearch.vue'
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
 import FloatingActionButton from '@/components/ui/FloatingActionButton.vue'
 import SimpleDialog from '@/components/ui/SimpleDialog.vue'
-import UserSearch from '@/components/tenant/UserSearch.vue'
-import RoleDialog from '@/components/tenant/RoleDialog.vue'
 import UserTable from '@/components/user/UserTable.vue'
-import type { Group, Role, Tenant, User } from '@/models'
+import type { Group } from '@/models/group.model'
+import type { Role } from '@/models/role.model'
+import type { Tenant } from '@/models/tenant.model'
+import type { User } from '@/models/user.model'
+import { useGroupStore } from '@/stores/useGroupStore'
 import { type IdirSearchType, ROLES } from '@/utils/constants'
 import { currentUserHasRole } from '@/utils/permissions'
-import { useGroupStore } from '@/stores'
 
 // --- Stores ----------------------------------------------------------------
 const groupStore = useGroupStore()

@@ -1,4 +1,5 @@
-import { Role, SsoUser } from '@/models'
+import { Role } from '@/models/role.model'
+import { SsoUser } from '@/models/ssouser.model'
 
 export declare type UserId = string & { readonly __brand: 'UserId' }
 
