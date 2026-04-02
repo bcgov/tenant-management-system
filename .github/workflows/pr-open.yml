@@ -32,25 +32,27 @@ jobs:
           tag_fallback: latest
           triggers: ('${{ matrix.package }}/')
 
-  deploys:
+  deploys-silver-dev:
     name: Deploys (${{ github.event.number }})
     needs: [builds]
-    uses: ./.github/workflows/.deployer.yml
-    secrets:
-      bcgov_sso_api_client_id: ${{ secrets.BCGOV_SSO_API_CLIENT_ID }}
-      bcgov_sso_api_client_secret: ${{ secrets.BCGOV_SSO_API_CLIENT_SECRET }}
-      oc_namespace: ${{ secrets.OC_NAMESPACE }}
-      oc_token: ${{ secrets.OC_TOKEN }}
+    uses: ./.github/workflows/silver-dev.yml
+    secrets: inherit
     with:
+      tag: ${{ github.event.number }}
       db_user: app-${{ github.event.number }}
-      params: --set backend.service.targetPort=4144 --set global.secrets.persist=false
-      triggers: ('backend/' 'frontend/' 'migrations/' 'charts/' '.github/workflows/.deployer.yml')
-      db_triggers: ('charts/crunchy/')
-
+  
+  deploys-gold-dev:
+    name: Deploys (${{ github.event.number }})
+    needs: [builds]
+    uses: ./.github/workflows/gold-dev.yml
+    secrets: inherit
+    with:
+      tag: ${{ github.event.number }}
+      db_user: app-${{ github.event.number }}
+  
   tests:
     name: Tests
-    if: needs.deploys.outputs.triggered == 'true'
-    needs: [deploys]
+    needs: [deploys-silver-dev]
     permissions:
       checks: write
     uses: ./.github/workflows/.tests.yml
@@ -59,10 +61,10 @@ jobs:
 
   zap:
     name: ZAP Security Scan
-    needs: [deploys]
+    needs: [deploys-silver-dev]
     if: |
       contains(github.event.pull_request.labels.*.name, 'zap') &&
-      needs.deploys.outputs.triggered == 'true'
+      needs.deploys-silver-dev.outputs.triggered == 'true'
     runs-on: ubuntu-24.04
     strategy:
       matrix:
@@ -83,7 +85,7 @@ jobs:
 
   results:
     name: PR Results
-    needs: [builds, deploys, tests, zap]
+    needs: [builds, deploys-silver-dev, tests, zap]
     if: always()
     runs-on: ubuntu-24.04
     steps:
