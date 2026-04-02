@@ -1,0 +1,44 @@
+info:
+  name: create tenant with group
+  type: http
+  seq: 4
+  tags:
+    - fixture
+
+http:
+  method: POST
+  url: "{{baseUrl}}/tenants/{{tenantId}}/groups"
+  body:
+    type: json
+    data: |
+      {
+        "description": "A Group",
+        "name": "Group A",
+        "tenantUserId": "{{ownerUserId}}"
+      }
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        const tokenResponse = await bru.runRequest('_setup/mint token owner')
+
+        const tenantResponse = await bru.runRequest('_fixtures/create tenant')
+
+        // Prevent variable stomping by setting at the end
+        bru.setVar('token', tokenResponse.data.token)
+        bru.setVar('tenantId', tenantResponse.data.data.tenant.id)
+        bru.setVar('ownerUserId', tenantResponse.data.data.tenant.users[0].id)
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "201"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
