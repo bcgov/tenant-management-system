@@ -1,0 +1,38 @@
+info:
+  name: get group
+  type: http
+  seq: 1
+
+http:
+  method: GET
+  url: "{{baseUrl}}/tenants/{{tenantId}}/groups/{{groupId}}"
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        const tokenResponse = await bru.runRequest('_setup/mint token owner')
+        bru.setVar('token', tokenResponse.data.token)
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+    - expression: res.body.data.group.name
+      operator: eq
+      value: Group A
+    - expression: res.body.data.group.description
+      operator: eq
+      value: A Group
+    - expression: res.body.data.group.createdBy
+      operator: eq
+      value: Orwell, Odysseus CITZ:EX
+      disabled: true
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

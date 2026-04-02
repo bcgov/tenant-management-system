@@ -46,14 +46,6 @@ runtime:
       variable:
         name: tenantId
         scope: runtime
-    - type: set-variable
-      phase: after-response
-      selector:
-        expression: "{{tenantId}}"
-        method: jsonq
-      variable:
-        name: ""
-        scope: runtime
 
 settings:
   encodeUrl: true
