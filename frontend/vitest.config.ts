@@ -1,11 +1,7 @@
 import { fileURLToPath } from 'node:url'
 import { mergeConfig, defineConfig, configDefaults } from 'vitest/config'
-import { config } from '@vue/test-utils'
 
-import { i18n } from './src/i18n'
 import viteConfig from './vite.config'
-
-config.global.plugins.push(i18n)
 
 export default mergeConfig(
   viteConfig,
@@ -27,6 +23,7 @@ export default mergeConfig(
           inline: ['vuetify'],
         },
       },
+      setupFiles: ['./vitest.setup.ts'],
     },
   }),
 )
