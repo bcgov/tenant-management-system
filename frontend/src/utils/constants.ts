@@ -94,7 +94,7 @@ export const MINISTRIES = Object.freeze([
 ])
 
 /**
- * Available roles in the Tenant Management System (TMS)
+ * Available roles in the application.
  *
  * Defines the hierarchical roles that users can be assigned within the system,
  * each with specific permissions and responsibilities.

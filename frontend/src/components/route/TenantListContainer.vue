@@ -54,10 +54,9 @@ const handleTenantSubmit = async (
       authStore.authenticatedUser,
     )
     notification.success(
-      'Your request for a new tenant has been sent to the Tenant Management ' +
-        "System administrator. You'll be notified of the outcome within 48 " +
-        'hours.',
-      'Request successully submitted',
+      'Your request for a new tenant has been sent to the CSTAR ' +
+        "administrator. You'll be notified of the outcome within 48 hours.",
+      'Request successfully submitted',
     )
     isDuplicateName.value = false
     dialogClose()
