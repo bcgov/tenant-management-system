@@ -20,9 +20,6 @@ const logoutURL = computed(() => authStore.logout())
             $t('general.logout')
           }}</v-btn>
         </div>
-        <p>
-          <a>{{ $t('landing.learnMore') }}</a>
-        </p>
       </div>
     </v-row>
   </v-container>
