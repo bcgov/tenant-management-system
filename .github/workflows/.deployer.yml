@@ -77,7 +77,7 @@ jobs:
     name: Stack
     environment:
       name: ${{ inputs.environment || 'dev' }}
-      url: https://cstar-${{ steps.pr.outputs.pr || inputs.tag || inputs.environment }}.apps.silver.devops.gov.bc.ca
+      url: https://cstar-${{ steps.pr.outputs.pr || inputs.tag || inputs.environment }}.${{ steps.vars.outputs.domain }}
     runs-on: ubuntu-24.04
     outputs:
       tag: ${{ inputs.tag || steps.pr.outputs.pr }}
@@ -112,16 +112,21 @@ jobs:
 
           # version, to support helm packaging for non-pr based releases (workflow_dispatch). default to 1.0.0+github run number
           version=1.0.0+${{ github.run_number }}
+          
+          # Extract domain name for github host url
+          domain=${{ replace(replace(replace(secrets.OPENSHIFT_SERVER, 'https://', ''), ':6443', ''), 'api.', 'apps.') }}
 
             # Summary
           echo "tag=${tag}"
           echo "release=${release}"
           echo "version=${version}"
+          echo "domain=${domain}"
 
           # Output
           echo "tag=${tag}" >> $GITHUB_OUTPUT
           echo "release=${release}" >> $GITHUB_OUTPUT
           echo "version=${version}" >> $GITHUB_OUTPUT
+          echo "domain=${domain}" >> $GITHUB_OUTPUT
 
       - name: Stop pre-existing deployments on PRs (status = pending-upgrade)
         if: github.event_name == 'pull_request'
