@@ -114,7 +114,7 @@ jobs:
           version=1.0.0+${{ github.run_number }}
           
           # Extract domain name for github host url
-          server=${{ secrets.OPENSHIFT_SERVER }}
+          server=${{ vars.OC_SERVER }}
           domain=$(echo "$SERVER" | sed -E 's#https?://##; s#:[0-9]+##; s#^api\.#apps.#')
 
             # Summary
