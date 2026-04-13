@@ -1,7 +1,6 @@
 ---
 name: Deploy Dev (Silver)
-permissions:
-   contents: read
+permissions: {}
 
 on:
   workflow_dispatch:
