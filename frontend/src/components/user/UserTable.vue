@@ -258,7 +258,7 @@ const selectRowItem = (e: Event, r: RowPropsType) => {
             class="mr-2"
             size="x-large"
             style="transform: scale(1.5)"
-            left
+            start
           />
           {{ $t('users.noUsersAdd', { where }) }}
         </v-btn>
@@ -325,7 +325,7 @@ const selectRowItem = (e: Event, r: RowPropsType) => {
                 <template #activator="{ props: tooltipProps }">
                   <v-list-item-title
                     v-bind="tooltipProps"
-                    class="text-body-2 text-disabled cursor-default"
+                    class="text-body-medium text-disabled cursor-default"
                   >
                     <v-icon v-if="actionItem.icon" :icon="actionItem.icon" />
                     {{ actionItem.title }}

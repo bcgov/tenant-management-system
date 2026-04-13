@@ -338,7 +338,7 @@ watch(selectAllRoles, () => {
             <p class="mb-2">2. Assign role(s) to this user:</p>
           </v-col>
           <v-col cols="6">
-            <p class="mb-2 text-body-2">Available Roles:</p>
+            <p class="mb-2 text-body-medium">Available Roles:</p>
           </v-col>
           <v-col cols="12">
             <v-checkbox

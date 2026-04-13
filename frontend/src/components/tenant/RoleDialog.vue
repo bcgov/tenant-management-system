@@ -242,7 +242,7 @@ const handleSave = async () => {
   >
     <v-card class="px-10 py-10">
       <v-card-title class="mb-4 border-b-sm">
-        <v-row justify="end">
+        <v-row class="justify-end">
           <v-btn variant="plain" @click="$emit('update:openDialog', false)">
             <v-icon :icon="mdiClose" />
           </v-btn>
@@ -260,7 +260,7 @@ const handleSave = async () => {
         <p class="text-body-2 mb-4">
           {{ $t('tenants.learnMore') }}
         </p>
-        <p class="text-body-2 mb-12">
+        <p class="text-body-medium mb-12">
           {{ $t('tenants.roleAssignDesc') }}
         </p>
         <v-data-table
@@ -275,7 +275,7 @@ const handleSave = async () => {
             <v-checkbox
               v-model="item.value"
               :label="item.role"
-              class="text-body-2 d-inline-flex normalHeight"
+              class="text-body-medium d-inline-flex normalHeight"
             />
           </template>
         </v-data-table>

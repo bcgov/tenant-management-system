@@ -45,7 +45,7 @@ onBeforeUnmount(() => {
 
 <template>
   <v-container>
-    <v-row v-if="loading && showSpinner" align="center" justify="center">
+    <v-row v-if="loading && showSpinner" class="align-center justify-center">
       <v-col class="text-center" cols="auto">
         <v-progress-circular indeterminate />
         <div v-if="loadingMessage" class="mt-2">
