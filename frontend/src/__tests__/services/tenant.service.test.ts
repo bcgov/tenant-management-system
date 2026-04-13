@@ -36,8 +36,11 @@ vi.mock('@/services/authenticated.axios', () => ({
   }),
 }))
 
-import { DuplicateEntityError, ValidationError } from '@/errors'
-import { SsoUser, User, Role } from '@/models'
+import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
+import { ValidationError } from '@/errors/domain/ValidationError'
+import { Role } from '@/models/role.model'
+import { SsoUser } from '@/models/ssouser.model'
+import { User } from '@/models/user.model'
 import { tenantService } from '@/services/tenant.service'
 
 describe('tenantService', () => {
@@ -395,9 +398,9 @@ describe('tenantService', () => {
       const error = new Error('User not found')
       mockDelete.mockRejectedValueOnce(error)
 
-      await expect(
-        tenantService.removeUser(tenantId, userId),
-      ).rejects.toThrow(error)
+      await expect(tenantService.removeUser(tenantId, userId)).rejects.toThrow(
+        error,
+      )
 
       expect(mockedUtils.logApiError).toHaveBeenCalledWith(
         'Error adding user to tenant',

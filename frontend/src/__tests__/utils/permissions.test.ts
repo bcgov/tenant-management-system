@@ -1,9 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { SsoUser } from '@/models/ssouser.model'
+import { Tenant } from '@/models/tenant.model'
+import { User } from '@/models/user.model'
 import {
   currentUserHasRole,
   currentUserIsOperationsAdmin,
 } from '@/utils/permissions'
-import { Tenant, User, SsoUser } from '@/models'
 
 // Mock the auth store
 const mockAuthStore = {
@@ -11,7 +14,7 @@ const mockAuthStore = {
   isOperationsAdmin: false,
 }
 
-vi.mock('@/stores', () => ({
+vi.mock('@/stores/useAuthStore', () => ({
   useAuthStore: () => mockAuthStore,
 }))
 

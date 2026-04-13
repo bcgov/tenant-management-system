@@ -1,9 +1,11 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
-import { Tenant, type TenantDetailFields, User } from '@/models'
-import { tenantService } from '@/services'
-import { useRoleStore } from './useRoleStore'
+import { Role } from '@/models/role.model'
+import { Tenant, type TenantDetailFields } from '@/models/tenant.model'
+import { User } from '@/models/user.model'
+import { tenantService } from '@/services/tenant.service'
+import { useRoleStore } from '@/stores/useRoleStore'
 
 /**
  * Pinia store for managing tenants and tenant users.
@@ -22,10 +24,10 @@ export const useTenantStore = defineStore('tenant', () => {
    */
   function upsertTenant(tenant: Tenant) {
     const index = tenants.value.findIndex((t) => t.id === tenant.id)
-    if (index !== -1) {
-      tenants.value[index] = tenant
-    } else {
+    if (index === -1) {
       tenants.value.push(tenant)
+    } else {
+      tenants.value[index] = tenant
     }
 
     return tenant
@@ -140,7 +142,7 @@ export const useTenantStore = defineStore('tenant', () => {
       throw new Error(`User with ID ${userId} not found in tenant ${tenant.id}`)
     }
 
-    user.roles = user.roles.filter((role) => role.id !== roleId)
+    user.roles = user.roles.filter((role: Role) => role.id !== roleId)
   }
 
   /**
@@ -158,9 +160,7 @@ export const useTenantStore = defineStore('tenant', () => {
     roleIds: string[],
     fullRoleIds?: string[],
   ) => {
-    if (!fullRoleIds) {
-      fullRoleIds = roleIds
-    }
+    fullRoleIds ??= roleIds
 
     const roleStore = useRoleStore()
     await tenantService.assignUserRoles(tenant.id, userId, roleIds)

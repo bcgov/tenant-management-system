@@ -36,9 +36,11 @@ vi.mock('@/services/authenticated.axios', () => ({
   }),
 }))
 
-import { DuplicateEntityError, ValidationError } from '@/errors'
-import { User, SsoUser } from '@/models'
-import { groupService } from '@/services'
+import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
+import { ValidationError } from '@/errors/domain/ValidationError'
+import { SsoUser } from '@/models/ssouser.model'
+import { User } from '@/models/user.model'
+import { groupService } from '@/services/group.service'
 
 describe('groupService', () => {
   const tenantId = '1'

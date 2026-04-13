@@ -5,7 +5,8 @@ import { VForm } from 'vuetify/components'
 
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
-import type { Group, GroupDetailFields, Tenant } from '@/models'
+import type { Group, GroupDetailFields } from '@/models/group.model'
+import type { Tenant } from '@/models/tenant.model'
 import { ROLES } from '@/utils/constants'
 import { currentUserHasRole } from '@/utils/permissions'
 

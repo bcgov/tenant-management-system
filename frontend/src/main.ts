@@ -14,10 +14,7 @@ import { ConfigError, loadConfig } from './services/config.service'
 import { logger } from '@/utils/logger'
 
 export async function initializeApp() {
-  logger.info('Starting application initialization...')
-
   await loadConfig()
-  logger.info('Configuration loaded successfully')
 
   // Create app and pinia first so we can use the store
   const app = createApp(App)
@@ -29,9 +26,7 @@ export async function initializeApp() {
   app.use(i18n)
 
   const authStore = useAuthStore()
-
   await authStore.initKeycloak()
-  logger.info('Keycloak initialized successfully')
 
   app.mount('#app')
 }

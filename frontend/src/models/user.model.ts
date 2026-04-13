@@ -1,4 +1,5 @@
-import { Role, SsoUser } from '@/models'
+import { Role } from '@/models/role.model'
+import { SsoUser } from '@/models/ssouser.model'
 
 export declare type UserId = string & { readonly __brand: 'UserId' }
 
@@ -88,10 +89,19 @@ export class User {
     const attributes = searchData.attributes
     const type = attributes.idir_username?.[0]
       ? 'idir'
-      : (searchData.username?.includes('bceidbusiness') ? 'bceidbusiness' : 'bceidbasic')
+      : searchData.username?.includes('bceidbusiness')
+        ? 'bceidbusiness'
+        : 'bceidbasic'
     const userId =
-      attributes.idir_user_guid?.[0] ?? attributes.idir_userid?.[0] ?? attributes.bceid_user_guid?.[0] ?? attributes.bceid_userid?.[0] ?? ''
-    const username = attributes.idir_username?.[0] ?? attributes.bceid_username?.[0] ?? undefined
+      attributes.idir_user_guid?.[0] ??
+      attributes.idir_userid?.[0] ??
+      attributes.bceid_user_guid?.[0] ??
+      attributes.bceid_userid?.[0] ??
+      ''
+    const username =
+      attributes.idir_username?.[0] ??
+      attributes.bceid_username?.[0] ??
+      undefined
     const displayName =
       attributes.display_name?.[0] ?? attributes.displayName?.[0] ?? ''
 

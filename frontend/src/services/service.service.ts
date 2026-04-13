@@ -1,6 +1,6 @@
 import type { GroupServiceRoles } from '@/models/groupserviceroles.model'
-import { authenticatedAxios } from './authenticated.axios'
-import { logApiError } from './utils'
+import { authenticatedAxios } from '@/services/authenticated.axios'
+import { logApiError } from '@/services/utils'
 
 const api = authenticatedAxios()
 

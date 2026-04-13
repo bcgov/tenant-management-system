@@ -28,7 +28,7 @@ vi.mock('@/services/utils', () => ({
 }))
 
 // Import after mocks are set up
-import { roleService } from '@/services'
+import { roleService } from '@/services/role.service'
 import { logApiError } from '@/services/utils'
 
 describe('roleService', () => {

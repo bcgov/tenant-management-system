@@ -1,6 +1,11 @@
-import { authenticatedAxios } from './authenticated.axios'
-import { logApiError } from './utils'
-import { type IdirSearchType, IDIR_SEARCH_TYPE, type BCeIDSearchType, BCeID_SEARCH_TYPE } from '@/utils/constants'
+import { authenticatedAxios } from '@/services/authenticated.axios'
+import { logApiError } from '@/services/utils'
+import {
+  type IdirSearchType,
+  IDIR_SEARCH_TYPE,
+  type BCeIDSearchType,
+  BCeID_SEARCH_TYPE,
+} from '@/utils/constants'
 
 const api = authenticatedAxios()
 
@@ -16,8 +21,8 @@ export const userService = {
   async _searchIdirUsers(searchType: IdirSearchType, searchValue: string) {
     try {
       const response = await api.get('/users/bcgovssousers/idir/search', {
-        params: { 
-          [searchType]: searchValue
+        params: {
+          [searchType]: searchValue,
         },
       })
 
@@ -41,7 +46,7 @@ export const userService = {
       const response = await api.get('/users/bcgovssousers/bceid/search', {
         params: {
           [searchType]: searchValue,
-          bceidType: 'both'
+          bceidType: 'both',
         },
       })
 
@@ -89,7 +94,10 @@ export const userService = {
    *   user-like objects.
    */
   async searchBCeIDDisplayName(firstName: string) {
-    return this._searchBceidUsers(BCeID_SEARCH_TYPE.DISPLAY_NAME.value, firstName)
+    return this._searchBceidUsers(
+      BCeID_SEARCH_TYPE.DISPLAY_NAME.value,
+      firstName,
+    )
   },
 
   /**

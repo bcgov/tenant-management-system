@@ -8,9 +8,14 @@ http:
   url: "{{baseUrl}}/roles"
   auth:
     type: bearer
-    token: "{{token-other-issuer}}"
+    token: "{{token}}"
 
 runtime:
+  scripts:
+    - type: after-response
+      code: |-
+        const tokenResponse = await bru.runRequest('_setup/mint token other issuer')
+        bru.setVar('token', tokenResponse.data.token)
   assertions:
     - expression: res.status
       operator: eq

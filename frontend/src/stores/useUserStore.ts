@@ -1,9 +1,14 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
-import { User } from '@/models'
-import { userService } from '@/services'
-import { type BCeIDSearchType, type IdirSearchType, BCeID_SEARCH_TYPE, IDIR_SEARCH_TYPE } from '@/utils/constants'
+import { User } from '@/models/user.model'
+import { userService } from '@/services/user.service'
+import {
+  type BCeIDSearchType,
+  type IdirSearchType,
+  BCeID_SEARCH_TYPE,
+  IDIR_SEARCH_TYPE,
+} from '@/utils/constants'
 
 /**
  * Pinia store for searching and managing IDIR users.

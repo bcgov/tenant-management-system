@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { watchEffect } from 'vue'
 
-import { useAuthStore } from '@/stores'
+import { useAuthStore } from '@/stores/useAuthStore'
 
 // --- Store and Composable Setup ----------------------------------------------
 
@@ -11,7 +11,7 @@ const authStore = useAuthStore()
 
 watchEffect(() => {
   if (!authStore.isAuthenticated) {
-    window.location.href = '/'
+    globalThis.location.href = '/'
   }
 })
 </script>

@@ -1,7 +1,5 @@
 import { reactive } from 'vue'
 
-import { logger } from '@/utils/logger'
-
 export class ConfigError extends Error {
   constructor(message: string) {
     super(message)
@@ -70,9 +68,6 @@ export const config = reactive<AppConfig>({} as AppConfig)
 export async function loadConfig(): Promise<void> {
   let loadedConfig
   if (import.meta.env.VITE_DISABLE_RUNTIME_CONFIG === 'true') {
-    // For local development load config from .env instead of the network file.
-    logger.info('Loading configuration from environment variables')
-
     loadedConfig = {
       api: {
         baseUrl: import.meta.env.VITE_API_BASE_URL,
@@ -88,8 +83,6 @@ export async function loadConfig(): Promise<void> {
       },
     }
   } else {
-    logger.info('Loading configuration from network file')
-
     const response = await fetch('/config/default.json')
     if (!response.ok) {
       throw new ConfigError(

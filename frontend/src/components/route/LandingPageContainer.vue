@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { computed, watchEffect } from 'vue'
 import { useRouter } from 'vue-router'
+
 import { config } from '@/services/config.service'
-import { useAuthStore } from '@/stores'
+import { useAuthStore } from '@/stores/useAuthStore'
 
 const authStore = useAuthStore()
 const router = useRouter()

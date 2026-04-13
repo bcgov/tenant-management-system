@@ -1,7 +1,9 @@
 info:
   name: mint token other audience
   type: http
-  seq: 3
+  seq: 6
+  tags:
+    - setup
 
 http:
   method: POST
@@ -13,8 +15,8 @@ http:
         "claims": {
           "aud": "other-audience",
           "identity_provider": "idir",
-          "idir_user_guid": "8BADF00DCAFEBABE4ACE8BEEDEADBEEF",
-          "sub": "8badf00dcafebabe4ace8beedeadbeef@azureidir"
+          "idir_user_guid": "BAC649237F244F3C806D3063BB4CEBCF",
+          "sub": "bac649237f244f3c806d3063bb4cebcf@azureidir"
         }
       }
   auth: inherit
@@ -29,22 +31,13 @@ runtime:
       value: idir
     - expression: res.body.claims.idir_user_guid
       operator: eq
-      value: 8BADF00DCAFEBABE4ACE8BEEDEADBEEF
+      value: BAC649237F244F3C806D3063BB4CEBCF
     - expression: res.body.claims.sub
       operator: eq
-      value: 8badf00dcafebabe4ace8beedeadbeef@azureidir
+      value: bac649237f244f3c806d3063bb4cebcf@azureidir
     - expression: res.status
       operator: eq
       value: "200"
-  actions:
-    - type: set-variable
-      phase: after-response
-      selector:
-        expression: res.body.token
-        method: jsonq
-      variable:
-        name: token-other-audience
-        scope: runtime
 
 settings:
   encodeUrl: true

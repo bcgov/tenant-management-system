@@ -4,7 +4,7 @@ import { VForm } from 'vuetify/components'
 
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
-import type { TenantRequestDetailFields } from '@/models'
+import type { TenantRequestDetailFields } from '@/models/tenantrequest.model'
 import { MINISTRIES } from '@/utils/constants'
 
 // --- Component Interface -----------------------------------------------------

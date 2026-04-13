@@ -3,14 +3,17 @@ import { mdiPlusBox } from '@mdi/js'
 import { computed, ref } from 'vue'
 
 import UserSearch from '@/components/group/UserSearch.vue'
+import FloatingActionButton from '@/components/ui/FloatingActionButton.vue'
 import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
 import SimpleDialog from '@/components/ui/SimpleDialog.vue'
-import type { Group, GroupUser, Tenant, User } from '@/models'
+import UserTable from '@/components/user/UserTable.vue'
+import type { Group } from '@/models/group.model'
+import type { GroupUser } from '@/models/groupuser.model'
+import { GroupUser as GroupUserModel } from '@/models/groupuser.model'
+import type { Tenant } from '@/models/tenant.model'
+import type { User } from '@/models/user.model'
 import { type IdirSearchType, ROLES } from '@/utils/constants'
 import { currentUserHasRole } from '@/utils/permissions'
-import UserTable from '../user/UserTable.vue'
-import { GroupUser as GroupUserModel } from '@/models'
-import FloatingActionButton from '@/components/ui/FloatingActionButton.vue'
 
 // --- Component Interface -----------------------------------------------------
 

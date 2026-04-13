@@ -1,0 +1,27 @@
+info:
+  name: tenant add user
+  type: folder
+  seq: 9
+
+request:
+  auth: inherit
+  scripts:
+    - type: before-request
+      code: |-
+        // Setup variables for the tests in this directory are:
+        //
+        //  - roleServiceUser: Object for the service user role
+        //  - roleTenantOwner: Object for the tenant owner role
+        //  - roleUserAdmin: Object for the user admin role
+        //  - tenantId: String for the tenant.id UUID
+        //
+
+        const response = await bru.runRequest('_fixtures/get roles')
+        const roles = response.data.data.roles
+
+        bru.setVar('roleServiceUser', roles.find(role => role.name === 'TMS.SERVICE_USER'))
+        bru.setVar('roleTenantOwner', roles.find(role => role.name === 'TMS.TENANT_OWNER'))
+        bru.setVar('roleUserAdmin', roles.find(role => role.name === 'TMS.USER_ADMIN'))
+
+        const tenantResponse = await bru.runRequest('_fixtures/create tenant')
+        bru.setVar('tenantId', tenantResponse.data.data.tenant.id)

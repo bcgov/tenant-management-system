@@ -36,10 +36,12 @@ vi.mock('@/services/authenticated.axios', () => ({
   }),
 }))
 
-import { DuplicateEntityError, ValidationError } from '@/errors'
-import { type TenantRequestDetailFields, User } from '@/models'
-import { tenantRequestService } from '@/services'
+import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
+import { ValidationError } from '@/errors/domain/ValidationError'
 import type { SSOUserId } from '@/models/ssouser.model'
+import { type TenantRequestDetailFields } from '@/models/tenantrequest.model'
+import { User } from '@/models/user.model'
+import { tenantRequestService } from '@/services/tenantrequest.service'
 
 describe('tenantRequestService', () => {
   const requestId = '123'
