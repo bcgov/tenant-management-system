@@ -1,6 +1,7 @@
 ---
 name: Deploy Dev (Gold)
-
+permissions:
+  contents: read
 on:
   workflow_dispatch:
     inputs:
