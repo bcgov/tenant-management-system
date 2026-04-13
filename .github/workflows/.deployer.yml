@@ -110,11 +110,12 @@ jobs:
           # Release name includes run numbers to ensure uniqueness
           release=cstar-${{ steps.pr.outputs.pr || inputs.tag || inputs.environment }}
 
-          # version, to support helm packaging for non-pr based releases (workflow_dispatch). default to 1.0.0+github run number
+          # Version, to support helm packaging for non-pr based releases (workflow_dispatch). default to 1.0.0+github run number
           version=1.0.0+${{ github.run_number }}
           
           # Extract domain name for github host url
-          domain=${{ replace(replace(replace(secrets.OPENSHIFT_SERVER, 'https://', ''), ':6443', ''), 'api.', 'apps.') }}
+          server=${{ secrets.OPENSHIFT_SERVER }}
+          domain=$(echo "$SERVER" | sed -E 's#https?://##; s#:[0-9]+##; s#^api\.#apps.#')
 
             # Summary
           echo "tag=${tag}"
