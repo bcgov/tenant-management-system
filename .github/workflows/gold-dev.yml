@@ -50,7 +50,8 @@ jobs:
     secrets: inherit
     with:
       environment: gold-dev
-      db_user: appproxy # appproxy is the user which works with pgbouncer.
+      db_user: ${{ inputs.db_user }} # appproxy is the user which works with pgbouncer.
+      db_triggers: ('charts/crunchy/')
       params: --set backend.deploymentStrategy=RollingUpdate
         --set frontend.deploymentStrategy=RollingUpdate
         --set global.autoscaling=${{ inputs.autoscaling }}
@@ -70,7 +71,8 @@ jobs:
     secrets: inherit
     with:
       environment: golddr-dev
-      db_user: appproxy # appproxy is the user which works with pgbouncer.
+      db_user: ${{ inputs.db_user }} # appproxy is the user which works with pgbouncer.
+      db_triggers: ('charts/crunchy/')
       params: --set backend.deploymentStrategy=RollingUpdate
         --set frontend.deploymentStrategy=RollingUpdate
         --set global.autoscaling=${{ inputs.autoscaling }}
