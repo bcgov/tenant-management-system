@@ -1,11 +1,14 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
-import { Group, type GroupDetailFields, GroupUser, User } from '@/models'
-import { groupService, serviceService } from '@/services'
-import { ServerError } from '@/errors'
-import { ServiceRole } from '@/models/servicerole.model'
+import { ServerError } from '@/errors/domain/ServerError'
+import { Group, type GroupDetailFields } from '@/models/group.model'
 import type { GroupServiceRoles } from '@/models/groupserviceroles.model'
+import { GroupUser } from '@/models/groupuser.model'
+import { ServiceRole } from '@/models/servicerole.model'
+import { User } from '@/models/user.model'
+import { groupService } from '@/services/group.service'
+import { serviceService } from '@/services/service.service'
 
 type GroupRoleType = {
   [key: string]: ServiceRole[]
@@ -29,10 +32,10 @@ export const useGroupStore = defineStore('group', () => {
    */
   function upsertGroup(group: Group) {
     const index = groups.value.findIndex((g) => g.id === group.id)
-    if (index !== -1) {
-      groups.value[index] = group
-    } else {
+    if (index === -1) {
       groups.value.push(group)
+    } else {
+      groups.value[index] = group
     }
 
     return group

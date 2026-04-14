@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest'
-import { Service } from '@/models'
+import { describe, expect, it } from 'vitest'
+
+import { Service } from '@/models/service.model'
 
 describe('Service model', () => {
   it('constructor assigns all properties correctly', () => {

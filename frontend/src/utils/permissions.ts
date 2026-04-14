@@ -1,5 +1,5 @@
-import { Tenant } from '@/models'
-import { useAuthStore } from '@/stores'
+import { Tenant } from '@/models/tenant.model'
+import { useAuthStore } from '@/stores/useAuthStore'
 
 /**
  * Checks if the current user has a specific role in the given tenant.

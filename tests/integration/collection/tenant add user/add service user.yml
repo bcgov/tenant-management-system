@@ -1,0 +1,71 @@
+info:
+  name: add service user
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{baseUrl}}/tenants/{{tenantId}}/users"
+  body:
+    type: json
+    data: |
+      {
+        "roles": [
+          "{{roleServiceUser.id}}"
+        ],
+        "user": {
+          "displayName": "Saramago, Salman CITZ:EX",
+          "email": "Salman.Saramago@gov.bc.ca",
+          "firstName": "Salman",
+          "lastName": "Saramago",
+          "ssoUserId": "23BCA2E3B9C6408595322A138F9EF5CA",
+          "userName": "SSARAMAG"
+        }
+      }
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        const tokenResponse = await bru.runRequest('_setup/mint token owner')
+        bru.setVar('token', tokenResponse.data.token)
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "201"
+    - expression: res.body.data.user.ssoUser.displayName
+      operator: eq
+      value: Saramago, Salman CITZ:EX
+    - expression: res.body.data.user.ssoUser.email
+      operator: eq
+      value: Salman.Saramago@gov.bc.ca
+    - expression: res.body.data.user.ssoUser.firstName
+      operator: eq
+      value: Salman
+    - expression: res.body.data.user.ssoUser.lastName
+      operator: eq
+      value: Saramago
+    - expression: res.body.data.user.ssoUser.ssoUserId
+      operator: eq
+      value: 23BCA2E3B9C6408595322A138F9EF5CA
+    - expression: res.body.data.user.ssoUser.userName
+      operator: eq
+      value: SSARAMAG
+    - expression: res.body.data.user.roles
+      operator: length
+      value: "1"
+    - expression: res.body.data.user.roles[0].name
+      operator: eq
+      value: TMS.SERVICE_USER
+    - expression: ""
+      operator: eq
+      value: ""
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

@@ -1,6 +1,5 @@
 import { ServiceRole } from './servicerole.model'
 
-
 declare type ServiceId = string & { readonly __brand: 'ServiceId' }
 declare type RoleId = string & { readonly __brand: 'RoleId' }
 
@@ -18,7 +17,7 @@ export type RolesType = {
   isDeleted: boolean
   createdDateTime: string
   updatedDateTime: string
-  enabled?: boolean | undefined
+  enabled: boolean | undefined
 }
 
 export class Service {

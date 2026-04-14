@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest'
-import { Role } from '@/models'
+import { describe, expect, it } from 'vitest'
+
+import { Role } from '@/models/role.model'
 
 describe('Role model', () => {
   it('constructor assigns all properties correctly', () => {

@@ -1,8 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
-import { Service } from '@/models'
-import { serviceService } from '@/services'
+import { Service } from '@/models/service.model'
+import { serviceService } from '@/services/service.service'
 
 /**
  * Pinia store for managing services and tenant-specific services.
@@ -21,10 +21,10 @@ export const useServiceStore = defineStore('service', () => {
    */
   function upsertService(service: Service) {
     const index = services.value.findIndex((s) => s.id === service.id)
-    if (index !== -1) {
-      services.value[index] = service
-    } else {
+    if (index === -1) {
       services.value.push(service)
+    } else {
+      services.value[index] = service
     }
 
     return service

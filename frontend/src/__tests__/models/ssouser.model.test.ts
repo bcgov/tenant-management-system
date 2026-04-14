@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { SsoUser } from '@/models'
+
+import { SsoUser } from '@/models/ssouser.model'
 
 describe('SsoUser model', () => {
   it('constructor assigns all properties correctly', () => {

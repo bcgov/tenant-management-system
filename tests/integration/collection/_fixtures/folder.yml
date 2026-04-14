@@ -1,0 +1,14 @@
+info:
+  name: _fixtures
+  type: folder
+  seq: 2
+
+request:
+  auth: inherit
+  scripts:
+    - type: before-request
+      code: |-
+        // Skip the fixtures in this folder.
+        if (req.getTags().includes('fixture') && req.getExecutionMode() === 'runner') {
+          bru.runner.skipRequest()
+        }

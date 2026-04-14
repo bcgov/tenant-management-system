@@ -1,6 +1,6 @@
-import { User } from '@/models'
-import { ROLES } from '@/utils/constants'
 import type { SSOUserId } from '@/models/ssouser.model'
+import { User } from '@/models/user.model'
+import { ROLES } from '@/utils/constants'
 
 export declare type TenantId = string & { readonly __brand: 'TenantId' }
 

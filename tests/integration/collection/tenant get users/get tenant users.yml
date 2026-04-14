@@ -1,0 +1,42 @@
+info:
+  name: get tenant users
+  type: http
+  seq: 1
+
+http:
+  method: GET
+  url: "{{baseUrl}}/tenants/{{tenantId}}/users"
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        const tokenResponse = await bru.runRequest('_setup/mint token owner')
+        bru.setVar('token', tokenResponse.data.token)
+    - type: tests
+      code: |-
+        test('Users to be Odysseus, Salman', () => {
+          const users = res.getBody().data.users
+          const userNames = users.map(user => user.ssoUser.firstName)
+
+          expect(userNames).to.include.members([
+            'Odysseus',
+            'Salman',
+          ])
+        })
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+    - expression: res.body.data.users
+      operator: length
+      value: "2"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

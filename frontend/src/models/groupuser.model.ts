@@ -1,4 +1,4 @@
-import { User } from '@/models'
+import { User } from '@/models/user.model'
 
 declare type GroupUserId = string & { readonly __brand: 'GroupUserId' }
 

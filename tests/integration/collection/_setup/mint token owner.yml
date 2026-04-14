@@ -1,0 +1,51 @@
+info:
+  name: mint token owner
+  type: http
+  seq: 4
+  tags:
+    - setup
+
+http:
+  method: POST
+  url: "{{mockJwksUrl}}/mint"
+  body:
+    type: json
+    data: |
+      {
+        "claims": {
+          "aud": "{{audience}}",
+          "display_name": "Orwell, Odysseus CITZ:EX",
+          "email": "Odysseus.Orwell@gov.bc.ca",
+          "family_name": "Orwell",
+          "given_name": "Odysseus",
+          "identity_provider": "idir",
+          "idir_user_guid": "820D17EA8C90438A9A74925B442CE775",
+          "idir_username": "OORWELL",
+          "sub": "820d17ea8c90438a9a74925b442ce775@azureidir"
+        }
+      }
+  auth: inherit
+
+runtime:
+  assertions:
+    - expression: res.body.claims.aud
+      operator: eq
+      value: "{{audience}}"
+    - expression: res.body.claims.identity_provider
+      operator: eq
+      value: idir
+    - expression: res.body.claims.idir_user_guid
+      operator: eq
+      value: 820D17EA8C90438A9A74925B442CE775
+    - expression: res.body.claims.sub
+      operator: eq
+      value: 820d17ea8c90438a9a74925b442ce775@azureidir
+    - expression: res.status
+      operator: eq
+      value: "200"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

@@ -8,9 +8,14 @@ http:
   url: "{{baseUrl}}/roles"
   auth:
     type: bearer
-    token: "{{token-expired}}"
+    token: "{{token}}"
 
 runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        const tokenResponse = await bru.runRequest('_setup/mint token expired')
+        bru.setVar('token', tokenResponse.data.token)
   assertions:
     - expression: res.status
       operator: eq

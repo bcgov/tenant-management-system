@@ -1,0 +1,87 @@
+---
+name: Deploy Dev (Gold)
+permissions: {}
+on:
+  workflow_dispatch:
+    inputs:
+      autoscaling:
+        description: 'enable or disable autoscaling'
+        required: false
+        type: boolean
+        default: false 
+      tag:
+        description: 'Image tag set to deploy; e.g. PR number or prod'
+        type: string
+        default: 'latest'
+      db_user:
+        description: "database user; e.g. PR number or approxy"
+        required: false
+        type: string
+        default: "appproxy"
+      params:
+        description: Extra parameters to pass to helm upgrade
+        required: false
+        type: string
+  workflow_call:
+    inputs:
+      autoscaling:
+        description: 'enable or disable autoscaling'
+        required: false
+        type: boolean
+        default: false 
+      tag:
+        description: 'Image tag set to deploy; e.g. PR number or prod'
+        required: false
+        type: string
+        default: 'latest'
+      db_user:
+        description: "database user; e.g. PR number or appproxy"
+        required: false
+        type: string
+        default: "appproxy"
+      params:
+        description: Extra parameters to pass to helm upgrade
+        required: false
+        type: string
+jobs:
+  deploy-gold-dev:
+    name: Deploys Dev (Gold)
+    uses: ./.github/workflows/.deployer.yml
+    secrets: inherit
+    with:
+      environment: gold-dev
+      db_user: ${{ inputs.db_user }} # appproxy is the user which works with pgbouncer.
+      db_triggers: ('charts/crunchy/')
+      params: --set backend.deploymentStrategy=RollingUpdate
+        --set frontend.deploymentStrategy=RollingUpdate
+        --set global.autoscaling=${{ inputs.autoscaling }}
+        --set frontend.pdb.enabled=true
+        --set frontend.pdb.minAvailable=2
+        --set frontend.replicaCount=3
+        --set backend.pdb.enabled=true
+        --set backend.pdb.minAvailable=2
+        --set backend.replicaCount=3
+        --set global.domain="apps.gold.devops.gov.bc.ca"
+        ${{ inputs.params }}
+      tag: ${{ inputs.tag }}
+
+  deploy-golddr-dev:
+    name: Deploys Dev (Golddr)
+    uses: ./.github/workflows/.deployer.yml
+    secrets: inherit
+    with:
+      environment: golddr-dev
+      db_user: ${{ inputs.db_user }} # appproxy is the user which works with pgbouncer.
+      db_triggers: ('charts/crunchy/')
+      params: --set backend.deploymentStrategy=RollingUpdate
+        --set frontend.deploymentStrategy=RollingUpdate
+        --set global.autoscaling=${{ inputs.autoscaling }}
+        --set frontend.pdb.enabled=true
+        --set frontend.pdb.minAvailable=2
+        --set frontend.replicaCount=3
+        --set backend.pdb.enabled=true
+        --set backend.pdb.minAvailable=2
+        --set backend.replicaCount=3
+        --set global.domain="apps.golddr.devops.gov.bc.ca"
+        ${{ inputs.params }}
+      tag: ${{ inputs.tag }}

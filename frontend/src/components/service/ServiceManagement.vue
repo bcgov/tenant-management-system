@@ -2,7 +2,8 @@
 import { mdiMagnify } from '@mdi/js'
 import { computed, ref } from 'vue'
 
-import type { Service, Tenant } from '@/models'
+import type { Service } from '@/models/service.model'
+import type { Tenant } from '@/models/tenant.model'
 import { ROLES } from '@/utils/constants'
 import { currentUserHasRole } from '@/utils/permissions'
 

@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 import ServiceManagement from '@/components/service/ServiceManagement.vue'
-import { useNotification } from '@/composables'
-import { Service, Tenant } from '@/models'
-import { useServiceStore } from '@/stores'
-import { useI18n } from 'vue-i18n'
+import { useNotification } from '@/composables/useNotification'
+import { Service } from '@/models/service.model'
+import { Tenant } from '@/models/tenant.model'
+import { useServiceStore } from '@/stores/useServiceStore'
 
 const { t } = useI18n()
 

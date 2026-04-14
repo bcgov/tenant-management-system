@@ -13,6 +13,9 @@ runtime:
     - expression: res.status
       operator: eq
       value: "200"
+    - expression: res.body.apiStatus
+      operator: eq
+      value: Healthy
 
 settings:
   encodeUrl: true

@@ -1,7 +1,8 @@
-import { describe, it, expect } from 'vitest'
-import { Role, SsoUser, User } from '@/models'
-import type { UserId } from '@/models/user.model'
-import type { RoleId } from '@/models/role.model'
+import { describe, expect, it } from 'vitest'
+
+import { Role, type RoleId } from '@/models/role.model'
+import { SsoUser } from '@/models/ssouser.model'
+import { User, type UserId } from '@/models/user.model'
 
 describe('User model', () => {
   it('constructor assigns properties correctly', () => {
@@ -77,6 +78,57 @@ describe('User model', () => {
     const user = User.fromApiData(apiData)
 
     expect(user.roles).toEqual([])
+  })
+
+  it('fromSearchData sets type to bceidbusiness when username includes bceidbusiness', () => {
+    const searchData = {
+      email: 'business@example.com',
+      firstName: 'Business',
+      lastName: 'User',
+      username: String.raw`bceidbusiness\someuser`,
+      attributes: {
+        bceid_user_guid: ['businessGuid'],
+        display_name: ['Business Display'],
+      },
+    }
+
+    const user = User.fromSearchData(searchData)
+
+    expect(user.ssoUser.idpType).toBe('bceidbusiness')
+    expect(user.id).toBe('businessGuid')
+  })
+
+  it('fromSearchData sets type to bceidbasic when username does not include bceidbusiness', () => {
+    const searchData = {
+      email: 'basic@example.com',
+      firstName: 'Basic',
+      lastName: 'User',
+      username: String.raw`bceidbasic\someuser`,
+      attributes: {
+        bceid_user_guid: ['basicGuid'],
+        display_name: ['Basic Display'],
+      },
+    }
+
+    const user = User.fromSearchData(searchData)
+
+    expect(user.ssoUser.idpType).toBe('bceidbasic')
+    expect(user.id).toBe('basicGuid')
+  })
+
+  it('fromSearchData sets type to bceidbasic when username is undefined', () => {
+    const searchData = {
+      email: 'nousername@example.com',
+      firstName: 'No',
+      lastName: 'Username',
+      attributes: {
+        bceid_user_guid: ['noUsernameGuid'],
+        display_name: ['No Username Display'],
+      },
+    }
+
+    const user = User.fromSearchData(searchData)
+    expect(user.ssoUser.idpType).toBe('bceidbasic')
   })
 
   it('fromSearchData creates User correctly with roles empty', () => {

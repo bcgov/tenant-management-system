@@ -1,24 +1,26 @@
 <script lang="ts" setup>
-import { watch, ref, computed, type Ref } from 'vue'
 import { storeToRefs } from 'pinia'
+import { computed, type Ref, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-
-import { useServiceStore, useGroupStore } from '@/stores'
-import { useNotification } from '@/composables'
-import type { Tenant, Group, GroupServiceRoles } from '@/models'
-import {
-  SharedServicesArray,
-  SharedServiceRoles,
-} from '@/models/groupserviceroles.model'
 
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
 import SimpleDialog, {
   type DialogButton,
 } from '@/components/ui/SimpleDialog.vue'
-import { currentUserHasRole } from '@/utils/permissions'
+import { useNotification } from '@/composables/useNotification'
+import type { Group } from '@/models/group.model'
+import {
+  type GroupServiceRoles,
+  SharedServicesArray,
+  SharedServiceRoles,
+} from '@/models/groupserviceroles.model'
+import type { Tenant } from '@/models/tenant.model'
+import { useGroupStore } from '@/stores/useGroupStore'
+import { useServiceStore } from '@/stores/useServiceStore'
 import { ROLES } from '@/utils/constants'
-  
+import { currentUserHasRole } from '@/utils/permissions'
+
 // Props
 const props = defineProps<{
   tenant: Tenant
@@ -50,9 +52,20 @@ const fetchServices = async () => {
     loadingServices.value = false
     for (let i = 0; i < services.value.length; i++) {
       const groupValues = groupRoles.value[services.value[i].id] || {}
-      roleValues.value[i] = groupValues.map((g) => g.enabled === true)
+      //these often aren't in the same order but it needs to be
+      const orderMap = new Map(
+        services.value[i].serviceRoles.map((obj, index) => [obj.id, index]),
+      )
+
+      // Sort based on the map
+      const sortedGroupValues = [...groupValues].sort((a, b) => {
+        const indexA = orderMap.get(a.id) ?? Infinity
+        const indexB = orderMap.get(b.id) ?? Infinity
+        return indexA - indexB
+      })
+      roleValues.value[i] = sortedGroupValues.map((g) => g.enabled === true)
       expanded.value[i] = services.value[i].name.toLowerCase()
-      defaultState.value[i] = groupValues.map((g) => g.enabled === true)
+      defaultState.value[i] = sortedGroupValues.map((g) => g.enabled === true)
     }
   })
 }
@@ -78,14 +91,24 @@ const saveChanges = async () => {
 
   for (let i = 0; i < services.value.length; i++) {
     const groupValues = groupRoles.value[services.value[i].id] || {}
+    const orderMap = new Map(
+      services.value[i].serviceRoles.map((obj, index) => [obj.id, index]),
+    )
+
+    // Sort based on the map
+    const sortedGroupValues = [...groupValues].sort((a, b) => {
+      const indexA = orderMap.get(a.id) ?? Infinity
+      const indexB = orderMap.get(b.id) ?? Infinity
+      return indexA - indexB
+    })
     const append: SharedServicesArray = new SharedServicesArray(
       services.value[i].id,
       [],
     )
 
-    for (let j = 0; j < groupValues.length; j++) {
+    for (let j = 0; j < sortedGroupValues.length; j++) {
       const val: SharedServiceRoles = new SharedServiceRoles(
-        groupValues[j].id,
+        sortedGroupValues[j].id,
         roleValues.value[i][j],
       )
       append.sharedServiceRoles.push(val)
@@ -127,9 +150,9 @@ const openDialog = (action: 'undo' | 'clear') => {
 
 const canMakeChanges = computed(() => {
   return (
-    currentUserHasRole(props.tenant, ROLES.TENANT_OWNER.value)
-    || currentUserHasRole(props.tenant, ROLES.USER_ADMIN.value)
-    || currentUserHasRole(props.tenant, ROLES.OPERATIONS_ADMIN.value)
+    currentUserHasRole(props.tenant, ROLES.TENANT_OWNER.value) ||
+    currentUserHasRole(props.tenant, ROLES.USER_ADMIN.value) ||
+    currentUserHasRole(props.tenant, ROLES.OPERATIONS_ADMIN.value)
   )
 })
 
@@ -201,12 +224,24 @@ const dialogButtons = computed(() => {
     />
     <v-row>
       <v-col cols="12">
-        <h4>{{ $t('groups.sharedServices', { servicesLabel: $t('general.servicesLabel', 2) }) }}</h4>
+        <h4>
+          {{
+            $t('groups.sharedServices', {
+              servicesLabel: $t('general.servicesLabel', 2),
+            })
+          }}
+        </h4>
       </v-col>
     </v-row>
     <v-row>
       <v-col cols="12">
-        <p>{{ $t('groups.sharedServicesDesc', { servicesLabel: $t('general.servicesLabel', 2) }) }}</p>
+        <p>
+          {{
+            $t('groups.sharedServicesDesc', {
+              servicesLabel: $t('general.servicesLabel', 2),
+            })
+          }}
+        </p>
       </v-col>
     </v-row>
     <v-row v-if="loadingServices">
@@ -295,8 +330,6 @@ const dialogButtons = computed(() => {
     </v-row>
   </v-container>
 </template>
-
-<style></style>
 
 <style scoped>
 .darkened {

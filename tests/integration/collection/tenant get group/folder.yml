@@ -1,0 +1,19 @@
+info:
+  name: tenant get group
+  type: folder
+  seq: 11
+
+request:
+  auth: inherit
+  scripts:
+    - type: before-request
+      code: |-
+        // Setup variables for the tests in this directory are:
+        //
+        //  - tenantId: String for the tenant.id UUID
+        //
+
+        const groupResponse = await bru.runRequest('_fixtures/create tenant with group')
+        // Side effect of the above is setting the tenantId
+        console.log(groupResponse)
+        bru.setVar('groupId', groupResponse.data.data.group.id)

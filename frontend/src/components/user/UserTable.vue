@@ -6,17 +6,18 @@ import {
   mdiPlus,
   mdiPlusBox,
 } from '@mdi/js'
-import { computed, ref } from 'vue'
-import type { ComputedRef } from 'vue'
+import { computed, type ComputedRef, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-
-import type { User, Tenant, Role, GroupUser } from '@/models'
-import type { UserId } from '@/models/user.model'
+// TODO: sus
 import type { ItemSlotBase } from 'vuetify/lib/components/VDataTable/types.mjs'
 
+import type { GroupUser } from '@/models/groupuser.model'
+import type { Role } from '@/models/role.model'
+import type { Tenant } from '@/models/tenant.model'
+import type { User, UserId } from '@/models/user.model'
+import { ROLES } from '@/utils/constants'
 import { convertIDPToDisplay } from '@/utils/display'
 import { currentUserHasRole } from '@/utils/permissions'
-import { ROLES } from '@/utils/constants'
 
 type RowPropsType = ItemSlotBase<User>
 

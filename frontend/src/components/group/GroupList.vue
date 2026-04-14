@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import GroupListCard from '@/components/group/GroupListCard.vue'
-import type { Group } from '@/models'
+import type { Group } from '@/models/group.model'
 
 // --- Component Interface -----------------------------------------------------
 

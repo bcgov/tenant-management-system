@@ -2,12 +2,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 describe('Logger', () => {
   let consoleErrorSpy: ReturnType<typeof vi.spyOn>
-  let consoleLogSpy: ReturnType<typeof vi.spyOn>
   let consoleWarnSpy: ReturnType<typeof vi.spyOn>
 
   beforeEach(() => {
     consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
-    consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
     consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
     vi.resetModules()
   })
@@ -68,16 +66,6 @@ describe('Logger', () => {
       })
     })
 
-    describe('info', () => {
-      it('should log info message', async () => {
-        const { logger } = await import('@/utils/logger')
-        logger.info('Test info message')
-
-        expect(consoleLogSpy).toHaveBeenCalledWith('Test info message')
-        expect(consoleLogSpy).toHaveBeenCalledTimes(1)
-      })
-    })
-
     describe('warning', () => {
       it('should log warning message', async () => {
         const { logger } = await import('@/utils/logger')
@@ -102,13 +90,6 @@ describe('Logger', () => {
       expect(consoleErrorSpy).not.toHaveBeenCalled()
     })
 
-    it('should not log info messages', async () => {
-      const { logger } = await import('@/utils/logger')
-      logger.info('Test info message')
-
-      expect(consoleLogSpy).not.toHaveBeenCalled()
-    })
-
     it('should not log warning messages', async () => {
       const { logger } = await import('@/utils/logger')
       logger.warning('Test warning message')
@@ -125,11 +106,9 @@ describe('Logger', () => {
     it('should log in test environment (non-production)', async () => {
       const { logger } = await import('@/utils/logger')
       logger.error('Test error')
-      logger.info('Test info')
       logger.warning('Test warning')
 
       expect(consoleErrorSpy).toHaveBeenCalledTimes(1)
-      expect(consoleLogSpy).toHaveBeenCalledTimes(1)
       expect(consoleWarnSpy).toHaveBeenCalledTimes(1)
     })
   })
@@ -142,10 +121,8 @@ describe('Logger', () => {
     it('should expose expected methods', async () => {
       const { logger } = await import('@/utils/logger')
       expect(logger).toHaveProperty('error')
-      expect(logger).toHaveProperty('info')
       expect(logger).toHaveProperty('warning')
       expect(typeof logger.error).toBe('function')
-      expect(typeof logger.info).toBe('function')
       expect(typeof logger.warning).toBe('function')
     })
   })

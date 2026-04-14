@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { useAuthStore } from '@/stores'
+import { useAuthStore } from '@/stores/useAuthStore'
 
 import { currentUserIsOperationsAdmin } from '@/utils/permissions'
 
