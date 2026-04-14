@@ -900,6 +900,8 @@ export class TMRepository {
       description: group.description,
       createdDateTime: group.createdDateTime,
       updatedDateTime: group.updatedDateTime,
+      createdBy: group.createdBy,
+      updatedBy: group.updatedBy,
     }
 
     if (expand.includes('groupUsers') && group.users) {

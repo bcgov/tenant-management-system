@@ -2829,7 +2829,9 @@ describe('Tenant API', () => {
   describe('POST /v1/shared-services', () => {
     const validSharedServiceData = {
       name: 'Test Shared Service',
+      displayName: 'Test Shared Service Display',
       clientIdentifier: 'test-service-client',
+      landingPageUrl: 'https://example.gov.bc.ca/test-shared-service',
       description: 'Test Description',
       isActive: true,
       roles: [
@@ -2876,7 +2878,9 @@ describe('Tenant API', () => {
       const mockSharedService = {
         id: '123e4567-e89b-12d3-a456-426614174000',
         name: validSharedServiceData.name,
+        displayName: validSharedServiceData.displayName,
         clientIdentifier: validSharedServiceData.clientIdentifier,
+        landingPageUrl: validSharedServiceData.landingPageUrl,
         description: validSharedServiceData.description,
         isActive: validSharedServiceData.isActive,
         sharedServiceRoles: [
@@ -2911,7 +2915,9 @@ describe('Tenant API', () => {
           sharedService: {
             id: mockSharedService.id,
             name: mockSharedService.name,
+            displayName: mockSharedService.displayName,
             clientIdentifier: mockSharedService.clientIdentifier,
+            landingPageUrl: mockSharedService.landingPageUrl,
             description: mockSharedService.description,
             isActive: mockSharedService.isActive,
             sharedServiceRoles: expect.arrayContaining([
@@ -2931,7 +2937,9 @@ describe('Tenant API', () => {
       expect(mockTMSRepository.saveSharedService).toHaveBeenCalledWith(
         expect.objectContaining({
           name: validSharedServiceData.name,
+          displayName: validSharedServiceData.displayName,
           clientIdentifier: validSharedServiceData.clientIdentifier,
+          landingPageUrl: validSharedServiceData.landingPageUrl,
           description: validSharedServiceData.description,
           isActive: validSharedServiceData.isActive,
           roles: validSharedServiceData.roles,
@@ -2943,7 +2951,9 @@ describe('Tenant API', () => {
     it('should create shared service with minimal required fields', async () => {
       const minimalData = {
         name: 'Minimal Service',
+        displayName: 'Minimal Service Display',
         clientIdentifier: 'minimal-service',
+        landingPageUrl: 'https://example.gov.bc.ca/minimal-service',
         roles: [
           {
             name: 'Basic Role',
@@ -2954,7 +2964,9 @@ describe('Tenant API', () => {
       const mockSharedService = {
         id: '123e4567-e89b-12d3-a456-426614174000',
         name: minimalData.name,
+        displayName: minimalData.displayName,
         clientIdentifier: minimalData.clientIdentifier,
+        landingPageUrl: minimalData.landingPageUrl,
         description: null,
         isActive: true,
         sharedServiceRoles: [
@@ -2983,7 +2995,9 @@ describe('Tenant API', () => {
           sharedService: {
             id: mockSharedService.id,
             name: mockSharedService.name,
+            displayName: mockSharedService.displayName,
             clientIdentifier: mockSharedService.clientIdentifier,
+            landingPageUrl: mockSharedService.landingPageUrl,
             description: mockSharedService.description,
             isActive: mockSharedService.isActive,
           },
@@ -3029,6 +3043,25 @@ describe('Tenant API', () => {
       })
     })
 
+    it('should fail when shared service display name already exists', async () => {
+      const errorMessage = `A shared service with display name '${validSharedServiceData.displayName}' already exists`
+      mockTMSRepository.saveSharedService.mockRejectedValue(
+        new ConflictError(errorMessage),
+      )
+
+      const response = await request(app)
+        .post('/v1/shared-services')
+        .send(validSharedServiceData)
+
+      expect(response.status).toBe(409)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Conflict',
+        httpResponseCode: 409,
+        message: errorMessage,
+        name: 'Error occurred creating shared service',
+      })
+    })
+
     it('should return 400 when required fields are missing', async () => {
       const invalidData = {
         description: 'Missing required fields',
@@ -3045,7 +3078,9 @@ describe('Tenant API', () => {
     it('should return 400 when roles array is empty', async () => {
       const invalidData = {
         name: validSharedServiceData.name,
+        displayName: validSharedServiceData.displayName,
         clientIdentifier: validSharedServiceData.clientIdentifier,
+        landingPageUrl: validSharedServiceData.landingPageUrl,
         roles: [],
       }
 
@@ -3358,7 +3393,9 @@ describe('Tenant API', () => {
         {
           id: '123e4567-e89b-12d3-a456-426614174000',
           name: 'Service A',
+          displayName: 'Service A Display',
           clientIdentifier: 'service-a',
+          landingPageUrl: 'https://example.gov.bc.ca/service-a',
           description: 'First shared service',
           isActive: true,
           roles: [
@@ -3383,7 +3420,9 @@ describe('Tenant API', () => {
         {
           id: '123e4567-e89b-12d3-a456-426614174003',
           name: 'Service B',
+          displayName: 'Service B Display',
           clientIdentifier: 'service-b',
+          landingPageUrl: 'https://example.gov.bc.ca/service-b',
           description: 'Second shared service',
           isActive: true,
           roles: [
@@ -3414,7 +3453,9 @@ describe('Tenant API', () => {
             {
               id: mockSharedServices[0].id,
               name: mockSharedServices[0].name,
+              displayName: mockSharedServices[0].displayName,
               clientIdentifier: mockSharedServices[0].clientIdentifier,
+              landingPageUrl: mockSharedServices[0].landingPageUrl,
               description: mockSharedServices[0].description,
               isActive: mockSharedServices[0].isActive,
               roles: expect.arrayContaining([
@@ -3431,7 +3472,9 @@ describe('Tenant API', () => {
             {
               id: mockSharedServices[1].id,
               name: mockSharedServices[1].name,
+              displayName: mockSharedServices[1].displayName,
               clientIdentifier: mockSharedServices[1].clientIdentifier,
+              landingPageUrl: mockSharedServices[1].landingPageUrl,
               description: mockSharedServices[1].description,
               isActive: mockSharedServices[1].isActive,
               roles: expect.arrayContaining([
@@ -3472,14 +3515,18 @@ describe('Tenant API', () => {
         {
           id: '123e4567-e89b-12d3-a456-426614174000',
           name: 'Alpha Service',
+          displayName: 'Alpha Service Display',
           clientIdentifier: 'alpha-service',
+          landingPageUrl: 'https://example.gov.bc.ca/alpha-service',
           isActive: true,
           roles: [],
         },
         {
           id: '123e4567-e89b-12d3-a456-426614174001',
           name: 'Zebra Service',
+          displayName: 'Zebra Service Display',
           clientIdentifier: 'zebra-service',
+          landingPageUrl: 'https://example.gov.bc.ca/zebra-service',
           isActive: true,
           roles: [],
         },
@@ -3502,7 +3549,9 @@ describe('Tenant API', () => {
         {
           id: '123e4567-e89b-12d3-a456-426614174000',
           name: 'Active Service',
+          displayName: 'Active Service Display',
           clientIdentifier: 'active-service',
+          landingPageUrl: 'https://example.gov.bc.ca/active-service',
           isActive: true,
           roles: [],
         },
@@ -3524,7 +3573,9 @@ describe('Tenant API', () => {
         {
           id: '123e4567-e89b-12d3-a456-426614174000',
           name: 'Test Service',
+          displayName: 'Test Service Display',
           clientIdentifier: 'test-service',
+          landingPageUrl: 'https://example.gov.bc.ca/test-service',
           isActive: true,
           roles: [
             {
@@ -3798,7 +3849,9 @@ describe('Tenant API', () => {
         {
           id: '123e4567-e89b-12d3-a456-426614174001',
           name: 'Service A',
+          displayName: 'Service A Display',
           clientIdentifier: 'service-a',
+          landingPageUrl: 'https://example.gov.bc.ca/service-a',
           description: 'First shared service for tenant',
           isActive: true,
           roles: [
@@ -3823,7 +3876,9 @@ describe('Tenant API', () => {
         {
           id: '123e4567-e89b-12d3-a456-426614174004',
           name: 'Service B',
+          displayName: 'Service B Display',
           clientIdentifier: 'service-b',
+          landingPageUrl: 'https://example.gov.bc.ca/service-b',
           description: 'Second shared service for tenant',
           isActive: true,
           roles: [
@@ -3856,7 +3911,9 @@ describe('Tenant API', () => {
             {
               id: mockSharedServices[0].id,
               name: mockSharedServices[0].name,
+              displayName: mockSharedServices[0].displayName,
               clientIdentifier: mockSharedServices[0].clientIdentifier,
+              landingPageUrl: mockSharedServices[0].landingPageUrl,
               description: mockSharedServices[0].description,
               isActive: mockSharedServices[0].isActive,
               roles: expect.arrayContaining([
@@ -3873,7 +3930,9 @@ describe('Tenant API', () => {
             {
               id: mockSharedServices[1].id,
               name: mockSharedServices[1].name,
+              displayName: mockSharedServices[1].displayName,
               clientIdentifier: mockSharedServices[1].clientIdentifier,
+              landingPageUrl: mockSharedServices[1].landingPageUrl,
               description: mockSharedServices[1].description,
               isActive: mockSharedServices[1].isActive,
               roles: expect.arrayContaining([
@@ -3920,14 +3979,18 @@ describe('Tenant API', () => {
         {
           id: '123e4567-e89b-12d3-a456-426614174000',
           name: 'Alpha Service',
+          displayName: 'Alpha Service Display',
           clientIdentifier: 'alpha-service',
+          landingPageUrl: 'https://example.gov.bc.ca/alpha-service',
           isActive: true,
           roles: [],
         },
         {
           id: '123e4567-e89b-12d3-a456-426614174001',
           name: 'Zebra Service',
+          displayName: 'Zebra Service Display',
           clientIdentifier: 'zebra-service',
+          landingPageUrl: 'https://example.gov.bc.ca/zebra-service',
           isActive: true,
           roles: [],
         },
@@ -3952,7 +4015,9 @@ describe('Tenant API', () => {
         {
           id: '123e4567-e89b-12d3-a456-426614174000',
           name: 'Test Service',
+          displayName: 'Test Service Display',
           clientIdentifier: 'test-service',
+          landingPageUrl: 'https://example.gov.bc.ca/test-service',
           isActive: true,
           roles: [
             {
