@@ -110,9 +110,6 @@ const rules = {
   <v-dialog v-model="dialogVisible" max-width="800px">
     <v-card class="pa-6">
       <v-card-title>Request New Tenant</v-card-title>
-      <v-card-subtitle>
-        <a href="#">Learn more about Multi-Tenancy</a>
-      </v-card-subtitle>
       <v-card-text>
         <v-form ref="form" v-model="isFormValid">
           <v-row>

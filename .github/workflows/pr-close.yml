@@ -12,29 +12,83 @@ concurrency:
 permissions: {}
 
 jobs:
-  cleanup:
-    name: Cleanup and Image Promotion
+  cleanup-silver-dev:
+    name: Cleanup and Image Promotion - Silver
     uses: ./.github/workflows/.pr-close.yml
     permissions:
       packages: write
     secrets:
       oc_namespace: ${{ secrets.OC_NAMESPACE }}
       oc_token: ${{ secrets.OC_TOKEN }}
+      oc_server: ${{ vars.OC_SERVER }}
     with:
       cleanup: helm
       cleanup_name: cstar
+      environment: silver-dev 
+      packages: backend frontend migrations
+      target: ${{ github.event.number }}
+  
+  cleanup-gold-dev:
+    name: Cleanup and Image Promotion - Gold
+    uses: ./.github/workflows/.pr-close.yml
+    permissions:
+      packages: write
+    secrets:
+      oc_namespace: ${{ secrets.OC_NAMESPACE }}
+      oc_token: ${{ secrets.OC_TOKEN }}
+      oc_server: ${{ vars.OC_SERVER }}
+    with:
+      cleanup: helm
+      cleanup_name: cstar
+      environment: gold-dev 
+      packages: backend frontend migrations
+      target: ${{ github.event.number }}
+  
+  cleanup-golddr-dev:
+    name: Cleanup and Image Promotion - Golddr
+    uses: ./.github/workflows/.pr-close.yml
+    permissions:
+      packages: write
+    secrets:
+      oc_namespace: ${{ secrets.OC_NAMESPACE }}
+      oc_token: ${{ secrets.OC_TOKEN }}
+      oc_server: ${{ vars.OC_SERVER }}
+    with:
+      cleanup: helm
+      cleanup_name: cstar
+      environment: golddr-dev 
       packages: backend frontend migrations
       target: ${{ github.event.number }}
 
-  cleanup_db: # TODO move it off to another action later.
+  cleanup-db-silver-dev: # TODO move it off to another action later.
     name: Remove DB User from Crunchy
     runs-on: ubuntu-24.04
     steps:
       - uses: bcgov/action-crunchy@a109166ff26880dc75676492a33b816ac0ce392f # v1.2.6
         name: Remove PR Specific User
         with:
-          oc_namespace: ${{ secrets.oc_namespace }}
-          oc_token: ${{ secrets.oc_token }}
-          oc_server: ${{ vars.oc_server }}
+          environment: silver-dev
           release_name: cstar-db
-          values_file: charts/crunchy/values-dev.yml
+          values_file: charts/crunchy/values-silver-dev.yml
+  
+  cleanup-db-gold-dev: # TODO move it off to another action later.
+    name: Remove DB User from Crunchy
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: bcgov/action-crunchy@a109166ff26880dc75676492a33b816ac0ce392f # v1.2.6
+        name: Remove PR Specific User
+        with:
+          environment: gold-dev
+          release_name: cstar-db
+          values_file: charts/crunchy/values-gold-dev.yml
+  
+  cleanup-db-golddr-dev: # TODO move it off to another action later.
+    name: Remove DB User from Crunchy
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: bcgov/action-crunchy@a109166ff26880dc75676492a33b816ac0ce392f # v1.2.6
+        name: Remove PR Specific User
+        with:
+          environment: golddr-dev
+          release_name: cstar-db
+          values_file: charts/crunchy/values-golddr-dev.yml

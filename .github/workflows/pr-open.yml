@@ -52,7 +52,7 @@ jobs:
   
   tests:
     name: Tests
-    needs: [deploys-silver-dev]
+    needs: [deploys-gold-dev]
     permissions:
       checks: write
     uses: ./.github/workflows/.tests.yml
@@ -61,10 +61,10 @@ jobs:
 
   zap:
     name: ZAP Security Scan
-    needs: [deploys-silver-dev]
+    needs: [deploys-gold-dev]
     if: |
       contains(github.event.pull_request.labels.*.name, 'zap') &&
-      needs.deploys-silver-dev.outputs.triggered == 'true'
+      needs.deploys-gold-dev.outputs.triggered == 'true'
     runs-on: ubuntu-24.04
     strategy:
       matrix:
@@ -85,7 +85,7 @@ jobs:
 
   results:
     name: PR Results
-    needs: [builds, deploys-silver-dev, tests, zap]
+    needs: [builds, deploys-gold-dev, tests, zap]
     if: always()
     runs-on: ubuntu-24.04
     steps:

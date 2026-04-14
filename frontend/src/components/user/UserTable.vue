@@ -3,7 +3,7 @@ import {
   mdiClose,
   mdiDeleteOutline,
   mdiDotsVertical,
-  mdiPlus,
+  mdiPencil,
   mdiPlusBox,
 } from '@mdi/js'
 import { computed, type ComputedRef, ref } from 'vue'
@@ -30,10 +30,10 @@ const props = defineProps<{
   showOffboardDialog?: (user: User) => void
   showActions?: boolean
   showAdd?: boolean
-  showAddRoles?: boolean
+  showEditRoles?: boolean
   showRoles?: boolean
   enableSelect?: boolean
-  addUserRole?: (user: User) => void
+  editUserRoles?: (user: User) => void
   selectUser?: (e: Event | null, r: RowPropsType) => boolean
   sortBy?: Array<{ key: string; order?: 'asc' | 'desc' }>
 }>()
@@ -172,11 +172,11 @@ const canRemoveRole = function (item: User, role: Role): boolean {
 
 const actionItems = computed(() => {
   const rv = []
-  if (props.showAddRoles && props.addUserRole) {
+  if (props.showEditRoles && props.editUserRoles) {
     rv.push({
-      title: t('users.addRoleAction'),
-      icon: mdiPlus,
-      action: props.addUserRole,
+      title: t('users.editRolesAction'),
+      icon: mdiPencil,
+      action: props.editUserRoles,
       disabledCondition: () => {
         return false
       },

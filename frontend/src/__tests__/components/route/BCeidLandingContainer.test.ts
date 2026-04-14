@@ -68,7 +68,6 @@ describe('BCeidLandingContainer.vue', () => {
     expect(text).toContain('general.logout')
     expect(text).toContain('landing.bceidWelcome')
     expect(text).toContain('landing.bceidWelcomeDesc')
-    expect(text).toContain('landing.learnMore')
   })
 
   it('renders the greeting icon', () => {
@@ -76,14 +75,6 @@ describe('BCeidLandingContainer.vue', () => {
     const icon = wrapper.find('span')
 
     expect(icon.exists()).toBe(true)
-  })
-
-  it('renders the learn more link', () => {
-    const wrapper = mountComponent()
-    const links = wrapper.findAll('a')
-    const learnMoreLink = links.find((l) => l.text() === 'landing.learnMore')
-
-    expect(learnMoreLink).toBeDefined()
   })
 
   it('handles logout URL being an empty string', () => {
