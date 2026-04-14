@@ -53,13 +53,15 @@ jobs:
       environment: silver-dev
       db_user: ${{ inputs.db_user }} # appproxy is the user which works with pgbouncer.
       db_triggers: ('charts/crunchy/')
-      params: --set backend.deploymentStrategy=RollingUpdate
+      params: 
+        --set global.autoscaling=${{ inputs.autoscaling }}
         --set frontend.deploymentStrategy=RollingUpdate
-        --set frontend.autoscaling=true
-        --set backend.autoscaling=true
+        --set frontend.autoscaling.enabled=${{ inputs.autoscaling }}
         --set frontend.pdb.enabled=true
         --set frontend.pdb.minAvailable=2
         --set frontend.replicaCount=3
+        --set backend.autoscaling.enabled=${{ inputs.autoscaling }}
+        --set backend.deploymentStrategy=RollingUpdate
         --set backend.pdb.enabled=true
         --set backend.pdb.minAvailable=2
         --set backend.replicaCount=3
