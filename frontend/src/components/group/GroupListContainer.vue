@@ -149,11 +149,19 @@ onMounted(async () => {
     @select="handleCardClick"
   />
   <v-container v-else>
-    <p class="text-center">
-      No groups have been created for this tenant yet.
-      <span v-if="isUserAdmin">Click Create a Group to get started.</span>
-    </p>
-    <p class="text-center"><a href="#">Learn more about Groups</a></p>
+    <v-row justify="center">
+      <v-col cols="12" md="5">
+        <p class="mb-4 text-center">
+          No groups have been created for this tenant yet.
+          <span v-if="isUserAdmin">Click Create a Group to get started.</span>
+        </p>
+        <p class="text-center">
+          Groups let you manage access for multiple users at once. Assign roles
+          to a group instead of individual users to keep access consistent and
+          easier to manage.
+        </p>
+      </v-col>
+    </v-row>
   </v-container>
 
   <GroupCreateDialog

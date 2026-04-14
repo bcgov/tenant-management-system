@@ -257,11 +257,8 @@ const handleSave = async () => {
           <p>Editing User:</p>
           <h3 class="text-bold">{{ user?.ssoUser.displayName }}</h3>
         </div>
-        <p class="mb-4">
-          <a href=""
-            >{{ $t('tenants.learnMore') }} {{ $t('tenants.tenant', 1) }}
-            {{ $t('roles.role', 2) }}</a
-          >
+        <p class="text-body-2 mb-4">
+          {{ $t('tenants.learnMore') }}
         </p>
         <p class="text-body-2 mb-12">
           {{ $t('tenants.roleAssignDesc') }}
