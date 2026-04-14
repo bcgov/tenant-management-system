@@ -17,6 +17,10 @@ jobs:
     uses: ./.github/workflows/.pr-close.yml
     permissions:
       packages: write
+    secrets:
+      oc_namespace: ${{ secrets.OC_NAMESPACE }}
+      oc_token: ${{ secrets.OC_TOKEN }}
+      oc_server: ${{ vars.OC_SERVER }}
     with:
       cleanup: helm
       cleanup_name: cstar
@@ -29,6 +33,10 @@ jobs:
     uses: ./.github/workflows/.pr-close.yml
     permissions:
       packages: write
+    secrets:
+      oc_namespace: ${{ secrets.OC_NAMESPACE }}
+      oc_token: ${{ secrets.OC_TOKEN }}
+      oc_server: ${{ vars.OC_SERVER }}
     with:
       cleanup: helm
       cleanup_name: cstar
@@ -41,6 +49,10 @@ jobs:
     uses: ./.github/workflows/.pr-close.yml
     permissions:
       packages: write
+    secrets:
+      oc_namespace: ${{ secrets.OC_NAMESPACE }}
+      oc_token: ${{ secrets.OC_TOKEN }}
+      oc_server: ${{ vars.OC_SERVER }}
     with:
       cleanup: helm
       cleanup_name: cstar
