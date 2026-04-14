@@ -55,7 +55,8 @@ jobs:
       db_triggers: ('charts/crunchy/')
       params: --set backend.deploymentStrategy=RollingUpdate
         --set frontend.deploymentStrategy=RollingUpdate
-        --set global.autoscaling=${{ inputs.autoscaling }}
+        --set frontend.autoscaling=${{ inputs.autoscaling }}
+        --set backend.autoscaling=${{ inputs.autoscaling }}
         --set frontend.pdb.enabled=true
         --set frontend.pdb.minAvailable=2
         --set frontend.replicaCount=3
