@@ -14,7 +14,7 @@ on:
         type: string
 
 env:
-  DOMAIN: apps.silver.devops.gov.bc.ca
+  DOMAIN: apps.gold.devops.gov.bc.ca
   PREFIX: cstar-${{ inputs.target }}
 
 permissions: {}
