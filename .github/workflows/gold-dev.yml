@@ -71,6 +71,7 @@ jobs:
     uses: ./.github/workflows/.deployer.yml
     secrets: inherit
     with:
+      release_name: cstar-${{ inputs.tag }}
       environment: golddr-dev
       db_user: ${{ inputs.db_user }} # appproxy is the user which works with pgbouncer.
       db_triggers: ('charts/crunchy/')
