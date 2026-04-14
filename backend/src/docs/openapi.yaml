@@ -3105,6 +3105,12 @@ components:
           type: string
           format: date-time
           example: '2024-03-21T10:00:00Z'
+        createdBy:
+          type: string
+          example: 'F45AFBBD68C44D6F956BA3A1D9181399'
+        updatedBy:
+          type: string
+          example: 'F45AFBBD68C44D6F956BA3A1D9181399'
 
     GroupUserWithUser:
       type: object
