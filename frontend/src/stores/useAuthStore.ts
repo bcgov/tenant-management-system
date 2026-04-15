@@ -1,17 +1,20 @@
-import Keycloak from 'keycloak-js'
+import Keycloak, {
+  type KeycloakLoginOptions,
+  type KeycloakTokenParsed,
+} from 'keycloak-js'
 import { defineStore } from 'pinia'
+import { computed, ref } from 'vue'
 
+import { Role } from '@/models/role.model'
 import { SsoUser } from '@/models/ssouser.model'
 import { User } from '@/models/user.model'
 import { config } from '@/services/config.service'
-import { logger } from '@/utils/logger'
 import { ROLES } from '@/utils/constants'
+import { logger } from '@/utils/logger'
 
-let refreshTimer: ReturnType<typeof setTimeout> | undefined
-
-enum UserSource {
-  IDIR = 'IDIR',
+enum IdentityProvider {
   BCeID = 'BCeID',
+  IDIR = 'IDIR',
 }
 
 /**
@@ -25,262 +28,204 @@ enum UserSource {
  *
  * It exposes:
  * - `authenticated`: Boolean indicating login status
- * - `user`: The parsed `User` object (or `null`)
- * - `token`: The current access token string
+ * - `identityProvider`: The source of the user's identity (IDIR or BCeID)
  * - `keycloak`: The raw Keycloak instance for advanced usage
+ * - `sessionExpired`: Flag indicating if the session has expired
+ * - `user`: The parsed `User` object (or `null`)
  *
  * It also provides convenient getters for accessing:
  * - `authenticatedUser`: A guaranteed non-null user (throws if not available)
- * - `getUser`: The current user (or `null`)
- * - `isAuthenticated`: Whether the user is logged in
+ * - `isOperationsAdmin`: Whether the user has operations admin privileges
  *
- * Typical usage involves calling `initKeycloak()` on app startup, and then
- * relying on the state and getters in your components and services.
+ * Usage is to call `initKeycloak()` on app startup, and then rely on the state
+ * and getters in components and services.
  */
-export const useAuthStore = defineStore('auth', {
-  state: () => ({
-    /**
-     * Whether the user is currently authenticated via Keycloak.
-     */
-    authenticated: false,
+export const useAuthStore = defineStore('auth', () => {
+  // Private state
 
-    /**
-     * The Keycloak instance used for authentication.
-     * TODO: This never should have been allowed to be null. Fix it.
-     */
-    keycloak: null as Keycloak | null,
+  /**
+   * The Keycloak instance used for authentication.
+   */
+  const keycloak = ref<Keycloak | null>(null)
 
-    /**
-     * The current Keycloak JWT token as a string, or an empty string if not
-     * authenticated.
-     */
-    token: '' as string,
+  /**
+   * The parsed user object extracted from the Keycloak token, or `null` if
+   * not yet available.
+   */
+  const user = ref<User | null>(null)
 
-    /**
-     * The parsed user object extracted from the Keycloak token, or `null` if
-     * not yet available.
-     */
-    user: null as User | null,
+  // Exported state
 
-    userSource: UserSource.IDIR,
-    /**
-     * If the users token doesn't refresh then we set this to true to show a logged out message
-     */
-    loggedOut: false,
-  }),
+  /**
+   * If the user's token doesn't refresh then set this to true to show a
+   * logged out message.
+   */
+  const sessionExpired = ref(false)
 
-  getters: {
-    /**
-     * Getter for the authenticated user that throws an exception if the user
-     * is not yet available.
-     *
-     * This allows calling code to assume a logged-in state without repeatedly
-     * checking if `state.user` is `null`. It simplifies logic in components or
-     * services that require the user to be authenticated.
-     *
-     * This should only be used in places where authentication has already been
-     * guaranteed (e.g., after login, in protected routes, etc.).
-     *
-     * @param state - The state for this store
-     * @returns The authenticated `User` object
-     * @throws {Error} If the user is not yet available (e.g., before login)
-     */
-    authenticatedUser: (state): User => {
-      if (!state.user) {
-        throw new Error('User is not available yet')
-      }
+  // Private methods
 
-      return state.user
-    },
+  /**
+   * Internal guard to handle the unlikely event that this store (and keycloak)
+   * were never initialized.
+   *
+   * @returns the Keycloak instance
+   */
+  const getKeycloak = (): Keycloak => {
+    if (!keycloak.value) {
+      throw new Error('Keycloak not initialized')
+    }
 
-    /**
-     * Getter for the current user.
-     *
-     * Returns the current `User` object from the store, or `null` if the user
-     * is not logged in. This is the safe way to access user information in
-     * places where the user might not be authenticated yet.
-     *
-     * @param state - The state for this store
-     * @returns The current `User` or `null` if not logged in
-     */
-    getUser: (state) => state.user,
+    return keycloak.value
+  }
 
-    /**
-     * Getter for the authentication status.
-     *
-     * Indicates whether the user is currently authenticated. Useful for
-     * conditionally showing authenticated-only features in the UI.
-     *
-     * @param state - The state for this store
-     * @returns `true` if the user is authenticated, `false` otherwise
-     */
-    isAuthenticated: (state) => state.authenticated,
+  /**
+   * Parses the user data from the current Keycloak token.
+   *
+   * This method extracts claims like name, email, and GUID from the decoded
+   * token and maps them to a `User` object.
+   *
+   * @returns The parsed `User` object.
+   */
+  const parseUserFromToken = (tokenParsed: KeycloakTokenParsed): User => {
+    const identityProvider = tokenParsed.identity_provider?.toLowerCase()
+    const isIdir = identityProvider?.includes('idir')
+    const guid = isIdir
+      ? tokenParsed.idir_user_guid
+      : tokenParsed.bceid_user_guid
 
-    /**
-     * Checks if the current user has operations admin privileges.
-     *
-     * @param state - The state for this store
-     * @returns `true` if user is an operations admin, `false` otherwise
-     */
-    isOperationsAdmin: (state): boolean => {
-      if (!state.authenticated || !state.keycloak?.tokenParsed) {
-        return false
-      }
+    const ssoUser = new SsoUser(
+      guid,
+      isIdir ? tokenParsed.idir_username : tokenParsed.bceid_username,
+      tokenParsed.given_name,
+      tokenParsed.family_name,
+      tokenParsed.display_name,
+      tokenParsed.email,
+      tokenParsed.identity_provider?.toLowerCase().includes('idir')
+        ? IdentityProvider.IDIR
+        : IdentityProvider.BCeID,
+    )
 
-      const clientRoles = state.keycloak.tokenParsed.client_roles || []
-
-      return clientRoles.includes(ROLES.OPERATIONS_ADMIN.value)
-    },
-  },
-
-  actions: {
-    /**
-     * Initializes Keycloak and sets the authenticated if successful.
-     */
-    async initKeycloak(): Promise<void> {
-      try {
-        // TODO - when the TODO above is fixed, keycloak will never be null.
-        this.keycloak ??= new Keycloak({
-          clientId: config.oidc.clientId,
-          realm: config.oidc.realm,
-          url: config.oidc.serverUrl,
-        })
-
-        const authenticated = await this.keycloak.init({
-          // onLoad: 'login-required',
-          onLoad: 'check-sso',
-          silentCheckSsoRedirectUri:
-            globalThis.location.origin + '/silent-check-sso.html',
-          checkLoginIframe: false,
-        })
-
-        this.authenticated = authenticated
-        if (authenticated) {
-          this.token = this.keycloak.token ?? ''
-          this.loggedOut = false
-          this.user = this.parseUserFromToken()
-          this.userSource = this.keycloak.tokenParsed?.identity_provider
-            ?.toLowerCase()
-            .includes('idir')
-            ? UserSource.IDIR
-            : UserSource.BCeID
-          this.scheduleTokenRefresh()
-        }
-      } catch (error) {
-        logger.error('Keycloak init failed', error)
-        throw error
-      }
-    },
-
-    /**
-     * Initiates the login process using Keycloak.
-     *
-     * Redirects the user to the Keycloak login screen. Upon successful login,
-     * Keycloak will redirect back to the app.
-     */
-    login(options: object = {}): void {
-      this.keycloak?.login(options)
-    },
-
-    /**
-     * Logs out the user and clears local/session storage and token refresh
-     * timer.
-     *
-     * This will trigger a redirect to Keycloak's logout endpoint and then back
-     * to the app. It also clears authentication state from the store and
-     * browser storage.
-     */
-    logout(): string | undefined {
-      // For whatever reason the components in this app are getting cancelled with the logout method
-      // so instead returning a string to use as a href
-      const q = this.keycloak?.createLogoutUrl({
-        redirectUri: globalThis.location.origin,
-      }) // Ensure redirectUri is set
-      return q
-    },
-
-    /**
-     * Parses the user data from the current Keycloak token.
-     *
-     * This method extracts claims like name, email, and GUID from the decoded
-     * token and maps them to a `User` object. If no token is present, it
-     * returns `null`.
-     *
-     * @returns The parsed `User` object or `null` if no token is present.
-     */
-    parseUserFromToken(): User | null {
-      const parsed = this.keycloak?.tokenParsed
-      if (!parsed) {
-        return null
-      }
-
-      let ssoUser = new SsoUser(
-        parsed.idir_user_guid,
-        parsed.idir_username,
-        parsed.given_name,
-        parsed.family_name,
-        parsed.display_name,
-        parsed.email,
+    const roles: Role[] = []
+    const tokenRoles = tokenParsed.client_roles || []
+    if (tokenRoles.includes(ROLES.OPERATIONS_ADMIN.value)) {
+      roles.push(
+        new Role(
+          'unused_id',
+          ROLES.OPERATIONS_ADMIN.value,
+          ROLES.OPERATIONS_ADMIN.title,
+        ),
       )
+    }
 
-      const source = parsed.identity_provider?.toLowerCase().includes('idir')
-        ? UserSource.IDIR
-        : UserSource.BCeID
+    return new User(guid, ssoUser, roles)
+  }
 
-      if (source === UserSource.BCeID) {
-        ssoUser = new SsoUser(
-          parsed.bceid_user_guid,
-          parsed.bceid_username,
-          parsed.given_name,
-          parsed.family_name,
-          parsed.display_name,
-          parsed.email,
-        )
+  // Exported Methods
+
+  const accessToken = computed((): string | undefined => {
+    return getKeycloak().token
+  })
+
+  /**
+   * Getter for the authenticated user that throws an exception if the user
+   * is not yet available.
+   *
+   * This allows calling code to assume a logged-in state without repeatedly
+   * checking if `state.user` is `null`. It simplifies logic in components or
+   * services that require the user to be authenticated.
+   *
+   * This should only be used in places where authentication has already been
+   * guaranteed (e.g., after login, in protected routes, etc.).
+   *
+   * @returns The authenticated `User` object
+   * @throws {Error} If the user is not yet available (e.g., before login)
+   */
+  const authenticatedUser = computed((): User => {
+    if (!user.value) {
+      throw new Error('User not available')
+    }
+
+    return user.value
+  })
+
+  /**
+   * Checks that the token is valid for at least the next 30 seconds and
+   * refreshes it if not.
+   *
+   * @returns a token valid for at least the next 30 seconds, or an empty
+   * string if the user is not authenticated
+   */
+  const ensureFreshToken = async (): Promise<void> => {
+    // Before login there is no point in trying to refresh the token.
+    if (!user.value) {
+      return
+    }
+
+    try {
+      await getKeycloak().updateToken(30)
+    } catch {
+      sessionExpired.value = true
+      user.value = null
+    }
+  }
+
+  /**
+   * Initializes Keycloak and sets the authenticated if successful.
+   */
+  const init = async (): Promise<void> => {
+    try {
+      keycloak.value = new Keycloak({
+        clientId: config.oidc.clientId,
+        realm: config.oidc.realm,
+        url: config.oidc.serverUrl,
+      })
+
+      const authenticated = await keycloak.value.init({
+        checkLoginIframe: false,
+        onLoad: 'check-sso',
+        silentCheckSsoRedirectUri:
+          globalThis.location.origin + '/silent-check-sso.html',
+      })
+
+      if (authenticated) {
+        user.value = keycloak.value.tokenParsed
+          ? parseUserFromToken(keycloak.value.tokenParsed)
+          : null
       }
+    } catch (error) {
+      logger.error('Keycloak init failed', error)
 
-      return new User(
-        source === UserSource.IDIR
-          ? parsed.idir_user_guid
-          : parsed.bceid_user_guid,
-        ssoUser,
-        [],
-      )
-    },
+      throw error
+    }
+  }
 
-    /**
-     * Sets up a recurring timer to refresh the Keycloak token.
-     *
-     * Attempts to refresh the token every 10 seconds. If the token is
-     * successfully refreshed, the store's `token` and `user` state are updated.
-     * If the refresh fails, the error is logged.
-     */
-    scheduleTokenRefresh(): void {
-      if (refreshTimer) {
-        clearTimeout(refreshTimer)
-      }
+  /**
+   * Initiates the login process using Keycloak.
+   *
+   * This redirects the user to the Keycloak login screen. Upon successful login
+   * will redirect back to the app, where the `init()` method will complete the
+   * authentication process and set the user data.
+   */
+  const login = (options: KeycloakLoginOptions = {}): void => {
+    getKeycloak().login(options)
+  }
 
-      refreshTimer = globalThis.setTimeout(() => {
-        this.keycloak
-          ?.updateToken(30)
-          .then((refreshed) => {
-            if (refreshed) {
-              this.token = this.keycloak?.token ?? ''
-              this.user = this.parseUserFromToken()
-              this.loggedOut = false
-            }
-          })
-          .catch((error) => {
-            this.loggedOut = true
-            this.token = ''
-            this.user = null
-            this.authenticated = false
-            logger.error('Failed to refresh token', error)
-            globalThis.location.href = '/'
-          })
-          .finally(() => {
-            this.scheduleTokenRefresh()
-          })
-      }, 10000)
-    },
-  },
+  /**
+   * Logs out the user.
+   */
+  const logout = (): void => {
+    getKeycloak().logout({
+      redirectUri: globalThis.location.origin,
+    })
+  }
+
+  return {
+    accessToken,
+    authenticatedUser,
+    ensureFreshToken,
+    init,
+    login,
+    logout,
+    sessionExpired,
+  }
 })
