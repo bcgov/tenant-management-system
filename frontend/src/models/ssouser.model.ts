@@ -45,6 +45,7 @@ export class SsoUser {
    * @param lastName - The user's last name
    * @param displayName - The display name of the user
    * @param email - The user's email address (optional)
+   * @param idpType - The identity provider type (optional)
    */
   constructor(
     ssoUserId: string,
@@ -58,9 +59,9 @@ export class SsoUser {
     this.displayName = displayName
     this.email = email
     this.firstName = firstName
+    this.idpType = idpType
     this.lastName = lastName
     this.userName = userName
-    this.idpType = idpType
     this.ssoUserId = ssoUserId as SSOUserId
   }
 
@@ -74,6 +75,7 @@ export class SsoUser {
    * @param apiData.lastName - The user's last name
    * @param apiData.userName - The user's username (optional)
    * @param apiData.ssoUserId - The unique SSO user ID
+   * @param apiData.idpType - The identity provider type (optional)
    * @returns A new SsoUser instance
    */
   static fromApiData(apiData: {

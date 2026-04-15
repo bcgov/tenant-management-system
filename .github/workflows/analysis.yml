@@ -72,7 +72,7 @@ jobs:
           dir: frontend
           node_version: '22'
           sonar_args: >
-            -Dsonar.coverage.exclusions=**/types/**
+            -Dsonar.coverage.exclusions=**/types/**,**/__tests__/**
             -Dsonar.exclusions=**/coverage/**,**/node_modules/**,**/types/**,**/*.config.ts,**/*test.ts
             -Dsonar.organization=bcgov-sonarcloud
             -Dsonar.projectBaseDir=.

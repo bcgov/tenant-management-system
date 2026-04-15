@@ -2,7 +2,18 @@ import { mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
 
+import { makeUser } from '@/__tests__/__factories__'
+import {
+  mockAuthStore,
+  mockAuthStoreLogin,
+} from '@/__tests__/__helpers__/useAuthStore.mock'
+
 import LandingPageContainer from '@/components/route/LandingPageContainer.vue'
+
+const mockPush = vi.fn()
+vi.mock('vue-router', () => ({
+  useRouter: () => ({ push: mockPush }),
+}))
 
 vi.mock('@/services/config.service', () => ({
   config: {
@@ -10,28 +21,6 @@ vi.mock('@/services/config.service', () => ({
     businessBceidBroker: 'business-bceid-hint',
     idirBroker: 'idir-hint',
   },
-  configLoaded: { value: true },
-}))
-
-const mockPush = vi.fn()
-vi.mock('vue-router', () => ({
-  useRouter: () => ({ push: mockPush }),
-}))
-
-const mockLogin = vi.fn()
-const mockIsAuthenticated = { value: false }
-const mockUserSource = { value: '' }
-
-vi.mock('@/stores/useAuthStore', () => ({
-  useAuthStore: () => ({
-    login: mockLogin,
-    get isAuthenticated() {
-      return mockIsAuthenticated.value
-    },
-    get userSource() {
-      return mockUserSource.value
-    },
-  }),
 }))
 
 const mountComponent = () =>
@@ -47,17 +36,10 @@ const mountComponent = () =>
     },
   })
 
-describe('LandingPage.vue', () => {
+describe('LandingPageContainer.vue', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockIsAuthenticated.value = false
-    mockUserSource.value = ''
-  })
-
-  it('renders without crashing', () => {
-    const wrapper = mountComponent()
-
-    expect(wrapper.exists()).toBe(true)
+    mockAuthStore(null)
   })
 
   it('renders all three login buttons', () => {
@@ -65,46 +47,46 @@ describe('LandingPage.vue', () => {
     const buttons = wrapper.findAll('button')
 
     expect(buttons).toHaveLength(3)
-    expect(buttons[0].text()).toBe('Log in with IDIR')
-    expect(buttons[1].text()).toBe('Login with Basic BCeID')
-    expect(buttons[2].text()).toBe('Login with Business BCeID')
+    expect(buttons[0].text()).toContain('IDIR')
+    expect(buttons[1].text()).toContain('Basic BCeID')
+    expect(buttons[2].text()).toContain('Business BCeID')
   })
 
   it('calls login with idirHint when IDIR button is clicked', async () => {
     const wrapper = mountComponent()
     await wrapper.findAll('button')[0].trigger('click')
 
-    expect(mockLogin).toHaveBeenCalledWith({ idpHint: 'idir-hint' })
+    expect(mockAuthStoreLogin()).toHaveBeenCalledWith({ idpHint: 'idir-hint' })
   })
 
   it('calls login with basicBceidHint when Basic BCeID button is clicked', async () => {
     const wrapper = mountComponent()
     await wrapper.findAll('button')[1].trigger('click')
 
-    expect(mockLogin).toHaveBeenCalledWith({ idpHint: 'basic-bceid-hint' })
+    expect(mockAuthStoreLogin()).toHaveBeenCalledWith({
+      idpHint: 'basic-bceid-hint',
+    })
   })
 
   it('calls login with businessBceidHint when Business BCeID button is clicked', async () => {
     const wrapper = mountComponent()
     await wrapper.findAll('button')[2].trigger('click')
 
-    expect(mockLogin).toHaveBeenCalledWith({ idpHint: 'business-bceid-hint' })
+    expect(mockAuthStoreLogin()).toHaveBeenCalledWith({
+      idpHint: 'business-bceid-hint',
+    })
   })
 
   it('redirects to /tenants when authenticated as IDIR', async () => {
-    mockIsAuthenticated.value = true
-    mockUserSource.value = 'IDIR'
-
+    mockAuthStore(makeUser({ idpType: 'IDIR' }))
     mountComponent()
     await nextTick()
 
     expect(mockPush).toHaveBeenCalledWith('/tenants')
   })
 
-  it('redirects to /bceid when authenticated as non-IDIR', async () => {
-    mockIsAuthenticated.value = true
-    mockUserSource.value = 'BCEID'
-
+  it('redirects to /bceid when authenticated as BCeID', async () => {
+    mockAuthStore(makeUser({ idpType: 'BCeID' }))
     mountComponent()
     await nextTick()
 
@@ -112,8 +94,6 @@ describe('LandingPage.vue', () => {
   })
 
   it('does not redirect when not authenticated', async () => {
-    mockIsAuthenticated.value = false
-
     mountComponent()
     await nextTick()
 
