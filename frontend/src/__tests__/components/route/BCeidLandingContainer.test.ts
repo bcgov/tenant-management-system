@@ -9,8 +9,7 @@ vi.mock('vue-i18n', () => ({
   }),
 }))
 
-const MOCK_LOGOUT_URL = 'https://example.com/logout'
-const mockLogout = vi.fn().mockReturnValue(MOCK_LOGOUT_URL)
+const mockLogout = vi.fn()
 
 vi.mock('@/stores/useAuthStore', () => ({
   useAuthStore: () => ({
@@ -26,8 +25,8 @@ const mountComponent = () =>
       },
       stubs: {
         'v-btn': {
-          template: '<a :href="href"><slot /></a>',
-          props: ['href', 'color'],
+          template: '<button @click="$emit(\'click\')"><slot /></button>',
+          props: ['color'],
         },
         'v-container': { template: '<div><slot /></div>' },
         'v-icon': { template: '<span><slot /></span>' },
@@ -39,26 +38,12 @@ const mountComponent = () =>
 describe('BCeidLandingContainer.vue', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockLogout.mockReturnValue(MOCK_LOGOUT_URL)
   })
 
   it('renders without crashing', () => {
     const wrapper = mountComponent()
 
     expect(wrapper.exists()).toBe(true)
-  })
-
-  it('calls authStore.logout() to compute the logout URL', () => {
-    mountComponent()
-
-    expect(mockLogout).toHaveBeenCalledOnce()
-  })
-
-  it('renders the logout button with the correct href from logoutURL', () => {
-    const wrapper = mountComponent()
-    const btn = wrapper.find('a')
-
-    expect(btn.attributes('href')).toBe(MOCK_LOGOUT_URL)
   })
 
   it('renders i18n keys for expected text nodes', () => {
@@ -77,21 +62,11 @@ describe('BCeidLandingContainer.vue', () => {
     expect(icon.exists()).toBe(true)
   })
 
-  it('handles logout URL being an empty string', () => {
-    mockLogout.mockReturnValue('')
-
+  it('calls authStore.logout() when the logout button is clicked', async () => {
     const wrapper = mountComponent()
-    const btn = wrapper.find('a')
 
-    expect(btn.attributes('href')).toBe('')
-  })
+    await wrapper.find('button').trigger('click')
 
-  it('handles logout URL being undefined', () => {
-    mockLogout.mockReturnValue(undefined)
-
-    const wrapper = mountComponent()
-    const btn = wrapper.find('a')
-
-    expect(btn.attributes('href')).toBeUndefined()
+    expect(mockLogout).toHaveBeenCalled()
   })
 })

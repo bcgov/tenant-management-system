@@ -1,5 +1,6 @@
 import { Tenant } from '@/models/tenant.model'
 import { useAuthStore } from '@/stores/useAuthStore'
+import { ROLES } from '@/utils/constants'
 
 /**
  * Checks if the current user has a specific role in the given tenant.
@@ -27,5 +28,11 @@ export function currentUserHasRole(tenant: Tenant, roleName: string): boolean {
  * @returns True if the current user is an operations admin, false otherwise.
  */
 export function currentUserIsOperationsAdmin(): boolean {
-  return useAuthStore().isOperationsAdmin
+  const currentUser = useAuthStore().authenticatedUser
+
+  return (
+    currentUser?.roles.some(
+      (role) => role.name === ROLES.OPERATIONS_ADMIN.value,
+    ) ?? false
+  )
 }

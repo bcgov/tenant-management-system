@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { type App, createApp } from 'vue'
-
 import { handleInitError, initializeApp } from '@/main'
 import { ConfigError, loadConfig } from '@/services/config.service'
 
@@ -9,8 +8,10 @@ const mockApp: Partial<App<Element>> = {
   mount: vi.fn(),
 }
 
+// Updated to match the new store method name: .init()
 const mockAuthStore = {
-  initKeycloak: vi.fn(async () => undefined),
+  ensureFreshToken: vi.fn(),
+  init: vi.fn(async () => undefined),
 }
 
 vi.mock('@/services/config.service', () => ({
@@ -25,41 +26,42 @@ vi.mock('@/services/config.service', () => ({
 
 vi.mock('vue', async () => {
   const actual = await vi.importActual<typeof import('vue')>('vue')
-  return {
-    ...actual,
-    createApp: vi.fn(() => mockApp),
-  }
+  return { ...actual, createApp: vi.fn(() => mockApp) }
 })
 
 vi.mock('@/stores/useAuthStore', () => ({
   useAuthStore: () => mockAuthStore,
 }))
 
-beforeEach(() => {
-  vi.clearAllMocks()
-})
-
 describe('initializeApp', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    document.body.innerHTML = '<div id="app"></div>'
+    // Reset listeners by clearing the mock
+    mockAuthStore.ensureFreshToken = vi.fn()
+  })
+
   it('creates the app, initializes auth, and mounts', async () => {
     await initializeApp()
 
+    // Simulate user activity
+    globalThis.dispatchEvent(new MouseEvent('click'))
+    globalThis.dispatchEvent(new KeyboardEvent('keydown'))
+
     expect(createApp).toHaveBeenCalledTimes(1)
     expect(mockApp.use).toHaveBeenCalled()
-    expect(mockAuthStore.initKeycloak).toHaveBeenCalledTimes(1)
+    expect(mockAuthStore.init).toHaveBeenCalledTimes(1) // Matches refactored name
     expect(mockApp.mount).toHaveBeenCalledWith('#app')
+    expect(mockAuthStore.ensureFreshToken).toHaveBeenCalledTimes(2)
   })
 
   it('throws when loadConfig fails', async () => {
     vi.mocked(loadConfig).mockRejectedValueOnce(new ConfigError('fail'))
-
     await expect(initializeApp()).rejects.toBeInstanceOf(ConfigError)
   })
 
-  it('throws when initKeycloak fails', async () => {
-    mockAuthStore.initKeycloak.mockRejectedValueOnce(
-      new Error('Keycloak failed'),
-    )
-
+  it('throws when authStore.init fails', async () => {
+    mockAuthStore.init.mockRejectedValueOnce(new Error('Keycloak failed'))
     await expect(initializeApp()).rejects.toThrow('Keycloak failed')
   })
 })
@@ -67,19 +69,16 @@ describe('initializeApp', () => {
 describe('handleInitError', () => {
   it('renders a Configuration Error for ConfigError', () => {
     handleInitError(new ConfigError('fail'))
-
     expect(document.body.innerHTML).toContain('Configuration Error')
   })
 
   it('renders an Authentication Error for Keycloak errors', () => {
     handleInitError(new Error('Keycloak failed'))
-
     expect(document.body.innerHTML).toContain('Authentication Error')
   })
 
   it('renders a generic error for unknown errors', () => {
     handleInitError(new Error('something else'))
-
     expect(document.body.innerHTML).toContain('Application Error')
   })
 })

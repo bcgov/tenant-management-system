@@ -10,14 +10,14 @@ const authStore = useAuthStore()
 // --- Watchers and Effects ----------------------------------------------------
 
 watchEffect(() => {
-  if (!authStore.isAuthenticated) {
+  if (!authStore.authenticatedUser) {
     globalThis.location.href = '/'
   }
 })
 </script>
 
 <template>
-  <div v-if="authStore.isAuthenticated">
+  <div v-if="authStore.authenticatedUser">
     <slot></slot>
   </div>
 </template>

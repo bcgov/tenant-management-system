@@ -5,19 +5,27 @@ import { useRouter } from 'vue-router'
 import { config } from '@/services/config.service'
 import { useAuthStore } from '@/stores/useAuthStore'
 
+// --- Store and Composable Setup ----------------------------------------------
+
 const authStore = useAuthStore()
 const router = useRouter()
 
-const idirHint = computed(() => config.idirBroker)
+// --- Computed Values ---------------------------------------------------------
+
 const basicBceidHint = computed(() => config.basicBceidBroker)
 const businessBceidHint = computed(() => config.businessBceidBroker)
+const idirHint = computed(() => config.idirBroker)
+
+// --- Watchers and Effects ----------------------------------------------------
 
 watchEffect(() => {
-  if (authStore.isAuthenticated) {
-    if (authStore.userSource === 'IDIR') {
+  if (authStore.authenticatedUser !== null) {
+    if (authStore.authenticatedUser.ssoUser.idpType === 'IDIR') {
       router.push('/tenants')
+
       return
     }
+
     router.push('/bceid')
   }
 })

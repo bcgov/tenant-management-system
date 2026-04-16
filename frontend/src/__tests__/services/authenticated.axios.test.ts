@@ -1,18 +1,19 @@
 import axios, { AxiosHeaders } from 'axios'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { User, UserId } from '@/models/user.model'
 import { authenticatedAxios } from '@/services/authenticated.axios'
 
 vi.mock('@/services/config.service', () => ({
   config: { api: { baseUrl: 'https://api.example.com' } },
 }))
 
+const mockEnsureFreshToken = vi.fn().mockResolvedValue(undefined)
+
 const mockAuthStore = {
-  authenticated: false,
-  keycloak: null as { token: string } | null,
-  loggedOut: false,
-  token: '',
-  user: null,
+  authenticatedUser: null as User | null,
+  accessToken: '',
+  ensureFreshToken: mockEnsureFreshToken,
 }
 
 vi.mock('@/stores/useAuthStore', () => ({
@@ -21,11 +22,9 @@ vi.mock('@/stores/useAuthStore', () => ({
 
 beforeEach(() => {
   vi.clearAllMocks()
-  mockAuthStore.authenticated = false
-  mockAuthStore.keycloak = null
-  mockAuthStore.loggedOut = false
-  mockAuthStore.token = ''
-  mockAuthStore.user = null
+  mockAuthStore.authenticatedUser = null
+  mockAuthStore.accessToken = ''
+  mockEnsureFreshToken.mockResolvedValue(undefined)
 })
 
 function getSuccessInterceptor() {
@@ -37,17 +36,6 @@ function getSuccessInterceptor() {
   }
 
   return handler.fulfilled
-}
-
-function getErrorInterceptor() {
-  const instance = authenticatedAxios()
-  const handler = instance.interceptors.request.handlers?.[0]
-
-  if (!handler?.rejected) {
-    throw new Error('Request error interceptor not found')
-  }
-
-  return handler.rejected
 }
 
 describe('authenticatedAxios', () => {
@@ -79,47 +67,16 @@ describe('request interceptor (success)', () => {
     const cfg = await getSuccessInterceptor()({ headers: new AxiosHeaders() })
 
     expect(cfg.headers.Authorization).toBeUndefined()
+    expect(mockEnsureFreshToken).not.toHaveBeenCalled()
   })
 
-  it('sets Authorization header when authenticated', async () => {
-    mockAuthStore.authenticated = true
-    mockAuthStore.keycloak = { token: 'my-token' }
+  it('sets Authorization header and ensures fresh token when authenticated', async () => {
+    mockAuthStore.authenticatedUser = { id: '123' as UserId } as unknown as User
+    mockAuthStore.accessToken = 'my-token'
 
     const cfg = await getSuccessInterceptor()({ headers: new AxiosHeaders() })
 
+    expect(mockEnsureFreshToken).toHaveBeenCalledOnce()
     expect(cfg.headers.Authorization).toBe('Bearer my-token')
-  })
-})
-
-describe('request interceptor (error)', () => {
-  it('sets auth store state and redirects on network error', async () => {
-    const error = await getErrorInterceptor()({ code: 'ERR_NETWORK' }).catch(
-      (e: unknown) => e,
-    )
-
-    expect(mockAuthStore.loggedOut).toBe(true)
-    expect(mockAuthStore.authenticated).toBe(false)
-    expect(mockAuthStore.token).toBe('')
-    expect(mockAuthStore.user).toBeNull()
-    expect((error as Error).message).toMatch(/Network Error/)
-  })
-
-  it('returns the error directly if already an Error', async () => {
-    const original = new Error('boom')
-
-    const error = await getErrorInterceptor()(original).catch((e: unknown) => e)
-
-    expect(error).toBe(original)
-  })
-
-  it('wraps a non-Error in a new Error', async () => {
-    const error = await getErrorInterceptor()('something bad').catch(
-      (e: unknown) => e,
-    )
-
-    expect(error).toBeInstanceOf(Error)
-    expect((error as Error & { originalError: unknown }).originalError).toBe(
-      'something bad',
-    )
   })
 })
