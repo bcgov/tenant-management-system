@@ -40,6 +40,7 @@ jobs:
         --set backend.pdb.enabled=true
         --set backend.pdb.minAvailable=2
         --set backend.replicaCount=3
+        --set global.domain="apps.silver.devops.gov.bc.ca"
       tag: ${{ inputs.tag }}
   
   deploy-gold-dev:
@@ -59,6 +60,7 @@ jobs:
         --set backend.pdb.enabled=true
         --set backend.pdb.minAvailable=2
         --set backend.replicaCount=3
+        --set global.domain="apps.gold.devops.gov.bc.ca"
       tag: ${{ inputs.tag }}
 
   tests:
