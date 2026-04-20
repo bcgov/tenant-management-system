@@ -23,12 +23,32 @@ concurrency:
 permissions: {}
 
 jobs:
-  deploy-dev:
+  deploy-silver-dev:
     name: Deploy (DEV)
     uses: ./.github/workflows/.deployer.yml
     secrets: inherit
     with:
-      environment: dev
+      release_name: cstar-dev
+      environment: silver-dev
+      db_user: appproxy # appproxy is the user which works with pgbouncer.
+      params: --set backend.deploymentStrategy=RollingUpdate
+        --set frontend.deploymentStrategy=RollingUpdate
+        --set global.autoscaling=true
+        --set frontend.pdb.enabled=true
+        --set frontend.pdb.minAvailable=2
+        --set frontend.replicaCount=3
+        --set backend.pdb.enabled=true
+        --set backend.pdb.minAvailable=2
+        --set backend.replicaCount=3
+      tag: ${{ inputs.tag }}
+  
+  deploy-gold-dev:
+    name: Deploy (DEV)
+    uses: ./.github/workflows/.deployer.yml
+    secrets: inherit
+    with:
+      release_name: cstar-dev
+      environment: gold-dev
       db_user: appproxy # appproxy is the user which works with pgbouncer.
       params: --set backend.deploymentStrategy=RollingUpdate
         --set frontend.deploymentStrategy=RollingUpdate
@@ -43,12 +63,12 @@ jobs:
 
   tests:
     name: Tests
-    needs: [deploy-dev]
+    needs: [deploy-gold-dev]
     permissions:
       checks: write
     uses: ./.github/workflows/.tests.yml
     with:
-      image_tag: ${{ needs.deploy-dev.outputs.tag }}
+      image_tag: ${{ needs.deploy-gold-dev.outputs.tag }}
       target: dev
 
   deploy-test:
