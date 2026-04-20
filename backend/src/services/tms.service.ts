@@ -56,6 +56,128 @@ export class TMSService {
     this.mapper = mapper || new TMSMapper()
   }
 
+  private getIdirGuid(user: unknown): string | undefined {
+    if (!user || typeof user !== 'object') {
+      return undefined
+    }
+
+    const attributes = (user as { attributes?: unknown }).attributes
+    if (!attributes || typeof attributes !== 'object') {
+      return undefined
+    }
+
+    const idirUserGuid = (attributes as { idir_user_guid?: unknown })
+      .idir_user_guid
+    if (!Array.isArray(idirUserGuid) || typeof idirUserGuid[0] !== 'string') {
+      return undefined
+    }
+
+    return idirUserGuid[0]
+  }
+
+  private getIdirUserCompletenessScore(user: unknown): number {
+    if (!user || typeof user !== 'object') {
+      return 0
+    }
+
+    const typedUser = user as {
+      firstName?: unknown
+      lastName?: unknown
+      email?: unknown
+      username?: unknown
+      attributes?: {
+        display_name?: unknown
+        idir_username?: unknown
+      }
+    }
+
+    let score = 0
+
+    if (typeof typedUser.firstName === 'string' && typedUser.firstName.trim()) {
+      score += 1
+    }
+    if (typeof typedUser.lastName === 'string' && typedUser.lastName.trim()) {
+      score += 1
+    }
+    if (typeof typedUser.email === 'string' && typedUser.email.trim()) {
+      score += 1
+    }
+    if (typeof typedUser.username === 'string' && typedUser.username.trim()) {
+      score += 1
+    }
+    if (
+      Array.isArray(typedUser.attributes?.display_name) &&
+      typeof typedUser.attributes.display_name[0] === 'string' &&
+      typedUser.attributes.display_name[0].trim()
+    ) {
+      score += 1
+    }
+    if (
+      Array.isArray(typedUser.attributes?.idir_username) &&
+      typeof typedUser.attributes.idir_username[0] === 'string' &&
+      typedUser.attributes.idir_username[0].trim()
+    ) {
+      score += 1
+    }
+    if (this.getIdirGuid(user)) {
+      score += 1
+    }
+
+    return score
+  }
+
+  private dedupIdirSearchResults(payload: unknown) {
+    if (!payload || typeof payload !== 'object') {
+      return payload
+    }
+
+    const data = (payload as { data?: unknown }).data
+    if (!Array.isArray(data)) {
+      return payload
+    }
+
+    const dedupedUsers = new Map<
+      string,
+      { user: unknown; score: number; firstSeenIndex: number }
+    >()
+    const usersWithoutGuid: Array<{ user: unknown; index: number }> = []
+
+    data.forEach((user, index) => {
+      const guid = this.getIdirGuid(user)
+
+      if (!guid) {
+        usersWithoutGuid.push({ user, index })
+        return
+      }
+
+      const score = this.getIdirUserCompletenessScore(user)
+      const existing = dedupedUsers.get(guid)
+
+      if (!existing || score > existing.score) {
+        dedupedUsers.set(guid, {
+          user,
+          score,
+          firstSeenIndex: existing?.firstSeenIndex ?? index,
+        })
+      }
+    })
+
+    const dedupedData = [
+      ...Array.from(dedupedUsers.values()).map((entry) => ({
+        user: entry.user,
+        index: entry.firstSeenIndex,
+      })),
+      ...usersWithoutGuid,
+    ]
+      .sort((a, b) => a.index - b.index)
+      .map((entry) => entry.user)
+
+    return {
+      ...(payload as Record<string, unknown>),
+      data: dedupedData,
+    }
+  }
+
   public async createTenant(req: Request) {
     const input: CreateTenantInputDto = {
       name: req.body.name,
@@ -242,12 +364,22 @@ export class TMSService {
   public async searchBCGOVSSOUsers(req: Request) {
     try {
       const token: string = await this.getToken()
-      const queryParams = req.query
+      const { dedup, ...queryParams } = req.query
       const response = await axios.get(config.bcgovSsoApi.url, {
         headers: { Authorization: `Bearer ${token}` },
         params: queryParams,
       })
-      return await response.data
+
+      const dedupValue = dedup as unknown
+      const shouldDedup =
+        dedupValue === true ||
+        (typeof dedupValue === 'string' && dedupValue === 'true')
+
+      if (!shouldDedup) {
+        return response.data
+      }
+
+      return this.dedupIdirSearchResults(response.data)
     } catch (error: unknown) {
       logger.error(getErrorMessage(error))
       if (

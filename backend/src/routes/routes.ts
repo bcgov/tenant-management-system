@@ -110,7 +110,6 @@ export class Routes {
     app
       .route(RoutesConstants.SEARCH_BC_GOV_IDIR_USERS)
       .get(
-        checkJwt(),
         validate(validator.searchBCGOVSSOUsers, {}, {}),
         (req: Request, res: Response) =>
           this.tmsController.searchBCGOVSSOUsers(req, res),
