@@ -80,18 +80,18 @@ function handleAddService() {
       <v-col cols="12">
         <v-data-table
           :header-props="{
-            class: 'text-body-1 font-weight-bold bg-surface-light',
+            class: 'bg-surface-light font-weight-bold text-body-small',
           }"
           :headers="[
             {
-              title: 'Service',
-              key: 'name',
               align: 'start',
+              key: 'name',
+              title: 'Service',
             },
             {
-              title: 'Available Since',
-              key: 'createdDate',
               align: 'start',
+              key: 'createdDate',
+              title: 'Available Since',
             },
           ]"
           :items="tenantServices"
@@ -142,7 +142,7 @@ function handleAddService() {
             hide-details
           ></v-select>
         </v-col>
-        <v-col class="d-flex align-center" cols="6">
+        <v-col class="align-center d-flex" cols="6">
           <v-btn
             :disabled="!selectedServiceId"
             color="primary"

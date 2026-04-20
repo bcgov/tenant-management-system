@@ -78,7 +78,7 @@ const moreThanOneTenantOwner = computed(() => {
   return owners.length > 1
 })
 
-const headerClass = 'text-body-1 font-weight-bold bg-surface-light'
+const headerClass = 'bg-surface-light font-weight-bold text-body-small'
 
 const sortKey = computed(() => {
   if (props.sortBy && props.sortBy.length > 0) {
@@ -97,54 +97,54 @@ type TableHeaderItem = {
 const headers: ComputedRef<TableHeaderItem[]> = computed(() => {
   const rv: TableHeaderItem[] = [
     {
-      title: t('users.firstName'),
+      align: 'start',
       key: 'ssoUser.firstName',
-      align: 'start',
       sortable: true,
+      title: t('users.firstName'),
     },
     {
-      title: t('users.lastName'),
+      align: 'start',
       key: 'ssoUser.lastName',
-      align: 'start',
       sortable: true,
+      title: t('users.lastName'),
     },
     {
-      title: t('users.email'),
+      align: 'start',
       key: 'ssoUser.email',
-      align: 'start',
       sortable: true,
+      title: t('users.email'),
     },
     {
-      title: t('users.idpType'),
-      key: 'ssoUser.idpType',
       align: 'start',
+      key: 'ssoUser.idpType',
       sortable: false,
+      title: t('users.idpType'),
     },
   ]
   if (props.showRoles) {
     rv.push({
-      title: t('users.tenantRoles'),
+      align: 'start',
       key: 'roles',
       sortable: false,
-      align: 'start',
+      title: t('users.tenantRoles'),
     })
   }
 
   if (props.showActions) {
     rv.push({
-      title: t('users.actions'),
+      align: 'center',
       key: 'actions',
       sortable: false,
-      align: 'center',
+      title: t('users.actions'),
     })
   }
 
   if (props.showAdd) {
     rv.push({
-      title: t('users.addUser'),
+      align: 'center',
       key: 'add',
       sortable: false,
-      align: 'center',
+      title: t('users.addUser'),
     })
   }
 
@@ -291,7 +291,7 @@ const selectRowItem = (e: Event, r: RowPropsType) => {
     <template #[`item.add`]="{ item }">
       <v-btn
         :icon="mdiPlusBox"
-        class="pa-0 ma-0"
+        class="ma-0 pa-0"
         color="primary"
         density="compact"
         size="x-large"
@@ -325,7 +325,7 @@ const selectRowItem = (e: Event, r: RowPropsType) => {
                 <template #activator="{ props: tooltipProps }">
                   <v-list-item-title
                     v-bind="tooltipProps"
-                    class="text-body-medium text-disabled cursor-default"
+                    class="cursor-default text-body-medium text-disabled"
                   >
                     <v-icon v-if="actionItem.icon" :icon="actionItem.icon" />
                     {{ actionItem.title }}

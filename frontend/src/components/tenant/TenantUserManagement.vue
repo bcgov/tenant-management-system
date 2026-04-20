@@ -307,7 +307,6 @@ watch(selectAllRoles, () => {
         <FloatingActionButton
           :icon="mdiPlusBox"
           :text="$t('tenants.addAnotherUser', tenant.users.length)"
-          class="no-transform"
           @click="toggleSearch"
         />
       </v-col>
@@ -448,8 +447,5 @@ watch(selectAllRoles, () => {
 <style scoped>
 .v-btn--icon.default-radius {
   border-radius: 4px;
-}
-.v-btn.no-transform {
-  text-transform: none;
 }
 </style>
