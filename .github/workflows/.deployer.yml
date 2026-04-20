@@ -54,6 +54,10 @@ on:
         type: string
 
       ### Usually a bad idea / not recommended
+      release_name:
+        description: 'Release name to use if defined'
+        required: false
+        type: string
       timeout-minutes:
         description: 'Timeout minutes'
         default: 10
@@ -62,11 +66,6 @@ on:
       values:
         description: 'Values file'
         default: 'values.yaml'
-        required: false
-        type: string
-      release_name:
-        description: 'Release name for deployment'
-        default: "cstar-${{ inputs.environment || steps.pr.outputs.pr || inputs.tag }}"
         required: false
         type: string
     outputs:
@@ -82,7 +81,7 @@ jobs:
     name: Stack
     environment:
       name: ${{ inputs.environment || 'dev' }}
-      url: https://${{ inputs.release_name }}.${{ steps.vars.outputs.domain }}
+      url: https://${{ vars.outputs.release }}.${{ steps.vars.outputs.domain }}
     runs-on: ubuntu-24.04
     outputs:
       tag: ${{ inputs.tag || steps.pr.outputs.pr }}
@@ -113,7 +112,7 @@ jobs:
           tag=${{ inputs.tag || steps.pr.outputs.pr }}
 
           # Release name includes run numbers to ensure uniqueness
-          release=${{ inputs.release_name }}
+          release=${{ inputs.release_name || cstar-steps.pr.outputs.pr || cstar-inputs.tag || cstar-inputs.environment }}
 
           # Version, to support helm packaging for non-pr based releases (workflow_dispatch). default to 1.0.0+github run number
           version=1.0.0+${{ github.run_number }}
