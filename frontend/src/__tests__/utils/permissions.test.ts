@@ -1,229 +1,72 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
-import { SsoUser } from '@/models/ssouser.model'
-import { Tenant } from '@/models/tenant.model'
-import { User } from '@/models/user.model'
+import {
+  makeOperationsAdminUser,
+  makeTenant,
+  makeTenantOwnerRole,
+  makeUser,
+} from '@/__tests__/__factories__'
+import { mockAuthStore } from '@/__tests__/__helpers__/useAuthStore.mock'
+
+import { ROLES } from '@/utils/constants'
 import {
   currentUserHasRole,
   currentUserIsOperationsAdmin,
 } from '@/utils/permissions'
 
-// Mock the auth store
-const mockAuthStore = {
-  authenticatedUser: null as User | null | undefined,
-  isOperationsAdmin: false,
-}
+describe('currentUserHasRole', () => {
+  it('returns true when the current user has the specified role in the tenant', () => {
+    const user = makeUser({
+      ssoUserId: 'user-123',
+      roles: [makeTenantOwnerRole()],
+    })
+    mockAuthStore(user)
+    const tenant = makeTenant({ users: [user] })
 
-vi.mock('@/stores/useAuthStore', () => ({
-  useAuthStore: () => mockAuthStore,
-}))
-
-// Mock tenant model
-const mockTenant = {
-  userHasRole: vi.fn(),
-} as unknown as Tenant
-
-describe('User Permissions Utils', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-    mockAuthStore.authenticatedUser = null
-    mockAuthStore.isOperationsAdmin = false
+    expect(currentUserHasRole(tenant, ROLES.TENANT_OWNER.value)).toBe(true)
   })
 
-  afterEach(() => {
-    vi.restoreAllMocks()
+  it('returns false when the current user does not have the specified role', () => {
+    const user = makeUser({ ssoUserId: 'user-123', roles: [] })
+    mockAuthStore(user)
+    const tenant = makeTenant({ users: [user] })
+
+    expect(currentUserHasRole(tenant, ROLES.TENANT_OWNER.value)).toBe(false)
   })
 
-  describe('currentUserHasRole', () => {
-    it('should return false when no user is authenticated', () => {
-      mockAuthStore.authenticatedUser = null
+  it('returns false when the current user is not in the tenant', () => {
+    const user = makeUser({ ssoUserId: 'user-123' })
+    const otherUser = makeUser({ ssoUserId: 'other-user' })
+    mockAuthStore(user)
+    const tenant = makeTenant({ users: [otherUser] })
 
-      const result = currentUserHasRole(mockTenant, 'ADMIN')
-
-      expect(result).toBe(false)
-      expect(mockTenant.userHasRole).not.toHaveBeenCalled()
-    })
-
-    it('should return false when user is undefined', () => {
-      mockAuthStore.authenticatedUser = undefined
-
-      const result = currentUserHasRole(mockTenant, 'ADMIN')
-
-      expect(result).toBe(false)
-      expect(mockTenant.userHasRole).not.toHaveBeenCalled()
-    })
-
-    it('should call tenant.userHasRole with current user and role name', () => {
-      const mockSsoUser = new SsoUser(
-        '123',
-        'john.doe',
-        'John',
-        'Doe',
-        'John Doe',
-        'john.doe@example.com',
-      )
-      const mockUser = new User('123', mockSsoUser, [])
-      mockAuthStore.authenticatedUser = mockUser
-      vi.mocked(mockTenant.userHasRole).mockReturnValue(true)
-
-      const result = currentUserHasRole(mockTenant, 'ADMIN')
-
-      expect(mockTenant.userHasRole).toHaveBeenCalledWith(mockUser, 'ADMIN')
-      expect(mockTenant.userHasRole).toHaveBeenCalledTimes(1)
-      expect(result).toBe(true)
-    })
-
-    it('should return false when tenant.userHasRole returns false', () => {
-      const mockSsoUser = new SsoUser(
-        '123',
-        'john.doe',
-        'John',
-        'Doe',
-        'John Doe',
-        'john.doe@example.com',
-      )
-      const mockUser = new User('123', mockSsoUser, [])
-      mockAuthStore.authenticatedUser = mockUser
-      vi.mocked(mockTenant.userHasRole).mockReturnValue(false)
-
-      const result = currentUserHasRole(mockTenant, 'ADMIN')
-
-      expect(mockTenant.userHasRole).toHaveBeenCalledWith(mockUser, 'ADMIN')
-      expect(result).toBe(false)
-    })
-
-    it('should work with different role names', () => {
-      const mockSsoUser = new SsoUser(
-        '456',
-        'jane.smith',
-        'Jane',
-        'Smith',
-        'Jane Smith',
-        'jane.smith@example.com',
-      )
-      const mockUser = new User('456', mockSsoUser, [])
-      mockAuthStore.authenticatedUser = mockUser
-      vi.mocked(mockTenant.userHasRole).mockReturnValue(true)
-
-      const roles = ['USER_ADMIN', 'SERVICE_USER', 'TENANT_OWNER']
-
-      roles.forEach((role) => {
-        const result = currentUserHasRole(mockTenant, role)
-        expect(result).toBe(true)
-      })
-
-      expect(mockTenant.userHasRole).toHaveBeenCalledTimes(roles.length)
-      roles.forEach((role) => {
-        expect(mockTenant.userHasRole).toHaveBeenCalledWith(mockUser, role)
-      })
-    })
-
-    it('should handle empty role name', () => {
-      const mockSsoUser = new SsoUser(
-        '789',
-        'bob.wilson',
-        'Bob',
-        'Wilson',
-        'Bob Wilson',
-        'bob.wilson@example.com',
-      )
-      const mockUser = new User('789', mockSsoUser, [])
-      mockAuthStore.authenticatedUser = mockUser
-      vi.mocked(mockTenant.userHasRole).mockReturnValue(false)
-
-      const result = currentUserHasRole(mockTenant, '')
-
-      expect(mockTenant.userHasRole).toHaveBeenCalledWith(mockUser, '')
-      expect(result).toBe(false)
-    })
+    expect(currentUserHasRole(tenant, ROLES.TENANT_OWNER.value)).toBe(false)
   })
 
-  describe('currentUserIsOperationsAdmin', () => {
-    it('should return false when user is not operations admin', () => {
-      mockAuthStore.isOperationsAdmin = false
+  it('returns false when the user is not authenticated', () => {
+    mockAuthStore(null)
+    const tenant = makeTenant()
 
-      const result = currentUserIsOperationsAdmin()
+    expect(currentUserHasRole(tenant, ROLES.TENANT_OWNER.value)).toBe(false)
+  })
+})
 
-      expect(result).toBe(false)
-    })
+describe('currentUserIsOperationsAdmin', () => {
+  it('returns true when the current user is an operations admin', () => {
+    mockAuthStore(makeOperationsAdminUser())
 
-    it('should return true when user is operations admin', () => {
-      mockAuthStore.isOperationsAdmin = true
-
-      const result = currentUserIsOperationsAdmin()
-
-      expect(result).toBe(true)
-    })
-
-    it('should directly return auth store value', () => {
-      // Test that it's not doing any additional logic
-      const testValues = [true, false, true, false]
-
-      testValues.forEach((value) => {
-        mockAuthStore.isOperationsAdmin = value
-        const result = currentUserIsOperationsAdmin()
-        expect(result).toBe(value)
-      })
-    })
+    expect(currentUserIsOperationsAdmin()).toBe(true)
   })
 
-  describe('integration scenarios', () => {
-    it('should handle operations admin checking role in tenant', () => {
-      const mockSsoUser = new SsoUser(
-        '999',
-        'admin.user',
-        'Admin',
-        'User',
-        'Admin User',
-        'admin.user@example.com',
-      )
-      const mockUser = new User('999', mockSsoUser, [])
-      mockAuthStore.authenticatedUser = mockUser
-      mockAuthStore.isOperationsAdmin = true
-      vi.mocked(mockTenant.userHasRole).mockReturnValue(true)
+  it('returns false when the current user does not have the operations admin role', () => {
+    mockAuthStore(makeUser())
 
-      const isOpsAdmin = currentUserIsOperationsAdmin()
-      const hasRole = currentUserHasRole(mockTenant, 'USER_ADMIN')
+    expect(currentUserIsOperationsAdmin()).toBe(false)
+  })
 
-      expect(isOpsAdmin).toBe(true)
-      expect(hasRole).toBe(true)
-      expect(mockTenant.userHasRole).toHaveBeenCalledWith(
-        mockUser,
-        'USER_ADMIN',
-      )
-    })
+  it('returns false when the user is not authenticated', () => {
+    mockAuthStore(null)
 
-    it('should handle non-operations admin with no tenant role', () => {
-      const mockSsoUser = new SsoUser(
-        '888',
-        'regular.user',
-        'Regular',
-        'User',
-        'Regular User',
-        'regular.user@example.com',
-      )
-      const mockUser = new User('888', mockSsoUser, [])
-      mockAuthStore.authenticatedUser = mockUser
-      mockAuthStore.isOperationsAdmin = false
-      vi.mocked(mockTenant.userHasRole).mockReturnValue(false)
-
-      const isOpsAdmin = currentUserIsOperationsAdmin()
-      const hasRole = currentUserHasRole(mockTenant, 'ADMIN')
-
-      expect(isOpsAdmin).toBe(false)
-      expect(hasRole).toBe(false)
-    })
-
-    it('should handle unauthenticated user for both functions', () => {
-      mockAuthStore.authenticatedUser = null
-      mockAuthStore.isOperationsAdmin = false
-
-      const isOpsAdmin = currentUserIsOperationsAdmin()
-      const hasRole = currentUserHasRole(mockTenant, 'USER')
-
-      expect(isOpsAdmin).toBe(false)
-      expect(hasRole).toBe(false)
-      expect(mockTenant.userHasRole).not.toHaveBeenCalled()
-    })
+    expect(currentUserIsOperationsAdmin()).toBe(false)
   })
 })

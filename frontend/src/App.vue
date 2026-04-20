@@ -7,9 +7,16 @@ import AppNotifications from '@/components/layout/AppNotifications.vue'
 import LandingPageContainer from '@/components/route/LandingPageContainer.vue'
 import { useAuthStore } from '@/stores/useAuthStore'
 
+// --- Store and Composable Setup ----------------------------------------------
+
 const authStore = useAuthStore()
-const user = computed(() => authStore.getUser)
-const loggedOut = computed(() => authStore.loggedOut)
+
+// --- Computed Values ---------------------------------------------------------
+
+const loggedOut = computed(() => authStore.sessionExpired)
+const user = computed(() => {
+  return authStore.isAuthenticated ? authStore.authenticatedUser : null
+})
 </script>
 
 <template>
@@ -18,15 +25,16 @@ const loggedOut = computed(() => authStore.loggedOut)
     <AppNotifications />
     <AppHeader :user="user" />
 
-    <!-- Router view for dynamic component rendering -->
     <v-main>
       <AppNavigation />
-      <v-container class="mt-10 px-12" fluid>
-        <div v-if="loggedOut" class="text-center my-3">
+      <v-container class="fluid mt-10 px-12">
+        <div v-if="loggedOut" class="my-3 text-center">
           <h2>{{ $t('general.sessionExpired') }}</h2>
           <p>{{ $t('general.sessionExpiredDesc') }}</p>
           <LandingPageContainer />
         </div>
+
+        <!-- Router view for dynamic component rendering -->
         <router-view v-else />
       </v-container>
     </v-main>

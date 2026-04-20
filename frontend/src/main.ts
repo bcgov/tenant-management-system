@@ -1,32 +1,32 @@
 import '@bcgov/design-tokens/css-prefixed/variables.css'
-
-import '@/assets/styles/global.css'
-
 import { createPinia } from 'pinia'
 import { createApp } from 'vue'
 
 import App from '@/App.vue'
+import '@/assets/styles/global.css'
+import { i18n } from '@/i18n'
 import vuetify from '@/plugins/vuetify'
 import router from '@/router'
-import { i18n } from '@/i18n'
+import { ConfigError, loadConfig } from '@/services/config.service'
 import { useAuthStore } from '@/stores/useAuthStore'
-import { ConfigError, loadConfig } from './services/config.service'
 import { logger } from '@/utils/logger'
 
 export async function initializeApp() {
   await loadConfig()
 
-  // Create app and pinia first so we can use the store
   const app = createApp(App)
-  const pinia = createPinia()
 
-  app.use(pinia)
+  app.use(createPinia())
   app.use(router)
   app.use(vuetify)
   app.use(i18n)
 
   const authStore = useAuthStore()
-  await authStore.initKeycloak()
+  await authStore.init()
+
+  // User action causes a check of the JWT expiry, and a refresh when needed.
+  globalThis.addEventListener('click', () => authStore.ensureFreshToken())
+  globalThis.addEventListener('keydown', () => authStore.ensureFreshToken())
 
   app.mount('#app')
 }
