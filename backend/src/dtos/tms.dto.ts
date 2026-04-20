@@ -31,7 +31,9 @@ export interface CreateTenantRequestInputDto {
 
 export interface CreateSharedServiceInputDto {
   name: string
+  displayName: string
   clientIdentifier: string
+  landingPageUrl: string
   description?: string
   isActive?: boolean
   roles: Array<{
@@ -265,7 +267,9 @@ export interface SaveTenantRequestResultDto {
 export interface SaveSharedServiceResultDto {
   id?: string
   name?: string
+  displayName?: string
   clientIdentifier?: string
+  landingPageUrl?: string
   description?: string | null
   isActive?: boolean
   sharedServiceRoles?: unknown[]

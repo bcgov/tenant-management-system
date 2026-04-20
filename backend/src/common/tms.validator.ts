@@ -320,11 +320,17 @@ export default {
         .max(30)
         .pattern(/^\S.*\S$/)
         .required(),
+      displayName: Joi.string()
+        .min(1)
+        .max(100)
+        .pattern(/^\S.*\S$/)
+        .required(),
       clientIdentifier: Joi.string()
         .min(1)
         .max(55)
         .pattern(/^\S.*\S$/)
         .required(),
+      landingPageUrl: Joi.string().uri().max(500).required(),
       description: Joi.string().min(1).max(500).optional(),
       isActive: Joi.boolean().optional(),
       roles: Joi.array()

@@ -284,11 +284,11 @@ watch(selectAllRoles, () => {
     <v-row>
       <v-col cols="12">
         <UserTable
-          :add-user-role="showChangeRoles"
+          :edit-user-roles="showChangeRoles"
           :filter="userSearch"
           :handle-remove-role="handleRemoveRole"
           :show-actions="isUserAdmin"
-          :show-add-roles="true"
+          :show-edit-roles="true"
           :show-offboard-dialog="showOffboardDialog"
           :show-roles="true"
           :tenant="tenant"

@@ -59,6 +59,8 @@ export interface GetGroupResultDto {
   description?: string | null
   createdDateTime: Date
   updatedDateTime: Date
+  createdBy: string
+  updatedBy: string
   users?: Array<{
     id: string
     isDeleted: boolean

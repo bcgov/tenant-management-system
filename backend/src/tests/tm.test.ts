@@ -1279,7 +1279,8 @@ describe('Tenant Management API', () => {
             id: groupId,
             name: mockGroup.name,
             description: mockGroup.description,
-            tenant: { id: tenantId },
+            createdBy: mockGroup.createdBy,
+            updatedBy: mockGroup.updatedBy,
           },
         },
       })
@@ -1344,6 +1345,8 @@ describe('Tenant Management API', () => {
           group: {
             id: groupId,
             name: mockGroupWithUsers.name,
+            createdBy: mockGroupWithUsers.createdBy,
+            updatedBy: mockGroupWithUsers.updatedBy,
             users: [
               {
                 id: '123e4567-e89b-12d3-a456-426614174002',

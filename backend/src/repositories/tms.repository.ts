@@ -1498,20 +1498,45 @@ export class TMSRepository {
   }
 
   public async saveSharedService(input: CreateSharedServiceInputDto) {
-    const { name, clientIdentifier, description, isActive, roles, updatedBy } =
-      input
+    const {
+      name,
+      displayName,
+      clientIdentifier,
+      landingPageUrl,
+      description,
+      isActive,
+      roles,
+      updatedBy,
+    } = input
     let sharedServiceResponse!: SaveSharedServiceResultDto
     await this.manager.transaction(async (transactionEntityManager) => {
       try {
-        if (await this.checkIfSharedServiceNameExists(name)) {
+        if (
+          await this.checkIfSharedServiceNameExists(
+            name,
+            transactionEntityManager,
+          )
+        ) {
           throw new ConflictError(
             `A shared service with name '${name}' already exists`,
           )
         }
 
         if (
+          await this.checkIfSharedServiceDisplayNameExists(
+            displayName,
+            transactionEntityManager,
+          )
+        ) {
+          throw new ConflictError(
+            `A shared service with display name '${displayName}' already exists`,
+          )
+        }
+
+        if (
           await this.checkIfSharedServiceClientIdentifierExists(
             clientIdentifier,
+            transactionEntityManager,
           )
         ) {
           throw new ConflictError(
@@ -1521,7 +1546,9 @@ export class TMSRepository {
 
         const sharedService: SharedService = new SharedService()
         sharedService.name = name
+        sharedService.displayName = displayName
         sharedService.clientIdentifier = clientIdentifier
+        sharedService.landingPageUrl = landingPageUrl
         if (description !== undefined) {
           sharedService.description = description
         }
@@ -1675,6 +1702,21 @@ export class TMSRepository {
       .createQueryBuilder()
       .from(SharedService, 'ss')
       .where('ss.clientIdentifier = :clientIdentifier', { clientIdentifier })
+      .getExists()
+    return sharedServiceExists
+  }
+
+  public async checkIfSharedServiceDisplayNameExists(
+    displayName: string,
+    transactionEntityManager?: EntityManager,
+  ) {
+    transactionEntityManager = transactionEntityManager
+      ? transactionEntityManager
+      : this.manager
+    const sharedServiceExists = await transactionEntityManager
+      .createQueryBuilder()
+      .from(SharedService, 'ss')
+      .where('ss.displayName = :displayName', { displayName })
       .getExists()
     return sharedServiceExists
   }
