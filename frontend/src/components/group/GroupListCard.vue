@@ -40,7 +40,6 @@ const emit = defineEmits<{
 .card-link {
   color: rgb(var(--v-theme-typography-link-color)) !important;
   cursor: pointer;
-  text-decoration: underline;
   transition: color 0.2s ease;
 }
 
