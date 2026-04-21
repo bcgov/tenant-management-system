@@ -20,7 +20,7 @@ export function authenticatedAxios(timeout = 60000) {
     const authStore = useAuthStore()
     if (authStore.authenticatedUser !== null) {
       await authStore.ensureFreshToken()
-      cfg.headers.Authorization = `Bearer ${authStore.accessToken}`
+      cfg.headers.Authorization = `Bearer ${authStore.getAccessToken()}`
     }
 
     return cfg
