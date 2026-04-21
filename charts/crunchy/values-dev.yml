@@ -35,7 +35,7 @@ crunchy: # enable it for TEST and PROD, for PR based pipelines simply use single
     dataVolumeClaimSpec:
       storage: 700Mi
       storageClassName: netapp-block-standard
-      walStorage: 1Gi
+      walStorage: 1.3Gi
 
     requests:
       cpu: 50m
@@ -68,7 +68,7 @@ crunchy: # enable it for TEST and PROD, for PR based pipelines simply use single
       incrementalBackupSchedule: 0 0-7,9-23 * * * # every hour incremental
       volume:
         accessModes: 'ReadWriteOnce'
-        storage: 0.5Gi
+        storage: 0.8Gi
         storageClassName: netapp-file-backup
 
     config:
