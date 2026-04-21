@@ -55,11 +55,6 @@ watch(
         name: '',
       }
       isFormValid.value = false
-
-      // Trigger validation when dialog is shown, so that the user knows which
-      // fields are required.
-      await nextTick()
-      form.value?.validate()
     }
   },
 )
