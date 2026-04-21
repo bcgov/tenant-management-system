@@ -25,7 +25,7 @@ defineProps<{
     </v-toolbar-title>
 
     <div v-if="user" class="d-flex align-center user-info">
-      <v-icon :icon="mdiAccountOutline" size="large" />
+      <v-icon :icon="mdiAccountOutline" />
       <span class="text-no-wrap ms-1 me-4">{{ user.ssoUser.displayName }}</span>
       <v-btn
         :prepend-icon="mdiLogout"
