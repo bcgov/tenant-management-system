@@ -1,5 +1,6 @@
 import request from 'supertest'
 import express, { type ErrorRequestHandler } from 'express'
+import axios from 'axios'
 import { TMSRepository } from '../repositories/tms.repository'
 import { TMRepository } from '../repositories/tm.repository'
 import { TMSConstants } from '../common/tms.constants'
@@ -4937,6 +4938,71 @@ describe('Tenant API', () => {
       expect(response.body).toEqual(mockSearchResults)
     })
 
+    it('should deduplicate IDIR users by guid when dedup=true', async () => {
+      const mockSearchResults = {
+        data: [
+          {
+            firstName: 'John',
+            lastName: '',
+            email: '',
+            username: 'guid-1@idir',
+            attributes: {
+              idir_user_guid: ['GUID-1'],
+              idir_username: ['JDOE'],
+              display_name: ['Doe, John'],
+            },
+          },
+          {
+            firstName: 'John',
+            lastName: 'Doe',
+            email: 'john.doe@gov.bc.ca',
+            username: 'guid-1@idir',
+            attributes: {
+              idir_user_guid: ['GUID-1'],
+              idir_username: ['JDOE'],
+              display_name: ['Doe, John'],
+            },
+          },
+          {
+            firstName: 'Jane',
+            lastName: 'Smith',
+            email: 'jane.smith@gov.bc.ca',
+            username: 'guid-2@idir',
+            attributes: {
+              idir_user_guid: ['GUID-2'],
+              idir_username: ['JSMITH'],
+              display_name: ['Smith, Jane'],
+            },
+          },
+        ],
+      }
+
+      jest
+        .spyOn(
+          tmsController.tmsService as unknown as {
+            getToken: () => Promise<string>
+          },
+          'getToken',
+        )
+        .mockResolvedValue('mock-access-token')
+      jest.spyOn(axios, 'get').mockResolvedValue({ data: mockSearchResults })
+
+      const response = await request(app)
+        .get('/v1/users/bcgovssousers/idir/search')
+        .query({ email: 'john.doe@gov.bc.ca', dedup: 'true' })
+
+      expect(response.status).toBe(200)
+      expect(response.body).toEqual({
+        data: [mockSearchResults.data[1], mockSearchResults.data[2]],
+      })
+      expect(axios.get).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({
+          params: { email: 'john.doe@gov.bc.ca' },
+        }),
+      )
+    })
+
     it('should return empty array when no users found', async () => {
       const mockSearchResults = { data: [] }
 
@@ -5126,6 +5192,75 @@ describe('Tenant API', () => {
 
       expect(response.status).toBe(200)
       expect(response.body).toEqual(mockSearchResults)
+    })
+
+    it('should deduplicate BCEID users by guid when dedup=true', async () => {
+      const mockSearchResults = {
+        data: [
+          {
+            firstName: 'Master',
+            lastName: '',
+            email: '',
+            username: 'guid-1@bceidboth',
+            attributes: {
+              bceid_user_guid: ['GUID-1'],
+              bceid_username: ['USER1'],
+              display_name: ['Master Chief'],
+            },
+          },
+          {
+            firstName: 'Master',
+            lastName: 'Chief',
+            email: 'master.chief@example.com',
+            username: 'guid-1@bceidboth',
+            attributes: {
+              bceid_user_guid: ['GUID-1'],
+              bceid_username: ['USER1'],
+              display_name: ['Master Chief'],
+            },
+          },
+          {
+            firstName: 'Shankar',
+            lastName: 'Sethuraman',
+            email: 'shankar@example.com',
+            username: 'guid-2@bceidboth',
+            attributes: {
+              bceid_user_guid: ['GUID-2'],
+              bceid_username: ['USER2'],
+              display_name: ['Shankar Sethuraman'],
+            },
+          },
+        ],
+      }
+
+      jest
+        .spyOn(
+          tmsController.tmsService as unknown as {
+            getToken: () => Promise<string>
+          },
+          'getToken',
+        )
+        .mockResolvedValue('mock-access-token')
+      jest.spyOn(axios, 'get').mockResolvedValue({ data: mockSearchResults })
+
+      const response = await request(app)
+        .get('/v1/users/bcgovssousers/bceid/search')
+        .query({
+          bceidType: 'both',
+          username: 'user1',
+          dedup: 'true',
+        })
+
+      expect(response.status).toBe(200)
+      expect(response.body).toEqual({
+        data: [mockSearchResults.data[1], mockSearchResults.data[2]],
+      })
+      expect(axios.get).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({
+          params: { bceidType: 'both', username: 'user1' },
+        }),
+      )
     })
 
     it('should return empty array when no users found', async () => {
