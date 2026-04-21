@@ -44,7 +44,7 @@
     ]
   },
   "scripts": {
-    "lint": "eslint 'src/**/*.{ts,tsx}' --max-warnings 0",
+    "lint": "eslint \"src/**/*.{ts,tsx}\" --max-warnings 0",
     "start": "node --env-file=.env --require ts-node/register src/index.ts",
     "dev": "node --env-file=.env --require ts-node/register --watch src/index.ts",
     "typeorm": "node --env-file=.env --require ts-node/register ./node_modules/typeorm/cli.js",
