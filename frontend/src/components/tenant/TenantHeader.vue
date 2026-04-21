@@ -36,7 +36,7 @@ function toggleDetail() {
 
 <template>
   <v-sheet color="surface-light-blue">
-    <v-row align="center" class="pa-4" no-gutters>
+    <v-row class="align-center px-4" no-gutters>
       <v-col cols="8">
         <h2>Tenant Details</h2>
       </v-col>

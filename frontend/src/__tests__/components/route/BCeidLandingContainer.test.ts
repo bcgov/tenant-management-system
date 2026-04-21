@@ -1,22 +1,12 @@
 import { mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import {
+  mockAuthStore,
+  mockAuthStoreLogout,
+} from '@/__tests__/__helpers__/useAuthStore.mock'
+
 import BceidLandingContainer from '@/components/route/BCeidLandingContainer.vue'
-
-vi.mock('vue-i18n', () => ({
-  useI18n: () => ({
-    t: (key: string) => key,
-  }),
-}))
-
-const MOCK_LOGOUT_URL = 'https://example.com/logout'
-const mockLogout = vi.fn().mockReturnValue(MOCK_LOGOUT_URL)
-
-vi.mock('@/stores/useAuthStore', () => ({
-  useAuthStore: () => ({
-    logout: mockLogout,
-  }),
-}))
 
 const mountComponent = () =>
   mount(BceidLandingContainer, {
@@ -26,8 +16,8 @@ const mountComponent = () =>
       },
       stubs: {
         'v-btn': {
-          template: '<a :href="href"><slot /></a>',
-          props: ['href', 'color'],
+          template: '<button @click="$emit(\'click\')"><slot /></button>',
+          props: ['color'],
         },
         'v-container': { template: '<div><slot /></div>' },
         'v-icon': { template: '<span><slot /></span>' },
@@ -39,26 +29,7 @@ const mountComponent = () =>
 describe('BCeidLandingContainer.vue', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockLogout.mockReturnValue(MOCK_LOGOUT_URL)
-  })
-
-  it('renders without crashing', () => {
-    const wrapper = mountComponent()
-
-    expect(wrapper.exists()).toBe(true)
-  })
-
-  it('calls authStore.logout() to compute the logout URL', () => {
-    mountComponent()
-
-    expect(mockLogout).toHaveBeenCalledOnce()
-  })
-
-  it('renders the logout button with the correct href from logoutURL', () => {
-    const wrapper = mountComponent()
-    const btn = wrapper.find('a')
-
-    expect(btn.attributes('href')).toBe(MOCK_LOGOUT_URL)
+    mockAuthStore(null)
   })
 
   it('renders i18n keys for expected text nodes', () => {
@@ -72,26 +43,15 @@ describe('BCeidLandingContainer.vue', () => {
 
   it('renders the greeting icon', () => {
     const wrapper = mountComponent()
-    const icon = wrapper.find('span')
 
-    expect(icon.exists()).toBe(true)
+    expect(wrapper.find('span').exists()).toBe(true)
   })
 
-  it('handles logout URL being an empty string', () => {
-    mockLogout.mockReturnValue('')
-
+  it('calls logout when the logout button is clicked', async () => {
     const wrapper = mountComponent()
-    const btn = wrapper.find('a')
 
-    expect(btn.attributes('href')).toBe('')
-  })
+    await wrapper.find('button').trigger('click')
 
-  it('handles logout URL being undefined', () => {
-    mockLogout.mockReturnValue(undefined)
-
-    const wrapper = mountComponent()
-    const btn = wrapper.find('a')
-
-    expect(btn.attributes('href')).toBeUndefined()
+    expect(mockAuthStoreLogout()).toHaveBeenCalled()
   })
 })

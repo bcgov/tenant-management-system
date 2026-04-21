@@ -1,5 +1,6 @@
 import tsEslint from '@typescript-eslint/eslint-plugin'
 import pluginVue from 'eslint-plugin-vue'
+import pluginVuetify from 'eslint-plugin-vuetify'
 import pluginVitest from '@vitest/eslint-plugin'
 import pluginCypress from 'eslint-plugin-cypress'
 import tsParser from '@typescript-eslint/parser'
@@ -179,6 +180,8 @@ const config = [
       'cypress/support/**/*.{js,ts,jsx,tsx}',
     ],
   },
+
+  ...pluginVuetify.configs['flat/recommended-v4'],
 
   skipFormatting,
 

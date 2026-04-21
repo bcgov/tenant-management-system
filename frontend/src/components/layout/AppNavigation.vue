@@ -1,21 +1,23 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { useAuthStore } from '@/stores/useAuthStore'
 
+import { useAuthStore } from '@/stores/useAuthStore'
 import { currentUserIsOperationsAdmin } from '@/utils/permissions'
 
 // --- Store and Composable Setup ----------------------------------------------
 
-const route = useRoute()
 const authStore = useAuthStore()
+const route = useRoute()
 
 // --- Computed Values ---------------------------------------------------------
 
 const isOperationsAdmin = computed(() => currentUserIsOperationsAdmin())
+const loggedIn = computed(() => authStore.isAuthenticated)
+
+// Use the route path to determine which button is active.
 const isRouteSettings = computed(() => route.path.startsWith('/settings'))
 const isRouteTenant = computed(() => route.path.startsWith('/tenant'))
-const loggedIn = computed(() => authStore.isAuthenticated)
 </script>
 
 <template>
@@ -24,7 +26,6 @@ const loggedIn = computed(() => authStore.isAuthenticated)
       <v-btn
         v-if="loggedIn"
         :active="isRouteTenant"
-        exact-active-class=""
         to="/tenants"
         variant="text"
       >
@@ -33,7 +34,6 @@ const loggedIn = computed(() => authStore.isAuthenticated)
       <v-btn
         v-if="isOperationsAdmin && loggedIn"
         :active="isRouteSettings"
-        exact-active-class=""
         to="/settings"
         variant="text"
       >

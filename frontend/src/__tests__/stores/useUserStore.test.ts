@@ -1,5 +1,4 @@
-// @ts-nocheck
-import { setActivePinia, createPinia, type Store } from 'pinia'
+import { setActivePinia, createPinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import * as utils from '@/services/utils'
@@ -12,7 +11,6 @@ const mockedUtils = vi.mocked(utils)
 
 mockedUtils.logApiError.mockImplementation(() => {})
 
-// Create mock functions in vi.hoisted to ensure they're available during module loading
 const { mockGet, mockPost, mockPut, mockDelete, mockPatch } = vi.hoisted(
   () => ({
     mockGet: vi.fn(),
@@ -23,7 +21,6 @@ const { mockGet, mockPost, mockPut, mockDelete, mockPatch } = vi.hoisted(
   }),
 )
 
-// Mock the authenticated axios to return an object with HTTP methods
 vi.mock('@/services/authenticated.axios', () => ({
   authenticatedAxios: () => ({
     get: mockGet,
@@ -34,7 +31,6 @@ vi.mock('@/services/authenticated.axios', () => ({
   }),
 }))
 
-// Mock the constants
 vi.mock('@/utils/constants', () => ({
   IDIR_SEARCH_TYPE: {
     EMAIL: { value: 'email' },
@@ -48,7 +44,7 @@ vi.mock('@/utils/constants', () => ({
 }))
 
 import { useUserStore } from '@/stores/useUserStore'
-let userStore: Store
+let userStore: ReturnType<typeof useUserStore>
 
 describe('useUserStore', () => {
   const fakeIdirUsers = [

@@ -24,6 +24,10 @@ export default mergeConfig(
         },
       },
       setupFiles: ['./vitest.setup.ts'],
+      typecheck: {
+        enabled: true,
+        tsconfig: './tsconfig.vitest.json',
+      },
     },
   }),
 )

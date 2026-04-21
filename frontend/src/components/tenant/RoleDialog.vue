@@ -241,8 +241,8 @@ const handleSave = async () => {
     persistent
   >
     <v-card class="px-10 py-10">
-      <v-card-title class="mb-4 border-b-sm">
-        <v-row justify="end">
+      <v-card-title class="border-b-sm mb-4">
+        <v-row class="justify-end">
           <v-btn variant="plain" @click="$emit('update:openDialog', false)">
             <v-icon :icon="mdiClose" />
           </v-btn>
@@ -257,15 +257,15 @@ const handleSave = async () => {
           <p>Editing User:</p>
           <h3 class="text-bold">{{ user?.ssoUser.displayName }}</h3>
         </div>
-        <p class="text-body-2 mb-4">
+        <p class="mb-4 text-body-medium">
           {{ $t('tenants.learnMore') }}
         </p>
-        <p class="text-body-2 mb-12">
+        <p class="mb-12 text-body-medium">
           {{ $t('tenants.roleAssignDesc') }}
         </p>
         <v-data-table
           :header-props="{
-            class: 'text-body-2 font-weight-bold bg-surface-light',
+            class: 'bg-surface-light font-weight-bold text-body-medium',
           }"
           :headers="headers"
           :items="items"
@@ -275,7 +275,7 @@ const handleSave = async () => {
             <v-checkbox
               v-model="item.value"
               :label="item.role"
-              class="text-body-2 d-inline-flex normalHeight"
+              class="text-body-medium d-inline-flex normalHeight"
             />
           </template>
         </v-data-table>
@@ -308,11 +308,10 @@ const handleSave = async () => {
 }
 
 .normalHeight.v-checkbox .v-label {
+  font-family: 'Roboto', sans-serif;
   font-size: 0.875rem !important;
   font-weight: 400;
-  line-height: 1.5;
   letter-spacing: 0.0178571429em !important;
-  font-family: 'Roboto', sans-serif;
-  text-transform: none !important;
+  line-height: 1.5;
 }
 </style>

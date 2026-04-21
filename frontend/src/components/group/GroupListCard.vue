@@ -23,12 +23,10 @@ const emit = defineEmits<{
 
 <template>
   <v-card class="hoverable" color="surface-light-gray" @click="emit('click')">
-    <v-card-title>
-      <h4>{{ group.name }}</h4>
-    </v-card-title>
+    <v-card-title>{{ group.name }}</v-card-title>
     <v-card-text>
-      <p class="p-small">Date Created: {{ group.createdDate }}</p>
-      <p class="p-small">Created By: {{ group.createdBy }}</p>
+      <span class="d-block p-small">Date Created: {{ group.createdDate }}</span>
+      <span class="d-block p-small">Created By: {{ group.createdBy }}</span>
 
       <span class="card-link">
         <p v-if="isAdmin" class="mt-4">Edit Group &rarr;</p>

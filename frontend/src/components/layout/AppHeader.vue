@@ -1,35 +1,33 @@
 <script setup lang="ts">
 import { mdiAccountOutline, mdiLogout } from '@mdi/js'
-import { computed } from 'vue'
 
 import type { User } from '@/models/user.model'
 import { useAuthStore } from '@/stores/useAuthStore'
+
+// --- Store and Composable Setup ----------------------------------------------
+
+const authStore = useAuthStore()
 
 // --- Component Interface -----------------------------------------------------
 
 defineProps<{
   user: User | null
 }>()
-
-// --- Component Methods -------------------------------------------------------
-
-const authStore = useAuthStore()
-const logoutURL = computed(() => authStore.logout())
 </script>
 
 <template>
-  <v-app-bar class="px-4" elevation="1" app>
+  <v-app-bar class="px-4" elevation="1">
     <v-toolbar-title class="flex-grow-1 d-flex align-center">
       <img alt="Logo" class="logo" src="/BCID_H_RGB_pos.svg" />
-      <span class="app-title"
-        >Connected Services, Team Access, and Roles (CSTAR)</span
-      >
+      <span class="app-title">
+        Connected Services, Team Access, and Roles (CSTAR)
+      </span>
     </v-toolbar-title>
 
     <div v-if="user" class="d-flex align-center user-info">
       <v-icon :icon="mdiAccountOutline" size="large" />
       <span class="text-no-wrap ms-1 me-4">{{ user.ssoUser.displayName }}</span>
-      <v-btn :href="logoutURL" class="logout-btn">
+      <v-btn class="logout-btn" @click="authStore.logout()">
         <v-icon :icon="mdiLogout" class="me-1" size="x-large" />
         Logout
       </v-btn>
