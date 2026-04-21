@@ -77,7 +77,7 @@ const iconType = computed(() => {
     @update:model-value="$emit('update:modelValue', $event)"
   >
     <v-card>
-      <v-card-title v-if="title" class="text-h6">
+      <v-card-title v-if="title" class="text-headline-small">
         <v-row>
           <v-col>
             <v-icon

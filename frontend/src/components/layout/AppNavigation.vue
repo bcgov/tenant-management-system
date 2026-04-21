@@ -26,7 +26,6 @@ const isRouteTenant = computed(() => route.path.startsWith('/tenant'))
       <v-btn
         v-if="loggedIn"
         :active="isRouteTenant"
-        exact-active-class=""
         to="/tenants"
         variant="text"
       >
@@ -35,7 +34,6 @@ const isRouteTenant = computed(() => route.path.startsWith('/tenant'))
       <v-btn
         v-if="isOperationsAdmin && loggedIn"
         :active="isRouteSettings"
-        exact-active-class=""
         to="/settings"
         variant="text"
       >

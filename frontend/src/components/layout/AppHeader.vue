@@ -16,7 +16,7 @@ defineProps<{
 </script>
 
 <template>
-  <v-app-bar class="px-4" elevation="1" app>
+  <v-app-bar class="px-4" elevation="1">
     <v-toolbar-title class="flex-grow-1 d-flex align-center">
       <img alt="Logo" class="logo" src="/BCID_H_RGB_pos.svg" />
       <span class="app-title">

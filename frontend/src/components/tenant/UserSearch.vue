@@ -100,7 +100,7 @@ function handleSearch() {
   <v-row>
     <v-dialog v-model="conflict" width="auto">
       <v-card>
-        <v-card-title class="text-h6 border-b-sm">
+        <v-card-title class="text-headline-small border-b-sm">
           <v-icon :icon="mdiAlert" color="warning" size="xsmall" />
           {{ $t('general.duplicate') }}
           <v-icon :icon="mdiClose" class="float-right" size="xsmall" />

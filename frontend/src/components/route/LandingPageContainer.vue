@@ -35,7 +35,6 @@ watchEffect(() => {
   <v-container fluid>
     <div class="text-center my-3">
       <v-btn
-        class="normal-case"
         color="primary"
         variant="flat"
         @click="authStore.login({ idpHint: idirHint })"
@@ -45,7 +44,6 @@ watchEffect(() => {
     </div>
     <div class="text-center my-3">
       <v-btn
-        class="normal-case"
         color="primary"
         variant="flat"
         @click="authStore.login({ idpHint: basicBceidHint })"
@@ -55,7 +53,6 @@ watchEffect(() => {
     </div>
     <div class="text-center my-3">
       <v-btn
-        class="normal-case"
         color="primary"
         variant="flat"
         @click="authStore.login({ idpHint: businessBceidHint })"
@@ -65,9 +62,3 @@ watchEffect(() => {
     </div>
   </v-container>
 </template>
-
-<style scoped>
-.normal-case {
-  text-transform: none;
-}
-</style>

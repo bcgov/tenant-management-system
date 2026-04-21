@@ -31,18 +31,14 @@ const owner = computed(() => {
 <template>
   <v-card class="hoverable" color="surface-light-gray" @click="emit('click')">
     <v-card-title>
-      <span class="card-link">
-        <h6>{{ tenant.name }}</h6>
-      </span>
+      <span class="card-link">{{ tenant.name }}</span>
     </v-card-title>
-    <v-card-subtitle>
-      <p>{{ tenant.ministryName }}</p>
-    </v-card-subtitle>
+    <v-card-subtitle>{{ tenant.ministryName }}</v-card-subtitle>
     <v-card-text v-if="owner">
-      <p class="p-small">
+      <span class="d-block p-small">
         {{ $t('roles.owner') }}: {{ owner.ssoUser.displayName }}
-      </p>
-      <p class="p-small">{{ owner.ssoUser.email }}</p>
+      </span>
+      <span class="d-block p-small">{{ owner.ssoUser.email }}</span>
     </v-card-text>
   </v-card>
 </template>

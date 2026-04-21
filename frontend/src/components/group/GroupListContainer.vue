@@ -149,7 +149,7 @@ onMounted(async () => {
     @select="handleCardClick"
   />
   <v-container v-else>
-    <v-row justify="center">
+    <v-row class="justify-center">
       <v-col cols="12" md="5">
         <p class="mb-4 text-center">
           No groups have been created for this tenant yet.

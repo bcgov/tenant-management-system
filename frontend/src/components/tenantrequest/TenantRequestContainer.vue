@@ -174,7 +174,7 @@ onMounted(async () => {
           <v-data-table
             :cell-props="getCellProps"
             :header-props="{
-              class: 'text-body-1 font-weight-bold bg-surface-light',
+              class: 'bg-surface-light font-weight-bold text-body-small',
             }"
             :headers="[
               {
@@ -224,7 +224,7 @@ onMounted(async () => {
               >
                 <v-chip
                   :color="getStatusColor(item.status)"
-                  class="d-inline-flex align-center"
+                  class="align-center d-inline-flex"
                 >
                   {{ item.status }}
                 </v-chip>
