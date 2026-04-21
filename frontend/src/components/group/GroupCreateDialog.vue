@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { mdiClose } from '@mdi/js'
 import { nextTick, ref, watch } from 'vue'
 import { VForm } from 'vuetify/components'
 
@@ -21,8 +22,8 @@ const dialogVisible = defineModel<boolean>()
 
 // --- Component State ---------------------------------------------------------
 
-const form = ref<InstanceType<typeof VForm>>()
 const addUser = ref(false)
+const form = ref<InstanceType<typeof VForm>>()
 const formData = ref<GroupDetailFields>({
   description: '',
   name: '',
@@ -102,7 +103,17 @@ const rules = {
 <template>
   <v-dialog v-model="dialogVisible" max-width="600px">
     <v-card class="pa-6">
-      <v-card-title>Create a Group</v-card-title>
+      <v-card-title class="align-center d-flex justify-space-between">
+        Create a Group
+        <v-btn
+          rounded="lg"
+          size="medium"
+          variant="plain"
+          @click="dialogVisible = false"
+        >
+          <v-icon :icon="mdiClose" />
+        </v-btn>
+      </v-card-title>
       <v-card-subtitle class="my-6 text-wrap">
         Groups let you manage access for multiple users at once. Assign roles to
         a group instead of individual users to keep access consistent and easier

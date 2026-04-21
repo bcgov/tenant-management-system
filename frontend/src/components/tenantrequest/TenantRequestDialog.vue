@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { mdiClose } from '@mdi/js'
 import { nextTick, ref, watch } from 'vue'
 import { VForm } from 'vuetify/components'
 
@@ -104,7 +105,17 @@ const rules = {
 <template>
   <v-dialog v-model="dialogVisible" max-width="800px">
     <v-card class="pa-6">
-      <v-card-title>Request New Tenant</v-card-title>
+      <v-card-title class="align-center d-flex justify-space-between">
+        Request New Tenant
+        <v-btn
+          rounded="lg"
+          size="medium"
+          variant="plain"
+          @click="dialogVisible = false"
+        >
+          <v-icon :icon="mdiClose" />
+        </v-btn>
+      </v-card-title>
       <v-card-text>
         <v-form ref="form" v-model="isFormValid">
           <v-row>
