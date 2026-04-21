@@ -12,7 +12,7 @@ const props = defineProps<{
 // --- Component State ---------------------------------------------------------
 
 const showSpinner = ref(false)
-let timeoutId: number | null = null
+let timeout: ReturnType<typeof globalThis.setTimeout> | null = null
 
 // --- Watchers and Effects ----------------------------------------------------
 
@@ -20,14 +20,14 @@ watch(
   () => props.loading,
   (isLoading) => {
     if (isLoading) {
-      timeoutId = window.setTimeout(() => {
+      timeout = globalThis.setTimeout(() => {
         showSpinner.value = true
       }, props.delay ?? 300)
     } else {
       showSpinner.value = false
-      if (timeoutId) {
-        clearTimeout(timeoutId)
-        timeoutId = null
+      if (timeout) {
+        clearTimeout(timeout)
+        timeout = null
       }
     }
   },
@@ -37,8 +37,8 @@ watch(
 // --- Component Lifecycle -----------------------------------------------------
 
 onBeforeUnmount(() => {
-  if (timeoutId) {
-    clearTimeout(timeoutId)
+  if (timeout) {
+    clearTimeout(timeout)
   }
 })
 </script>

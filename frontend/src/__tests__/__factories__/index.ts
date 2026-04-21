@@ -1,8 +1,30 @@
+import { Group } from '@/models/group.model'
 import { Role } from '@/models/role.model'
 import { SsoUser } from '@/models/ssouser.model'
 import { Tenant } from '@/models/tenant.model'
 import { User } from '@/models/user.model'
 import { ROLES } from '@/utils/constants'
+
+// Group Factories
+
+export function makeGroup(
+  overrides: Partial<{
+    createdBy: string
+    createdDate: string
+    description: string
+    id: string
+    name: string
+  }> = {},
+): Group {
+  return new Group(
+    overrides.createdBy ?? crypto.randomUUID(),
+    overrides.createdDate ?? '2026-01-01',
+    overrides.description ?? 'Test group description',
+    overrides.id ?? crypto.randomUUID(),
+    overrides.name ?? 'Test Group',
+    [],
+  )
+}
 
 // Role Factories
 
@@ -31,6 +53,7 @@ export function makeUserAdminRole(): Role {
 export function makeTenant(
   overrides: Partial<{
     id: string
+    ministry: string
     name: string
     users: User[]
   }> = {},
@@ -41,7 +64,7 @@ export function makeTenant(
     'Test tenant description',
     overrides.id ?? crypto.randomUUID(),
     overrides.name ?? 'Test Tenant',
-    "Citizens' Services",
+    overrides.ministry ?? "Citizens' Services",
     overrides.users ?? [],
   )
 }
@@ -73,6 +96,7 @@ export function makeSsoUser(
 export function makeUser(
   overrides: Partial<{
     displayName: string
+    email: string
     id: string
     idpType: string
     roles: Role[]
@@ -83,6 +107,7 @@ export function makeUser(
     overrides.id ?? crypto.randomUUID(),
     makeSsoUser({
       displayName: overrides.displayName ?? 'Twain, Tolstoy CITZ:EX',
+      email: overrides.email ?? 'tolstoy.twain@gov.bc.ca',
       idpType: overrides.idpType ?? 'idir',
       ssoUserId: overrides.ssoUserId ?? crypto.randomUUID(),
     }),
