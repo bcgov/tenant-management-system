@@ -155,6 +155,10 @@ export default {
       displayName: Joi.string(),
       username: Joi.string(),
       email: Joi.string(),
+      dedup: Joi.alternatives().try(
+        Joi.boolean(),
+        Joi.string().valid('true', 'false', ''),
+      ),
     }).or('guid', 'displayName', 'username', 'email'),
   },
 
