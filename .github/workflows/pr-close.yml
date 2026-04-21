@@ -67,6 +67,9 @@ jobs:
       - uses: bcgov/action-crunchy@a109166ff26880dc75676492a33b816ac0ce392f # v1.2.6
         name: Remove PR Specific User
         with:
+          oc_namespace: ${{ secrets.OC_NAMESPACE }}
+          oc_token: ${{ secrets.OC_TOKEN }}
+          oc_server: ${{ vars.OC_SERVER }}
           environment: silver-dev
           release_name: cstar-db
           values_file: charts/crunchy/values-silver-dev.yml
@@ -78,6 +81,9 @@ jobs:
       - uses: bcgov/action-crunchy@a109166ff26880dc75676492a33b816ac0ce392f # v1.2.6
         name: Remove PR Specific User
         with:
+          oc_namespace: ${{ secrets.OC_NAMESPACE }}
+          oc_token: ${{ secrets.OC_TOKEN }}
+          oc_server: ${{ vars.OC_SERVER }}
           environment: gold-dev
           release_name: cstar-db
           values_file: charts/crunchy/values-gold-dev.yml
@@ -89,6 +95,9 @@ jobs:
       - uses: bcgov/action-crunchy@a109166ff26880dc75676492a33b816ac0ce392f # v1.2.6
         name: Remove PR Specific User
         with:
+          oc_namespace: ${{ secrets.OC_NAMESPACE }}
+          oc_token: ${{ secrets.OC_TOKEN }}
+          oc_server: ${{ vars.OC_SERVER }}
           environment: golddr-dev
           release_name: cstar-db
           values_file: charts/crunchy/values-golddr-dev.yml
