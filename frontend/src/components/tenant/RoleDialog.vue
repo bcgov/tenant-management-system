@@ -1,9 +1,10 @@
 <script setup lang="ts">
-//imports
 import { mdiClose } from '@mdi/js'
 import { watch, ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
+import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
+import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
 import { useNotification } from '@/composables/useNotification'
 import type { Tenant } from '@/models/tenant.model'
 import type { User } from '@/models/user.model'
@@ -288,17 +289,15 @@ const updateState = (newUser: User | null) => {
           </template>
         </v-data-table>
       </v-card-text>
-      <v-card-actions class="justify-end">
-        <v-btn
+      <v-card-actions class="d-flex justify-end">
+        <ButtonSecondary
           :text="$t('general.cancel')"
-          variant="text"
+          class="me-4"
           @click="$emit('update:openDialog', false)"
         />
-        <v-btn
+        <ButtonPrimary
           :disabled="!hasChanges || !atLeastOneRole"
           :text="$t('general.save')"
-          color="primary"
-          variant="flat"
           @click="handleSave"
         />
       </v-card-actions>
