@@ -4,8 +4,8 @@ import type { Group } from '@/models/group.model'
 // --- Component Interface -----------------------------------------------------
 
 const { group } = defineProps<{
-  isAdmin: boolean
   group: Group
+  isAdmin: boolean
 }>()
 
 /**
@@ -28,9 +28,9 @@ const emit = defineEmits<{
       <span class="d-block p-small">Date Created: {{ group.createdDate }}</span>
       <span class="d-block p-small">Created By: {{ group.createdBy }}</span>
 
-      <span class="card-link">
-        <p v-if="isAdmin" class="mt-4">Edit Group &rarr;</p>
-        <p v-else class="mt-4">View Group &rarr;</p>
+      <span class="card-link mt-4">
+        <p v-if="isAdmin">Edit Group &rarr;</p>
+        <p v-else>View Group &rarr;</p>
       </span>
     </v-card-text>
   </v-card>

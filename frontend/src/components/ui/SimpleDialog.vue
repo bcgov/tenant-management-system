@@ -43,8 +43,8 @@ const props = withDefaults(
 )
 
 const emit = defineEmits<{
-  (e: 'update:modelValue', value: boolean): void
   (e: 'buttonClick', action: string): void
+  (e: 'update:modelValue', value: boolean): void
 }>()
 
 // --- Component Methods -------------------------------------------------------

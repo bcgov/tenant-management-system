@@ -40,7 +40,7 @@ function toggleDetail() {
       <v-col cols="8">
         <h2>Tenant Details</h2>
       </v-col>
-      <v-col class="d-flex align-center justify-end" cols="4">
+      <v-col class="align-center d-flex justify-end" cols="4">
         <div class="me-4">
           <p>
             Date Created:

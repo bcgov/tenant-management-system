@@ -3,67 +3,37 @@
 import { mdiClose } from '@mdi/js'
 import { watch, ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-const { t } = useI18n()
 
 import { useNotification } from '@/composables/useNotification'
 import type { Tenant } from '@/models/tenant.model'
 import type { User } from '@/models/user.model'
-import { ROLES } from '@/utils/constants'
-import { useTenantStore } from '@/stores/useTenantStore'
 import { useRoleStore } from '@/stores/useRoleStore'
+import { useTenantStore } from '@/stores/useTenantStore'
+import { ROLES } from '@/utils/constants'
 
-//stores
+const { t } = useI18n()
+
+// TODO: non-container components should not directly use stores - they should
+// emit events and let the parent container handle the store interactions.
+// Refactor this component to follow that pattern.
 const tenantStore = useTenantStore()
 const roleStore = useRoleStore()
 const notification = useNotification()
 
-//props and default state
+// --- Component Interface -----------------------------------------------------
+
 const props = defineProps<{
-  userIndex: number | null
   tenant: Tenant | null
+  userIndex: number | null
 }>()
 
-const user = computed<User | null>(() => {
-  if (
-    props.tenant &&
-    props.userIndex !== null &&
-    props.userIndex >= 0 &&
-    props.userIndex < props.tenant.users.length
-  ) {
-    const newUser = props.tenant.users[props.userIndex]
-    updateState(newUser)
-    return newUser
-  }
-  return null
-})
-const dialogVisible = defineModel<boolean>()
+const emit = defineEmits(['update:openDialog'])
+
+// --- Component State ---------------------------------------------------------
+
 const defaultValues = ref<Array<boolean>>([false, false, false])
 
-//computed
-const ROLE_LOOKUP = computed(() => [
-  roleStore.roles.find((r) => r.name === ROLES.TENANT_OWNER.value),
-  roleStore.roles.find((r) => r.name === ROLES.USER_ADMIN.value),
-  roleStore.roles.find((r) => r.name === ROLES.SERVICE_USER.value),
-])
-
-// watch state for changes based on default values
-const hasChanges = computed(() => {
-  for (let i = 0; i < items.value.length; i++) {
-    if (items.value[i].value !== defaultValues.value[i]) {
-      return true
-    }
-  }
-  return false
-})
-
-const atLeastOneRole = computed(() => {
-  for (const item of items.value) {
-    if (item.value) {
-      return true
-    }
-  }
-  return false
-})
+const dialogVisible = defineModel<boolean>()
 
 const isBCeIDUser = ref<boolean>(false)
 
@@ -95,7 +65,131 @@ const items = ref<Array<{ role: string; description: string; value: boolean }>>(
       ],
 )
 
-//catch user prop changes and update defaults / state
+// headers for the table
+const headers = [
+  { title: t('roles.role', 1), value: 'role' },
+  { title: t('general.description'), value: 'description' },
+]
+
+// --- Watchers and Effects ----------------------------------------------------
+
+watch(
+  () => props.userIndex,
+  (newIndex) => {
+    if (
+      props.tenant &&
+      newIndex !== null &&
+      newIndex >= 0 &&
+      newIndex < props.tenant.users.length
+    ) {
+      const newUser = props.tenant.users[newIndex]
+      updateState(newUser)
+    }
+  },
+)
+
+// --- Computed Values ---------------------------------------------------------
+
+const atLeastOneRole = computed(() => {
+  for (const item of items.value) {
+    if (item.value) {
+      return true
+    }
+  }
+
+  return false
+})
+
+// watch state for changes based on default values
+const hasChanges = computed(() => {
+  for (let i = 0; i < items.value.length; i++) {
+    if (items.value[i].value !== defaultValues.value[i]) {
+      return true
+    }
+  }
+
+  return false
+})
+
+const roleLookup = computed(() => [
+  roleStore.roles.find((r) => r.name === ROLES.TENANT_OWNER.value),
+  roleStore.roles.find((r) => r.name === ROLES.USER_ADMIN.value),
+  roleStore.roles.find((r) => r.name === ROLES.SERVICE_USER.value),
+])
+
+const user = computed<User | null>(() => {
+  if (
+    props.tenant &&
+    props.userIndex !== null &&
+    props.userIndex >= 0 &&
+    props.userIndex < props.tenant.users.length
+  ) {
+    const newUser = props.tenant.users[props.userIndex]
+    updateState(newUser)
+
+    return newUser
+  }
+
+  return null
+})
+
+// --- Component Methods -------------------------------------------------------
+
+const handleSave = async () => {
+  const roleIds = []
+  const fullRoleIds = []
+  const removeIds = []
+
+  //built array of roles to add/remove
+  for (let i = 0; i < items.value.length; i++) {
+    if (items.value[i].value) {
+      fullRoleIds.push(roleLookup.value?.[i]?.id as string)
+      if (!defaultValues.value[i]) {
+        roleIds.push(roleLookup.value?.[i]?.id as string)
+      }
+    } else if (!items.value[i].value && defaultValues.value[i]) {
+      if (roleLookup?.value?.[i]?.id !== undefined) {
+        removeIds.push(roleLookup.value?.[i]?.id as string)
+      }
+    }
+  }
+
+  try {
+    //add first because remove fails if last role
+    if (roleIds.length > 0) {
+      await tenantStore.assignTenantUserRoles(
+        props.tenant as Tenant,
+        user?.value?.id as string,
+        roleIds,
+        fullRoleIds,
+      )
+    }
+
+    //remove any that aren't added
+    if (removeIds.length > 0) {
+      for (const removeId of removeIds) {
+        await tenantStore.removeTenantUserRole(
+          props.tenant as Tenant,
+          user?.value?.id as string,
+          removeId,
+        )
+      }
+    }
+
+    //success, show notification toast
+    notification.success(t('roles.updateSuccess'))
+    emit('update:openDialog', false)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (error: any) {
+    // show the best possible error message in error case
+    const msg =
+      error.response?.data?.details?.body?.[0]?.message ||
+      error.response?.data?.message ||
+      error.message
+    notification.error(`${t('roles.updateError')} ${msg}`)
+    console.error('Error updating roles:', error)
+  }
+}
 
 const updateState = (newUser: User | null) => {
   isBCeIDUser.value = false
@@ -138,6 +232,7 @@ const updateState = (newUser: User | null) => {
     items.value[2].value = false
     defaultValues.value[2] = false
   }
+
   if (newUser && newUser?.roles) {
     for (const role of newUser.roles) {
       if (role.name === ROLES.TENANT_OWNER.value && !isBCeIDUser.value) {
@@ -154,83 +249,6 @@ const updateState = (newUser: User | null) => {
     }
   }
 }
-
-watch(
-  () => props.userIndex,
-  (newIndex) => {
-    if (
-      props.tenant &&
-      newIndex !== null &&
-      newIndex >= 0 &&
-      newIndex < props.tenant.users.length
-    ) {
-      const newUser = props.tenant.users[newIndex]
-      updateState(newUser)
-    }
-  },
-)
-
-// emit when dialog is closed/opened
-const emit = defineEmits(['update:openDialog'])
-
-//headers for the table
-const headers = [
-  { title: t('roles.role', 1), value: 'role' },
-  { title: t('general.description'), value: 'description' },
-]
-
-//save method
-const handleSave = async () => {
-  const roleIds = []
-  const fullRoleIds = []
-  const removeIds = []
-  //built array of roles to add/remove
-  for (let i = 0; i < items.value.length; i++) {
-    if (items.value[i].value) {
-      fullRoleIds.push(ROLE_LOOKUP.value?.[i]?.id as string)
-      if (!defaultValues.value[i]) {
-        roleIds.push(ROLE_LOOKUP.value?.[i]?.id as string)
-      }
-    } else if (!items.value[i].value && defaultValues.value[i]) {
-      if (ROLE_LOOKUP?.value?.[i]?.id !== undefined) {
-        removeIds.push(ROLE_LOOKUP.value?.[i]?.id as string)
-      }
-    }
-  }
-  try {
-    //add first because remove fails if last role
-    if (roleIds.length > 0) {
-      await tenantStore.assignTenantUserRoles(
-        props.tenant as Tenant,
-        user?.value?.id as string,
-        roleIds,
-        fullRoleIds,
-      )
-    }
-    //remove any that aren't added
-    if (removeIds.length > 0) {
-      for (const removeId of removeIds) {
-        await tenantStore.removeTenantUserRole(
-          props.tenant as Tenant,
-          user?.value?.id as string,
-          removeId,
-        )
-      }
-    }
-    //success, show notification toast
-    notification.success(t('roles.updateSuccess'))
-    emit('update:openDialog', false)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  } catch (error: any) {
-    // show the best possible error message in error case
-    const msg =
-      error.response?.data?.details?.body?.[0]?.message ||
-      error.response?.data?.message ||
-      error.message
-    notification.error(`${t('roles.updateError')} ${msg}`)
-    console.error('Error updating roles:', error)
-  }
-}
 </script>
 
 <template>
@@ -240,7 +258,7 @@ const handleSave = async () => {
     width="627px"
     persistent
   >
-    <v-card class="px-10 py-10">
+    <v-card class="pa-10">
       <v-card-title class="border-b-sm mb-4">
         <v-row class="justify-end">
           <v-btn
@@ -277,7 +295,7 @@ const handleSave = async () => {
             <v-checkbox
               v-model="item.value"
               :label="item.role"
-              class="text-body-medium d-inline-flex normalHeight"
+              class="d-inline-flex normalHeight text-body-medium"
             />
           </template>
         </v-data-table>
@@ -301,19 +319,19 @@ const handleSave = async () => {
 </template>
 
 <style>
-.normalHeight.v-checkbox .v-selection-control {
-  min-height: unset;
-}
-
-.normalHeight.v-input--density-default {
-  height: 68px;
-}
-
 .normalHeight.v-checkbox .v-label {
   font-family: 'Roboto', sans-serif;
   font-size: 0.875rem !important;
   font-weight: 400;
   letter-spacing: 0.0178571429em !important;
   line-height: 1.5;
+}
+
+.normalHeight.v-checkbox .v-selection-control {
+  min-height: unset;
+}
+
+.normalHeight.v-input--density-default {
+  height: 68px;
 }
 </style>
