@@ -24,7 +24,7 @@ const emit = defineEmits<{
   <v-btn
     :disabled="disabled"
     :prepend-icon="icon"
-    class="tms-floating-action-button py-2 px-4"
+    class="cstar-floating-action-button py-2 px-4"
     color="primary"
     size="large"
     variant="text"
@@ -35,12 +35,12 @@ const emit = defineEmits<{
 </template>
 
 <style scoped>
-.tms-floating-action-button:hover:not(:disabled) {
+.cstar-floating-action-button:hover:not(:disabled) {
   /* Since this button has inverted colour, use the grey background on hover. */
   background-color: rgb(var(--v-theme-secondary-hover)) !important;
 }
 
-.tms-floating-action-button :deep(.v-icon) {
+.cstar-floating-action-button :deep(.v-icon) {
   font-size: 28px;
   height: 28px;
   width: 28px;
