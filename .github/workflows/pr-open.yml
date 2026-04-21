@@ -32,15 +32,6 @@ jobs:
           tag_fallback: latest
           triggers: ('${{ matrix.package }}/')
 
-  deploys-silver-dev:
-    name: Deploys (${{ github.event.number }})
-    needs: [builds]
-    uses: ./.github/workflows/silver-dev.yml
-    secrets: inherit
-    with:
-      tag: ${{ github.event.number }}
-      db_user: app-${{ github.event.number }}
-  
   deploys-gold-dev:
     name: Deploys (${{ github.event.number }})
     needs: [builds]
@@ -80,7 +71,7 @@ jobs:
         with:
           allow_issue_writing: false
           artifact_name: zap-${{ matrix.name }}-pr${{ github.event.number }}
-          target: https://cstar-${{ github.event.number }}.apps.silver.devops.gov.bc.ca/${{ matrix.path }}
+          target: https://cstar-${{ github.event.number }}.apps.gold.devops.gov.bc.ca/${{ matrix.path }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
   results:
