@@ -65,12 +65,6 @@ const items = ref<Array<{ role: string; description: string; value: boolean }>>(
       ],
 )
 
-// headers for the table
-const headers = [
-  { title: t('roles.role', 1), value: 'role' },
-  { title: t('general.description'), value: 'description' },
-]
-
 // --- Watchers and Effects ----------------------------------------------------
 
 watch(
@@ -252,29 +246,19 @@ const updateState = (newUser: User | null) => {
 </script>
 
 <template>
-  <v-dialog
-    :model-value="dialogVisible"
-    height="777px"
-    width="627px"
-    persistent
-  >
-    <v-card class="pa-10">
-      <v-card-title class="border-b-sm mb-4">
-        <v-row class="justify-end">
-          <v-btn
-            :icon="mdiClose"
-            variant="plain"
-            @click="$emit('update:openDialog', false)"
-          ></v-btn>
-        </v-row>
-        <v-row>
-          {{ $t('general.edit') }} {{ $t('tenants.tenant', 1) }}
-          {{ $t('roles.role', 1) }}
-        </v-row>
+  <v-dialog v-model="dialogVisible" height="777px" width="627px" persistent>
+    <v-card class="pa-6">
+      <v-card-title class="align-center d-flex justify-space-between">
+        {{ $t('general.edit') }} {{ $t('tenants.tenant', 1) }}
+        {{ $t('roles.role', 1) }}
+        <v-btn
+          :icon="mdiClose"
+          variant="plain"
+          @click="dialogVisible = false"
+        ></v-btn>
       </v-card-title>
-      <v-card-text class="pa-0">
+      <v-card-text>
         <div class="my-4">
-          <p>Editing User:</p>
           <h3 class="text-bold">{{ user?.ssoUser.displayName }}</h3>
         </div>
         <p class="mb-4 text-body-medium">
@@ -283,11 +267,15 @@ const updateState = (newUser: User | null) => {
         <p class="mb-12 text-body-medium">
           {{ $t('tenants.roleAssignDesc') }}
         </p>
+
         <v-data-table
           :header-props="{
             class: 'bg-surface-light font-weight-bold text-body-medium',
           }"
-          :headers="headers"
+          :headers="[
+            { title: t('roles.role', 1), value: 'role' },
+            { title: t('general.description'), value: 'description' },
+          ]"
           :items="items"
           hide-default-footer
         >

@@ -107,8 +107,6 @@ const rules = {
         Create a Group
         <v-btn
           :icon="mdiClose"
-          rounded="lg"
-          size="medium"
           variant="plain"
           @click="dialogVisible = false"
         ></v-btn>

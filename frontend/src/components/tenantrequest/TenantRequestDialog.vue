@@ -109,8 +109,6 @@ const rules = {
         Request New Tenant
         <v-btn
           :icon="mdiClose"
-          rounded="lg"
-          size="medium"
           variant="plain"
           @click="dialogVisible = false"
         ></v-btn>
