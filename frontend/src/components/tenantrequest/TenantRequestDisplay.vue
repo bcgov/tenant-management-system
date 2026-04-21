@@ -153,7 +153,7 @@ const handleSubmit = () => {
           >
             Back to All Requests
           </v-btn>
-          <ButtonSecondary class="me-4" text="Cancel" @click="handleBack" />
+          <ButtonSecondary class="mx-4" text="Cancel" @click="handleBack" />
           <ButtonPrimary
             :disabled="!isFormValid"
             text="Submit"
