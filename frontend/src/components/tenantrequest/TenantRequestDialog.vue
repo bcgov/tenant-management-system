@@ -72,6 +72,8 @@ watch(
 const dialogClose = () => (dialogVisible.value = false)
 
 const handleSubmit = () => {
+  form.value?.validate()
+
   if (isFormValid.value) {
     formData.value.name = formData.value.name.trim()
     formData.value.ministryName = formData.value.ministryName.trim()
@@ -125,19 +127,25 @@ const rules = {
                   rules.maxLength(30),
                   rules.notDuplicated,
                 ]"
-                label="Name of Tenant"
                 required
-              />
+              >
+                <template #label>
+                  Name of Tenant <span class="text-error">*</span>
+                </template>
+              </v-text-field>
             </v-col>
             <v-col cols="12" md="6">
               <v-select
                 v-model="formData.ministryName"
                 :items="MINISTRIES"
                 :rules="[rules.required]"
-                label="Ministry/Organization"
                 placeholder="Select an option..."
                 required
-              />
+              >
+                <template #label>
+                  Ministry/Organization <span class="text-error">*</span>
+                </template>
+              </v-select>
             </v-col>
           </v-row>
           <v-row>
@@ -146,22 +154,21 @@ const rules = {
                 v-model="formData.description"
                 :rules="[rules.required, rules.maxLength(500)]"
                 counter="500"
-                label="Description of Tenant"
                 rows="1"
                 auto-grow
                 required
-              ></v-textarea>
+              >
+                <template #label>
+                  Description of Tenant <span class="text-error">*</span>
+                </template>
+              </v-textarea>
             </v-col>
           </v-row>
         </v-form>
       </v-card-text>
       <v-card-actions class="d-flex justify-end">
         <ButtonSecondary class="me-4" text="Cancel" @click="dialogClose" />
-        <ButtonPrimary
-          :disabled="!isFormValid"
-          text="Submit Request"
-          @click="handleSubmit"
-        />
+        <ButtonPrimary text="Submit Request" @click="handleSubmit" />
       </v-card-actions>
     </v-card>
   </v-dialog>

@@ -71,6 +71,8 @@ watch(
 const dialogClose = () => (dialogVisible.value = false)
 
 const handleSubmit = () => {
+  form.value?.validate()
+
   if (isFormValid.value) {
     formData.value.name = formData.value.name.trim()
     formData.value.description = formData.value.description.trim()
@@ -128,9 +130,12 @@ const rules = {
                   rules.maxLength(30),
                   rules.notDuplicated,
                 ]"
-                label="Group Name"
                 required
-              />
+              >
+                <template #label>
+                  Group Name <span class="text-error">*</span>
+                </template>
+              </v-text-field>
             </v-col>
           </v-row>
           <v-row>
@@ -139,11 +144,14 @@ const rules = {
                 v-model="formData.description"
                 :rules="[rules.required, rules.maxLength(500)]"
                 counter="500"
-                label="Group Description"
                 rows="1"
                 auto-grow
                 required
-              ></v-textarea>
+              >
+                <template #label>
+                  Group Description <span class="text-error">*</span>
+                </template>
+              </v-textarea>
             </v-col>
           </v-row>
           <v-row>
@@ -158,11 +166,7 @@ const rules = {
       </v-card-text>
       <v-card-actions class="d-flex justify-end">
         <ButtonSecondary class="me-4" text="Cancel" @click="dialogClose" />
-        <ButtonPrimary
-          :disabled="!isFormValid"
-          text="Submit"
-          @click="handleSubmit"
-        />
+        <ButtonPrimary text="Submit" @click="handleSubmit" />
       </v-card-actions>
     </v-card>
   </v-dialog>
