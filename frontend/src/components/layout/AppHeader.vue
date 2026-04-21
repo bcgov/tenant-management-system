@@ -27,8 +27,11 @@ defineProps<{
     <div v-if="user" class="d-flex align-center user-info">
       <v-icon :icon="mdiAccountOutline" size="large" />
       <span class="text-no-wrap ms-1 me-4">{{ user.ssoUser.displayName }}</span>
-      <v-btn class="logout-btn" @click="authStore.logout()">
-        <v-icon :icon="mdiLogout" class="me-1" size="x-large" />
+      <v-btn
+        :prepend-icon="mdiLogout"
+        class="logout-btn me-1"
+        @click="authStore.logout()"
+      >
         Logout
       </v-btn>
     </div>

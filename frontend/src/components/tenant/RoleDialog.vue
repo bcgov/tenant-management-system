@@ -243,9 +243,11 @@ const handleSave = async () => {
     <v-card class="px-10 py-10">
       <v-card-title class="border-b-sm mb-4">
         <v-row class="justify-end">
-          <v-btn variant="plain" @click="$emit('update:openDialog', false)">
-            <v-icon :icon="mdiClose" />
-          </v-btn>
+          <v-btn
+            :icon="mdiClose"
+            variant="plain"
+            @click="$emit('update:openDialog', false)"
+          ></v-btn>
         </v-row>
         <v-row>
           {{ $t('general.edit') }} {{ $t('tenants.tenant', 1) }}

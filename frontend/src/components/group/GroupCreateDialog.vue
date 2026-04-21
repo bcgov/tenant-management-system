@@ -106,13 +106,12 @@ const rules = {
       <v-card-title class="align-center d-flex justify-space-between">
         Create a Group
         <v-btn
+          :icon="mdiClose"
           rounded="lg"
           size="medium"
           variant="plain"
           @click="dialogVisible = false"
-        >
-          <v-icon :icon="mdiClose" />
-        </v-btn>
+        ></v-btn>
       </v-card-title>
       <v-card-subtitle class="my-6 text-wrap">
         Groups let you manage access for multiple users at once. Assign roles to

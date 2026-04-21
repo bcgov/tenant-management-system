@@ -108,13 +108,12 @@ const rules = {
       <v-card-title class="align-center d-flex justify-space-between">
         Request New Tenant
         <v-btn
+          :icon="mdiClose"
           rounded="lg"
           size="medium"
           variant="plain"
           @click="dialogVisible = false"
-        >
-          <v-icon :icon="mdiClose" />
-        </v-btn>
+        ></v-btn>
       </v-card-title>
       <v-card-text>
         <v-form ref="form" v-model="isFormValid">

@@ -56,14 +56,12 @@ function toggleDetail() {
           </p>
         </div>
         <v-btn
+          :icon="showDetail ? mdiChevronUp : mdiChevronDown"
           rounded="lg"
           size="small"
           variant="outlined"
-          icon
           @click="toggleDetail"
-        >
-          <v-icon :icon="showDetail ? mdiChevronUp : mdiChevronDown" />
-        </v-btn>
+        ></v-btn>
       </v-col>
     </v-row>
   </v-sheet>
