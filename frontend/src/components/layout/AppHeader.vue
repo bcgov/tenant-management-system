@@ -17,7 +17,7 @@ defineProps<{
 
 <template>
   <v-app-bar class="px-4" elevation="1">
-    <v-toolbar-title class="flex-grow-1 d-flex align-center">
+    <v-toolbar-title class="align-center d-flex flex-grow-1">
       <img alt="Logo" class="logo" src="/BCID_H_RGB_pos.svg" />
       <span class="app-title">
         Connected Services, Team Access, and Roles (CSTAR)
@@ -26,7 +26,7 @@ defineProps<{
 
     <div v-if="user" class="d-flex align-center user-info">
       <v-icon :icon="mdiAccountOutline" />
-      <span class="text-no-wrap ms-1 me-4">{{ user.ssoUser.displayName }}</span>
+      <span class="me-4 ms-1 text-no-wrap">{{ user.ssoUser.displayName }}</span>
       <v-btn
         :prepend-icon="mdiLogout"
         class="logout-btn me-1"
