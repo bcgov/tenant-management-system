@@ -24,6 +24,23 @@ describe('TenantRequest model', () => {
     expect(tenantRequest.rejectionReason).toBe('')
   })
 
+  it('fromApiData handles created by username', () => {
+    const apiData = {
+      createdBy: 'creatorUuid',
+      createdByUserName: 'creatorUser',
+      createdDateTime: '2025-08-01',
+      description: 'API request description',
+      id: 'request789',
+      name: 'API Request',
+      ministryName: 'Ministry',
+      status: 'APPROVED',
+    }
+
+    const tenantRequest = TenantRequest.fromApiData(apiData)
+
+    expect(tenantRequest.createdBy).toBe('creatorUser')
+  })
+
   it('fromApiData creates an instance correctly including rejectionReason', () => {
     const apiData = {
       createdBy: 'creatorUser',

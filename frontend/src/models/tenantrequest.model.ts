@@ -14,7 +14,7 @@ export type TenantRequestDetailFields = Pick<
  */
 export class TenantRequest {
   /**
-   * The username of who created the tenant request.
+   * The identity of who created the tenant request.
    */
   createdBy: string
 
@@ -58,7 +58,7 @@ export class TenantRequest {
   /**
    * Creates a new Tenant Request instance.
    *
-   * @param createdBy - The username of who created the tenant request
+   * @param createdBy - The identity of who created the tenant request
    * @param createdDate - ISO8601 date string (YYYY-MM-DD) when tenant request
    *   was created
    * @param description - Description of the tenant request
@@ -92,9 +92,11 @@ export class TenantRequest {
    * Creates a Tenant Request instance from API response data.
    *
    * @param apiData - The raw tenant request data from the API
-   * @param apiData.createdBy - The username of who created the tenant request
+   * @param apiData.createdBy - The uuid of who created the tenant request
    * @param apiData.createdDateTime - ISO8601 date string (YYYY-MM-DD) when the
    *     tenant request was created
+   * @param apiData.createdByUserName - The username of who created the tenant
+   *     request
    * @param apiData.description - Description of the tenant request
    * @param apiData.id - Unique identifier for the tenant request
    * @param apiData.name - Display name of the tenant request
@@ -107,6 +109,7 @@ export class TenantRequest {
    */
   static fromApiData(apiData: {
     createdBy: string
+    createdByUserName?: string
     createdDateTime: string
     description: string
     id: string
@@ -116,7 +119,7 @@ export class TenantRequest {
     status: string
   }): TenantRequest {
     const tenantRequest = new TenantRequest(
-      apiData.createdBy,
+      apiData.createdByUserName || apiData.createdBy,
       apiData.createdDateTime,
       apiData.description,
       apiData.id,
