@@ -547,6 +547,40 @@ export class TMSController {
     }
   }
 
+  public async updateSharedServiceStatus(req: Request, res: Response) {
+    try {
+      const result = await this.tmsService.updateSharedServiceStatus(req)
+      res.status(200).send(result)
+    } catch (error: unknown) {
+      logger.error(getErrorMessage(error))
+      if (error instanceof ConflictError) {
+        this.errorHandler.generalError(
+          res,
+          'Error occurred updating shared service status',
+          getErrorMessage(error),
+          error.statusCode,
+          'Conflict',
+        )
+      } else if (error instanceof NotFoundError) {
+        this.errorHandler.generalError(
+          res,
+          'Error occurred updating shared service status',
+          getErrorMessage(error),
+          error.statusCode,
+          'Not Found',
+        )
+      } else {
+        this.errorHandler.generalError(
+          res,
+          'Error occurred updating shared service status',
+          getErrorMessage(error),
+          500,
+          'Internal Server Error',
+        )
+      }
+    }
+  }
+
   public async associateSharedServiceToTenant(req: Request, res: Response) {
     try {
       await this.tmsService.associateSharedServiceToTenant(req)
