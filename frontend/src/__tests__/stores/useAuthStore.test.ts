@@ -122,7 +122,7 @@ describe('useAuthStore', () => {
       const store = useAuthStore()
       await store.init()
 
-      const token = store.accessToken
+      const token = store.getAccessToken()
 
       expect(token).toBe('fake-token')
     })
@@ -131,7 +131,7 @@ describe('useAuthStore', () => {
       const store = useAuthStore()
       mockTokenParsed = makeIdirToken()
 
-      expect(() => store.accessToken).toThrow('Keycloak not initialized')
+      expect(() => store.getAccessToken()).toThrow('Keycloak not initialized')
     })
   })
 
@@ -164,6 +164,21 @@ describe('useAuthStore', () => {
 
       expect(store.sessionExpired).toBe(true)
       expect(() => store.authenticatedUser).toThrow('User not available')
+    })
+  })
+
+  describe('isAAuthenticated', () => {
+    it('returns true when a user is set', async () => {
+      const store = useAuthStore()
+      await store.init()
+
+      expect(store.isAuthenticated).toBe(true)
+    })
+
+    it('returns false when no user is set', async () => {
+      const store = useAuthStore()
+
+      expect(store.isAuthenticated).toBe(false)
     })
   })
 

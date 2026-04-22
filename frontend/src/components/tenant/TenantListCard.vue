@@ -9,16 +9,8 @@ const { tenant } = defineProps<{
   tenant: Tenant
 }>()
 
-/**
- * SonarQube rule S6598 triggers when there is a single emitter, and it suggests
- * using function type syntax rather than call signature syntax. However, the
- * Vue standard is to use call signature syntax. This intentional deviation from
- * the SonarQube rule is to be compatible with Vue's recommendation.
- *
- * @see https://vuejs.org/guide/typescript/composition-api.html#typing-component-emits
- */
 const emit = defineEmits<{
-  (event: 'click'): void // NOSONAR: S6598
+  (event: 'click'): void
 }>()
 
 // --- Computed Values ---------------------------------------------------------
@@ -47,7 +39,6 @@ const owner = computed(() => {
 .card-link {
   color: rgb(var(--v-theme-typography-link-color)) !important;
   cursor: pointer;
-  text-decoration: underline;
   transition: color 0.2s ease;
 }
 

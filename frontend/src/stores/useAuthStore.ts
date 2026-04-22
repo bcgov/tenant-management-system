@@ -23,23 +23,20 @@ enum IdentityProvider {
  * This store handles:
  * - Initializing and configuring Keycloak
  * - Managing login and logout flows
- * - Persisting the authenticated user's identity and token
- * - Automatically refreshing tokens
+ * - Refreshing tokens
  *
  * It exposes:
- * - `authenticated`: Boolean indicating login status
- * - `identityProvider`: The source of the user's identity (IDIR or BCeID)
- * - `keycloak`: The raw Keycloak instance for advanced usage
- * - `sessionExpired`: Flag indicating if the session has expired
- * - `user`: The parsed `User` object (or `null`)
- *
- * It also provides convenient getters for accessing:
  * - `authenticatedUser`: A guaranteed non-null user (throws if not available)
+ * - `ensureFreshToken()`: Method to refresh the token if it's about to expire
+ * - `getAccessToken()`: Method to get the current access token
+ * - `sessionExpired`: Flag indicating if the session has expired
+ * - `init()`: Method to initialize Keycloak and set the user state
  * - `isAuthenticated`: Whether the user is logged in
- * - `isOperationsAdmin`: Whether the user has operations admin privileges
+ * - `login()`: Method to trigger the Keycloak login flow
+ * - `logout()`: Method to log the user out
  *
- * Usage is to call `initKeycloak()` on app startup, and then rely on the state
- * and getters in components and services.
+ * Usage is to call `init()` on app startup, and then rely on the state and
+ * getters in components and services.
  */
 export const useAuthStore = defineStore('auth', () => {
   // Private state
@@ -123,10 +120,6 @@ export const useAuthStore = defineStore('auth', () => {
 
   // Exported Methods
 
-  const accessToken = computed((): string | undefined => {
-    return getKeycloak().token
-  })
-
   /**
    * Getter for the authenticated user that throws an exception if the user
    * is not yet available.
@@ -168,6 +161,15 @@ export const useAuthStore = defineStore('auth', () => {
       sessionExpired.value = true
       user.value = null
     }
+  }
+
+  /**
+   * Gets the current access token.
+   *
+   * @returns a String containing the access token.
+   */
+  const getAccessToken = (): string | undefined => {
+    return getKeycloak().token
   }
 
   /**
@@ -226,9 +228,9 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   return {
-    accessToken,
     authenticatedUser,
     ensureFreshToken,
+    getAccessToken,
     init,
     isAuthenticated,
     login,

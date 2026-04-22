@@ -31,7 +31,7 @@ export class User {
    */
   constructor(id: string, ssoUser: SsoUser, roles: Role[] = []) {
     this.id = id as UserId
-    this.roles = Array.isArray(roles) ? roles : []
+    this.roles = roles
     this.ssoUser = ssoUser
   }
 

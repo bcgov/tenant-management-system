@@ -3,7 +3,7 @@
 
 defineProps<{
   disabled?: boolean
-  icon: string
+  icon?: string
   text: string
 }>()
 
@@ -16,9 +16,7 @@ const emit = defineEmits<{
   <v-btn
     :disabled="disabled"
     :prepend-icon="icon"
-    class="cstar-floating-action-button px-4 py-2"
-    color="primary"
-    size="large"
+    class="cstar-button-tertiary"
     variant="text"
     @click="emit('click')"
   >
@@ -27,14 +25,11 @@ const emit = defineEmits<{
 </template>
 
 <style scoped>
-.cstar-floating-action-button:hover:not(:disabled) {
-  /* Since this button has inverted colour, use the grey background on hover. */
-  background-color: rgb(var(--v-theme-secondary-hover)) !important;
+.cstar-button-tertiary:disabled {
+  background-color: rgb(var(--v-theme-tertiary-disabled)) !important;
 }
 
-.cstar-floating-action-button :deep(.v-icon) {
-  font-size: 28px;
-  height: 28px;
-  width: 28px;
+.cstar-button-tertiary:hover:not(:disabled) {
+  background-color: rgb(var(--v-theme-tertiary-hover)) !important;
 }
 </style>

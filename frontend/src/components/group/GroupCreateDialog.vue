@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { mdiClose } from '@mdi/js'
 import { nextTick, ref, watch } from 'vue'
 import { VForm } from 'vuetify/components'
 
@@ -21,8 +22,8 @@ const dialogVisible = defineModel<boolean>()
 
 // --- Component State ---------------------------------------------------------
 
-const form = ref<InstanceType<typeof VForm>>()
 const addUser = ref(false)
+const form = ref<InstanceType<typeof VForm>>()
 const formData = ref<GroupDetailFields>({
   description: '',
   name: '',
@@ -54,11 +55,6 @@ watch(
         name: '',
       }
       isFormValid.value = false
-
-      // Trigger validation when dialog is shown, so that the user knows which
-      // fields are required.
-      await nextTick()
-      form.value?.validate()
     }
   },
 )
@@ -75,6 +71,8 @@ watch(
 const dialogClose = () => (dialogVisible.value = false)
 
 const handleSubmit = () => {
+  form.value?.validate()
+
   if (isFormValid.value) {
     formData.value.name = formData.value.name.trim()
     formData.value.description = formData.value.description.trim()
@@ -107,7 +105,14 @@ const rules = {
 <template>
   <v-dialog v-model="dialogVisible" max-width="600px">
     <v-card class="pa-6">
-      <v-card-title>Create a Group</v-card-title>
+      <v-card-title class="align-center d-flex justify-space-between">
+        Create a Group
+        <v-btn
+          :icon="mdiClose"
+          variant="plain"
+          @click="dialogVisible = false"
+        ></v-btn>
+      </v-card-title>
       <v-card-subtitle class="my-6 text-wrap">
         Groups let you manage access for multiple users at once. Assign roles to
         a group instead of individual users to keep access consistent and easier
@@ -125,9 +130,12 @@ const rules = {
                   rules.maxLength(30),
                   rules.notDuplicated,
                 ]"
-                label="Group Name"
                 required
-              />
+              >
+                <template #label>
+                  Group Name <span class="text-error">*</span>
+                </template>
+              </v-text-field>
             </v-col>
           </v-row>
           <v-row>
@@ -136,11 +144,14 @@ const rules = {
                 v-model="formData.description"
                 :rules="[rules.required, rules.maxLength(500)]"
                 counter="500"
-                label="Group Description"
                 rows="1"
                 auto-grow
                 required
-              ></v-textarea>
+              >
+                <template #label>
+                  Group Description <span class="text-error">*</span>
+                </template>
+              </v-textarea>
             </v-col>
           </v-row>
           <v-row>
@@ -155,11 +166,7 @@ const rules = {
       </v-card-text>
       <v-card-actions class="d-flex justify-end">
         <ButtonSecondary class="me-4" text="Cancel" @click="dialogClose" />
-        <ButtonPrimary
-          :disabled="!isFormValid"
-          text="Submit"
-          @click="handleSubmit"
-        />
+        <ButtonPrimary text="Submit" @click="handleSubmit" />
       </v-card-actions>
     </v-card>
   </v-dialog>

@@ -1,88 +1,93 @@
 {
-  "tenants": {
-    "tenant": "Tenants | Tenant | Tenants",
-    "learnMore": "Tenant roles define what a user can see and do within a tenant. Each role provides a different level of access, from full management to limited use.",
-    "roleAssignDesc": "Below are the available tenant roles you can assign to a user. A checkmark shows roles currently assigned to this user. Select additional role(s) to update their permissions.",
-    "errors": {
-      "uniqueName": "Tenant name must be unique",
-      "nonNewStatusChange": "Requests can only have a status change from New. Start a new request instead",
-      "nameExists": "Tenant Request cannot be approved because the name already exists",
-      "genericRequestError": "Failed to update Tenant Request"
-    },
-    "addAnotherUser": "Add a user to this tenant | Add another user to this tenant | Add another user to this tenant"
-  },
-  "roles": {
-    "role": "Roles | Role | Roles",
-    "owner": "Tenant Owner",
-    "admin": "User Admin",
-    "user": "Service User",
-    "ownerDesc": "Creates and manages tenants",
-    "adminDesc": "Manages groups and users ",
-    "userDesc": "Accesses services via groups",
-    "updateSuccess": "Roles updated successfully",
-    "updateError": "Failed to update roles:"
-  },
-  "groups": {
-    "group": "Groups | Group | Groups",
-    "createGroup": "Create New Group",
-    "editGroup": "Edit Group",
-    "deleteGroup": "Delete Group",
-    "deleteConfirm": "Are you sure you want to delete the group \"{groupName}\"?",
-    "noServices": "No services available.",
-    "createSuccess": "Group created successfully",
-    "createError": "Failed to create group:",
-    "updateSuccess": "Group updated successfully",
-    "updateError": "Failed to update group:",
-    "deleteSuccess": "Group deleted successfully",
-    "deleteError": "Failed to delete group:",
-    "sharedServices": "Adding {servicesLabel} Roles",
-    "sharedServicesDesc": "Click 'Edit' to start assigning roles. Choose the roles you want to add to your Group from each available {servicesLabel}, then click 'Save' to apply your changes.",
-    "sharedServicesSavedTitle": "Roles Saved",
-    "sharedServicesSavedDesc": "The roles for this group have been successfully updated.",
-    "sharedServicesSaveErrorTitle": "Error Saving Roles",
-    "sharedServicesSaveErrorDesc": "There was an error updating the roles {error}. Please try again.",
-    "undoRoleModalTitle": "Revert to Previous Roles?",
-    "undoRoleModalDesc": "You're about to undo your current selections and restore the previously assigned roles. Are you sure you want to continue?",
-    "clearAllRoleModalTitle": "Delete all Selections?",
-    "clearAllRoleModalDesc": "You're about to delete all of your current role selections. Are you sure you want to continue?"
-  },
   "general": {
-    "save": "Save",
     "cancel": "Cancel",
-    "description": "Description",
-    "edit": "Edit",
     "clearAll": "Clear All",
-    "undoChanges": "Undo Changes",
+    "description": "Description",
+    "duplicate": "Duplicate Entry",
+    "edit": "Edit",
+    "logout": "Log Out",
     "revert": "Revert",
+    "save": "Save",
     "servicesLabel": "Connected Service | Connected Services",
     "servicesLabelLower": "connected service | connected services",
-    "logout": "Log Out",
     "sessionExpired": "Your session has expired. Please log in to continue.",
     "sessionExpiredDesc": "For security reasons, CSTAR automatically logs you out after a period of inactivity.",
-    "duplicate": "Duplicate Entry"
+    "undoChanges": "Undo Changes"
   },
-  "users": {
-    "user": "Users | User | Users",
-    "addUser": "Add User",
-    "offboardUserTitle": "Offboarding User",
-    "offboardUserMessage": "This action will remove this user's tenant and group memberships. They will no longer have access to any systems using CSTAR.",
-    "offboardUserAction": "Offboard User",
-    "viewUserDetailsAction": "View User Details",
-    "editRolesAction": "Edit Tenant Roles",
-    "firstName": "First Name",
-    "lastName": "Last Name",
-    "email": "Email",
-    "idpType": "Identity Provider",
-    "tenantRoles": "Tenant Roles",
-    "actions": "Actions",
-    "noMatch": "No users match your search criteria",
-    "noUsersIn": "Add a {where} member to get started",
-    "noUsersYet": "No {where} members added yet",
-    "noUsersAdd": "Add {where} member",
-    "actionDisabledTooltip": "You can't offboard the last tenant owner"
+
+  "groups": {
+    "clearAllRoleModalDesc": "You're about to delete all of your current role selections. Are you sure you want to continue?",
+    "clearAllRoleModalTitle": "Delete all Selections?",
+    "createError": "Failed to create group:",
+    "createGroup": "Create New Group",
+    "createSuccess": "Group created successfully",
+    "deleteConfirm": "Are you sure you want to delete the group \"{groupName}\"?",
+    "deleteError": "Failed to delete group:",
+    "deleteGroup": "Delete Group",
+    "deleteSuccess": "Group deleted successfully",
+    "editGroup": "Edit Group",
+    "group": "Groups | Group | Groups",
+    "noServices": "No services available.",
+    "sharedServices": "Adding {servicesLabel} Roles",
+    "sharedServicesDesc": "Click 'Edit' to start assigning roles. Choose the roles you want to add to your Group from each available {servicesLabel}, then click 'Save' to apply your changes.",
+    "sharedServicesSaveErrorDesc": "There was an error updating the roles {error}. Please try again.",
+    "sharedServicesSaveErrorTitle": "Error Saving Roles",
+    "sharedServicesSavedDesc": "The roles for this group have been successfully updated.",
+    "sharedServicesSavedTitle": "Roles Saved",
+    "undoRoleModalDesc": "You're about to undo your current selections and restore the previously assigned roles. Are you sure you want to continue?",
+    "undoRoleModalTitle": "Revert to Previous Roles?",
+    "updateError": "Failed to update group:",
+    "updateSuccess": "Group updated successfully"
   },
+
   "landing": {
     "bceidWelcome": "Welcome to CSTAR",
     "bceidWelcomeDesc": "Thank you for logging in with your BCeID. Your account is available for your system administrator to find and manage. There's nothing you need to do in CSTAR, and you may log out at any time."
+  },
+
+  "roles": {
+    "admin": "User Admin",
+    "adminDesc": "Manages groups and users ",
+    "owner": "Tenant Owner",
+    "ownerDesc": "Creates and manages tenants",
+    "role": "Roles | Role | Roles",
+    "updateError": "Failed to update roles:",
+    "updateSuccess": "Roles updated successfully",
+    "user": "Service User",
+    "userDesc": "Accesses services via groups"
+  },
+
+  "tenants": {
+    "addAnotherUser": "Add a user to this tenant | Add another user to this tenant | Add another user to this tenant",
+    "errors": {
+      "genericRequestError": "Failed to update Tenant Request",
+      "nameExists": "Tenant Request cannot be approved because the name already exists",
+      "nonNewStatusChange": "Requests can only have a status change from New. Start a new request instead",
+      "uniqueName": "Tenant name must be unique"
+    },
+    "learnMore": "Tenant roles define what a user can see and do within a tenant. Each role provides a different level of access, from full management to limited use.",
+    "roleAssignDesc": "Below are the available tenant roles you can assign to a user. A checkmark shows roles currently assigned to this user. Select additional role(s) to update their permissions.",
+    "tenant": "Tenants | Tenant | Tenants"
+  },
+
+  "users": {
+    "actionDisabledTooltip": "You can't offboard the last tenant owner",
+    "actions": "Actions",
+    "addUser": "Add User",
+    "editRolesAction": "Edit Tenant Roles",
+    "email": "Email",
+    "firstName": "First Name",
+    "idpType": "Identity Provider",
+    "lastName": "Last Name",
+    "noMatch": "No users match your search criteria",
+    "noUsersAdd": "Add {where} member",
+    "noUsersIn": "Add a {where} member to get started",
+    "noUsersYet": "No {where} members added yet",
+    "offboardUserAction": "Offboard User",
+    "offboardUserMessage": "This action will remove this user's tenant and group memberships. They will no longer have access to any systems using CSTAR.",
+    "offboardUserTitle": "Offboarding User",
+    "tenantRoles": "Tenant Roles",
+    "user": "Users | User | Users",
+    "viewUserDetailsAction": "View User Details"
   }
 }

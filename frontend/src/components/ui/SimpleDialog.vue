@@ -43,8 +43,8 @@ const props = withDefaults(
 )
 
 const emit = defineEmits<{
-  (e: 'update:modelValue', value: boolean): void
   (e: 'buttonClick', action: string): void
+  (e: 'update:modelValue', value: boolean): void
 }>()
 
 // --- Component Methods -------------------------------------------------------
@@ -92,14 +92,12 @@ const iconType = computed(() => {
           <v-spacer />
           <v-btn
             v-if="hasClose === true"
+            :icon="mdiClose"
             class="ma-2"
             size="small"
             variant="text"
-            icon
             @click="$emit('update:modelValue', false)"
-          >
-            <v-icon :icon="mdiClose"></v-icon>
-          </v-btn>
+          ></v-btn>
         </v-row>
       </v-card-title>
       <v-card-text>

@@ -6,16 +6,8 @@ defineProps<{
   text: string
 }>()
 
-/**
- * SonarQube rule S6598 triggers when there is a single emitter, and it suggests
- * using function type syntax rather than call signature syntax. However, the
- * Vue standard is to use call signature syntax. This intentional deviation from
- * the SonarQube rule is to be compatible with Vue's recommendation.
- *
- * @see https://vuejs.org/guide/typescript/composition-api.html#typing-component-emits
- */
 const emit = defineEmits<{
-  (event: 'click'): void // NOSONAR: S6598
+  (event: 'click'): void
 }>()
 </script>
 
@@ -27,8 +19,8 @@ const emit = defineEmits<{
   <v-btn
     :disabled="disabled"
     base-color="secondary"
-    border="sm opacity-100"
-    class="tms-button-secondary"
+    border="opacity-100 sm"
+    class="cstar-button-secondary"
     variant="flat"
     @click="emit('click')"
   >
@@ -37,11 +29,11 @@ const emit = defineEmits<{
 </template>
 
 <style scoped>
-.tms-button-secondary:disabled {
+.cstar-button-secondary:disabled {
   background-color: rgb(var(--v-theme-secondary-disabled)) !important;
 }
 
-.tms-button-secondary:hover:not(:disabled) {
+.cstar-button-secondary:hover:not(:disabled) {
   background-color: rgb(var(--v-theme-secondary-hover)) !important;
 }
 </style>
