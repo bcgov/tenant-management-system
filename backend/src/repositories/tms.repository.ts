@@ -782,10 +782,17 @@ export class TMSRepository {
       })
     }
 
-    if (tenant.createdBy) {
-      tenant.createdBy =
-        (await this.getCreatorDisplayName(tenant.createdBy))?.userName ||
-        tenant.createdBy
+    const normalizedCreatedBy = tenant.createdBy?.trim()
+
+    if (normalizedCreatedBy) {
+      const createdByUserName =
+        normalizedCreatedBy === 'system'
+          ? 'system'
+          : await this.getCreatorDisplayName(normalizedCreatedBy).then(
+              (creator) => creator?.userName,
+            )
+      ;(tenant as Tenant & { createdByUserName?: string }).createdByUserName =
+        createdByUserName
     }
     return tenant
   }

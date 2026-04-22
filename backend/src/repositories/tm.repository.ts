@@ -894,6 +894,15 @@ export class TMRepository {
       throw new NotFoundError(`Group not found: ${groupId}`)
     }
 
+    const normalizedCreatedBy = group.createdBy?.trim()
+
+    let createdByUserName: string | undefined
+    if (normalizedCreatedBy === 'system') {
+      createdByUserName = 'system'
+    } else if (normalizedCreatedBy) {
+      createdByUserName = await this.getSsoUserDisplayName(normalizedCreatedBy)
+    }
+
     const groupResponse: GetGroupResultDto = {
       id: group.id,
       name: group.name,
@@ -901,6 +910,7 @@ export class TMRepository {
       createdDateTime: group.createdDateTime,
       updatedDateTime: group.updatedDateTime,
       createdBy: group.createdBy,
+      createdByUserName,
       updatedBy: group.updatedBy,
     }
 
