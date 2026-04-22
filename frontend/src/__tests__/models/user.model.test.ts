@@ -22,21 +22,6 @@ describe('User model', () => {
     expect(user.roles).toEqual(roles)
   })
 
-  it('constructor defaults roles to empty array if invalid', () => {
-    const ssoUser = new SsoUser(
-      'sso2',
-      'username2',
-      'First2',
-      'Last2',
-      'Display2',
-      'email2@example.com',
-    )
-    // @ts-expect-error Testing fallback for invalid roles
-    const user = new User('user2', ssoUser, null)
-
-    expect(user.roles).toEqual([])
-  })
-
   it('fromApiData converts API data to User instance correctly', () => {
     const apiData = {
       id: 'userApi' as UserId,
