@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { Service } from '@/models/service.model'
+import type { RoleId } from '@/models/role.model'
 
 describe('Service model', () => {
   it('constructor assigns all properties correctly', () => {
@@ -32,7 +33,20 @@ describe('Service model', () => {
       isActive: true,
       updatedDateTime: '2025-08-02',
       serviceRoles: [],
-      roles: [],
+      roles: [
+        {
+          id: 'role456' as RoleId,
+          name: 'User',
+          description: 'Standard user role',
+          allowedIdentityProviders: [],
+          createdBy: '',
+          enabled: true,
+          updatedBy: '',
+          isDeleted: false,
+          createdDateTime: '',
+          updatedDateTime: '',
+        },
+      ],
     }
 
     const service = Service.fromApiData(apiData)

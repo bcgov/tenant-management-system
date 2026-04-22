@@ -13,7 +13,7 @@ export type GroupDetailFields = Pick<Group, 'description' | 'name'>
  */
 export class Group {
   /**
-   * The username of who created the group.
+   * The identity of who created the group.
    */
   createdBy: string
 
@@ -47,7 +47,7 @@ export class Group {
   /**
    * Creates a new Group instance.
    *
-   * @param createdBy - The username of who created the group
+   * @param createdBy - The identity of who created the group
    * @param createdDate - ISO8601 date string (YYYY-MM-DD) when group was
    *   created
    * @param description - Description of the group
@@ -78,9 +78,10 @@ export class Group {
    * 'createdDate' property.
    *
    * @param apiData - The raw group data from the API
-   * @param apiData.createdBy - The username of who created the group
+   * @param apiData.createdBy - The UUID of who created the group
    * @param apiData.createdDateTime - ISO8601 date string (YYYY-MM-DD) when
    *     group was created
+   * @param apiData.createdByUsername - The username of who created the group
    * @param apiData.description - Description of the group
    * @param apiData.id - Unique identifier for the group
    * @param apiData.name - Display name of the group
@@ -89,6 +90,7 @@ export class Group {
    */
   static fromApiData(apiData: {
     createdBy: string
+    createdByUserName?: string
     createdDateTime: string
     description: string
     id: string
@@ -100,7 +102,7 @@ export class Group {
       : []
 
     return new Group(
-      apiData.createdBy,
+      apiData.createdByUserName || apiData.createdBy,
       apiData.createdDateTime,
       apiData.description,
       apiData.id,

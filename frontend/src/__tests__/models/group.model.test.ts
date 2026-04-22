@@ -34,7 +34,7 @@ describe('Group model', () => {
     )
 
     const group = new Group(
-      'creatorUser',
+      'creatorUuid',
       '2025-08-01',
       'Group description',
       'group123',
@@ -47,7 +47,7 @@ describe('Group model', () => {
 
   it('constructor sets groupUsers to empty array if not an array', () => {
     const group = new Group(
-      'creatorUser',
+      'creatorUuid',
       '2025-08-01',
       'Group description',
       'group123',
@@ -66,7 +66,7 @@ describe('Group model', () => {
     ]
 
     const apiData = {
-      createdBy: 'creatorUser',
+      createdBy: 'creatorUuid',
       createdDateTime: '2025-08-01',
       description: 'API description',
       id: 'group456' as GroupId,
@@ -80,6 +80,22 @@ describe('Group model', () => {
     expect(group.groupUsers).toHaveLength(apiData.users.length)
   })
 
+  it('fromApiData handles created by username', () => {
+    const apiData = {
+      createdBy: 'creatorUuid',
+      createdDateTime: '2025-08-01',
+      createdByUserName: 'creatorUser',
+      description: 'API description',
+      id: 'group789',
+      name: 'API Group',
+      users: [],
+    }
+
+    const group = Group.fromApiData(apiData)
+
+    expect(group.createdBy).toEqual('creatorUser')
+  })
+
   it('fromApiData handles non-array users gracefully', () => {
     type GroupApiData = Omit<
       Parameters<typeof Group.fromApiData>[0],
@@ -89,7 +105,7 @@ describe('Group model', () => {
     }
 
     const apiData: GroupApiData = {
-      createdBy: 'creatorUser',
+      createdBy: 'creatorUuid',
       createdDateTime: '2025-08-01',
       description: 'API description',
       id: 'group789',
