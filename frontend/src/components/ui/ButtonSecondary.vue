@@ -28,7 +28,7 @@ const emit = defineEmits<{
     :disabled="disabled"
     base-color="secondary"
     border="sm opacity-100"
-    class="tms-button-secondary"
+    class="cstar-button-secondary"
     variant="flat"
     @click="emit('click')"
   >
@@ -37,11 +37,11 @@ const emit = defineEmits<{
 </template>
 
 <style scoped>
-.tms-button-secondary:disabled {
+.cstar-button-secondary:disabled {
   background-color: rgb(var(--v-theme-secondary-disabled)) !important;
 }
 
-.tms-button-secondary:hover:not(:disabled) {
+.cstar-button-secondary:hover:not(:disabled) {
   background-color: rgb(var(--v-theme-secondary-hover)) !important;
 }
 </style>

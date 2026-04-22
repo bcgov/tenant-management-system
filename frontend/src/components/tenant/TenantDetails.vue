@@ -125,7 +125,7 @@ function toggleEdit() {
 </script>
 
 <template>
-  <v-row class="pa-4 bg-surface-light-gray" no-gutters>
+  <v-row class="bg-surface-light-gray pa-4" no-gutters>
     <!-- Form content -->
     <v-col cols="10">
       <v-form ref="form" v-model="isFormValid" @submit.prevent="handleSubmit">
@@ -213,26 +213,22 @@ function toggleEdit() {
     <v-col v-if="isTenantOwner" class="d-flex justify-end" cols="2">
       <v-btn
         v-if="isEditing"
+        :icon="mdiClose"
         rounded="lg"
         size="small"
         variant="outlined"
-        icon
         @click="handleCancel"
-      >
-        <v-icon :icon="mdiClose" />
-      </v-btn>
+      ></v-btn>
 
       <v-menu v-else>
         <template #activator="{ props: slotProps }">
           <v-btn
+            :icon="mdiDotsVertical"
             rounded="lg"
             size="small"
             variant="outlined"
-            icon
             v-bind="slotProps"
-          >
-            <v-icon :icon="mdiDotsVertical" />
-          </v-btn>
+          ></v-btn>
         </template>
         <v-list>
           <v-list-item @click="toggleEdit">

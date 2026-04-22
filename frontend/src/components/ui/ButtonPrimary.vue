@@ -22,7 +22,7 @@ const emit = defineEmits<{
 <template>
   <v-btn
     :disabled="disabled"
-    class="tms-button-primary"
+    class="cstar-button-primary"
     color="primary"
     variant="flat"
     @click="emit('click')"
@@ -32,12 +32,12 @@ const emit = defineEmits<{
 </template>
 
 <style scoped>
-.tms-button-primary:disabled {
+.cstar-button-primary:disabled {
   background-color: rgb(var(--v-theme-primary-disabled)) !important;
   color: rgb(var(--v-theme-on-surface)) !important;
 }
 
-.tms-button-primary:hover:not(:disabled) {
+.cstar-button-primary:hover:not(:disabled) {
   background-color: rgb(var(--v-theme-primary-hover)) !important;
 }
 </style>

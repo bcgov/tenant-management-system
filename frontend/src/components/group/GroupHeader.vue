@@ -40,7 +40,7 @@ function toggleDetail() {
       <v-col cols="8">
         <h2>Group Details</h2>
       </v-col>
-      <v-col class="d-flex align-center justify-end" cols="4">
+      <v-col class="align-center d-flex justify-end" cols="4">
         <div class="me-4">
           <p>
             Date Created:
@@ -56,14 +56,12 @@ function toggleDetail() {
           </p>
         </div>
         <v-btn
+          :icon="showDetail ? mdiChevronUp : mdiChevronDown"
           rounded="lg"
           size="small"
           variant="outlined"
-          icon
           @click="toggleDetail"
-        >
-          <v-icon :icon="showDetail ? mdiChevronUp : mdiChevronDown" />
-        </v-btn>
+        ></v-btn>
       </v-col>
     </v-row>
   </v-sheet>

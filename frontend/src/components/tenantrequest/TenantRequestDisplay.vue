@@ -4,6 +4,7 @@ import { computed, ref } from 'vue'
 
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
+import ButtonTertiary from '@/components/ui/ButtonTertiary.vue'
 import type { TenantRequest } from '@/models/tenantrequest.model'
 import { TENANT_REQUEST_STATUS } from '@/utils/constants'
 
@@ -145,14 +146,12 @@ const handleSubmit = () => {
       <v-col cols="12">
         <v-divider class="mb-4" />
         <div class="d-flex justify-start">
-          <v-btn
-            :prepend-icon="mdiArrowLeft"
-            color="primary"
-            variant="text"
+          <ButtonTertiary
+            :icon="mdiArrowLeft"
+            class="me-4"
+            text="Back to All Requests"
             @click="handleBack"
-          >
-            Back to All Requests
-          </v-btn>
+          />
           <ButtonSecondary class="me-4" text="Cancel" @click="handleBack" />
           <ButtonPrimary
             :disabled="!isFormValid"

@@ -20,10 +20,14 @@ import { useGroupStore } from '@/stores/useGroupStore'
 import { type IdirSearchType, ROLES } from '@/utils/constants'
 import { currentUserHasRole } from '@/utils/permissions'
 
-// --- Stores ----------------------------------------------------------------
+// --- Stores ------------------------------------------------------------------
+
+// TODO: non-container components should not directly use stores - they should
+// emit events and let the parent container handle the store interactions.
+// Refactor this component to follow that pattern.
 const groupStore = useGroupStore()
 
-// --- Component Interface ----------------------------------------------------
+// --- Component Interface -----------------------------------------------------
 
 const props = defineProps<{
   loadingSearch: boolean
@@ -178,8 +182,9 @@ function handleRemoveRole(user: User, role: Role) {
 
   if (isOwnerRole && ownerCount <= 1) {
     showInfo(
-      `There must be at least one user with the ${t('roles.owner')} role. To remove ` +
-        'this role from the current user, assign the role to another user first.',
+      `There must be at least one user with the ${t('roles.owner')} role. To ` +
+        'remove this role from the current user, assign the role to another ' +
+        'user first.',
     )
     return
   }
@@ -226,6 +231,7 @@ function showChangeRoles(user: User) {
   const uIndex = props.tenant.users.findIndex((u: User) => {
     return u.id === user.id
   })
+
   if (uIndex !== -1) {
     modifyingUserIndex.value = uIndex
     roleDialogVisible.value = true

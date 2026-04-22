@@ -8,12 +8,13 @@ vi.mock('@/services/config.service', () => ({
   config: { api: { baseUrl: 'https://api.example.com' } },
 }))
 
+const mockAccessToken = vi.fn().mockReturnValue(undefined)
 const mockEnsureFreshToken = vi.fn().mockResolvedValue(undefined)
 
 const mockAuthStore = {
   authenticatedUser: null as User | null,
-  accessToken: '',
   ensureFreshToken: mockEnsureFreshToken,
+  getAccessToken: mockAccessToken,
 }
 
 vi.mock('@/stores/useAuthStore', () => ({
@@ -23,7 +24,7 @@ vi.mock('@/stores/useAuthStore', () => ({
 beforeEach(() => {
   vi.clearAllMocks()
   mockAuthStore.authenticatedUser = null
-  mockAuthStore.accessToken = ''
+  mockAccessToken.mockResolvedValue(undefined)
   mockEnsureFreshToken.mockResolvedValue(undefined)
 })
 
@@ -72,7 +73,7 @@ describe('request interceptor (success)', () => {
 
   it('sets Authorization header and ensures fresh token when authenticated', async () => {
     mockAuthStore.authenticatedUser = { id: '123' as UserId } as unknown as User
-    mockAuthStore.accessToken = 'my-token'
+    mockAccessToken.mockReturnValue('my-token')
 
     const cfg = await getSuccessInterceptor()({ headers: new AxiosHeaders() })
 

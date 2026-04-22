@@ -55,10 +55,7 @@ export const tenantService = {
   },
 
   /**
-   * removes a user from the specified tenant.
-   *
-   * Note: The format of the user in the request body differs from elsewhere,
-   * so it requires explicit construction.
+   * Removes a user from the specified tenant.
    *
    * @param {string} tenantId - The unique identifier of the tenant.
    * @param {string} userId - The id of the user to remove
@@ -71,9 +68,9 @@ export const tenantService = {
 
       return response
     } catch (error: unknown) {
-      logApiError('Error adding user to tenant', error)
+      logApiError('Error removing user from tenant', error)
 
-      // Handle HTTP 409 Conflict (duplicate)
+      // Handle HTTP 409 Conflict (cannot remove last owner)
       if (isDuplicateEntityError(error)) {
         throw new DuplicateEntityError(error.response.data.message)
       }

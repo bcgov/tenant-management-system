@@ -394,6 +394,22 @@ describe('tenantService', () => {
       )
     })
 
+    it('should throw DuplicateEntityError on HTTP 409', async () => {
+      const error = {
+        isAxiosError: true,
+        response: {
+          status: 409,
+          data: { message: 'Tenant name already exists' },
+        },
+      }
+      mockDelete.mockRejectedValueOnce(error)
+      mockedUtils.isDuplicateEntityError.mockReturnValueOnce(true)
+
+      await expect(
+        tenantService.removeUser(tenantId, userId),
+      ).rejects.toBeInstanceOf(DuplicateEntityError)
+    })
+
     it('should log and rethrow errors', async () => {
       const error = new Error('User not found')
       mockDelete.mockRejectedValueOnce(error)
@@ -403,7 +419,7 @@ describe('tenantService', () => {
       )
 
       expect(mockedUtils.logApiError).toHaveBeenCalledWith(
-        'Error adding user to tenant',
+        'Error removing user from tenant',
         error,
       )
     })
