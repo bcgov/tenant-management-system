@@ -88,7 +88,7 @@ describe('GroupCreateDialog', () => {
   })
 
   describe('closing the dialog', () => {
-    it('emits update:modelValue=false when the × icon button is clicked', async () => {
+    it('emits update:modelValue=false when the x icon button is clicked', async () => {
       wrapper = mountDialog()
       const btn = document.body.querySelector(
         '.v-card-title .v-btn',
