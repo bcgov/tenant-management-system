@@ -19,23 +19,36 @@ import { ROLES } from '@/utils/constants'
 import { convertIDPToDisplay } from '@/utils/display'
 import { currentUserHasRole } from '@/utils/permissions'
 
+type TableHeaderItem = {
+  align?: 'start' | 'center' | 'end'
+  key: string
+  sortable?: boolean
+  title: string
+}
+
 type RowPropsType = ItemSlotBase<User>
 
+const { t } = useI18n()
+
+const headerClass = 'bg-surface-light font-weight-bold text-body-small'
+
+// --- Component Interface -----------------------------------------------------
+
 const props = defineProps<{
-  users: Array<User> | Array<GroupUser>
-  where: string
+  editUserRoles?: (user: User) => void
+  enableSelect?: boolean
   filter?: string
-  tenant: Tenant
   handleRemoveRole?: (user: User, role: Role) => void
-  showOffboardDialog?: (user: User) => void
+  selectUser?: (e: Event | null, r: RowPropsType) => boolean
   showActions?: boolean
   showAdd?: boolean
   showEditRoles?: boolean
+  showOffboardDialog?: (user: User) => void
   showRoles?: boolean
-  enableSelect?: boolean
-  editUserRoles?: (user: User) => void
-  selectUser?: (e: Event | null, r: RowPropsType) => boolean
   sortBy?: Array<{ key: string; order?: 'asc' | 'desc' }>
+  tenant: Tenant
+  users: Array<User> | Array<GroupUser>
+  where: string
 }>()
 
 const emit = defineEmits<{
@@ -43,56 +56,67 @@ const emit = defineEmits<{
   (event: 'add-first-clicked'): void
 }>()
 
-const { t } = useI18n()
+// --- Component State ---------------------------------------------------------
+
+const selectedUser = ref<User[] | null>(null)
+
+// --- Computed Values ---------------------------------------------------------
+
+const actionItems = computed(() => {
+  const rv = []
+  if (props.showEditRoles && props.editUserRoles) {
+    rv.push({
+      title: t('users.editRolesAction'),
+      icon: mdiPencil,
+      action: props.editUserRoles,
+      disabledCondition: () => {
+        return false
+      },
+    })
+  }
+
+  if (isUserAdmin.value && props.showOffboardDialog) {
+    rv.push({
+      title: t('users.offboardUserAction'),
+      action: props.showOffboardDialog,
+      icon: mdiDeleteOutline,
+      disabledCondition: (item: User) => {
+        return !(
+          moreThanOneTenantOwner.value ||
+          !item.roles.some((r: Role) => r.name === ROLES.TENANT_OWNER.value)
+        )
+      },
+    })
+  }
+
+  return rv
+})
 
 const computedUsers = computed((): User[] => {
   const u = props.users
-  if (!Array.isArray(u)) return []
-  if (u.length === 0) return []
+  if (!Array.isArray(u)) {
+    return []
+  }
+
+  if (u.length === 0) {
+    return []
+  }
+
   const first = u[0]
-  // If items look like GroupUser (have a `user` property), map to the inner User
+  // If items look like GroupUser (have a `user` property), map to the inner
+  // User
   if ((first as GroupUser).user !== undefined) {
     return (u as GroupUser[]).map((g) => {
       const user = g.user
       //to get GroupUserId to UserId we have to go through unknown
       user.id = g.id as unknown as UserId
+
       return user
     })
   }
+
   return u as User[]
 })
-
-const selectedUser = ref<User[] | null>(null)
-
-const isUserAdmin = computed(() => {
-  // A tenant owner, by default, is also a user admin - even if they don't have
-  // the USER_ADMIN role.
-  return (
-    currentUserHasRole(props.tenant, ROLES.TENANT_OWNER.value) ||
-    currentUserHasRole(props.tenant, ROLES.USER_ADMIN.value)
-  )
-})
-
-const moreThanOneTenantOwner = computed(() => {
-  const owners = props.tenant.getOwners()
-  return owners.length > 1
-})
-
-const headerClass = 'bg-surface-light font-weight-bold text-body-small'
-
-const sortKey = computed(() => {
-  if (props.sortBy && props.sortBy.length > 0) {
-    return props.sortBy
-  }
-  return [{ key: 'ssoUser.firstName' }]
-})
-
-type TableHeaderItem = {
-  title: string
-  key: string
-  align?: 'start' | 'center' | 'end'
-  sortable?: boolean
-}
 
 const headers: ComputedRef<TableHeaderItem[]> = computed(() => {
   const rv: TableHeaderItem[] = [
@@ -151,7 +175,32 @@ const headers: ComputedRef<TableHeaderItem[]> = computed(() => {
   return rv
 })
 
-const canRemoveRole = function (item: User, role: Role): boolean {
+const isUserAdmin = computed(() => {
+  // A tenant owner, by default, is also a user admin - even if they don't have
+  // the USER_ADMIN role.
+  return (
+    currentUserHasRole(props.tenant, ROLES.TENANT_OWNER.value) ||
+    currentUserHasRole(props.tenant, ROLES.USER_ADMIN.value)
+  )
+})
+
+const moreThanOneTenantOwner = computed(() => {
+  const owners = props.tenant.getOwners()
+
+  return owners.length > 1
+})
+
+const sortKey = computed(() => {
+  if (props.sortBy && props.sortBy.length > 0) {
+    return props.sortBy
+  }
+
+  return [{ key: 'ssoUser.firstName' }]
+})
+
+// --- Component Methods -------------------------------------------------------
+
+const canRemoveRole = (item: User, role: Role): boolean => {
   if (item.roles.length <= 1) {
     return false
   }
@@ -163,40 +212,15 @@ const canRemoveRole = function (item: User, role: Role): boolean {
   if (!props.handleRemoveRole) {
     return false
   }
+
   if (role.name !== ROLES.TENANT_OWNER.value) {
     return true
   }
-  // For tenant owners, only allow role removal if there is more than one tenant owner
+
+  // For tenant owners, only allow role removal if there is more than one tenant
+  // owner
   return moreThanOneTenantOwner.value
 }
-
-const actionItems = computed(() => {
-  const rv = []
-  if (props.showEditRoles && props.editUserRoles) {
-    rv.push({
-      title: t('users.editRolesAction'),
-      icon: mdiPencil,
-      action: props.editUserRoles,
-      disabledCondition: () => {
-        return false
-      },
-    })
-  }
-  if (isUserAdmin.value && props.showOffboardDialog) {
-    rv.push({
-      title: t('users.offboardUserAction'),
-      action: props.showOffboardDialog,
-      icon: mdiDeleteOutline,
-      disabledCondition: (item: User) => {
-        return !(
-          moreThanOneTenantOwner.value ||
-          !item.roles.some((r: Role) => r.name === ROLES.TENANT_OWNER.value)
-        )
-      },
-    })
-  }
-  return rv
-})
 
 const colorRowItem = (item: ItemSlotBase<User>) => {
   const selectedId: UserId | undefined = selectedUser.value?.[0]?.id
@@ -317,9 +341,10 @@ const selectRowItem = (e: Event, r: RowPropsType) => {
             :value="i"
           >
             <!--
-                  Disable the action when `actionItem.enabledCondition(item)` is false.
-                  When disabled, show a tooltip explaining why and prevent clicks.
-                -->
+              Disable the action when `actionItem.enabledCondition(item)` is
+              false. When disabled, show a tooltip explaining why and prevent
+              clicks.
+            -->
             <template v-if="actionItem.disabledCondition(item)">
               <v-tooltip location="top">
                 <template #activator="{ props: tooltipProps }">
