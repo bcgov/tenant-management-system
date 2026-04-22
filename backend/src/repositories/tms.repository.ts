@@ -24,6 +24,7 @@ import {
   CreateTenantInputDto,
   CreateTenantRequestInputDto,
   CreateSharedServiceInputDto,
+  UpdateSharedServiceStatusInputDto,
   GetTenantRequestsInputDto,
   UpdateTenantRequestStatusResultDto,
   UpdateTenantRequestStatusInputDto,
@@ -1681,6 +1682,46 @@ export class TMSRepository {
     })
 
     return await this.getSharedServiceWithRoles(sharedServiceId)
+  }
+
+  public async updateSharedServiceStatus(
+    input: UpdateSharedServiceStatusInputDto,
+  ) {
+    const { sharedServiceId, isActive, updatedBy } = input
+
+    await this.manager.transaction(async (transactionEntityManager) => {
+      const sharedService: SharedService | null = await transactionEntityManager
+        .createQueryBuilder(SharedService, 'sharedService')
+        .where('sharedService.id = :id', { id: sharedServiceId })
+        .getOne()
+
+      if (!sharedService) {
+        throw new NotFoundError(`Shared service not found: ${sharedServiceId}`)
+      }
+
+      if (sharedService.isActive === isActive) {
+        throw new ConflictError(
+          isActive
+            ? 'Shared service is already active'
+            : 'Shared service is already inactive',
+        )
+      }
+
+      sharedService.isActive = isActive
+      sharedService.updatedBy = updatedBy
+
+      await transactionEntityManager.save(sharedService)
+    })
+
+    const updatedSharedService =
+      await this.getSharedServiceWithRoles(sharedServiceId)
+    if (!updatedSharedService) {
+      throw new UnexpectedStateError(
+        `Shared service load failed after update: ${sharedServiceId}`,
+      )
+    }
+
+    return updatedSharedService
   }
 
   public async checkIfSharedServiceNameExists(

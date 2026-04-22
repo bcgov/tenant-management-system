@@ -369,6 +369,15 @@ export default {
     }).options({ abortEarly: false, convert: false }),
   },
 
+  updateSharedServiceStatus: {
+    params: Joi.object({
+      sharedServiceId: Joi.string().guid().required(),
+    }),
+    body: Joi.object({
+      isActive: Joi.boolean().required(),
+    }).options({ abortEarly: false, convert: false }),
+  },
+
   associateSharedServiceToTenant: {
     params: Joi.object({
       tenantId: Joi.string().guid().required(),
