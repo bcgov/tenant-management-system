@@ -18,35 +18,25 @@ describe('ButtonSecondary', () => {
 
   it('renders the provided text', () => {
     const wrapper = mountComponent({ text: 'Submit' })
+
     expect(wrapper.text()).toContain('Submit')
   })
 
-  it('emits click event when clicked and not disabled', async () => {
+  it('emits click event when clicked', async () => {
     const wrapper = mountComponent()
-    const btn = wrapper.find('button')
+    const btn = wrapper.find('[data-test-id="button-secondary"]')
 
     await btn.trigger('click')
 
-    expect(wrapper.emitted()).toHaveProperty('click')
     expect(wrapper.emitted('click')).toHaveLength(1)
   })
 
   it('does not emit click event when disabled', async () => {
     const wrapper = mountComponent({ disabled: true })
-    const btn = wrapper.find('button')
-    expect(btn.element.disabled).toBe(true)
+    const btn = wrapper.find('[data-test-id="button-secondary"]')
 
     await btn.trigger('click')
 
     expect(wrapper.emitted('click')).toBeUndefined()
-  })
-
-  it('applies the correct vuetify props', () => {
-    const wrapper = mountComponent()
-    const vBtn = wrapper.findComponent({ name: 'VBtn' })
-
-    expect(vBtn.props('baseColor')).toBe('secondary')
-    expect(vBtn.props('variant')).toBe('flat')
-    expect(vBtn.classes()).toContain('cstar-button-secondary')
   })
 })

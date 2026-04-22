@@ -16,6 +16,7 @@ const emit = defineEmits<{
     :disabled="disabled"
     class="cstar-button-primary"
     color="primary"
+    data-test-id="button-primary"
     variant="flat"
     @click="emit('click')"
   >

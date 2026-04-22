@@ -18,6 +18,7 @@ const emit = defineEmits<{
     :prepend-icon="icon"
     class="cstar-floating-action-button px-4 py-2"
     color="primary"
+    data-test-id="floating-action-button"
     size="large"
     variant="text"
     @click="emit('click')"
