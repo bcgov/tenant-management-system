@@ -3,11 +3,17 @@ import { onBeforeUnmount, ref, watch } from 'vue'
 
 // --- Component Interface -----------------------------------------------------
 
-const props = defineProps<{
-  delay?: number // milliseconds to wait before showing spinner
-  loading: boolean
-  loadingMessage?: string
-}>()
+const props = withDefaults(
+  defineProps<{
+    delayMilliseconds?: number
+    loading: boolean
+    loadingMessage?: string
+  }>(),
+  {
+    delayMilliseconds: 300,
+    loadingMessage: undefined,
+  },
+)
 
 // --- Component State ---------------------------------------------------------
 
@@ -22,7 +28,7 @@ watch(
     if (isLoading) {
       timeout = globalThis.setTimeout(() => {
         showSpinner.value = true
-      }, props.delay ?? 300)
+      }, props.delayMilliseconds)
     } else {
       showSpinner.value = false
       if (timeout) {
@@ -47,15 +53,17 @@ onBeforeUnmount(() => {
   <v-container>
     <v-row v-if="loading && showSpinner" class="align-center justify-center">
       <v-col class="text-center" cols="auto">
-        <v-progress-circular indeterminate />
-        <div v-if="loadingMessage" class="mt-2">
+        <v-progress-circular data-test-id="spinner" indeterminate />
+        <div v-if="loadingMessage" class="mt-2" data-test-id="message">
           {{ loadingMessage }}
         </div>
       </v-col>
     </v-row>
 
     <template v-else-if="!loading">
-      <slot />
+      <div data-test-id="content">
+        <slot />
+      </div>
     </template>
   </v-container>
 </template>

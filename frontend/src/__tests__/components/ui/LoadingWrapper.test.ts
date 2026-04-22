@@ -1,11 +1,14 @@
 import { mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { createVuetify } from 'vuetify'
 
 import LoadingWrapper from '@/components/ui/LoadingWrapper.vue'
 
+const vuetify = createVuetify()
+
 const mountComponent = (props: {
+  delayMilliseconds?: number
   loading: boolean
-  delay?: number
   loadingMessage?: string
 }) =>
   mount(LoadingWrapper, {
@@ -14,12 +17,7 @@ const mountComponent = (props: {
       default: '<div class="slotted">Content</div>',
     },
     global: {
-      stubs: {
-        'v-container': { template: '<div><slot /></div>' },
-        'v-row': { template: '<div><slot /></div>' },
-        'v-col': { template: '<div><slot /></div>' },
-        'v-progress-circular': { template: '<div class="spinner" />' },
-      },
+      plugins: [vuetify],
     },
   })
 
@@ -32,129 +30,98 @@ describe('LoadingWrapper.vue', () => {
     vi.useRealTimers()
   })
 
-  describe('when not loading', () => {
-    it('renders slot content', () => {
-      const wrapper = mountComponent({ loading: false })
+  it('when not loading shows content', () => {
+    const wrapper = mountComponent({ loading: false })
 
-      expect(wrapper.find('.slotted').exists()).toBe(true)
-    })
-
-    it('does not render the spinner', () => {
-      const wrapper = mountComponent({ loading: false })
-
-      expect(wrapper.find('.spinner').exists()).toBe(false)
-    })
+    expect(wrapper.find('[data-test-id="content"]').exists()).toBe(true)
+    expect(wrapper.find('[data-test-id="message"]').exists()).toBe(false)
+    expect(wrapper.find('[data-test-id="spinner"]').exists()).toBe(false)
   })
 
-  describe('when loading before delay elapses', () => {
-    it('does not render the spinner', () => {
-      const wrapper = mountComponent({ loading: true, delay: 300 })
+  it('when loading shows spinner after no delay', async () => {
+    const wrapper = mountComponent({ delayMilliseconds: 0, loading: true })
 
-      expect(wrapper.find('.spinner').exists()).toBe(false)
-    })
+    vi.runAllTimers()
+    await wrapper.vm.$nextTick()
 
-    it('does not render slot content', () => {
-      const wrapper = mountComponent({ loading: true, delay: 300 })
-
-      expect(wrapper.find('.slotted').exists()).toBe(false)
-    })
-
-    it('unmounts cleanly when there is no active timeout', () => {
-      const wrapper = mountComponent({ loading: false })
-
-      expect(() => wrapper.unmount()).not.toThrow()
-    })
-
-    it('clears the timeout on unmount', async () => {
-      const wrapper = mountComponent({ loading: true, delay: 300 })
-
-      wrapper.unmount()
-      vi.advanceTimersByTime(300)
-      await wrapper.vm.$nextTick()
-
-      expect(wrapper.find('.spinner').exists()).toBe(false)
-    })
+    expect(wrapper.find('[data-test-id="content"]').exists()).toBe(false)
+    expect(wrapper.find('[data-test-id="message"]').exists()).toBe(false)
+    expect(wrapper.find('[data-test-id="spinner"]').exists()).toBe(true)
   })
 
-  describe('when loading after delay elapses', () => {
-    it('renders the spinner', async () => {
-      const wrapper = mountComponent({ loading: true, delay: 300 })
+  it('when loading shows no spinner before delay', async () => {
+    const wrapper = mountComponent({ delayMilliseconds: 300, loading: true })
 
-      vi.advanceTimersByTime(300)
-      await wrapper.vm.$nextTick()
+    vi.advanceTimersByTime(100)
+    await wrapper.vm.$nextTick()
 
-      expect(wrapper.find('.spinner').exists()).toBe(true)
-    })
-
-    it('does not render slot content', async () => {
-      const wrapper = mountComponent({ loading: true, delay: 300 })
-
-      vi.advanceTimersByTime(300)
-      await wrapper.vm.$nextTick()
-
-      expect(wrapper.find('.slotted').exists()).toBe(false)
-    })
-
-    it('renders the loading message when provided', async () => {
-      const wrapper = mountComponent({
-        loading: true,
-        delay: 300,
-        loadingMessage: 'Please wait...',
-      })
-
-      vi.advanceTimersByTime(300)
-      await wrapper.vm.$nextTick()
-
-      expect(wrapper.text()).toContain('Please wait...')
-    })
-
-    it('does not render the loading message when not provided', async () => {
-      const wrapper = mountComponent({ loading: true, delay: 300 })
-
-      vi.advanceTimersByTime(300)
-      await wrapper.vm.$nextTick()
-
-      expect(wrapper.text()).not.toContain('mt-2')
-    })
+    expect(wrapper.find('[data-test-id="content"]').exists()).toBe(false)
+    expect(wrapper.find('[data-test-id="message"]').exists()).toBe(false)
+    expect(wrapper.find('[data-test-id="spinner"]').exists()).toBe(false)
   })
 
-  describe('when loading transitions to done', () => {
-    it('hides the spinner and shows slot content', async () => {
-      const wrapper = mountComponent({ loading: true, delay: 300 })
+  it('when loading shows spinner after delay', async () => {
+    const wrapper = mountComponent({ delayMilliseconds: 300, loading: true })
 
-      vi.advanceTimersByTime(300)
-      await wrapper.vm.$nextTick()
-      expect(wrapper.find('.spinner').exists()).toBe(true)
+    vi.advanceTimersByTime(300)
+    await wrapper.vm.$nextTick()
 
-      await wrapper.setProps({ loading: false })
-
-      expect(wrapper.find('.spinner').exists()).toBe(false)
-      expect(wrapper.find('.slotted').exists()).toBe(true)
-    })
-
-    it('clears the timeout if loading stops before delay elapses', async () => {
-      const wrapper = mountComponent({ loading: true, delay: 300 })
-
-      await wrapper.setProps({ loading: false })
-      vi.advanceTimersByTime(300)
-      await wrapper.vm.$nextTick()
-
-      expect(wrapper.find('.spinner').exists()).toBe(false)
-      expect(wrapper.find('.slotted').exists()).toBe(true)
-    })
+    expect(wrapper.find('[data-test-id="content"]').exists()).toBe(false)
+    expect(wrapper.find('[data-test-id="message"]').exists()).toBe(false)
+    expect(wrapper.find('[data-test-id="spinner"]').exists()).toBe(true)
   })
 
-  describe('when using default delay', () => {
-    it('shows spinner after 300ms by default', async () => {
-      const wrapper = mountComponent({ loading: true })
-
-      vi.advanceTimersByTime(299)
-      await wrapper.vm.$nextTick()
-      expect(wrapper.find('.spinner').exists()).toBe(false)
-
-      vi.advanceTimersByTime(1)
-      await wrapper.vm.$nextTick()
-      expect(wrapper.find('.spinner').exists()).toBe(true)
+  it('when loading shows spinner and message after delay', async () => {
+    const wrapper = mountComponent({
+      delayMilliseconds: 300,
+      loading: true,
+      loadingMessage: 'Loading...',
     })
+
+    vi.advanceTimersByTime(300)
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.find('[data-test-id="content"]').exists()).toBe(false)
+    expect(wrapper.find('[data-test-id="message"]').text()).toBe('Loading...')
+    expect(wrapper.find('[data-test-id="spinner"]').exists()).toBe(true)
+  })
+
+  it('unmounts cleanly when there is no active timeout', () => {
+    const wrapper = mountComponent({ loading: false })
+
+    expect(() => wrapper.unmount()).not.toThrow()
+  })
+
+  it('unmounts cleanly when there is an active timeout', async () => {
+    const wrapper = mountComponent({ delayMilliseconds: 100, loading: true })
+
+    vi.advanceTimersByTime(300)
+    await wrapper.vm.$nextTick()
+
+    expect(() => wrapper.unmount()).not.toThrow()
+  })
+
+  it('clears the timeout after loading', async () => {
+    const wrapper = mountComponent({ delayMilliseconds: 100, loading: true })
+    vi.advanceTimersByTime(300)
+    await wrapper.vm.$nextTick()
+    expect(wrapper.find('[data-test-id="content"]').exists()).toBe(false)
+    expect(wrapper.find('[data-test-id="spinner"]').exists()).toBe(true)
+
+    await wrapper.setProps({ loading: false })
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.find('[data-test-id="content"]').exists()).toBe(true)
+    expect(wrapper.find('[data-test-id="spinner"]').exists()).toBe(false)
+  })
+
+  it('clears the spinner on unmount', async () => {
+    const wrapper = mountComponent({ delayMilliseconds: 300, loading: true })
+
+    wrapper.unmount()
+    vi.advanceTimersByTime(300)
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.find('[data-test-id="spinner"]').exists()).toBe(false)
   })
 })

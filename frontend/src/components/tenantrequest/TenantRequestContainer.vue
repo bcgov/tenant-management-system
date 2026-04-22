@@ -76,8 +76,10 @@ const handleApproved = async (name: string) => {
         // If the API says that this name exists already, then show the name
         // duplicated validation error.
         notification.error(t('tenants.errors.nonNewStatusChange'))
+
         return
       }
+
       // If the API says that this name exists already, then show the name
       // duplicated validation error.
       notification.error(t('tenants.errors.nameExists'))
