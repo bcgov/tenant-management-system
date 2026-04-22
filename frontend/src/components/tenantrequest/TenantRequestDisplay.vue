@@ -11,8 +11,8 @@ import { TENANT_REQUEST_STATUS } from '@/utils/constants'
 // --- Component Interface -----------------------------------------------------
 
 const props = defineProps<{
-  tenantRequest: TenantRequest
   erroredApproving: boolean
+  tenantRequest: TenantRequest
 }>()
 
 const emit = defineEmits<{
@@ -23,9 +23,9 @@ const emit = defineEmits<{
 
 // --- Component State ---------------------------------------------------------
 
+const name = ref(props.tenantRequest.name)
 const rejectionNotes = ref('')
 const selectedStatus = ref(props.tenantRequest.status)
-const name = ref(props.tenantRequest.name)
 
 // Copy these here so that the order can be controlled.
 const statusOptions = [
