@@ -1,7 +1,3 @@
-import { i18n } from '@/i18n'
-import type { ComposerTranslation } from 'vue-i18n'
-
-const t: ComposerTranslation = i18n.global.t
 /**
  * Available search field types for IDIR user lookups
  *
@@ -112,19 +108,19 @@ export const ROLES = Object.freeze({
    * Standard user role with basic service access
    */
   SERVICE_USER: {
-    title: t('roles.user'),
+    title: 'Service User',
     value: 'TMS.SERVICE_USER',
   },
 
   /**
    * Owner of a specific tenant with management privileges
    */
-  TENANT_OWNER: { title: t('roles.owner'), value: 'TMS.TENANT_OWNER' },
+  TENANT_OWNER: { title: 'Tenant Owner', value: 'TMS.TENANT_OWNER' },
 
   /**
    * Administrative role for managing users within a tenant
    */
-  USER_ADMIN: { title: t('roles.admin'), value: 'TMS.USER_ADMIN' },
+  USER_ADMIN: { title: 'User Admin', value: 'TMS.USER_ADMIN' },
 })
 
 /**
