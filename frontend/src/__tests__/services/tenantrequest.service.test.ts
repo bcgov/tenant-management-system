@@ -229,8 +229,9 @@ describe('tenantRequestService', () => {
   })
 
   describe('updateTenantRequestStatus', () => {
-    const status = 'APPROVED'
     const rejectionReason = 'Does not meet requirements'
+    const status = 'APPROVED'
+    const tenantName = 'Updated Tenant Request Name'
 
     it('should successfully update status without rejection reason', async () => {
       mockPatch.mockResolvedValueOnce({})
@@ -241,6 +242,12 @@ describe('tenantRequestService', () => {
         `/tenant-requests/${requestId}/status`,
         {
           status,
+        },
+      )
+      expect(mockPatch).not.toHaveBeenCalledWith(
+        `/tenant-requests/${requestId}/status`,
+        {
+          name: expect.anything(),
         },
       )
     })
@@ -262,6 +269,12 @@ describe('tenantRequestService', () => {
           rejectionReason,
         },
       )
+      expect(mockPatch).not.toHaveBeenCalledWith(
+        `/tenant-requests/${requestId}/status`,
+        {
+          name: expect.anything(),
+        },
+      )
     })
 
     it('should handle empty rejection reason by not including it', async () => {
@@ -277,6 +290,31 @@ describe('tenantRequestService', () => {
         `/tenant-requests/${requestId}/status`,
         {
           status,
+        },
+      )
+      expect(mockPatch).not.toHaveBeenCalledWith(
+        `/tenant-requests/${requestId}/status`,
+        {
+          name: expect.anything(),
+        },
+      )
+    })
+
+    it('should handle name updates', async () => {
+      mockPatch.mockResolvedValueOnce({})
+
+      await tenantRequestService.updateTenantRequestStatus(
+        requestId,
+        status,
+        '',
+        tenantName,
+      )
+
+      expect(mockPatch).toHaveBeenCalledWith(
+        `/tenant-requests/${requestId}/status`,
+        {
+          status,
+          tenantName,
         },
       )
     })
