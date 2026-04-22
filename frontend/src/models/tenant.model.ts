@@ -104,9 +104,9 @@ export class Tenant {
    *
    * @param apiData - The raw tenant data from the API
    * @param apiData.createdBy - The uuid of who created the tenant
+   * @param apiData.createdByUserName - The username of who created the tenant
    * @param apiData.createdDateTime - ISO8601 date string (YYYY-MM-DD) when
    *     tenant was created
-   * @param apiData.createdByUserName - The username of who created the tenant
    * @param apiData.description - Description of the tenant
    * @param apiData.id - Unique identifier for the tenant
    * @param apiData.name - Display name of the tenant
