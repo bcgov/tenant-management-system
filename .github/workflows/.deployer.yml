@@ -81,7 +81,7 @@ jobs:
     name: Stack
     environment:
       name: ${{ inputs.environment || 'dev' }}
-      url: https://${{ vars.outputs.release }}.${{ steps.vars.outputs.domain }}
+      url: "https://${{ vars.outputs.release }}.${{ steps.vars.outputs.domain }}"
     runs-on: ubuntu-24.04
     outputs:
       tag: ${{ inputs.tag || steps.pr.outputs.pr }}
