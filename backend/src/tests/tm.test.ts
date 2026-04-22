@@ -1259,6 +1259,7 @@ describe('Tenant Management API', () => {
         users: [],
         sharedServiceRoles: [],
         createdBy: 'test-user',
+        createdByUserName: 'jdoe',
         updatedBy: 'test-user',
         createdDateTime: new Date(),
         updatedDateTime: new Date(),
@@ -1280,6 +1281,7 @@ describe('Tenant Management API', () => {
             name: mockGroup.name,
             description: mockGroup.description,
             createdBy: mockGroup.createdBy,
+            createdByUserName: mockGroup.createdByUserName,
             updatedBy: mockGroup.updatedBy,
           },
         },
@@ -1328,6 +1330,7 @@ describe('Tenant Management API', () => {
         ],
         sharedServiceRoles: [],
         createdBy: 'test-user',
+        createdByUserName: 'jdoe',
         updatedBy: 'test-user',
       }
 
@@ -1346,6 +1349,7 @@ describe('Tenant Management API', () => {
             id: groupId,
             name: mockGroupWithUsers.name,
             createdBy: mockGroupWithUsers.createdBy,
+            createdByUserName: mockGroupWithUsers.createdByUserName,
             updatedBy: mockGroupWithUsers.updatedBy,
             users: [
               {
@@ -1380,6 +1384,40 @@ describe('Tenant Management API', () => {
           expand: ['groupUsers'],
         }),
       )
+    })
+
+    it('should return createdByUserName as system when group createdBy is padded system', async () => {
+      const mockGroup = {
+        id: groupId,
+        name: 'Test Group',
+        description: 'Test Group Description',
+        tenant: { id: tenantId },
+        users: [],
+        sharedServiceRoles: [],
+        createdBy: 'system                          ',
+        createdByUserName: 'system',
+        updatedBy: 'system                          ',
+        createdDateTime: new Date(),
+        updatedDateTime: new Date(),
+      }
+
+      mockTMRepository.getGroup.mockResolvedValue(
+        mockGroup as unknown as GetGroupResult,
+      )
+
+      const response = await request(app).get(
+        `/v1/tenants/${tenantId}/groups/${groupId}`,
+      )
+
+      expect(response.status).toBe(200)
+      expect(response.body).toMatchObject({
+        data: {
+          group: {
+            createdBy: 'system                          ',
+            createdByUserName: 'system',
+          },
+        },
+      })
     })
 
     it('should fail when group does not exist', async () => {
