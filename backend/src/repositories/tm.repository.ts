@@ -167,7 +167,7 @@ export class TMRepository {
     const creator = await this.manager.findOne(SSOUser, {
       where: { ssoUserId },
     })
-    return creator?.displayName
+    return creator?.userName
   }
 
   public async checkIfGroupNameExistsInTenant(
