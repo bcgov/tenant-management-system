@@ -18,7 +18,7 @@ export type TenantDetailFields = Pick<
  */
 export class Tenant {
   /**
-   * The username of who created the tenant.
+   * The identity of who created the tenant.
    */
   createdBy: string
 
@@ -57,7 +57,7 @@ export class Tenant {
   /**
    * Creates a new Tenant instance.
    *
-   * @param createdBy - The username of who created the tenant
+   * @param createdBy - The identity of who created the tenant
    * @param createdDate - ISO8601 date string (YYYY-MM-DD) when tenant was
    *   created
    * @param description - Description of the tenant
@@ -103,9 +103,10 @@ export class Tenant {
    * 'createdDate' property.
    *
    * @param apiData - The raw tenant data from the API
-   * @param apiData.createdBy - The username of who created the tenant
+   * @param apiData.createdBy - The uuid of who created the tenant
    * @param apiData.createdDateTime - ISO8601 date string (YYYY-MM-DD) when
    *     tenant was created
+   * @param apiData.createdByUserName - The username of who created the tenant
    * @param apiData.description - Description of the tenant
    * @param apiData.id - Unique identifier for the tenant
    * @param apiData.name - Display name of the tenant
@@ -115,6 +116,7 @@ export class Tenant {
    */
   static fromApiData(apiData: {
     createdBy: string
+    createdByUserName?: string
     createdDateTime: string
     description: string
     id: string
@@ -127,7 +129,7 @@ export class Tenant {
       : []
 
     return new Tenant(
-      apiData.createdBy,
+      apiData.createdByUserName || apiData.createdBy,
       apiData.createdDateTime,
       apiData.description,
       apiData.id,
