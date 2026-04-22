@@ -1547,8 +1547,14 @@ describe('Tenant API', () => {
     })
 
     it('should get tenant details successfully', async () => {
+      const tenantResponse = {
+        ...mockTenant,
+        createdBy: '123e4567e89b12d3a456426614174001',
+        createdByUserName: 'test-user',
+      }
+
       mockTMSRepository.getTenant.mockResolvedValue(
-        mockTenant as unknown as GetTenantResult,
+        tenantResponse as unknown as GetTenantResult,
       )
 
       const response = await request(app).get(`/v1/tenants/${tenantId}`)
@@ -1557,10 +1563,12 @@ describe('Tenant API', () => {
       expect(response.body).toMatchObject({
         data: {
           tenant: {
-            id: mockTenant.id,
-            name: mockTenant.name,
-            ministryName: mockTenant.ministryName,
-            description: mockTenant.description,
+            id: tenantResponse.id,
+            name: tenantResponse.name,
+            ministryName: tenantResponse.ministryName,
+            description: tenantResponse.description,
+            createdBy: tenantResponse.createdBy,
+            createdByUserName: tenantResponse.createdByUserName,
           },
         },
       })
@@ -1574,8 +1582,14 @@ describe('Tenant API', () => {
     })
 
     it('should get tenant details with expanded user roles', async () => {
+      const tenantResponse = {
+        ...mockTenant,
+        createdBy: '123e4567e89b12d3a456426614174001',
+        createdByUserName: 'test-user',
+      }
+
       mockTMSRepository.getTenant.mockResolvedValue(
-        mockTenant as unknown as GetTenantResult,
+        tenantResponse as unknown as GetTenantResult,
       )
 
       const response = await request(app)
@@ -1586,20 +1600,22 @@ describe('Tenant API', () => {
       expect(response.body).toMatchObject({
         data: {
           tenant: {
-            id: mockTenant.id,
-            name: mockTenant.name,
-            ministryName: mockTenant.ministryName,
-            description: mockTenant.description,
+            id: tenantResponse.id,
+            name: tenantResponse.name,
+            ministryName: tenantResponse.ministryName,
+            description: tenantResponse.description,
+            createdBy: tenantResponse.createdBy,
+            createdByUserName: tenantResponse.createdByUserName,
             users: [
               {
                 ssoUser: expect.objectContaining({
-                  firstName: mockTenant.users[0].firstName,
-                  lastName: mockTenant.users[0].lastName,
-                  ssoUserId: mockTenant.users[0].ssoUserId,
+                  firstName: tenantResponse.users[0].ssoUser.firstName,
+                  lastName: tenantResponse.users[0].ssoUser.lastName,
+                  ssoUserId: tenantResponse.users[0].ssoUser.ssoUserId,
                 }),
                 roles: [
                   {
-                    id: mockTenant.users[0].roles[0].id,
+                    id: tenantResponse.users[0].roles[0].id,
                     name: TMSConstants.TENANT_OWNER,
                   },
                 ],
@@ -1615,6 +1631,30 @@ describe('Tenant API', () => {
           expand: ['tenantUserRoles'],
         }),
       )
+    })
+
+    it('should return createdByUserName as system when tenant createdBy is padded system', async () => {
+      const tenantResponse = {
+        ...mockTenant,
+        createdBy: 'system                          ',
+        createdByUserName: 'system',
+      }
+
+      mockTMSRepository.getTenant.mockResolvedValue(
+        tenantResponse as unknown as GetTenantResult,
+      )
+
+      const response = await request(app).get(`/v1/tenants/${tenantId}`)
+
+      expect(response.status).toBe(200)
+      expect(response.body).toMatchObject({
+        data: {
+          tenant: {
+            createdBy: 'system                          ',
+            createdByUserName: 'system',
+          },
+        },
+      })
     })
 
     it('should return 400 when tenant ID is invalid', async () => {
