@@ -145,6 +145,7 @@ const headers: ComputedRef<TableHeaderItem[]> = computed(() => {
       title: t('users.idpType'),
     },
   ]
+
   if (props.showRoles) {
     rv.push({
       align: 'start',
@@ -291,7 +292,9 @@ const selectRowItem = (e: Event, r: RowPropsType) => {
     <template #[`item.roles`]="{ item }">
       <div class="d-flex flex-wrap" style="gap: 8px; margin-block: 4px">
         <v-chip
-          v-for="role in item.roles"
+          v-for="role in [...item.roles].sort((a, b) =>
+            a.description.localeCompare(b.description),
+          )"
           :key="role.id"
           class="d-inline-flex align-center"
           color="primary"
