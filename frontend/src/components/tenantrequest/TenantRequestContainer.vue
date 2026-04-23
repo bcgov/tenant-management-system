@@ -205,7 +205,7 @@ onMounted(async () => {
             ]"
             :items="tenantRequests"
             :search="search"
-            :sort-by="[{ key: 'createdDate' }]"
+            :sort-by="[{ key: 'createdDate', order: 'desc' }]"
             item-value="id"
             striped="even"
             fixed-header
