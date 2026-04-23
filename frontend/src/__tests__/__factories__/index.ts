@@ -2,6 +2,7 @@ import { Group } from '@/models/group.model'
 import { Role } from '@/models/role.model'
 import { SsoUser } from '@/models/ssouser.model'
 import { Tenant } from '@/models/tenant.model'
+import { TenantRequest } from '@/models/tenantrequest.model'
 import { User } from '@/models/user.model'
 import { ROLES } from '@/utils/constants'
 
@@ -66,6 +67,26 @@ export function makeTenant(
     overrides.name ?? 'Test Tenant',
     overrides.ministry ?? "Citizens' Services",
     overrides.users ?? [],
+  )
+}
+
+// Tenant Request Factories
+
+export function makeTenantRequest(
+  overrides: Partial<{
+    id: string
+    ministry: string
+    name: string
+  }> = {},
+): TenantRequest {
+  return new TenantRequest(
+    crypto.randomUUID(),
+    '2026-01-01',
+    'Test tenant description',
+    overrides.id ?? crypto.randomUUID(),
+    overrides.name ?? 'Test Tenant Request',
+    overrides.ministry ?? "Citizens' Services",
+    'NEW',
   )
 }
 
