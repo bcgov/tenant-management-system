@@ -260,7 +260,8 @@ const selectRowItem = (e: Event, r: RowPropsType) => {
     hover
     return-object
     @click:row="
-      (e: Event, r: RowPropsType) => enableSelect && selectRowItem(e, r)
+      (event: Event, row: RowPropsType) =>
+        enableSelect && selectRowItem(event, row)
     "
   >
     <template #no-data>

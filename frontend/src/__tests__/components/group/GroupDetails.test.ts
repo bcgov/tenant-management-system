@@ -79,9 +79,11 @@ describe('GroupDetails.vue', () => {
       const wrapper = mountComponent({ isEditing: true })
       const vm = wrapper.vm as unknown as GroupDetailsInstance
 
-      // Spy on the real VForm ref's validate method — replacing vm.form would
-      // not affect the internal ref that handleSubmit closes over.
-      vi.spyOn(vm.form!, 'validate').mockResolvedValue({ valid: true })
+      const form = vm.form
+      if (!form) {
+        throw new Error('form ref is not defined')
+      }
+      vi.spyOn(form, 'validate').mockResolvedValue({ valid: true })
 
       vm.formData.name = '  New Name  '
       vm.formData.description = 'Test Desc'
@@ -100,7 +102,11 @@ describe('GroupDetails.vue', () => {
       const wrapper = mountComponent({ isEditing: true })
       const vm = wrapper.vm as unknown as GroupDetailsInstance
 
-      vi.spyOn(vm.form!, 'validate').mockResolvedValue({ valid: false })
+      const form = vm.form
+      if (!form) {
+        throw new Error('form ref is not defined')
+      }
+      vi.spyOn(form, 'validate').mockResolvedValue({ valid: false })
 
       await vm.handleSubmit()
 
@@ -116,8 +122,12 @@ describe('GroupDetails.vue', () => {
       // vm.form points to the real VForm instance mounted by Vuetify.
       // We must spy on that object directly — replacing vm.form would not
       // affect the internal ref the watcher closes over.
+      const form = vm.form
+      if (!form) {
+        throw new Error('form ref is not defined')
+      }
       const validateSpy = vi
-        .spyOn(vm.form!, 'validate')
+        .spyOn(form, 'validate')
         .mockResolvedValue({ valid: false })
 
       await wrapper.setProps({ isDuplicateName: true })

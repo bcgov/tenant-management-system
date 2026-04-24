@@ -11,8 +11,8 @@ import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
 
 export type DialogButton = {
-  text: string
   action: string
+  text: string
   type?: 'primary' | 'secondary'
 }
 
@@ -20,31 +20,29 @@ export type DialogButton = {
 
 const props = withDefaults(
   defineProps<{
-    modelValue: boolean
-    title?: string
-    message?: string
     buttons?: {
-      text: string
       action: string
+      text: string
       type?: 'primary' | 'secondary'
     }[]
-    hasClose?: boolean
     dialogType?: string | null
+    hasClose?: boolean
     maxWidth?: number
+    message: string
+    modelValue: boolean
+    title: string
   }>(),
   {
-    title: '',
-    message: '',
     buttons: () => [],
-    hasClose: false,
     dialogType: null,
+    hasClose: true,
     maxWidth: 500,
   },
 )
 
 const emit = defineEmits<{
-  (e: 'buttonClick', action: string): void
-  (e: 'update:modelValue', value: boolean): void
+  (event: 'buttonClick', action: string): void
+  (event: 'update:modelValue', value: boolean): void
 }>()
 
 // --- Component Methods -------------------------------------------------------
@@ -58,12 +56,12 @@ function handleButtonClick(action: string) {
 
 const iconType = computed(() => {
   switch (props.dialogType) {
-    case 'warning':
-      return mdiAlertOutline
     case 'error':
       return mdiAlertOctagonOutline
     case 'success':
       return mdiCheckCircleOutline
+    case 'warning':
+      return mdiAlertOutline
     default:
       return ''
   }
@@ -74,41 +72,45 @@ const iconType = computed(() => {
   <v-dialog
     :max-width="maxWidth ? maxWidth : 500"
     :model-value="modelValue"
+    data-test-id="dialog"
     @update:model-value="$emit('update:modelValue', $event)"
   >
     <v-card>
-      <v-card-title v-if="title" class="text-headline-small">
-        <v-row>
-          <v-col>
-            <v-icon
-              v-if="dialogType !== null"
-              :color="dialogType"
-              :icon="iconType"
-              class="ma-2"
-              size="small"
-            />
-            {{ title }}
-          </v-col>
-          <v-spacer />
+      <v-card-item>
+        <template v-if="dialogType !== null" #prepend>
+          <v-icon
+            v-if="dialogType !== null"
+            :color="dialogType"
+            :icon="iconType"
+            data-test-id="icon"
+            size="small"
+          />
+        </template>
+        <v-card-title class="text-wrap" data-test-id="title">{{
+          title
+        }}</v-card-title>
+        <template v-if="hasClose" #append>
           <v-btn
-            v-if="hasClose === true"
             :icon="mdiClose"
-            class="ma-2"
+            data-test-id="close"
             size="small"
             variant="text"
             @click="$emit('update:modelValue', false)"
-          ></v-btn>
-        </v-row>
-      </v-card-title>
+          />
+        </template>
+      </v-card-item>
       <v-card-text>
-        <div v-if="message">{{ message }}</div>
-        <slot />
+        <div data-test-id="message">{{ message }}</div>
+        <div data-test-id="slot">
+          <slot />
+        </div>
       </v-card-text>
-      <v-card-actions class="justify-end">
+      <v-card-actions class="ga-4 justify-end pa-6">
         <component
           :is="btn.type === 'primary' ? ButtonPrimary : ButtonSecondary"
           v-for="btn in buttons"
           :key="btn.action"
+          :data-test-id="`button-${btn.action}`"
           :text="btn.text"
           @click="handleButtonClick(btn.action)"
         />
