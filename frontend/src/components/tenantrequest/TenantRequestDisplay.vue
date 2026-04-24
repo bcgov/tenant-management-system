@@ -1,11 +1,9 @@
 <script setup lang="ts">
-import { mdiArrowLeft } from '@mdi/js'
 import { computed, ref } from 'vue'
 
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
-import ButtonTertiary from '@/components/ui/ButtonTertiary.vue'
-import type { TenantRequest } from '@/models/tenantrequest.model'
+import { TenantRequest } from '@/models/tenantrequest.model'
 import { TENANT_REQUEST_STATUS } from '@/utils/constants'
 
 // --- Component Interface -----------------------------------------------------
@@ -25,11 +23,9 @@ const emit = defineEmits<{
 
 const name = ref(props.tenantRequest.name)
 const rejectionNotes = ref('')
-const selectedStatus = ref(props.tenantRequest.status)
+const selectedStatus = ref(null)
 
-// Copy these here so that the order can be controlled.
 const statusOptions = [
-  TENANT_REQUEST_STATUS.NEW,
   TENANT_REQUEST_STATUS.APPROVED,
   TENANT_REQUEST_STATUS.REJECTED,
 ]
@@ -49,7 +45,14 @@ const isFormValid = computed(() => {
 })
 
 const showNotesField = computed(() => {
-  return selectedStatus.value === TENANT_REQUEST_STATUS.REJECTED.value
+  return (
+    props.tenantRequest.status === TENANT_REQUEST_STATUS.REJECTED.value ||
+    selectedStatus.value === TENANT_REQUEST_STATUS.REJECTED.value
+  )
+})
+
+const statusAlreadySet = computed(() => {
+  return props.tenantRequest.status !== TENANT_REQUEST_STATUS.NEW.value
 })
 
 // --- Component Methods -------------------------------------------------------
@@ -79,31 +82,33 @@ const handleSubmit = () => {
         <v-text-field
           :model-value="tenantRequest.createdBy"
           label="User Name (IDIR)"
-          disabled
+          readonly
         />
       </v-col>
       <v-col cols="5">
         <v-text-field
           :model-value="tenantRequest.ministryName"
           label="Ministry/Organization"
-          disabled
+          readonly
         />
       </v-col>
       <v-col cols="3">
         <v-text-field
           :model-value="tenantRequest.createdDate"
           label="Date of Request (YYYY-MM-DD)"
-          disabled
+          readonly
         />
       </v-col>
     </v-row>
     <v-row>
       <v-col cols="4">
         <v-text-field
-          v-model="name"
-          :disabled="!erroredApproving"
+          v-if="statusAlreadySet || !erroredApproving"
+          :model-value="tenantRequest.name"
           label="Requested Tenant Name"
+          readonly
         />
+        <v-text-field v-else v-model="name" label="Requested Tenant Name" />
         <div v-if="erroredApproving" class="text-error mt-n5">
           {{ $t('tenants.errors.uniqueName') }}
         </div>
@@ -114,12 +119,31 @@ const handleSubmit = () => {
           label="Description of Tenant"
           rows="1"
           auto-grow
-          disabled
+          readonly
         ></v-textarea>
       </v-col>
     </v-row>
 
-    <v-row class="mt-4">
+    <v-row v-if="statusAlreadySet" class="mt-4">
+      <v-col cols="4">
+        <v-text-field
+          :model-value="tenantRequest.status"
+          label="Status"
+          readonly
+        />
+      </v-col>
+      <v-col v-if="showNotesField" cols="8">
+        <v-textarea
+          :auto-grow="true"
+          :model-value="tenantRequest.rejectionReason"
+          label="Rejection Notes"
+          rows="1"
+          variant="filled"
+          readonly
+        />
+      </v-col>
+    </v-row>
+    <v-row v-else class="mt-4">
       <v-col cols="4">
         <v-select
           v-model="selectedStatus"
@@ -128,7 +152,6 @@ const handleSubmit = () => {
           variant="outlined"
         />
       </v-col>
-
       <v-col v-if="showNotesField" cols="8">
         <v-textarea
           v-model="rejectionNotes"
@@ -145,13 +168,14 @@ const handleSubmit = () => {
     <v-row class="mt-6">
       <v-col cols="12">
         <v-divider class="mb-4" />
-        <div class="d-flex justify-start">
-          <ButtonTertiary
-            :icon="mdiArrowLeft"
+        <div v-if="statusAlreadySet" class="d-flex justify-start">
+          <ButtonPrimary
             class="me-4"
             text="Back to All Requests"
             @click="handleBack"
           />
+        </div>
+        <div v-else class="d-flex justify-start">
           <ButtonSecondary class="me-4" text="Cancel" @click="handleBack" />
           <ButtonPrimary
             :disabled="!isFormValid"
