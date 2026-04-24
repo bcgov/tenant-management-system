@@ -60,13 +60,13 @@ jobs:
         --set frontend.autoscaling.maxReplicas=3
         --set frontend.deploymentStrategy=RollingUpdate
         --set frontend.pdb.enabled=true
-        --set frontend.pdb.minAvailable=2
+        --set frontend.pdb.minAvailable=1
         --set backend.autoscaling.enabled=${{ inputs.autoscaling }}
         --set backend.autoscaling.minReplicas=2
         --set backend.autoscaling.maxReplicas=3
         --set backend.deploymentStrategy=RollingUpdate
         --set backend.pdb.enabled=true
-        --set backend.pdb.minAvailable=2
+        --set backend.pdb.minAvailable=1
         --set global.domain="apps.gold.devops.gov.bc.ca"
         ${{ inputs.params }}
       tag: ${{ inputs.tag }}
@@ -87,13 +87,13 @@ jobs:
         --set frontend.autoscaling.maxReplicas=3
         --set frontend.deploymentStrategy=RollingUpdate
         --set frontend.pdb.enabled=true
-        --set frontend.pdb.minAvailable=2
+        --set frontend.pdb.minAvailable=1
         --set backend.autoscaling.enabled=${{ inputs.autoscaling }}
         --set backend.autoscaling.minReplicas=2
         --set backend.autoscaling.maxReplicas=3
         --set backend.deploymentStrategy=RollingUpdate
         --set backend.pdb.enabled=true
-        --set backend.pdb.minAvailable=2
+        --set backend.pdb.minAvailable=1
         --set global.domain="apps.golddr.devops.gov.bc.ca"
         ${{ inputs.params }}
       tag: ${{ inputs.tag }}
