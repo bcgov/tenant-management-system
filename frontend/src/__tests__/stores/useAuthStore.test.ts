@@ -119,6 +119,7 @@ describe('useAuthStore', () => {
 
   describe('accessToken', () => {
     it('returns the access token from Keycloak', async () => {
+      mockTokenParsed = makeIdirToken()
       const store = useAuthStore()
       await store.init()
 
@@ -128,8 +129,8 @@ describe('useAuthStore', () => {
     })
 
     it('throws an exception when not initialized', async () => {
-      const store = useAuthStore()
       mockTokenParsed = makeIdirToken()
+      const store = useAuthStore()
 
       expect(() => store.getAccessToken()).toThrow('Keycloak not initialized')
     })
@@ -167,8 +168,9 @@ describe('useAuthStore', () => {
     })
   })
 
-  describe('isAAuthenticated', () => {
+  describe('isAuthenticated', () => {
     it('returns true when a user is set', async () => {
+      mockTokenParsed = makeIdirToken()
       const store = useAuthStore()
       await store.init()
 
@@ -184,6 +186,7 @@ describe('useAuthStore', () => {
 
   describe('login', () => {
     it('calls keycloak login with provided options', async () => {
+      mockTokenParsed = makeIdirToken()
       const store = useAuthStore()
       await store.init()
 
@@ -193,6 +196,7 @@ describe('useAuthStore', () => {
     })
 
     it('calls keycloak login with no options by default', async () => {
+      mockTokenParsed = makeIdirToken()
       const store = useAuthStore()
       await store.init()
 
@@ -204,6 +208,7 @@ describe('useAuthStore', () => {
 
   describe('logout', () => {
     it('calls keycloak logout with the origin as redirect URI', async () => {
+      mockTokenParsed = makeIdirToken()
       const store = useAuthStore()
       await store.init()
 

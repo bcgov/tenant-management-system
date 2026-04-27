@@ -16,7 +16,7 @@ import type { Role } from '@/models/role.model'
 import type { Tenant } from '@/models/tenant.model'
 import type { User, UserId } from '@/models/user.model'
 import { ROLES } from '@/utils/constants'
-import { convertIDPToDisplay } from '@/utils/display'
+import { identityProviderToDisplay } from '@/utils/identityProvider'
 import { currentUserHasRole } from '@/utils/permissions'
 
 type TableHeaderItem = {
@@ -313,7 +313,7 @@ const selectRowItem = (e: Event, r: RowPropsType) => {
     </template>
 
     <template #[`item.ssoUser.idpType`]="{ item }">
-      {{ convertIDPToDisplay(item.ssoUser.idpType) }}
+      {{ identityProviderToDisplay(item.ssoUser.idpType) }}
     </template>
 
     <template #[`item.add`]="{ item }">

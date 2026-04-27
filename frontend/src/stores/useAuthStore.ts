@@ -10,12 +10,11 @@ import { SsoUser } from '@/models/ssouser.model'
 import { User } from '@/models/user.model'
 import { config } from '@/services/config.service'
 import { ROLES } from '@/utils/constants'
+import {
+  IdentityProvider,
+  resolveIdentityProvider,
+} from '@/utils/identityProvider'
 import { logger } from '@/utils/logger'
-
-enum IdentityProvider {
-  BCeID = 'BCeID',
-  IDIR = 'IDIR',
-}
 
 /**
  * Pinia store for managing user authentication state via Keycloak.
@@ -83,10 +82,13 @@ export const useAuthStore = defineStore('auth', () => {
    * token and maps them to a `User` object.
    *
    * @returns The parsed `User` object.
+   * @throws Error if the identity provider isn't IDIR or BCeID.
    */
   const parseUserFromToken = (tokenParsed: KeycloakTokenParsed): User => {
-    const identityProvider = tokenParsed.identity_provider?.toLowerCase()
-    const isIdir = identityProvider?.includes('idir')
+    const identityProvider = resolveIdentityProvider(
+      tokenParsed.identity_provider,
+    )
+    const isIdir = identityProvider === IdentityProvider.IDIR
     const guid = isIdir
       ? tokenParsed.idir_user_guid
       : tokenParsed.bceid_user_guid
@@ -98,9 +100,7 @@ export const useAuthStore = defineStore('auth', () => {
       tokenParsed.family_name,
       tokenParsed.display_name,
       tokenParsed.email,
-      tokenParsed.identity_provider?.toLowerCase().includes('idir')
-        ? IdentityProvider.IDIR
-        : IdentityProvider.BCeID,
+      identityProvider,
     )
 
     const roles: Role[] = []
