@@ -46,8 +46,8 @@ const deleteDialogButtons = computed(() => [
     type: 'secondary' as const,
   },
   {
-    text: 'Confirm Removal',
-    action: 'confirm',
+    text: 'Remove',
+    action: 'remove',
     type: 'primary' as const,
   },
 ])
@@ -85,7 +85,7 @@ function handleDeleteClick(user: User) {
 }
 
 function handleDeleteDialogAction(action: string) {
-  if (action === 'confirm' && groupUserToDelete.value) {
+  if (action === 'remove' && groupUserToDelete.value) {
     emit('delete', groupUserToDelete.value.id)
   }
 
@@ -162,10 +162,10 @@ function toggleSearch() {
       v-model="showDeleteDialog"
       :buttons="deleteDialogButtons"
       :max-width="650"
-      message="This will only take them out of this group - it won't remove them
-        from the tenant. Removing membership from a group is permanent and
-        cannot be undone. Please confirm before proceeding."
-      title="You're about to permanently remove this user from this group"
+      dialog-type="warning"
+      message="This will remove the user from this group only. This action can't
+        be undone."
+      title="Remove user from group?"
       @button-click="handleDeleteDialogAction"
     />
   </v-container>
