@@ -137,7 +137,11 @@ export function makeUser(
 }
 
 export function makeUserBceid(): User {
-  return makeUser({ idpType: 'bceid' })
+  return makeUser({ idpType: 'BCeID' })
+}
+
+export function makeUserIdir(): User {
+  return makeUser({ idpType: 'IDIR' })
 }
 
 export function makeUserOperationsAdmin(): User {
