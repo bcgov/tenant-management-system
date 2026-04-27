@@ -29,23 +29,23 @@ export function makeGroup(
 
 // Role Factories
 
-export function makeOperationsAdminRole(): Role {
-  return makeRole(ROLES.OPERATIONS_ADMIN.value)
-}
-
 export function makeRole(name: string): Role {
   return new Role('role-id', name, name)
 }
 
-export function makeServiceUserRole(): Role {
+export function makeRoleOperationsAdmin(): Role {
+  return makeRole(ROLES.OPERATIONS_ADMIN.value)
+}
+
+export function makeRoleServiceUser(): Role {
   return makeRole(ROLES.SERVICE_USER.value)
 }
 
-export function makeTenantOwnerRole(): Role {
+export function makeRoleTenantOwner(): Role {
   return makeRole(ROLES.TENANT_OWNER.value)
 }
 
-export function makeUserAdminRole(): Role {
+export function makeRoleUserAdmin(): Role {
   return makeRole(ROLES.USER_ADMIN.value)
 }
 
@@ -136,6 +136,14 @@ export function makeUser(
   )
 }
 
-export function makeOperationsAdminUser(): User {
-  return makeUser({ roles: [makeOperationsAdminRole()] })
+export function makeUserBceid(): User {
+  return makeUser({ idpType: 'BCeID' })
+}
+
+export function makeUserIdir(): User {
+  return makeUser({ idpType: 'IDIR' })
+}
+
+export function makeUserOperationsAdmin(): User {
+  return makeUser({ roles: [makeRoleOperationsAdmin()] })
 }

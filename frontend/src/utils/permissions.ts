@@ -20,6 +20,40 @@ export function currentUserHasRole(tenant: Tenant, roleName: string): boolean {
 }
 
 /**
+ * Checks if the current user is a BceID user.
+ *
+ * This function uses the auth store to determine if the current user logged in
+ * with BCeID credentials.
+ *
+ * @returns True if the current user is a BCeID user, false otherwise.
+ */
+export function currentUserIsBceid(): boolean {
+  const authStore = useAuthStore()
+  if (!authStore.isAuthenticated) {
+    return false
+  }
+
+  return authStore.authenticatedUser.ssoUser.idpType === 'BCeID'
+}
+
+/**
+ * Checks if the current user is an IDIR user.
+ *
+ * This function uses the auth store to determine if the current user logged in
+ * with IDIR credentials.
+ *
+ * @returns True if the current user is an IDIR user, false otherwise.
+ */
+export function currentUserIsIdir(): boolean {
+  const authStore = useAuthStore()
+  if (!authStore.isAuthenticated) {
+    return false
+  }
+
+  return authStore.authenticatedUser.ssoUser.idpType === 'IDIR'
+}
+
+/**
  * Checks if the current user is an operations admin.
  *
  * This function uses the auth store to determine if the current user has

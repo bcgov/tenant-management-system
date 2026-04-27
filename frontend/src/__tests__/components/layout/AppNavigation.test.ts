@@ -8,7 +8,10 @@ import { makeUser } from '@/__tests__/__factories__'
 import { mockAuthStore } from '@/__tests__/__helpers__/useAuthStore.mock'
 
 import AppNavigation from '@/components/layout/AppNavigation.vue'
-import { currentUserIsOperationsAdmin } from '@/utils/permissions'
+import {
+  currentUserIsIdir,
+  currentUserIsOperationsAdmin,
+} from '@/utils/permissions'
 
 const mockRoute = { path: '/' }
 vi.mock('vue-router', () => ({
@@ -16,6 +19,7 @@ vi.mock('vue-router', () => ({
 }))
 
 vi.mock('@/utils/permissions', () => ({
+  currentUserIsIdir: vi.fn(),
   currentUserIsOperationsAdmin: vi.fn(),
 }))
 
@@ -34,6 +38,7 @@ describe('AppNavigation.vue', () => {
     vi.clearAllMocks()
     mockRoute.path = '/'
     mockAuthStore(null)
+    vi.mocked(currentUserIsIdir).mockReturnValue(false)
     vi.mocked(currentUserIsOperationsAdmin).mockReturnValue(false)
   })
 
@@ -46,24 +51,45 @@ describe('AppNavigation.vue', () => {
 
   it('renders Tenants button when logged in', () => {
     mockAuthStore(makeUser())
+    vi.mocked(currentUserIsIdir).mockReturnValue(true)
 
     const wrapper = mountComponent()
 
     expect(wrapper.text()).toContain('Tenants')
   })
 
+  it('does not render Settings button when user is not operations admin', () => {
+    mockAuthStore(makeUser())
+    vi.mocked(currentUserIsOperationsAdmin).mockReturnValue(false)
+
+    expect(mountComponent().text()).not.toContain('Settings')
+  })
+
   it('renders Settings button only when user is operations admin', () => {
     mockAuthStore(makeUser())
-
-    vi.mocked(currentUserIsOperationsAdmin).mockReturnValue(false)
-    expect(mountComponent().text()).not.toContain('Settings')
-
     vi.mocked(currentUserIsOperationsAdmin).mockReturnValue(true)
+
     expect(mountComponent().text()).toContain('Settings')
   })
 
-  it('sets buttons to active based on current route', () => {
+  it('sets tenant button to active based on current route', () => {
     mockAuthStore(makeUser())
+    vi.mocked(currentUserIsIdir).mockReturnValue(true)
+    vi.mocked(currentUserIsOperationsAdmin).mockReturnValue(true)
+    mockRoute.path = '/tenants'
+
+    const wrapper = mountComponent()
+
+    const btns = wrapper.findAllComponents(components.VBtn)
+    const tenantsBtn = btns.find((b) => b.text().includes('Tenants'))
+    const settingsBtn = btns.find((b) => b.text().includes('Settings'))
+    expect(tenantsBtn?.props('active')).toBe(true)
+    expect(settingsBtn?.props('active')).toBe(false)
+  })
+
+  it('sets settings button to active based on current route', () => {
+    mockAuthStore(makeUser())
+    vi.mocked(currentUserIsIdir).mockReturnValue(true)
     vi.mocked(currentUserIsOperationsAdmin).mockReturnValue(true)
     mockRoute.path = '/settings/users'
 
@@ -72,7 +98,7 @@ describe('AppNavigation.vue', () => {
     const btns = wrapper.findAllComponents(components.VBtn)
     const tenantsBtn = btns.find((b) => b.text().includes('Tenants'))
     const settingsBtn = btns.find((b) => b.text().includes('Settings'))
-    expect(settingsBtn?.props('active')).toBe(true)
     expect(tenantsBtn?.props('active')).toBe(false)
+    expect(settingsBtn?.props('active')).toBe(true)
   })
 })
