@@ -2,6 +2,7 @@
 import { watchEffect } from 'vue'
 
 import { useAuthStore } from '@/stores/useAuthStore'
+import { currentUserIsBceid, currentUserIsIdir } from '@/utils/permissions'
 
 // --- Store and Composable Setup ----------------------------------------------
 
@@ -13,11 +14,15 @@ watchEffect(() => {
   if (!authStore.isAuthenticated) {
     globalThis.location.href = '/'
   }
+
+  if (currentUserIsBceid()) {
+    globalThis.location.href = '/bceid'
+  }
 })
 </script>
 
 <template>
-  <div v-if="authStore.isAuthenticated">
-    <slot></slot>
+  <div v-if="currentUserIsIdir()" data-test-id="slot">
+    <slot />
   </div>
 </template>

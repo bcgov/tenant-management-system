@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
 import {
-  makeOperationsAdminUser,
+  makeRoleTenantOwner,
   makeTenant,
-  makeTenantOwnerRole,
   makeUser,
+  makeUserOperationsAdmin,
 } from '@/__tests__/__factories__'
 import { mockAuthStore } from '@/__tests__/__helpers__/useAuthStore.mock'
 
@@ -18,7 +18,7 @@ describe('currentUserHasRole', () => {
   it('returns true when the current user has the specified role in the tenant', () => {
     const user = makeUser({
       ssoUserId: 'user-123',
-      roles: [makeTenantOwnerRole()],
+      roles: [makeRoleTenantOwner()],
     })
     mockAuthStore(user)
     const tenant = makeTenant({ users: [user] })
@@ -53,7 +53,7 @@ describe('currentUserHasRole', () => {
 
 describe('currentUserIsOperationsAdmin', () => {
   it('returns true when the current user is an operations admin', () => {
-    mockAuthStore(makeOperationsAdminUser())
+    mockAuthStore(makeUserOperationsAdmin())
 
     expect(currentUserIsOperationsAdmin()).toBe(true)
   })

@@ -2,8 +2,8 @@ import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 
 import {
+  makeRoleTenantOwner,
   makeTenant,
-  makeTenantOwnerRole,
   makeUser,
 } from '@/__tests__/__factories__'
 import TenantListCard from '@/components/tenant/TenantListCard.vue'
@@ -53,7 +53,7 @@ describe('TenantListCard.vue', () => {
   describe('owner info', () => {
     it('renders owner display name and email when tenant has an owner', () => {
       const owner = makeUser({
-        roles: [makeTenantOwnerRole()],
+        roles: [makeRoleTenantOwner()],
         displayName: 'Tolstoy Twain',
         email: 'tolstoy.twain@example.com',
       })
