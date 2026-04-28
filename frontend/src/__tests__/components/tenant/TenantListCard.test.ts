@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest'
 import {
   makeRoleTenantOwner,
   makeTenant,
+  makeSsoUser,
   makeUser,
 } from '@/__tests__/__factories__'
 import TenantListCard from '@/components/tenant/TenantListCard.vue'
@@ -41,7 +42,7 @@ describe('TenantListCard.vue', () => {
 
     it('renders the ministry name', () => {
       const tenant = makeTenant({
-        ministry: 'Test Ministry',
+        ministryName: 'Test Ministry',
         name: 'My Tenant',
       })
       const wrapper = mountComponent({ tenant })
@@ -54,8 +55,10 @@ describe('TenantListCard.vue', () => {
     it('renders owner display name and email when tenant has an owner', () => {
       const owner = makeUser({
         roles: [makeRoleTenantOwner()],
-        displayName: 'Tolstoy Twain',
-        email: 'tolstoy.twain@example.com',
+        ssoUser: makeSsoUser({
+          displayName: 'Tolstoy Twain',
+          email: 'tolstoy.twain@example.com',
+        }),
       })
       const tenant = makeTenant({ users: [owner] })
       const wrapper = mountComponent({ tenant })

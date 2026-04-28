@@ -2,8 +2,8 @@
 import { mdiMagnify } from '@mdi/js'
 import { computed, ref } from 'vue'
 
-import type { Service } from '@/models/service.model'
-import type { Tenant } from '@/models/tenant.model'
+import { type Service, type ServiceId } from '@/models/service.model'
+import { type Tenant } from '@/models/tenant.model'
 import { ROLES } from '@/utils/constants'
 import { currentUserHasRole } from '@/utils/permissions'
 
@@ -16,7 +16,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (event: 'add-service', serviceId: string): void
+  (event: 'add-service', serviceId: ServiceId): void
 }>()
 
 // --- Component State ---------------------------------------------------------
@@ -40,7 +40,8 @@ const isTenantAdmin = computed(() => {
 
 function handleAddService() {
   if (selectedServiceId.value) {
-    emit('add-service', selectedServiceId.value)
+    // TODO
+    emit('add-service', selectedServiceId.value as ServiceId)
     selectedServiceId.value = ''
   }
 }

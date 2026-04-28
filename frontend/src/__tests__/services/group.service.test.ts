@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { type GroupId } from '@/models/group.model'
 import * as utils from '@/services/utils'
 
 vi.mock('@/services/utils', () => ({
@@ -44,7 +45,7 @@ import { groupService } from '@/services/group.service'
 
 describe('groupService', () => {
   const tenantId = '1'
-  const groupId = '123'
+  const groupId = '123' as GroupId
   const groupUserId = '456'
 
   const fakeGroup = {

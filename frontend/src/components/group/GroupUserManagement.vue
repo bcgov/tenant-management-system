@@ -7,11 +7,10 @@ import FloatingActionButton from '@/components/ui/FloatingActionButton.vue'
 import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
 import SimpleDialog from '@/components/ui/SimpleDialog.vue'
 import UserTable from '@/components/user/UserTable.vue'
-import type { Group } from '@/models/group.model'
-import type { GroupUser } from '@/models/groupuser.model'
-import { GroupUser as GroupUserModel } from '@/models/groupuser.model'
-import type { Tenant } from '@/models/tenant.model'
-import type { User } from '@/models/user.model'
+import { type Group } from '@/models/group.model'
+import { GroupUser, type GroupUserId } from '@/models/groupuser.model'
+import { type Tenant } from '@/models/tenant.model'
+import { type User } from '@/models/user.model'
 import { type IdirSearchType, ROLES } from '@/utils/constants'
 import { currentUserHasRole } from '@/utils/permissions'
 
@@ -27,7 +26,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (event: 'add', user: User): void
   (event: 'cancel' | 'clear-search'): void
-  (event: 'delete', userId: string): void
+  (event: 'delete', userId: GroupUserId): void
   (event: 'search', searchType: IdirSearchType, searchText: string): void
 }>()
 
@@ -78,7 +77,8 @@ function handleClearSearch() {
 }
 
 function handleDeleteClick(user: User) {
-  const groupUser = new GroupUserModel(user.id, user)
+  // TODO
+  const groupUser = new GroupUser(user.id as unknown as GroupUserId, user)
 
   showDeleteDialog.value = true
   groupUserToDelete.value = groupUser

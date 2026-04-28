@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n'
 
 import ServiceManagement from '@/components/service/ServiceManagement.vue'
 import { useNotification } from '@/composables/useNotification'
-import { Service } from '@/models/service.model'
+import { Service, type ServiceId } from '@/models/service.model'
 import { Tenant } from '@/models/tenant.model'
 import { useServiceStore } from '@/stores/useServiceStore'
 
@@ -29,7 +29,7 @@ const tenantServices = ref<Service[]>([])
 
 // --- Component Methods -------------------------------------------------------
 
-async function handleAddService(serviceId: string) {
+async function handleAddService(serviceId: ServiceId) {
   try {
     await serviceStore.addServiceToTenant(props.tenant.id, serviceId)
 

@@ -5,7 +5,7 @@ import Keycloak, {
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 
-import { Role } from '@/models/role.model'
+import { Role, toRoleId } from '@/models/role.model'
 import { SsoUser } from '@/models/ssouser.model'
 import { User } from '@/models/user.model'
 import { config } from '@/services/config.service'
@@ -108,7 +108,7 @@ export const useAuthStore = defineStore('auth', () => {
     if (tokenRoles.includes(ROLES.OPERATIONS_ADMIN.value)) {
       roles.push(
         new Role(
-          'unused_id',
+          toRoleId('unused_id'),
           ROLES.OPERATIONS_ADMIN.value,
           ROLES.OPERATIONS_ADMIN.title,
         ),

@@ -6,8 +6,7 @@ import { useAuthStore } from '@/stores/useAuthStore'
 /**
  * Create an Axios instance with authentication and default config.
  *
- * @param {number} [timeout=60000] Milliseconds before timing out the
- *     request.
+ * @param [timeout=60000] Milliseconds before timing out the request.
  * @returns {import('axios').AxiosInstance} An Axios instance.
  */
 export function authenticatedAxios(timeout = 60000) {

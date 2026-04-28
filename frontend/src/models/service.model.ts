@@ -1,23 +1,60 @@
+import { type ServiceRoleApiData } from './servicerole.model'
 import { ServiceRole } from './servicerole.model'
 
-declare type ServiceId = string & { readonly __brand: 'ServiceId' }
-declare type RoleId = string & { readonly __brand: 'RoleId' }
+export type ServiceId = string & { readonly __brand: 'ServiceId' }
 
 /**
- * Represents a service in the system.
+ * The shape of the data that comes from the API.
  */
+type ServiceApiData = {
+  /**
+   * Client identifier for the service.
+   */
+  clientIdentifier: string
 
-export type RolesType = {
-  description: string
-  id: RoleId
-  name: string
-  allowedIdentityProviders: string[]
+  /**
+   * Created by user identifier.
+   */
   createdBy: string
-  updatedBy: string
-  isDeleted: boolean
+
+  /**
+   * ISO8601 date string (YYYY-MM-DD) when service was created.
+   *
+   * Note: This is mapped from 'createdDateTime' in the API.
+   */
   createdDateTime: string
+
+  /**
+   * Description of the service.
+   */
+  description: string
+
+  /**
+   * Unique identifier for the service.
+   */
+  id: ServiceId
+
+  /**
+   * Whether or not the service is active.
+   */
+  isActive: boolean
+
+  /**
+   * Display name of the service.
+   */
+  name: string
+
+  /**
+   * The roles in available in the service.
+   */
+  serviceRoles: ServiceRoleApiData[]
+
+  /**
+   * ISO8601 date string (YYYY-MM-DD) when service was created.
+   *
+   * Note: This is mapped from 'updatedDateTime' in the API.
+   */
   updatedDateTime: string
-  enabled: boolean | undefined
 }
 
 export class Service {
@@ -39,7 +76,7 @@ export class Service {
   name: string
 
   /**
-   * Display name of the service.
+   * Client identifier for the service.
    */
   clientIdentifier: string
 
@@ -49,12 +86,12 @@ export class Service {
   createdBy: string
 
   /**
-   * Service Description
+   * Description of the service.
    */
   description: string
 
   /**
-   * Whether or not the service is active
+   * Whether or not the service is active.
    */
   isActive: boolean
 
@@ -66,7 +103,7 @@ export class Service {
   updatedDate: string
 
   /**
-   * The roles in available in the service
+   * The roles in available in the service.
    */
   serviceRoles: ServiceRole[]
 
@@ -79,7 +116,7 @@ export class Service {
    *   created
    */
   constructor(
-    id: string,
+    id: ServiceId,
     name: string,
     createdDate: string,
     clientIdentifier: string,
@@ -90,7 +127,7 @@ export class Service {
     serviceRoles: ServiceRole[],
   ) {
     this.createdDate = createdDate
-    this.id = id as ServiceId
+    this.id = id
     this.name = name
     this.clientIdentifier = clientIdentifier
     this.createdBy = createdBy
@@ -107,33 +144,11 @@ export class Service {
    * 'createdDate' property.
    *
    * @param apiData - The raw service data from the API
-   * @param apiData.createdDateTime - ISO8601 date string (YYYY-MM-DD) when
-   *     service was created
-   * @param apiData.id - Unique identifier for the service
-   * @param apiData.name - Display name of the service
-   * @param apiData.clientIdentifier - Client identifier of the service
-   * @param apiData.createdBy - Created by user identifier
-   * @param apiData.description - Service Description
-   * @param apiData.isActive - Whether or not the service is active
-   * @param apiData.updatedDateTime - ISO8601 date string (YYYY-MM-DD) when
-   *     service was created
-   * @param apiData.serviceRoles - The roles in available in the service
    * @returns A new Service instance
    */
-  static fromApiData(apiData: {
-    createdDateTime: string
-    id: string
-    name: string
-    clientIdentifier: string
-    createdBy: string
-    description: string
-    isActive: boolean
-    updatedDateTime: string
-    roles: RolesType[]
-  }): Service {
-    const serviceRoles = apiData.roles.map((roleData) =>
-      ServiceRole.fromApiData(roleData),
-    )
+  static fromApiData(apiData: ServiceApiData): Service {
+    const serviceRoles = apiData.serviceRoles.map(ServiceRole.fromApiData)
+
     return new Service(
       apiData.id,
       apiData.name,

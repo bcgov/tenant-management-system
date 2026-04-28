@@ -1,7 +1,32 @@
-import { Role } from '@/models/role.model'
-import { SsoUser } from '@/models/ssouser.model'
+import { Role, type RoleApiData } from '@/models/role.model'
+import {
+  SsoUser,
+  type SsoUserApiData,
+  toSsoUserId,
+} from '@/models/ssouser.model'
 
-export declare type UserId = string & { readonly __brand: 'UserId' }
+export type UserId = string & { readonly __brand: 'UserId' }
+export const toUserId = (id: string): UserId => id as UserId
+
+/**
+ * The shape of the data that comes from the API.
+ */
+export type UserApiData = {
+  /**
+   * Unique identifier for the user.
+   */
+  id: UserId
+
+  /**
+   * SSO user details.
+   */
+  ssoUser: SsoUserApiData
+
+  /**
+   * Array of roles assigned to the user, which may be undefined.
+   */
+  roles?: RoleApiData[]
+}
 
 /**
  * Represents a user in the system.
@@ -29,8 +54,8 @@ export class User {
    * @param ssoUser - The associated SSO user details
    * @param roles - Array of roles assigned to the user (default empty array)
    */
-  constructor(id: string, ssoUser: SsoUser, roles: Role[] = []) {
-    this.id = id as UserId
+  constructor(id: UserId, ssoUser: SsoUser, roles: Role[] = []) {
+    this.id = id
     this.roles = roles
     this.ssoUser = ssoUser
   }
@@ -39,22 +64,14 @@ export class User {
    * Creates a User instance from API response data.
    *
    * @param apiData - The raw user data from the API
-   * @param apiData.id - Unique identifier for the user
-   * @param apiData.ssoUser - Raw SSO user data to be converted
-   * @param apiData.roles - Optional array of raw role data to be converted
    * @returns A new User instance
    */
-  static fromApiData(apiData: {
-    id: string
-    ssoUser: SsoUser
-    roles?: Role[]
-  }): User {
+  static fromApiData(apiData: UserApiData): User {
     const roles = Array.isArray(apiData.roles)
       ? apiData.roles.map(Role.fromApiData)
       : []
     const ssoUser = SsoUser.fromApiData(apiData.ssoUser)
-
-    const userId = apiData.id as UserId
+    const userId = apiData.id
 
     return new User(userId, ssoUser, roles)
   }
@@ -92,12 +109,13 @@ export class User {
       : searchData.username?.includes('bceidbusiness')
         ? 'bceidbusiness'
         : 'bceidbasic'
-    const userId =
+    const userId = toSsoUserId(
       attributes.idir_user_guid?.[0] ??
-      attributes.idir_userid?.[0] ??
-      attributes.bceid_user_guid?.[0] ??
-      attributes.bceid_userid?.[0] ??
-      ''
+        attributes.idir_userid?.[0] ??
+        attributes.bceid_user_guid?.[0] ??
+        attributes.bceid_userid?.[0] ??
+        '',
+    )
     const username =
       attributes.idir_username?.[0] ??
       attributes.bceid_username?.[0] ??
@@ -116,9 +134,11 @@ export class User {
     )
 
     return new User(
-      userId,
+      // We don't know the user ID, so duplicate the SsoUserId
+      toUserId(userId),
       ssoUser,
-      [], // Roles are not provided in search results
+      // Roles are not provided in search results
+      [],
     )
   }
 }

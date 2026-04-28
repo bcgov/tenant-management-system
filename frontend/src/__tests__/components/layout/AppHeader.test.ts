@@ -1,7 +1,7 @@
 import { mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { makeUser } from '@/__tests__/__factories__'
+import { makeSsoUser, makeUser } from '@/__tests__/__factories__'
 import {
   mockAuthStore,
   mockAuthStoreLogout,
@@ -46,7 +46,9 @@ describe('AppHeader.vue', () => {
   })
 
   it('renders user display name when user is provided', () => {
-    const user = makeUser({ displayName: 'Ulysses Updike' })
+    const user = makeUser({
+      ssoUser: makeSsoUser({ displayName: 'Ulysses Updike' }),
+    })
     const wrapper = mountComponent(user)
 
     expect(wrapper.text()).toContain('Ulysses Updike')

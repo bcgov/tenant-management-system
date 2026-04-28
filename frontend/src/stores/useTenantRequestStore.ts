@@ -4,6 +4,7 @@ import { ref } from 'vue'
 import {
   TenantRequest,
   type TenantRequestDetailFields,
+  type TenantRequestId,
 } from '@/models/tenantrequest.model'
 import { User } from '@/models/user.model'
 import { tenantRequestService } from '@/services/tenantrequest.service'
@@ -49,13 +50,13 @@ export const useTenantRequestStore = defineStore('tenantRequest', () => {
    * Updates the status of a tenant request and optionally sets a rejection
    * reason.
    *
-   * @param {string} tenantRequestId - The ID of the tenant request.
+   * @param tenantRequestId - The ID of the tenant request.
    * @param {string} status - The new status for the tenant request.
    * @param {string} [rejectionReason] - The reason for rejection, if any.
    * @returns {Promise<void>}
    */
   const updateTenantRequestStatus = async (
-    tenantRequestId: string,
+    tenantRequestId: TenantRequestId,
     status: string,
     rejectionReason?: string,
     tenantName?: string,
