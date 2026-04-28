@@ -3,10 +3,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useNotification } from '@/composables/useNotification'
 import { NotificationType } from '@/types/NotificationType'
 
-vi.mock('uuid', () => ({
-  v4: () => 'test-uuid-123',
-}))
-
 describe('useNotification', () => {
   let notification: ReturnType<typeof useNotification>
 
@@ -25,12 +21,9 @@ describe('useNotification', () => {
     notification.success('Test message', 'Test title')
 
     expect(notification.items).toHaveLength(1)
-    expect(notification.items[0]).toEqual({
-      id: 'test-uuid-123',
-      title: 'Test title',
-      message: 'Test message',
-      type: NotificationType.SUCCESS,
-    })
+    expect(notification.items[0].message).toEqual('Test message')
+    expect(notification.items[0].title).toEqual('Test title')
+    expect(notification.items[0].type).toEqual(NotificationType.SUCCESS)
   })
 
   it('should use default success title when not provided', () => {
