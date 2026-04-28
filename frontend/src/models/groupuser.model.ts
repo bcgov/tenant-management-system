@@ -1,6 +1,21 @@
-import { User } from '@/models/user.model'
+import { User, type UserApiData } from '@/models/user.model'
 
-declare type GroupUserId = string & { readonly __brand: 'GroupUserId' }
+export type GroupUserId = string & { readonly __brand: 'GroupUserId' }
+
+/**
+ * The shape of the data that comes from the API.
+ */
+export type GroupUserApiData = {
+  /**
+   * Unique identifier for the group user.
+   */
+  id: GroupUserId
+
+  /**
+   * The user associated with the group user.
+   */
+  user: UserApiData
+}
 
 /**
  * Represents a user within a group.
@@ -22,8 +37,8 @@ export class GroupUser {
    * @param id - Unique identifier for the group user
    * @param user - The user associated with the group user
    */
-  constructor(id: string, user: User) {
-    this.id = id as GroupUserId
+  constructor(id: GroupUserId, user: User) {
+    this.id = id
     this.user = user
   }
 
@@ -35,7 +50,7 @@ export class GroupUser {
    * @param apiData.user - Raw user data to be converted to a User instance
    * @returns A new GroupUser instance
    */
-  static fromApiData(apiData: { id: string; user: User }): GroupUser {
+  static fromApiData(apiData: GroupUserApiData): GroupUser {
     const user = User.fromApiData(apiData.user)
 
     return new GroupUser(apiData.id, user)

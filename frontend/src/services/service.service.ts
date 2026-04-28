@@ -1,4 +1,7 @@
-import type { GroupServiceRoles } from '@/models/groupserviceroles.model'
+import type { GroupId } from '@/models/group.model'
+import type { ServiceId } from '@/models/service.model'
+import type { TenantId } from '@/models/tenant.model'
+import type { GroupServiceRole } from '@/models/groupservicerole.model'
 import { authenticatedAxios } from '@/services/authenticated.axios'
 import { logApiError } from '@/services/utils'
 
@@ -27,12 +30,12 @@ export const serviceService = {
   /**
    * Adds an existing connected service with a tenant.
    *
-   * @param {string} tenantId - The unique identifier of the tenant.
-   * @param {string} serviceId - The unique identifier of the connected service.
+   * @param tenantId - The unique identifier of the tenant.
+   * @param serviceId - The unique identifier of the connected service.
    * @returns {Promise<object>} A promise that resolves to the result.
    * @throws Will throw an error if the API request fails.
    */
-  async addServiceToTenant(tenantId: string, serviceId: string) {
+  async addServiceToTenant(tenantId: TenantId, serviceId: ServiceId) {
     try {
       const requestBody = {
         sharedServiceId: serviceId,
@@ -54,12 +57,12 @@ export const serviceService = {
   /**
    * Retrieves all connected services associated with a specific tenant.
    *
-   * @param {string} tenantId - The unique identifier of the tenant.
+   * @param tenantId - The unique identifier of the tenant.
    * @returns {Promise<object[]>} A promise that resolves to an array of
    *   connected service objects associated with the tenant.
    * @throws Will throw an error if the API request fails.
    */
-  async getTenantServices(tenantId: string) {
+  async getTenantServices(tenantId: TenantId) {
     try {
       const response = await api.get(`/tenants/${tenantId}/shared-services`)
 
@@ -74,13 +77,13 @@ export const serviceService = {
   /**
    * Retrieves all connected services associated with a group.
    *
-   * @param {string} tenantId - The unique identifier of the tenant.
-   * @param {string} groupId - The unique identifier of the group.
+   * @param tenantId - The unique identifier of the tenant.
+   * @param groupId - The unique identifier of the group.
    * @returns {Promise<object[]>} A promise that resolves to an array of
    *   connected service objects associated with the tenant.
    * @throws Will throw an error if the API request fails.
    */
-  async getTenantGroupServices(tenantId: string, groupId: string) {
+  async getTenantGroupServices(tenantId: TenantId, groupId: GroupId) {
     try {
       const response = await api.get(
         `/tenants/${tenantId}/groups/${groupId}/shared-services/shared-service-roles`,
@@ -95,9 +98,9 @@ export const serviceService = {
   },
 
   async updateTenantGroupServices(
-    tenantId: string,
-    groupId: string,
-    data: GroupServiceRoles,
+    tenantId: TenantId,
+    groupId: GroupId,
+    data: GroupServiceRole,
   ) {
     try {
       const response = await api.put(

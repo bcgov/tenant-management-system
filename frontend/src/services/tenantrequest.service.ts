@@ -6,7 +6,10 @@ import {
 } from '@/services/utils'
 import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
 import { ValidationError } from '@/errors/domain/ValidationError'
-import { type TenantRequestDetailFields } from '@/models/tenantrequest.model'
+import {
+  type TenantRequestDetailFields,
+  type TenantRequestId,
+} from '@/models/tenantrequest.model'
 import { type User } from '@/models/user.model'
 
 const api = authenticatedAxios()
@@ -84,14 +87,14 @@ export const tenantRequestService = {
   /**
    * Updates the status of a tenant request.
    *
-   * @param {string} requestId - The ID of the tenant request to update.
+   * @param tenantRequestId - The ID of the tenant request to update.
    * @param {string} status - The new status (APPROVED, REJECTED, etc.).
    * @param {string} [rejectionReason] - Optional rejection reason (required for
    *   REJECTED status).
    * @throws Will throw an error if the API request fails.
    */
   async updateTenantRequestStatus(
-    requestId: string,
+    tenantRequestId: TenantRequestId,
     status: string,
     rejectionReason?: string,
     tenantName?: string,
@@ -113,7 +116,7 @@ export const tenantRequestService = {
         requestBody.tenantName = tenantName
       }
 
-      await api.patch(`/tenant-requests/${requestId}/status`, requestBody)
+      await api.patch(`/tenant-requests/${tenantRequestId}/status`, requestBody)
     } catch (error: unknown) {
       logApiError('Error updating tenant request status', error)
 

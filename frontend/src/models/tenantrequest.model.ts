@@ -1,4 +1,56 @@
-declare type TenantRequestId = string & { readonly __brand: 'TenantRequestId' }
+export type TenantRequestId = string & { readonly __brand: 'TenantRequestId' }
+
+/**
+ * The shape of the data that comes from the API.
+ */
+type TenantRequestApiData = {
+  /**
+   * The UUID of who created the tenant request.
+   */
+  createdBy: string
+
+  /**
+   * The username of who created the tenant request, may be undefined.
+   */
+  createdByUserName?: string
+
+  /**
+   * ISO8601 date string (YYYY-MM-DD) when the tenant request was created.
+   *
+   * Note: This is mapped from 'createdDateTime' in the API.
+   */
+  createdDateTime: string
+
+  /**
+   * Description of the tenant request.
+   */
+  description: string
+
+  /**
+   * Unique identifier for the tenant request.
+   */
+  id: TenantRequestId
+
+  /**
+   * Associated ministry or organization name.
+   */
+  ministryName: string
+
+  /**
+   * Display name of the tenant request.
+   */
+  name: string
+
+  /**
+   * The reason that a request with status REJECTED was rejected.
+   */
+  rejectionReason?: string
+
+  /**
+   * Status of the tenant request: APPROVED, NEW, or REJECTED.
+   */
+  status: string
+}
 
 /**
  * Utility type that represents the subset of Tenant Request properties used in
@@ -36,14 +88,14 @@ export class TenantRequest {
   id: TenantRequestId
 
   /**
-   * Display name of the tenant request.
-   */
-  name: string
-
-  /**
    * Associated ministry or organization name.
    */
   ministryName: string
+
+  /**
+   * Display name of the tenant request.
+   */
+  name: string
 
   /**
    * The reason that a request with status REJECTED was rejected.
@@ -73,7 +125,7 @@ export class TenantRequest {
     createdBy: string,
     createdDate: string,
     description: string,
-    id: string,
+    id: TenantRequestId,
     name: string,
     ministryName: string,
     status: string,
@@ -81,7 +133,7 @@ export class TenantRequest {
     this.createdBy = createdBy
     this.createdDate = createdDate
     this.description = description
-    this.id = id as TenantRequestId
+    this.id = id
     this.name = name
     this.ministryName = ministryName
     this.rejectionReason = ''
@@ -92,32 +144,9 @@ export class TenantRequest {
    * Creates a Tenant Request instance from API response data.
    *
    * @param apiData - The raw tenant request data from the API
-   * @param apiData.createdBy - The uuid of who created the tenant request
-   * @param apiData.createdDateTime - ISO8601 date string (YYYY-MM-DD) when the
-   *     tenant request was created
-   * @param apiData.createdByUserName - The username of who created the tenant
-   *     request
-   * @param apiData.description - Description of the tenant request
-   * @param apiData.id - Unique identifier for the tenant request
-   * @param apiData.name - Display name of the tenant request
-   * @param apiData.ministryName - Associated ministry or organization name
-   * @param apiData.rejectionReason - Optional reason that a request with status
-   *   REJECTED was rejected
-   * @param apiData.status - Status of the tenant request (APPROVED, NEW, or
-   *   REJECTED)
    * @returns A new Tenant Request instance
    */
-  static fromApiData(apiData: {
-    createdBy: string
-    createdByUserName?: string
-    createdDateTime: string
-    description: string
-    id: string
-    name: string
-    ministryName: string
-    rejectionReason?: string
-    status: string
-  }): TenantRequest {
+  static fromApiData(apiData: TenantRequestApiData): TenantRequest {
     const tenantRequest = new TenantRequest(
       apiData.createdByUserName || apiData.createdBy,
       apiData.createdDateTime,

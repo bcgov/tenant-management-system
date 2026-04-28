@@ -12,7 +12,8 @@ import LoadingWrapper from '@/components/ui/LoadingWrapper.vue'
 import { useNotification } from '@/composables/useNotification'
 import { DomainError } from '@/errors/domain/DomainError'
 import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
-import { type GroupDetailFields } from '@/models/group.model'
+import { type GroupDetailFields, toGroupId } from '@/models/group.model'
+import { toTenantId } from '@/models/tenant.model'
 import { useGroupStore } from '@/stores/useGroupStore'
 import { useTenantStore } from '@/stores/useTenantStore'
 
@@ -60,14 +61,14 @@ const breadcrumbs = computed(() => {
 
 const routeGroupId = computed(() =>
   Array.isArray(route.params.groupId)
-    ? route.params.groupId[0]
-    : route.params.groupId,
+    ? toGroupId(route.params.groupId[0])
+    : toGroupId(route.params.groupId),
 )
 
 const routeTenantId = computed(() =>
   Array.isArray(route.params.tenantId)
-    ? route.params.tenantId[0]
-    : route.params.tenantId,
+    ? toTenantId(route.params.tenantId[0])
+    : toTenantId(route.params.tenantId),
 )
 
 const group = computed(() => {

@@ -2,7 +2,7 @@ import { mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
 
-import { makeUser } from '@/__tests__/__factories__'
+import { makeSsoUser, makeUser } from '@/__tests__/__factories__'
 import {
   mockAuthStore,
   mockAuthStoreLogin,
@@ -78,7 +78,7 @@ describe('LandingPageContainer.vue', () => {
   })
 
   it('redirects to /tenants when authenticated as IDIR', async () => {
-    mockAuthStore(makeUser({ idpType: 'IDIR' }))
+    mockAuthStore(makeUser({ ssoUser: makeSsoUser({ idpType: 'IDIR' }) }))
     mountComponent()
     await nextTick()
 
@@ -86,7 +86,7 @@ describe('LandingPageContainer.vue', () => {
   })
 
   it('redirects to /bceid when authenticated as BCeID', async () => {
-    mockAuthStore(makeUser({ idpType: 'BCeID' }))
+    mockAuthStore(makeUser({ ssoUser: makeSsoUser({ idpType: 'BCeID' }) }))
     mountComponent()
     await nextTick()
 
