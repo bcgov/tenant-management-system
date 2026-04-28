@@ -1,4 +1,3 @@
-import { v4 as uuidv4 } from 'uuid'
 import { reactive } from 'vue'
 
 import { type Notification } from '@/types/Notification'
@@ -24,7 +23,7 @@ function addNotification(
   message: string,
   type: NotificationType = NotificationType.SUCCESS,
 ) {
-  const id = uuidv4()
+  const id = crypto.randomUUID()
   const notification: Notification = { id, title, message, type }
   state.notifications.push(notification)
 
