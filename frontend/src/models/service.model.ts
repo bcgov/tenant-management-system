@@ -47,7 +47,7 @@ type ServiceApiData = {
   /**
    * The roles in available in the service.
    */
-  serviceRoles: ServiceRoleApiData[]
+  roles: ServiceRoleApiData[]
 
   /**
    * ISO8601 date string (YYYY-MM-DD) when service was created.
@@ -147,7 +147,7 @@ export class Service {
    * @returns A new Service instance
    */
   static fromApiData(apiData: ServiceApiData): Service {
-    const serviceRoles = apiData.serviceRoles.map(ServiceRole.fromApiData)
+    const serviceRoles = apiData.roles.map(ServiceRole.fromApiData)
 
     return new Service(
       apiData.id,
