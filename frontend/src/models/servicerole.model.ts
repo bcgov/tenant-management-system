@@ -1,62 +1,121 @@
-declare type ServiceRoleId = string & { readonly __brand: 'ServiceRoleId' }
+export type ServiceRoleId = string & { readonly __brand: 'ServiceRoleId' }
+
+/**
+ * The shape of the data that comes from the API.
+ */
+export type ServiceRoleApiData = {
+  /**
+   * Allowed identity providers.
+   */
+  allowedIdentityProviders: string[]
+
+  /**
+   * Created by for this service role.
+   */
+  createdBy: string
+
+  /**
+   * ISO8601 date string (YYYY-MM-DD) when service role was created.
+   *
+   * Note: This is mapped from 'createdDateTime' in the API.
+   */
+  createdDateTime: string
+
+  /**
+   * Description of the service role.
+   */
+  description: string
+
+  /**
+   * Whether or not the service role is enabled.
+   */
+  enabled?: boolean
+
+  /**
+   * Unique identifier for the service role.
+   */
+  id: ServiceRoleId
+
+  /**
+   * Whether or not the service role is deleted.
+   */
+  isDeleted: boolean
+
+  /**
+   * Name of the service role.
+   */
+  name: string
+
+  /**
+   * Updated by for this service role.
+   */
+  updatedBy: string
+
+  /**
+   * ISO8601 date string (YYYY-MM-DD) when service role was updated.
+   *
+   * Note: This is mapped from 'updateddateTime' in the API.
+   */
+  updatedDateTime: string
+}
 
 /**
  * Represents a service role within the system.
  */
 export class ServiceRole {
   /**
-   * Description of the role.
-   */
-  description: string
-
-  /**
-   * Unique identifier for the role.
-   */
-  id: ServiceRoleId
-
-  /**
-   * Name of the role.
-   */
-  name: string
-
-  /**
-   * Allowed identity providers
+   * Allowed identity providers.
    */
   allowedIdentityProviders: string[]
 
   /**
-   * Created by for this role
+   * Created by for this service role.
    */
   createdBy: string
 
   /**
-   * Updated by for this role
-   */
-  updatedBy: string
-
-  /**
-   * Whether or not the role is deleted
-   */
-  isDeleted: boolean
-
-  /**
-   * ISO8601 date string (YYYY-MM-DD) when service was created.
+   * ISO8601 date string (YYYY-MM-DD) when service role was created.
    *
    * Note: This is mapped from 'createdDateTime' in the API.
    */
   createdDate: string
 
   /**
-   * ISO8601 date string (YYYY-MM-DD) when service was created.
+   * Description of the service role.
+   */
+  description: string
+
+  /**
+   * Whether or not the service role is enabled.
+   */
+  enabled: boolean
+
+  /**
+   * Unique identifier for the service role.
+   */
+  id: ServiceRoleId
+
+  /**
+   * Whether or not the service role is deleted.
+   */
+  isDeleted: boolean
+
+  /**
+   * Name of the service role.
+   */
+  name: string
+
+  /**
+   * Updated by for this service role.
+   */
+  updatedBy: string
+
+  /**
+   * ISO8601 date string (YYYY-MM-DD) when service role was updated.
    *
    * Note: This is mapped from 'updateddateTime' in the API.
    */
   updatedDate: string
-
-  /**
-   * Whether or not the role is enabled
-   */
-  enabled: boolean
 
   /**
    * Creates a new Role instance.
@@ -66,7 +125,7 @@ export class ServiceRole {
    * @param description - Description of the role
    */
   constructor(
-    id: string,
+    id: ServiceRoleId,
     name: string,
     description: string,
     allowedIdentityProviders: string[],
@@ -78,7 +137,7 @@ export class ServiceRole {
     enabled: boolean = false,
   ) {
     this.description = description
-    this.id = id as ServiceRoleId
+    this.id = id
     this.name = name
     this.allowedIdentityProviders = allowedIdentityProviders
     this.createdBy = createdBy
@@ -90,33 +149,12 @@ export class ServiceRole {
   }
 
   /**
-   * Creates a Role instance from API response data.
+   * Creates a ServiceRole instance from API response data.
    *
-   * @param apiData - The raw role data from the API
-   * @param apiData.description - Description of the role
-   * @param apiData.id - Unique identifier for the role
-   * @param apiData.name - Name of the role
-   * @param apiData.allowedIdentityProviders - Allowed identity providers
-   * @param apiData.createdBy - Created by for this role
-   * @param apiData.updatedBy - Updated by for this role
-   * @param apiData.isDeleted - Whether or not the role is deleted
-   * @param apiData.createdDateTime - ISO8601 date string (YYYY-MM-DD) when service was created
-   * @param apiData.updatedDateTime - ISO8601 date string (YYYY-MM-DD) when service was created
-   * @param apiData.enabled - Whether or not the role is enabled
-   * @returns A new Role instance
+   * @param apiData - The raw service role data from the API
+   * @returns A new ServiceRole instance
    */
-  static fromApiData(apiData: {
-    description: string
-    id: string
-    name: string
-    allowedIdentityProviders: string[]
-    createdBy: string
-    updatedBy: string
-    isDeleted: boolean
-    createdDateTime: string
-    updatedDateTime: string
-    enabled?: boolean
-  }): ServiceRole {
+  static fromApiData(apiData: ServiceRoleApiData): ServiceRole {
     return new ServiceRole(
       apiData.id,
       apiData.name,

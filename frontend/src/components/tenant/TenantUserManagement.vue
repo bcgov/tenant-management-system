@@ -12,10 +12,10 @@ import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
 import FloatingActionButton from '@/components/ui/FloatingActionButton.vue'
 import SimpleDialog from '@/components/ui/SimpleDialog.vue'
 import UserTable from '@/components/user/UserTable.vue'
-import type { Group } from '@/models/group.model'
-import type { Role } from '@/models/role.model'
-import type { Tenant } from '@/models/tenant.model'
-import type { User } from '@/models/user.model'
+import { type Group } from '@/models/group.model'
+import { type Role, type RoleId } from '@/models/role.model'
+import { type Tenant } from '@/models/tenant.model'
+import { type User, type UserId } from '@/models/user.model'
 import { useGroupStore } from '@/stores/useGroupStore'
 import { type IdirSearchType, ROLES } from '@/utils/constants'
 import { currentUserHasRole } from '@/utils/permissions'
@@ -39,9 +39,10 @@ const props = defineProps<{
 const emit = defineEmits<{
   (event: 'add', user: User, groups: Group[]): void
   (event: 'cancel' | 'clear-search'): void
-  (event: 'remove-role', userId: string, roleId: string): void
+  (event: 'remove-role', userId: UserId, roleId: RoleId): void
   (event: 'search', searchType: IdirSearchType, searchText: string): void
-  (event: 'remove-user', userId: string | undefined): void
+  // TODO: what does it mean to remove an undefined user?
+  (event: 'remove-user', userId: UserId | undefined): void
 }>()
 
 // --- Component State ---------------------------------------------------------

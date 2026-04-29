@@ -3,7 +3,10 @@ import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 
 import { useAuthStore } from '@/stores/useAuthStore'
-import { currentUserIsOperationsAdmin } from '@/utils/permissions'
+import {
+  currentUserIsIdir,
+  currentUserIsOperationsAdmin,
+} from '@/utils/permissions'
 
 // --- Store and Composable Setup ----------------------------------------------
 
@@ -13,6 +16,7 @@ const route = useRoute()
 // --- Computed Values ---------------------------------------------------------
 
 const isOperationsAdmin = computed(() => currentUserIsOperationsAdmin())
+const isIdirUser = computed(() => currentUserIsIdir())
 const loggedIn = computed(() => authStore.isAuthenticated)
 
 // Use the route path to determine which button is active.
@@ -24,7 +28,7 @@ const isRouteTenant = computed(() => route.path.startsWith('/tenant'))
   <v-toolbar class="px-12" color="surface-light-gray" elevation="0" flat>
     <div class="d-flex align-center" style="gap: 8px">
       <v-btn
-        v-if="loggedIn"
+        v-if="isIdirUser"
         :active="isRouteTenant"
         to="/tenants"
         variant="text"

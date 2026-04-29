@@ -1,107 +1,75 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
+import { makeGroupUser } from '@/__tests__/__factories__'
 import { Group, type GroupId } from '@/models/group.model'
-import { GroupUser } from '@/models/groupuser.model'
-import { SsoUser } from '@/models/ssouser.model'
-import { User } from '@/models/user.model'
 
 describe('Group model', () => {
-  beforeEach(() => {
-    vi.spyOn(GroupUser, 'fromApiData').mockImplementation((data) => {
-      const fakeSsoUser = new SsoUser(
-        data.user.id,
-        undefined,
-        '',
-        '',
-        '',
-        undefined,
-      )
-      const gu = new GroupUser(data.id, new User(data.user.id, fakeSsoUser))
-      return { ...gu, mocked: true }
-    })
-  })
-
-  afterEach(() => {
-    vi.restoreAllMocks()
-  })
-
-  it('constructor assigns all properties correctly', () => {
-    const fakeSsoUser = new SsoUser('235', undefined, '', '', '', undefined)
-    const groupUsers: GroupUser[] = []
-    groupUsers.push(
-      new GroupUser('user1', new User('user1', fakeSsoUser)),
-      new GroupUser('user2', new User('user2', fakeSsoUser)),
-    )
+  it('constructor assigns all properties', () => {
+    const groupUsers = [makeGroupUser()]
 
     const group = new Group(
-      'creatorUser',
-      '2025-08-01',
-      'Group description',
-      'group123',
-      'Group Name',
+      'created-by',
+      'created-date',
+      'description',
+      'id' as GroupId,
+      'name',
       groupUsers,
     )
 
+    expect(group.createdBy).toEqual('created-by')
+    expect(group.createdDate).toEqual('created-date')
+    expect(group.description).toEqual('description')
+    expect(group.id).toEqual('id')
+    expect(group.name).toEqual('name')
     expect(group.groupUsers).toEqual(groupUsers)
   })
 
-  it('constructor sets groupUsers to empty array if not an array', () => {
-    const group = new Group(
-      'creatorUser',
-      '2025-08-01',
-      'Group description',
-      'group123',
-      'Group Name',
-      null as unknown as GroupUser[],
-    )
-
-    expect(group.groupUsers).toEqual([])
-  })
-
-  it('fromApiData converts API data to Group instance correctly', () => {
-    const fakeSsoUser = new SsoUser('userA', undefined, '', '', '', undefined)
-    const gus = [
-      new GroupUser('userA', new User('userA', fakeSsoUser)),
-      new GroupUser('userB', new User('userB', fakeSsoUser)),
-    ]
-
+  it('fromApiData converts API data to Group instance', () => {
     const apiData = {
-      createdBy: 'creatorUser',
-      createdDateTime: '2025-08-01',
-      description: 'API description',
-      id: 'group456' as GroupId,
-      name: 'API Group',
-      users: gus,
+      createdBy: 'created-by',
+      createdDateTime: 'created-date-time',
+      description: 'description',
+      id: 'id' as GroupId,
+      name: 'name',
+      users: [makeGroupUser()],
     }
 
     const group = Group.fromApiData(apiData)
 
-    expect(GroupUser.fromApiData).toHaveBeenCalledTimes(apiData.users.length)
+    expect(group.createdBy).toEqual('created-by')
+    expect(group.createdDate).toEqual('created-date-time')
+    expect(group.description).toEqual('description')
+    expect(group.id).toEqual('id')
+    expect(group.name).toEqual('name')
     expect(group.groupUsers).toHaveLength(apiData.users.length)
   })
 
-  it('fromApiData handles non-array users gracefully', () => {
-    type GroupApiData = Omit<
-      Parameters<typeof Group.fromApiData>[0],
-      'users'
-    > & {
-      users: GroupUser[] | null
+  it('fromApiData handles created by username', () => {
+    const apiData = {
+      createdBy: 'created-by',
+      createdByUserName: 'created-by-username',
+      createdDateTime: 'created-date-time',
+      description: 'description',
+      id: 'id' as GroupId,
+      name: 'name',
+      users: [makeGroupUser()],
     }
 
-    const apiData: GroupApiData = {
-      createdBy: 'creatorUser',
-      createdDateTime: '2025-08-01',
-      description: 'API description',
-      id: 'group789',
-      name: 'API Group',
-      users: null,
+    const group = Group.fromApiData(apiData)
+
+    expect(group.createdBy).toEqual('created-by-username')
+  })
+
+  it('fromApiData handles non-array users', () => {
+    const apiData = {
+      createdBy: 'created-by',
+      createdDateTime: 'created-date-time',
+      description: 'description',
+      id: 'id' as GroupId,
+      name: 'name',
     }
 
-    // Type assertion to force call with nullable users (invalid input
-    // simulation)
-    const group = Group.fromApiData(
-      apiData as unknown as Parameters<typeof Group.fromApiData>[0],
-    )
+    const group = Group.fromApiData(apiData)
 
     expect(group.groupUsers).toEqual([])
   })

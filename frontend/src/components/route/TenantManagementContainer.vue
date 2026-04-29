@@ -12,7 +12,7 @@ import LoadingWrapper from '@/components/ui/LoadingWrapper.vue'
 import { useNotification } from '@/composables/useNotification'
 import { DomainError } from '@/errors/domain/DomainError'
 import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
-import { type TenantDetailFields } from '@/models/tenant.model'
+import { type TenantDetailFields, toTenantId } from '@/models/tenant.model'
 import { useTenantStore } from '@/stores/useTenantStore'
 
 // --- Store and Composable Setup ----------------------------------------------
@@ -48,8 +48,8 @@ const breadcrumbs = computed(() => {
 
 const routeTenantId = computed(() =>
   Array.isArray(route.params.tenantId)
-    ? route.params.tenantId[0]
-    : route.params.tenantId,
+    ? toTenantId(route.params.tenantId[0])
+    : toTenantId(route.params.tenantId),
 )
 
 const tenant = computed(() => {

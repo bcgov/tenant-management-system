@@ -10,11 +10,12 @@ import SimpleDialog, {
 } from '@/components/ui/SimpleDialog.vue'
 import { useNotification } from '@/composables/useNotification'
 import type { Group } from '@/models/group.model'
+import { type GroupServiceRole } from '@/models/groupservicerole.model'
 import {
-  type GroupServiceRoles,
-  SharedServicesArray,
-  SharedServiceRoles,
-} from '@/models/groupserviceroles.model'
+  SharedServiceArray,
+  SharedServiceRole,
+  type SharedServiceRoleId,
+} from '@/models/sharedservicerole.model'
 import type { Tenant } from '@/models/tenant.model'
 import { useGroupStore } from '@/stores/useGroupStore'
 import { useServiceStore } from '@/stores/useServiceStore'
@@ -85,7 +86,7 @@ const undoChanges = () => {
 }
 
 const saveChanges = async () => {
-  const data: GroupServiceRoles = {
+  const data: GroupServiceRole = {
     sharedServices: [],
   }
 
@@ -101,14 +102,16 @@ const saveChanges = async () => {
       const indexB = orderMap.get(b.id) ?? Infinity
       return indexA - indexB
     })
-    const append: SharedServicesArray = new SharedServicesArray(
-      services.value[i].id,
+    // TODO
+    const append: SharedServiceArray = new SharedServiceArray(
+      services.value[i].id as unknown as SharedServiceRoleId,
       [],
     )
 
     for (let j = 0; j < sortedGroupValues.length; j++) {
-      const val: SharedServiceRoles = new SharedServiceRoles(
-        sortedGroupValues[j].id,
+      // TODO
+      const val: SharedServiceRole = new SharedServiceRole(
+        sortedGroupValues[j].id as unknown as SharedServiceRoleId,
         roleValues.value[i][j],
       )
       append.sharedServiceRoles.push(val)

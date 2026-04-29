@@ -5,8 +5,9 @@ import TenantUserManagement from '@/components/tenant/TenantUserManagement.vue'
 import { useNotification } from '@/composables/useNotification'
 import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
 import { Group } from '@/models/group.model'
+import { type RoleId } from '@/models/role.model'
 import { Tenant } from '@/models/tenant.model'
-import { User } from '@/models/user.model'
+import { User, type UserId } from '@/models/user.model'
 import { useGroupStore } from '@/stores/useGroupStore'
 import { useRoleStore } from '@/stores/useRoleStore'
 import { useTenantStore } from '@/stores/useTenantStore'
@@ -21,11 +22,11 @@ const props = defineProps<{
 
 // --- Store and Composable Setup ----------------------------------------------
 
+const groupStore = useGroupStore()
 const notification = useNotification()
 const roleStore = useRoleStore()
 const tenantStore = useTenantStore()
 const userStore = useUserStore()
-const groupStore = useGroupStore()
 
 // --- Component State ---------------------------------------------------------
 
@@ -59,12 +60,17 @@ async function handleAddUser(user: User, groups: Group[]) {
       notification.error('Failed to add user')
     }
   }
-  if (!addToGroups) return
+
+  if (!addToGroups) {
+    return
+  }
+
   try {
     for (const group of groups) {
       await groupStore.addGroupUser(props.tenant.id, group.id, user)
     }
-    //only show alert if user was added to at least one group
+
+    // Only show alert if user was added to at least one group.
     if (groups.length > 0) {
       notification.success(
         'New user succesfully added to groups',
@@ -80,7 +86,7 @@ async function handleClearSearch() {
   searchResults.value = null
 }
 
-async function handleRemoveRole(userId: string, roleId: string) {
+async function handleRemoveRole(userId: UserId, roleId: RoleId) {
   try {
     await tenantStore.removeTenantUserRole(props.tenant, userId, roleId)
     notification.success(
@@ -92,9 +98,13 @@ async function handleRemoveRole(userId: string, roleId: string) {
   }
 }
 
-async function handleRemoveUser(userId: string | undefined) {
+// TODO: why would you remove user for an undefined?
+async function handleRemoveUser(userId: UserId | undefined) {
   try {
-    if (!userId) throw new Error('No user selected')
+    if (!userId) {
+      throw new Error('No user selected')
+    }
+
     await tenantStore.removeTenantUser(props.tenant.id, userId)
     notification.success('The user was successfully removed', 'User Removed')
   } catch {

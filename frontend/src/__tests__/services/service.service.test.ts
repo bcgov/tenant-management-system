@@ -1,11 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { type GroupId } from '@/models/group.model'
+import { GroupServiceRole } from '@/models/groupservicerole.model'
+import { type ServiceId } from '@/models/service.model'
 import {
-  GroupServiceRoles,
-  SharedServiceRoles,
-  SharedServicesArray,
-} from '@/models/groupserviceroles.model'
-
+  SharedServiceArray,
+  SharedServiceRole,
+  type SharedServiceRoleId,
+} from '@/models/sharedservicerole.model'
+import { type TenantId } from '@/models/tenant.model'
 import * as utils from '@/services/utils'
 
 vi.mock('@/services/utils', () => ({
@@ -41,8 +44,8 @@ vi.mock('@/services/authenticated.axios', () => ({
 import { serviceService } from '@/services/service.service'
 
 describe('serviceService', () => {
-  const tenantId = '1'
-  const serviceId = '123'
+  const tenantId = '1' as TenantId
+  const serviceId = '123' as ServiceId
 
   const fakeSharedService = {
     id: serviceId,
@@ -186,10 +189,10 @@ describe('serviceService', () => {
         },
       ],
     }
-    const groupId = '1'
+
+    const groupId = '1' as GroupId
 
     it('should return tenant group services on success', async () => {
-      const groupId = '1'
       mockGet.mockResolvedValueOnce({
         data: { data: { sharedServices: fakeSharedGroupServices } },
       })
@@ -237,18 +240,17 @@ describe('serviceService', () => {
   })
 
   describe('updateTenantGroupServices', () => {
-    const fakeSharedServices: SharedServicesArray[] = [
-      new SharedServicesArray('c7c82cb9-6344-4864-be39-19ffb03d105f', [
-        new SharedServiceRoles('c7c82cb9-6344-4864-be39-19ffb03d105f', true),
+    const fakeSharedServices: SharedServiceArray[] = [
+      new SharedServiceArray('id1' as SharedServiceRoleId, [
+        new SharedServiceRole('id2' as SharedServiceRoleId, true),
       ]),
     ]
-    const fakeUpdateData: GroupServiceRoles = new GroupServiceRoles(
+    const fakeUpdateData: GroupServiceRole = new GroupServiceRole(
       fakeSharedServices,
     )
-    const groupId = '1'
+    const groupId = '1' as GroupId
 
     it('should return tenant group services on success', async () => {
-      const groupId = '1'
       mockPut.mockResolvedValueOnce({ data: { data: {} } })
 
       const result = await serviceService.updateTenantGroupServices(

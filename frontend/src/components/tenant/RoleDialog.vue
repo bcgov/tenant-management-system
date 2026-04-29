@@ -6,8 +6,9 @@ import { useI18n } from 'vue-i18n'
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
 import { useNotification } from '@/composables/useNotification'
-import type { Tenant } from '@/models/tenant.model'
-import type { User } from '@/models/user.model'
+import { type RoleId } from '@/models/role.model'
+import { type Tenant } from '@/models/tenant.model'
+import { type User, type UserId } from '@/models/user.model'
 import { useRoleStore } from '@/stores/useRoleStore'
 import { useTenantStore } from '@/stores/useTenantStore'
 import { ROLES } from '@/utils/constants'
@@ -152,10 +153,11 @@ const handleSave = async () => {
   try {
     //add first because remove fails if last role
     if (roleIds.length > 0) {
+      // TODO
       await tenantStore.assignTenantUserRoles(
         props.tenant as Tenant,
-        user?.value?.id as string,
-        roleIds,
+        user?.value?.id as UserId,
+        roleIds as RoleId[],
         fullRoleIds,
       )
     }
@@ -163,10 +165,11 @@ const handleSave = async () => {
     //remove any that aren't added
     if (removeIds.length > 0) {
       for (const removeId of removeIds) {
+        // TODO
         await tenantStore.removeTenantUserRole(
           props.tenant as Tenant,
-          user?.value?.id as string,
-          removeId,
+          user?.value?.id as UserId,
+          removeId as RoleId,
         )
       }
     }

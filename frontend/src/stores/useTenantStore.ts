@@ -1,9 +1,13 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
-import { Role } from '@/models/role.model'
-import { Tenant, type TenantDetailFields } from '@/models/tenant.model'
-import { User } from '@/models/user.model'
+import { Role, type RoleId } from '@/models/role.model'
+import {
+  Tenant,
+  type TenantDetailFields,
+  type TenantId,
+} from '@/models/tenant.model'
+import { User, type UserId } from '@/models/user.model'
 import { tenantService } from '@/services/tenant.service'
 import { useRoleStore } from '@/stores/useRoleStore'
 
@@ -72,10 +76,10 @@ export const useTenantStore = defineStore('tenant', () => {
   /**
    * Fetches a tenant by ID from the API and updates the store.
    *
-   * @param {string} tenantId - The ID of the tenant.
+   * @param tenantId - The ID of the tenant.
    * @returns {Promise<Tenant>} The fetched tenant.
    */
-  const fetchTenant = async (tenantId: string) => {
+  const fetchTenant = async (tenantId: TenantId) => {
     loading.value = true
     try {
       const tenantData = await tenantService.getTenant(tenantId)
@@ -90,10 +94,10 @@ export const useTenantStore = defineStore('tenant', () => {
   /**
    * Fetches all tenants for a given user from the API and updates the store.
    *
-   * @param {string} userId - The ID of the user.
+   * @param userId - The ID of the user.
    * @returns {Promise<void>}
    */
-  const fetchTenants = async (userId: string) => {
+  const fetchTenants = async (userId: UserId) => {
     loading.value = true
     try {
       const tenantList = await tenantService.getUserTenants(userId)
@@ -106,14 +110,14 @@ export const useTenantStore = defineStore('tenant', () => {
   /**
    * Retrieves a tenant by its ID from the store.
    *
-   * @param {string} tenantId - The ID of the tenant.
+   * @param tenantId - The ID of the tenant.
    * @returns {Tenant|undefined} The tenant if found, otherwise undefined.
    */
-  function getTenant(tenantId: string): Tenant | undefined {
+  function getTenant(tenantId: TenantId): Tenant | undefined {
     return tenants.value.find((t) => t.id === tenantId)
   }
 
-  async function removeTenantUser(tenantId: string, userId: string) {
+  async function removeTenantUser(tenantId: TenantId, userId: UserId) {
     await tenantService.removeUser(tenantId, userId)
     const tenant = getTenant(tenantId)
     if (tenant) {
@@ -125,15 +129,15 @@ export const useTenantStore = defineStore('tenant', () => {
    * Removes a role from a user in a tenant.
    *
    * @param {Tenant} tenant - The tenant the user belongs to.
-   * @param {string} userId - The ID of the user.
-   * @param {string} roleId - The ID of the role to remove.
+   * @param userId - The ID of the user.
+   * @param roleId - The ID of the role to remove.
    * @throws {Error} If the user is not found in the tenant.
    * @returns {Promise<void>}
    */
   const removeTenantUserRole = async (
     tenant: Tenant,
-    userId: string,
-    roleId: string,
+    userId: UserId,
+    roleId: RoleId,
   ) => {
     await tenantService.removeUserRole(tenant.id, userId, roleId)
 
@@ -149,15 +153,15 @@ export const useTenantStore = defineStore('tenant', () => {
    * Adds/Assigns roles from a user in a tenant. (removes those not in array)
    *
    * @param {Tenant} tenant - The tenant the user belongs to.
-   * @param {string} userId - The ID of the user.
-   * @param {string[]} roleIds - The IDs of the role to ensure are present.
+   * @param userId - The ID of the user.
+   * @param roleIds - The IDs of the role to ensure are present.
    * @throws {Error} If the user is not found in the tenant.
    * @returns {Promise<void>}
    */
   const assignTenantUserRoles = async (
     tenant: Tenant,
-    userId: string,
-    roleIds: string[],
+    userId: UserId,
+    roleIds: RoleId[],
     fullRoleIds?: string[],
   ) => {
     fullRoleIds ??= roleIds
@@ -180,24 +184,24 @@ export const useTenantStore = defineStore('tenant', () => {
   /**
    * Updates the details of a tenant.
    *
-   * @param {string} id - The ID of the tenant to update.
+   * @param tenantId - The ID of the tenant to update.
    * @param {TenantDetailFields} tenantDetails - The updated tenant details.
    * @throws {Error} If the tenant is not found in the store.
    * @returns {Promise<void>}
    */
   const updateTenantDetails = async (
-    id: string,
+    tenantId: TenantId,
     tenantDetails: TenantDetailFields,
   ) => {
     // Grab the existing tenant from the store, to confirm the ID and for use
     // later.
-    const tenant = getTenant(id)
+    const tenant = getTenant(tenantId)
     if (!tenant) {
-      throw new Error(`Tenant with ID ${id} not found`)
+      throw new Error(`Tenant with ID ${tenantId} not found`)
     }
 
     const apiResponse = await tenantService.updateTenant(
-      id,
+      tenantId,
       tenantDetails.name,
       tenantDetails.ministryName,
       tenantDetails.description,

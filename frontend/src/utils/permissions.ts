@@ -1,6 +1,7 @@
 import { Tenant } from '@/models/tenant.model'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { ROLES } from '@/utils/constants'
+import { IdentityProvider } from '@/utils/identityProvider'
 
 /**
  * Checks if the current user has a specific role in the given tenant.
@@ -17,6 +18,40 @@ export function currentUserHasRole(tenant: Tenant, roleName: string): boolean {
   }
 
   return tenant.userHasRole(authStore.authenticatedUser, roleName)
+}
+
+/**
+ * Checks if the current user is a BceID user.
+ *
+ * This function uses the auth store to determine if the current user logged in
+ * with BCeID credentials.
+ *
+ * @returns True if the current user is a BCeID user, false otherwise.
+ */
+export function currentUserIsBceid(): boolean {
+  const authStore = useAuthStore()
+  if (!authStore.isAuthenticated) {
+    return false
+  }
+
+  return authStore.authenticatedUser.ssoUser.idpType === IdentityProvider.BCEID
+}
+
+/**
+ * Checks if the current user is an IDIR user.
+ *
+ * This function uses the auth store to determine if the current user logged in
+ * with IDIR credentials.
+ *
+ * @returns True if the current user is an IDIR user, false otherwise.
+ */
+export function currentUserIsIdir(): boolean {
+  const authStore = useAuthStore()
+  if (!authStore.isAuthenticated) {
+    return false
+  }
+
+  return authStore.authenticatedUser.ssoUser.idpType === IdentityProvider.IDIR
 }
 
 /**

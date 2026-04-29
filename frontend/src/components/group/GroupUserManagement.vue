@@ -7,11 +7,10 @@ import FloatingActionButton from '@/components/ui/FloatingActionButton.vue'
 import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
 import SimpleDialog from '@/components/ui/SimpleDialog.vue'
 import UserTable from '@/components/user/UserTable.vue'
-import type { Group } from '@/models/group.model'
-import type { GroupUser } from '@/models/groupuser.model'
-import { GroupUser as GroupUserModel } from '@/models/groupuser.model'
-import type { Tenant } from '@/models/tenant.model'
-import type { User } from '@/models/user.model'
+import { type Group } from '@/models/group.model'
+import { GroupUser, type GroupUserId } from '@/models/groupuser.model'
+import { type Tenant } from '@/models/tenant.model'
+import { type User } from '@/models/user.model'
 import { type IdirSearchType, ROLES } from '@/utils/constants'
 import { currentUserHasRole } from '@/utils/permissions'
 
@@ -27,7 +26,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (event: 'add', user: User): void
   (event: 'cancel' | 'clear-search'): void
-  (event: 'delete', userId: string): void
+  (event: 'delete', userId: GroupUserId): void
   (event: 'search', searchType: IdirSearchType, searchText: string): void
 }>()
 
@@ -46,8 +45,8 @@ const deleteDialogButtons = computed(() => [
     type: 'secondary' as const,
   },
   {
-    text: 'Confirm Removal',
-    action: 'confirm',
+    text: 'Remove',
+    action: 'remove',
     type: 'primary' as const,
   },
 ])
@@ -78,14 +77,15 @@ function handleClearSearch() {
 }
 
 function handleDeleteClick(user: User) {
-  const groupUser = new GroupUserModel(user.id, user)
+  // TODO
+  const groupUser = new GroupUser(user.id as unknown as GroupUserId, user)
 
   showDeleteDialog.value = true
   groupUserToDelete.value = groupUser
 }
 
 function handleDeleteDialogAction(action: string) {
-  if (action === 'confirm' && groupUserToDelete.value) {
+  if (action === 'remove' && groupUserToDelete.value) {
     emit('delete', groupUserToDelete.value.id)
   }
 
@@ -162,10 +162,10 @@ function toggleSearch() {
       v-model="showDeleteDialog"
       :buttons="deleteDialogButtons"
       :max-width="650"
-      message="This will only take them out of this group - it won't remove them
-        from the tenant. Removing membership from a group is permanent and
-        cannot be undone. Please confirm before proceeding."
-      title="You're about to permanently remove this user from this group"
+      dialog-type="warning"
+      message="This will remove the user from this group only. This action can't
+        be undone."
+      title="Remove user from group?"
       @button-click="handleDeleteDialogAction"
     />
   </v-container>

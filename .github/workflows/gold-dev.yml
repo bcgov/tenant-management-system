@@ -8,7 +8,7 @@ on:
         description: 'enable or disable autoscaling'
         required: false
         type: boolean
-        default: false 
+        default: true
       tag:
         description: 'Image tag set to deploy; e.g. PR number or prod'
         type: string
@@ -28,7 +28,7 @@ on:
         description: 'enable or disable autoscaling'
         required: false
         type: boolean
-        default: false
+        default: true
       tag:
         description: 'Image tag set to deploy; e.g. PR number or prod'
         required: false
@@ -56,13 +56,17 @@ jobs:
       params: 
         --set global.autoscaling=${{ inputs.autoscaling }}
         --set frontend.autoscaling.enabled=${{ inputs.autoscaling }}
+        --set frontend.autoscaling.minReplicas=2
+        --set frontend.autoscaling.maxReplicas=3
         --set frontend.deploymentStrategy=RollingUpdate
         --set frontend.pdb.enabled=true
-        --set frontend.pdb.minAvailable=2
+        --set frontend.pdb.minAvailable=1
         --set backend.autoscaling.enabled=${{ inputs.autoscaling }}
+        --set backend.autoscaling.minReplicas=2
+        --set backend.autoscaling.maxReplicas=3
         --set backend.deploymentStrategy=RollingUpdate
         --set backend.pdb.enabled=true
-        --set backend.pdb.minAvailable=2
+        --set backend.pdb.minAvailable=1
         --set global.domain="apps.gold.devops.gov.bc.ca"
         ${{ inputs.params }}
       tag: ${{ inputs.tag }}
@@ -79,13 +83,17 @@ jobs:
       params: 
         --set global.autoscaling=${{ inputs.autoscaling }}
         --set frontend.autoscaling.enabled=${{ inputs.autoscaling }}
+        --set frontend.autoscaling.minReplicas=2
+        --set frontend.autoscaling.maxReplicas=3
         --set frontend.deploymentStrategy=RollingUpdate
         --set frontend.pdb.enabled=true
-        --set frontend.pdb.minAvailable=2
-        --set backend.autoscaling.enable=${{ inputs.autoscaling }}
+        --set frontend.pdb.minAvailable=1
+        --set backend.autoscaling.enabled=${{ inputs.autoscaling }}
+        --set backend.autoscaling.minReplicas=2
+        --set backend.autoscaling.maxReplicas=3
         --set backend.deploymentStrategy=RollingUpdate
         --set backend.pdb.enabled=true
-        --set backend.pdb.minAvailable=2
+        --set backend.pdb.minAvailable=1
         --set global.domain="apps.golddr.devops.gov.bc.ca"
         ${{ inputs.params }}
       tag: ${{ inputs.tag }}

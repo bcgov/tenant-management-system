@@ -1,8 +1,56 @@
-import type { SSOUserId } from '@/models/ssouser.model'
-import { User } from '@/models/user.model'
+import { type SsoUserId } from '@/models/ssouser.model'
+import { User, type UserApiData } from '@/models/user.model'
 import { ROLES } from '@/utils/constants'
 
-export declare type TenantId = string & { readonly __brand: 'TenantId' }
+export type TenantId = string & { readonly __brand: 'TenantId' }
+export const toTenantId = (id: string): TenantId => id as TenantId
+
+/**
+ * The shape of the data that comes from the API.
+ */
+type TenantApiData = {
+  /**
+   * The UUID of who created the tenant.
+   */
+  createdBy: string
+
+  /**
+   * The username of who created the tenant, may be undefined.
+   */
+  createdByUserName?: string
+
+  /**
+   * ISO8601 date string (YYYY-MM-DD) when tenant was created.
+   *
+   * Note: This is mapped from 'createdDateTime' in the API.
+   */
+  createdDateTime: string
+
+  /**
+   * Description of the tenant.
+   */
+  description: string
+
+  /**
+   * Unique identifier for the tenant.
+   */
+  id: TenantId
+
+  /**
+   * Associated ministry or organization name.
+   */
+  ministryName: string
+
+  /**
+   * Display name of the tenant.
+   */
+  name: string
+
+  /**
+   * Array of users associated with this tenant.
+   */
+  users: UserApiData[]
+}
 
 /**
  * Utility type that represents the subset of Tenant properties used in the form
@@ -18,7 +66,7 @@ export type TenantDetailFields = Pick<
  */
 export class Tenant {
   /**
-   * The username of who created the tenant.
+   * The identity of who created the tenant.
    */
   createdBy: string
 
@@ -40,14 +88,14 @@ export class Tenant {
   id: TenantId
 
   /**
-   * Display name of the tenant.
-   */
-  name: string
-
-  /**
    * Associated ministry or organization name.
    */
   ministryName: string
+
+  /**
+   * Display name of the tenant.
+   */
+  name: string
 
   /**
    * Array of users associated with this tenant.
@@ -57,7 +105,7 @@ export class Tenant {
   /**
    * Creates a new Tenant instance.
    *
-   * @param createdBy - The username of who created the tenant
+   * @param createdBy - The identity of who created the tenant
    * @param createdDate - ISO8601 date string (YYYY-MM-DD) when tenant was
    *   created
    * @param description - Description of the tenant
@@ -70,7 +118,7 @@ export class Tenant {
     createdBy: string,
     createdDate: string,
     description: string,
-    id: string,
+    id: TenantId,
     name: string,
     ministryName: string,
     users: User[],
@@ -78,7 +126,7 @@ export class Tenant {
     this.createdBy = createdBy
     this.createdDate = createdDate
     this.description = description
-    this.id = id as TenantId
+    this.id = id
     this.name = name
     this.ministryName = ministryName
     this.users = Array.isArray(users) ? users : []
@@ -90,10 +138,8 @@ export class Tenant {
    * @param ssoUserId - The SSO User ID of the user to find
    * @returns The User if found, or undefined if not found
    */
-  findUser(ssoUserId: string): User | undefined {
-    return this.users.find(
-      (user) => user.ssoUser.ssoUserId === (ssoUserId as SSOUserId),
-    )
+  findUser(ssoUserId: SsoUserId): User | undefined {
+    return this.users.find((user) => user.ssoUser.ssoUserId === ssoUserId)
   }
 
   /**
@@ -103,31 +149,15 @@ export class Tenant {
    * 'createdDate' property.
    *
    * @param apiData - The raw tenant data from the API
-   * @param apiData.createdBy - The username of who created the tenant
-   * @param apiData.createdDateTime - ISO8601 date string (YYYY-MM-DD) when
-   *     tenant was created
-   * @param apiData.description - Description of the tenant
-   * @param apiData.id - Unique identifier for the tenant
-   * @param apiData.name - Display name of the tenant
-   * @param apiData.ministryName - Associated ministry or organization name
-   * @param apiData.users - Array of raw user objects to be converted
    * @returns A new Tenant instance
    */
-  static fromApiData(apiData: {
-    createdBy: string
-    createdDateTime: string
-    description: string
-    id: string
-    name: string
-    ministryName: string
-    users: User[]
-  }): Tenant {
+  static fromApiData(apiData: TenantApiData): Tenant {
     const users = Array.isArray(apiData.users)
       ? apiData.users.map(User.fromApiData)
       : []
 
     return new Tenant(
-      apiData.createdBy,
+      apiData.createdByUserName || apiData.createdBy,
       apiData.createdDateTime,
       apiData.description,
       apiData.id,
