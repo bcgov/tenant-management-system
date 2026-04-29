@@ -26,7 +26,7 @@ export interface AppConfig {
  * Validate the shape of a raw config object against the AppConfig interface. If
  * validation fails, it throws a list of all missing fields.
  *
- * @param raw The raw config object to validate
+ * @param raw - The raw config object to validate
  * @returns The validated config object typed as AppConfig
  * @throws {ConfigError} If the config is missing required fields or is not an
  * object

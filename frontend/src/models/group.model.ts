@@ -6,7 +6,7 @@ export const toGroupId = (id: string): GroupId => id as GroupId
 /**
  * The shape of the data that comes from the API.
  */
-type GroupApiData = {
+export type GroupApiData = {
   /**
    * The identity of who created the group.
    */

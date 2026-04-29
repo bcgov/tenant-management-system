@@ -8,7 +8,7 @@ export const toTenantId = (id: string): TenantId => id as TenantId
 /**
  * The shape of the data that comes from the API.
  */
-type TenantApiData = {
+export type TenantApiData = {
   /**
    * The UUID of who created the tenant.
    */

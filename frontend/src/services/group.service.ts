@@ -1,7 +1,10 @@
 import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
 import { ValidationError } from '@/errors/domain/ValidationError'
-import { type GroupId } from '@/models/group.model'
-import { type GroupUserId } from '@/models/groupuser.model'
+import { type GroupApiData, type GroupId } from '@/models/group.model'
+import {
+  type GroupUserApiData,
+  type GroupUserId,
+} from '@/models/groupuser.model'
 import { type TenantId } from '@/models/tenant.model'
 import { User } from '@/models/user.model'
 import { authenticatedAxios } from '@/services/authenticated.axios'
@@ -19,11 +22,15 @@ export const groupService = {
    *
    * @param tenantId - The ID of the tenant.
    * @param groupId - The ID of the group to add the user to.
-   * @param {User} user - The user to add to the group.
-   * @returns {Promise<object>} A promise that resolves to the response data.
+   * @param user - The user to add to the group.
+   * @returns A promise that resolves to the group user data.
    * @throws Will throw an error if the API request fails.
    */
-  async addUserToGroup(tenantId: TenantId, groupId: GroupId, user: User) {
+  async addUserToGroup(
+    tenantId: TenantId,
+    groupId: GroupId,
+    user: User,
+  ): Promise<GroupUserApiData> {
     try {
       const requestBody = {
         user: {
@@ -67,15 +74,17 @@ export const groupService = {
   /**
    * Creates a new group with the specified name and description.
    *
-   * @param tenantId - The ID of the tenant that the group is created
-   *   for.
-   * @param {string} name - The name of the group to create.
-   * @param {string} description - The description of the group.
-   * @returns {Promise<object>} A promise that resolves to the newly created
-   *   group-like object.
+   * @param tenantId - The ID of the tenant that the group is created for.
+   * @param name - The name of the group to create.
+   * @param description - The description of the group.
+   * @returns A promise that resolves to the group data.
    * @throws Will throw an error if the API request fails.
    */
-  async createGroup(tenantId: TenantId, name: string, description: string) {
+  async createGroup(
+    tenantId: TenantId,
+    name: string,
+    description: string,
+  ): Promise<GroupApiData> {
     try {
       const requestBody = {
         description,
@@ -115,10 +124,10 @@ export const groupService = {
    *
    * @param tenantId - The ID of the tenant.
    * @param groupId - The ID of the group within the tenant.
-   * @returns {Promise<object>} A promise that resolves a group-like object.
+   * @returns A promise that resolves to the group data.
    * @throws Will throw an error if the API request fails.
    */
-  async getGroup(tenantId: TenantId, groupId: GroupId) {
+  async getGroup(tenantId: TenantId, groupId: GroupId): Promise<GroupApiData> {
     try {
       const response = await api.get(
         `/tenants/${tenantId}/groups/${groupId}?expand=groupUsers`,
@@ -136,11 +145,10 @@ export const groupService = {
    * Retrieves the groups associated with the specified tenant.
    *
    * @param tenantId - The ID of the tenant.
-   * @returns {Promise<object[]>} A promise that resolves to an array of
-   *   group-like objects.
+   * @returns A promise that resolves to an array of group data.
    * @throws Will throw an error if the API request fails.
    */
-  async getTenantGroups(tenantId: TenantId) {
+  async getTenantGroups(tenantId: TenantId): Promise<GroupApiData[]> {
     try {
       const response = await api.get(`/tenants/${tenantId}/groups`)
 
@@ -158,15 +166,14 @@ export const groupService = {
    * @param tenantId - The ID of the tenant.
    * @param groupId - The ID of the group to remove the user from.
    * @param groupUserId - The ID of the group user to remove.
-   * @returns {Promise<void>} A promise that resolves when the user is
-   *   successfully removed.
+   * @returns A promise that resolves when the request succeeds.
    * @throws Will throw an error if the API request fails.
    */
   async removeUserFromGroup(
     tenantId: TenantId,
     groupId: GroupId,
     groupUserId: GroupUserId,
-  ) {
+  ): Promise<void> {
     try {
       await api.delete(
         `/tenants/${tenantId}/groups/${groupId}/users/${groupUserId}`,
@@ -181,12 +188,11 @@ export const groupService = {
   /**
    * Updates an existing group with the specified details.
    *
-   * @param {TenantId} tenantId - The ID of the tenant that the group belongs to.
-   * @param {GroupId} groupId - The ID of the group to update.
-   * @param {string} name - The new name of the group.
-   * @param {string} description - The new description for the group.
-   * @returns {Promise<object>} A promise that resolves to the updated group
-   *   object.
+   * @param tenantId - The ID of the tenant that the group belongs to.
+   * @param groupId - The ID of the group to update.
+   * @param name - The new name of the group.
+   * @param description - The new description for the group.
+   * @returns A promise that resolves to the group data.
    * @throws Will throw an error if the API request fails.
    */
   async updateGroup(
@@ -194,7 +200,7 @@ export const groupService = {
     groupId: GroupId,
     name: string,
     description: string,
-  ) {
+  ): Promise<GroupApiData> {
     try {
       const requestBody = {
         description: description,

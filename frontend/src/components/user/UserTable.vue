@@ -9,12 +9,12 @@ import {
 import { computed, type ComputedRef, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 // TODO: sus
-import type { ItemSlotBase } from 'vuetify/lib/components/VDataTable/types.mjs'
+import { type ItemSlotBase } from 'vuetify/lib/components/VDataTable/types.mjs'
 
-import type { GroupUser } from '@/models/groupuser.model'
-import type { Role } from '@/models/role.model'
-import type { Tenant } from '@/models/tenant.model'
-import type { User, UserId } from '@/models/user.model'
+import { type GroupUser } from '@/models/groupuser.model'
+import { type Role } from '@/models/role.model'
+import { type Tenant } from '@/models/tenant.model'
+import { type User, type UserId } from '@/models/user.model'
 import { ROLES } from '@/utils/constants'
 import { identityProviderToDisplay } from '@/utils/identityProvider'
 import { currentUserHasRole } from '@/utils/permissions'

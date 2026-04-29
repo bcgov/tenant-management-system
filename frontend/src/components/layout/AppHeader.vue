@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { mdiAccountOutline, mdiLogout } from '@mdi/js'
 
-import type { User } from '@/models/user.model'
+import { type User } from '@/models/user.model'
 import { useAuthStore } from '@/stores/useAuthStore'
 
 // --- Store and Composable Setup ----------------------------------------------

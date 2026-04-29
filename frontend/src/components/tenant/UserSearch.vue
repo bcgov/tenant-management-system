@@ -2,9 +2,9 @@
 import { mdiAlert, mdiClose } from '@mdi/js'
 import { computed, ref, watch } from 'vue'
 // TODO: sus
-import type {
-  ItemSlotBase,
-  DataTableItem,
+import {
+  type ItemSlotBase,
+  type DataTableItem,
 } from 'vuetify/lib/components/VDataTable/types.mjs'
 
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'

@@ -1,7 +1,7 @@
 import axios, { AxiosHeaders } from 'axios'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { User, UserId } from '@/models/user.model'
+import { type User, type UserId } from '@/models/user.model'
 import { authenticatedAxios } from '@/services/authenticated.axios'
 
 vi.mock('@/services/config.service', () => ({

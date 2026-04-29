@@ -5,7 +5,7 @@ import { VForm } from 'vuetify/components'
 
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
-import type { GroupDetailFields } from '@/models/group.model'
+import { type GroupDetailFields } from '@/models/group.model'
 
 // --- Component Interface -----------------------------------------------------
 

@@ -1,8 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
-import { type TenantId } from '@/models/tenant.model'
 import { Service, type ServiceId } from '@/models/service.model'
+import { type TenantId } from '@/models/tenant.model'
 import { serviceService } from '@/services/service.service'
 
 /**
@@ -17,10 +17,10 @@ export const useServiceStore = defineStore('service', () => {
   /**
    * Inserts or updates a service in the store.
    *
-   * @param {Service} service - The service to insert or update.
-   * @returns {Service} The inserted or updated service.
+   * @param service - The service to insert or update.
+   * @returns The inserted or updated service.
    */
-  function upsertService(service: Service) {
+  function upsertService(service: Service): Service {
     const index = services.value.findIndex((s) => s.id === service.id)
     if (index === -1) {
       services.value.push(service)
@@ -38,32 +38,26 @@ export const useServiceStore = defineStore('service', () => {
    *
    * @param tenantId - The ID of the tenant.
    * @param serviceId - The ID of the service.
-   * @returns {Promise<unknown>} The API response.
+   * @returns A promise that resolves when the service is added to the tenant.
    */
   const addServiceToTenant = async (
     tenantId: TenantId,
     serviceId: ServiceId,
-  ) => {
-    const apiResponse = await serviceService.addServiceToTenant(
-      tenantId,
-      serviceId,
-    )
-
-    return apiResponse
+  ): Promise<void> => {
+    await serviceService.addServiceToTenant(tenantId, serviceId)
   }
 
   /**
    * Fetches all connected services from the API and updates the store.
    *
-   * @returns {Promise<Service[]>} The list of services.
+   * @returns A promise that resolves to the list of all services.
    */
-  const fetchServices = async () => {
+  const fetchServices = async (): Promise<Service[]> => {
     loading.value = true
     try {
       const services = await serviceService.getAllSharedServices()
-      services.value = services.map(Service.fromApiData)
 
-      return services.value
+      return services.map(Service.fromApiData)
     } finally {
       loading.value = false
     }
@@ -73,9 +67,12 @@ export const useServiceStore = defineStore('service', () => {
    * Fetches services for a tenant from the API and updates the store.
    *
    * @param tenantId - The ID of the tenant.
-   * @returns {Promise<Service[]>} The list of tenant services.
+   * @returns A promise that resolves to the list of services associated with
+   *   the tenant.
    */
-  const fetchTenantServices = async (tenantId: TenantId) => {
+  const fetchTenantServices = async (
+    tenantId: TenantId,
+  ): Promise<Service[]> => {
     loading.value = true
     try {
       const services = await serviceService.getTenantServices(tenantId)
@@ -94,7 +91,7 @@ export const useServiceStore = defineStore('service', () => {
    * Retrieves a service by its ID from the store.
    *
    * @param serviceId - The ID of the service.
-   * @returns {Service|undefined} The service if found, otherwise undefined.
+   * @returns The service if found, otherwise undefined.
    */
   function getService(serviceId: ServiceId): Service | undefined {
     return services.value.find((s) => s.id === serviceId)

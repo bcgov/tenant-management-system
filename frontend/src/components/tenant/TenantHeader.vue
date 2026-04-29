@@ -2,7 +2,7 @@
 import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 import { ref } from 'vue'
 
-import type { Tenant } from '@/models/tenant.model'
+import { type Tenant } from '@/models/tenant.model'
 
 // --- Component Interface -----------------------------------------------------
 

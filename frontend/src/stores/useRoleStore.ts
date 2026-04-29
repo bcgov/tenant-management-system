@@ -17,9 +17,10 @@ export const useRoleStore = defineStore('role', () => {
   /**
    * Fetches all roles from the API and updates the store.
    *
-   * @returns {Promise<void>}
+   * @returns A promise that resolves when the roles are fetched and the store
+   *   is updated.
    */
-  const fetchRoles = async () => {
+  const fetchRoles = async (): Promise<void> => {
     loading.value = true
     try {
       const roleList = await roleService.getRoles()

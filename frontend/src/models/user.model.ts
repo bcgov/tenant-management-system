@@ -29,6 +29,41 @@ export type UserApiData = {
 }
 
 /**
+ * The shape of the data that comes from the API.
+ */
+export type UserSearchApiData = {
+  /**
+   * Additional attributes that may be returned by the SSO API, and can be
+   * inconsistent in key casing and presence. For example, the username might be
+   * under the key 'bceid_username' or 'idir_username', or may not be present at
+   * all.
+   */
+  attributes: {
+    [key: string]: string[] | undefined
+  }
+
+  /**
+   * Email address of the user.
+   */
+  email: string
+
+  /**
+   * First name of the user.
+   */
+  firstName: string
+
+  /**
+   * Last name of the user.
+   */
+  lastName: string
+
+  /**
+   * Optional username of the user.
+   */
+  username?: string
+}
+
+/**
  * Represents a user in the system.
  */
 export class User {
@@ -84,23 +119,10 @@ export class User {
    * username is undefined it could cause issues.
    *
    * @param searchData - The raw user search data
-   * @param searchData.email - Email address of the user
-   * @param searchData.firstName - First name of the user
-   * @param searchData.lastName - Last name of the user
-   * @param searchData.attributes - Additional attributes with possibly
-   *   inconsistent key casing or presence
    * @returns A new User instance with no roles (roles are not provided in
    *   search results)
    */
-  static fromSearchData(searchData: {
-    email: string
-    firstName: string
-    lastName: string
-    username?: string
-    attributes: {
-      [key: string]: string[] | undefined
-    }
-  }): User {
+  static fromSearchData(searchData: UserSearchApiData): User {
     // The SSO API doesn't always return the expected fields - try to be lenient
     // but note that if the username is undefined then it will cause issues.
     const attributes = searchData.attributes

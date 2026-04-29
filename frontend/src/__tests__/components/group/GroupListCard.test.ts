@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 
 import { makeGroup } from '@/__tests__/__factories__'
 import GroupListCard from '@/components/group/GroupListCard.vue'
-import type { Group } from '@/models/group.model'
+import { type Group } from '@/models/group.model'
 
 const mountComponent = (props: { group: Group; isAdmin: boolean }) =>
   mount(GroupListCard, {
