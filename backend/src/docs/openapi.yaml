@@ -1470,6 +1470,106 @@ paths:
               schema:
                 $ref: '#/components/schemas/InternalServerErrorResponse'
 
+  /v1/shared-services/{sharedServiceId}:
+    put:
+      summary: Update shared service
+      description: Updates shared service metadata. Requires JWT authentication and TMS.OPERATIONS_ADMIN role.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: sharedServiceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The unique identifier of the shared service
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              minProperties: 1
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 30
+                  pattern: '^\S.*\S$'
+                  example: 'Updated Email Service'
+                displayName:
+                  type: string
+                  minLength: 1
+                  maxLength: 100
+                  pattern: '^\S.*\S$'
+                  example: 'Updated Common Document Generation Service (CDOGS)'
+                clientIdentifier:
+                  type: string
+                  minLength: 1
+                  maxLength: 55
+                  pattern: '^\S.*\S$'
+                  example: 'updated-email-service-client'
+                landingPageUrl:
+                  type: string
+                  maxLength: 500
+                  format: uri
+                  example: 'https://updated-cdogs.gov.bc.ca'
+                description:
+                  type: string
+                  maxLength: 500
+                  nullable: true
+                  example: 'Updated shared email service for all tenants'
+      responses:
+        '200':
+          description: Shared service successfully updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      sharedService:
+                        $ref: '#/components/schemas/SharedServiceWithRoles'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        '403':
+          description: Forbidden - User is not an operations administrator
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        '404':
+          description: Shared service not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+        '409':
+          description: Conflict - Shared service with same name, display name, or client identifier already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConflictErrorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+
   /v1/shared-services/{sharedServiceId}/status:
     patch:
       summary: Update shared service active status
