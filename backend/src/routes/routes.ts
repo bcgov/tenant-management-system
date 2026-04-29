@@ -239,6 +239,15 @@ export class Routes {
           this.tmsController.createSharedService(req, res),
       )
     app
+      .route(RoutesConstants.UPDATE_SHARED_SERVICE)
+      .put(
+        checkJwt(),
+        checkOperationsAdmin,
+        validate(validator.updateSharedService, {}, {}),
+        (req: Request, res: Response) =>
+          this.tmsController.updateSharedService(req, res),
+      )
+    app
       .route(RoutesConstants.UPDATE_SHARED_SERVICE_STATUS)
       .patch(
         checkJwt(),

@@ -21,6 +21,7 @@ import {
   CreateTenantInputDto,
   CreateTenantRequestInputDto,
   CreateSharedServiceInputDto,
+  UpdateSharedServiceInputDto,
   UpdateSharedServiceStatusInputDto,
   UpdateTenantRequestStatusResponseDto,
   UpdateTenantRequestStatusResultDto,
@@ -665,6 +666,25 @@ export class TMSService {
     return {
       data: {
         sharedService: savedSharedService,
+      },
+    }
+  }
+
+  public async updateSharedService(req: Request) {
+    const input: UpdateSharedServiceInputDto = {
+      sharedServiceId: req.params.sharedServiceId,
+      name: req.body.name,
+      displayName: req.body.displayName,
+      clientIdentifier: req.body.clientIdentifier,
+      landingPageUrl: req.body.landingPageUrl,
+      description: req.body.description,
+      updatedBy: req.decodedJwt?.idir_user_guid || 'system',
+    }
+    const updatedSharedService =
+      await this.tmsRepository.updateSharedService(input)
+    return {
+      data: {
+        sharedService: updatedSharedService,
       },
     }
   }

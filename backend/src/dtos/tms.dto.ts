@@ -46,6 +46,16 @@ export interface CreateSharedServiceInputDto {
   updatedBy: string
 }
 
+export interface UpdateSharedServiceInputDto {
+  sharedServiceId: string
+  name?: string
+  displayName?: string
+  clientIdentifier?: string
+  landingPageUrl?: string
+  description?: string | null
+  updatedBy: string
+}
+
 export interface AddSharedServiceRolesInputDto {
   sharedServiceId: string
   roles: Array<{

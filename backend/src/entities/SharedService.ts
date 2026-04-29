@@ -31,7 +31,7 @@ export class SharedService {
   landingPageUrl!: string
 
   @Column({ type: 'varchar', length: 500, name: 'description', nullable: true })
-  description!: string
+  description!: string | null
 
   @Column({ type: 'boolean', name: 'is_active', default: true })
   isActive!: boolean

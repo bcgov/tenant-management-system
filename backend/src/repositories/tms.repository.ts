@@ -24,6 +24,7 @@ import {
   CreateTenantInputDto,
   CreateTenantRequestInputDto,
   CreateSharedServiceInputDto,
+  UpdateSharedServiceInputDto,
   UpdateSharedServiceStatusInputDto,
   GetTenantRequestsInputDto,
   UpdateTenantRequestStatusResultDto,
@@ -1682,6 +1683,105 @@ export class TMSRepository {
     })
 
     return await this.getSharedServiceWithRoles(sharedServiceId)
+  }
+
+  public async updateSharedService(input: UpdateSharedServiceInputDto) {
+    const {
+      sharedServiceId,
+      name,
+      displayName,
+      clientIdentifier,
+      landingPageUrl,
+      description,
+      updatedBy,
+    } = input
+
+    await this.manager.transaction(async (transactionEntityManager) => {
+      const sharedService: SharedService | null = await transactionEntityManager
+        .createQueryBuilder(SharedService, 'sharedService')
+        .where('sharedService.id = :id', { id: sharedServiceId })
+        .getOne()
+
+      if (!sharedService) {
+        throw new NotFoundError(`Shared service not found: ${sharedServiceId}`)
+      }
+
+      if (
+        name !== undefined &&
+        name !== sharedService.name &&
+        (await transactionEntityManager
+          .createQueryBuilder()
+          .from(SharedService, 'ss')
+          .where('ss.name = :name', { name })
+          .andWhere('ss.id != :sharedServiceId', { sharedServiceId })
+          .getExists())
+      ) {
+        throw new ConflictError(
+          `A shared service with name '${name}' already exists`,
+        )
+      }
+
+      if (
+        displayName !== undefined &&
+        displayName !== sharedService.displayName &&
+        (await transactionEntityManager
+          .createQueryBuilder()
+          .from(SharedService, 'ss')
+          .where('ss.displayName = :displayName', { displayName })
+          .andWhere('ss.id != :sharedServiceId', { sharedServiceId })
+          .getExists())
+      ) {
+        throw new ConflictError(
+          `A shared service with display name '${displayName}' already exists`,
+        )
+      }
+
+      if (
+        clientIdentifier !== undefined &&
+        clientIdentifier !== sharedService.clientIdentifier &&
+        (await transactionEntityManager
+          .createQueryBuilder()
+          .from(SharedService, 'ss')
+          .where('ss.clientIdentifier = :clientIdentifier', {
+            clientIdentifier,
+          })
+          .andWhere('ss.id != :sharedServiceId', { sharedServiceId })
+          .getExists())
+      ) {
+        throw new ConflictError(
+          `A shared service with client identifier '${clientIdentifier}' already exists`,
+        )
+      }
+
+      if (name !== undefined) {
+        sharedService.name = name
+      }
+      if (displayName !== undefined) {
+        sharedService.displayName = displayName
+      }
+      if (clientIdentifier !== undefined) {
+        sharedService.clientIdentifier = clientIdentifier
+      }
+      if (landingPageUrl !== undefined) {
+        sharedService.landingPageUrl = landingPageUrl
+      }
+      if (description !== undefined) {
+        sharedService.description = description
+      }
+      sharedService.updatedBy = updatedBy
+
+      await transactionEntityManager.save(sharedService)
+    })
+
+    const updatedSharedService =
+      await this.getSharedServiceWithRoles(sharedServiceId)
+    if (!updatedSharedService) {
+      throw new UnexpectedStateError(
+        `Shared service load failed after update: ${sharedServiceId}`,
+      )
+    }
+
+    return updatedSharedService
   }
 
   public async updateSharedServiceStatus(
