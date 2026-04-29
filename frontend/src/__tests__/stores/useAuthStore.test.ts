@@ -1,4 +1,4 @@
-import type { KeycloakTokenParsed } from 'keycloak-js'
+import { type KeycloakTokenParsed } from 'keycloak-js'
 import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 

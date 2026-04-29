@@ -19,24 +19,24 @@ export const useTenantRequestStore = defineStore('tenantRequest', () => {
   /**
    * Creates a new tenant request.
    *
-   * @param {TenantRequestDetailFields} tenantRequestDetails - The details of
-   *   the tenant request.
-   * @param {User} user - The user creating the request.
-   * @returns {Promise<void>}
+   * @param tenantRequestDetails - The details of the tenant request.
+   * @param user - The user creating the request.
+   * @returns A promise that resolves when the tenant request is created.
    */
   const createTenantRequest = async (
     tenantRequestDetails: TenantRequestDetailFields,
     user: User,
-  ) => {
+  ): Promise<void> => {
     await tenantRequestService.createTenantRequest(tenantRequestDetails, user)
   }
 
   /**
    * Fetches all tenant requests from the API and updates the store.
    *
-   * @returns {Promise<void>}
+   * @returns A promise that resolves when the tenant requests are fetched and
+   *   the store is updated.
    */
-  const fetchTenantRequests = async () => {
+  const fetchTenantRequests = async (): Promise<void> => {
     loading.value = true
     try {
       const tenantList = await tenantRequestService.getTenantRequests()
@@ -51,16 +51,18 @@ export const useTenantRequestStore = defineStore('tenantRequest', () => {
    * reason.
    *
    * @param tenantRequestId - The ID of the tenant request.
-   * @param {string} status - The new status for the tenant request.
-   * @param {string} [rejectionReason] - The reason for rejection, if any.
-   * @returns {Promise<void>}
+   * @param status - The new status for the tenant request.
+   * @param rejectionReason - Optional reason for rejection.
+   * @param tenantName - Optional new tenant name, used when there is a name
+   *   clash.
+   * @returns A promise that resolves when the tenant request status is updated.
    */
   const updateTenantRequestStatus = async (
     tenantRequestId: TenantRequestId,
     status: string,
     rejectionReason?: string,
     tenantName?: string,
-  ) => {
+  ): Promise<void> => {
     await tenantRequestService.updateTenantRequestStatus(
       tenantRequestId,
       status,
@@ -74,6 +76,7 @@ export const useTenantRequestStore = defineStore('tenantRequest', () => {
 
     if (tenantRequest) {
       tenantRequest.status = status
+
       if (rejectionReason) {
         tenantRequest.rejectionReason = rejectionReason
       }

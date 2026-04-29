@@ -9,14 +9,14 @@ import SimpleDialog, {
   type DialogButton,
 } from '@/components/ui/SimpleDialog.vue'
 import { useNotification } from '@/composables/useNotification'
-import type { Group } from '@/models/group.model'
+import { type Group } from '@/models/group.model'
 import { type GroupServiceRole } from '@/models/groupservicerole.model'
 import {
   SharedServiceArray,
   SharedServiceRole,
   type SharedServiceRoleId,
 } from '@/models/sharedservicerole.model'
-import type { Tenant } from '@/models/tenant.model'
+import { type Tenant } from '@/models/tenant.model'
 import { useGroupStore } from '@/stores/useGroupStore'
 import { useServiceStore } from '@/stores/useServiceStore'
 import { ROLES } from '@/utils/constants'

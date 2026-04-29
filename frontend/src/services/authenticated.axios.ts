@@ -1,4 +1,4 @@
-import axios from 'axios'
+import axios, { type AxiosInstance } from 'axios'
 
 import { config } from '@/services/config.service'
 import { useAuthStore } from '@/stores/useAuthStore'
@@ -6,10 +6,11 @@ import { useAuthStore } from '@/stores/useAuthStore'
 /**
  * Create an Axios instance with authentication and default config.
  *
- * @param [timeout=60000] Milliseconds before timing out the request.
- * @returns {import('axios').AxiosInstance} An Axios instance.
+ * @param timeout - Milliseconds before timing out the request. Default is 60000
+ *     (1 minute).
+ * @returns An Axios instance with auth headers and the given timeout.
  */
-export function authenticatedAxios(timeout = 60000) {
+export function authenticatedAxios(timeout = 60000): AxiosInstance {
   const instance = axios.create({ timeout })
 
   instance.interceptors.request.use(async (cfg) => {

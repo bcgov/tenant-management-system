@@ -6,7 +6,7 @@ export type ServiceId = string & { readonly __brand: 'ServiceId' }
 /**
  * The shape of the data that comes from the API.
  */
-type ServiceApiData = {
+export type ServiceApiData = {
   /**
    * Client identifier for the service.
    */

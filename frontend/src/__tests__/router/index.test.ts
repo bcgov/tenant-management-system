@@ -1,6 +1,6 @@
 import { mount, VueWrapper } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { ComponentPublicInstance } from 'vue'
+import { type ComponentPublicInstance } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 
 import router from '@/router'

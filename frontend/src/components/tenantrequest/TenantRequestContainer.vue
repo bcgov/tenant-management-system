@@ -7,7 +7,7 @@ import TenantRequestDisplay from '@/components/tenantrequest/TenantRequestDispla
 import { useNotification } from '@/composables/useNotification'
 import { DomainError } from '@/errors/domain/DomainError'
 import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
-import type { TenantRequest } from '@/models/tenantrequest.model'
+import { type TenantRequest } from '@/models/tenantrequest.model'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { useTenantRequestStore } from '@/stores/useTenantRequestStore'
 import { useTenantStore } from '@/stores/useTenantStore'

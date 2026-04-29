@@ -7,6 +7,7 @@ import {
 import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
 import { ValidationError } from '@/errors/domain/ValidationError'
 import {
+  type TenantRequestApiData,
   type TenantRequestDetailFields,
   type TenantRequestId,
 } from '@/models/tenantrequest.model'
@@ -18,15 +19,15 @@ export const tenantRequestService = {
   /**
    * Creates a new tenant request with the specified details and user.
    *
-   * @param {TenantRequestDetailFields} tenantRequestDetails - The details of
-   *   the tenant request to create.
-   * @param {User} user - The user that is creating the tenant request.
+   * @param tenantRequestDetails - The details of the tenant request to create.
+   * @param user - The user that is creating the tenant request.
+   * @returns A promise that resolves when the request succeeds.
    * @throws Will throw an error if the API request fails.
    */
   async createTenantRequest(
     tenantRequestDetails: TenantRequestDetailFields,
     user: User,
-  ) {
+  ): Promise<void> {
     try {
       const requestBody = {
         description: tenantRequestDetails.description,
@@ -68,11 +69,10 @@ export const tenantRequestService = {
   /**
    * Retrieves all the tenant requests.
    *
-   * @returns {Promise<object[]>} A promise that resolves to an array of
-   *   tenant-request-like objects.
+   * @returns A promise that resolves to an array of tenant request data.
    * @throws Will throw an error if the API request fails.
    */
-  async getTenantRequests() {
+  async getTenantRequests(): Promise<TenantRequestApiData[]> {
     try {
       const response = await api.get('/tenant-requests')
 
@@ -88,9 +88,11 @@ export const tenantRequestService = {
    * Updates the status of a tenant request.
    *
    * @param tenantRequestId - The ID of the tenant request to update.
-   * @param {string} status - The new status (APPROVED, REJECTED, etc.).
-   * @param {string} [rejectionReason] - Optional rejection reason (required for
-   *   REJECTED status).
+   * @param status - The new status (APPROVED, REJECTED, etc.).
+   * @param rejectionReason - Optional rejection reason (required for REJECTED
+   *     status).
+   * @param tenantName - The new tenant name used when there is a name clash.
+   * @returns A promise that resolves when the request succeeds.
    * @throws Will throw an error if the API request fails.
    */
   async updateTenantRequestStatus(
@@ -98,7 +100,7 @@ export const tenantRequestService = {
     status: string,
     rejectionReason?: string,
     tenantName?: string,
-  ) {
+  ): Promise<void> {
     try {
       const requestBody: {
         status: string

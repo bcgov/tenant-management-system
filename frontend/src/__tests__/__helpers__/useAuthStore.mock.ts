@@ -2,7 +2,7 @@ import { vi } from 'vitest'
 import { reactive } from 'vue'
 
 import { makeUser } from '@/__tests__/__factories__'
-import type { User } from '@/models/user.model'
+import { type User } from '@/models/user.model'
 
 const storeState = reactive({
   sessionExpired: false,

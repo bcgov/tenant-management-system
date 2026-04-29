@@ -8,7 +8,7 @@ import {
 } from '@/__tests__/__helpers__/useAuthStore.mock'
 
 import AppHeader from '@/components/layout/AppHeader.vue'
-import type { User } from '@/models/user.model'
+import { type User } from '@/models/user.model'
 
 const mountComponent = (user: User | null = null) =>
   mount(AppHeader, {
