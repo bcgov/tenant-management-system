@@ -1,16 +1,23 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { Role } from '@/models/role.model'
-import { SsoUser } from '@/models/ssouser.model'
-import { Tenant, type TenantId } from '@/models/tenant.model'
-import { User, type UserId } from '@/models/user.model'
+import { makeRole, makeSsoUser, makeUser } from '@/__tests__/__factories__'
+
+import { Role, toRoleId } from '@/models/role.model'
+import { SsoUser, toSsoUserId } from '@/models/ssouser.model'
+import {
+  Tenant,
+  type TenantApiData,
+  type TenantId,
+  toTenantId,
+} from '@/models/tenant.model'
+import { toUserId, User, type UserId } from '@/models/user.model'
 import { ROLES } from '@/utils/constants'
 
 describe('Tenant model', () => {
   beforeEach(() => {
     vi.spyOn(User, 'fromApiData').mockImplementation(
       (apiData: { id: string; ssoUser: SsoUser; roles?: Role[] }) =>
-        new User(apiData.id, apiData.ssoUser, apiData.roles ?? []),
+        new User(toUserId(apiData.id), apiData.ssoUser, apiData.roles ?? []),
     )
   })
 
@@ -20,37 +27,19 @@ describe('Tenant model', () => {
 
   it('constructor assigns properties correctly', () => {
     const users = [
-      new User(
-        'user1',
-        new SsoUser(
-          'sso1',
-          'username1',
-          'First',
-          'Last',
-          'Display',
-          'email1@example.com',
-        ),
-        [new Role('r1', 'role1', 'desc1')],
-      ),
-      new User(
-        'user2',
-        new SsoUser(
-          'sso2',
-          'username2',
-          'First2',
-          'Last2',
-          'Display2',
-          'email2@example.com',
-        ),
-        [new Role('r2', 'role2', 'desc2')],
-      ),
+      makeUser({
+        id: 'user1',
+      }),
+      makeUser({
+        id: 'user2',
+      }),
     ]
 
     const tenant = new Tenant(
       'creatorUser',
       '2025-08-01',
       'Tenant description',
-      'tenant123',
+      toTenantId('tenant123'),
       'Tenant Name',
       'Ministry',
       users,
@@ -64,7 +53,7 @@ describe('Tenant model', () => {
       'creatorUser',
       '2025-08-01',
       'Tenant description',
-      'tenant123',
+      toTenantId('tenant123'),
       'Tenant Name',
       'Ministry',
       null as unknown as User[],
@@ -74,7 +63,7 @@ describe('Tenant model', () => {
   })
 
   it('fromApiData converts API data to Tenant instance correctly', () => {
-    const apiData = {
+    const apiData: TenantApiData = {
       createdBy: 'creatorUser',
       createdDateTime: '2025-08-01',
       description: 'API description',
@@ -84,27 +73,39 @@ describe('Tenant model', () => {
       users: [
         {
           id: 'userA' as UserId,
-          ssoUser: new SsoUser(
-            'ssoA',
-            'userA',
-            'FirstA',
-            'LastA',
-            'DisplayA',
-            'a@example.com',
-          ),
-          roles: [new Role('r1', ROLES.TENANT_OWNER.value, 'Owner role')],
+          ssoUser: {
+            ssoUserId: toSsoUserId('ssoA'),
+            userName: 'userA',
+            firstName: 'FirstA',
+            lastName: 'LastA',
+            displayName: 'DisplayA',
+            email: 'a@example.com',
+          },
+          roles: [
+            {
+              id: toRoleId('r1'),
+              name: ROLES.TENANT_OWNER.value,
+              description: 'Owner role',
+            },
+          ],
         },
         {
           id: 'userB' as UserId,
-          ssoUser: new SsoUser(
-            'ssoB',
-            'userB',
-            'FirstB',
-            'LastB',
-            'DisplayB',
-            'b@example.com',
-          ),
-          roles: [new Role('r2', 'SomeRole', 'Other role')],
+          ssoUser: {
+            ssoUserId: toSsoUserId('ssoB'),
+            userName: 'userB',
+            firstName: 'FirstB',
+            lastName: 'LastB',
+            displayName: 'DisplayB',
+            email: 'b@example.com',
+          },
+          roles: [
+            {
+              id: toRoleId('r2'),
+              name: 'SomeRole',
+              description: 'Other role',
+            },
+          ],
         },
       ],
     }
@@ -144,7 +145,7 @@ describe('Tenant model', () => {
       createdBy: 'creatorUser',
       createdDateTime: '2025-08-01',
       description: 'API description',
-      id: 'tenant789',
+      id: toTenantId('tenant789'),
       name: 'API Tenant',
       ministryName: 'Ministry',
       users: null,
@@ -159,67 +160,48 @@ describe('Tenant model', () => {
   })
 
   it('findUser returns the user matching the ssoUserId', () => {
-    const ssoUserId = 'sso1'
-    const user = new User(
-      'user1',
-      new SsoUser(
-        ssoUserId,
-        'username1',
-        'First',
-        'Last',
-        'Display',
-        'email1@example.com',
-      ),
-      [],
-    )
+    const ssoUserId = toSsoUserId('sso1')
+    const user = makeUser({ ssoUser: makeSsoUser({ ssoUserId }) })
+
     const tenant = new Tenant(
       'creatorUser',
       '2025-08-01',
       '',
-      'tenant1',
+      toTenantId('tenant1'),
       'Name',
       'Ministry',
       [user],
     )
 
     expect(tenant.findUser(ssoUserId)).toEqual(user)
-    expect(tenant.findUser('not-found')).toBeUndefined()
+    expect(tenant.findUser(toSsoUserId('not-found'))).toBeUndefined()
   })
 
   it('getOwners returns users with TENANT_OWNER role', () => {
-    const ownerRole = new Role('r1', ROLES.TENANT_OWNER.value, 'Owner role')
-    const otherRole = new Role('r2', 'SomeOtherRole', 'Other role')
-
-    const ownerUser = new User(
-      'user1',
-      new SsoUser(
-        'sso1',
-        'username1',
-        'First',
-        'Last',
-        'Display',
-        'email1@example.com',
-      ),
-      [ownerRole],
-    )
-    const otherUser = new User(
-      'user2',
-      new SsoUser(
-        'sso2',
-        'username2',
-        'First2',
-        'Last2',
-        'Display2',
-        'email2@example.com',
-      ),
-      [otherRole],
-    )
+    const ownerRole = makeRole({
+      id: 'r1',
+      name: ROLES.TENANT_OWNER.value,
+      description: 'Owner role',
+    })
+    const otherRole = makeRole({
+      id: 'r2',
+      name: 'SomeOtherRole',
+      description: 'Other role',
+    })
+    const ownerUser = makeUser({
+      ssoUser: makeSsoUser({ ssoUserId: toSsoUserId('sso1') }),
+      roles: [ownerRole],
+    })
+    const otherUser = makeUser({
+      ssoUser: makeSsoUser({ ssoUserId: toSsoUserId('sso2') }),
+      roles: [otherRole],
+    })
 
     const tenant = new Tenant(
       'creatorUser',
       '2025-08-01',
       '',
-      'tenant1',
+      toTenantId('tenant1'),
       'Name',
       'Ministry',
       [ownerUser, otherUser],
@@ -228,75 +210,54 @@ describe('Tenant model', () => {
     expect(tenant.getOwners()).toEqual([ownerUser])
     expect(tenant.getFirstOwner()).toEqual(ownerUser)
   })
+})
 
-  it('userHasRole returns true if user has the role', () => {
-    const roleName = ROLES.TENANT_OWNER.value
-    const user = new User(
-      'user1',
-      new SsoUser(
-        'sso1',
-        'username1',
-        'First',
-        'Last',
-        'Display',
-        'email1@example.com',
-      ),
-      [new Role('r1', roleName, 'Owner role')],
-    )
-    const tenant = new Tenant(
-      'creatorUser',
-      '2025-08-01',
-      '',
-      'tenant1',
-      'Name',
-      'Ministry',
-      [user],
-    )
+it('userHasRole returns true if user has the role', () => {
+  const roleName = ROLES.TENANT_OWNER.value
+  const user = makeUser({
+    roles: [makeRole({ id: 'r1', name: roleName, description: 'Owner role' })],
+  })
+  const tenant = new Tenant(
+    'creatorUser',
+    '2025-08-01',
+    '',
+    toTenantId('tenant1'),
+    'Name',
+    'Ministry',
+    [user],
+  )
 
-    expect(tenant.userHasRole(user, roleName)).toBe(true)
-    expect(tenant.userHasRole(user, 'NonexistentRole')).toBe(false)
+  expect(tenant.userHasRole(user, roleName)).toBe(true)
+  expect(tenant.userHasRole(user, 'NonexistentRole')).toBe(false)
+})
+
+it('userHasRole returns false if user does not have the role or is not found', () => {
+  const roleName = ROLES.TENANT_OWNER.value
+  const user = makeUser({
+    roles: [
+      makeRole({ id: 'r1', name: 'SomeOtherRole', description: 'Other role' }),
+    ],
+  })
+  const tenant = new Tenant(
+    'creatorUser',
+    '2025-08-01',
+    'Description',
+    toTenantId('tenant1'),
+    'Name',
+    'Ministry',
+    [user],
+  )
+
+  // User exists but does not have the role
+  expect(tenant.userHasRole(user, roleName)).toBe(false)
+
+  // User not found in tenant users
+  const unknownUser = makeUser({
+    id: 'otherUser',
+    roles: [
+      makeRole({ id: 'r2', name: 'SomeOtherRole', description: 'Other role' }),
+    ],
   })
 
-  it('userHasRole returns false if user does not have the role or is not found', () => {
-    const roleName = ROLES.TENANT_OWNER.value
-    const user = new User(
-      'user1',
-      new SsoUser(
-        'sso1',
-        'username1',
-        'First',
-        'Last',
-        'Display',
-        'email1@example.com',
-      ),
-      [new Role('r1', 'SomeOtherRole', 'Other role')],
-    )
-    const tenant = new Tenant(
-      'creatorUser',
-      '2025-08-01',
-      '',
-      'tenant1',
-      'Name',
-      'Ministry',
-      [user],
-    )
-
-    // User exists but does not have the role
-    expect(tenant.userHasRole(user, roleName)).toBe(false)
-
-    // User not found in tenant users
-    const unknownUser = new User(
-      'user2',
-      new SsoUser(
-        'sso2',
-        'username2',
-        'First2',
-        'Last2',
-        'Display2',
-        'email2@example.com',
-      ),
-      [new Role('r2', roleName, 'Owner role')],
-    )
-    expect(tenant.userHasRole(unknownUser, roleName)).toBe(false)
-  })
+  expect(tenant.userHasRole(unknownUser, roleName)).toBe(false)
 })

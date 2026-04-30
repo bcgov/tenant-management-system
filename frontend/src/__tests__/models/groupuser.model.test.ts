@@ -1,18 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { GroupUser } from '@/models/groupuser.model'
-import { Role } from '@/models/role.model'
-import { SsoUser } from '@/models/ssouser.model'
-import { User } from '@/models/user.model'
+import { makeSsoUser, makeUser } from '@/__tests__/__factories__'
 
-const fakeSsoUser = new SsoUser(
-  'sso-123',
-  'jdoe',
-  'John',
-  'Doe',
-  'John Doe',
-  'jdoe@example.com',
-)
+import { GroupUser, toGroupUserId } from '@/models/groupuser.model'
+import { Role } from '@/models/role.model'
+import { toUserId, User } from '@/models/user.model'
+
+const fakeSsoUser = makeSsoUser()
 
 const fakeUserData = {
   id: 'user1',
@@ -20,14 +14,14 @@ const fakeUserData = {
   roles: [] as Role[],
 }
 
-const fakeUser = new User(fakeUserData.id, fakeSsoUser, fakeUserData.roles)
+const fakeUser = makeUser({ ssoUser: fakeSsoUser })
 
 describe('GroupUser model', () => {
   let mockedUserInstance: User
 
   beforeEach(() => {
     mockedUserInstance = new User(
-      fakeUserData.id,
+      toUserId(fakeUserData.id),
       fakeSsoUser,
       fakeUserData.roles,
     )
@@ -40,13 +34,16 @@ describe('GroupUser model', () => {
   })
 
   it('constructor assigns properties correctly', () => {
-    const groupUser = new GroupUser('groupUserId', mockedUserInstance)
+    const groupUser = new GroupUser(
+      toGroupUserId('groupUserId'),
+      mockedUserInstance,
+    )
     expect(groupUser.id).toBe('groupUserId')
     expect(groupUser.user).toBe(mockedUserInstance)
   })
 
   it('fromApiData converts API data to GroupUser instance correctly', () => {
-    const apiData = new GroupUser('groupUser123', fakeUser)
+    const apiData = new GroupUser(toGroupUserId('groupUser123'), fakeUser)
 
     const groupUser = GroupUser.fromApiData(apiData)
 

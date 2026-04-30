@@ -1,16 +1,21 @@
 import { describe, it, expect } from 'vitest'
 
-import { SsoUser } from '@/models/ssouser.model'
+import {
+  SsoUser,
+  toSsoUserId,
+  type SsoUserApiData,
+} from '@/models/ssouser.model'
 
 describe('SsoUser model', () => {
   it('constructor assigns all properties correctly', () => {
     const ssoUser = new SsoUser(
-      'sso123',
+      toSsoUserId('sso123'),
       'jdoe',
       'John',
       'Doe',
       'John Doe',
       'jdoe@example.com',
+      'idir',
     )
 
     expect(ssoUser.ssoUserId).toBe('sso123')
@@ -23,12 +28,13 @@ describe('SsoUser model', () => {
 
   it('constructor works with missing optional fields', () => {
     const ssoUser = new SsoUser(
-      'sso456',
+      toSsoUserId('sso456'),
       undefined,
       'Jane',
       'Smith',
       'Jane Smith',
       undefined,
+      'idir',
     )
 
     expect(ssoUser.ssoUserId).toBe('sso456')
@@ -37,13 +43,14 @@ describe('SsoUser model', () => {
   })
 
   it('fromApiData creates SsoUser instance correctly with all fields', () => {
-    const apiData = {
-      ssoUserId: 'sso789',
+    const apiData: SsoUserApiData = {
+      ssoUserId: toSsoUserId('sso789'),
       userName: 'jsmith',
       firstName: 'Joe',
       lastName: 'Smith',
       displayName: 'Joe Smith',
       email: 'joe.smith@example.com',
+      idpType: 'idir',
     }
 
     const ssoUser = SsoUser.fromApiData(apiData)
@@ -58,8 +65,8 @@ describe('SsoUser model', () => {
   })
 
   it('fromApiData creates SsoUser instance correctly without optional fields', () => {
-    const apiData = {
-      ssoUserId: 'sso101',
+    const apiData: SsoUserApiData = {
+      ssoUserId: toSsoUserId('sso101'),
       firstName: 'Alice',
       lastName: 'Wonderland',
       displayName: 'Alice W.',

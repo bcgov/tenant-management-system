@@ -3,14 +3,17 @@ import { createPinia, setActivePinia } from 'pinia'
 import { nextTick } from 'vue'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import {
+  makeGroup,
+  makeRole,
+  makeSsoUser,
+  makeTenant,
+  makeUser,
+} from '@/__tests__/__factories__'
+
 import TenantUserManagementContainer from '@/components/tenant/UserManagementContainer.vue'
 import { useNotification } from '@/composables/useNotification'
 import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
-import { Group } from '@/models/group.model'
-import { Role } from '@/models/role.model'
-import { SsoUser } from '@/models/ssouser.model'
-import { Tenant } from '@/models/tenant.model'
-import { User } from '@/models/user.model'
 import { useGroupStore } from '@/stores/useGroupStore'
 import { useRoleStore } from '@/stores/useRoleStore'
 import { useTenantStore } from '@/stores/useTenantStore'
@@ -20,42 +23,6 @@ import { IDIR_SEARCH_TYPE } from '@/utils/constants'
 vi.mock('@/composables/useNotification', () => ({
   useNotification: vi.fn(),
 }))
-
-// --- Helpers -----------------------------------------------------------------
-
-function makeUser(id = 'u1', displayName = 'Test User') {
-  const ssoUser = new SsoUser(
-    id,
-    'username',
-    'First',
-    'Last',
-    displayName,
-    'e@e.com',
-  )
-  return new User(id, ssoUser, [])
-}
-
-function makeGroup(id = 'g1') {
-  return new Group('creator', '2026-01-01', 'desc', id, 'Group One', [])
-}
-
-function makeTenant(id = 't1') {
-  return new Tenant(
-    'creator',
-    '2026-01-01',
-    'desc',
-    id,
-    'Tenant One',
-    'CITZ',
-    [],
-  )
-}
-
-function makeRole(id = 'r1') {
-  return new Role(id, 'Role One', 'desc')
-}
-
-// --- Setup -------------------------------------------------------------------
 
 function child(wrapper: ReturnType<typeof mountComponent>) {
   return wrapper.getComponent({ name: 'TenantUserManagement' })
@@ -158,7 +125,7 @@ describe('TenantUserManagementContainer', () => {
     it('adds user to each provided group and shows group success notification', async () => {
       const tenant = makeTenant()
       const user = makeUser()
-      const groups = [makeGroup('g1'), makeGroup('g2')]
+      const groups = [makeGroup({ id: 'g1' }), makeGroup({ id: 'g2' })]
       tenantStore.addTenantUser = vi.fn().mockResolvedValue(undefined)
       groupStore.addGroupUser = vi.fn().mockResolvedValue(undefined)
 
@@ -202,7 +169,9 @@ describe('TenantUserManagementContainer', () => {
     })
 
     it('shows duplicate error and clears searchResults on DuplicateEntityError', async () => {
-      const user = makeUser('u1', 'Jane Doe')
+      const user = makeUser({
+        ssoUser: makeSsoUser({ displayName: 'Jane Doe' }),
+      })
       tenantStore.addTenantUser = vi
         .fn()
         .mockRejectedValue(new DuplicateEntityError())
@@ -264,8 +233,12 @@ describe('TenantUserManagementContainer', () => {
 
   describe('handleClearSearch', () => {
     it('sets searchResults to null', async () => {
-      userStore.searchIdirEmail = vi.fn().mockResolvedValue([makeUser('a')])
-      userStore.searchBCeIDEmail = vi.fn().mockResolvedValue([makeUser('b')])
+      userStore.searchIdirEmail = vi
+        .fn()
+        .mockResolvedValue([makeUser({ id: 'a' })])
+      userStore.searchBCeIDEmail = vi
+        .fn()
+        .mockResolvedValue([makeUser({ id: 'b' })])
 
       const wrapper = mountComponent()
       await child(wrapper).vm.$emit(
@@ -287,8 +260,12 @@ describe('TenantUserManagementContainer', () => {
 
   describe('@cancel inline handler', () => {
     it('sets searchResults to null on cancel', async () => {
-      userStore.searchIdirEmail = vi.fn().mockResolvedValue([makeUser('a')])
-      userStore.searchBCeIDEmail = vi.fn().mockResolvedValue([makeUser('b')])
+      userStore.searchIdirEmail = vi
+        .fn()
+        .mockResolvedValue([makeUser({ id: 'a' })])
+      userStore.searchBCeIDEmail = vi
+        .fn()
+        .mockResolvedValue([makeUser({ id: 'b' })])
 
       const wrapper = mountComponent()
       await child(wrapper).vm.$emit(
@@ -398,13 +375,21 @@ describe('TenantUserManagementContainer', () => {
 
   describe('handleUserSearch', () => {
     beforeEach(() => {
-      userStore.searchIdirFirstName = vi.fn().mockResolvedValue([makeUser('a')])
-      userStore.searchIdirLastName = vi.fn().mockResolvedValue([makeUser('b')])
-      userStore.searchIdirEmail = vi.fn().mockResolvedValue([makeUser('c')])
+      userStore.searchIdirFirstName = vi
+        .fn()
+        .mockResolvedValue([makeUser({ id: 'a' })])
+      userStore.searchIdirLastName = vi
+        .fn()
+        .mockResolvedValue([makeUser({ id: 'b' })])
+      userStore.searchIdirEmail = vi
+        .fn()
+        .mockResolvedValue([makeUser({ id: 'c' })])
       userStore.searchBCeIDDisplayName = vi
         .fn()
-        .mockResolvedValue([makeUser('d')])
-      userStore.searchBCeIDEmail = vi.fn().mockResolvedValue([makeUser('e')])
+        .mockResolvedValue([makeUser({ id: 'd' })])
+      userStore.searchBCeIDEmail = vi
+        .fn()
+        .mockResolvedValue([makeUser({ id: 'e' })])
     })
 
     it('searches by first name and concatenates BCeID display name results', async () => {

@@ -98,7 +98,7 @@ export function makeSsoUser(
     overrides.lastName ?? 'test-sso-user-last-name',
     overrides.displayName ?? 'test-sso-user-display-name',
     overrides.email ?? 'test-sso-user-email',
-    overrides.idpType ?? 'test-sso-user-idpType',
+    overrides.idpType ?? 'test-sso-user-idp-type',
   )
 }
 

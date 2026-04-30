@@ -6,5 +6,5 @@
   },
   "exclude": [],
   "extends": "./tsconfig.app.json",
-  "include": ["src/**/__tests__/**/*", "env.d.ts", "vitest.setup.ts"]
+  "include": ["src/__tests__/**/*.ts", "env.d.ts", "vitest.setup.ts"]
 }

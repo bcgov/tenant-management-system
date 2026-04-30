@@ -1,6 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { makeUser } from '@/__tests__/__factories__'
+
 import { type GroupId } from '@/models/group.model'
+import { type GroupUserId } from '@/models/groupuser.model'
+import { type TenantId } from '@/models/tenant.model'
 import * as utils from '@/services/utils'
 
 vi.mock('@/services/utils', () => ({
@@ -39,14 +43,12 @@ vi.mock('@/services/authenticated.axios', () => ({
 
 import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
 import { ValidationError } from '@/errors/domain/ValidationError'
-import { SsoUser } from '@/models/ssouser.model'
-import { User } from '@/models/user.model'
 import { groupService } from '@/services/group.service'
 
 describe('groupService', () => {
-  const tenantId = '1'
+  const tenantId = '1' as TenantId
   const groupId = '123' as GroupId
-  const groupUserId = '456'
+  const groupUserId = '456' as GroupUserId
 
   const fakeGroup = {
     id: groupId,
@@ -54,15 +56,7 @@ describe('groupService', () => {
     description: 'Group description',
   }
 
-  const ssoFakeUser: SsoUser = new SsoUser(
-    '789',
-    'johndoe',
-    'John',
-    'Doe',
-    'John Doe',
-    'john.doe@example.com',
-  )
-  const fakeUser: User = new User('user123', ssoFakeUser, [])
+  const fakeUser = makeUser()
 
   const fakeGroupUser = {
     id: groupUserId,

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   makeRoleTenantOwner,
+  makeSsoUser,
   makeTenant,
   makeUser,
   makeUserBceid,
@@ -22,7 +23,6 @@ describe('permissions', () => {
   describe('currentUserHasRole', () => {
     it('returns true when the current user has the specified role in the tenant', () => {
       const user = makeUser({
-        ssoUserId: 'user-123',
         roles: [makeRoleTenantOwner()],
       })
       mockAuthStore(user)
@@ -32,7 +32,7 @@ describe('permissions', () => {
     })
 
     it('returns false when the current user does not have the specified role', () => {
-      const user = makeUser({ ssoUserId: 'user-123', roles: [] })
+      const user = makeUser({ roles: [] })
       mockAuthStore(user)
       const tenant = makeTenant({ users: [user] })
 
@@ -40,8 +40,10 @@ describe('permissions', () => {
     })
 
     it('returns false when the current user is not in the tenant', () => {
-      const user = makeUser({ ssoUserId: 'user-123' })
-      const otherUser = makeUser({ ssoUserId: 'other-user' })
+      const user = makeUser()
+      const otherUser = makeUser({
+        ssoUser: makeSsoUser({ ssoUserId: 'other-user' }),
+      })
       mockAuthStore(user)
       const tenant = makeTenant({ users: [otherUser] })
 

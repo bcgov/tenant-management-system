@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { type App, createApp } from 'vue'
+
 import { handleInitError, initializeApp } from '@/main'
 import { ConfigError, loadConfig } from '@/services/config.service'
 

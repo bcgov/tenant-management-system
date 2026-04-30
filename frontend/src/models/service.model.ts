@@ -2,6 +2,7 @@ import { type ServiceRoleApiData } from './servicerole.model'
 import { ServiceRole } from './servicerole.model'
 
 export type ServiceId = string & { readonly __brand: 'ServiceId' }
+export const toServiceId = (id: string): ServiceId => id as ServiceId
 
 /**
  * The shape of the data that comes from the API.
