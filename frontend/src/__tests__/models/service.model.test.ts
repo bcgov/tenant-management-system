@@ -1,12 +1,16 @@
 import { describe, expect, it } from 'vitest'
 
-import { Service } from '@/models/service.model'
-import { type RoleId } from '@/models/role.model'
+import {
+  Service,
+  toServiceId,
+  type ServiceApiData,
+} from '@/models/service.model'
+import { toServiceRoleId } from '@/models/servicerole.model'
 
 describe('Service model', () => {
   it('constructor assigns all properties correctly', () => {
     const service = new Service(
-      'service123',
+      toServiceId('service123'),
       'My Service',
       '2025-08-01',
       '',
@@ -23,8 +27,8 @@ describe('Service model', () => {
   })
 
   it('fromApiData creates Service instance correctly', () => {
-    const apiData = {
-      id: 'service456',
+    const apiData: ServiceApiData = {
+      id: toServiceId('service456'),
       name: 'API Service',
       createdDateTime: '2025-08-01',
       clientIdentifier: 'client-789',
@@ -32,10 +36,9 @@ describe('Service model', () => {
       description: 'A service from API',
       isActive: true,
       updatedDateTime: '2025-08-02',
-      serviceRoles: [],
       roles: [
         {
-          id: 'role456' as RoleId,
+          id: toServiceRoleId('role456'),
           name: 'User',
           description: 'Standard user role',
           allowedIdentityProviders: [],

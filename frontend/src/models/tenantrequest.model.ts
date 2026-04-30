@@ -1,4 +1,6 @@
 export type TenantRequestId = string & { readonly __brand: 'TenantRequestId' }
+export const toTenantRequestId = (id: string): TenantRequestId =>
+  id as TenantRequestId
 
 /**
  * The shape of the data that comes from the API.

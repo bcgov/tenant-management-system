@@ -1,21 +1,22 @@
 import { describe, expect, it } from 'vitest'
 
-import { Role, type RoleId } from '@/models/role.model'
+import { makeRole, makeSsoUser } from '@/__tests__/__factories__'
+
+import { Role } from '@/models/role.model'
 import { SsoUser } from '@/models/ssouser.model'
-import { User, type UserId } from '@/models/user.model'
+import {
+  toUserId,
+  User,
+  type UserApiData,
+  type UserId,
+} from '@/models/user.model'
 
 describe('User model', () => {
   it('constructor assigns properties correctly', () => {
-    const ssoUser = new SsoUser(
-      'sso1',
-      'username1',
-      'First',
-      'Last',
-      'Display',
-      'email@example.com',
-    )
-    const roles = [new Role('r1', 'role1', 'desc1')]
-    const user = new User('user1', ssoUser, roles)
+    const ssoUser = makeSsoUser()
+    const roles = [makeRole()]
+
+    const user = new User(toUserId('user1'), ssoUser, roles)
 
     expect(user.id).toBe('user1')
     expect(user.ssoUser).toBe(ssoUser)
@@ -23,41 +24,28 @@ describe('User model', () => {
   })
 
   it('fromApiData converts API data to User instance correctly', () => {
-    const apiData = {
+    const roles = [
+      makeRole({ name: 'role1', description: 'desc1' }),
+      makeRole({ name: 'role2', description: 'desc2' }),
+    ]
+    const apiData: UserApiData = {
       id: 'userApi' as UserId,
-      ssoUser: new SsoUser(
-        'ssoApi',
-        'usernameApi',
-        'FirstApi',
-        'LastApi',
-        'DisplayApi',
-        'api@example.com',
-      ),
-      roles: [
-        { id: 'r1' as RoleId, name: 'role1', description: 'desc1' },
-        { id: 'r2' as RoleId, name: 'role2', description: 'desc2' },
-      ],
+      ssoUser: makeSsoUser(),
+      roles,
     }
 
     const user = User.fromApiData(apiData)
 
     expect(user.id).toBe(apiData.id)
     expect(user.ssoUser).toBeInstanceOf(SsoUser)
-    expect(user.roles).toHaveLength(apiData.roles.length)
+    expect(user.roles).toHaveLength(roles.length)
     expect(user.roles[0]).toBeInstanceOf(Role)
   })
 
   it('fromApiData handles missing roles gracefully', () => {
-    const apiData = {
-      id: 'userApiNoRoles',
-      ssoUser: new SsoUser(
-        'ssoNoRoles',
-        'usernameNoRoles',
-        'FirstNoRoles',
-        'LastNoRoles',
-        'DisplayNoRoles',
-        'noroles@example.com',
-      ),
+    const apiData: UserApiData = {
+      id: toUserId('userApiNoRoles'),
+      ssoUser: makeSsoUser(),
     }
 
     const user = User.fromApiData(apiData)

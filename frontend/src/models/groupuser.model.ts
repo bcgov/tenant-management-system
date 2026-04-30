@@ -1,6 +1,7 @@
 import { User, type UserApiData } from '@/models/user.model'
 
 export type GroupUserId = string & { readonly __brand: 'GroupUserId' }
+export const toGroupUserId = (id: string): GroupUserId => id as GroupUserId
 
 /**
  * The shape of the data that comes from the API.

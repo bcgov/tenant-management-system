@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
-import { TenantRequest } from '@/models/tenantrequest.model'
+import {
+  TenantRequest,
+  type TenantRequestApiData,
+  toTenantRequestId,
+} from '@/models/tenantrequest.model'
 
 describe('TenantRequest model', () => {
   it('constructor assigns properties correctly and sets rejectionReason to empty string', () => {
@@ -8,7 +12,7 @@ describe('TenantRequest model', () => {
       'creatorUser',
       '2025-08-01',
       'Request description',
-      'request123',
+      toTenantRequestId('request123'),
       'Request Name',
       'Ministry',
       'NEW',
@@ -25,12 +29,12 @@ describe('TenantRequest model', () => {
   })
 
   it('fromApiData handles created by username', () => {
-    const apiData = {
+    const apiData: TenantRequestApiData = {
       createdBy: 'creatorUuid',
       createdByUserName: 'creatorUser',
       createdDateTime: '2025-08-01',
       description: 'API request description',
-      id: 'request789',
+      id: toTenantRequestId('request789'),
       name: 'API Request',
       ministryName: 'Ministry',
       status: 'APPROVED',
@@ -42,11 +46,11 @@ describe('TenantRequest model', () => {
   })
 
   it('fromApiData creates an instance correctly including rejectionReason', () => {
-    const apiData = {
+    const apiData: TenantRequestApiData = {
       createdBy: 'creatorUser',
       createdDateTime: '2025-08-01',
       description: 'API request description',
-      id: 'request456',
+      id: toTenantRequestId('request456'),
       name: 'API Request',
       ministryName: 'Ministry',
       status: 'REJECTED',
@@ -66,11 +70,11 @@ describe('TenantRequest model', () => {
   })
 
   it('fromApiData sets rejectionReason to empty string if missing', () => {
-    const apiData = {
+    const apiData: TenantRequestApiData = {
       createdBy: 'creatorUser',
       createdDateTime: '2025-08-01',
       description: 'API request description',
-      id: 'request789',
+      id: toTenantRequestId('request789'),
       name: 'API Request',
       ministryName: 'Ministry',
       status: 'APPROVED',

@@ -2,12 +2,12 @@ import { mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
 
+import { makeGroup, makeTenant, makeUser } from '@/__tests__/__factories__'
+
 import GroupListContainer from '@/components/group/GroupListContainer.vue'
 import { DomainError } from '@/errors/domain/DomainError'
 import { ServerError } from '@/errors/domain/ServerError'
 import { Group } from '@/models/group.model'
-import { SsoUser } from '@/models/ssouser.model'
-import { Tenant } from '@/models/tenant.model'
 import { User } from '@/models/user.model'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { useGroupStore } from '@/stores/useGroupStore'
@@ -37,13 +37,7 @@ vi.mock('@/stores/useGroupStore', () => ({ useGroupStore: vi.fn() }))
 type AuthStoreMock = Partial<ReturnType<typeof useAuthStore>>
 type GroupStoreMock = Partial<ReturnType<typeof useGroupStore>>
 
-const makeTenant = (id = 't1') =>
-  new Tenant('c', 'd', 'desc', id, 'Name', 'm', [])
-const makeUser = (id = 'u1') =>
-  new User(id, new SsoUser(id, 'u', 'F', 'L', 'D', 'e@e.com'), [])
-const makeGroup = (id = 'g1') => new Group('c', 'd', 'desc', id, 'Group', [])
-
-const mountComponent = (tenant = makeTenant()) => {
+const mountComponent = (tenant = makeTenant({ id: 't1' })) => {
   return mount(GroupListContainer, {
     props: { tenant },
     global: {
@@ -184,7 +178,7 @@ describe('GroupListContainer.vue', () => {
   })
 
   it('navigates to group detail on selection', async () => {
-    mockGroup.groups = [makeGroup('g1')]
+    mockGroup.groups = [makeGroup({ id: 'g1' })]
     const wrapper = mountComponent()
     const list = wrapper.getComponent({ name: 'GroupList' })
     await list.vm.$emit('select', 'g1')

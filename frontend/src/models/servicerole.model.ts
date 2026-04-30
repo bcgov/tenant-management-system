@@ -1,4 +1,6 @@
 export type ServiceRoleId = string & { readonly __brand: 'ServiceRoleId' }
+export const toServiceRoleId = (id: string): ServiceRoleId =>
+  id as ServiceRoleId
 
 /**
  * The shape of the data that comes from the API.
