@@ -1,13 +1,10 @@
-import { Group, type GroupId } from '@/models/group.model'
-import { GroupUser, type GroupUserId } from '@/models/groupuser.model'
-import { Role, type RoleId } from '@/models/role.model'
-import { SsoUser, type SsoUserId } from '@/models/ssouser.model'
-import { Tenant, type TenantId } from '@/models/tenant.model'
-import {
-  TenantRequest,
-  type TenantRequestId,
-} from '@/models/tenantrequest.model'
-import { User, type UserId } from '@/models/user.model'
+import { Group, toGroupId } from '@/models/group.model'
+import { GroupUser, toGroupUserId } from '@/models/groupuser.model'
+import { Role, toRoleId } from '@/models/role.model'
+import { SsoUser, toSsoUserId } from '@/models/ssouser.model'
+import { Tenant, toTenantId } from '@/models/tenant.model'
+import { TenantRequest, toTenantRequestId } from '@/models/tenantrequest.model'
+import { toUserId, User } from '@/models/user.model'
 import { ROLES } from '@/utils/constants'
 
 // Group Factory
@@ -26,7 +23,7 @@ export function makeGroup(
     overrides.createdBy ?? 'test-group-created-by',
     overrides.createdDate ?? 'test-group-created-date',
     overrides.description ?? 'test-group-description',
-    (overrides.id ?? 'test-group-id') as GroupId,
+    toGroupId(overrides.id ?? 'test-group-id'),
     overrides.name ?? 'test-group-name',
     overrides.groupUsers ?? [],
   )
@@ -41,7 +38,7 @@ export function makeGroupUser(
   }> = {},
 ): GroupUser {
   return new GroupUser(
-    (overrides.id ?? 'test-group-user-id') as GroupUserId,
+    toGroupUserId(overrides.id ?? 'test-group-user-id'),
     overrides.user ?? makeUser(),
   )
 }
@@ -56,7 +53,7 @@ export function makeRole(
   }> = {},
 ): Role {
   return new Role(
-    (overrides.id ?? 'test-role-id') as RoleId,
+    toRoleId(overrides.id ?? 'test-role-id'),
     overrides.name ?? 'test-role-name',
     overrides.description ?? 'test-role-description',
   )
@@ -92,7 +89,7 @@ export function makeSsoUser(
   }> = {},
 ): SsoUser {
   return new SsoUser(
-    (overrides.ssoUserId ?? 'test-sso-user-id') as SsoUserId,
+    toSsoUserId(overrides.ssoUserId ?? 'test-sso-user-id'),
     overrides.userName ?? 'test-sso-user-user-name',
     overrides.firstName ?? 'test-sso-user-first-name',
     overrides.lastName ?? 'test-sso-user-last-name',
@@ -119,7 +116,7 @@ export function makeTenant(
     overrides.createdBy ?? 'test-tenant-created-by',
     overrides.createdDate ?? 'test-tenant-created-date',
     overrides.description ?? 'test-tenant-description',
-    (overrides.id ?? 'test-tenant-id') as TenantId,
+    toTenantId(overrides.id ?? 'test-tenant-id'),
     overrides.name ?? 'test-tenant-name',
     overrides.ministryName ?? 'test-tenant-ministry-name',
     overrides.users ?? [makeUser()],
@@ -143,7 +140,7 @@ export function makeTenantRequest(
     overrides.createdBy ?? 'test-tenant-request-created-by',
     overrides.createdDate ?? 'test-tenant-request-created-date',
     overrides.description ?? 'test-tenant-request-description',
-    (overrides.id ?? 'test-tenant-request-id') as TenantRequestId,
+    toTenantRequestId(overrides.id ?? 'test-tenant-request-id'),
     overrides.ministryName ?? 'test-tenant-request-ministry-name',
     overrides.name ?? 'test-tenant-request-name',
     overrides.status ?? 'test-tenant-request-status',
@@ -160,7 +157,7 @@ export function makeUser(
   }> = {},
 ): User {
   return new User(
-    (overrides.id ?? 'test-user-id') as UserId,
+    toUserId(overrides.id ?? 'test-user-id'),
     overrides.ssoUser ?? makeSsoUser(),
     overrides.roles ?? [],
   )

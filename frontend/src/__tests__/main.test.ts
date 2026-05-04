@@ -1,19 +1,31 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { type App, createApp } from 'vue'
+import { createApp } from 'vue'
 
 import { handleInitError, initializeApp } from '@/main'
 import { ConfigError, loadConfig } from '@/services/config.service'
 
-const mockApp: Partial<App<Element>> = {
-  use: vi.fn().mockReturnThis(),
+const mockApp = {
+  config: { errorHandler: undefined as unknown },
   mount: vi.fn(),
+  use: vi.fn().mockReturnThis(),
 }
 
-// Updated to match the new store method name: .init()
 const mockAuthStore = {
   ensureFreshToken: vi.fn(),
   init: vi.fn(async () => undefined),
 }
+
+const mockNotification = vi.hoisted(() => ({ error: vi.fn() }))
+
+vi.mock('@/composables/useNotification', () => ({
+  useNotification: () => mockNotification,
+}))
+
+const mockLogger = vi.hoisted(() => ({ error: vi.fn() }))
+
+vi.mock('@/utils/logger', () => ({
+  logger: mockLogger,
+}))
 
 vi.mock('@/services/config.service', () => ({
   ConfigError: class ConfigError extends Error {
@@ -38,14 +50,12 @@ describe('initializeApp', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     document.body.innerHTML = '<div id="app"></div>'
-    // Reset listeners by clearing the mock
     mockAuthStore.ensureFreshToken = vi.fn()
   })
 
   it('creates the app, initializes auth, and mounts', async () => {
     await initializeApp()
 
-    // Simulate user activity
     globalThis.dispatchEvent(new MouseEvent('click'))
     globalThis.dispatchEvent(new KeyboardEvent('keydown'))
 
@@ -81,5 +91,26 @@ describe('handleInitError', () => {
   it('renders a generic error for unknown errors', () => {
     handleInitError(new Error('something else'))
     expect(document.body.innerHTML).toContain('Application Error')
+  })
+})
+
+describe('app error handler', () => {
+  beforeEach(async () => {
+    vi.clearAllMocks()
+    await initializeApp()
+  })
+
+  it('logs and notifies for unexpected errors', () => {
+    const handler = mockApp.config.errorHandler as Function
+
+    handler(new Error('something broke'))
+
+    expect(mockLogger.error).toHaveBeenCalledWith(
+      'Application Error',
+      expect.any(Error),
+    )
+    expect(mockNotification.error).toHaveBeenCalledWith(
+      'An unexpected error occurred',
+    )
   })
 })

@@ -55,16 +55,16 @@ export const isValidationError = (
 /**
  * Logs an API error with a custom message.
  *
- * Differentiates between Axios errors and other error types for better logging
- *   detail.
+ * API errors must always, always, always be logged for debugging. It might end
+ * up being logged twice, but be defensive in case something swallows the Error.
  *
  * @param message - A descriptive message to include in the log.
- * @param error - The error object caught from an API call or other source.
+ * @param cause - The error object caught from an API call or other source.
  */
-export const logApiError = (message: string, error: unknown) => {
-  if (axios.isAxiosError(error)) {
-    logger.error(`${message}: ${error.message}`, error)
+export const logApiError = (message: string, cause: unknown) => {
+  if (axios.isAxiosError(cause)) {
+    logger.error(`${message}: ${cause.message}`, cause)
   } else {
-    logger.error(message, error)
+    logger.error(message, cause)
   }
 }
