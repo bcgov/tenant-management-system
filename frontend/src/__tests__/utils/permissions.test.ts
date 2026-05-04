@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
   makeRoleTenantOwner,
@@ -9,7 +9,7 @@ import {
   makeUserIdir,
   makeUserOperationsAdmin,
 } from '@/__tests__/__factories__'
-import { mockAuthStore } from '@/__tests__/__helpers__/useAuthStore.mock'
+import { createMockAuthStore } from '@/__tests__/__helpers__/useAuthStore.mock'
 
 import { ROLES } from '@/utils/constants'
 import {
@@ -19,13 +19,24 @@ import {
   currentUserIsOperationsAdmin,
 } from '@/utils/permissions'
 
+let currentAuthStore = createMockAuthStore()
+
+vi.mock('@/stores/useAuthStore', () => ({
+  useAuthStore: () => currentAuthStore,
+}))
+
+beforeEach(() => {
+  vi.clearAllMocks()
+  currentAuthStore = createMockAuthStore()
+})
+
 describe('permissions', () => {
   describe('currentUserHasRole', () => {
     it('returns true when the current user has the specified role in the tenant', () => {
       const user = makeUser({
         roles: [makeRoleTenantOwner()],
       })
-      mockAuthStore(user)
+      currentAuthStore = createMockAuthStore({ user })
       const tenant = makeTenant({ users: [user] })
 
       expect(currentUserHasRole(tenant, ROLES.TENANT_OWNER.value)).toBe(true)
@@ -33,7 +44,7 @@ describe('permissions', () => {
 
     it('returns false when the current user does not have the specified role', () => {
       const user = makeUser({ roles: [] })
-      mockAuthStore(user)
+      currentAuthStore = createMockAuthStore({ user })
       const tenant = makeTenant({ users: [user] })
 
       expect(currentUserHasRole(tenant, ROLES.TENANT_OWNER.value)).toBe(false)
@@ -44,14 +55,14 @@ describe('permissions', () => {
       const otherUser = makeUser({
         ssoUser: makeSsoUser({ ssoUserId: 'other-user' }),
       })
-      mockAuthStore(user)
+      currentAuthStore = createMockAuthStore({ user })
       const tenant = makeTenant({ users: [otherUser] })
 
       expect(currentUserHasRole(tenant, ROLES.TENANT_OWNER.value)).toBe(false)
     })
 
     it('returns false when the user is not authenticated', () => {
-      mockAuthStore(null)
+      currentAuthStore = createMockAuthStore({ user: null })
       const tenant = makeTenant()
 
       expect(currentUserHasRole(tenant, ROLES.TENANT_OWNER.value)).toBe(false)
@@ -60,19 +71,19 @@ describe('permissions', () => {
 
   describe('currentUserIsBCeID', () => {
     it('returns true when the current user is BCeID', () => {
-      mockAuthStore(makeUserBceid())
+      currentAuthStore = createMockAuthStore({ user: makeUserBceid() })
 
       expect(currentUserIsBceid()).toBe(true)
     })
 
     it('returns false when the current user is IDIR', () => {
-      mockAuthStore(makeUserIdir())
+      currentAuthStore = createMockAuthStore({ user: makeUserIdir() })
 
       expect(currentUserIsBceid()).toBe(false)
     })
 
     it('returns false when no current user', () => {
-      mockAuthStore(null)
+      currentAuthStore = createMockAuthStore({ user: null })
 
       expect(currentUserIsBceid()).toBe(false)
     })
@@ -80,19 +91,19 @@ describe('permissions', () => {
 
   describe('currentUserIsIDIR', () => {
     it('returns true when the current user is IDIR', () => {
-      mockAuthStore(makeUserIdir())
+      currentAuthStore = createMockAuthStore({ user: makeUserIdir() })
 
       expect(currentUserIsIdir()).toBe(true)
     })
 
     it('returns false when the current user is IDIR', () => {
-      mockAuthStore(makeUserBceid())
+      currentAuthStore = createMockAuthStore({ user: makeUserBceid() })
 
       expect(currentUserIsIdir()).toBe(false)
     })
 
     it('returns false when no current user', () => {
-      mockAuthStore(null)
+      currentAuthStore = createMockAuthStore({ user: null })
 
       expect(currentUserIsIdir()).toBe(false)
     })
@@ -100,19 +111,21 @@ describe('permissions', () => {
 
   describe('currentUserIsOperationsAdmin', () => {
     it('returns true when the current user is an operations admin', () => {
-      mockAuthStore(makeUserOperationsAdmin())
+      currentAuthStore = createMockAuthStore({
+        user: makeUserOperationsAdmin(),
+      })
 
       expect(currentUserIsOperationsAdmin()).toBe(true)
     })
 
     it('returns false when the current user does not have the operations admin role', () => {
-      mockAuthStore(makeUser())
+      currentAuthStore = createMockAuthStore({ user: makeUser() })
 
       expect(currentUserIsOperationsAdmin()).toBe(false)
     })
 
     it('returns false when the user is not authenticated', () => {
-      mockAuthStore(null)
+      currentAuthStore = createMockAuthStore({ user: null })
 
       expect(currentUserIsOperationsAdmin()).toBe(false)
     })

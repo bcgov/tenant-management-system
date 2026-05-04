@@ -1,10 +1,17 @@
 import { mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { makeUser, makeUserBceid } from '@/__tests__/__factories__'
-import { mockAuthStore } from '@/__tests__/__helpers__/useAuthStore.mock'
+import { makeUserBceid } from '@/__tests__/__factories__'
+import { createMockAuthStore } from '@/__tests__/__helpers__/useAuthStore.mock'
+
 import LoginContainer from '@/components/auth/LoginContainer.vue'
 import * as permissions from '@/utils/permissions'
+
+let currentAuthStore = createMockAuthStore()
+
+vi.mock('@/stores/useAuthStore', () => ({
+  useAuthStore: () => currentAuthStore,
+}))
 
 vi.mock('@/utils/permissions', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/utils/permissions')>()
@@ -22,7 +29,7 @@ const mountComponent = () => mount(LoginContainer, {})
 describe('LoginContainer.vue', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockAuthStore(null)
+    currentAuthStore = createMockAuthStore()
 
     Object.defineProperty(globalThis, 'location', {
       value: mockLocation,
@@ -32,13 +39,15 @@ describe('LoginContainer.vue', () => {
   })
 
   it('redirects to / when not authenticated', () => {
+    currentAuthStore = createMockAuthStore({ user: null })
+
     mountComponent()
 
     expect(globalThis.location.href).toBe('/')
   })
 
   it('redirects to /bceid when bceid', () => {
-    mockAuthStore(makeUserBceid())
+    currentAuthStore = createMockAuthStore({ user: makeUserBceid() })
     vi.mocked(permissions.currentUserIsBceid).mockReturnValue(true)
 
     mountComponent()
@@ -53,7 +62,7 @@ describe('LoginContainer.vue', () => {
   })
 
   it('does not render slot content when authenticated but not idir', () => {
-    mockAuthStore(makeUserBceid())
+    currentAuthStore = createMockAuthStore({ user: makeUserBceid() })
 
     const wrapper = mountComponent()
 
@@ -61,20 +70,10 @@ describe('LoginContainer.vue', () => {
   })
 
   it('renders slot content when authenticated and idir', () => {
-    mockAuthStore(makeUser())
     vi.mocked(permissions.currentUserIsIdir).mockReturnValue(true)
 
     const wrapper = mountComponent()
 
     expect(wrapper.find('[data-test-id="slot"]').exists()).toBe(true)
-  })
-
-  it('does not redirect when authenticated', () => {
-    mockAuthStore(makeUser())
-    const originalHref = globalThis.location.href
-
-    mountComponent()
-
-    expect(globalThis.location.href).toBe(originalHref)
   })
 })

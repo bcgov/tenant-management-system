@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createRouter, createWebHistory } from 'vue-router'
 
 import { makeTenant, makeUser } from '@/__tests__/__factories__'
-import { mockAuthStore } from '@/__tests__/__helpers__/useAuthStore.mock'
+import { createMockAuthStore } from '@/__tests__/__helpers__/useAuthStore.mock'
 import {
   mockTenantRequestStore,
   mockTenantRequestStoreCreateTenantRequest,
@@ -15,13 +15,20 @@ import {
   mockTenantStoreFetchError,
   mockTenantStoreFetchTenants,
 } from '@/__tests__/__helpers__/useTenantStore.mock'
+
 import TenantListContainer from '@/components/route/TenantListContainer.vue'
 import { useNotification } from '@/composables/useNotification'
 import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
 import vuetify from '@/plugins/vuetify'
 
+let currentAuthStore = createMockAuthStore()
+
+vi.mock('@/stores/useAuthStore', () => ({
+  useAuthStore: () => currentAuthStore,
+}))
+
 beforeEach(() => {
-  mockAuthStore()
+  currentAuthStore = createMockAuthStore()
   mockTenantRequestStore()
   mockTenantStore()
 })
@@ -60,7 +67,6 @@ const mountComponent = () =>
 describe('TenantListContainer.vue', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
-    mockAuthStore()
     mockTenantRequestStore()
     mockTenantStore()
   })
@@ -68,7 +74,7 @@ describe('TenantListContainer.vue', () => {
   describe('onMounted', () => {
     it('fetches tenants on mount', async () => {
       const user = makeUser()
-      mockAuthStore(user)
+      currentAuthStore = createMockAuthStore({ user })
 
       mountComponent()
       await flushPromises()
@@ -117,7 +123,7 @@ describe('TenantListContainer.vue', () => {
     it('submits a tenant request and closes the dialog', async () => {
       mockTenantRequestStore()
       const user = makeUser()
-      mockAuthStore(user)
+      currentAuthStore = createMockAuthStore({ user })
       const notification = useNotification()
       const wrapper = mountComponent()
       const details = { name: 'New Tenant', description: '', ministryName: '' }

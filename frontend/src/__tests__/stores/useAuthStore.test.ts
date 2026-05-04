@@ -163,7 +163,7 @@ describe('useAuthStore', () => {
       mockUpdateToken.mockRejectedValue(new Error('refresh failed'))
       await store.ensureFreshToken()
 
-      expect(store.sessionExpired).toBe(true)
+      expect(store.isSessionExpired).toBe(true)
       expect(() => store.authenticatedUser).toThrow('User not available')
     })
   })

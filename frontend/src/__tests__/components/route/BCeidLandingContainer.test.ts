@@ -1,12 +1,15 @@
 import { mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import {
-  mockAuthStore,
-  mockAuthStoreLogout,
-} from '@/__tests__/__helpers__/useAuthStore.mock'
+import { createMockAuthStore } from '@/__tests__/__helpers__/useAuthStore.mock'
 
 import BceidLandingContainer from '@/components/route/BCeidLandingContainer.vue'
+
+let currentAuthStore = createMockAuthStore()
+
+vi.mock('@/stores/useAuthStore', () => ({
+  useAuthStore: () => currentAuthStore,
+}))
 
 const mountComponent = () =>
   mount(BceidLandingContainer, {
@@ -29,7 +32,7 @@ const mountComponent = () =>
 describe('BCeidLandingContainer.vue', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockAuthStore(null)
+    currentAuthStore = createMockAuthStore()
   })
 
   it('renders i18n keys for expected text nodes', () => {
@@ -52,6 +55,6 @@ describe('BCeidLandingContainer.vue', () => {
 
     await wrapper.find('button').trigger('click')
 
-    expect(mockAuthStoreLogout()).toHaveBeenCalled()
+    expect(currentAuthStore.logout).toHaveBeenCalled()
   })
 })

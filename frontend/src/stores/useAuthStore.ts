@@ -16,6 +16,8 @@ import {
 } from '@/utils/identityProvider'
 import { logger } from '@/utils/logger'
 
+type LoginState = 'anonymous' | 'authenticated' | 'expired'
+
 /**
  * Pinia store for managing user authentication state via Keycloak.
  *
@@ -46,18 +48,15 @@ export const useAuthStore = defineStore('auth', () => {
   const keycloak = ref<Keycloak | null>(null)
 
   /**
+   * The current login state of the user, and therefore also the access token.
+   */
+  const loginState = ref<LoginState>('anonymous')
+
+  /**
    * The parsed user object extracted from the Keycloak token, or `null` if
    * not yet available.
    */
   const user = ref<User | null>(null)
-
-  // Exported state
-
-  /**
-   * If the user's token doesn't refresh then set this to true to show a
-   * logged out message.
-   */
-  const sessionExpired = ref(false)
 
   // Private methods
 
@@ -143,23 +142,23 @@ export const useAuthStore = defineStore('auth', () => {
   })
 
   /**
-   * Checks that the token is valid for at least the next 30 seconds and
+   * Checks that the token is valid for at least the next 30 seconds, and
    * refreshes it if not.
    *
-   * @returns a token valid for at least the next 30 seconds, or an empty
+   * @returns a Promise that resolves when token valid for at least the next 30 seconds, or an empty
    * string if the user is not authenticated
    */
   const ensureFreshToken = async (): Promise<void> => {
     // Before login there is no point in trying to refresh the token.
-    if (!user.value) {
+    if (loginState.value === 'anonymous') {
       return
     }
 
     try {
       await getKeycloak().updateToken(30)
     } catch {
-      sessionExpired.value = true
       user.value = null
+      loginState.value = 'expired'
     }
   }
 
@@ -190,10 +189,11 @@ export const useAuthStore = defineStore('auth', () => {
           globalThis.location.origin + '/silent-check-sso.html',
       })
 
-      if (authenticated) {
-        user.value = keycloak.value.tokenParsed
-          ? parseUserFromToken(keycloak.value.tokenParsed)
-          : null
+      if (authenticated && keycloak.value.tokenParsed) {
+        user.value = parseUserFromToken(keycloak.value.tokenParsed)
+        loginState.value = 'authenticated'
+      } else {
+        loginState.value = 'anonymous'
       }
     } catch (error) {
       logger.error('Keycloak init failed', error)
@@ -203,9 +203,14 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   /**
-   * Safe boolean check for use in watchers, templates, and if-statements.
+   * Is the user logged in with a valid token?
    */
-  const isAuthenticated = computed(() => !!user.value)
+  const isAuthenticated = computed(() => loginState.value === 'authenticated')
+
+  /**
+   * Was the user's session expired due to a failed token refresh?
+   */
+  const isSessionExpired = computed(() => loginState.value === 'expired')
 
   /**
    * Initiates the login process using Keycloak.
@@ -233,8 +238,8 @@ export const useAuthStore = defineStore('auth', () => {
     getAccessToken,
     init,
     isAuthenticated,
+    isSessionExpired,
     login,
     logout,
-    sessionExpired,
   }
 })

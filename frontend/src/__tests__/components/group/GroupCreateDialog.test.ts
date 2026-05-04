@@ -59,11 +59,6 @@ async function clickSubmit(wrapper: ReturnType<typeof mountDialog>) {
   await flushPromises()
 }
 
-async function clickCancel(wrapper: ReturnType<typeof mountDialog>) {
-  await wrapper.findComponent({ name: 'ButtonSecondary' }).trigger('click')
-  await flushPromises()
-}
-
 let wrapper: ReturnType<typeof mountDialog>
 
 afterEach(() => {
@@ -96,15 +91,6 @@ describe('GroupCreateDialog', () => {
 
       btn.click()
       await nextTick()
-
-      const emissions = wrapper.emitted('update:modelValue') as boolean[][]
-      expect(emissions.at(-1)?.[0]).toBe(false)
-    })
-
-    it.skip('emits update:modelValue=false when Cancel is clicked', async () => {
-      wrapper = mountDialog()
-
-      await clickCancel(wrapper)
 
       const emissions = wrapper.emitted('update:modelValue') as boolean[][]
       expect(emissions.at(-1)?.[0]).toBe(false)

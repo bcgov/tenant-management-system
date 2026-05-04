@@ -2,10 +2,15 @@ import { mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
 
-import { makeUser } from '@/__tests__/__factories__'
-import { mockAuthStore } from '@/__tests__/__helpers__/useAuthStore.mock'
+import { createMockAuthStore } from '@/__tests__/__helpers__/useAuthStore.mock'
 
 import App from '@/App.vue'
+
+let currentAuthStore = createMockAuthStore()
+
+vi.mock('@/stores/useAuthStore', () => ({
+  useAuthStore: () => currentAuthStore,
+}))
 
 vi.mock('vue-i18n', () => ({
   useI18n: () => ({ t: (key: string) => key }),
@@ -39,11 +44,11 @@ const mountApp = () =>
 describe('App.vue', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockAuthStore(null)
+    currentAuthStore = createMockAuthStore()
   })
 
   it('shows session expired view when sessionExpired is true', async () => {
-    mockAuthStore(null, true)
+    currentAuthStore = createMockAuthStore({ isSessionExpired: true })
 
     const wrapper = mountApp()
     await nextTick()
@@ -52,8 +57,6 @@ describe('App.vue', () => {
   })
 
   it('shows router view when not session expired', async () => {
-    mockAuthStore(makeUser())
-
     const wrapper = mountApp()
     await nextTick()
 
@@ -61,7 +64,9 @@ describe('App.vue', () => {
   })
 
   it('passes null user to AppHeader when not authenticated', async () => {
-    mockAuthStore(null)
+    currentAuthStore = createMockAuthStore({
+      user: null,
+    })
 
     const wrapper = mountApp()
     await nextTick()
