@@ -61,7 +61,6 @@
     "addAnotherUser": "Add a user to this tenant | Add another user to this tenant | Add another user to this tenant",
     "errors": {
       "genericRequestError": "Failed to update Tenant Request",
-      "nameExists": "Tenant Request cannot be approved because the name already exists",
       "nonNewStatusChange": "Requests can only have a status change from New. Start a new request instead",
       "uniqueName": "Tenant name must be unique"
     },

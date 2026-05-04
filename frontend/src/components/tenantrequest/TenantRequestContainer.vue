@@ -24,7 +24,7 @@ const tenantStore = useTenantStore()
 
 // --- Component State ---------------------------------------------------------
 
-const erroredApproving = ref(false)
+const isDuplicateName = ref(false)
 const search = ref('')
 const selectedTenantRequest: Ref<TenantRequest | null> = ref(null)
 
@@ -52,7 +52,7 @@ const getStatusColor = (status: string) => {
 }
 
 const handleApproved = async (name: string) => {
-  erroredApproving.value = false
+  isDuplicateName.value = false
   if (!selectedTenantRequest.value) {
     return
   }
@@ -66,9 +66,13 @@ const handleApproved = async (name: string) => {
     )
     notification.success('Tenant Request has been successfully updated')
     await tenantStore.fetchTenants(authStore.authenticatedUser.id)
-    handleBackToList()
+    handleCancel()
   } catch (error) {
     if (error instanceof DuplicateEntityError) {
+      // TODO - this should be handled better by the API. The API should return
+      // a specific error code, not some string that needs parsing. This is
+      // brittle and can easily break if the API error message changes - and it
+      // is currently broken.
       if (
         error.userMessage &&
         error.userMessage.includes('Cannot update tenant request with status')
@@ -82,8 +86,7 @@ const handleApproved = async (name: string) => {
 
       // If the API says that this name exists already, then show the name
       // duplicated validation error.
-      notification.error(t('tenants.errors.nameExists'))
-      erroredApproving.value = true
+      isDuplicateName.value = true
     } else if (error instanceof DomainError && error.userMessage) {
       // For any other API Domain Error, display the user message that comes
       // from the API. This should not happen but is useful if there are
@@ -96,13 +99,13 @@ const handleApproved = async (name: string) => {
   }
 }
 
-const handleBackToList = () => {
+const handleCancel = () => {
   selectedTenantRequest.value = null
-  erroredApproving.value = false
+  isDuplicateName.value = false
 }
 
 const handleRejected = async (notes: string) => {
-  erroredApproving.value = false
+  isDuplicateName.value = false
   if (!selectedTenantRequest.value) {
     return
   }
@@ -114,7 +117,7 @@ const handleRejected = async (notes: string) => {
       notes,
     )
     notification.success('Tenant Request has been successfully updated')
-    handleBackToList()
+    handleCancel()
   } catch {
     notification.error('Failed to update Tenant Request')
   }
@@ -139,10 +142,11 @@ onMounted(async () => {
   <v-container class="px-0" fluid>
     <template v-if="selectedTenantRequest">
       <TenantRequestDisplay
-        :errored-approving="erroredApproving"
+        :is-duplicate-name="isDuplicateName"
         :tenant-request="selectedTenantRequest"
         @approved="handleApproved"
-        @back="handleBackToList"
+        @cancel="handleCancel"
+        @clear-duplicate-error="isDuplicateName = false"
         @rejected="handleRejected"
       />
     </template>
@@ -152,7 +156,7 @@ onMounted(async () => {
         <v-col cols="12">
           <h4 class="mb-6 mt-12">Tenant Requests</h4>
           <p class="mb-8">
-            Click a row in the table to approve, deny, or to see more details.
+            Select a request to review details and approve or reject it.
           </p>
         </v-col>
       </v-row>
@@ -186,7 +190,7 @@ onMounted(async () => {
               {
                 key: 'createdBy',
                 sortable: false,
-                title: 'User Name (IDIR)',
+                title: 'Requested By',
               },
               {
                 key: 'ministryName',

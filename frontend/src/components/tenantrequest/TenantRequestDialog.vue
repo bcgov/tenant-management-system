@@ -15,8 +15,8 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (event: 'clear-duplicate-error'): void
-  (event: 'submit', tenantRequestDetails: TenantRequestDetailFields): void
+  clearDuplicateError: []
+  submit: [tenantRequestDetails: TenantRequestDetailFields]
 }>()
 
 const dialogVisible = defineModel<boolean>()
@@ -63,7 +63,7 @@ watch(
 watch(
   () => [formData.value.name, formData.value.ministryName],
   () => {
-    emit('clear-duplicate-error')
+    emit('clearDuplicateError')
   },
 )
 
@@ -71,8 +71,8 @@ watch(
 
 const dialogClose = () => (dialogVisible.value = false)
 
-const handleSubmit = () => {
-  form.value?.validate()
+const handleSubmit = async () => {
+  await form.value?.validate()
 
   if (isFormValid.value) {
     formData.value.name = formData.value.name.trim()

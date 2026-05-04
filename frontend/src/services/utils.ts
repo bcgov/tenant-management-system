@@ -63,7 +63,11 @@ export const isValidationError = (
  */
 export const logApiError = (message: string, cause: unknown) => {
   if (axios.isAxiosError(cause)) {
-    logger.error(`${message}: ${cause.message}`, cause)
+    if (isDuplicateEntityError(cause)) {
+      logger.warning(`${message}: ${cause.message}`, cause)
+    } else {
+      logger.error(`${message}: ${cause.message}`, cause)
+    }
   } else {
     logger.error(message, cause)
   }
