@@ -5,7 +5,7 @@ import { computed, ref } from 'vue'
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
 import ButtonTertiary from '@/components/ui/ButtonTertiary.vue'
-import type { TenantRequest } from '@/models/tenantrequest.model'
+import { type TenantRequest } from '@/models/tenantrequest.model'
 import { TENANT_REQUEST_STATUS } from '@/utils/constants'
 
 // --- Component Interface -----------------------------------------------------

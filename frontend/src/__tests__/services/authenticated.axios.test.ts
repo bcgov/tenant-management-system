@@ -1,31 +1,26 @@
-import axios, { AxiosHeaders } from 'axios'
+import axios, { AxiosHeaders, type AxiosResponse } from 'axios'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { User, UserId } from '@/models/user.model'
+import { makeUser } from '@/__tests__/__factories__'
+import { createMockAuthStore } from '@/__tests__/__helpers__/useAuthStore.mock'
+
+import { SessionExpiredError } from '@/errors/SessionExpiredError'
 import { authenticatedAxios } from '@/services/authenticated.axios'
+import * as logApiErrorModule from '@/services/utils'
 
 vi.mock('@/services/config.service', () => ({
   config: { api: { baseUrl: 'https://api.example.com' } },
 }))
 
-const mockAccessToken = vi.fn().mockReturnValue(undefined)
-const mockEnsureFreshToken = vi.fn().mockResolvedValue(undefined)
-
-const mockAuthStore = {
-  authenticatedUser: null as User | null,
-  ensureFreshToken: mockEnsureFreshToken,
-  getAccessToken: mockAccessToken,
-}
+let currentAuthStore = createMockAuthStore()
 
 vi.mock('@/stores/useAuthStore', () => ({
-  useAuthStore: () => mockAuthStore,
+  useAuthStore: () => currentAuthStore,
 }))
 
 beforeEach(() => {
   vi.clearAllMocks()
-  mockAuthStore.authenticatedUser = null
-  mockAccessToken.mockResolvedValue(undefined)
-  mockEnsureFreshToken.mockResolvedValue(undefined)
+  currentAuthStore = createMockAuthStore()
 })
 
 function getSuccessInterceptor() {
@@ -57,6 +52,34 @@ describe('authenticatedAxios', () => {
   })
 })
 
+describe('request interceptor (expired)', () => {
+  it('throws SessionExpiredError if session is already expired', async () => {
+    currentAuthStore = createMockAuthStore({
+      user: null,
+      isSessionExpired: true,
+    })
+
+    await expect(
+      getSuccessInterceptor()({ headers: new AxiosHeaders() }),
+    ).rejects.toBeInstanceOf(SessionExpiredError)
+  })
+
+  it('throws SessionExpiredError if token refresh causes expiry', async () => {
+    currentAuthStore = createMockAuthStore({
+      user: makeUser(),
+      ensureFreshToken: vi.fn().mockImplementation(() => {
+        vi.spyOn(currentAuthStore, 'isSessionExpired', 'get').mockReturnValue(
+          true,
+        )
+      }),
+    })
+
+    await expect(
+      getSuccessInterceptor()({ headers: new AxiosHeaders() }),
+    ).rejects.toBeInstanceOf(SessionExpiredError)
+  })
+})
+
 describe('request interceptor (success)', () => {
   it('sets baseURL from config', async () => {
     const cfg = await getSuccessInterceptor()({ headers: new AxiosHeaders() })
@@ -65,19 +88,72 @@ describe('request interceptor (success)', () => {
   })
 
   it('does not set Authorization when not authenticated', async () => {
+    currentAuthStore = createMockAuthStore({
+      user: null,
+    })
     const cfg = await getSuccessInterceptor()({ headers: new AxiosHeaders() })
 
     expect(cfg.headers.Authorization).toBeUndefined()
-    expect(mockEnsureFreshToken).not.toHaveBeenCalled()
+    expect(currentAuthStore.ensureFreshToken).not.toHaveBeenCalled()
   })
 
   it('sets Authorization header and ensures fresh token when authenticated', async () => {
-    mockAuthStore.authenticatedUser = { id: '123' as UserId } as unknown as User
-    mockAccessToken.mockReturnValue('my-token')
+    currentAuthStore = createMockAuthStore({
+      getAccessToken: vi.fn().mockReturnValue('my-token'),
+      user: makeUser(),
+    })
 
     const cfg = await getSuccessInterceptor()({ headers: new AxiosHeaders() })
 
-    expect(mockEnsureFreshToken).toHaveBeenCalledOnce()
+    expect(currentAuthStore.ensureFreshToken).toHaveBeenCalledOnce()
     expect(cfg.headers.Authorization).toBe('Bearer my-token')
+  })
+})
+
+function getResponseInterceptor() {
+  const instance = authenticatedAxios()
+  const handler = instance.interceptors.response.handlers?.[0]
+
+  if (!handler?.rejected) {
+    throw new Error('Response interceptor not found')
+  }
+
+  return { success: handler.fulfilled, error: handler.rejected }
+}
+
+describe('response interceptor', () => {
+  it('passes through successful responses unchanged', () => {
+    const { success } = getResponseInterceptor()
+    const response = { data: { foo: 'bar' } } as AxiosResponse
+
+    expect(success(response)).toBe(response)
+  })
+
+  it('logs all errors', () => {
+    const logSpy = vi.spyOn(logApiErrorModule, 'logApiError')
+    const { error } = getResponseInterceptor()
+    const err = new Error('something broke')
+
+    error(err).catch(() => {})
+
+    expect(logSpy).toHaveBeenCalledWith('API request failed', err)
+  })
+
+  it('returns a never-resolving promise for SessionExpiredError', async () => {
+    const { error } = getResponseInterceptor()
+
+    const result = error(new SessionExpiredError())
+
+    // Verify it's a promise that doesn't reject
+    await expect(
+      Promise.race([result, Promise.resolve('sentinel')]),
+    ).resolves.toBe('sentinel')
+  })
+
+  it('rejects with the original error for non-session errors', async () => {
+    const { error } = getResponseInterceptor()
+    const err = new Error('network failure')
+
+    await expect(error(err)).rejects.toBe(err)
   })
 })

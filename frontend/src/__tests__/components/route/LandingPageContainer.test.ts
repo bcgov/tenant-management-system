@@ -2,14 +2,16 @@ import { mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
 
-import { makeSsoUser, makeUser } from '@/__tests__/__factories__'
-import {
-  mockAuthStore,
-  mockAuthStoreLogin,
-} from '@/__tests__/__helpers__/useAuthStore.mock'
+import { makeUserBceid, makeUserIdir } from '@/__tests__/__factories__'
+import { createMockAuthStore } from '@/__tests__/__helpers__/useAuthStore.mock'
 
 import LandingPageContainer from '@/components/route/LandingPageContainer.vue'
 
+let currentAuthStore = createMockAuthStore()
+
+vi.mock('@/stores/useAuthStore', () => ({
+  useAuthStore: () => currentAuthStore,
+}))
 const mockPush = vi.fn()
 vi.mock('vue-router', () => ({
   useRouter: () => ({ push: mockPush }),
@@ -39,7 +41,7 @@ const mountComponent = () =>
 describe('LandingPageContainer.vue', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockAuthStore(null)
+    currentAuthStore = createMockAuthStore()
   })
 
   it('renders all three login buttons', () => {
@@ -56,14 +58,16 @@ describe('LandingPageContainer.vue', () => {
     const wrapper = mountComponent()
     await wrapper.findAll('button')[0].trigger('click')
 
-    expect(mockAuthStoreLogin()).toHaveBeenCalledWith({ idpHint: 'idir-hint' })
+    expect(currentAuthStore.login).toHaveBeenCalledWith({
+      idpHint: 'idir-hint',
+    })
   })
 
   it('calls login with basicBceidHint when Basic BCeID button is clicked', async () => {
     const wrapper = mountComponent()
     await wrapper.findAll('button')[1].trigger('click')
 
-    expect(mockAuthStoreLogin()).toHaveBeenCalledWith({
+    expect(currentAuthStore.login).toHaveBeenCalledWith({
       idpHint: 'basic-bceid-hint',
     })
   })
@@ -72,13 +76,16 @@ describe('LandingPageContainer.vue', () => {
     const wrapper = mountComponent()
     await wrapper.findAll('button')[2].trigger('click')
 
-    expect(mockAuthStoreLogin()).toHaveBeenCalledWith({
+    expect(currentAuthStore.login).toHaveBeenCalledWith({
       idpHint: 'business-bceid-hint',
     })
   })
 
   it('redirects to /tenants when authenticated as IDIR', async () => {
-    mockAuthStore(makeUser({ ssoUser: makeSsoUser({ idpType: 'IDIR' }) }))
+    currentAuthStore = createMockAuthStore({
+      user: makeUserIdir(),
+    })
+
     mountComponent()
     await nextTick()
 
@@ -86,7 +93,10 @@ describe('LandingPageContainer.vue', () => {
   })
 
   it('redirects to /bceid when authenticated as BCeID', async () => {
-    mockAuthStore(makeUser({ ssoUser: makeSsoUser({ idpType: 'BCeID' }) }))
+    currentAuthStore = createMockAuthStore({
+      user: makeUserBceid(),
+    })
+
     mountComponent()
     await nextTick()
 
@@ -94,6 +104,10 @@ describe('LandingPageContainer.vue', () => {
   })
 
   it('does not redirect when not authenticated', async () => {
+    currentAuthStore = createMockAuthStore({
+      user: null,
+    })
+
     mountComponent()
     await nextTick()
 

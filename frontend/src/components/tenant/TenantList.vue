@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 
 import TenantListCard from '@/components/tenant/TenantListCard.vue'
-import type { Tenant } from '@/models/tenant.model'
+import { type Tenant } from '@/models/tenant.model'
 
 // --- Component Interface -----------------------------------------------------
 

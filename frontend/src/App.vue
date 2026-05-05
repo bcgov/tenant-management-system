@@ -13,7 +13,7 @@ const authStore = useAuthStore()
 
 // --- Computed Values ---------------------------------------------------------
 
-const loggedOut = computed(() => authStore.sessionExpired)
+const loggedOut = computed(() => authStore.isSessionExpired)
 const user = computed(() => {
   return authStore.isAuthenticated ? authStore.authenticatedUser : null
 })

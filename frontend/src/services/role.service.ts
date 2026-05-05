@@ -1,3 +1,4 @@
+import { type RoleApiData } from '@/models/role.model'
 import { authenticatedAxios } from '@/services/authenticated.axios'
 import { logApiError } from '@/services/utils'
 
@@ -7,11 +8,10 @@ export const roleService = {
   /**
    * Retrieves all the roles.
    *
-   * @returns {Promise<object[]>} A promise that resolves to an array of
-   *     role-like objects.
+   * @returns A promise that resolves to an array of role data.
    * @throws Will throw an error if the API request fails.
    */
-  async getRoles() {
+  async getRoles(): Promise<RoleApiData[]> {
     try {
       const response = await api.get('/roles')
 

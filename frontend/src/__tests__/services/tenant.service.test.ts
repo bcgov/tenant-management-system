@@ -1,5 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { makeRole, makeSsoUser, makeUser } from '../__factories__'
+
+import { type RoleId } from '@/models/role.model'
+import { type SsoUserId } from '@/models/ssouser.model'
+import { type TenantId } from '@/models/tenant.model'
+import { type UserId } from '@/models/user.model'
 import * as utils from '@/services/utils'
 
 vi.mock('@/services/utils', () => ({
@@ -38,28 +44,25 @@ vi.mock('@/services/authenticated.axios', () => ({
 
 import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
 import { ValidationError } from '@/errors/domain/ValidationError'
-import { Role } from '@/models/role.model'
-import { SsoUser } from '@/models/ssouser.model'
-import { User } from '@/models/user.model'
 import { tenantService } from '@/services/tenant.service'
 
 describe('tenantService', () => {
-  const tenantId = '1'
-  const userId = '123'
-  const roleId = '456'
-  const ssoUserId = '789'
+  const tenantId = '1' as TenantId
+  const userId = '123' as UserId
+  const roleId = '456' as RoleId
+  const ssoUserId = '789' as SsoUserId
 
-  const fakeRole: Role = new Role(roleId, 'Admin', 'Administrator role')
+  const fakeRole = makeRole({ id: roleId })
 
-  const fakeSSOUser = new SsoUser(
-    ssoUserId,
-    'johndow',
-    'John',
-    'Doe',
-    'John Doe',
-    'john.doe@example.com',
-  )
-  const fakeUser: User = new User(userId, fakeSSOUser, [fakeRole])
+  const fakeSsoUser = makeSsoUser({
+    ssoUserId: ssoUserId,
+  })
+
+  const fakeUser = makeUser({
+    id: userId,
+    roles: [fakeRole],
+    ssoUser: fakeSsoUser,
+  })
 
   const fakeTenant = {
     id: tenantId,
@@ -93,6 +96,7 @@ describe('tenantService', () => {
           displayName: fakeUser.ssoUser.displayName,
           email: fakeUser.ssoUser.email,
           firstName: fakeUser.ssoUser.firstName,
+          idpType: fakeUser.ssoUser.idpType,
           lastName: fakeUser.ssoUser.lastName,
           ssoUserId: fakeUser.ssoUser.ssoUserId,
           userName: fakeUser.ssoUser.userName,
@@ -333,11 +337,11 @@ describe('tenantService', () => {
         data: { data: { tenants: userTenants } },
       })
 
-      const result = await tenantService.getUserTenants(ssoUserId)
+      const result = await tenantService.getUserTenants(userId)
 
       expect(result).toEqual(userTenants)
       expect(mockGet).toHaveBeenCalledWith(
-        `/users/${ssoUserId}/tenants?expand=tenantUserRoles`,
+        `/users/${userId}/tenants?expand=tenantUserRoles`,
       )
     })
 
@@ -345,9 +349,7 @@ describe('tenantService', () => {
       const error = new Error('User not found')
       mockGet.mockRejectedValueOnce(error)
 
-      await expect(tenantService.getUserTenants(ssoUserId)).rejects.toThrow(
-        error,
-      )
+      await expect(tenantService.getUserTenants(userId)).rejects.toThrow(error)
 
       expect(mockedUtils.logApiError).toHaveBeenCalledWith(
         'Error getting users tenants',

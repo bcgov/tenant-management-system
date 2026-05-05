@@ -67,6 +67,15 @@ describe('useNotification', () => {
     expect(notification.items).toHaveLength(0)
   })
 
+  it('should handle removing a non-existent notification id gracefully', () => {
+    notification.success('Test message')
+    expect(notification.items).toHaveLength(1)
+
+    notification.remove('non-existent-id')
+
+    expect(notification.items).toHaveLength(1)
+  })
+
   it('should auto-remove notification after 10 seconds', () => {
     notification.success('Test message')
     expect(notification.items).toHaveLength(1)

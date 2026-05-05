@@ -5,7 +5,7 @@ import { createVuetify } from 'vuetify'
 import { makeTenant } from '@/__tests__/__factories__'
 import TenantList from '@/components/tenant/TenantList.vue'
 import TenantListCard from '@/components/tenant/TenantListCard.vue'
-import type { Tenant } from '@/models/tenant.model'
+import { type Tenant } from '@/models/tenant.model'
 
 const vuetify = createVuetify()
 

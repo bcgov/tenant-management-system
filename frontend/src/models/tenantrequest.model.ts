@@ -1,9 +1,11 @@
 export type TenantRequestId = string & { readonly __brand: 'TenantRequestId' }
+export const toTenantRequestId = (id: string): TenantRequestId =>
+  id as TenantRequestId
 
 /**
  * The shape of the data that comes from the API.
  */
-type TenantRequestApiData = {
+export type TenantRequestApiData = {
   /**
    * The UUID of who created the tenant request.
    */

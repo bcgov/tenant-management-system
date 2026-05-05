@@ -169,7 +169,7 @@ const config = [
   // Vitest test files
   {
     ...pluginVitest.configs.recommended,
-    files: ['src/**/__tests__/*'],
+    files: ['src/__tests__/**/*.ts'],
   },
 
   // Cypress test files

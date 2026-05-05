@@ -7,8 +7,8 @@ import { nextTick } from 'vue'
 
 import GroupDetails from '@/components/group/GroupDetails.vue'
 import { currentUserHasRole } from '@/utils/permissions'
-import type { Group } from '@/models/group.model'
-import type { Tenant } from '@/models/tenant.model'
+import { type Group } from '@/models/group.model'
+import { type Tenant } from '@/models/tenant.model'
 
 vi.mock('@/utils/permissions', () => ({
   currentUserHasRole: vi.fn(),

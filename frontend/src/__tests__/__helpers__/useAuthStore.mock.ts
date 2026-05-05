@@ -2,52 +2,52 @@ import { vi } from 'vitest'
 import { reactive } from 'vue'
 
 import { makeUser } from '@/__tests__/__factories__'
-import type { User } from '@/models/user.model'
 
-const storeState = reactive({
-  sessionExpired: false,
-  user: null as User | null,
-})
+import { type User } from '@/models/user.model'
 
-const mockLogin = vi.fn()
-const mockLogout = vi.fn()
+type MockAuthStoreOverrides = Partial<{
+  ensureFreshToken: ReturnType<typeof vi.fn>
+  getAccessToken: ReturnType<typeof vi.fn>
+  isSessionExpired: boolean
+  login: ReturnType<typeof vi.fn>
+  logout: ReturnType<typeof vi.fn>
+  user: User | null
+}>
 
-vi.mock('@/stores/useAuthStore', () => ({
-  useAuthStore: () => ({
+export function createMockAuthStore(overrides: MockAuthStoreOverrides = {}) {
+  const state = reactive({
+    isSessionExpired: overrides.isSessionExpired ?? false,
+    user: overrides.user === undefined ? makeUser() : overrides.user,
+  })
+
+  const ensureFreshToken = overrides.ensureFreshToken ?? vi.fn()
+  const getAccessToken = overrides.getAccessToken ?? vi.fn()
+  const login = overrides.login ?? vi.fn()
+  const logout = overrides.logout ?? vi.fn()
+
+  return {
     get authenticatedUser() {
-      if (storeState.user === null) {
+      if (state.user === null) {
         throw new Error('User not available')
       }
 
-      return storeState.user
+      return state.user
     },
+
+    ensureFreshToken,
+
+    getAccessToken,
 
     get isAuthenticated() {
-      return storeState.user !== null
+      return state.user !== null
     },
 
-    get sessionExpired() {
-      return storeState.sessionExpired
+    login,
+
+    logout,
+
+    get isSessionExpired() {
+      return state.isSessionExpired
     },
-
-    login: mockLogin,
-
-    logout: mockLogout,
-  }),
-}))
-
-export function mockAuthStore(
-  user: User | null = makeUser(),
-  sessionExpired = false,
-) {
-  storeState.sessionExpired = sessionExpired
-  storeState.user = user
-}
-
-export function mockAuthStoreLogin() {
-  return mockLogin
-}
-
-export function mockAuthStoreLogout() {
-  return mockLogout
+  }
 }

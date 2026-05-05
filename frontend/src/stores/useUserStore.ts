@@ -20,17 +20,15 @@ export const useUserStore = defineStore('user', () => {
   /**
    * Private function to handle IDIR user search with loading state management.
    *
-   * @param {IdirSearchType} searchType - The type of search (email, firstName,
-   *   lastName).
-   * @param {string} searchValue - The search value to pass to the service.
-   * @returns {Promise<User[]>} A promise that resolves to an array of User
-   *   objects.
+   * @param searchType - The type of search (email, firstName, lastName).
+   * @param searchValue - The search value to pass to the service.
+   * @returns A promise that resolves to an array of User objects.
    * @throws {Error} If the search type is invalid.
    */
   async function _searchIdirUsers(
     searchType: IdirSearchType,
     searchValue: string,
-  ) {
+  ): Promise<User[]> {
     loading.value = true
     try {
       let response
@@ -59,9 +57,8 @@ export const useUserStore = defineStore('user', () => {
   /**
    * Searches for IDIR users based on the email address.
    *
-   * @param {string} email - The email address substring to search.
-   * @returns {Promise<User[]>} A promise that resolves to an array of User
-   *   objects.
+   * @param email - The email address substring to search.
+   * @returns A promise that resolves to an array of user data.
    */
   async function searchIdirEmail(email: string) {
     return _searchIdirUsers(IDIR_SEARCH_TYPE.EMAIL.value, email)
@@ -70,9 +67,8 @@ export const useUserStore = defineStore('user', () => {
   /**
    * Searches for IDIR users based on the first name.
    *
-   * @param {string} firstName - The first name substring to search.
-   * @returns {Promise<User[]>} A promise that resolves to an array of User
-   *   objects.
+   * @param firstName - The first name substring to search.
+   * @returns A promise that resolves to an array of user data.
    */
   async function searchIdirFirstName(firstName: string) {
     return _searchIdirUsers(IDIR_SEARCH_TYPE.FIRST_NAME.value, firstName)
@@ -81,9 +77,8 @@ export const useUserStore = defineStore('user', () => {
   /**
    * Searches for IDIR users based on the last name.
    *
-   * @param {string} lastName - The last name substring to search.
-   * @returns {Promise<User[]>} A promise that resolves to an array of User
-   *   objects.
+   * @param lastName - The last name substring to search.
+   * @returns A promise that resolves to an array of user data.
    */
   async function searchIdirLastName(lastName: string) {
     return _searchIdirUsers(IDIR_SEARCH_TYPE.LAST_NAME.value, lastName)
@@ -92,11 +87,10 @@ export const useUserStore = defineStore('user', () => {
   /**
    * Private function to handle BCEID user search with loading state management.
    *
-   * @param {BCeIDSearchType} searchType - The type of search (email, firstName,
+   * @param searchType - The type of search (email, firstName,
    *   lastName).
-   * @param {string} searchValue - The search value to pass to the service.
-   * @returns {Promise<User[]>} A promise that resolves to an array of User
-   *   objects.
+   * @param searchValue - The search value to pass to the service.
+   * @returns A promise that resolves to an array of user data.
    * @throws {Error} If the search type is invalid.
    */
   async function _searchBceidUsers(
@@ -128,9 +122,8 @@ export const useUserStore = defineStore('user', () => {
   /**
    * Searches for BCeID users based on the email address.
    *
-   * @param {string} email - The email address substring to search.
-   * @returns {Promise<User[]>} A promise that resolves to an array of User
-   *   objects.
+   * @param email - The email address substring to search.
+   * @returns A promise that resolves to an array of user data.
    */
   async function searchBCeIDEmail(email: string) {
     return _searchBceidUsers(BCeID_SEARCH_TYPE.EMAIL.value, email)
@@ -139,9 +132,8 @@ export const useUserStore = defineStore('user', () => {
   /**
    * Searches for BCeID users based on the first name.
    *
-   * @param {string} firstName - The first name substring to search.
-   * @returns {Promise<User[]>} A promise that resolves to an array of User
-   *   objects.
+   * @param firstName - The first name substring to search.
+   * @returns A promise that resolves to an array of user data.
    */
   async function searchBCeIDDisplayName(firstName: string) {
     return _searchBceidUsers(BCeID_SEARCH_TYPE.DISPLAY_NAME.value, firstName)

@@ -2,13 +2,16 @@ import { mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { makeSsoUser, makeUser } from '@/__tests__/__factories__'
-import {
-  mockAuthStore,
-  mockAuthStoreLogout,
-} from '@/__tests__/__helpers__/useAuthStore.mock'
+import { createMockAuthStore } from '@/__tests__/__helpers__/useAuthStore.mock'
 
 import AppHeader from '@/components/layout/AppHeader.vue'
-import type { User } from '@/models/user.model'
+import { type User } from '@/models/user.model'
+
+let currentAuthStore = createMockAuthStore()
+
+vi.mock('@/stores/useAuthStore', () => ({
+  useAuthStore: () => currentAuthStore,
+}))
 
 const mountComponent = (user: User | null = null) =>
   mount(AppHeader, {
@@ -28,7 +31,7 @@ const mountComponent = (user: User | null = null) =>
 describe('AppHeader.vue', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockAuthStore(null)
+    currentAuthStore = createMockAuthStore()
   })
 
   it('renders the app title', () => {
@@ -71,6 +74,6 @@ describe('AppHeader.vue', () => {
 
     await wrapper.find('.logout-btn').trigger('click')
 
-    expect(mockAuthStoreLogout()).toHaveBeenCalled()
+    expect(currentAuthStore.logout).toHaveBeenCalled()
   })
 })

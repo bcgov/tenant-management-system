@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
 import { makeGroupUser } from '@/__tests__/__factories__'
-import { Group, type GroupId } from '@/models/group.model'
+
+import { Group, toGroupId } from '@/models/group.model'
 
 describe('Group model', () => {
   it('constructor assigns all properties', () => {
@@ -11,7 +12,7 @@ describe('Group model', () => {
       'created-by',
       'created-date',
       'description',
-      'id' as GroupId,
+      toGroupId('id'),
       'name',
       groupUsers,
     )
@@ -29,7 +30,7 @@ describe('Group model', () => {
       createdBy: 'created-by',
       createdDateTime: 'created-date-time',
       description: 'description',
-      id: 'id' as GroupId,
+      id: toGroupId('id'),
       name: 'name',
       users: [makeGroupUser()],
     }
@@ -50,7 +51,7 @@ describe('Group model', () => {
       createdByUserName: 'created-by-username',
       createdDateTime: 'created-date-time',
       description: 'description',
-      id: 'id' as GroupId,
+      id: toGroupId('id'),
       name: 'name',
       users: [makeGroupUser()],
     }
@@ -65,7 +66,7 @@ describe('Group model', () => {
       createdBy: 'created-by',
       createdDateTime: 'created-date-time',
       description: 'description',
-      id: 'id' as GroupId,
+      id: toGroupId('id'),
       name: 'name',
     }
 

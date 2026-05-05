@@ -3,13 +3,16 @@ import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
 
+import {
+  makeGroup,
+  makeSsoUser,
+  makeTenant,
+  makeUser,
+} from '@/__tests__/__factories__'
+
 import GroupUserManagementContainer from '@/components/group/UserManagementContainer.vue'
 import { useNotification } from '@/composables/useNotification'
 import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
-import { Group } from '@/models/group.model'
-import { SsoUser } from '@/models/ssouser.model'
-import { Tenant } from '@/models/tenant.model'
-import { User } from '@/models/user.model'
 import { useGroupStore } from '@/stores/useGroupStore'
 import { useUserStore } from '@/stores/useUserStore'
 import { IDIR_SEARCH_TYPE } from '@/utils/constants'
@@ -17,39 +20,6 @@ import { IDIR_SEARCH_TYPE } from '@/utils/constants'
 vi.mock('@/composables/useNotification', () => ({
   useNotification: vi.fn(),
 }))
-
-// --- Helpers -----------------------------------------------------------------
-
-function makeUser(id = 'u1', displayName = 'Test User') {
-  const ssoUser = new SsoUser(
-    id,
-    'username',
-    'First',
-    'Last',
-    displayName,
-    'e@e.com',
-  )
-  return new User(id, ssoUser, [])
-}
-
-function makeGroup(id = 'g1') {
-  const group = new Group('creator', '2026-01-01', id, 'Group One', 'desc', [])
-  return group
-}
-
-function makeTenant(id = 't1') {
-  return new Tenant(
-    'creator',
-    '2026-01-01',
-    'a tenant',
-    id,
-    'Tenant One',
-    'min',
-    [],
-  )
-}
-
-// --- Setup -------------------------------------------------------------------
 
 function mountComponent(group = makeGroup(), tenant = makeTenant()) {
   return mount(GroupUserManagementContainer, {
@@ -79,8 +49,6 @@ describe('GroupUserManagementContainer', () => {
     vi.mocked(useNotification).mockReturnValue(notificationMock)
   })
 
-  // --- handleAddUser ---------------------------------------------------------
-
   describe('handleAddUser', () => {
     it('calls addGroupUser, clears searchResults, and shows success notification', async () => {
       const group = makeGroup()
@@ -108,7 +76,9 @@ describe('GroupUserManagementContainer', () => {
 
     it('shows duplicate error notification and clears results on DuplicateEntityError', async () => {
       const group = makeGroup()
-      const user = makeUser('u1', 'Jane Doe')
+      const user = makeUser({
+        ssoUser: makeSsoUser({ displayName: 'Jane Doe' }),
+      })
       groupStore.addGroupUser = vi
         .fn()
         .mockRejectedValue(new DuplicateEntityError())
@@ -206,13 +176,21 @@ describe('GroupUserManagementContainer', () => {
 
   describe('handleUserSearch', () => {
     beforeEach(() => {
-      userStore.searchIdirFirstName = vi.fn().mockResolvedValue([makeUser('a')])
-      userStore.searchIdirLastName = vi.fn().mockResolvedValue([makeUser('b')])
-      userStore.searchIdirEmail = vi.fn().mockResolvedValue([makeUser('c')])
+      userStore.searchIdirFirstName = vi
+        .fn()
+        .mockResolvedValue([makeUser({ id: 'a' })])
+      userStore.searchIdirLastName = vi
+        .fn()
+        .mockResolvedValue([makeUser({ id: 'b' })])
+      userStore.searchIdirEmail = vi
+        .fn()
+        .mockResolvedValue([makeUser({ id: 'c' })])
       userStore.searchBCeIDDisplayName = vi
         .fn()
-        .mockResolvedValue([makeUser('d')])
-      userStore.searchBCeIDEmail = vi.fn().mockResolvedValue([makeUser('e')])
+        .mockResolvedValue([makeUser({ id: 'd' })])
+      userStore.searchBCeIDEmail = vi
+        .fn()
+        .mockResolvedValue([makeUser({ id: 'e' })])
     })
 
     it('searches by first name and concatenates BCeID display name results', async () => {
@@ -322,8 +300,12 @@ describe('GroupUserManagementContainer', () => {
   })
 
   it('sets searchResults to null on cancel', async () => {
-    userStore.searchIdirEmail = vi.fn().mockResolvedValue([makeUser('a')])
-    userStore.searchBCeIDEmail = vi.fn().mockResolvedValue([makeUser('b')])
+    userStore.searchIdirEmail = vi
+      .fn()
+      .mockResolvedValue([makeUser({ id: 'a' })])
+    userStore.searchBCeIDEmail = vi
+      .fn()
+      .mockResolvedValue([makeUser({ id: 'b' })])
 
     const wrapper = mountComponent()
 

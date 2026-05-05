@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
-import { Role } from '@/models/role.model'
+import { Role, toRoleId, type RoleApiData } from '@/models/role.model'
 
 describe('Role model', () => {
   it('constructor assigns all properties correctly', () => {
-    const role = new Role('role123', 'Admin', 'Administrator role')
+    const role = new Role(toRoleId('role123'), 'Admin', 'Administrator role')
 
     expect(role.id).toBe('role123')
     expect(role.name).toBe('Admin')
@@ -12,8 +12,8 @@ describe('Role model', () => {
   })
 
   it('fromApiData creates Role instance correctly', () => {
-    const apiData = {
-      id: 'role456',
+    const apiData: RoleApiData = {
+      id: toRoleId('role456'),
       name: 'User',
       description: 'Standard user role',
     }

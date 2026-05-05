@@ -4,6 +4,7 @@ import { createApp } from 'vue'
 
 import App from '@/App.vue'
 import '@/assets/styles/global.css'
+import { useNotification } from '@/composables/useNotification'
 import { i18n } from '@/i18n'
 import vuetify from '@/plugins/vuetify'
 import router from '@/router'
@@ -20,6 +21,16 @@ export async function initializeApp() {
   app.use(router)
   app.use(vuetify)
   app.use(i18n)
+
+  app.config.errorHandler = (error) => {
+    // Log the error for debugging, as it could be something unexpected like a
+    // change in what the API is returning.
+    logger.error('Application Error', error)
+
+    // Display a notification to the user.
+    const notification = useNotification()
+    notification.error('An unexpected error occurred')
+  }
 
   const authStore = useAuthStore()
   await authStore.init()

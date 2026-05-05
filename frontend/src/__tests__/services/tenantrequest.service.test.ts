@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { makeUser } from '../__factories__'
+
 import * as utils from '@/services/utils'
 
 vi.mock('@/services/utils', () => ({
@@ -38,27 +40,16 @@ vi.mock('@/services/authenticated.axios', () => ({
 
 import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
 import { ValidationError } from '@/errors/domain/ValidationError'
-import type { SSOUserId } from '@/models/ssouser.model'
-import { type TenantRequestDetailFields } from '@/models/tenantrequest.model'
-import { User } from '@/models/user.model'
+import {
+  type TenantRequestDetailFields,
+  type TenantRequestId,
+} from '@/models/tenantrequest.model'
 import { tenantRequestService } from '@/services/tenantrequest.service'
 
 describe('tenantRequestService', () => {
-  const requestId = '123'
-  const ssoUserId = '789'
+  const requestId = '123' as TenantRequestId
 
-  const fakeUser: User = new User(
-    '1',
-    {
-      displayName: 'John Doe',
-      email: 'john.doe@example.com',
-      firstName: 'John',
-      lastName: 'Doe',
-      ssoUserId: ssoUserId as SSOUserId,
-      userName: 'johndoe',
-    },
-    [],
-  )
+  const fakeUser = makeUser()
 
   const fakeTenantRequestDetails: TenantRequestDetailFields = {
     name: 'Test Tenant Request',

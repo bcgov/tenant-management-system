@@ -1,11 +1,21 @@
 import { mount, VueWrapper } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { ComponentPublicInstance } from 'vue'
+import { type ComponentPublicInstance } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 
+import { i18n, loadLocaleMessages, setI18nLanguage } from '@/i18n'
 import router from '@/router'
 
-// Mock the components since we're testing routes, not component functionality
+vi.mock('@/i18n', () => ({
+  i18n: {
+    global: {
+      availableLocales: [] as string[],
+    },
+  },
+  loadLocaleMessages: vi.fn().mockResolvedValue(undefined),
+  setI18nLanguage: vi.fn(),
+}))
+
 vi.mock('@/components/route/GroupManagementContainer.vue', () => ({
   default: { template: `<div>GroupManagementContainer</div>` },
 }))
@@ -29,7 +39,6 @@ const TENANT_LIST_TEMPLATE = 'TenantListContainer'
 const TENANT_MANAGE_TEMPLATE = 'TenantManagementContainer'
 const LANDING_PAGE_TEMPLATE = 'LandingPageContainer'
 
-// Create a test app component
 const TestApp = {
   template: '<router-view />',
 }
@@ -46,7 +55,6 @@ describe('Vue Router', () => {
   let wrapper: VueWrapper<ComponentPublicInstance> | null = null
 
   beforeEach(() => {
-    // Reset router state before each test
     router.push('/')
   })
 
@@ -116,13 +124,11 @@ describe('Vue Router', () => {
   })
 
   it('passes props correctly to components', async () => {
-    // Test that props: true works correctly
     const TestComponent = {
       props: ['tenantId', 'groupId'],
       template: '<div>{{ tenantId }}-{{ groupId }}</div>',
     }
 
-    // Create a test router with our test component
     const testRouter = createRouter({
       history: createWebHistory(),
       routes: [
@@ -147,12 +153,10 @@ describe('Vue Router', () => {
   })
 })
 
-// Alternative approach: Testing route configuration directly
 describe('Route Configuration', () => {
   it('has correct route definitions', () => {
     const routes = router.getRoutes()
 
-    // Check that all expected routes exist
     const paths = routes.map((route) => route.path)
     expect(paths).toContain('/')
     expect(paths).toContain('/settings')
@@ -175,7 +179,6 @@ describe('Route Configuration', () => {
   })
 })
 
-// Integration test approach
 describe('Router Integration', () => {
   let wrapper: VueWrapper<ComponentPublicInstance> | null = null
 
@@ -193,17 +196,14 @@ describe('Router Integration', () => {
       },
     })
 
-    // Start at root, should redirect to tenants
     await router.push('/')
     await router.isReady()
     expect(router.currentRoute.value.path).toBe('/')
 
-    // Navigate to a specific tenant
     await router.push('/tenants/123')
     await router.isReady()
     expect(router.currentRoute.value.params.tenantId).toBe('123')
 
-    // Navigate to group management
     await router.push('/tenants/123/groups/456')
     await router.isReady()
     expect(router.currentRoute.value.params).toEqual({
@@ -211,9 +211,65 @@ describe('Router Integration', () => {
       groupId: '456',
     })
 
-    // Navigate to settings
     await router.push('/settings')
     await router.isReady()
     expect(router.currentRoute.value.path).toBe('/settings')
+  })
+})
+
+describe('Router beforeEach guard for i18n', () => {
+  const availableLocales = i18n.global.availableLocales
+
+  beforeEach(async () => {
+    availableLocales.length = 0
+    vi.mocked(loadLocaleMessages).mockClear()
+    vi.mocked(setI18nLanguage).mockClear()
+    await router.push('/')
+    await router.isReady()
+    vi.mocked(loadLocaleMessages).mockClear()
+    vi.mocked(setI18nLanguage).mockClear()
+  })
+
+  it('calls loadLocaleMessages when the locale is not yet available', async () => {
+    await router.push('/settings')
+    await router.isReady()
+
+    expect(loadLocaleMessages).toHaveBeenCalledWith(i18n, 'en')
+    expect(setI18nLanguage).toHaveBeenCalledWith(i18n, 'en')
+  })
+
+  it('skips loadLocaleMessages when the locale is already available', async () => {
+    availableLocales.push('en')
+
+    await router.push('/settings')
+    await router.isReady()
+
+    expect(loadLocaleMessages).not.toHaveBeenCalled()
+    expect(setI18nLanguage).toHaveBeenCalled()
+  })
+
+  it('always calls setI18nLanguage regardless of whether locale was loaded', async () => {
+    availableLocales.push('en')
+
+    await router.push('/tenants')
+    await router.isReady()
+
+    expect(setI18nLanguage).toHaveBeenCalledTimes(1)
+  })
+
+  it('awaits loadLocaleMessages before calling setI18nLanguage', async () => {
+    const callOrder: string[] = []
+
+    vi.mocked(loadLocaleMessages).mockImplementation(async () => {
+      callOrder.push('loadLocaleMessages')
+    })
+    vi.mocked(setI18nLanguage).mockImplementation(() => {
+      callOrder.push('setI18nLanguage')
+    })
+
+    await router.push('/settings')
+    await router.isReady()
+
+    expect(callOrder).toEqual(['loadLocaleMessages', 'setI18nLanguage'])
   })
 })
