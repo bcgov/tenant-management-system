@@ -37,6 +37,8 @@ export class RoutesConstants {
     '/v1/shared-services/:sharedServiceId/status'
   public static ADD_SHARED_SERVICE_ROLES =
     '/v1/shared-services/:sharedServiceId/shared-service-roles'
+  public static UPDATE_SHARED_SERVICE_ROLE =
+    '/v1/shared-services/:sharedServiceId/shared-service-roles/:sharedServiceRoleId'
   public static GET_ALL_ACTIVE_SHARED_SERVICES = '/v1/shared-services'
   public static ASSOCIATE_SHARED_SERVICE_TO_TENANT =
     '/v1/tenants/:tenantId/shared-services'

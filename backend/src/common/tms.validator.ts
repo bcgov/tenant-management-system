@@ -518,4 +518,32 @@ export default {
         .required(),
     }).options({ abortEarly: false, convert: false }),
   },
+
+  updateSharedServiceRole: {
+    params: Joi.object({
+      sharedServiceId: Joi.string().guid().required(),
+      sharedServiceRoleId: Joi.string().guid().required(),
+    }),
+    body: Joi.object({
+      name: Joi.string()
+        .min(1)
+        .max(30)
+        .pattern(/^\S.*\S$/)
+        .optional(),
+      description: Joi.string().min(1).max(255).allow(null).optional(),
+      allowedIdentityProviders: Joi.array()
+        .items(
+          Joi.string().valid(
+            'idir',
+            'azureidir',
+            'bceidbasic',
+            'bceidbusiness',
+          ),
+        )
+        .allow(null)
+        .optional(),
+    })
+      .or('name', 'description', 'allowedIdentityProviders')
+      .options({ abortEarly: false, convert: false }),
+  },
 }

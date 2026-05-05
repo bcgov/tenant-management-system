@@ -581,6 +581,40 @@ export class TMSController {
     }
   }
 
+  public async updateSharedServiceRole(req: Request, res: Response) {
+    try {
+      const result = await this.tmsService.updateSharedServiceRole(req)
+      res.status(200).send(result)
+    } catch (error: unknown) {
+      logger.error(getErrorMessage(error))
+      if (error instanceof ConflictError) {
+        this.errorHandler.generalError(
+          res,
+          'Error occurred updating shared service role',
+          getErrorMessage(error),
+          error.statusCode,
+          'Conflict',
+        )
+      } else if (error instanceof NotFoundError) {
+        this.errorHandler.generalError(
+          res,
+          'Error occurred updating shared service role',
+          getErrorMessage(error),
+          error.statusCode,
+          'Not Found',
+        )
+      } else {
+        this.errorHandler.generalError(
+          res,
+          'Error occurred updating shared service role',
+          getErrorMessage(error),
+          500,
+          'Internal Server Error',
+        )
+      }
+    }
+  }
+
   public async updateSharedServiceStatus(req: Request, res: Response) {
     try {
       const result = await this.tmsService.updateSharedServiceStatus(req)

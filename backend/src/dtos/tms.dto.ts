@@ -68,6 +68,17 @@ export interface AddSharedServiceRolesInputDto {
   updatedBy: string
 }
 
+export interface UpdateSharedServiceRoleInputDto {
+  sharedServiceId: string
+  sharedServiceRoleId: string
+  name?: string
+  description?: string | null
+  allowedIdentityProviders?: Array<
+    'idir' | 'azureidir' | 'bceidbasic' | 'bceidbusiness'
+  > | null
+  updatedBy: string
+}
+
 export interface AssociateSharedServiceToTenantInputDto {
   tenantId: string
   sharedServiceId: string

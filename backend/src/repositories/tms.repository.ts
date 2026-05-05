@@ -25,6 +25,7 @@ import {
   CreateTenantRequestInputDto,
   CreateSharedServiceInputDto,
   UpdateSharedServiceInputDto,
+  UpdateSharedServiceRoleInputDto,
   UpdateSharedServiceStatusInputDto,
   GetTenantRequestsInputDto,
   UpdateTenantRequestStatusResultDto,
@@ -1683,6 +1684,81 @@ export class TMSRepository {
     })
 
     return await this.getSharedServiceWithRoles(sharedServiceId)
+  }
+
+  public async updateSharedServiceRole(input: UpdateSharedServiceRoleInputDto) {
+    const {
+      sharedServiceId,
+      sharedServiceRoleId,
+      name,
+      description,
+      allowedIdentityProviders,
+      updatedBy,
+    } = input
+
+    await this.manager.transaction(async (transactionEntityManager) => {
+      const sharedServiceRole: SharedServiceRole | null =
+        await transactionEntityManager
+          .createQueryBuilder(SharedServiceRole, 'ssr')
+          .innerJoinAndSelect('ssr.sharedService', 'sharedService')
+          .where('ssr.id = :sharedServiceRoleId', { sharedServiceRoleId })
+          .andWhere('sharedService.id = :sharedServiceId', { sharedServiceId })
+          .andWhere('ssr.isDeleted = :isDeleted', { isDeleted: false })
+          .getOne()
+
+      if (!sharedServiceRole) {
+        throw new NotFoundError(
+          `Shared service role not found: ${sharedServiceRoleId}`,
+        )
+      }
+
+      if (
+        name !== undefined &&
+        name !== sharedServiceRole.name &&
+        (await transactionEntityManager
+          .createQueryBuilder()
+          .from(SharedServiceRole, 'ssr')
+          .where('ssr.sharedService.id = :sharedServiceId', {
+            sharedServiceId,
+          })
+          .andWhere('ssr.name = :name', { name })
+          .andWhere('ssr.id != :sharedServiceRoleId', {
+            sharedServiceRoleId,
+          })
+          .andWhere('ssr.isDeleted = :isDeleted', { isDeleted: false })
+          .getExists())
+      ) {
+        throw new ConflictError(
+          `Role '${name}' already exists for this shared service`,
+        )
+      }
+
+      if (name !== undefined) {
+        sharedServiceRole.name = name
+      }
+      if (description !== undefined) {
+        sharedServiceRole.description = description
+      }
+      if (allowedIdentityProviders !== undefined) {
+        sharedServiceRole.allowedIdentityProviders =
+          allowedIdentityProviders && allowedIdentityProviders.length > 0
+            ? allowedIdentityProviders
+            : null
+      }
+      sharedServiceRole.updatedBy = updatedBy
+
+      await transactionEntityManager.save(sharedServiceRole)
+    })
+
+    const updatedSharedService =
+      await this.getSharedServiceWithRoles(sharedServiceId)
+    if (!updatedSharedService) {
+      throw new UnexpectedStateError(
+        `Shared service load failed after update: ${sharedServiceId}`,
+      )
+    }
+
+    return updatedSharedService
   }
 
   public async updateSharedService(input: UpdateSharedServiceInputDto) {
