@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import {
   mdiAccountGroupOutline,
-  mdiAccountKey,
+  mdiAccountKeyOutline,
   mdiAccountOutline,
   mdiChevronLeft,
   mdiChevronRight,
   mdiClipboardList,
-  mdiCog,
+  mdiCogOutline,
   mdiDomain,
   mdiPuzzle,
-  mdiShieldAccount,
+  mdiShieldAccountOutline,
   mdiVectorRectangle,
 } from '@mdi/js'
 import { computed, ref, watch } from 'vue'
@@ -70,15 +70,14 @@ watch(mobile, () => {
     <AppHeader :user="user" />
 
     <v-navigation-drawer v-if="showDrawer" :rail="rail" permanent>
-      <v-list class="pt-4" nav>
+      <v-list nav>
         <v-list-item
           v-if="isAdministrator"
-          :prepend-icon="mdiCog"
+          :prepend-icon="mdiCogOutline"
           class="mt-2"
           title="Settings"
           to="/settings"
         />
-
         <template v-if="isSettingsRoute">
           <v-divider class="my-2" />
           <v-list-item
@@ -101,37 +100,41 @@ watch(mobile, () => {
           to="/tenants"
         />
 
-        <v-divider v-if="isTenantRoute" />
-
-        <v-list v-if="isTenantRoute" class="pl-4" nav>
+        <template v-if="isTenantRoute">
+          <v-divider />
           <v-list-item
+            :class="{ 'pl-6': !rail }"
             :prepend-icon="mdiAccountOutline"
             :to="`/tenants/${tenantId}/users`"
-            title="Users"
+            title="Tenant Users"
           />
           <v-list-item
+            :class="{ 'pl-6': !rail }"
             :prepend-icon="mdiAccountGroupOutline"
             :to="`/tenants/${tenantId}/groups`"
             title="Groups"
           />
-          <v-list v-if="isGroupRoute" class="pl-8" nav>
+          <template v-if="isGroupRoute">
             <v-list-item
-              :prepend-icon="mdiAccountKey"
+              :class="{ 'pl-10': !rail }"
+              :prepend-icon="mdiAccountKeyOutline"
               :to="`/tenants/${tenantId}/groups/${groupId}/members`"
               title="Members"
             />
             <v-list-item
-              :prepend-icon="mdiShieldAccount"
+              :class="{ 'pl-10': !rail }"
+              :prepend-icon="mdiShieldAccountOutline"
               :to="`/tenants/${tenantId}/groups/${groupId}/roles`"
               title="Service Roles"
             />
-          </v-list>
+          </template>
           <v-list-item
+            :class="{ 'pl-6': !rail }"
             :prepend-icon="mdiVectorRectangle"
             :to="`/tenants/${tenantId}/services`"
             title="Connected Services"
           />
-        </v-list>
+        </template>
       </v-list>
       <template #append>
         <v-list-item
