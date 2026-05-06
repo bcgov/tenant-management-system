@@ -10,7 +10,7 @@ import LandingPageContainer from '@/components/route/LandingPageContainer.vue'
 import SettingsServiceContainer from '@/components/route/SettingsServiceContainer.vue'
 import SettingsTenantRequestContainer from '@/components/route/SettingsTenantRequestContainer.vue'
 import TenantListContainer from '@/components/route/TenantListContainer.vue'
-import TenantManagementContainer from '@/components/route/TenantManagementContainer.vue'
+import TenantDetailContainer from '@/components/route/TenantDetailContainer.vue'
 import ServiceManagementContainer from '@/components/service/ServiceManagementContainer.vue'
 import UserManagementContainer from '@/components/tenant/UserManagementContainer.vue'
 
@@ -34,7 +34,7 @@ const routes = [
   { path: '/tenants', component: TenantListContainer },
   {
     path: '/tenants/:tenantId',
-    component: TenantManagementContainer,
+    component: TenantDetailContainer,
     props: true,
     children: [
       {

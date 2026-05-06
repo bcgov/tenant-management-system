@@ -27,34 +27,30 @@ function toggleDetail() {
 </script>
 
 <template>
-  <v-sheet color="surface-light-blue">
-    <v-row class="align-center px-4" no-gutters>
-      <v-col cols="8">
-        <h2>Tenant: {{ tenant.name }}</h2>
+  <v-sheet class="px-10 py-4" color="surface-light-gray">
+    <v-row class="align-center">
+      <v-col>
+        <hgroup class="text-stack">
+          <p class="p-large">{{ tenant.name }}</p>
+          <p class="p-label">{{ tenant.ministryName }}</p>
+        </hgroup>
       </v-col>
-      <v-col class="align-center d-flex justify-end" cols="4">
-        <div class="me-4">
-          <p>
-            Date Created:
-            <span class="text-no-wrap">
-              <strong>{{ tenant.createdDate }}</strong>
-            </span>
-          </p>
-        </div>
-        <div class="me-4">
-          <p>
-            Created By:
-            <strong>{{ tenant.createdBy }}</strong>
-          </p>
-        </div>
+
+      <v-col cols="auto">
         <v-btn
           :icon="showDetail ? mdiChevronUp : mdiChevronDown"
           rounded="lg"
           size="small"
-          variant="outlined"
+          variant="plain"
           @click="toggleDetail"
         ></v-btn>
       </v-col>
     </v-row>
   </v-sheet>
 </template>
+
+<style scoped>
+.text-stack p {
+  margin: 0;
+}
+</style>

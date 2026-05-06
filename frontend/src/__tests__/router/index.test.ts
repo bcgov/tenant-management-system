@@ -22,8 +22,8 @@ vi.mock('@/components/route/GroupManagementContainer.vue', () => ({
 vi.mock('@/components/route/TenantListContainer.vue', () => ({
   default: { template: `<div>TenantListContainer</div>` },
 }))
-vi.mock('@/components/route/TenantManagementContainer.vue', () => ({
-  default: { template: `<div>TenantManagementContainer</div>` },
+vi.mock('@/components/route/TenantDetailContainer.vue', () => ({
+  default: { template: `<div>TenantDetailContainer</div>` },
 }))
 
 vi.mock('@/components/route/LandingPageContainer.vue', () => ({
@@ -32,7 +32,7 @@ vi.mock('@/components/route/LandingPageContainer.vue', () => ({
 
 const GROUP_MANAGE_TEMPLATE = 'GroupManagementContainer'
 const TENANT_LIST_TEMPLATE = 'TenantListContainer'
-const TENANT_MANAGE_TEMPLATE = 'TenantManagementContainer'
+const TENANT_DETAIL_TEMPLATE = 'TenantDetailContainer'
 const LANDING_PAGE_TEMPLATE = 'LandingPageContainer'
 
 const TestApp = {
@@ -100,7 +100,7 @@ describe('Vue Router', () => {
 
     expect(router.currentRoute.value.path).toBe(`/tenants/${tenantId}`)
     expect(router.currentRoute.value.params.tenantId).toBe(tenantId)
-    expect(wrapper.text()).toContain(TENANT_MANAGE_TEMPLATE)
+    expect(wrapper.text()).toContain(TENANT_DETAIL_TEMPLATE)
   })
 
   it('navigates to group management route with params', async () => {

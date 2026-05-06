@@ -29,6 +29,14 @@ p {
   font: var(--bcds-typography-regular-body);
 }
 
+.p-label {
+  font: var(--bcds-typography-regular-label);
+}
+
+.p-large {
+  font: var(--bcds-typography-regular-large-body);
+}
+
 .p-small {
   font: var(--bcds-typography-regular-small-body);
 }
