@@ -127,7 +127,7 @@ function toggleEdit() {
     <v-col cols="10">
       <v-form ref="form" v-model="isFormValid" @submit.prevent="handleSubmit">
         <v-row>
-          <v-col cols="6">
+          <v-col cols="12" md="6">
             <v-text-field
               v-if="isEditing"
               v-model="formData.name"
@@ -146,7 +146,7 @@ function toggleEdit() {
               disabled
             />
           </v-col>
-          <v-col cols="6">
+          <v-col cols="12" md="6">
             <v-textarea
               v-if="isEditing"
               v-model="formData.description"
@@ -162,6 +162,7 @@ function toggleEdit() {
               :model-value="group.description"
               label="Group Description"
               rows="1"
+              auto-grow
               disabled
             ></v-textarea>
           </v-col>
