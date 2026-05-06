@@ -33,7 +33,7 @@ const tenantStore = useTenantStore()
 
 const isDuplicateName = ref(false)
 const isEditing = ref(false)
-const showDetail = ref(true)
+const showDetail = ref(false)
 const tab = ref<number>(0)
 
 // --- Computed Values ---------------------------------------------------------

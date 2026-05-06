@@ -16,7 +16,7 @@ const emit = defineEmits<{
 
 // --- Component State ---------------------------------------------------------
 
-const showDetail = ref(true)
+const showDetail = ref(false)
 
 // --- Component Methods -------------------------------------------------------
 
@@ -28,9 +28,9 @@ function toggleDetail() {
 
 <template>
   <v-sheet color="surface-light-blue">
-    <v-row class="align-center pa-4" no-gutters>
+    <v-row class="align-center px-4" no-gutters>
       <v-col cols="8">
-        <h2>Group Details</h2>
+        <h2>Group: {{ group.name }}</h2>
       </v-col>
       <v-col class="align-center d-flex justify-end" cols="4">
         <div class="me-4">
