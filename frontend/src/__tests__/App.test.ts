@@ -30,7 +30,6 @@ const mountApp = () =>
       },
       stubs: {
         AppHeader: true,
-        AppNavigation: true,
         AppNotifications: true,
         LandingPageContainer: true,
         VApp: { template: '<div><slot /></div>' },
