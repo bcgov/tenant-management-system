@@ -1260,6 +1260,7 @@ export class TMSRepository {
         if (tenantRequest.status !== 'NEW') {
           throw new ConflictError(
             `Cannot update tenant request with status: ${tenantRequest.status}`,
+            TMSConstants.TENANT_REQUEST_INVALID_STATUS,
           )
         }
 
@@ -1281,6 +1282,7 @@ export class TMSRepository {
           ) {
             throw new ConflictError(
               `A tenant with name '${tenantRequest.name}' and ministry name '${tenantRequest.ministryName}' already exists`,
+              TMSConstants.TENANT_NAME_ALREADY_EXISTS,
             )
           }
 

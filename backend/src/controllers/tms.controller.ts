@@ -458,6 +458,7 @@ export class TMSController {
           getErrorMessage(error),
           error.statusCode,
           'Conflict',
+          error.code,
         )
       } else {
         this.errorHandler.generalError(

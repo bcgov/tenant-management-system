@@ -2491,6 +2491,7 @@ describe('Tenant API', () => {
       mockTMSRepository.updateTenantRequestStatus.mockRejectedValue(
         new ConflictError(
           `Cannot update tenant request with status: ${mockTenantRequest.status}`,
+          TMSConstants.TENANT_REQUEST_INVALID_STATUS,
         ),
       )
 
@@ -2504,6 +2505,7 @@ describe('Tenant API', () => {
         httpResponseCode: 409,
         message: `Cannot update tenant request with status: ${mockTenantRequest.status}`,
         name: 'Error occurred updating tenant request status',
+        code: TMSConstants.TENANT_REQUEST_INVALID_STATUS,
       })
 
       expect(mockTMSRepository.updateTenantRequestStatus).toHaveBeenCalledWith(
@@ -2585,6 +2587,7 @@ describe('Tenant API', () => {
       mockTMSRepository.updateTenantRequestStatus.mockRejectedValue(
         new ConflictError(
           `A tenant with name '${mockTenantRequest.name}' and ministry name '${mockTenantRequest.ministryName}' already exists`,
+          TMSConstants.TENANT_NAME_ALREADY_EXISTS,
         ),
       )
 
@@ -2598,6 +2601,7 @@ describe('Tenant API', () => {
         httpResponseCode: 409,
         message: `A tenant with name '${mockTenantRequest.name}' and ministry name '${mockTenantRequest.ministryName}' already exists`,
         name: 'Error occurred updating tenant request status',
+        code: TMSConstants.TENANT_NAME_ALREADY_EXISTS,
       })
 
       expect(mockTMSRepository.updateTenantRequestStatus).toHaveBeenCalledWith(

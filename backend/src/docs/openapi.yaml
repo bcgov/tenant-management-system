@@ -1301,11 +1301,39 @@ paths:
               schema:
                 $ref: '#/components/schemas/NotFoundErrorResponse'
         '409':
-          description: Conflict - Cannot update tenant request with current status
+          description: Conflict - Cannot update tenant request with current status or tenant already exists
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ConflictErrorResponse'
+                allOf:
+                  - $ref: '#/components/schemas/ConflictErrorResponse'
+                  - type: object
+                    properties:
+                      code:
+                        type: string
+                        enum:
+                          - TENANT_REQUEST_INVALID_STATUS
+                          - TENANT_NAME_ALREADY_EXISTS
+                        description: Stable machine-readable code for tenant request status conflicts.
+                    required:
+                      - code
+              examples:
+                invalidStatus:
+                  summary: Tenant request already decisioned
+                  value:
+                    name: Error occurred updating tenant request status
+                    message: 'Cannot update tenant request with status: APPROVED'
+                    httpResponseCode: 409
+                    errorMessage: Conflict
+                    code: TENANT_REQUEST_INVALID_STATUS
+                tenantAlreadyExists:
+                  summary: Tenant already exists
+                  value:
+                    name: Error occurred updating tenant request status
+                    message: "A tenant with name 'Test Tenant' and ministry name 'Test Ministry' already exists"
+                    httpResponseCode: 409
+                    errorMessage: Conflict
+                    code: TENANT_NAME_ALREADY_EXISTS
         '500':
           description: Internal Server Error
           content:
