@@ -74,6 +74,18 @@ describe('Logger', () => {
         expect(consoleWarnSpy).toHaveBeenCalledWith('Test warning message')
         expect(consoleWarnSpy).toHaveBeenCalledTimes(1)
       })
+
+      it('should log warning message with error object', async () => {
+        const { logger } = await import('@/utils/logger')
+        const error = new Error('Test warning message')
+        logger.warning('Test warning message', error)
+
+        expect(consoleWarnSpy).toHaveBeenCalledWith(
+          'Test warning message',
+          error,
+        )
+        expect(consoleWarnSpy).toHaveBeenCalledTimes(1)
+      })
     })
   })
 

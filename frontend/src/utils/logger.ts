@@ -24,10 +24,15 @@ const logError = (message: string, error?: unknown) => {
  * Logs a warning message to the console (in non-production environments).
  *
  * @param message - A short description of what went wrong.
+ * @param error - An optional error object for additional debugging context.
  */
-const logWarning = (message: string) => {
+const logWarning = (message: string, error?: unknown) => {
   if (isDev) {
-    console.warn(message)
+    if (error === undefined) {
+      console.warn(message)
+    } else {
+      console.warn(message, error)
+    }
   }
 }
 

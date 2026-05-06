@@ -23,6 +23,7 @@ vi.mock('axios', async (importOriginal) => {
 vi.mock('@/utils/logger', () => ({
   logger: {
     error: vi.fn(),
+    warning: vi.fn(),
   },
 }))
 
@@ -141,6 +142,21 @@ describe('isValidationError', () => {
 describe('logApiError', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+  })
+
+  it('logs the axios warning message and object for a duplicate error', () => {
+    const error = {
+      ...makeAxiosError(409, { message: 'dup' }),
+      message: 'dup',
+    } as AxiosError
+    mockIsAxiosError.mockReturnValue(true)
+
+    logApiError('Failed to fetch', error)
+
+    expect(logger.warning).toHaveBeenCalledExactlyOnceWith(
+      'Failed to fetch: dup',
+      error,
+    )
   })
 
   it('logs the axios error message and error object for an Axios error', () => {
