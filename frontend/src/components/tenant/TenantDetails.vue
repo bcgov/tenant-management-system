@@ -192,6 +192,7 @@ function toggleEdit() {
               :model-value="tenant.description"
               label="Tenant Description"
               rows="1"
+              auto-grow
               disabled
             ></v-textarea>
           </v-col>
