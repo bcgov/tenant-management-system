@@ -3,11 +3,8 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 
 import LoginContainer from '@/components/auth/LoginContainer.vue'
-import ServiceManagementContainer from '@/components/service/ServiceManagementContainer.vue'
 import TenantDetails from '@/components/tenant/TenantDetails.vue'
 import TenantHeader from '@/components/tenant/TenantHeader.vue'
-import UserManagementContainer from '@/components/tenant/UserManagementContainer.vue'
-import BreadcrumbBar from '@/components/ui/BreadcrumbBar.vue'
 import LoadingWrapper from '@/components/ui/LoadingWrapper.vue'
 import { useNotification } from '@/composables/useNotification'
 import { DomainError } from '@/errors/domain/DomainError'
@@ -25,26 +22,9 @@ const tenantStore = useTenantStore()
 
 const isDuplicateName = ref(false)
 const isEditing = ref(false)
-const showDetail = ref(true)
-const tab = ref<number>(0)
+const showDetail = ref(false)
 
 // --- Computed Values ---------------------------------------------------------
-
-const breadcrumbs = computed(() => {
-  // Shouldn't happen as the template can't call this function when null.
-  if (!tenant.value) {
-    return []
-  }
-
-  return [
-    { title: 'Tenants', disabled: false, href: '/tenants' },
-    {
-      title: tenant.value.name,
-      disabled: false,
-      href: `/tenants/${routeTenantId.value}`,
-    },
-  ]
-})
 
 const routeTenantId = computed(() =>
   Array.isArray(route.params.tenantId)
@@ -98,8 +78,6 @@ onMounted(async () => {
 <template>
   <LoginContainer>
     <LoadingWrapper :loading="!tenant" loading-message="Loading tenant...">
-      <BreadcrumbBar :items="breadcrumbs" class="mb-6" />
-
       <TenantHeader v-model:show-detail="showDetail" :tenant="tenant!" />
 
       <TenantDetails
@@ -111,22 +89,7 @@ onMounted(async () => {
         @update="handleUpdateTenant"
       />
 
-      <v-card class="mt-6" elevation="0">
-        <v-tabs v-model="tab" :disabled="isEditing" :mandatory="false">
-          <v-tab :value="0">User Management</v-tab>
-          <v-tab :value="1">{{ $t('general.servicesLabel', 2) }}</v-tab>
-        </v-tabs>
-
-        <v-window v-model="tab">
-          <v-window-item :value="0">
-            <UserManagementContainer :tenant="tenant!" />
-          </v-window-item>
-
-          <v-window-item :value="1">
-            <ServiceManagementContainer :tenant="tenant!" />
-          </v-window-item>
-        </v-window>
-      </v-card>
+      <router-view :tenant="tenant" />
     </LoadingWrapper>
   </LoginContainer>
 </template>

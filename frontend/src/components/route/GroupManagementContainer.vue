@@ -7,15 +7,20 @@ import GroupDetails from '@/components/group/GroupDetails.vue'
 import GroupHeader from '@/components/group/GroupHeader.vue'
 import GroupRoleContainer from '@/components/group/GroupRoleContainer.vue'
 import UserManagementContainer from '@/components/group/UserManagementContainer.vue'
-import BreadcrumbBar from '@/components/ui/BreadcrumbBar.vue'
 import LoadingWrapper from '@/components/ui/LoadingWrapper.vue'
 import { useNotification } from '@/composables/useNotification'
 import { DomainError } from '@/errors/domain/DomainError'
 import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
 import { type GroupDetailFields, toGroupId } from '@/models/group.model'
-import { toTenantId } from '@/models/tenant.model'
+import { Tenant, toTenantId } from '@/models/tenant.model'
 import { useGroupStore } from '@/stores/useGroupStore'
 import { useTenantStore } from '@/stores/useTenantStore'
+
+// --- Component Interface -----------------------------------------------------
+
+const props = defineProps<{
+  tenant: Tenant
+}>()
 
 // --- Store and Composable Setup ----------------------------------------------
 
@@ -33,32 +38,6 @@ const tab = ref<number>(0)
 
 // --- Computed Values ---------------------------------------------------------
 
-const breadcrumbs = computed(() => {
-  // Shouldn't happen as the template can't call this function when null.
-  if (!group.value || !tenant.value) {
-    return []
-  }
-
-  return [
-    { title: 'Tenants', disabled: false, href: '/tenants' },
-    {
-      title: tenant.value.name,
-      disabled: false,
-      href: `/tenants/${routeTenantId.value}`,
-    },
-    {
-      title: 'User Management',
-      disabled: false,
-      href: `/tenants/${routeTenantId.value}`,
-    },
-    {
-      title: 'Group Details',
-      disabled: false,
-      href: `/groups/${routeGroupId.value}`,
-    },
-  ]
-})
-
 const routeGroupId = computed(() =>
   Array.isArray(route.params.groupId)
     ? toGroupId(route.params.groupId[0])
@@ -75,21 +54,17 @@ const group = computed(() => {
   return groupStore.getGroup(routeGroupId.value) || null
 })
 
-const tenant = computed(() => {
-  return tenantStore.getTenant(routeTenantId.value) || null
-})
-
 // --- Component Methods -------------------------------------------------------
 
 async function handleUpdateGroup(updatedGroup: GroupDetailFields) {
   // Shouldn't happen as the template can't call this function when null.
-  if (!group.value || !tenant.value) {
+  if (!group.value || !props.tenant) {
     return
   }
 
   try {
     await groupStore.updateGroupDetails(
-      tenant.value.id,
+      props.tenant.id,
       group.value.id,
       updatedGroup,
     )
@@ -135,8 +110,6 @@ onMounted(async () => {
       :loading="!group || !tenant"
       loading-message="Loading group..."
     >
-      <BreadcrumbBar :items="breadcrumbs" class="mb-6" />
-
       <GroupHeader v-model:show-detail="showDetail" :group="group!" />
 
       <GroupDetails
@@ -144,7 +117,7 @@ onMounted(async () => {
         v-model:is-editing="isEditing"
         :group="group!"
         :is-duplicate-name="isDuplicateName"
-        :tenant="tenant!"
+        :tenant="tenant"
         @clear-duplicate-error="isDuplicateName = false"
         @update="handleUpdateGroup"
       />
@@ -157,10 +130,10 @@ onMounted(async () => {
 
         <v-window v-model="tab">
           <v-window-item :value="0">
-            <UserManagementContainer :group="group!" :tenant="tenant!" />
+            <UserManagementContainer :group="group!" :tenant="tenant" />
           </v-window-item>
           <v-window-item :value="1">
-            <GroupRoleContainer :group="group!" :tenant="tenant!" />
+            <GroupRoleContainer :group="group!" :tenant="tenant" />
           </v-window-item>
         </v-window>
       </v-card>

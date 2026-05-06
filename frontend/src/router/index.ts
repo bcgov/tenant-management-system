@@ -1,27 +1,61 @@
 import { i18n, loadLocaleMessages, setI18nLanguage } from '@/i18n'
 import { createRouter, createWebHistory } from 'vue-router'
 
+import GroupListContainer from '@/components/group/GroupListContainer.vue'
 import BCeidLandingContainer from '@/components/route/BCeidLandingContainer.vue'
 import GroupManagementContainer from '@/components/route/GroupManagementContainer.vue'
 import LandingPageContainer from '@/components/route/LandingPageContainer.vue'
-import SettingsContainer from '@/components/route/SettingsContainer.vue'
 import TenantListContainer from '@/components/route/TenantListContainer.vue'
+import TenantRequestContainer from '@/components/tenantrequest/TenantRequestContainer.vue'
 import TenantManagementContainer from '@/components/route/TenantManagementContainer.vue'
+import ServiceManagementContainer from '@/components/service/ServiceManagementContainer.vue'
+import SettingsServicesPlaceholder from '@/components/settings/SettingsServicesPlaceholder.vue'
+import UserManagementContainer from '@/components/tenant/UserManagementContainer.vue'
 
 const routes = [
   { path: '/', component: LandingPageContainer },
   { path: '/bceid', component: BCeidLandingContainer },
-  { path: '/settings', component: SettingsContainer },
+  {
+    path: '/settings',
+    redirect: '/settings/requests',
+    children: [
+      {
+        path: 'requests',
+        component: TenantRequestContainer,
+      },
+      {
+        path: 'services',
+        component: SettingsServicesPlaceholder,
+      },
+    ],
+  },
   { path: '/tenants', component: TenantListContainer },
   {
     path: '/tenants/:tenantId',
     component: TenantManagementContainer,
     props: true,
-  },
-  {
-    path: '/tenants/:tenantId/groups/:groupId',
-    component: GroupManagementContainer,
-    props: true,
+    children: [
+      {
+        path: '/tenants/:tenantId/groups',
+        component: GroupListContainer,
+        props: true,
+      },
+      {
+        path: '/tenants/:tenantId/groups/:groupId',
+        component: GroupManagementContainer,
+        props: true,
+      },
+      {
+        path: '/tenants/:tenantId/services',
+        component: ServiceManagementContainer,
+        props: true,
+      },
+      {
+        path: '/tenants/:tenantId/users',
+        component: UserManagementContainer,
+        props: true,
+      },
+    ],
   },
   { path: '/:catchAll(.*)', redirect: '/' },
 ]
@@ -32,7 +66,7 @@ const router = createRouter({
   routes,
 })
 
-router.beforeEach(async (to, from, next) => {
+router.beforeEach(async (to, _from, next) => {
   const paramsLocale: string = (to.params.locale as string) ?? 'en'
 
   // load locale messages
