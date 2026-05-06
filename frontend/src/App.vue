@@ -5,10 +5,10 @@ import {
   mdiAccountOutline,
   mdiChevronLeft,
   mdiChevronRight,
-  mdiClipboardList,
+  mdiClipboardListOutline,
   mdiCogOutline,
   mdiDomain,
-  mdiPuzzle,
+  mdiPuzzleOutline,
   mdiShieldAccountOutline,
   mdiVectorRectangle,
 } from '@mdi/js'
@@ -81,12 +81,12 @@ watch(mobile, () => {
         <template v-if="isSettingsRoute">
           <v-divider class="my-2" />
           <v-list-item
-            :prepend-icon="mdiClipboardList"
+            :prepend-icon="mdiClipboardListOutline"
             title="Tenant Requests"
             to="/settings/requests"
           />
           <v-list-item
-            :prepend-icon="mdiPuzzle"
+            :prepend-icon="mdiPuzzleOutline"
             title="Services"
             to="/settings/services"
           />

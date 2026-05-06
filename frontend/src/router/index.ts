@@ -7,11 +7,11 @@ import GroupUserManagementContainer from '@/components/group/UserManagementConta
 import BCeidLandingContainer from '@/components/route/BCeidLandingContainer.vue'
 import GroupManagementContainer from '@/components/route/GroupManagementContainer.vue'
 import LandingPageContainer from '@/components/route/LandingPageContainer.vue'
+import SettingsServiceContainer from '@/components/route/SettingsServiceContainer.vue'
+import SettingsTenantRequestContainer from '@/components/route/SettingsTenantRequestContainer.vue'
 import TenantListContainer from '@/components/route/TenantListContainer.vue'
-import TenantRequestContainer from '@/components/tenantrequest/TenantRequestContainer.vue'
 import TenantManagementContainer from '@/components/route/TenantManagementContainer.vue'
 import ServiceManagementContainer from '@/components/service/ServiceManagementContainer.vue'
-import SettingsServicesPlaceholder from '@/components/settings/SettingsServicesPlaceholder.vue'
 import UserManagementContainer from '@/components/tenant/UserManagementContainer.vue'
 
 const routes = [
@@ -23,11 +23,11 @@ const routes = [
     children: [
       {
         path: 'requests',
-        component: TenantRequestContainer,
+        component: SettingsTenantRequestContainer,
       },
       {
         path: 'services',
-        component: SettingsServicesPlaceholder,
+        component: SettingsServiceContainer,
       },
     ],
   },
