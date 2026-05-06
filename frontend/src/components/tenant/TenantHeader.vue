@@ -30,7 +30,7 @@ function toggleDetail() {
   <v-sheet color="surface-light-blue">
     <v-row class="align-center px-4" no-gutters>
       <v-col cols="8">
-        <h2>{{ tenant.name }}</h2>
+        <h2>Tenant: {{ tenant.name }}</h2>
       </v-col>
       <v-col class="align-center d-flex justify-end" cols="4">
         <div class="me-4">
