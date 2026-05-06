@@ -10,7 +10,8 @@ import {
   mdiPuzzle,
   mdiVectorRectangle,
 } from '@mdi/js'
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
+import { useDisplay } from 'vuetify'
 import { useRoute } from 'vue-router'
 
 import AppHeader from '@/components/layout/AppHeader.vue'
@@ -26,10 +27,13 @@ import {
 
 const authStore = useAuthStore()
 const route = useRoute()
+const { mobile } = useDisplay()
 
 // --- Component State ---------------------------------------------------------
 
-const rail = ref(false)
+const rail = computed(() => railManual.value ?? mobile.value)
+
+const railManual = ref<boolean | null>(null)
 
 // --- Computed Values ---------------------------------------------------------
 
@@ -47,6 +51,10 @@ const tenantId = computed(() => route.params.tenantId)
 
 const user = computed(() => {
   return authStore.isAuthenticated ? authStore.authenticatedUser : null
+})
+
+watch(mobile, () => {
+  railManual.value = null
 })
 </script>
 
@@ -106,14 +114,13 @@ const user = computed(() => {
             title="Connected Services"
           />
         </v-list>
-
-        <template #append>
-          <v-list-item
-            :prepend-icon="rail ? mdiChevronRight : mdiChevronLeft"
-            @click="rail = !rail"
-          />
-        </template>
       </v-list>
+      <template #append>
+        <v-list-item
+          :prepend-icon="rail ? mdiChevronRight : mdiChevronLeft"
+          @click="railManual = !rail"
+        />
+      </template>
     </v-navigation-drawer>
 
     <v-main>
