@@ -43,9 +43,7 @@ export class Routes {
     app
       .route(RoutesConstants.ADD_TENANT_USERS)
       .post(
-        checkJwt(),
         validate(validator.addTenantUser, {}, {}),
-        checkTenantAccess([TMSConstants.TENANT_OWNER, TMSConstants.USER_ADMIN]),
         (req: Request, res: Response) =>
           this.tmsController.addTenantUser(req, res),
       )
@@ -151,7 +149,6 @@ export class Routes {
     app
       .route(RoutesConstants.CREATE_TENANT_REQUEST)
       .post(
-        checkJwt(),
         validate(validator.createTenantRequest, {}, {}),
         (req: Request, res: Response) =>
           this.tmsController.createTenantRequest(req, res),
@@ -159,8 +156,6 @@ export class Routes {
     app
       .route(RoutesConstants.UPDATE_TENANT_REQUEST_STATUS)
       .patch(
-        checkJwt(),
-        checkOperationsAdmin,
         validate(validator.updateTenantRequestStatus, {}, {}),
         (req: Request, res: Response) =>
           this.tmsController.updateTenantRequestStatus(req, res),
@@ -168,8 +163,6 @@ export class Routes {
     app
       .route(RoutesConstants.GET_TENANT_REQUESTS)
       .get(
-        checkJwt(),
-        checkOperationsAdmin,
         validate(validator.getTenantRequests, {}, {}),
         (req: Request, res: Response) =>
           this.tmsController.getTenantRequests(req, res),
@@ -239,6 +232,15 @@ export class Routes {
           this.tmsController.createSharedService(req, res),
       )
     app
+      .route(RoutesConstants.UPDATE_SHARED_SERVICE)
+      .put(
+        checkJwt(),
+        checkOperationsAdmin,
+        validate(validator.updateSharedService, {}, {}),
+        (req: Request, res: Response) =>
+          this.tmsController.updateSharedService(req, res),
+      )
+    app
       .route(RoutesConstants.UPDATE_SHARED_SERVICE_STATUS)
       .patch(
         checkJwt(),
@@ -255,6 +257,15 @@ export class Routes {
         checkOperationsAdmin,
         (req: Request, res: Response) =>
           this.tmsController.addSharedServiceRoles(req, res),
+      )
+    app
+      .route(RoutesConstants.UPDATE_SHARED_SERVICE_ROLE)
+      .put(
+        checkJwt(),
+        validate(validator.updateSharedServiceRole, {}, {}),
+        checkOperationsAdmin,
+        (req: Request, res: Response) =>
+          this.tmsController.updateSharedServiceRole(req, res),
       )
     app
       .route(RoutesConstants.GET_ALL_ACTIVE_SHARED_SERVICES)

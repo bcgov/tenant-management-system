@@ -21,6 +21,8 @@ import {
   CreateTenantInputDto,
   CreateTenantRequestInputDto,
   CreateSharedServiceInputDto,
+  UpdateSharedServiceInputDto,
+  UpdateSharedServiceRoleInputDto,
   UpdateSharedServiceStatusInputDto,
   UpdateTenantRequestStatusResponseDto,
   UpdateTenantRequestStatusResultDto,
@@ -669,6 +671,25 @@ export class TMSService {
     }
   }
 
+  public async updateSharedService(req: Request) {
+    const input: UpdateSharedServiceInputDto = {
+      sharedServiceId: req.params.sharedServiceId,
+      name: req.body.name,
+      displayName: req.body.displayName,
+      clientIdentifier: req.body.clientIdentifier,
+      landingPageUrl: req.body.landingPageUrl,
+      description: req.body.description,
+      updatedBy: req.decodedJwt?.idir_user_guid || 'system',
+    }
+    const updatedSharedService =
+      await this.tmsRepository.updateSharedService(input)
+    return {
+      data: {
+        sharedService: updatedSharedService,
+      },
+    }
+  }
+
   public async addSharedServiceRoles(req: Request) {
     const input: AddSharedServiceRolesInputDto = {
       sharedServiceId: req.params.sharedServiceId,
@@ -677,6 +698,24 @@ export class TMSService {
     }
     const updatedSharedService =
       await this.tmsRepository.addSharedServiceRoles(input)
+    return {
+      data: {
+        sharedService: updatedSharedService,
+      },
+    }
+  }
+
+  public async updateSharedServiceRole(req: Request) {
+    const input: UpdateSharedServiceRoleInputDto = {
+      sharedServiceId: req.params.sharedServiceId,
+      sharedServiceRoleId: req.params.sharedServiceRoleId,
+      name: req.body.name,
+      description: req.body.description,
+      allowedIdentityProviders: req.body.allowedIdentityProviders,
+      updatedBy: req.decodedJwt?.idir_user_guid || 'system',
+    }
+    const updatedSharedService =
+      await this.tmsRepository.updateSharedServiceRole(input)
     return {
       data: {
         sharedService: updatedSharedService,

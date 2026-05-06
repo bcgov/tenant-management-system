@@ -24,7 +24,7 @@ export class SharedServiceRole {
   name!: string
 
   @Column({ type: 'varchar', length: 255, name: 'description', nullable: true })
-  description!: string
+  description!: string | null
 
   @Column({
     type: 'text',

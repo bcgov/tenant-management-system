@@ -369,6 +369,39 @@ export default {
     }).options({ abortEarly: false, convert: false }),
   },
 
+  updateSharedService: {
+    params: Joi.object({
+      sharedServiceId: Joi.string().guid().required(),
+    }),
+    body: Joi.object({
+      name: Joi.string()
+        .min(1)
+        .max(30)
+        .pattern(/^\S.*\S$/)
+        .optional(),
+      displayName: Joi.string()
+        .min(1)
+        .max(100)
+        .pattern(/^\S.*\S$/)
+        .optional(),
+      clientIdentifier: Joi.string()
+        .min(1)
+        .max(55)
+        .pattern(/^\S.*\S$/)
+        .optional(),
+      landingPageUrl: Joi.string().uri().max(500).optional(),
+      description: Joi.string().min(1).max(500).allow(null).optional(),
+    })
+      .or(
+        'name',
+        'displayName',
+        'clientIdentifier',
+        'landingPageUrl',
+        'description',
+      )
+      .options({ abortEarly: false, convert: false }),
+  },
+
   updateSharedServiceStatus: {
     params: Joi.object({
       sharedServiceId: Joi.string().guid().required(),
@@ -484,5 +517,33 @@ export default {
         .max(50)
         .required(),
     }).options({ abortEarly: false, convert: false }),
+  },
+
+  updateSharedServiceRole: {
+    params: Joi.object({
+      sharedServiceId: Joi.string().guid().required(),
+      sharedServiceRoleId: Joi.string().guid().required(),
+    }),
+    body: Joi.object({
+      name: Joi.string()
+        .min(1)
+        .max(30)
+        .pattern(/^\S.*\S$/)
+        .optional(),
+      description: Joi.string().min(1).max(255).allow(null).optional(),
+      allowedIdentityProviders: Joi.array()
+        .items(
+          Joi.string().valid(
+            'idir',
+            'azureidir',
+            'bceidbasic',
+            'bceidbusiness',
+          ),
+        )
+        .allow(null)
+        .optional(),
+    })
+      .or('name', 'description', 'allowedIdentityProviders')
+      .options({ abortEarly: false, convert: false }),
   },
 }

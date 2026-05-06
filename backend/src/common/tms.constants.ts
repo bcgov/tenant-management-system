@@ -7,4 +7,6 @@ export class TMSConstants {
   public static BASIC_BCEID_PROVIDER = 'bceidbasic'
   public static BUSINESS_BCEID_PROVIDER = 'bceidbusiness'
   public static BCEID_BOTH_PROVIDER = 'bceidboth'
+  public static TENANT_REQUEST_INVALID_STATUS = 'TENANT_REQUEST_INVALID_STATUS'
+  public static TENANT_NAME_ALREADY_EXISTS = 'TENANT_NAME_ALREADY_EXISTS'
 }

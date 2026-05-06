@@ -458,6 +458,7 @@ export class TMSController {
           getErrorMessage(error),
           error.statusCode,
           'Conflict',
+          error.code,
         )
       } else {
         this.errorHandler.generalError(
@@ -513,6 +514,40 @@ export class TMSController {
     }
   }
 
+  public async updateSharedService(req: Request, res: Response) {
+    try {
+      const sharedService = await this.tmsService.updateSharedService(req)
+      res.status(200).send(sharedService)
+    } catch (error: unknown) {
+      logger.error(getErrorMessage(error))
+      if (error instanceof ConflictError) {
+        this.errorHandler.generalError(
+          res,
+          'Error occurred updating shared service',
+          getErrorMessage(error),
+          error.statusCode,
+          'Conflict',
+        )
+      } else if (error instanceof NotFoundError) {
+        this.errorHandler.generalError(
+          res,
+          'Error occurred updating shared service',
+          getErrorMessage(error),
+          error.statusCode,
+          'Not Found',
+        )
+      } else {
+        this.errorHandler.generalError(
+          res,
+          'Error occurred updating shared service',
+          getErrorMessage(error),
+          500,
+          'Internal Server Error',
+        )
+      }
+    }
+  }
+
   public async addSharedServiceRoles(req: Request, res: Response) {
     try {
       const result = await this.tmsService.addSharedServiceRoles(req)
@@ -539,6 +574,40 @@ export class TMSController {
         this.errorHandler.generalError(
           res,
           'Error occurred adding shared service roles',
+          getErrorMessage(error),
+          500,
+          'Internal Server Error',
+        )
+      }
+    }
+  }
+
+  public async updateSharedServiceRole(req: Request, res: Response) {
+    try {
+      const result = await this.tmsService.updateSharedServiceRole(req)
+      res.status(200).send(result)
+    } catch (error: unknown) {
+      logger.error(getErrorMessage(error))
+      if (error instanceof ConflictError) {
+        this.errorHandler.generalError(
+          res,
+          'Error occurred updating shared service role',
+          getErrorMessage(error),
+          error.statusCode,
+          'Conflict',
+        )
+      } else if (error instanceof NotFoundError) {
+        this.errorHandler.generalError(
+          res,
+          'Error occurred updating shared service role',
+          getErrorMessage(error),
+          error.statusCode,
+          'Not Found',
+        )
+      } else {
+        this.errorHandler.generalError(
+          res,
+          'Error occurred updating shared service role',
           getErrorMessage(error),
           500,
           'Internal Server Error',

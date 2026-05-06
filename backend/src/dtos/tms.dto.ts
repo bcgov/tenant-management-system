@@ -46,6 +46,16 @@ export interface CreateSharedServiceInputDto {
   updatedBy: string
 }
 
+export interface UpdateSharedServiceInputDto {
+  sharedServiceId: string
+  name?: string
+  displayName?: string
+  clientIdentifier?: string
+  landingPageUrl?: string
+  description?: string | null
+  updatedBy: string
+}
+
 export interface AddSharedServiceRolesInputDto {
   sharedServiceId: string
   roles: Array<{
@@ -55,6 +65,17 @@ export interface AddSharedServiceRolesInputDto {
       'idir' | 'azureidir' | 'bceidbasic' | 'bceidbusiness'
     > | null
   }>
+  updatedBy: string
+}
+
+export interface UpdateSharedServiceRoleInputDto {
+  sharedServiceId: string
+  sharedServiceRoleId: string
+  name?: string
+  description?: string | null
+  allowedIdentityProviders?: Array<
+    'idir' | 'azureidir' | 'bceidbasic' | 'bceidbusiness'
+  > | null
   updatedBy: string
 }
 

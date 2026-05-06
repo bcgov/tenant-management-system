@@ -2491,6 +2491,7 @@ describe('Tenant API', () => {
       mockTMSRepository.updateTenantRequestStatus.mockRejectedValue(
         new ConflictError(
           `Cannot update tenant request with status: ${mockTenantRequest.status}`,
+          TMSConstants.TENANT_REQUEST_INVALID_STATUS,
         ),
       )
 
@@ -2504,6 +2505,7 @@ describe('Tenant API', () => {
         httpResponseCode: 409,
         message: `Cannot update tenant request with status: ${mockTenantRequest.status}`,
         name: 'Error occurred updating tenant request status',
+        code: TMSConstants.TENANT_REQUEST_INVALID_STATUS,
       })
 
       expect(mockTMSRepository.updateTenantRequestStatus).toHaveBeenCalledWith(
@@ -2585,6 +2587,7 @@ describe('Tenant API', () => {
       mockTMSRepository.updateTenantRequestStatus.mockRejectedValue(
         new ConflictError(
           `A tenant with name '${mockTenantRequest.name}' and ministry name '${mockTenantRequest.ministryName}' already exists`,
+          TMSConstants.TENANT_NAME_ALREADY_EXISTS,
         ),
       )
 
@@ -2598,6 +2601,7 @@ describe('Tenant API', () => {
         httpResponseCode: 409,
         message: `A tenant with name '${mockTenantRequest.name}' and ministry name '${mockTenantRequest.ministryName}' already exists`,
         name: 'Error occurred updating tenant request status',
+        code: TMSConstants.TENANT_NAME_ALREADY_EXISTS,
       })
 
       expect(mockTMSRepository.updateTenantRequestStatus).toHaveBeenCalledWith(
@@ -3152,6 +3156,239 @@ describe('Tenant API', () => {
     })
   })
 
+  describe('PUT /v1/shared-services/:sharedServiceId', () => {
+    const sharedServiceId = '123e4567-e89b-12d3-a456-426614174000'
+    const validUpdateData = {
+      name: 'Updated Shared Service',
+      displayName: 'Updated Shared Service Display',
+      clientIdentifier: 'updated-service-client',
+      landingPageUrl: 'https://example.gov.bc.ca/updated-shared-service',
+      description: 'Updated Description',
+    }
+
+    beforeEach(() => {
+      app.put(
+        '/v1/shared-services/:sharedServiceId',
+        validate(validator.updateSharedService, {}, {}),
+        (req, res) => tmsController.updateSharedService(req, res),
+      )
+
+      const validationErrorHandler: ErrorRequestHandler = (
+        err,
+        req,
+        res,
+        next,
+      ) => {
+        if (
+          err &&
+          typeof err === 'object' &&
+          'name' in err &&
+          (err as { name: string }).name === 'ValidationError'
+        ) {
+          return res
+            .status((err as { statusCode: number }).statusCode)
+            .json(err)
+        }
+        next(err)
+      }
+      app.use(validationErrorHandler)
+    })
+
+    it('should update a shared service successfully', async () => {
+      const mockUpdatedSharedService = {
+        id: sharedServiceId,
+        name: validUpdateData.name,
+        displayName: validUpdateData.displayName,
+        clientIdentifier: validUpdateData.clientIdentifier,
+        landingPageUrl: validUpdateData.landingPageUrl,
+        description: validUpdateData.description,
+        isActive: true,
+        sharedServiceRoles: [],
+        createdDateTime: new Date(),
+        updatedDateTime: new Date(),
+        createdBy: '123e4567e89b12d3a456426614174001',
+        updatedBy: '123e4567e89b12d3a456426614174001',
+      } as unknown as ResolvedAddSharedServiceRolesResult
+
+      mockTMSRepository.updateSharedService.mockResolvedValue(
+        mockUpdatedSharedService,
+      )
+
+      const response = await request(app)
+        .put(`/v1/shared-services/${sharedServiceId}`)
+        .send(validUpdateData)
+
+      expect(response.status).toBe(200)
+      expect(response.body).toMatchObject({
+        data: {
+          sharedService: {
+            id: mockUpdatedSharedService.id,
+            name: mockUpdatedSharedService.name,
+            displayName: mockUpdatedSharedService.displayName,
+            clientIdentifier: mockUpdatedSharedService.clientIdentifier,
+            landingPageUrl: mockUpdatedSharedService.landingPageUrl,
+            description: mockUpdatedSharedService.description,
+          },
+        },
+      })
+
+      expect(mockTMSRepository.updateSharedService).toHaveBeenCalledWith(
+        expect.objectContaining({
+          sharedServiceId,
+          ...validUpdateData,
+          updatedBy: 'system',
+        }),
+      )
+    })
+
+    it('should allow clearing shared service description', async () => {
+      const mockUpdatedSharedService = {
+        id: sharedServiceId,
+        name: 'Test Shared Service',
+        displayName: 'Test Shared Service Display',
+        clientIdentifier: 'test-service-client',
+        landingPageUrl: 'https://example.gov.bc.ca/test-shared-service',
+        description: null,
+        isActive: true,
+        sharedServiceRoles: [],
+        createdDateTime: new Date(),
+        updatedDateTime: new Date(),
+        createdBy: '123e4567e89b12d3a456426614174001',
+        updatedBy: '123e4567e89b12d3a456426614174001',
+      } as unknown as ResolvedAddSharedServiceRolesResult
+
+      mockTMSRepository.updateSharedService.mockResolvedValue(
+        mockUpdatedSharedService,
+      )
+
+      const response = await request(app)
+        .put(`/v1/shared-services/${sharedServiceId}`)
+        .send({ description: null })
+
+      expect(response.status).toBe(200)
+      expect(response.body.data.sharedService.description).toBeNull()
+      expect(mockTMSRepository.updateSharedService).toHaveBeenCalledWith(
+        expect.objectContaining({
+          sharedServiceId,
+          description: null,
+          updatedBy: 'system',
+        }),
+      )
+    })
+
+    it('should return 404 when shared service is not found', async () => {
+      const errorMessage = `Shared service not found: ${sharedServiceId}`
+      mockTMSRepository.updateSharedService.mockRejectedValue(
+        new NotFoundError(errorMessage),
+      )
+
+      const response = await request(app)
+        .put(`/v1/shared-services/${sharedServiceId}`)
+        .send(validUpdateData)
+
+      expect(response.status).toBe(404)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Not Found',
+        httpResponseCode: 404,
+        message: errorMessage,
+        name: 'Error occurred updating shared service',
+      })
+    })
+
+    it('should return 409 when shared service name already exists', async () => {
+      const errorMessage = `A shared service with name '${validUpdateData.name}' already exists`
+      mockTMSRepository.updateSharedService.mockRejectedValue(
+        new ConflictError(errorMessage),
+      )
+
+      const response = await request(app)
+        .put(`/v1/shared-services/${sharedServiceId}`)
+        .send(validUpdateData)
+
+      expect(response.status).toBe(409)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Conflict',
+        httpResponseCode: 409,
+        message: errorMessage,
+        name: 'Error occurred updating shared service',
+      })
+    })
+
+    it('should return 409 when shared service display name already exists', async () => {
+      const errorMessage = `A shared service with display name '${validUpdateData.displayName}' already exists`
+      mockTMSRepository.updateSharedService.mockRejectedValue(
+        new ConflictError(errorMessage),
+      )
+
+      const response = await request(app)
+        .put(`/v1/shared-services/${sharedServiceId}`)
+        .send(validUpdateData)
+
+      expect(response.status).toBe(409)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Conflict',
+        httpResponseCode: 409,
+        message: errorMessage,
+        name: 'Error occurred updating shared service',
+      })
+    })
+
+    it('should return 409 when client identifier already exists', async () => {
+      const errorMessage = `A shared service with client identifier '${validUpdateData.clientIdentifier}' already exists`
+      mockTMSRepository.updateSharedService.mockRejectedValue(
+        new ConflictError(errorMessage),
+      )
+
+      const response = await request(app)
+        .put(`/v1/shared-services/${sharedServiceId}`)
+        .send(validUpdateData)
+
+      expect(response.status).toBe(409)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Conflict',
+        httpResponseCode: 409,
+        message: errorMessage,
+        name: 'Error occurred updating shared service',
+      })
+    })
+
+    it('should return 400 when shared service id is invalid', async () => {
+      const response = await request(app)
+        .put('/v1/shared-services/invalid-shared-service-id')
+        .send(validUpdateData)
+
+      expect(response.status).toBe(400)
+      expect(response.body.message).toBe('Validation Failed')
+    })
+
+    it('should return 400 when no update fields are provided', async () => {
+      const response = await request(app)
+        .put(`/v1/shared-services/${sharedServiceId}`)
+        .send({})
+
+      expect(response.status).toBe(400)
+      expect(response.body.message).toBe('Validation Failed')
+    })
+
+    it('should return 500 when database error occurs', async () => {
+      mockTMSRepository.updateSharedService.mockRejectedValue(
+        new Error('Database error'),
+      )
+
+      const response = await request(app)
+        .put(`/v1/shared-services/${sharedServiceId}`)
+        .send(validUpdateData)
+
+      expect(response.status).toBe(500)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Internal Server Error',
+        httpResponseCode: 500,
+        message: 'Database error',
+        name: 'Error occurred updating shared service',
+      })
+    })
+  })
+
   describe('POST /v1/shared-services/:sharedServiceId/shared-service-roles', () => {
     const sharedServiceId = '123e4567-e89b-12d3-a456-426614174000'
     const validRolesData = {
@@ -3398,6 +3635,240 @@ describe('Tenant API', () => {
         httpResponseCode: 500,
         message: 'Database error',
         name: 'Error occurred adding shared service roles',
+      })
+    })
+  })
+
+  describe('PUT /v1/shared-services/:sharedServiceId/shared-service-roles/:sharedServiceRoleId', () => {
+    const sharedServiceId = '123e4567-e89b-12d3-a456-426614174000'
+    const sharedServiceRoleId = '123e4567-e89b-12d3-a456-426614174001'
+    const validUpdateData = {
+      name: 'Updated Role',
+      description: 'Updated role description',
+      allowedIdentityProviders: ['idir', 'bceidbusiness'],
+    }
+
+    beforeEach(() => {
+      app.put(
+        '/v1/shared-services/:sharedServiceId/shared-service-roles/:sharedServiceRoleId',
+        validate(validator.updateSharedServiceRole, {}, {}),
+        (req, res) => tmsController.updateSharedServiceRole(req, res),
+      )
+
+      const validationErrorHandler: ErrorRequestHandler = (
+        err,
+        req,
+        res,
+        next,
+      ) => {
+        if (
+          err &&
+          typeof err === 'object' &&
+          'name' in err &&
+          (err as { name: string }).name === 'ValidationError'
+        ) {
+          return res
+            .status((err as { statusCode: number }).statusCode)
+            .json(err)
+        }
+        next(err)
+      }
+      app.use(validationErrorHandler)
+    })
+
+    it('should update a shared service role successfully', async () => {
+      const mockUpdatedSharedService = {
+        id: sharedServiceId,
+        name: 'Test Shared Service',
+        clientIdentifier: 'test-service-client',
+        description: 'Test Description',
+        isActive: true,
+        roles: [
+          {
+            id: sharedServiceRoleId,
+            name: validUpdateData.name,
+            description: validUpdateData.description,
+            allowedIdentityProviders: validUpdateData.allowedIdentityProviders,
+            isDeleted: false,
+          },
+        ],
+        createdDateTime: new Date(),
+        updatedDateTime: new Date(),
+        createdBy: '123e4567e89b12d3a456426614174001',
+        updatedBy: '123e4567e89b12d3a456426614174001',
+      } as unknown as ResolvedAddSharedServiceRolesResult
+
+      mockTMSRepository.updateSharedServiceRole.mockResolvedValue(
+        mockUpdatedSharedService,
+      )
+
+      const response = await request(app)
+        .put(
+          `/v1/shared-services/${sharedServiceId}/shared-service-roles/${sharedServiceRoleId}`,
+        )
+        .send(validUpdateData)
+
+      expect(response.status).toBe(200)
+      expect(response.body).toMatchObject({
+        data: {
+          sharedService: {
+            id: mockUpdatedSharedService.id,
+            roles: expect.arrayContaining([
+              expect.objectContaining({
+                id: sharedServiceRoleId,
+                name: validUpdateData.name,
+                description: validUpdateData.description,
+                allowedIdentityProviders:
+                  validUpdateData.allowedIdentityProviders,
+              }),
+            ]),
+          },
+        },
+      })
+
+      expect(mockTMSRepository.updateSharedServiceRole).toHaveBeenCalledWith(
+        expect.objectContaining({
+          sharedServiceId,
+          sharedServiceRoleId,
+          ...validUpdateData,
+          updatedBy: 'system',
+        }),
+      )
+    })
+
+    it('should allow clearing description and identity providers', async () => {
+      const mockUpdatedSharedService = {
+        id: sharedServiceId,
+        name: 'Test Shared Service',
+        clientIdentifier: 'test-service-client',
+        description: 'Test Description',
+        isActive: true,
+        roles: [
+          {
+            id: sharedServiceRoleId,
+            name: 'Existing Role',
+            description: null,
+            allowedIdentityProviders: null,
+            isDeleted: false,
+          },
+        ],
+        createdDateTime: new Date(),
+        updatedDateTime: new Date(),
+        createdBy: '123e4567e89b12d3a456426614174001',
+        updatedBy: '123e4567e89b12d3a456426614174001',
+      } as unknown as ResolvedAddSharedServiceRolesResult
+
+      mockTMSRepository.updateSharedServiceRole.mockResolvedValue(
+        mockUpdatedSharedService,
+      )
+
+      const response = await request(app)
+        .put(
+          `/v1/shared-services/${sharedServiceId}/shared-service-roles/${sharedServiceRoleId}`,
+        )
+        .send({
+          description: null,
+          allowedIdentityProviders: null,
+        })
+
+      expect(response.status).toBe(200)
+      expect(response.body.data.sharedService.roles[0]).toMatchObject({
+        description: null,
+        allowedIdentityProviders: null,
+      })
+      expect(mockTMSRepository.updateSharedServiceRole).toHaveBeenCalledWith(
+        expect.objectContaining({
+          sharedServiceId,
+          sharedServiceRoleId,
+          description: null,
+          allowedIdentityProviders: null,
+          updatedBy: 'system',
+        }),
+      )
+    })
+
+    it('should return 404 when shared service role is not found', async () => {
+      const errorMessage = `Shared service role not found: ${sharedServiceRoleId}`
+      mockTMSRepository.updateSharedServiceRole.mockRejectedValue(
+        new NotFoundError(errorMessage),
+      )
+
+      const response = await request(app)
+        .put(
+          `/v1/shared-services/${sharedServiceId}/shared-service-roles/${sharedServiceRoleId}`,
+        )
+        .send(validUpdateData)
+
+      expect(response.status).toBe(404)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Not Found',
+        httpResponseCode: 404,
+        message: errorMessage,
+        name: 'Error occurred updating shared service role',
+      })
+    })
+
+    it('should return 409 when role name already exists', async () => {
+      const errorMessage =
+        "Role 'Updated Role' already exists for this shared service"
+      mockTMSRepository.updateSharedServiceRole.mockRejectedValue(
+        new ConflictError(errorMessage),
+      )
+
+      const response = await request(app)
+        .put(
+          `/v1/shared-services/${sharedServiceId}/shared-service-roles/${sharedServiceRoleId}`,
+        )
+        .send(validUpdateData)
+
+      expect(response.status).toBe(409)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Conflict',
+        httpResponseCode: 409,
+        message: errorMessage,
+        name: 'Error occurred updating shared service role',
+      })
+    })
+
+    it('should return 400 when shared service role id is invalid', async () => {
+      const response = await request(app)
+        .put(
+          `/v1/shared-services/${sharedServiceId}/shared-service-roles/invalid-role-id`,
+        )
+        .send(validUpdateData)
+
+      expect(response.status).toBe(400)
+      expect(response.body.message).toBe('Validation Failed')
+    })
+
+    it('should return 400 when no update fields are provided', async () => {
+      const response = await request(app)
+        .put(
+          `/v1/shared-services/${sharedServiceId}/shared-service-roles/${sharedServiceRoleId}`,
+        )
+        .send({})
+
+      expect(response.status).toBe(400)
+      expect(response.body.message).toBe('Validation Failed')
+    })
+
+    it('should return 500 when database error occurs', async () => {
+      mockTMSRepository.updateSharedServiceRole.mockRejectedValue(
+        new Error('Database error'),
+      )
+
+      const response = await request(app)
+        .put(
+          `/v1/shared-services/${sharedServiceId}/shared-service-roles/${sharedServiceRoleId}`,
+        )
+        .send(validUpdateData)
+
+      expect(response.status).toBe(500)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Internal Server Error',
+        httpResponseCode: 500,
+        message: 'Database error',
+        name: 'Error occurred updating shared service role',
       })
     })
   })

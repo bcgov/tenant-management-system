@@ -1301,11 +1301,39 @@ paths:
               schema:
                 $ref: '#/components/schemas/NotFoundErrorResponse'
         '409':
-          description: Conflict - Cannot update tenant request with current status
+          description: Conflict - Cannot update tenant request with current status or tenant already exists
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ConflictErrorResponse'
+                allOf:
+                  - $ref: '#/components/schemas/ConflictErrorResponse'
+                  - type: object
+                    properties:
+                      code:
+                        type: string
+                        enum:
+                          - TENANT_REQUEST_INVALID_STATUS
+                          - TENANT_NAME_ALREADY_EXISTS
+                        description: Stable machine-readable code for tenant request status conflicts.
+                    required:
+                      - code
+              examples:
+                invalidStatus:
+                  summary: Tenant request already decisioned
+                  value:
+                    name: Error occurred updating tenant request status
+                    message: 'Cannot update tenant request with status: APPROVED'
+                    httpResponseCode: 409
+                    errorMessage: Conflict
+                    code: TENANT_REQUEST_INVALID_STATUS
+                tenantAlreadyExists:
+                  summary: Tenant already exists
+                  value:
+                    name: Error occurred updating tenant request status
+                    message: "A tenant with name 'Test Tenant' and ministry name 'Test Ministry' already exists"
+                    httpResponseCode: 409
+                    errorMessage: Conflict
+                    code: TENANT_NAME_ALREADY_EXISTS
         '500':
           description: Internal Server Error
           content:
@@ -1463,6 +1491,106 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+
+  /v1/shared-services/{sharedServiceId}:
+    put:
+      summary: Update shared service
+      description: Updates shared service metadata. Requires JWT authentication and TMS.OPERATIONS_ADMIN role.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: sharedServiceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The unique identifier of the shared service
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              minProperties: 1
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 30
+                  pattern: '^\S.*\S$'
+                  example: 'Updated Email Service'
+                displayName:
+                  type: string
+                  minLength: 1
+                  maxLength: 100
+                  pattern: '^\S.*\S$'
+                  example: 'Updated Common Document Generation Service (CDOGS)'
+                clientIdentifier:
+                  type: string
+                  minLength: 1
+                  maxLength: 55
+                  pattern: '^\S.*\S$'
+                  example: 'updated-email-service-client'
+                landingPageUrl:
+                  type: string
+                  maxLength: 500
+                  format: uri
+                  example: 'https://updated-cdogs.gov.bc.ca'
+                description:
+                  type: string
+                  maxLength: 500
+                  nullable: true
+                  example: 'Updated shared email service for all tenants'
+      responses:
+        '200':
+          description: Shared service successfully updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      sharedService:
+                        $ref: '#/components/schemas/SharedServiceWithRoles'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        '403':
+          description: Forbidden - User is not an operations administrator
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        '404':
+          description: Shared service not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+        '409':
+          description: Conflict - Shared service with same name, display name, or client identifier already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConflictErrorResponse'
         '500':
           description: Internal Server Error
           content:
@@ -2528,6 +2656,104 @@ paths:
                 $ref: '#/components/schemas/ForbiddenErrorResponse'
         '404':
           description: Shared service not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+        '409':
+          description: Conflict - Role with same name already exists for this shared service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConflictErrorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+
+  /v1/shared-services/{sharedServiceId}/shared-service-roles/{sharedServiceRoleId}:
+    put:
+      summary: Update a shared service role
+      description: Updates metadata for an existing shared service role. Requires JWT authentication and TMS.OPERATIONS_ADMIN role.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: sharedServiceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The unique identifier of the shared service
+        - name: sharedServiceRoleId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The unique identifier of the shared service role
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              minProperties: 1
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 30
+                  pattern: '^\S.*\S$'
+                  example: 'Updated Role'
+                description:
+                  type: string
+                  maxLength: 255
+                  nullable: true
+                  example: 'Updated role description'
+                allowedIdentityProviders:
+                  type: array
+                  items:
+                    type: string
+                    enum: ['idir', 'azureidir', 'bceidbasic', 'bceidbusiness']
+                  nullable: true
+                  example: ['idir', 'bceidbusiness']
+                  description: 'List of identity providers allowed to access this role. If null or empty, all identity providers are allowed.'
+      responses:
+        '200':
+          description: Shared service role successfully updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      sharedService:
+                        $ref: '#/components/schemas/SharedServiceWithRoles'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        '403':
+          description: Forbidden - User does not have the required TMS.OPERATIONS_ADMIN role
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        '404':
+          description: Shared service role not found
           content:
             application/json:
               schema:

@@ -11,9 +11,20 @@ export class ErrorHandler {
     message: string,
     httpResponseCode: number,
     errorMessage: string,
+    code?: string,
   ) {
-    res
-      .status(httpResponseCode)
-      .json({ name, message, httpResponseCode, errorMessage })
+    const responseBody: {
+      name: string
+      message: string
+      httpResponseCode: number
+      errorMessage: string
+      code?: string
+    } = { name, message, httpResponseCode, errorMessage }
+
+    if (code) {
+      responseBody.code = code
+    }
+
+    res.status(httpResponseCode).json(responseBody)
   }
 }
