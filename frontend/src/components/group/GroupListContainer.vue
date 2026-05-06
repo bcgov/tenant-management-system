@@ -57,7 +57,7 @@ const dialogClose = () => {
 const dialogOpen = () => (dialogVisible.value = true)
 
 const handleCardClick = (id: Group['id']) => {
-  router.push(`/tenants/${props.tenant.id}/groups/${id}`)
+  router.push(`/tenants/${props.tenant.id}/groups/${id}/members`)
 }
 
 const handleGroupCreate = async (

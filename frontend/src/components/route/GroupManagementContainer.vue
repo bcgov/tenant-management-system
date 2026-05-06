@@ -5,8 +5,6 @@ import { useRoute } from 'vue-router'
 import LoginContainer from '@/components/auth/LoginContainer.vue'
 import GroupDetails from '@/components/group/GroupDetails.vue'
 import GroupHeader from '@/components/group/GroupHeader.vue'
-import GroupRoleContainer from '@/components/group/GroupRoleContainer.vue'
-import UserManagementContainer from '@/components/group/UserManagementContainer.vue'
 import LoadingWrapper from '@/components/ui/LoadingWrapper.vue'
 import { useNotification } from '@/composables/useNotification'
 import { DomainError } from '@/errors/domain/DomainError'
@@ -34,7 +32,6 @@ const tenantStore = useTenantStore()
 const isDuplicateName = ref(false)
 const isEditing = ref(false)
 const showDetail = ref(false)
-const tab = ref<number>(0)
 
 // --- Computed Values ---------------------------------------------------------
 
@@ -122,21 +119,7 @@ onMounted(async () => {
         @update="handleUpdateGroup"
       />
 
-      <v-card class="mt-6" elevation="0">
-        <v-tabs v-model="tab" :disabled="isEditing" :mandatory="false">
-          <v-tab :value="0">Group Members</v-tab>
-          <v-tab :value="1">Service Roles</v-tab>
-        </v-tabs>
-
-        <v-window v-model="tab">
-          <v-window-item :value="0">
-            <UserManagementContainer :group="group!" :tenant="tenant" />
-          </v-window-item>
-          <v-window-item :value="1">
-            <GroupRoleContainer :group="group!" :tenant="tenant" />
-          </v-window-item>
-        </v-window>
-      </v-card>
+      <router-view :group="group" :tenant="tenant" />
     </LoadingWrapper>
   </LoginContainer>
 </template>

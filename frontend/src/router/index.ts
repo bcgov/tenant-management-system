@@ -2,6 +2,8 @@ import { i18n, loadLocaleMessages, setI18nLanguage } from '@/i18n'
 import { createRouter, createWebHistory } from 'vue-router'
 
 import GroupListContainer from '@/components/group/GroupListContainer.vue'
+import GroupRoleContainer from '@/components/group/GroupRoleContainer.vue'
+import GroupUserManagementContainer from '@/components/group/UserManagementContainer.vue'
 import BCeidLandingContainer from '@/components/route/BCeidLandingContainer.vue'
 import GroupManagementContainer from '@/components/route/GroupManagementContainer.vue'
 import LandingPageContainer from '@/components/route/LandingPageContainer.vue'
@@ -36,24 +38,24 @@ const routes = [
     props: true,
     children: [
       {
-        path: '/tenants/:tenantId/groups',
+        path: 'groups',
         component: GroupListContainer,
-        props: true,
       },
       {
-        path: '/tenants/:tenantId/groups/:groupId',
+        path: 'groups/:groupId',
         component: GroupManagementContainer,
-        props: true,
+        children: [
+          { path: 'members', component: GroupUserManagementContainer },
+          { path: 'roles', component: GroupRoleContainer },
+        ],
       },
       {
-        path: '/tenants/:tenantId/services',
+        path: 'services',
         component: ServiceManagementContainer,
-        props: true,
       },
       {
-        path: '/tenants/:tenantId/users',
+        path: 'users',
         component: UserManagementContainer,
-        props: true,
       },
     ],
   },

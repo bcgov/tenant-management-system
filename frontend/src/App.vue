@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import {
   mdiAccountGroupOutline,
+  mdiAccountKey,
   mdiAccountOutline,
   mdiChevronLeft,
   mdiChevronRight,
@@ -8,6 +9,7 @@ import {
   mdiCog,
   mdiDomain,
   mdiPuzzle,
+  mdiShieldAccount,
   mdiVectorRectangle,
 } from '@mdi/js'
 import { computed, ref, watch } from 'vue'
@@ -37,7 +39,11 @@ const railManual = ref<boolean | null>(null)
 
 // --- Computed Values ---------------------------------------------------------
 
+const groupId = computed(() => route.params.groupId)
+
 const isAdministrator = computed(() => currentUserIsOperationsAdmin())
+
+const isGroupRoute = computed(() => !!groupId.value)
 
 const isSettingsRoute = computed(() => route.path.startsWith('/settings'))
 
@@ -97,7 +103,7 @@ watch(mobile, () => {
 
         <v-divider v-if="isTenantRoute" />
 
-        <v-list v-if="isTenantRoute" nav>
+        <v-list v-if="isTenantRoute" class="pl-4" nav>
           <v-list-item
             :prepend-icon="mdiAccountOutline"
             :to="`/tenants/${tenantId}/users`"
@@ -108,6 +114,18 @@ watch(mobile, () => {
             :to="`/tenants/${tenantId}/groups`"
             title="Groups"
           />
+          <v-list v-if="isGroupRoute" class="pl-8" nav>
+            <v-list-item
+              :prepend-icon="mdiAccountKey"
+              :to="`/tenants/${tenantId}/groups/${groupId}/members`"
+              title="Members"
+            />
+            <v-list-item
+              :prepend-icon="mdiShieldAccount"
+              :to="`/tenants/${tenantId}/groups/${groupId}/roles`"
+              title="Service Roles"
+            />
+          </v-list>
           <v-list-item
             :prepend-icon="mdiVectorRectangle"
             :to="`/tenants/${tenantId}/services`"
