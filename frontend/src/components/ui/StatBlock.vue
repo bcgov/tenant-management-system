@@ -11,19 +11,19 @@ defineProps<{
 <template>
   <v-row class="align-center flex-nowrap" no-gutters>
     <v-col class="pr-4" cols="auto">
-      <v-icon>{{ icon }}</v-icon>
+      <v-icon size="x-large">{{ icon }}</v-icon>
     </v-col>
     <v-col cols="auto">
       <hgroup class="text-stack">
         <p class="p-label">{{ label }}</p>
-        <p class="p-small">{{ value }}</p>
+        <p>{{ value }}</p>
       </hgroup>
     </v-col>
   </v-row>
 </template>
 
 <style scoped>
-.text-stack p:first-child {
-  margin-bottom: 0.5rem;
+.text-stack p {
+  margin: 0;
 }
 </style>
