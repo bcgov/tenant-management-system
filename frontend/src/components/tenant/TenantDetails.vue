@@ -20,9 +20,9 @@ const props = defineProps<{
 
 // --- Computed Values ---------------------------------------------------------
 
-const tenantUsersCount = computed(() => props.tenant.users.length)
-
 const tenantGroupsCount = computed(() => props.groups.length)
+
+const tenantUsersCount = computed(() => props.tenant.users.length)
 </script>
 
 <template>

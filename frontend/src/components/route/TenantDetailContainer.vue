@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
 import LoginContainer from '@/components/auth/LoginContainer.vue'
@@ -21,6 +21,19 @@ const tenantStore = useTenantStore()
 // --- Component State ---------------------------------------------------------
 
 const showDetail = ref(false)
+
+// --- Watchers and Effects ----------------------------------------------------
+
+// Close the tenant details when the user navigates to a different aspect of the
+// tenant (users, groups, services).
+watch(
+  () => route.path,
+  (newPath, oldPath) => {
+    if (newPath !== oldPath) {
+      showDetail.value = false
+    }
+  },
+)
 
 // --- Computed Values ---------------------------------------------------------
 

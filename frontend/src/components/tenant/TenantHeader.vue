@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
-import { ref } from 'vue'
 
 import { type Tenant } from '@/models/tenant.model'
 
 // --- Component Interface -----------------------------------------------------
 
-defineProps<{
+const props = defineProps<{
+  showDetail: boolean
   tenant: Tenant
 }>()
 
@@ -14,15 +14,10 @@ const emit = defineEmits<{
   (event: 'update:showDetail', value: boolean): void
 }>()
 
-// --- Component State ---------------------------------------------------------
-
-const showDetail = ref(false)
-
 // --- Component Methods -------------------------------------------------------
 
 function toggleDetail() {
-  showDetail.value = !showDetail.value
-  emit('update:showDetail', showDetail.value)
+  emit('update:showDetail', !props.showDetail)
 }
 </script>
 
