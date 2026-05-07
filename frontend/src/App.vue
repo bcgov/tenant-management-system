@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import {
   mdiAccountGroupOutline,
-  mdiAccountKeyOutline,
+  mdiAccountLockOutline,
   mdiAccountOutline,
   mdiChevronLeft,
   mdiChevronRight,
-  mdiClipboardListOutline,
   mdiCogOutline,
-  mdiDomain,
+  mdiHomeCircleOutline,
+  mdiHomePlusOutline,
   mdiPuzzleOutline,
-  mdiShieldAccountOutline,
+  mdiShieldCheckOutline,
   mdiVectorRectangle,
 } from '@mdi/js'
 import { computed, ref, watch } from 'vue'
@@ -81,7 +81,7 @@ watch(mobile, () => {
         <template v-if="isSettingsRoute">
           <v-divider class="my-2" />
           <v-list-item
-            :prepend-icon="mdiClipboardListOutline"
+            :prepend-icon="mdiHomePlusOutline"
             title="Tenant Requests"
             to="/settings/requests"
           />
@@ -95,7 +95,7 @@ watch(mobile, () => {
         <v-divider v-if="isAdministrator" class="my-2" />
 
         <v-list-item
-          :prepend-icon="mdiDomain"
+          :prepend-icon="mdiHomeCircleOutline"
           title="All Tenants"
           to="/tenants"
         />
@@ -117,13 +117,13 @@ watch(mobile, () => {
           <template v-if="isGroupRoute">
             <v-list-item
               :class="{ 'pl-10': !rail }"
-              :prepend-icon="mdiAccountKeyOutline"
+              :prepend-icon="mdiAccountLockOutline"
               :to="`/tenants/${tenantId}/groups/${groupId}/members`"
               title="Members"
             />
             <v-list-item
               :class="{ 'pl-10': !rail }"
-              :prepend-icon="mdiShieldAccountOutline"
+              :prepend-icon="mdiShieldCheckOutline"
               :to="`/tenants/${tenantId}/groups/${groupId}/roles`"
               title="Service Roles"
             />
