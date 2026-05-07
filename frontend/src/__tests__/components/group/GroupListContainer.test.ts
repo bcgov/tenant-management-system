@@ -52,6 +52,9 @@ const mountComponent = (tenant = makeTenant({ id: 't1' })) => {
           template: '<div id="list-stub" />',
           props: ['groups', 'isAdmin'],
         },
+        LoginContainer: {
+          template: '<div><slot /></div>',
+        },
         ButtonPrimary: {
           template:
             '<button id="create-btn" @click="$emit(\'click\')"><slot /></button>',
@@ -177,11 +180,11 @@ describe('GroupListContainer.vue', () => {
     })
   })
 
-  it('navigates to group detail on selection', async () => {
+  it('navigates to group members on selection', async () => {
     mockGroup.groups = [makeGroup({ id: 'g1' })]
     const wrapper = mountComponent()
     const list = wrapper.getComponent({ name: 'GroupList' })
     await list.vm.$emit('select', 'g1')
-    expect(mockPush).toHaveBeenCalledWith('/tenants/t1/groups/g1')
+    expect(mockPush).toHaveBeenCalledWith('/tenants/t1/groups/g1/members')
   })
 })

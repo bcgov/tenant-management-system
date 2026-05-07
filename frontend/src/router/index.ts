@@ -48,6 +48,7 @@ const routes = [
           { path: 'members', component: GroupUserManagementContainer },
           { path: 'roles', component: GroupRoleContainer },
         ],
+        props: true,
       },
       {
         path: 'services',

@@ -49,7 +49,6 @@ const groupMembersCount = computed(() => props.group.groupUsers.length)
 </script>
 
 <template>
-  <!-- Header -->
   <v-sheet
     class="px-10 py-4"
     color="surface-light-gray"
@@ -73,7 +72,6 @@ const groupMembersCount = computed(() => props.group.groupUsers.length)
     </v-row>
   </v-sheet>
 
-  <!-- Detail -->
   <v-sheet v-if="showDetail" class="px-10 py-8">
     <pre class="description p-small">{{ group.description }}</pre>
 

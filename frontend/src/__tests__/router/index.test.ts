@@ -16,24 +16,47 @@ vi.mock('@/i18n', () => ({
   setI18nLanguage: vi.fn(),
 }))
 
-vi.mock('@/components/route/GroupManagementContainer.vue', () => ({
-  default: { template: `<div>GroupManagementContainer</div>` },
+vi.mock('@/components/group/GroupListContainer.vue', () => ({
+  default: { template: `<div>GroupListContainer</div>` },
+}))
+vi.mock('@/components/group/GroupRoleContainer.vue', () => ({
+  default: { template: `<div>GroupRoleContainer</div>` },
+}))
+vi.mock('@/components/group/UserManagementContainer.vue', () => ({
+  default: { template: `<div>GroupUserManagementContainer</div>` },
+}))
+vi.mock('@/components/route/BCeidLandingContainer.vue', () => ({
+  default: { template: `<div>BCeidLandingContainer</div>` },
+}))
+vi.mock('@/components/route/LandingPageContainer.vue', () => ({
+  default: { template: `<div>LandingPageContainer</div>` },
+}))
+vi.mock('@/components/route/SettingsServiceContainer.vue', () => ({
+  default: { template: `<div>SettingsServiceContainer</div>` },
+}))
+vi.mock('@/components/route/SettingsTenantRequestContainer.vue', () => ({
+  default: { template: `<div>SettingsTenantRequestContainer</div>` },
+}))
+vi.mock('@/components/route/TenantContainer.vue', () => ({
+  default: { template: `<div>TenantContainer<router-view /></div>` },
 }))
 vi.mock('@/components/route/TenantListContainer.vue', () => ({
   default: { template: `<div>TenantListContainer</div>` },
 }))
-vi.mock('@/components/route/TenantDetailContainer.vue', () => ({
-  default: { template: `<div>TenantDetailContainer</div>` },
+vi.mock('@/components/route/TenantGroupContainer.vue', () => ({
+  default: { template: `<div>TenantGroupContainer</div>` },
+}))
+vi.mock('@/components/service/ServiceManagementContainer.vue', () => ({
+  default: { template: `<div>ServiceManagementContainer</div>` },
+}))
+vi.mock('@/components/tenant/UserManagementContainer.vue', () => ({
+  default: { template: `<div>UserManagementContainer</div>` },
 }))
 
-vi.mock('@/components/route/LandingPageContainer.vue', () => ({
-  default: { template: `<div>LandingPageContainer</div>` },
-}))
-
-const GROUP_MANAGE_TEMPLATE = 'GroupManagementContainer'
-const TENANT_LIST_TEMPLATE = 'TenantListContainer'
-const TENANT_DETAIL_TEMPLATE = 'TenantDetailContainer'
 const LANDING_PAGE_TEMPLATE = 'LandingPageContainer'
+const TENANT_LIST_TEMPLATE = 'TenantListContainer'
+const TENANT_TEMPLATE = 'TenantContainer'
+const TENANT_GROUP_TEMPLATE = 'TenantGroupContainer'
 
 const TestApp = {
   template: '<router-view />',
@@ -71,14 +94,22 @@ describe('Vue Router', () => {
     expect(wrapper.text()).toContain(LANDING_PAGE_TEMPLATE)
   })
 
-  it('navigates to settings route', async () => {
+  it('navigates to settings default route', async () => {
     wrapper = initWrapper()
 
     await router.push('/settings')
     await router.isReady()
 
-    expect(router.currentRoute.value.path).toBe('/settings')
-    // expect(wrapper.text()).toContain(SETTINGS_TEMPLATE)
+    expect(router.currentRoute.value.path).toBe('/settings/requests')
+  })
+
+  it('navigates to settings/requests route', async () => {
+    wrapper = initWrapper()
+
+    await router.push('/settings/requests')
+    await router.isReady()
+
+    expect(router.currentRoute.value.path).toBe('/settings/requests')
   })
 
   it('navigates to tenants list route', async () => {
@@ -93,21 +124,21 @@ describe('Vue Router', () => {
 
   it('navigates to tenant management route with params', async () => {
     wrapper = initWrapper()
-
     const tenantId = '123'
+
     await router.push(`/tenants/${tenantId}`)
     await router.isReady()
 
     expect(router.currentRoute.value.path).toBe(`/tenants/${tenantId}`)
     expect(router.currentRoute.value.params.tenantId).toBe(tenantId)
-    expect(wrapper.text()).toContain(TENANT_DETAIL_TEMPLATE)
+    expect(wrapper.text()).toContain(TENANT_TEMPLATE)
   })
 
   it('navigates to group management route with params', async () => {
     wrapper = initWrapper()
-
     const tenantId = '123'
     const groupId = '456'
+
     await router.push(`/tenants/${tenantId}/groups/${groupId}`)
     await router.isReady()
 
@@ -116,7 +147,7 @@ describe('Vue Router', () => {
     )
     expect(router.currentRoute.value.params.tenantId).toBe(tenantId)
     expect(router.currentRoute.value.params.groupId).toBe(groupId)
-    expect(wrapper.text()).toContain(GROUP_MANAGE_TEMPLATE)
+    expect(wrapper.text()).toContain(TENANT_GROUP_TEMPLATE)
   })
 
   it('passes props correctly to components', async () => {
@@ -209,7 +240,7 @@ describe('Router Integration', () => {
 
     await router.push('/settings')
     await router.isReady()
-    expect(router.currentRoute.value.path).toBe('/settings')
+    expect(router.currentRoute.value.path).toBe('/settings/requests')
   })
 })
 

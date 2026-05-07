@@ -92,7 +92,7 @@ describe('TenantListContainer.vue', () => {
   })
 
   describe('navigation', () => {
-    it('navigates to the tenant page when a card is selected', async () => {
+    it('navigates to the tenant users page when a card is selected', async () => {
       mockTenantStore([makeTenant({ id: 'tenant-1' })])
       await router.isReady()
       const wrapper = mountComponent()
@@ -103,7 +103,7 @@ describe('TenantListContainer.vue', () => {
         .vm.$emit('select', 'tenant-1')
       await flushPromises()
 
-      expect(router.currentRoute.value.path).toBe('/tenants/tenant-1')
+      expect(router.currentRoute.value.path).toBe('/tenants/tenant-1/users')
     })
   })
 

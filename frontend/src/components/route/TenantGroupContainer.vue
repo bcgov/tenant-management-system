@@ -1,21 +1,23 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
 
 import LoginContainer from '@/components/auth/LoginContainer.vue'
 import GroupHeader from '@/components/group/GroupHeader.vue'
 import LoadingWrapper from '@/components/ui/LoadingWrapper.vue'
 import { useNotification } from '@/composables/useNotification'
-import { toGroupId } from '@/models/group.model'
-import { toTenantId } from '@/models/tenant.model'
+import { type GroupId } from '@/models/group.model'
+import { type TenantId } from '@/models/tenant.model'
 import { type GroupRoleType, useGroupStore } from '@/stores/useGroupStore'
 import { useTenantStore } from '@/stores/useTenantStore'
+
+// --- Component Interface -----------------------------------------------------
+
+const props = defineProps<{ groupId: GroupId; tenantId: TenantId }>()
 
 // --- Store and Composable Setup ----------------------------------------------
 
 const groupStore = useGroupStore()
 const notification = useNotification()
-const route = useRoute()
 const tenantStore = useTenantStore()
 
 // --- Computed Values ---------------------------------------------------------
@@ -34,39 +36,27 @@ const enabledServiceCount = computed(
     ).length,
 )
 
-const group = computed(() => groupStore.getGroup(routeGroupId.value))
+const group = computed(() => groupStore.getGroup(props.groupId))
 
-const routeGroupId = computed(() =>
-  Array.isArray(route.params.groupId)
-    ? toGroupId(route.params.groupId[0])
-    : toGroupId(route.params.groupId),
-)
-
-const routeTenantId = computed(() =>
-  Array.isArray(route.params.tenantId)
-    ? toTenantId(route.params.tenantId[0])
-    : toTenantId(route.params.tenantId),
-)
-
-const tenant = computed(() => tenantStore.getTenant(routeTenantId.value))
+const tenant = computed(() => tenantStore.getTenant(props.tenantId))
 
 // --- Component Lifecycle -----------------------------------------------------
 
 onMounted(async () => {
   try {
-    await groupStore.fetchGroup(routeTenantId.value, routeGroupId.value)
+    await groupStore.fetchGroup(props.tenantId, props.groupId)
   } catch {
     notification.error('Failed to load group')
   }
 
   try {
-    await groupStore.fetchRoles(routeTenantId.value, routeGroupId.value)
+    await groupStore.fetchRoles(props.tenantId, props.groupId)
   } catch {
     notification.error('Failed to load group roles')
   }
 
   try {
-    await tenantStore.fetchTenant(routeTenantId.value)
+    await tenantStore.fetchTenant(props.tenantId)
   } catch {
     notification.error('Failed to load tenant')
   }

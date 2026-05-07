@@ -1,40 +1,41 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
 
-import TenantHeader from '@/components/tenant/TenantHeader.vue'
 import LoginContainer from '@/components/auth/LoginContainer.vue'
+import TenantHeader from '@/components/tenant/TenantHeader.vue'
 import LoadingWrapper from '@/components/ui/LoadingWrapper.vue'
-import { useGroupStore } from '@/stores/useGroupStore'
 import { useNotification } from '@/composables/useNotification'
-import { toTenantId } from '@/models/tenant.model'
+import { type TenantId } from '@/models/tenant.model'
+import { useGroupStore } from '@/stores/useGroupStore'
 import { useTenantStore } from '@/stores/useTenantStore'
+
+// --- Component Interface -----------------------------------------------------
+
+const props = defineProps<{ tenantId: TenantId }>()
+
+// --- Store and Composable Setup ----------------------------------------------
 
 const groupStore = useGroupStore()
 const notification = useNotification()
-const route = useRoute()
 const tenantStore = useTenantStore()
 
-const routeTenantId = computed(() =>
-  Array.isArray(route.params.tenantId)
-    ? toTenantId(route.params.tenantId[0])
-    : toTenantId(route.params.tenantId),
-)
+// --- Computed Values ---------------------------------------------------------
 
 const groups = computed(() => groupStore.groups)
-const tenant = computed(
-  () => tenantStore.getTenant(routeTenantId.value) || null,
-)
+
+const tenant = computed(() => tenantStore.getTenant(props.tenantId))
+
+// --- Component Lifecycle ---------------------------------------------------------
 
 onMounted(async () => {
   try {
-    await groupStore.fetchGroups(routeTenantId.value)
+    await groupStore.fetchGroups(props.tenantId)
   } catch {
     notification.error('Failed to load groups')
   }
 
   try {
-    await tenantStore.fetchTenant(routeTenantId.value)
+    await tenantStore.fetchTenant(props.tenantId)
   } catch {
     notification.error('Failed to load tenant')
   }
