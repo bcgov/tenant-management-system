@@ -170,6 +170,12 @@ export class TMRepository {
     return creator?.userName
   }
 
+  private async getSsoUser(ssoUserId: string) {
+    return await this.manager.findOne(SSOUser, {
+      where: { ssoUserId },
+    })
+  }
+
   public async checkIfGroupNameExistsInTenant(
     name: string,
     tenantId: string,
@@ -897,10 +903,14 @@ export class TMRepository {
     const normalizedCreatedBy = group.createdBy?.trim()
 
     let createdByUserName: string | undefined
+    let createdByDisplayName: string | undefined
     if (normalizedCreatedBy === 'system') {
       createdByUserName = 'system'
+      createdByDisplayName = 'system'
     } else if (normalizedCreatedBy) {
-      createdByUserName = await this.getSsoUserDisplayName(normalizedCreatedBy)
+      const creator = await this.getSsoUser(normalizedCreatedBy)
+      createdByUserName = creator?.userName
+      createdByDisplayName = creator?.displayName
     }
 
     const groupResponse: GetGroupResultDto = {
@@ -911,6 +921,7 @@ export class TMRepository {
       updatedDateTime: group.updatedDateTime,
       createdBy: group.createdBy,
       createdByUserName,
+      createdByDisplayName,
       updatedBy: group.updatedBy,
     }
 

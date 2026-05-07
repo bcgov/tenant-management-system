@@ -1551,6 +1551,7 @@ describe('Tenant API', () => {
         ...mockTenant,
         createdBy: '123e4567e89b12d3a456426614174001',
         createdByUserName: 'test-user',
+        createdByDisplayName: 'Test User',
       }
 
       mockTMSRepository.getTenant.mockResolvedValue(
@@ -1569,6 +1570,7 @@ describe('Tenant API', () => {
             description: tenantResponse.description,
             createdBy: tenantResponse.createdBy,
             createdByUserName: tenantResponse.createdByUserName,
+            createdByDisplayName: tenantResponse.createdByDisplayName,
           },
         },
       })
@@ -1586,6 +1588,7 @@ describe('Tenant API', () => {
         ...mockTenant,
         createdBy: '123e4567e89b12d3a456426614174001',
         createdByUserName: 'test-user',
+        createdByDisplayName: 'Test User',
       }
 
       mockTMSRepository.getTenant.mockResolvedValue(
@@ -1606,6 +1609,7 @@ describe('Tenant API', () => {
             description: tenantResponse.description,
             createdBy: tenantResponse.createdBy,
             createdByUserName: tenantResponse.createdByUserName,
+            createdByDisplayName: tenantResponse.createdByDisplayName,
             users: [
               {
                 ssoUser: expect.objectContaining({
@@ -1633,11 +1637,12 @@ describe('Tenant API', () => {
       )
     })
 
-    it('should return createdByUserName as system when tenant createdBy is padded system', async () => {
+    it('should return createdByUserName and createdByDisplayName as system when tenant createdBy is padded system', async () => {
       const tenantResponse = {
         ...mockTenant,
         createdBy: 'system                          ',
         createdByUserName: 'system',
+        createdByDisplayName: 'system',
       }
 
       mockTMSRepository.getTenant.mockResolvedValue(
@@ -1652,6 +1657,7 @@ describe('Tenant API', () => {
           tenant: {
             createdBy: 'system                          ',
             createdByUserName: 'system',
+            createdByDisplayName: 'system',
           },
         },
       })

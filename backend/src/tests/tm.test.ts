@@ -1260,6 +1260,7 @@ describe('Tenant Management API', () => {
         sharedServiceRoles: [],
         createdBy: 'test-user',
         createdByUserName: 'jdoe',
+        createdByDisplayName: 'Doe, John',
         updatedBy: 'test-user',
         createdDateTime: new Date(),
         updatedDateTime: new Date(),
@@ -1282,6 +1283,7 @@ describe('Tenant Management API', () => {
             description: mockGroup.description,
             createdBy: mockGroup.createdBy,
             createdByUserName: mockGroup.createdByUserName,
+            createdByDisplayName: mockGroup.createdByDisplayName,
             updatedBy: mockGroup.updatedBy,
           },
         },
@@ -1331,6 +1333,7 @@ describe('Tenant Management API', () => {
         sharedServiceRoles: [],
         createdBy: 'test-user',
         createdByUserName: 'jdoe',
+        createdByDisplayName: 'Doe, John',
         updatedBy: 'test-user',
       }
 
@@ -1350,6 +1353,7 @@ describe('Tenant Management API', () => {
             name: mockGroupWithUsers.name,
             createdBy: mockGroupWithUsers.createdBy,
             createdByUserName: mockGroupWithUsers.createdByUserName,
+            createdByDisplayName: mockGroupWithUsers.createdByDisplayName,
             updatedBy: mockGroupWithUsers.updatedBy,
             users: [
               {
@@ -1386,7 +1390,7 @@ describe('Tenant Management API', () => {
       )
     })
 
-    it('should return createdByUserName as system when group createdBy is padded system', async () => {
+    it('should return createdByUserName and createdByDisplayName as system when group createdBy is padded system', async () => {
       const mockGroup = {
         id: groupId,
         name: 'Test Group',
@@ -1396,6 +1400,7 @@ describe('Tenant Management API', () => {
         sharedServiceRoles: [],
         createdBy: 'system                          ',
         createdByUserName: 'system',
+        createdByDisplayName: 'system',
         updatedBy: 'system                          ',
         createdDateTime: new Date(),
         updatedDateTime: new Date(),
@@ -1415,6 +1420,7 @@ describe('Tenant Management API', () => {
           group: {
             createdBy: 'system                          ',
             createdByUserName: 'system',
+            createdByDisplayName: 'system',
           },
         },
       })
