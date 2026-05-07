@@ -69,11 +69,13 @@ watch(mobile, () => {
       <template v-if="isRouteSettings">
         <v-divider class="my-2" />
         <v-list-item
+          :class="{ 'pl-6': !rail }"
           :prepend-icon="mdiHomePlusOutline"
           title="Tenant Requests"
           to="/settings/requests"
         />
         <v-list-item
+          :class="{ 'pl-6': !rail }"
           :prepend-icon="mdiPuzzleOutline"
           title="Services"
           to="/settings/services"
