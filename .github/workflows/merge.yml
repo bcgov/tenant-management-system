@@ -23,97 +23,43 @@ concurrency:
 permissions: {}
 
 jobs:
-  deploy-silver-dev:
-    name: Deploy (DEV)
-    uses: ./.github/workflows/.deployer.yml
+  vars:
+    name: Set Variables
+    outputs:
+      pr: ${{ steps.pr.outputs.pr }}
+    runs-on: ubuntu-22.04
+    timeout-minutes: 1
+    steps:
+      # Get PR number for squash merges to main
+      - name: Get PR Number From Event
+        if: github.event_name == 'push'
+        id: pr_no
+        uses: bcgov/action-get-pr@v0.1.0
+      - name: PR Number
+        id: pr
+        run: echo pr=${{ steps.pr_no.outputs.pr || inputs.pr}} >> $GITHUB_OUTPUT
+
+  deploys-silver-dev:
+    name: Deploys Silver Dev - (${{ needs.vars.outputs.pr }})
+    needs: [vars]
+    uses: ./.github/workflows/silver-dev.yml
     secrets: inherit
     with:
-      release_name: cstar-dev
-      environment: silver-dev
-      db_user: appproxy # appproxy is the user which works with pgbouncer.
-      params: --set backend.deploymentStrategy=RollingUpdate
-        --set frontend.deploymentStrategy=RollingUpdate
-        --set global.autoscaling=true
-        --set frontend.pdb.enabled=true
-        --set frontend.pdb.minAvailable=2
-        --set frontend.replicaCount=3
-        --set backend.pdb.enabled=true
-        --set backend.pdb.minAvailable=2
-        --set backend.replicaCount=3
-        --set global.domain="apps.silver.devops.gov.bc.ca"
-      tag: ${{ inputs.tag }}
+      tag: ${{ needs.vars.outputs.pr }}
+      db_user: appproxy
   
-  deploy-gold-dev:
-    name: Deploy (DEV)
-    uses: ./.github/workflows/.deployer.yml
+  deploys-gold-dev:
+    name: Deploys Gold Dev - (${{ needs.vars.outputs.pr }})
+    needs: [vars]
+    uses: ./.github/workflows/gold-dev.yml
     secrets: inherit
     with:
-      release_name: cstar-dev
-      environment: gold-dev
-      db_user: appproxy # appproxy is the user which works with pgbouncer.
-      params: --set backend.deploymentStrategy=RollingUpdate
-        --set frontend.deploymentStrategy=RollingUpdate
-        --set global.autoscaling=true
-        --set frontend.pdb.enabled=true
-        --set frontend.pdb.minAvailable=2
-        --set frontend.replicaCount=3
-        --set backend.pdb.enabled=true
-        --set backend.pdb.minAvailable=2
-        --set backend.replicaCount=3
-        --set global.domain="apps.gold.devops.gov.bc.ca"
-      tag: ${{ inputs.tag }}
-
-  tests:
-    name: Tests
-    needs: [deploy-gold-dev]
-    permissions:
-      checks: write
-    uses: ./.github/workflows/.tests.yml
-    with:
-      image_tag: ${{ needs.deploy-gold-dev.outputs.tag }}
-      target: dev
-
-  deploy-test:
-    name: Deploy (TEST)
-    needs: [tests]
-    uses: ./.github/workflows/.deployer.yml
-    secrets: inherit
-    with:
-      environment: test
-      db_user: appproxy # appproxy is the user which works with pgbouncer.
-      params: --set backend.deploymentStrategy=RollingUpdate
-        --set frontend.deploymentStrategy=RollingUpdate
-        --set global.autoscaling=true
-        --set frontend.pdb.enabled=true
-        --set frontend.pdb.minAvailable=2
-        --set frontend.replicaCount=3
-        --set backend.pdb.enabled=true
-        --set backend.pdb.minAvailable=2
-        --set backend.replicaCount=3
-      tag: ${{ inputs.tag }}
-
-  deploy-prod:
-    name: Deploy (PROD)
-    needs: [deploy-test]
-    uses: ./.github/workflows/.deployer.yml
-    secrets: inherit
-    with:
-      environment: prod
-      db_user: appproxy # appproxy is the user which works with pgbouncer.
-      params: --set backend.deploymentStrategy=RollingUpdate
-        --set frontend.deploymentStrategy=RollingUpdate
-        --set global.autoscaling=true
-        --set frontend.pdb.enabled=true
-        --set frontend.pdb.minAvailable=2
-        --set frontend.replicaCount=3
-        --set backend.pdb.enabled=true
-        --set backend.pdb.minAvailable=2
-        --set backend.replicaCount=3
-      tag: ${{ inputs.tag }}
-
-  promote:
+      tag: ${{ needs.vars.outputs.pr }}
+      db_user: appproxy
+  
+  promote-dev:
     name: Promote Images
-    needs: [deploy-prod]
+    needs: [deploys-gold-dev]
     runs-on: ubuntu-24.04
     permissions:
       packages: write
@@ -126,5 +72,106 @@ jobs:
         with:
           registry: ghcr.io
           repository: ${{ github.repository }}/${{ matrix.package }}
-          target: ${{ needs.deploy-prod.outputs.tag }}
+          target: ${{ needs.vars.outputs.pr }}
+          tags: dev
+  
+  dev-tests:
+    name: Tests
+    needs: [promote-dev]
+    permissions:
+      checks: write
+    uses: ./.github/workflows/.tests.yml
+    with:
+      image_tag: dev
+      target: dev
+
+  deploys-silver-test:
+    name: Deploys Silver Test - (${{ needs.vars.outputs.pr }})
+    needs: [vars, dev-tests]
+    uses: ./.github/workflows/silver-test.yml
+    secrets: inherit
+    with:
+      tag: ${{ needs.vars.outputs.pr }}
+      db_user: appproxy
+  
+  deploys-silver-test:
+    name: Deploys Silver Test - (${{ needs.vars.outputs.pr }})
+    needs: [vars, dev-tests]
+    uses: ./.github/workflows/silver-test.yml
+    secrets: inherit
+    with:
+      tag: ${{ needs.vars.outputs.pr }}
+      db_user: appproxy
+
+  deploys-gold-test:
+    name: Deploys Gold Test - (${{ needs.vars.outputs.pr }})
+    needs: [vars, dev-tests]
+    uses: ./.github/workflows/gold-test.yml
+    secrets: inherit
+    with:
+      tag: ${{ needs.vars.outputs.pr }}
+      db_user: appproxy
+  
+  promote-test:
+    name: Promote Images
+    needs: [vars,deploys-gold-test]
+    runs-on: ubuntu-24.04
+    permissions:
+      packages: write
+    strategy:
+      matrix:
+        package: [migrations, backend, frontend]
+    timeout-minutes: 1
+    steps:
+      - uses: shrink/actions-docker-registry-tag@f04afd0559f66b288586792eb150f45136a927fa # v4.0.0
+        with:
+          registry: ghcr.io
+          repository: ${{ github.repository }}/${{ matrix.package }}
+          target: ${{ needs.vars.outputs.pr }}
+          tags: test
+  
+  test-tests:
+    name: Tests
+    needs: [promote-test]
+    permissions:
+      checks: write
+    uses: ./.github/workflows/.tests.yml
+    with:
+      image_tag: test
+      target: test
+
+  deploys-silver-prod:
+    name: Deploys Silver Prod - (${{ needs.vars.outputs.pr }})
+    needs: [vars, test-tests]
+    uses: ./.github/workflows/silver-prod.yml
+    secrets: inherit
+    with:
+      tag: ${{ needs.vars.outputs.pr }}
+      db_user: appproxy
+
+  deploys-gold-prod:
+    name: Deploys Gold Prod - (${{ needs.vars.outputs.pr }})
+    needs: [vars, test-tests]
+    uses: ./.github/workflows/gold-prod.yml
+    secrets: inherit
+    with:
+      tag: ${{ needs.vars.outputs.pr }}
+      db_user: appproxy
+
+  promote:
+    name: Promote Images
+    needs: [deploys-gold-prod]
+    runs-on: ubuntu-24.04
+    permissions:
+      packages: write
+    strategy:
+      matrix:
+        package: [migrations, backend, frontend]
+    timeout-minutes: 1
+    steps:
+      - uses: shrink/actions-docker-registry-tag@f04afd0559f66b288586792eb150f45136a927fa # v4.0.0
+        with:
+          registry: ghcr.io
+          repository: ${{ github.repository }}/${{ matrix.package }}
+          target: ${{ needs.vars.outputs.pr }}
           tags: prod

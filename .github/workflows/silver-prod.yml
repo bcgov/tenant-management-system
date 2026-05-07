@@ -1,0 +1,72 @@
+---
+name: Deploy Prod (Silver)
+permissions: {}
+
+on:
+  workflow_dispatch:
+    inputs:
+      autoscaling:
+        description: 'enable or disable autoscaling'
+        required: false
+        type: boolean
+        default: true
+      tag:
+        description: Specify a tag to deploy; defaults to PR number
+        required: false
+        type: string
+      db_user:
+        description: "database user; e.g. PR number or approxy"
+        required: false
+        type: string
+        default: "appproxy"
+      params:
+        description: Extra parameters to pass to helm upgrade
+        required: false
+        type: string
+  workflow_call:
+    inputs:
+      autoscaling:
+        description: 'enable or disable autoscaling'
+        required: false
+        type: boolean
+        default: true
+      tag:
+        description: Specify a tag to deploy; defaults to PR number
+        required: false
+        type: string
+      db_user:
+        description: "database user; e.g. PR number or appproxy"
+        required: false
+        type: string
+        default: "appproxy"
+      params:
+        description: Extra parameters to pass to helm upgrade
+        required: false
+        type: string
+jobs:
+  deploy-silver-prod:
+    name: Deploys Prod (Silver)
+    uses: ./.github/workflows/.deployer.yml
+    secrets: inherit
+    with:
+      release_name: cstar-${{ inputs.tag }}
+      environment: silver-prod
+      db_user: ${{ inputs.db_user }} # appproxy is the user which works with pgbouncer.
+      db_triggers: ('charts/crunchy/')
+      params: 
+        --set global.autoscaling=${{ inputs.autoscaling }}
+        --set frontend.autoscaling.enabled=${{ inputs.autoscaling }}
+        --set frontend.autoscaling.minReplicas=2
+        --set frontend.autoscaling.maxReplicas=3
+        --set frontend.deploymentStrategy=RollingUpdate
+        --set frontend.pdb.enabled=true
+        --set frontend.pdb.minAvailable=1
+        --set backend.autoscaling.enabled=${{ inputs.autoscaling }}
+        --set backend.autoscaling.minReplicas=2
+        --set backend.autoscaling.maxReplicas=3
+        --set backend.deploymentStrategy=RollingUpdate
+        --set backend.pdb.enabled=true
+        --set backend.pdb.minAvailable=1
+        --set global.domain="apps.silver.devops.gov.bc.ca"
+        ${{ inputs.params }}
+      tag: ${{ inputs.tag }}
