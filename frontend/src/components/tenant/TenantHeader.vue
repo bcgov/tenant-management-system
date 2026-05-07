@@ -27,7 +27,7 @@ function toggleDetail() {
 </script>
 
 <template>
-  <v-sheet class="px-10 py-4" color="surface-light-gray">
+  <v-sheet class="px-10 py-4" color="surface-light-gray" @click="toggleDetail">
     <v-row class="align-center">
       <v-col>
         <hgroup class="text-stack">
@@ -42,7 +42,6 @@ function toggleDetail() {
           rounded="lg"
           size="small"
           variant="plain"
-          @click="toggleDetail"
         ></v-btn>
       </v-col>
     </v-row>
