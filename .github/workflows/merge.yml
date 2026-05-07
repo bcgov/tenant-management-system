@@ -93,15 +93,6 @@ jobs:
     with:
       tag: ${{ needs.vars.outputs.pr }}
       db_user: appproxy
-  
-  deploys-silver-test:
-    name: Deploys Silver Test - (${{ needs.vars.outputs.pr }})
-    needs: [vars, dev-tests]
-    uses: ./.github/workflows/silver-test.yml
-    secrets: inherit
-    with:
-      tag: ${{ needs.vars.outputs.pr }}
-      db_user: appproxy
 
   deploys-gold-test:
     name: Deploys Gold Test - (${{ needs.vars.outputs.pr }})
