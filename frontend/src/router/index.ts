@@ -5,7 +5,7 @@ import GroupListContainer from '@/components/group/GroupListContainer.vue'
 import GroupRoleContainer from '@/components/group/GroupRoleContainer.vue'
 import GroupUserManagementContainer from '@/components/group/UserManagementContainer.vue'
 import BCeidLandingContainer from '@/components/route/BCeidLandingContainer.vue'
-import GroupManagementContainer from '@/components/route/GroupManagementContainer.vue'
+import GroupDetailContainer from '@/components/route/GroupDetailContainer.vue'
 import LandingPageContainer from '@/components/route/LandingPageContainer.vue'
 import SettingsServiceContainer from '@/components/route/SettingsServiceContainer.vue'
 import SettingsTenantRequestContainer from '@/components/route/SettingsTenantRequestContainer.vue'
@@ -43,7 +43,7 @@ const routes = [
       },
       {
         path: 'groups/:groupId',
-        component: GroupManagementContainer,
+        component: GroupDetailContainer,
         children: [
           { path: 'members', component: GroupUserManagementContainer },
           { path: 'roles', component: GroupRoleContainer },

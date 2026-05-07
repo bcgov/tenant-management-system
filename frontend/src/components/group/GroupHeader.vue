@@ -1,60 +1,52 @@
 <script setup lang="ts">
 import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
-import { ref } from 'vue'
 
 import { type Group } from '@/models/group.model'
+import { type Tenant } from '@/models/tenant.model'
 
 // --- Component Interface -----------------------------------------------------
 
-defineProps<{
+const props = defineProps<{
   group: Group
+  showDetail: boolean
+  tenant: Tenant
 }>()
 
 const emit = defineEmits<{
   (event: 'update:showDetail', value: boolean): void
 }>()
 
-// --- Component State ---------------------------------------------------------
-
-const showDetail = ref(false)
-
 // --- Component Methods -------------------------------------------------------
 
 function toggleDetail() {
-  showDetail.value = !showDetail.value
-  emit('update:showDetail', showDetail.value)
+  emit('update:showDetail', !props.showDetail)
 }
 </script>
 
 <template>
-  <v-sheet color="surface-light-blue">
-    <v-row class="align-center px-4" no-gutters>
-      <v-col cols="8">
-        <h2>Group: {{ group.name }}</h2>
+  <v-sheet class="px-10 py-4" color="surface-light-gray" @click="toggleDetail">
+    <v-row class="align-center">
+      <v-col>
+        <hgroup class="text-stack">
+          <p class="p-large">{{ group.name }}</p>
+          <p class="p-label">Tenant: {{ tenant.name }}</p>
+        </hgroup>
       </v-col>
-      <v-col class="align-center d-flex justify-end" cols="4">
-        <div class="me-4">
-          <p>
-            Date Created:
-            <span class="text-no-wrap">
-              <strong>{{ group.createdDate }}</strong>
-            </span>
-          </p>
-        </div>
-        <div class="me-4">
-          <p>
-            Created By:
-            <strong>{{ group.createdBy }}</strong>
-          </p>
-        </div>
+
+      <v-col cols="auto">
         <v-btn
           :icon="showDetail ? mdiChevronUp : mdiChevronDown"
           rounded="lg"
           size="small"
-          variant="outlined"
-          @click="toggleDetail"
+          variant="plain"
         ></v-btn>
       </v-col>
     </v-row>
   </v-sheet>
 </template>
+
+<style scoped>
+.text-stack p {
+  margin: 0;
+}
+</style>

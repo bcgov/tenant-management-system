@@ -7,18 +7,10 @@ import GroupDetails from '@/components/group/GroupDetails.vue'
 import GroupHeader from '@/components/group/GroupHeader.vue'
 import LoadingWrapper from '@/components/ui/LoadingWrapper.vue'
 import { useNotification } from '@/composables/useNotification'
-import { DomainError } from '@/errors/domain/DomainError'
-import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
-import { type GroupDetailFields, toGroupId } from '@/models/group.model'
-import { Tenant, toTenantId } from '@/models/tenant.model'
-import { useGroupStore } from '@/stores/useGroupStore'
+import { toGroupId } from '@/models/group.model'
+import { toTenantId } from '@/models/tenant.model'
+import { type GroupRoleType, useGroupStore } from '@/stores/useGroupStore'
 import { useTenantStore } from '@/stores/useTenantStore'
-
-// --- Component Interface -----------------------------------------------------
-
-const props = defineProps<{
-  tenant: Tenant
-}>()
 
 // --- Store and Composable Setup ----------------------------------------------
 
@@ -29,8 +21,6 @@ const tenantStore = useTenantStore()
 
 // --- Component State ---------------------------------------------------------
 
-const isDuplicateName = ref(false)
-const isEditing = ref(false)
 const showDetail = ref(false)
 
 // --- Computed Values ---------------------------------------------------------
@@ -48,41 +38,26 @@ const routeTenantId = computed(() =>
 )
 
 const group = computed(() => {
-  return groupStore.getGroup(routeGroupId.value) || null
+  return groupStore.getGroup(routeGroupId.value)
 })
 
-// --- Component Methods -------------------------------------------------------
+const enabledRolesCount = computed(
+  () =>
+    Object.values(groupStore.groupRoles as GroupRoleType)
+      .flat()
+      .filter((role) => role.enabled).length,
+)
 
-async function handleUpdateGroup(updatedGroup: GroupDetailFields) {
-  // Shouldn't happen as the template can't call this function when null.
-  if (!group.value || !props.tenant) {
-    return
-  }
+const enabledServiceCount = computed(
+  () =>
+    Object.values(groupStore.groupRoles as GroupRoleType).filter((roles) =>
+      roles.some((role) => role.enabled),
+    ).length,
+)
 
-  try {
-    await groupStore.updateGroupDetails(
-      props.tenant.id,
-      group.value.id,
-      updatedGroup,
-    )
-    isEditing.value = false
-    notification.success('Group Details Successfully Updated')
-  } catch (error) {
-    if (error instanceof DuplicateEntityError) {
-      // If the API says that this name exists already, then show the name
-      // duplicated validation error.
-      isDuplicateName.value = true
-    } else if (error instanceof DomainError && error.userMessage) {
-      // For any other API Domain Error, display the user message that comes
-      // from the API. This should not happen but is useful if there are
-      // business rules in the API that are not implemented in the UI.
-      notification.error(error.userMessage)
-    } else {
-      // Otherwise display a generic error message.
-      notification.error('Failed to update the group')
-    }
-  }
-}
+const tenant = computed(() => {
+  return tenantStore.getTenant(routeTenantId.value)
+})
 
 // --- Component Lifecycle -----------------------------------------------------
 
@@ -91,6 +66,12 @@ onMounted(async () => {
     await groupStore.fetchGroup(routeTenantId.value, routeGroupId.value)
   } catch {
     notification.error('Failed to load group')
+  }
+
+  try {
+    await groupStore.fetchRoles(routeTenantId.value, routeGroupId.value)
+  } catch {
+    notification.error('Failed to load group roles')
   }
 
   try {
@@ -107,16 +88,18 @@ onMounted(async () => {
       :loading="!group || !tenant"
       loading-message="Loading group..."
     >
-      <GroupHeader v-model:show-detail="showDetail" :group="group!" />
+      <GroupHeader
+        v-model:show-detail="showDetail"
+        :group="group!"
+        :tenant="tenant!"
+      />
 
       <GroupDetails
         v-if="showDetail"
-        v-model:is-editing="isEditing"
         :group="group!"
-        :is-duplicate-name="isDuplicateName"
-        :tenant="tenant"
-        @clear-duplicate-error="isDuplicateName = false"
-        @update="handleUpdateGroup"
+        :group-enabled-service-count="enabledServiceCount"
+        :group-enabled-service-role-count="enabledRolesCount"
+        :tenant="tenant!"
       />
 
       <router-view :group="group" :tenant="tenant" />
