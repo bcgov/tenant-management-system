@@ -10,7 +10,7 @@ defineProps<{
 
 <template>
   <v-row class="align-center flex-nowrap" no-gutters>
-    <v-col class="pr-2" cols="auto">
+    <v-col class="pr-4" cols="auto">
       <v-icon>{{ icon }}</v-icon>
     </v-col>
     <v-col cols="auto">

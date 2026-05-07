@@ -26,26 +26,28 @@ const tenantGroupsCount = computed(() => props.groups.length)
 </script>
 
 <template>
-  <v-sheet class="px-10 py-4">
+  <v-sheet class="px-10 py-8">
     <v-row>
-      <v-col cols="12" md="3">
-        <pre class="p-small">{{ tenant.description }}</pre>
+      <v-col>
+        <pre class="description p-small">{{ tenant.description }}</pre>
       </v-col>
     </v-row>
+
+    <v-divider class="my-6" />
 
     <v-row class="align-center" style="column-gap: 8rem">
       <v-col cols="12" md="3">
         <StatBlock
           :icon="mdiCalendarMonthOutline"
           :value="tenant.createdDate"
-          label="Date created"
+          label="Date Created"
         />
       </v-col>
       <v-col cols="12" md="3">
         <StatBlock
           :icon="mdiAccountCircleOutline"
           :value="tenant.createdBy"
-          label="Created by"
+          label="Created By"
         />
       </v-col>
     </v-row>
@@ -68,3 +70,11 @@ const tenantGroupsCount = computed(() => props.groups.length)
     </v-row>
   </v-sheet>
 </template>
+
+<style scoped>
+.description {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+</style>
