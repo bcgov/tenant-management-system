@@ -61,6 +61,7 @@ export interface GetGroupResultDto {
   updatedDateTime: Date
   createdBy: string
   createdByUserName?: string
+  createdByDisplayName?: string
   updatedBy: string
   users?: Array<{
     id: string

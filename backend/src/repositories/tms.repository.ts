@@ -740,9 +740,7 @@ export class TMSRepository {
     }
   }
 
-  private async getCreatorDisplayName(
-    ssoUserId: string,
-  ): Promise<SSOUser | null> {
+  private async getCreatorUser(ssoUserId: string): Promise<SSOUser | null> {
     return this.manager.findOne(SSOUser, {
       where: { ssoUserId },
     })
@@ -788,14 +786,21 @@ export class TMSRepository {
     const normalizedCreatedBy = tenant.createdBy?.trim()
 
     if (normalizedCreatedBy) {
-      const createdByUserName =
-        normalizedCreatedBy === 'system'
-          ? 'system'
-          : await this.getCreatorDisplayName(normalizedCreatedBy).then(
-              (creator) => creator?.userName,
-            )
+      let createdByUserName: string | undefined
+      let createdByDisplayName: string | undefined
+      if (normalizedCreatedBy === 'system') {
+        createdByUserName = 'system'
+        createdByDisplayName = 'system'
+      } else {
+        const creator = await this.getCreatorUser(normalizedCreatedBy)
+        createdByUserName = creator?.userName
+        createdByDisplayName = creator?.displayName
+      }
       ;(tenant as Tenant & { createdByUserName?: string }).createdByUserName =
         createdByUserName
+      ;(
+        tenant as Tenant & { createdByDisplayName?: string }
+      ).createdByDisplayName = createdByDisplayName
     }
     return tenant
   }

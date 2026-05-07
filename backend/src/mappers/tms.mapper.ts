@@ -50,6 +50,7 @@ export interface TenantDto {
   updatedDateTime: Date
   createdBy: string
   createdByUserName?: string
+  createdByDisplayName?: string
   updatedBy: string
   users?: TenantUserDto[]
 }
@@ -74,6 +75,7 @@ export class TMSMapper {
   public toTenantDto(tenant: Tenant): TenantDto {
     const tenantWithCreatorUserName = tenant as Tenant & {
       createdByUserName?: string
+      createdByDisplayName?: string
     }
 
     return {
@@ -85,6 +87,7 @@ export class TMSMapper {
       updatedDateTime: tenant.updatedDateTime,
       createdBy: tenant.createdBy,
       createdByUserName: tenantWithCreatorUserName.createdByUserName,
+      createdByDisplayName: tenantWithCreatorUserName.createdByDisplayName,
       updatedBy: tenant.updatedBy,
       users: tenant.users
         ? tenant.users.map((user) => this.toTenantUserDto(user))

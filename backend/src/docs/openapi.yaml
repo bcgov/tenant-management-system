@@ -3152,6 +3152,9 @@ components:
         createdByUserName:
           type: string
           example: 'jdoe'
+        createdByDisplayName:
+          type: string
+          example: 'Doe, John'
         updatedBy:
           type: string
           example: 'F45AFBBD68C44D6F956BA3A1D9181399'
@@ -3422,6 +3425,9 @@ components:
         createdByUserName:
           type: string
           example: 'jdoe'
+        createdByDisplayName:
+          type: string
+          example: 'Doe, John'
         updatedBy:
           type: string
           example: 'F45AFBBD68C44D6F956BA3A1D9181399'
