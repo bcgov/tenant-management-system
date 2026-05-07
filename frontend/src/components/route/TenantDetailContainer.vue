@@ -53,10 +53,13 @@ const tenant = computed(() => {
 
 onMounted(async () => {
   try {
-    await Promise.all([
-      groupStore.fetchGroups(routeTenantId.value),
-      tenantStore.fetchTenant(routeTenantId.value),
-    ])
+    await groupStore.fetchGroups(routeTenantId.value)
+  } catch {
+    notification.error('Failed to load groups')
+  }
+
+  try {
+    await tenantStore.fetchTenant(routeTenantId.value)
   } catch {
     notification.error('Failed to load tenant')
   }
