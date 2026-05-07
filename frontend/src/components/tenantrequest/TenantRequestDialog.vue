@@ -115,10 +115,11 @@ const rules = {
           @click="dialogVisible = false"
         ></v-btn>
       </v-card-title>
+
       <v-card-text>
         <v-form ref="form" v-model="isFormValid">
-          <v-row>
-            <v-col cols="12" md="6">
+          <v-row no-gutters>
+            <v-col class="pe-md-3" cols="12" md="6">
               <v-text-field
                 v-model="formData.name"
                 :maxlength="30"
@@ -134,7 +135,7 @@ const rules = {
                 </template>
               </v-text-field>
             </v-col>
-            <v-col cols="12" md="6">
+            <v-col class="ps-md-3" cols="12" md="6">
               <v-select
                 v-model="formData.ministryName"
                 :items="MINISTRIES"
@@ -148,24 +149,22 @@ const rules = {
               </v-select>
             </v-col>
           </v-row>
-          <v-row>
-            <v-col cols="12" md="6">
-              <v-textarea
-                v-model="formData.description"
-                :rules="[rules.required, rules.maxLength(500)]"
-                counter="500"
-                rows="1"
-                auto-grow
-                required
-              >
-                <template #label>
-                  Description of Tenant <span class="text-error">*</span>
-                </template>
-              </v-textarea>
-            </v-col>
-          </v-row>
+
+          <v-textarea
+            v-model="formData.description"
+            :rules="[rules.required, rules.maxLength(500)]"
+            counter="500"
+            rows="1"
+            auto-grow
+            required
+          >
+            <template #label>
+              Description of Tenant <span class="text-error">*</span>
+            </template>
+          </v-textarea>
         </v-form>
       </v-card-text>
+
       <v-card-actions class="d-flex justify-end">
         <ButtonSecondary class="me-4" text="Cancel" @click="dialogClose" />
         <ButtonPrimary text="Submit Request" @click="handleSubmit" />
