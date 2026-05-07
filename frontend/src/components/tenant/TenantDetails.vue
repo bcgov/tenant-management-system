@@ -8,19 +8,21 @@ import {
 import { computed } from 'vue'
 
 import StatBlock from '@/components/ui/StatBlock.vue'
+import { type Group } from '@/models/group.model'
 import { type Tenant } from '@/models/tenant.model'
 
 // --- Component Interface -----------------------------------------------------
 
 const props = defineProps<{
+  groups: Group[]
   tenant: Tenant
 }>()
 
 // --- Computed Values ---------------------------------------------------------
 
-const tenantUsers = computed(() => props.tenant.users.length)
+const tenantUsersCount = computed(() => props.tenant.users.length)
 
-const tenantGroups = computed(() => 'TBD')
+const tenantGroupsCount = computed(() => props.groups.length)
 </script>
 
 <template>
@@ -31,7 +33,7 @@ const tenantGroups = computed(() => 'TBD')
       </v-col>
     </v-row>
 
-    <v-row class="align-center" style="gap: 8rem">
+    <v-row class="align-center" style="column-gap: 8rem">
       <v-col cols="12" md="3">
         <StatBlock
           :icon="mdiCalendarMonthOutline"
@@ -48,18 +50,18 @@ const tenantGroups = computed(() => 'TBD')
       </v-col>
     </v-row>
 
-    <v-row class="align-center" style="gap: 8rem">
+    <v-row class="align-center" style="column-gap: 8rem">
       <v-col cols="12" md="3">
         <StatBlock
           :icon="mdiAccountMultipleOutline"
-          :value="tenantUsers"
+          :value="tenantUsersCount"
           label="Users"
         />
       </v-col>
       <v-col cols="12" md="3">
         <StatBlock
           :icon="mdiAccountGroupOutline"
-          :value="tenantGroups"
+          :value="tenantGroupsCount"
           label="Groups"
         />
       </v-col>

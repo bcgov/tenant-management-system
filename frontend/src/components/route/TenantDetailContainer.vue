@@ -6,12 +6,14 @@ import LoginContainer from '@/components/auth/LoginContainer.vue'
 import TenantDetails from '@/components/tenant/TenantDetails.vue'
 import TenantHeader from '@/components/tenant/TenantHeader.vue'
 import LoadingWrapper from '@/components/ui/LoadingWrapper.vue'
+import { useGroupStore } from '@/stores/useGroupStore'
 import { useNotification } from '@/composables/useNotification'
 import { toTenantId } from '@/models/tenant.model'
 import { useTenantStore } from '@/stores/useTenantStore'
 
 // --- Store and Composable Setup ----------------------------------------------
 
+const groupStore = useGroupStore()
 const notification = useNotification()
 const route = useRoute()
 const tenantStore = useTenantStore()
@@ -21,6 +23,8 @@ const tenantStore = useTenantStore()
 const showDetail = ref(false)
 
 // --- Computed Values ---------------------------------------------------------
+
+const groups = computed(() => groupStore.groups)
 
 const routeTenantId = computed(() =>
   Array.isArray(route.params.tenantId)
@@ -36,7 +40,10 @@ const tenant = computed(() => {
 
 onMounted(async () => {
   try {
-    await tenantStore.fetchTenant(routeTenantId.value)
+    await Promise.all([
+      groupStore.fetchGroups(routeTenantId.value),
+      tenantStore.fetchTenant(routeTenantId.value),
+    ])
   } catch {
     notification.error('Failed to load tenant')
   }
@@ -45,10 +52,13 @@ onMounted(async () => {
 
 <template>
   <LoginContainer>
-    <LoadingWrapper :loading="!tenant" loading-message="Loading tenant...">
+    <LoadingWrapper
+      :loading="!groups || !tenant"
+      loading-message="Loading tenant..."
+    >
       <TenantHeader v-model:show-detail="showDetail" :tenant="tenant!" />
 
-      <TenantDetails v-if="showDetail" :tenant="tenant!" />
+      <TenantDetails v-if="showDetail" :groups="groups!" :tenant="tenant!" />
 
       <router-view :tenant="tenant" />
     </LoadingWrapper>
