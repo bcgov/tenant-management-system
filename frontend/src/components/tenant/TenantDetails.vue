@@ -27,11 +27,7 @@ const tenantUsersCount = computed(() => props.tenant.users.length)
 
 <template>
   <v-sheet class="px-10 py-8">
-    <v-row>
-      <v-col>
-        <pre class="description p-small">{{ tenant.description }}</pre>
-      </v-col>
-    </v-row>
+    <pre class="description p-small">{{ tenant.description }}</pre>
 
     <v-divider class="my-6" />
 
