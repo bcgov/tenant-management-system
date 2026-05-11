@@ -26,7 +26,7 @@
   },
   "dependencies": {
     "@types/express-jwt": "^6.0.4",
-    "axios": "1.15.0",
+    "axios": "1.16.0",
     "cls-rtracer": "^2.6.0",
     "cors": "^2.8.5",
     "express": "^4.22.1",
