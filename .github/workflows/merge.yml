@@ -59,7 +59,7 @@ jobs:
   
   promote-dev:
     name: Promote Images
-    needs: [deploys-gold-dev]
+    needs: [vars, deploys-gold-dev]
     runs-on: ubuntu-24.04
     permissions:
       packages: write
@@ -149,9 +149,9 @@ jobs:
       tag: ${{ needs.vars.outputs.pr }}
       db_user: appproxy
 
-  promote:
-    name: Promote Images
-    needs: [deploys-gold-prod]
+  promote-prod:
+    name: Promote Images Prod
+    needs: [vars, deploys-gold-prod]
     runs-on: ubuntu-24.04
     permissions:
       packages: write
