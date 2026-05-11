@@ -22,7 +22,7 @@
   "dependencies": {
     "@bcgov/design-tokens": "^4.0.0",
     "@mdi/js": "^7.4.47",
-    "axios": "^1.15.0",
+    "axios": "^1.16.0",
     "keycloak-js": "^26.2.0",
     "pinia": "^3.0.1",
     "vue": "^3.5.13",
