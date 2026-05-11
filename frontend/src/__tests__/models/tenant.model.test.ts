@@ -116,11 +116,11 @@ describe('Tenant model', () => {
     expect(tenant.users).toHaveLength(apiData.users.length)
   })
 
-  it('fromApiData handles created by username', () => {
+  it('fromApiData handles created by display name', () => {
     const apiData = {
-      createdBy: 'creatorUuid',
+      createdBy: 'created-by-uuid',
       createdDateTime: '2025-08-01',
-      createdByUserName: 'creatorUserName',
+      createdByDisplayName: 'created-by-display-name',
       description: 'API description',
       id: 'tenant456' as TenantId,
       name: 'API Tenant',
@@ -130,7 +130,7 @@ describe('Tenant model', () => {
 
     const tenant = Tenant.fromApiData(apiData)
 
-    expect(tenant.createdBy).toEqual('creatorUserName')
+    expect(tenant.createdBy).toEqual('created-by-display-name')
   })
 
   it('fromApiData handles null users gracefully', () => {

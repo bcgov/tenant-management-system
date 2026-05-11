@@ -238,7 +238,6 @@ describe('AppNavigation', () => {
     it('is in rail mode on mobile', () => {
       mockedUseDisplay.mockReturnValue(createDisplay(true))
       const wrapper = mountComponent()
-      console.log(wrapper.html())
 
       expect(wrapper.find('.v-navigation-drawer').classes()).toContain(
         'v-navigation-drawer--rail',
