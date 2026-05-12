@@ -1,12 +1,24 @@
 name: PR Closed
 
 on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Release target to uninstall.  expects pr or dev,test,prod,etc'
+        required: true
+        type: string
+  workflow_call:
+    inputs:
+      target:
+        description: 'Release target to uninstall.  expects pr or dev,test,prod,etc'
+        required: true
+        type: string
   pull_request:
     types: [closed]
 
 concurrency:
   # PR open and close use the same group, allowing only one at a time
-  group: ${{ github.event.number }}
+  group: ${{ github.event.number || inputs.target }}
   cancel-in-progress: true
 
 permissions: {}
@@ -26,7 +38,7 @@ jobs:
       cleanup_name: cstar
       environment: silver-dev 
       packages: backend frontend migrations
-      target: ${{ github.event.number }}
+      target: ${{ github.event.number || inputs.target }}
   
   cleanup-gold-dev:
     name: Cleanup and Image Promotion - Gold
@@ -42,7 +54,7 @@ jobs:
       cleanup_name: cstar
       environment: gold-dev 
       packages: backend frontend migrations
-      target: ${{ github.event.number }}
+      target: ${{ github.event.number || inputs.target }}
   
   cleanup-golddr-dev:
     name: Cleanup and Image Promotion - Golddr
@@ -58,7 +70,7 @@ jobs:
       cleanup_name: cstar
       environment: golddr-dev 
       packages: backend frontend migrations
-      target: ${{ github.event.number }}
+      target: ${{ github.event.number || inputs.target }}
 
   cleanup-db-silver-dev: # TODO move it off to another action later.
     name: Remove DB User from Crunchy
