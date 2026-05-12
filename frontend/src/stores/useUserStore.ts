@@ -18,6 +18,41 @@ export const useUserStore = defineStore('user', () => {
   const searchResults = ref<User[]>([])
 
   /**
+   * Private function to handle BCEID user search with loading state management.
+   *
+   * @param searchType - The type of search (email, firstName,
+   *   lastName).
+   * @param searchValue - The search value to pass to the service.
+   * @returns A promise that resolves to an array of user data.
+   * @throws {Error} If the search type is invalid.
+   */
+  async function _searchBceidUsers(
+    searchType: BCeIDSearchType,
+    searchValue: string,
+  ) {
+    loading.value = true
+    try {
+      let response
+      switch (searchType) {
+        case BCEID_SEARCH_TYPE.EMAIL.value:
+          response = await userService.searchBCeIDEmail(searchValue)
+          break
+        case BCEID_SEARCH_TYPE.DISPLAY_NAME.value:
+          response = await userService.searchBCeIDDisplayName(searchValue)
+          break
+        default:
+          throw new Error(`Invalid search type: ${searchType}`)
+      }
+
+      searchResults.value = response.map(User.fromSearchData)
+
+      return searchResults.value
+    } finally {
+      loading.value = false
+    }
+  }
+
+  /**
    * Private function to handle IDIR user search with loading state management.
    *
    * @param searchType - The type of search (email, firstName, lastName).
@@ -55,6 +90,26 @@ export const useUserStore = defineStore('user', () => {
   }
 
   /**
+   * Searches for BCeID users based on the display name.
+   *
+   * @param displayName - The display name substring to search.
+   * @returns A promise that resolves to an array of user data.
+   */
+  async function searchBCeIDDisplayName(displayName: string) {
+    return _searchBceidUsers(BCEID_SEARCH_TYPE.DISPLAY_NAME.value, displayName)
+  }
+
+  /**
+   * Searches for BCeID users based on the email address.
+   *
+   * @param email - The email address substring to search.
+   * @returns A promise that resolves to an array of user data.
+   */
+  async function searchBCeIDEmail(email: string) {
+    return _searchBceidUsers(BCEID_SEARCH_TYPE.EMAIL.value, email)
+  }
+
+  /**
    * Searches for IDIR users based on the email address.
    *
    * @param email - The email address substring to search.
@@ -84,69 +139,14 @@ export const useUserStore = defineStore('user', () => {
     return _searchIdirUsers(IDIR_SEARCH_TYPE.LAST_NAME.value, lastName)
   }
 
-  /**
-   * Private function to handle BCEID user search with loading state management.
-   *
-   * @param searchType - The type of search (email, firstName,
-   *   lastName).
-   * @param searchValue - The search value to pass to the service.
-   * @returns A promise that resolves to an array of user data.
-   * @throws {Error} If the search type is invalid.
-   */
-  async function _searchBceidUsers(
-    searchType: BCeIDSearchType,
-    searchValue: string,
-  ) {
-    loading.value = true
-    try {
-      let response
-      switch (searchType) {
-        case BCEID_SEARCH_TYPE.EMAIL.value:
-          response = await userService.searchBCeIDEmail(searchValue)
-          break
-        case BCEID_SEARCH_TYPE.DISPLAY_NAME.value:
-          response = await userService.searchBCeIDDisplayName(searchValue)
-          break
-        default:
-          throw new Error(`Invalid search type: ${searchType}`)
-      }
-
-      searchResults.value = response.map(User.fromSearchData)
-
-      return searchResults.value
-    } finally {
-      loading.value = false
-    }
-  }
-
-  /**
-   * Searches for BCeID users based on the email address.
-   *
-   * @param email - The email address substring to search.
-   * @returns A promise that resolves to an array of user data.
-   */
-  async function searchBCeIDEmail(email: string) {
-    return _searchBceidUsers(BCEID_SEARCH_TYPE.EMAIL.value, email)
-  }
-
-  /**
-   * Searches for BCeID users based on the first name.
-   *
-   * @param firstName - The first name substring to search.
-   * @returns A promise that resolves to an array of user data.
-   */
-  async function searchBCeIDDisplayName(firstName: string) {
-    return _searchBceidUsers(BCEID_SEARCH_TYPE.DISPLAY_NAME.value, firstName)
-  }
-
   return {
     loading,
     searchResults,
 
+    searchBCeIDDisplayName,
+    searchBCeIDEmail,
     searchIdirEmail,
     searchIdirFirstName,
     searchIdirLastName,
-    searchBCeIDEmail,
-    searchBCeIDDisplayName,
   }
 })

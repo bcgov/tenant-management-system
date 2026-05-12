@@ -2,8 +2,8 @@
 import { computed } from 'vue'
 
 import AppHeader from '@/components/layout/AppHeader.vue'
-import AppNotifications from '@/components/layout/AppNotifications.vue'
 import AppNavigation from '@/components/layout/AppNavigation.vue'
+import AppNotifications from '@/components/layout/AppNotifications.vue'
 import LandingPageContainer from '@/components/route/LandingPageContainer.vue'
 import { useAuthStore } from '@/stores/useAuthStore'
 
