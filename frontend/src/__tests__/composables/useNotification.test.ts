@@ -9,6 +9,9 @@ describe('useNotification', () => {
   beforeEach(() => {
     vi.useFakeTimers()
 
+    // Directly mutate the notifications array to clear it before each test,
+    // which isn't ideal but perhaps better than exporting a clear function that
+    // is only used for testing.
     notification = useNotification()
     notification.items.splice(0)
   })
@@ -17,7 +20,7 @@ describe('useNotification', () => {
     vi.useRealTimers()
   })
 
-  it('should add a success notification', () => {
+  it('success should add a notification', () => {
     notification.success('Test message', 'Test title')
 
     expect(notification.items).toHaveLength(1)
@@ -26,7 +29,7 @@ describe('useNotification', () => {
     expect(notification.items[0].type).toEqual(NotificationType.SUCCESS)
   })
 
-  it('should use default success title when not provided', () => {
+  it('success should use default title when not provided', () => {
     notification.success('Test success message')
 
     expect(notification.items).toHaveLength(1)
@@ -34,7 +37,7 @@ describe('useNotification', () => {
     expect(notification.items[0].type).toBe(NotificationType.SUCCESS)
   })
 
-  it('should use default info title when not provided', () => {
+  it('info should use default title when not provided', () => {
     notification.info('Test info message')
 
     expect(notification.items).toHaveLength(1)
@@ -42,7 +45,7 @@ describe('useNotification', () => {
     expect(notification.items[0].type).toBe(NotificationType.INFO)
   })
 
-  it('should use default warning title when not provided', () => {
+  it('warning should use default title when not provided', () => {
     notification.warning('Test warning message')
 
     expect(notification.items).toHaveLength(1)
@@ -50,7 +53,7 @@ describe('useNotification', () => {
     expect(notification.items[0].type).toBe(NotificationType.WARNING)
   })
 
-  it('should use default error title when not provided', () => {
+  it('error should use default title when not provided', () => {
     notification.error('Test error message')
 
     expect(notification.items).toHaveLength(1)
