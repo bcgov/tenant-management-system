@@ -5,6 +5,10 @@ permissions: {}
 on:
   workflow_dispatch:
     inputs:
+      release_name:
+        description: 'Release name to use if defined'
+        required: false
+        type: string
       autoscaling:
         description: 'enable or disable autoscaling'
         required: false
@@ -25,6 +29,10 @@ on:
         type: string
   workflow_call:
     inputs:
+      release_name:
+        description: 'Release name to use if defined'
+        required: false
+        type: string
       autoscaling:
         description: 'enable or disable autoscaling'
         required: false
@@ -50,7 +58,7 @@ jobs:
     uses: ./.github/workflows/.deployer.yml
     secrets: inherit
     with:
-      release_name: cstar-${{ inputs.tag }}
+      release_name: ${{ inputs.release_name }}
       environment: silver-dev
       db_user: ${{ inputs.db_user }} # appproxy is the user which works with pgbouncer.
       db_triggers: ('charts/crunchy/')
