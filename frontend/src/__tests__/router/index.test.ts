@@ -1,7 +1,6 @@
 import { mount, VueWrapper } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { type ComponentPublicInstance } from 'vue'
-import { createRouter, createWebHistory } from 'vue-router'
 
 import router from '@/router'
 
@@ -42,138 +41,70 @@ vi.mock('@/components/tenant/UserManagementContainer.vue', () => ({
   default: { template: `<div>UserManagementContainer</div>` },
 }))
 
-const LANDING_PAGE_TEMPLATE = 'LandingPageContainer'
-const TENANT_LIST_TEMPLATE = 'TenantListContainer'
-const TENANT_GROUP_TEMPLATE = 'TenantGroupContainer'
-const TENANT_TEMPLATE = 'TenantContainer'
-
-const TestApp = {
-  template: '<router-view />',
-}
-
-const initWrapper = function () {
-  return mount(TestApp, {
-    global: {
-      plugins: [router],
-    },
-  })
-}
+const TestApp = { template: '<router-view />' }
 
 describe('Vue Router', () => {
-  let wrapper: VueWrapper<ComponentPublicInstance> | null = null
+  let wrapper: VueWrapper<ComponentPublicInstance>
 
-  beforeEach(() => {
-    router.push('/')
+  beforeEach(async () => {
+    wrapper = mount(TestApp, { global: { plugins: [router] } })
+    await router.push('/')
+    await router.isReady()
   })
 
   afterEach(() => {
-    if (wrapper) {
-      wrapper.unmount()
-      wrapper = null
-    }
+    wrapper?.unmount()
   })
 
   it('loads landing page', async () => {
-    wrapper = initWrapper()
-
-    await router.push('/')
-    await router.isReady()
-
     expect(router.currentRoute.value.path).toBe('/')
-    expect(wrapper.text()).toContain(LANDING_PAGE_TEMPLATE)
+    expect(wrapper.text()).toContain('LandingPageContainer')
   })
 
-  it('navigates to settings default route', async () => {
-    wrapper = initWrapper()
-
+  it('redirects settings to settings/requests', async () => {
     await router.push('/settings')
     await router.isReady()
 
     expect(router.currentRoute.value.path).toBe('/settings/requests')
   })
 
-  it('navigates to settings/requests route', async () => {
-    wrapper = initWrapper()
-
-    await router.push('/settings/requests')
-    await router.isReady()
-
-    expect(router.currentRoute.value.path).toBe('/settings/requests')
-  })
-
-  it('navigates to tenants list route', async () => {
-    wrapper = initWrapper()
-
+  it('navigates to tenants list', async () => {
     await router.push('/tenants')
     await router.isReady()
 
     expect(router.currentRoute.value.path).toBe('/tenants')
-    expect(wrapper.text()).toContain(TENANT_LIST_TEMPLATE)
+    expect(wrapper.text()).toContain('TenantListContainer')
   })
 
-  it('navigates to tenant management route with params', async () => {
-    wrapper = initWrapper()
-    const tenantId = '123'
-
-    await router.push(`/tenants/${tenantId}`)
+  it('navigates to tenant with params', async () => {
+    await router.push('/tenants/123')
     await router.isReady()
 
-    expect(router.currentRoute.value.path).toBe(`/tenants/${tenantId}`)
-    expect(router.currentRoute.value.params.tenantId).toBe(tenantId)
-    expect(wrapper.text()).toContain(TENANT_TEMPLATE)
+    expect(router.currentRoute.value.params.tenantId).toBe('123')
+    expect(wrapper.text()).toContain('TenantContainer')
   })
 
-  it('navigates to group management route with params', async () => {
-    wrapper = initWrapper()
-    const tenantId = '123'
-    const groupId = '456'
-
-    await router.push(`/tenants/${tenantId}/groups/${groupId}`)
+  it('navigates to group with params', async () => {
+    await router.push('/tenants/123/groups/456')
     await router.isReady()
 
-    expect(router.currentRoute.value.path).toBe(
-      `/tenants/${tenantId}/groups/${groupId}`,
-    )
-    expect(router.currentRoute.value.params.tenantId).toBe(tenantId)
-    expect(router.currentRoute.value.params.groupId).toBe(groupId)
-    expect(wrapper.text()).toContain(TENANT_GROUP_TEMPLATE)
+    expect(router.currentRoute.value.params.tenantId).toBe('123')
+    expect(router.currentRoute.value.params.groupId).toBe('456')
+    expect(wrapper.text()).toContain('TenantGroupContainer')
   })
 
-  it('passes props correctly to components', async () => {
-    const TestComponent = {
-      props: ['tenantId', 'groupId'],
-      template: '<div>{{ tenantId }}-{{ groupId }}</div>',
-    }
+  it('redirects unknown routes to home', async () => {
+    await router.push('/this/does/not/exist')
+    await router.isReady()
 
-    const testRouter = createRouter({
-      history: createWebHistory(),
-      routes: [
-        {
-          path: '/tenants/:tenantId/groups/:groupId',
-          component: TestComponent,
-          props: true,
-        },
-      ],
-    })
-
-    wrapper = mount(TestApp, {
-      global: {
-        plugins: [testRouter],
-      },
-    })
-
-    await testRouter.push('/tenants/123/groups/456')
-    await testRouter.isReady()
-
-    expect(wrapper.text()).toContain('123-456')
+    expect(router.currentRoute.value.path).toBe('/')
   })
 })
 
 describe('Route Configuration', () => {
   it('has correct route definitions', () => {
-    const routes = router.getRoutes()
+    const paths = router.getRoutes().map((route) => route.path)
 
-    const paths = routes.map((route) => route.path)
     expect(paths).toContain('/')
     expect(paths).toContain('/settings')
     expect(paths).toContain('/tenants')
@@ -182,53 +113,14 @@ describe('Route Configuration', () => {
   })
 
   it('has props enabled for parameterized routes', () => {
-    const tenantRoute = router
-      .getRoutes()
-      .find((route) => route.path === '/tenants/:tenantId')
-    const groupRoute = router
-      .getRoutes()
-      .find((route) => route.path === '/tenants/:tenantId/groups/:groupId')
+    const routes = router.getRoutes()
+    const tenantRoute = routes.find((r) => r.path === '/tenants/:tenantId')
+    const groupRoute = routes.find(
+      (r) => r.path === '/tenants/:tenantId/groups/:groupId',
+    )
 
     // Vue Router transforms props: true into { default: true }
     expect(tenantRoute?.props).toEqual({ default: true })
     expect(groupRoute?.props).toEqual({ default: true })
-  })
-})
-
-describe('Router Integration', () => {
-  let wrapper: VueWrapper<ComponentPublicInstance> | null = null
-
-  afterEach(() => {
-    if (wrapper) {
-      wrapper.unmount()
-      wrapper = null
-    }
-  })
-
-  it('handles navigation flow correctly', async () => {
-    wrapper = mount(TestApp, {
-      global: {
-        plugins: [router],
-      },
-    })
-
-    await router.push('/')
-    await router.isReady()
-    expect(router.currentRoute.value.path).toBe('/')
-
-    await router.push('/tenants/123')
-    await router.isReady()
-    expect(router.currentRoute.value.params.tenantId).toBe('123')
-
-    await router.push('/tenants/123/groups/456')
-    await router.isReady()
-    expect(router.currentRoute.value.params).toEqual({
-      tenantId: '123',
-      groupId: '456',
-    })
-
-    await router.push('/settings')
-    await router.isReady()
-    expect(router.currentRoute.value.path).toBe('/settings/requests')
   })
 })
