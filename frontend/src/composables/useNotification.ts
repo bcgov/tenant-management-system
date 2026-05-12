@@ -13,14 +13,14 @@ const state = reactive<{ notifications: Notification[] }>({
 /**
  * Adds a new notification to the system with auto-removal after 10 seconds
  *
- * @param title - The title/header text for the notification
  * @param message - The main message content of the notification
+ * @param title - The title/header text for the notification
  * @param type - The notification type (SUCCESS, ERROR, WARNING, INFO). Defaults
  *   to SUCCESS
  */
 function addNotification(
-  title: string,
   message: string,
+  title: string,
   type: NotificationType = NotificationType.SUCCESS,
 ) {
   const id = crypto.randomUUID()
@@ -79,7 +79,7 @@ export const notification = {
    * @param title - Optional title for the notification (defaults to 'Success')
    */
   success: (message: string, title: string = 'Success') =>
-    addNotification(title, message, NotificationType.SUCCESS),
+    addNotification(message, title, NotificationType.SUCCESS),
 
   /**
    * Display an error notification
@@ -88,7 +88,7 @@ export const notification = {
    * @param title - Optional title for the notification (defaults to 'Error')
    */
   error: (message: string, title: string = 'Error') =>
-    addNotification(title, message, NotificationType.ERROR),
+    addNotification(message, title, NotificationType.ERROR),
 
   /**
    * Display a warning notification
@@ -97,7 +97,7 @@ export const notification = {
    * @param title - Optional title for the notification (defaults to 'Warning')
    */
   warning: (message: string, title: string = 'Warning') =>
-    addNotification(title, message, NotificationType.WARNING),
+    addNotification(message, title, NotificationType.WARNING),
 
   /**
    * Display an info notification
@@ -106,7 +106,7 @@ export const notification = {
    * @param title - Optional title for the notification (defaults to 'Info')
    */
   info: (message: string, title: string = 'Info') =>
-    addNotification(title, message, NotificationType.INFO),
+    addNotification(message, title, NotificationType.INFO),
 }
 
 /**

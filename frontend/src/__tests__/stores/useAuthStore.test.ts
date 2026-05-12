@@ -7,8 +7,8 @@ import { ROLES } from '@/utils/constants'
 
 vi.mock('@/services/config.service', () => ({
   config: {
-    oidc: { clientId: 'test', realm: 'test', serverUrl: 'http://localhost' },
     api: { baseUrl: 'http://api' },
+    oidc: { clientId: 'test', realm: 'test', serverUrl: 'http://localhost' },
   },
 }))
 
@@ -49,7 +49,7 @@ const makeBceidToken = (
   overrides: Partial<KeycloakTokenParsed> = {},
 ): KeycloakTokenParsed =>
   ({
-    identity_provider: 'bceid',
+    identity_provider: 'bceidbasic',
     bceid_user_guid: '456',
     bceid_username: 'bceid_user',
     ...overrides,
@@ -107,6 +107,15 @@ describe('useAuthStore', () => {
       await store.init()
 
       expect(() => store.authenticatedUser).toThrow('User not available')
+    })
+
+    it('does not set a user when JWT IdP is missing', async () => {
+      const store = useAuthStore()
+      mockTokenParsed = {}
+
+      await expect(store.init()).rejects.toThrow(
+        'Authentication is missing the identity_provider',
+      )
     })
 
     it('rethrows when Keycloak init fails', async () => {

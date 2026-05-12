@@ -8,9 +8,8 @@ import { roleService } from '@/services/role.service'
  * Pinia store for managing application roles.
  */
 export const useRoleStore = defineStore('role', () => {
-  const roles = ref<Role[]>([])
-
   const loading = ref(false)
+  const roles = ref<Role[]>([])
 
   // Exported Methods
 

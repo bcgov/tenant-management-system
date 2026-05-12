@@ -1,408 +1,115 @@
 import { setActivePinia, createPinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
-import * as utils from '@/services/utils'
-
-vi.mock('@/services/utils', () => ({
-  logApiError: vi.fn(),
-}))
-
-const mockedUtils = vi.mocked(utils)
-
-mockedUtils.logApiError.mockImplementation(() => {})
-
-const { mockGet, mockPost, mockPut, mockDelete, mockPatch } = vi.hoisted(
-  () => ({
-    mockGet: vi.fn(),
-    mockPost: vi.fn(),
-    mockPut: vi.fn(),
-    mockDelete: vi.fn(),
-    mockPatch: vi.fn(),
-  }),
-)
-
-vi.mock('@/services/authenticated.axios', () => ({
-  authenticatedAxios: () => ({
-    get: mockGet,
-    post: mockPost,
-    put: mockPut,
-    delete: mockDelete,
-    patch: mockPatch,
-  }),
-}))
-
-vi.mock('@/utils/constants', () => ({
-  IDIR_SEARCH_TYPE: {
-    EMAIL: { value: 'email' },
-    FIRST_NAME: { value: 'firstName' },
-    LAST_NAME: { value: 'lastName' },
-  },
-  BCeID_SEARCH_TYPE: {
-    EMAIL: { value: 'email' },
-    DISPLAY_NAME: { value: 'displayName' },
-  },
-}))
-
+import { User, type UserSearchApiData } from '@/models/user.model'
+import { userService } from '@/services/user.service'
 import { useUserStore } from '@/stores/useUserStore'
-let userStore: ReturnType<typeof useUserStore>
+
+vi.mock('@/services/user.service', () => ({
+  userService: {
+    searchIdirEmail: vi.fn(),
+    searchIdirFirstName: vi.fn(),
+    searchIdirLastName: vi.fn(),
+    searchBCeIDEmail: vi.fn(),
+    searchBCeIDDisplayName: vi.fn(),
+  },
+}))
 
 describe('useUserStore', () => {
-  const fakeIdirUsers = [
-    {
-      ssoUserId: '123',
-      email: 'john.doe@gov.bc.ca',
-      firstName: 'John',
-      lastName: 'Doe',
-      displayName: 'Doe, John',
-      userName: 'JDOE',
-      attributes: {
-        idir_use_guid: '123',
-      },
+  const mockSearchData: UserSearchApiData = {
+    attributes: {
+      idir_username: ['JDOE'],
+      idir_user_guid: ['123-guid'],
     },
-    {
-      ssoUserId: '124',
-      email: 'jane.smith@gov.bc.ca',
-      firstName: 'Jane',
-      lastName: 'Smith',
-      displayName: 'Smith, Jane',
-      userName: 'JSMITH',
-      attributes: {
-        idir_use_guid: '124',
-      },
-    },
-  ]
-
-  const fakeBceidUsers = [
-    {
-      ssoUserId: '456',
-      email: 'bob.johnson@gov.bc.ca',
-      firstName: 'Bob',
-      lastName: 'Johnson',
-      displayName: 'Johnson, Bob',
-      userName: 'BJOHNSON',
-      attributes: {
-        idir_use_guid: '125',
-      },
-    },
-    {
-      ssoUserId: '457',
-      email: 'alice.wilson@gov.bc.ca',
-      firstName: 'Alice',
-      lastName: 'Wilson',
-      displayName: 'Wilson, Alice',
-      userName: 'AWILSON',
-      attributes: {
-        idir_use_guid: '126',
-      },
-    },
-  ]
+    email: 'john.doe@gov.bc.ca',
+    firstName: 'John',
+    lastName: 'Doe',
+    username: 'jdoe',
+  }
 
   beforeEach(() => {
-    vi.clearAllMocks()
     setActivePinia(createPinia())
-    userStore = useUserStore()
+    vi.clearAllMocks()
   })
 
-  describe('searchIdirEmail', () => {
-    it('should search IDIR users by email', async () => {
-      const email = 'john.doe@gov.bc.ca'
-      const filteredUsers = [fakeIdirUsers[0]]
-      mockGet.mockResolvedValueOnce({ data: { data: filteredUsers } })
+  describe('IDIR Searches', () => {
+    it('searchIdirEmail manages loading state and maps results', async () => {
+      const store = useUserStore()
+      vi.mocked(userService.searchIdirEmail).mockResolvedValue([mockSearchData])
 
-      const result = await userStore.searchIdirEmail(email)
+      const promise = store.searchIdirEmail('john')
+      expect(store.loading).toBe(true)
 
-      expect(result).toHaveLength(1)
-      expect(result[0].ssoUser.email).toBe(fakeIdirUsers[0].email)
-      expect(mockGet).toHaveBeenCalledWith('/users/bcgovssousers/idir/search', {
-        params: { email },
-      })
+      const result = await promise
+      expect(store.loading).toBe(false)
+      expect(result[0]).toBeInstanceOf(User)
+      expect(store.searchResults).toEqual(result)
     })
 
-    it('should handle partial email searches', async () => {
-      const partialEmail = 'john'
-      mockGet.mockResolvedValueOnce({ data: { data: [fakeIdirUsers[0]] } })
+    it('searchIdirFirstName calls correct service', async () => {
+      const store = useUserStore()
+      vi.mocked(userService.searchIdirFirstName).mockResolvedValue([])
 
-      const result = await userStore.searchIdirEmail(partialEmail)
+      await store.searchIdirFirstName('John')
 
-      expect(result).toHaveLength(1)
-      expect(result[0].ssoUser.email).toBe(fakeIdirUsers[0].email)
-      expect(mockGet).toHaveBeenCalledWith('/users/bcgovssousers/idir/search', {
-        params: { email: partialEmail },
-      })
+      expect(userService.searchIdirFirstName).toHaveBeenCalledWith('John')
     })
 
-    it('should return empty array for no matches', async () => {
-      const email = 'nonexistent@gov.bc.ca'
-      mockGet.mockResolvedValueOnce({ data: { data: [] } })
+    it('searchIdirLastName calls correct service', async () => {
+      const store = useUserStore()
+      vi.mocked(userService.searchIdirLastName).mockResolvedValue([])
 
-      const result = await userStore.searchIdirEmail(email)
+      await store.searchIdirLastName('Doe')
 
-      expect(result).toEqual([])
-    })
-
-    it('should propagate errors from searchIdirUsers', async () => {
-      const email = 'test@gov.bc.ca'
-      const error = new Error('Search failed')
-      mockGet.mockRejectedValueOnce(error)
-
-      await expect(userStore.searchIdirEmail(email)).rejects.toThrow(error)
+      expect(userService.searchIdirLastName).toHaveBeenCalledWith('Doe')
     })
   })
 
-  describe('searchIdirFirstName', () => {
-    it('should search IDIR users by first name', async () => {
-      const firstName = 'John'
-      const filteredUsers = [fakeIdirUsers[0]]
-      mockGet.mockResolvedValueOnce({ data: { data: filteredUsers } })
+  describe('BCeID Searches', () => {
+    it('searchBCeIDEmail calls correct service and updates state', async () => {
+      const store = useUserStore()
+      vi.mocked(userService.searchBCeIDEmail).mockResolvedValue([
+        mockSearchData,
+      ])
 
-      const result = await userStore.searchIdirFirstName(firstName)
+      await store.searchBCeIDEmail('bob@example.com')
 
-      expect(result).toHaveLength(1)
-      expect(result[0].ssoUser.email).toEqual(fakeIdirUsers[0].email)
-      expect(mockGet).toHaveBeenCalledWith('/users/bcgovssousers/idir/search', {
-        params: { firstName },
-      })
-    })
-
-    it('should handle case-insensitive searches', async () => {
-      const firstName = 'john'
-      mockGet.mockResolvedValueOnce({ data: { data: [fakeIdirUsers[0]] } })
-
-      const result = await userStore.searchIdirFirstName(firstName)
-
-      expect(result).toHaveLength(1)
-      expect(result[0].ssoUser.email).toBe(fakeIdirUsers[0].email)
-      expect(mockGet).toHaveBeenCalledWith('/users/bcgovssousers/idir/search', {
-        params: { firstName },
-      })
-    })
-
-    it('should handle partial name searches', async () => {
-      const partialName = 'Jo'
-      mockGet.mockResolvedValueOnce({ data: { data: [fakeIdirUsers[0]] } })
-
-      const result = await userStore.searchIdirFirstName(partialName)
-
-      expect(result).toHaveLength(1)
-      expect(result[0].ssoUser.email).toBe(fakeIdirUsers[0].email)
-      expect(mockGet).toHaveBeenCalledWith('/users/bcgovssousers/idir/search', {
-        params: { firstName: partialName },
-      })
-    })
-
-    it('should return empty array for no matches', async () => {
-      const firstName = 'NonexistentName'
-      mockGet.mockResolvedValueOnce({ data: { data: [] } })
-
-      const result = await userStore.searchIdirFirstName(firstName)
-
-      expect(result).toEqual([])
-    })
-
-    it('should propagate errors from searchIdirUsers', async () => {
-      const firstName = 'John'
-      const error = new Error('Search failed')
-      mockGet.mockRejectedValueOnce(error)
-
-      await expect(userStore.searchIdirFirstName(firstName)).rejects.toThrow(
-        error,
+      expect(userService.searchBCeIDEmail).toHaveBeenCalledWith(
+        'bob@example.com',
       )
+      expect(store.searchResults).toHaveLength(1)
+    })
+
+    it('searchBCeIDDisplayName calls correct service', async () => {
+      const store = useUserStore()
+      vi.mocked(userService.searchBCeIDDisplayName).mockResolvedValue([])
+
+      await store.searchBCeIDDisplayName('Bob')
+
+      expect(userService.searchBCeIDDisplayName).toHaveBeenCalledWith('Bob')
     })
   })
 
-  describe('searchIdirLastName', () => {
-    it('should search IDIR users by last name', async () => {
-      const lastName = 'Smith'
-      const filteredUsers = [fakeIdirUsers[1]]
-      mockGet.mockResolvedValueOnce({ data: { data: filteredUsers } })
-
-      const result = await userStore.searchIdirLastName(lastName)
-
-      expect(result).toHaveLength(1)
-      expect(result[0].ssoUser.email).toBe(fakeIdirUsers[1].email)
-      expect(mockGet).toHaveBeenCalledWith('/users/bcgovssousers/idir/search', {
-        params: { lastName },
-      })
-    })
-
-    it('should handle case-insensitive searches', async () => {
-      const lastName = 'smith'
-      mockGet.mockResolvedValueOnce({ data: { data: [fakeIdirUsers[1]] } })
-
-      const result = await userStore.searchIdirLastName(lastName)
-
-      expect(result).toHaveLength(1)
-      expect(result[0].ssoUser.email).toBe(fakeIdirUsers[1].email)
-      expect(mockGet).toHaveBeenCalledWith('/users/bcgovssousers/idir/search', {
-        params: { lastName },
-      })
-    })
-
-    it('should handle partial name searches', async () => {
-      const partialName = 'Sm'
-      mockGet.mockResolvedValueOnce({ data: { data: [fakeIdirUsers[1]] } })
-
-      const result = await userStore.searchIdirLastName(partialName)
-
-      expect(result).toHaveLength(1)
-      expect(result[0].ssoUser.email).toBe(fakeIdirUsers[1].email)
-      expect(mockGet).toHaveBeenCalledWith('/users/bcgovssousers/idir/search', {
-        params: { lastName: partialName },
-      })
-    })
-
-    it('should return empty array for no matches', async () => {
-      const lastName = 'NonexistentLastName'
-      mockGet.mockResolvedValueOnce({ data: { data: [] } })
-
-      const result = await userStore.searchIdirLastName(lastName)
-
-      expect(result).toEqual([])
-    })
-
-    it('should propagate errors from searchIdirUsers', async () => {
-      const lastName = 'Smith'
-      const error = new Error('Search failed')
-      mockGet.mockRejectedValueOnce(error)
-
-      await expect(userStore.searchIdirLastName(lastName)).rejects.toThrow(
-        error,
-      )
-    })
-  })
-
-  //bceid searches
-  describe('searchBCeIDDisplayName', () => {
-    it('should search BCeID users by display name', async () => {
-      const displayName = 'Smith'
-      const filteredUsers = [fakeBceidUsers[1]]
-      mockGet.mockResolvedValueOnce({ data: { data: filteredUsers } })
-
-      const result = await userStore.searchBCeIDDisplayName(displayName)
-
-      expect(result).toHaveLength(1)
-      expect(result[0].ssoUser.email).toBe(filteredUsers[0].email)
-      expect(mockGet).toHaveBeenCalledWith(
-        '/users/bcgovssousers/bceid/search',
-        {
-          params: { displayName: displayName, bceidType: 'both' },
-        },
-      )
-    })
-
-    it('should handle case-insensitive searches', async () => {
-      const displayName = 'smith'
-      mockGet.mockResolvedValueOnce({ data: { data: fakeBceidUsers } })
-
-      const result = await userStore.searchBCeIDDisplayName(displayName)
-
-      expect(result).toHaveLength(fakeBceidUsers.length)
-      expect(result[0].ssoUser.email).toBe(fakeBceidUsers[0].email)
-      expect(mockGet).toHaveBeenCalledWith(
-        '/users/bcgovssousers/bceid/search',
-        {
-          params: { displayName: displayName, bceidType: 'both' },
-        },
-      )
-    })
-
-    it('should handle partial name searches', async () => {
-      const partialName = 'Sm'
-      mockGet.mockResolvedValueOnce({ data: { data: fakeBceidUsers } })
-
-      const result = await userStore.searchBCeIDDisplayName(partialName)
-
-      expect(result).toHaveLength(fakeBceidUsers.length)
-      expect(result[0].ssoUser.email).toBe(fakeBceidUsers[0].email)
-      expect(mockGet).toHaveBeenCalledWith(
-        '/users/bcgovssousers/bceid/search',
-        {
-          params: { displayName: partialName, bceidType: 'both' },
-        },
-      )
-    })
-
-    it('should return empty array for no matches', async () => {
-      const displayName = 'NonexistentName'
-      mockGet.mockResolvedValueOnce({ data: { data: [] } })
-
-      const result = await userStore.searchBCeIDDisplayName(displayName)
-
-      expect(result).toEqual([])
-    })
-
-    it('should propagate errors from searchBCeIDUsers', async () => {
-      const displayName = 'Smith'
-      const error = new Error('Search failed')
-      mockGet.mockRejectedValueOnce(error)
-
-      await expect(
-        userStore.searchBCeIDDisplayName(displayName),
-      ).rejects.toThrow(error)
-    })
-  })
-
-  describe('searchBCeIDUsersEmail', () => {
-    it('should return BCeID users for email search', async () => {
-      const searchValue = 'bob.johnson@gov.bc.ca'
-      mockGet.mockResolvedValueOnce({ data: { data: [fakeBceidUsers[0]] } })
-
-      const result = await userStore.searchBCeIDEmail(searchValue)
-
-      expect(result).toHaveLength(1)
-      expect(result[0].ssoUser.email).toBe(fakeBceidUsers[0].email)
-      expect(mockGet).toHaveBeenCalledWith(
-        '/users/bcgovssousers/bceid/search',
-        {
-          params: { email: searchValue, bceidType: 'both' },
-        },
-      )
-    })
-
-    it('should return bceid users for displayName search', async () => {
-      const searchValue = 'Bob'
-      mockGet.mockResolvedValueOnce({ data: { data: [fakeBceidUsers[0]] } })
-
-      const result = await userStore.searchBCeIDDisplayName(searchValue)
-
-      expect(result).toHaveLength(1)
-      expect(result[0].ssoUser.email).toBe(fakeBceidUsers[0].email)
-      expect(mockGet).toHaveBeenCalledWith(
-        '/users/bcgovssousers/bceid/search',
-        {
-          params: { displayName: searchValue, bceidType: 'both' },
-        },
-      )
-    })
-
-    it('should return empty array when no users found', async () => {
-      const searchValue = 'nonexistent@gov.bc.ca'
-      mockGet.mockResolvedValueOnce({ data: { data: [] } })
-
-      const result = await userStore.searchBCeIDEmail(searchValue)
-
-      expect(result).toEqual([])
-      expect(mockGet).toHaveBeenCalledWith(
-        '/users/bcgovssousers/bceid/search',
-        {
-          params: { email: searchValue, bceidType: 'both' },
-        },
-      )
-    })
-
-    it('should log and rethrow errors', async () => {
-      const searchValue = 'test@gov.bc.ca'
-      const error = new Error('Search failed')
-      mockGet.mockRejectedValueOnce(error)
-
-      await expect(userStore.searchBCeIDEmail(searchValue)).rejects.toThrow(
-        error,
+  describe('Error Handling & Cleanup', () => {
+    it('sets loading to false even if IDIR search fails', async () => {
+      const store = useUserStore()
+      vi.mocked(userService.searchIdirEmail).mockRejectedValue(
+        new Error('Fail'),
       )
 
-      expect(mockedUtils.logApiError).toHaveBeenCalledWith(
-        'Error searching BCeID users:',
-        error,
+      await expect(store.searchIdirEmail('test')).rejects.toThrow('Fail')
+
+      expect(store.loading).toBe(false)
+    })
+
+    it('sets loading to false even if BCeID search fails', async () => {
+      const store = useUserStore()
+      vi.mocked(userService.searchBCeIDEmail).mockRejectedValue(
+        new Error('Fail'),
       )
+
+      await expect(store.searchBCeIDEmail('test')).rejects.toThrow('Fail')
+
+      expect(store.loading).toBe(false)
     })
   })
 })

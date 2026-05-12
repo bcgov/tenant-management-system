@@ -5,14 +5,15 @@ import {
   type IdirSearchType,
   IDIR_SEARCH_TYPE,
   type BCeIDSearchType,
-  BCeID_SEARCH_TYPE,
+  BCEID_SEARCH_TYPE,
 } from '@/utils/constants'
 
 const api = authenticatedAxios()
 
 export const userService = {
   /**
-   * Private function to search for IDIR users with different search parameters.
+   * Searches for IDIR users with different search parameters.
+   *
    * @param searchType - The type of search (email, firstName, lastName).
    * @param searchValue - The search value.
    * @returns A promise that resolves to an array of user data.
@@ -37,8 +38,10 @@ export const userService = {
   },
 
   /**
-   * Private function to search for IDIR users with different search parameters.
-   * @param searchType - The type of search (email, firstName, lastName).
+   * Private function to search for BCeID users with different search
+   * parameters.
+   *
+   * @param searchType - The type of search (email, displayName).
    * @param searchValue - The search value.
    * @returns A promise that resolves to an array of user data.
    */
@@ -64,6 +67,7 @@ export const userService = {
 
   /**
    * Searches for IDIR users based on the email address.
+   *
    * @param email - The email address substring to search.
    * @returns A promise that resolves to an array of user data.
    */
@@ -73,6 +77,7 @@ export const userService = {
 
   /**
    * Searches for IDIR users based on the first name.
+   *
    * @param firstName - The first name substring to search.
    * @returns A promise that resolves to an array of user data.
    */
@@ -82,6 +87,7 @@ export const userService = {
 
   /**
    * Searches for IDIR users based on the last name.
+   *
    * @param lastName - The last name substring to search.
    * @returns A promise that resolves to an array of user data.
    */
@@ -90,25 +96,27 @@ export const userService = {
   },
 
   /**
-   * Searches for BCeID users based on the first name.
-   * @param firstName - The first name substring to search.
+   * Searches for BCeID users based on the display name.
+   *
+   * @param displayName - The display name substring to search.
    * @returns A promise that resolves to an array of user data.
    */
   async searchBCeIDDisplayName(
-    firstName: string,
+    displayName: string,
   ): Promise<UserSearchApiData[]> {
     return this._searchBceidUsers(
-      BCeID_SEARCH_TYPE.DISPLAY_NAME.value,
-      firstName,
+      BCEID_SEARCH_TYPE.DISPLAY_NAME.value,
+      displayName,
     )
   },
 
   /**
    * Searches for BCeID users based on the email.
+   *
    * @param email - The email substring to search.
    * @returns A promise that resolves to an array of user data.
    */
   async searchBCeIDEmail(email: string): Promise<UserSearchApiData[]> {
-    return this._searchBceidUsers(BCeID_SEARCH_TYPE.EMAIL.value, email)
+    return this._searchBceidUsers(BCEID_SEARCH_TYPE.EMAIL.value, email)
   },
 }

@@ -84,6 +84,11 @@ export const useAuthStore = defineStore('auth', () => {
    * @throws Error if the identity provider isn't IDIR or BCeID.
    */
   const parseUserFromToken = (tokenParsed: KeycloakTokenParsed): User => {
+    // Sanity check, this should not happen with SSO tokens.
+    if (!tokenParsed.identity_provider) {
+      throw new Error('Authentication is missing the identity_provider')
+    }
+
     const identityProvider = resolveIdentityProvider(
       tokenParsed.identity_provider,
     )

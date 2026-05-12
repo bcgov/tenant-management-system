@@ -10,6 +10,6 @@ export class ServerError extends DomainError {
    * @param userMessage - Optional user-friendly message to display.
    */
   constructor(userMessage?: string) {
-    super('Server error ', userMessage)
+    super('Server error', userMessage)
   }
 }

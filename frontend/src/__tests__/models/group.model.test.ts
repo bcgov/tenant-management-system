@@ -17,12 +17,12 @@ describe('Group model', () => {
       groupUsers,
     )
 
-    expect(group.createdBy).toEqual('created-by')
-    expect(group.createdDate).toEqual('created-date')
-    expect(group.description).toEqual('description')
-    expect(group.id).toEqual('id')
-    expect(group.name).toEqual('name')
-    expect(group.groupUsers).toEqual(groupUsers)
+    expect(group.createdBy).toBe('created-by')
+    expect(group.createdDate).toBe('created-date')
+    expect(group.description).toBe('description')
+    expect(group.id).toBe('id')
+    expect(group.name).toBe('name')
+    expect(group.groupUsers).toBe(groupUsers)
   })
 
   it('fromApiData converts API data to Group instance', () => {
@@ -37,12 +37,12 @@ describe('Group model', () => {
 
     const group = Group.fromApiData(apiData)
 
-    expect(group.createdBy).toEqual('created-by')
-    expect(group.createdDate).toEqual('created-date-time')
-    expect(group.description).toEqual('description')
-    expect(group.id).toEqual('id')
-    expect(group.name).toEqual('name')
-    expect(group.groupUsers).toHaveLength(apiData.users.length)
+    expect(group.createdBy).toBe('created-by')
+    expect(group.createdDate).toBe('created-date-time')
+    expect(group.description).toBe('description')
+    expect(group.id).toBe('id')
+    expect(group.name).toBe('name')
+    expect(group.groupUsers).toHaveLength(1)
   })
 
   it('fromApiData handles created by display name', () => {
@@ -58,7 +58,7 @@ describe('Group model', () => {
 
     const group = Group.fromApiData(apiData)
 
-    expect(group.createdBy).toEqual('created-by-display-name')
+    expect(group.createdBy).toBe('created-by-display-name')
   })
 
   it('fromApiData handles non-array users', () => {
