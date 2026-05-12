@@ -1,8 +1,8 @@
 /**
- * Available search field types for IDIR user lookups
+ * Available search field types for IDIR user lookups.
  *
- * Defines the searchable fields when querying IDIR (Integrated Directory)
- * users, each with a human-readable title and corresponding API value.
+ * Defines the searchable fields when querying IDIR users, each with a
+ * human-readable title and corresponding API value.
  */
 export const IDIR_SEARCH_TYPE = Object.freeze({
   EMAIL: { title: 'Email', value: 'email' },
@@ -11,42 +11,41 @@ export const IDIR_SEARCH_TYPE = Object.freeze({
 })
 
 /**
- * Type definition for IDIR search types
+ * Type definition for IDIR search types.
  *
  * Represents the possible values for IDIR user search fields: 'email',
- * 'firstName', 'lastName'
+ * 'firstName', and 'lastName'.
  */
 export type IdirSearchType =
   (typeof IDIR_SEARCH_TYPE)[keyof typeof IDIR_SEARCH_TYPE]['value']
 
 /**
- * Available search field types for BCeID user lookups
+ * Available search field types for BCeID user lookups.
  *
- * Defines the searchable fields when querying BCeID (British Columbia Electronic
- * Identity) users, each with a human-readable title and corresponding API value.
+ * Defines the searchable fields when querying BCeID users, each with a
+ * human-readable title and corresponding API value.
  */
-export const BCeID_SEARCH_TYPE = Object.freeze({
-  EMAIL: { title: 'Email', value: 'email' },
+export const BCEID_SEARCH_TYPE = Object.freeze({
   DISPLAY_NAME: { title: 'Name', value: 'displayName' },
+  EMAIL: { title: 'Email', value: 'email' },
 })
 
 /**
- * Type definition for IDIR search types
+ * Type definition for BCeID search types.
  *
- * Represents the possible values for IDIR user search fields: 'email',
- * 'firstName', 'lastName'
+ * Represents the possible values for BCeID user search fields: 'email' and
+ * 'displayName'
  */
 export type BCeIDSearchType =
-  (typeof BCeID_SEARCH_TYPE)[keyof typeof BCeID_SEARCH_TYPE]['value']
+  (typeof BCEID_SEARCH_TYPE)[keyof typeof BCEID_SEARCH_TYPE]['value']
 
 /**
- * British Columbia government ministries and organizations
+ * British Columbia government ministries and organizations.
  *
  * Complete list of BC government ministries and organizations that a tenant can
  * be associated with. Used for organizational categorization and access
  * control.
  *
- * @remarks
  * This list represents the current BC government structure and may need updates
  * when government reorganizations occur.
  */
@@ -97,7 +96,8 @@ export const MINISTRIES = Object.freeze([
  */
 export const ROLES = Object.freeze({
   /**
-   * Highest level administrative role with full system access
+   * Highest level administrative role with full system access for managing
+   * tenants and services. Controlled via the SSO role 'TMS.OPERATIONS_ADMIN'.
    */
   OPERATIONS_ADMIN: {
     title: 'Operations Admin',
@@ -105,7 +105,8 @@ export const ROLES = Object.freeze({
   },
 
   /**
-   * Standard user role with basic service access
+   * Standard role for a user of the tenant that has access to then enabled
+   * services.
    */
   SERVICE_USER: {
     title: 'Service User',
@@ -113,35 +114,36 @@ export const ROLES = Object.freeze({
   },
 
   /**
-   * Owner of a specific tenant with management privileges
+   * Owner of a specific tenant with full management privileges to manage users,
+   * services, and roles.
    */
   TENANT_OWNER: { title: 'Tenant Owner', value: 'TMS.TENANT_OWNER' },
 
   /**
-   * Administrative role for managing users within a tenant
+   * Administrative role for managing users within a tenant.
    */
   USER_ADMIN: { title: 'User Admin', value: 'TMS.USER_ADMIN' },
 })
 
 /**
- * Possible states for tenant access requests
+ * Possible states for tenant requests.
  *
  * Represents the workflow states that a tenant request can be in, from initial
  * submission through final resolution.
  */
 export const TENANT_REQUEST_STATUS = Object.freeze({
   /**
-   * Request has been reviewed and approved
+   * Request has been reviewed and approved.
    */
   APPROVED: { title: 'Approved', value: 'APPROVED' },
 
   /**
-   * Newly submitted request awaiting review
+   * Newly submitted request awaiting review.
    */
   NEW: { title: 'New', value: 'NEW' },
 
   /**
-   * Request has been reviewed and rejected
+   * Request has been reviewed and rejected.
    */
   REJECTED: { title: 'Rejected', value: 'REJECTED' },
 })

@@ -37,7 +37,7 @@ vi.mock('@/utils/constants', () => ({
     FIRST_NAME: { value: 'firstName' },
     LAST_NAME: { value: 'lastName' },
   },
-  BCeID_SEARCH_TYPE: {
+  BCEID_SEARCH_TYPE: {
     EMAIL: { value: 'email' },
     DISPLAY_NAME: { value: 'displayName' },
   },

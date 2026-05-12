@@ -6,7 +6,7 @@ import { userService } from '@/services/user.service'
 import {
   type BCeIDSearchType,
   type IdirSearchType,
-  BCeID_SEARCH_TYPE,
+  BCEID_SEARCH_TYPE,
   IDIR_SEARCH_TYPE,
 } from '@/utils/constants'
 
@@ -101,10 +101,10 @@ export const useUserStore = defineStore('user', () => {
     try {
       let response
       switch (searchType) {
-        case BCeID_SEARCH_TYPE.EMAIL.value:
+        case BCEID_SEARCH_TYPE.EMAIL.value:
           response = await userService.searchBCeIDEmail(searchValue)
           break
-        case BCeID_SEARCH_TYPE.DISPLAY_NAME.value:
+        case BCEID_SEARCH_TYPE.DISPLAY_NAME.value:
           response = await userService.searchBCeIDDisplayName(searchValue)
           break
         default:
@@ -126,7 +126,7 @@ export const useUserStore = defineStore('user', () => {
    * @returns A promise that resolves to an array of user data.
    */
   async function searchBCeIDEmail(email: string) {
-    return _searchBceidUsers(BCeID_SEARCH_TYPE.EMAIL.value, email)
+    return _searchBceidUsers(BCEID_SEARCH_TYPE.EMAIL.value, email)
   }
 
   /**
@@ -136,7 +136,7 @@ export const useUserStore = defineStore('user', () => {
    * @returns A promise that resolves to an array of user data.
    */
   async function searchBCeIDDisplayName(firstName: string) {
-    return _searchBceidUsers(BCeID_SEARCH_TYPE.DISPLAY_NAME.value, firstName)
+    return _searchBceidUsers(BCEID_SEARCH_TYPE.DISPLAY_NAME.value, firstName)
   }
 
   return {
