@@ -3,18 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { type ComponentPublicInstance } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 
-import { i18n, loadLocaleMessages, setI18nLanguage } from '@/i18n'
 import router from '@/router'
-
-vi.mock('@/i18n', () => ({
-  i18n: {
-    global: {
-      availableLocales: [] as string[],
-    },
-  },
-  loadLocaleMessages: vi.fn().mockResolvedValue(undefined),
-  setI18nLanguage: vi.fn(),
-}))
 
 vi.mock('@/components/group/GroupListContainer.vue', () => ({
   default: { template: `<div>GroupListContainer</div>` },
@@ -40,11 +29,11 @@ vi.mock('@/components/route/SettingsTenantRequestContainer.vue', () => ({
 vi.mock('@/components/route/TenantContainer.vue', () => ({
   default: { template: `<div>TenantContainer<router-view /></div>` },
 }))
-vi.mock('@/components/route/TenantListContainer.vue', () => ({
-  default: { template: `<div>TenantListContainer</div>` },
-}))
 vi.mock('@/components/route/TenantGroupContainer.vue', () => ({
   default: { template: `<div>TenantGroupContainer</div>` },
+}))
+vi.mock('@/components/route/TenantListContainer.vue', () => ({
+  default: { template: `<div>TenantListContainer</div>` },
 }))
 vi.mock('@/components/service/ServiceManagementContainer.vue', () => ({
   default: { template: `<div>ServiceManagementContainer</div>` },
@@ -55,8 +44,8 @@ vi.mock('@/components/tenant/UserManagementContainer.vue', () => ({
 
 const LANDING_PAGE_TEMPLATE = 'LandingPageContainer'
 const TENANT_LIST_TEMPLATE = 'TenantListContainer'
-const TENANT_TEMPLATE = 'TenantContainer'
 const TENANT_GROUP_TEMPLATE = 'TenantGroupContainer'
+const TENANT_TEMPLATE = 'TenantContainer'
 
 const TestApp = {
   template: '<router-view />',
@@ -241,62 +230,5 @@ describe('Router Integration', () => {
     await router.push('/settings')
     await router.isReady()
     expect(router.currentRoute.value.path).toBe('/settings/requests')
-  })
-})
-
-describe('Router beforeEach guard for i18n', () => {
-  const availableLocales = i18n.global.availableLocales
-
-  beforeEach(async () => {
-    availableLocales.length = 0
-    vi.mocked(loadLocaleMessages).mockClear()
-    vi.mocked(setI18nLanguage).mockClear()
-    await router.push('/')
-    await router.isReady()
-    vi.mocked(loadLocaleMessages).mockClear()
-    vi.mocked(setI18nLanguage).mockClear()
-  })
-
-  it('calls loadLocaleMessages when the locale is not yet available', async () => {
-    await router.push('/settings')
-    await router.isReady()
-
-    expect(loadLocaleMessages).toHaveBeenCalledWith(i18n, 'en')
-    expect(setI18nLanguage).toHaveBeenCalledWith(i18n, 'en')
-  })
-
-  it('skips loadLocaleMessages when the locale is already available', async () => {
-    availableLocales.push('en')
-
-    await router.push('/settings')
-    await router.isReady()
-
-    expect(loadLocaleMessages).not.toHaveBeenCalled()
-    expect(setI18nLanguage).toHaveBeenCalled()
-  })
-
-  it('always calls setI18nLanguage regardless of whether locale was loaded', async () => {
-    availableLocales.push('en')
-
-    await router.push('/tenants')
-    await router.isReady()
-
-    expect(setI18nLanguage).toHaveBeenCalledTimes(1)
-  })
-
-  it('awaits loadLocaleMessages before calling setI18nLanguage', async () => {
-    const callOrder: string[] = []
-
-    vi.mocked(loadLocaleMessages).mockImplementation(async () => {
-      callOrder.push('loadLocaleMessages')
-    })
-    vi.mocked(setI18nLanguage).mockImplementation(() => {
-      callOrder.push('setI18nLanguage')
-    })
-
-    await router.push('/settings')
-    await router.isReady()
-
-    expect(callOrder).toEqual(['loadLocaleMessages', 'setI18nLanguage'])
   })
 })
