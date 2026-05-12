@@ -2,8 +2,8 @@
 import { computed } from 'vue'
 
 import AppHeader from '@/components/layout/AppHeader.vue'
-import AppNavigation from '@/components/layout/AppNavigation.vue'
 import AppNotifications from '@/components/layout/AppNotifications.vue'
+import AppNavigation from '@/components/layout/AppNavigation.vue'
 import LandingPageContainer from '@/components/route/LandingPageContainer.vue'
 import { useAuthStore } from '@/stores/useAuthStore'
 
@@ -14,6 +14,7 @@ const authStore = useAuthStore()
 // --- Computed Values ---------------------------------------------------------
 
 const loggedOut = computed(() => authStore.isSessionExpired)
+
 const user = computed(() => {
   return authStore.isAuthenticated ? authStore.authenticatedUser : null
 })
@@ -21,12 +22,11 @@ const user = computed(() => {
 
 <template>
   <v-app>
-    <!-- Custom Components common to all application views -->
     <AppNotifications />
     <AppHeader :user="user" />
+    <AppNavigation />
 
     <v-main>
-      <AppNavigation />
       <v-container class="fluid mt-10 px-12">
         <div v-if="loggedOut" class="my-3 text-center">
           <h2>{{ $t('general.sessionExpired') }}</h2>

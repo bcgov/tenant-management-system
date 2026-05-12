@@ -14,7 +14,7 @@ import { User } from '@/models/user.model'
 import { groupService } from '@/services/group.service'
 import { serviceService } from '@/services/service.service'
 
-type GroupRoleType = {
+export type GroupRoleType = {
   [key: string]: ServiceRole[]
 }
 

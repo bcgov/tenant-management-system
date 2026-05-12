@@ -15,9 +15,9 @@ export type TenantApiData = {
   createdBy: string
 
   /**
-   * The username of who created the tenant, may be undefined.
+   * The display name of who created the tenant, may be undefined.
    */
-  createdByUserName?: string
+  createdByDisplayName?: string
 
   /**
    * ISO8601 date string (YYYY-MM-DD) when tenant was created.
@@ -148,6 +148,9 @@ export class Tenant {
    * Note: The API returns 'createdDateTime' which is mapped to the
    * 'createdDate' property.
    *
+   * Note: The API may return 'createdByDisplayName', in which case it is used
+   * in preference to the createBy UUID.
+   *
    * @param apiData - The raw tenant data from the API
    * @returns A new Tenant instance
    */
@@ -157,7 +160,7 @@ export class Tenant {
       : []
 
     return new Tenant(
-      apiData.createdByUserName || apiData.createdBy,
+      apiData.createdByDisplayName || apiData.createdBy,
       apiData.createdDateTime,
       apiData.description,
       apiData.id,

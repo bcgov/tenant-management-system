@@ -3,6 +3,8 @@ import { mdiMagnify } from '@mdi/js'
 import { computed, onMounted, ref, type Ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
+import AdministratorContainer from '@/components/auth/AdministratorContainer.vue'
+import LoginContainer from '@/components/auth/LoginContainer.vue'
 import TenantRequestDisplay from '@/components/tenantrequest/TenantRequestDisplay.vue'
 import { useNotification } from '@/composables/useNotification'
 import { DomainError } from '@/errors/domain/DomainError'
@@ -139,106 +141,110 @@ onMounted(async () => {
 </script>
 
 <template>
-  <v-container class="px-0" fluid>
-    <template v-if="selectedTenantRequest">
-      <TenantRequestDisplay
-        :is-duplicate-name="isDuplicateName"
-        :tenant-request="selectedTenantRequest"
-        @approved="handleApproved"
-        @cancel="handleCancel"
-        @clear-duplicate-error="isDuplicateName = false"
-        @rejected="handleRejected"
-      />
-    </template>
+  <LoginContainer>
+    <AdministratorContainer>
+      <v-container class="px-0" fluid>
+        <template v-if="selectedTenantRequest">
+          <TenantRequestDisplay
+            :is-duplicate-name="isDuplicateName"
+            :tenant-request="selectedTenantRequest"
+            @approved="handleApproved"
+            @cancel="handleCancel"
+            @clear-duplicate-error="isDuplicateName = false"
+            @rejected="handleRejected"
+          />
+        </template>
 
-    <template v-else>
-      <v-row>
-        <v-col cols="12">
-          <h4 class="mb-6 mt-12">Tenant Requests</h4>
-          <p class="mb-8">
-            Select a request to review details and approve or reject it.
-          </p>
-        </v-col>
-      </v-row>
+        <template v-else>
+          <v-row>
+            <v-col cols="12">
+              <h4 class="mb-6 mt-12">Tenant Requests</h4>
+              <p class="mb-8">
+                Select a request to review details and approve or reject it.
+              </p>
+            </v-col>
+          </v-row>
 
-      <v-row>
-        <v-col cols="4">
-          <v-text-field
-            v-model="search"
-            :append-inner-icon="mdiMagnify"
-            label="Search"
-            variant="outlined"
-            clearable
-            hide-details
-            single-line
-          ></v-text-field>
-        </v-col>
-      </v-row>
+          <v-row>
+            <v-col cols="4">
+              <v-text-field
+                v-model="search"
+                :append-inner-icon="mdiMagnify"
+                label="Search"
+                variant="outlined"
+                clearable
+                hide-details
+                single-line
+              ></v-text-field>
+            </v-col>
+          </v-row>
 
-      <v-row>
-        <v-col cols="12">
-          <v-data-table
-            :cell-props="getCellProps"
-            :header-props="{
-              class: 'bg-surface-light font-weight-bold text-body-small',
-            }"
-            :headers="[
-              {
-                key: 'createdDate',
-                title: 'Date of Request (YYYY-MM-DD)',
-              },
-              {
-                key: 'createdBy',
-                sortable: false,
-                title: 'Requested By',
-              },
-              {
-                key: 'ministryName',
-                title: 'Ministry / Organization',
-              },
-              {
-                key: 'name',
-                sortable: false,
-                title: 'Requested Tenant Name',
-              },
-              {
-                align: 'end',
-                key: 'status',
-                title: 'Status',
-              },
-            ]"
-            :items="tenantRequests"
-            :search="search"
-            :sort-by="[{ key: 'createdDate', order: 'desc' }]"
-            item-value="id"
-            striped="even"
-            fixed-header
-            hover
-            @click:row="handleRowClick"
-          >
-            <template #no-data>
-              <v-alert type="info">{{
-                search
-                  ? 'No tenant requests match your search criteria'
-                  : 'There are no tenant requests'
-              }}</v-alert>
-            </template>
-            <template #[`item.status`]="{ item }">
-              <div
-                class="d-flex flex-wrap justify-end"
-                style="gap: 8px; margin-block: 4px"
+          <v-row>
+            <v-col cols="12">
+              <v-data-table
+                :cell-props="getCellProps"
+                :header-props="{
+                  class: 'bg-surface-light font-weight-bold text-body-small',
+                }"
+                :headers="[
+                  {
+                    key: 'createdDate',
+                    title: 'Date of Request (YYYY-MM-DD)',
+                  },
+                  {
+                    key: 'createdBy',
+                    sortable: false,
+                    title: 'Requested By',
+                  },
+                  {
+                    key: 'ministryName',
+                    title: 'Ministry / Organization',
+                  },
+                  {
+                    key: 'name',
+                    sortable: false,
+                    title: 'Requested Tenant Name',
+                  },
+                  {
+                    align: 'end',
+                    key: 'status',
+                    title: 'Status',
+                  },
+                ]"
+                :items="tenantRequests"
+                :search="search"
+                :sort-by="[{ key: 'createdDate', order: 'desc' }]"
+                item-value="id"
+                striped="even"
+                fixed-header
+                hover
+                @click:row="handleRowClick"
               >
-                <v-chip
-                  :color="getStatusColor(item.status)"
-                  class="align-center d-inline-flex"
-                >
-                  {{ item.status }}
-                </v-chip>
-              </div>
-            </template>
-          </v-data-table>
-        </v-col>
-      </v-row>
-    </template>
-  </v-container>
+                <template #no-data>
+                  <v-alert type="info">{{
+                    search
+                      ? 'No tenant requests match your search criteria'
+                      : 'There are no tenant requests'
+                  }}</v-alert>
+                </template>
+                <template #[`item.status`]="{ item }">
+                  <div
+                    class="d-flex flex-wrap justify-end"
+                    style="gap: 8px; margin-block: 4px"
+                  >
+                    <v-chip
+                      :color="getStatusColor(item.status)"
+                      class="align-center d-inline-flex"
+                    >
+                      {{ item.status }}
+                    </v-chip>
+                  </div>
+                </template>
+              </v-data-table>
+            </v-col>
+          </v-row>
+        </template>
+      </v-container>
+    </AdministratorContainer>
+  </LoginContainer>
 </template>

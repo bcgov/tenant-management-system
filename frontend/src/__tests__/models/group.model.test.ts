@@ -45,10 +45,10 @@ describe('Group model', () => {
     expect(group.groupUsers).toHaveLength(apiData.users.length)
   })
 
-  it('fromApiData handles created by username', () => {
+  it('fromApiData handles created by display name', () => {
     const apiData = {
       createdBy: 'created-by',
-      createdByUserName: 'created-by-username',
+      createdByDisplayName: 'created-by-display-name',
       createdDateTime: 'created-date-time',
       description: 'description',
       id: toGroupId('id'),
@@ -58,7 +58,7 @@ describe('Group model', () => {
 
     const group = Group.fromApiData(apiData)
 
-    expect(group.createdBy).toEqual('created-by-username')
+    expect(group.createdBy).toEqual('created-by-display-name')
   })
 
   it('fromApiData handles non-array users', () => {
