@@ -45,6 +45,7 @@ jobs:
     uses: ./.github/workflows/silver-dev.yml
     secrets: inherit
     with:
+      release_name: cstar-dev
       tag: ${{ needs.vars.outputs.pr }}
       db_user: appproxy
   
@@ -54,6 +55,7 @@ jobs:
     uses: ./.github/workflows/gold-dev.yml
     secrets: inherit
     with:
+      release_name: cstar-dev
       tag: ${{ needs.vars.outputs.pr }}
       db_user: appproxy
   
@@ -91,6 +93,7 @@ jobs:
     uses: ./.github/workflows/silver-test.yml
     secrets: inherit
     with:
+      release_name: cstar-test
       tag: ${{ needs.vars.outputs.pr }}
       db_user: appproxy
 
@@ -100,6 +103,7 @@ jobs:
     uses: ./.github/workflows/gold-test.yml
     secrets: inherit
     with:
+      release_name: cstar-test
       tag: ${{ needs.vars.outputs.pr }}
       db_user: appproxy
   
@@ -137,6 +141,7 @@ jobs:
     uses: ./.github/workflows/silver-prod.yml
     secrets: inherit
     with:
+      release_name: cstar-prod
       tag: ${{ needs.vars.outputs.pr }}
       db_user: appproxy
 
@@ -146,6 +151,7 @@ jobs:
     uses: ./.github/workflows/gold-prod.yml
     secrets: inherit
     with:
+      release_name: cstar-prod
       tag: ${{ needs.vars.outputs.pr }}
       db_user: appproxy
 
