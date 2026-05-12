@@ -25,14 +25,14 @@ const groupServiceRole: GroupServiceRole = new GroupServiceRole([
 
 describe('SharedServiceRole model', () => {
   it('constructor assigns all properties correctly', () => {
-    expect(sharedServiceRole.id).toEqual('role1')
+    expect(sharedServiceRole.id).toBe('role1')
     expect(sharedServiceRole.enabled).toBe(true)
   })
 })
 
 describe('SharedServiceArray model', () => {
   it('constructor assigns all properties correctly', () => {
-    expect(sharedServiceArray.id).toEqual('service1')
+    expect(sharedServiceArray.id).toBe('service1')
     expect(sharedServiceArray.sharedServiceRoles[0].id).toBe('role1')
     expect(sharedServiceArray.sharedServiceRoles[0].enabled).toBe(true)
     expect(sharedServiceArray.sharedServiceRoles[1].id).toBe('role2')
@@ -42,18 +42,18 @@ describe('SharedServiceArray model', () => {
 
 describe('GroupServiceRole model', () => {
   it('constructor assigns all properties correctly', () => {
-    expect(groupServiceRole.sharedServices[0].id).toEqual('service1')
-    expect(groupServiceRole.sharedServices[0].sharedServiceRoles[0].id).toEqual(
+    expect(groupServiceRole.sharedServices[0].id).toBe('service1')
+    expect(groupServiceRole.sharedServices[0].sharedServiceRoles[0].id).toBe(
       'role1',
     )
     expect(
       groupServiceRole.sharedServices[0].sharedServiceRoles[0].enabled,
-    ).toEqual(true)
-    expect(groupServiceRole.sharedServices[0].sharedServiceRoles[1].id).toEqual(
+    ).toBe(true)
+    expect(groupServiceRole.sharedServices[0].sharedServiceRoles[1].id).toBe(
       'role2',
     )
     expect(
       groupServiceRole.sharedServices[0].sharedServiceRoles[1].enabled,
-    ).toEqual(false)
+    ).toBe(false)
   })
 })

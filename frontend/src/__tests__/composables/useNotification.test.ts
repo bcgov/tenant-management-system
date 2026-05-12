@@ -24,9 +24,9 @@ describe('useNotification', () => {
     notification.success('Test message', 'Test title')
 
     expect(notification.items).toHaveLength(1)
-    expect(notification.items[0].message).toEqual('Test message')
-    expect(notification.items[0].title).toEqual('Test title')
-    expect(notification.items[0].type).toEqual(NotificationType.SUCCESS)
+    expect(notification.items[0].message).toBe('Test message')
+    expect(notification.items[0].title).toBe('Test title')
+    expect(notification.items[0].type).toBe(NotificationType.SUCCESS)
   })
 
   it('success should use default title when not provided', () => {
