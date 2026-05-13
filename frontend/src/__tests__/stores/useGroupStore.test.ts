@@ -43,6 +43,7 @@ describe('Group Store', () => {
       displayName: 'John Doe',
       email: 'john@example.com',
       firstName: 'John',
+      idpType: 'azureidir',
       lastName: 'Doe',
       ssoUserId: toSsoUserId('sso-123'),
       userName: 'jdoe',
@@ -152,7 +153,7 @@ describe('Group Store', () => {
       const targetUserId = 'target-id' as GroupUserId
       const group = makeGroup({ id: groupId })
       group.groupUsers = [
-        makeGroupUser({ id: 'other-id' as GroupUserId }),
+        makeGroupUser({ id: 'other-id' }),
         makeGroupUser({ id: targetUserId }),
       ]
       store.groups = [group]

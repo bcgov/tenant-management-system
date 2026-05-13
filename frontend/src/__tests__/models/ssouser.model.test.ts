@@ -66,10 +66,11 @@ describe('SsoUser model', () => {
 
   it('fromApiData creates SsoUser instance correctly without optional fields', () => {
     const apiData: SsoUserApiData = {
-      ssoUserId: toSsoUserId('sso101'),
+      displayName: 'Alice W.',
+      idpType: 'azureidir',
       firstName: 'Alice',
       lastName: 'Wonderland',
-      displayName: 'Alice W.',
+      ssoUserId: toSsoUserId('sso101'),
       // userName and email omitted intentionally
     }
 

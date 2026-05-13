@@ -37,6 +37,7 @@ export const groupService = {
           displayName: user.ssoUser.displayName,
           email: user.ssoUser.email,
           firstName: user.ssoUser.firstName,
+          idpType: user.ssoUser.idpType,
           lastName: user.ssoUser.lastName,
           ssoUserId: user.ssoUser.ssoUserId,
           userName: user.ssoUser.userName,

@@ -7,13 +7,10 @@ import { computed, ref } from 'vue'
 
 import { Role, toRoleId } from '@/models/role.model'
 import { SsoUser } from '@/models/ssouser.model'
-import { User } from '@/models/user.model'
+import { toUserId, User } from '@/models/user.model'
 import { config } from '@/services/config.service'
 import { ROLES } from '@/utils/constants'
-import {
-  IdentityProvider,
-  resolveIdentityProvider,
-} from '@/utils/identityProvider'
+import { isIdpBceid, isIdpIdir } from '@/utils/identityProvider'
 import { logger } from '@/utils/logger'
 
 type LoginState = 'anonymous' | 'authenticated' | 'expired'
@@ -89,23 +86,32 @@ export const useAuthStore = defineStore('auth', () => {
       throw new Error('Authentication is missing the identity_provider')
     }
 
-    const identityProvider = resolveIdentityProvider(
-      tokenParsed.identity_provider,
-    )
-    const isIdir = identityProvider === IdentityProvider.IDIR
-    const guid = isIdir
-      ? tokenParsed.idir_user_guid
-      : tokenParsed.bceid_user_guid
-
-    const ssoUser = new SsoUser(
-      guid,
-      isIdir ? tokenParsed.idir_username : tokenParsed.bceid_username,
-      tokenParsed.given_name,
-      tokenParsed.family_name,
-      tokenParsed.display_name,
-      tokenParsed.email,
-      identityProvider,
-    )
+    let ssoUser
+    if (isIdpIdir(tokenParsed.identity_provider)) {
+      ssoUser = new SsoUser(
+        tokenParsed.idir_user_guid,
+        tokenParsed.idir_username,
+        tokenParsed.given_name,
+        tokenParsed.family_name,
+        tokenParsed.display_name,
+        tokenParsed.email,
+        tokenParsed.identity_provider,
+      )
+    } else if (isIdpBceid(tokenParsed.identity_provider)) {
+      ssoUser = new SsoUser(
+        tokenParsed.bceid_user_guid,
+        tokenParsed.bceid_username,
+        tokenParsed.given_name,
+        tokenParsed.family_name,
+        tokenParsed.display_name,
+        tokenParsed.email,
+        tokenParsed.identity_provider,
+      )
+    } else {
+      throw new Error(
+        `Unknown identity provider: "${tokenParsed.identity_provider}"`,
+      )
+    }
 
     const roles: Role[] = []
     const tokenRoles = tokenParsed.client_roles || []
@@ -119,7 +125,12 @@ export const useAuthStore = defineStore('auth', () => {
       )
     }
 
-    return new User(guid, ssoUser, roles)
+    // TODO: The User.id is being set to the SsoUser.ssoUserId, which is not
+    // correct. This is convenient for calling the API as it's currentUser.id
+    // rather than currentUser.ssoUser.ssoUserId. For the sake of future
+    // developer sanity the correct ID location should be used, and this User.id
+    // should be set to something like ''
+    return new User(toUserId(ssoUser.ssoUserId), ssoUser, roles)
   }
 
   // Exported Methods

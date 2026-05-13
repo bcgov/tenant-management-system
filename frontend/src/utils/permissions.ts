@@ -1,7 +1,7 @@
 import { Tenant } from '@/models/tenant.model'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { ROLES } from '@/utils/constants'
-import { IdentityProvider } from '@/utils/identityProvider'
+import { isIdpBceid, isIdpIdir } from '@/utils/identityProvider'
 
 /**
  * Checks if the current user has a specific role in the given tenant.
@@ -34,7 +34,7 @@ export function currentUserIsBceid(): boolean {
     return false
   }
 
-  return authStore.authenticatedUser.ssoUser.idpType === IdentityProvider.BCEID
+  return isIdpBceid(authStore.authenticatedUser.ssoUser.idpType)
 }
 
 /**
@@ -51,7 +51,7 @@ export function currentUserIsIdir(): boolean {
     return false
   }
 
-  return authStore.authenticatedUser.ssoUser.idpType === IdentityProvider.IDIR
+  return isIdpIdir(authStore.authenticatedUser.ssoUser.idpType)
 }
 
 /**

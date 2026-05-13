@@ -23,7 +23,7 @@ export type SsoUserApiData = {
   /**
    * The identity provider for the SSO user.
    */
-  idpType?: string
+  idpType: string
 
   /**
    * The user's last name.
@@ -63,7 +63,7 @@ export class SsoUser {
   /**
    * The identity provider for the SSO user.
    */
-  idpType?: string
+  idpType: string
 
   /**
    * The user's last name.
@@ -98,7 +98,7 @@ export class SsoUser {
     lastName: string,
     displayName: string,
     email: string | undefined,
-    idpType: string | undefined,
+    idpType: string,
   ) {
     this.displayName = displayName
     this.email = email

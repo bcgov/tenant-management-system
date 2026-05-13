@@ -12,6 +12,34 @@ const api = authenticatedAxios()
 
 export const userService = {
   /**
+   * Private function to search for BCeID users with different search
+   * parameters.
+   *
+   * @param searchType - The type of search (email, displayName).
+   * @param searchValue - The search value.
+   * @returns A promise that resolves to an array of user data.
+   */
+  async _searchBceidUsers(
+    searchType: BCeIDSearchType,
+    searchValue: string,
+  ): Promise<UserSearchApiData[]> {
+    try {
+      const response = await api.get('/users/bcgovssousers/bceid/search', {
+        params: {
+          [searchType]: searchValue,
+          bceidType: 'both',
+        },
+      })
+
+      return response.data.data
+    } catch (error) {
+      logApiError('Error searching BCeID users:', error)
+
+      throw error
+    }
+  },
+
+  /**
    * Searches for IDIR users with different search parameters.
    *
    * @param searchType - The type of search (email, firstName, lastName).
@@ -38,31 +66,28 @@ export const userService = {
   },
 
   /**
-   * Private function to search for BCeID users with different search
-   * parameters.
+   * Searches for BCeID users based on the display name.
    *
-   * @param searchType - The type of search (email, displayName).
-   * @param searchValue - The search value.
+   * @param displayName - The display name substring to search.
    * @returns A promise that resolves to an array of user data.
    */
-  async _searchBceidUsers(
-    searchType: BCeIDSearchType,
-    searchValue: string,
+  async searchBCeIDDisplayName(
+    displayName: string,
   ): Promise<UserSearchApiData[]> {
-    try {
-      const response = await api.get('/users/bcgovssousers/bceid/search', {
-        params: {
-          [searchType]: searchValue,
-          bceidType: 'both',
-        },
-      })
+    return this._searchBceidUsers(
+      BCEID_SEARCH_TYPE.DISPLAY_NAME.value,
+      displayName,
+    )
+  },
 
-      return response.data.data
-    } catch (error) {
-      logApiError('Error searching BCeID users:', error)
-
-      throw error
-    }
+  /**
+   * Searches for BCeID users based on the email.
+   *
+   * @param email - The email substring to search.
+   * @returns A promise that resolves to an array of user data.
+   */
+  async searchBCeIDEmail(email: string): Promise<UserSearchApiData[]> {
+    return this._searchBceidUsers(BCEID_SEARCH_TYPE.EMAIL.value, email)
   },
 
   /**
@@ -93,30 +118,5 @@ export const userService = {
    */
   async searchIdirLastName(lastName: string): Promise<UserSearchApiData[]> {
     return this._searchIdirUsers(IDIR_SEARCH_TYPE.LAST_NAME.value, lastName)
-  },
-
-  /**
-   * Searches for BCeID users based on the display name.
-   *
-   * @param displayName - The display name substring to search.
-   * @returns A promise that resolves to an array of user data.
-   */
-  async searchBCeIDDisplayName(
-    displayName: string,
-  ): Promise<UserSearchApiData[]> {
-    return this._searchBceidUsers(
-      BCEID_SEARCH_TYPE.DISPLAY_NAME.value,
-      displayName,
-    )
-  },
-
-  /**
-   * Searches for BCeID users based on the email.
-   *
-   * @param email - The email substring to search.
-   * @returns A promise that resolves to an array of user data.
-   */
-  async searchBCeIDEmail(email: string): Promise<UserSearchApiData[]> {
-    return this._searchBceidUsers(BCEID_SEARCH_TYPE.EMAIL.value, email)
   },
 }

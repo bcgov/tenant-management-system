@@ -1,22 +1,11 @@
 /**
- * There are two classes of identity providers: IDIR and BCeID, which includes
- * both Basic BCeID and Business BCeID.
+ * There are two broad classes of identity providers that are supported: BCeID
+ * and IDIR.
  */
-export enum IdentityProvider {
-  BCEID = 'BCeID',
-  IDIR = 'IDIR',
-}
-
-/**
- * Maps Keycloak identity provider values to the `IdentityProvider` enum.
- */
-const IDP_TOKEN_MAP: Record<string, IdentityProvider> = {
-  azureidir: IdentityProvider.IDIR,
-  bceidbasic: IdentityProvider.BCEID,
-  bceidboth: IdentityProvider.BCEID,
-  bceidbusiness: IdentityProvider.BCEID,
-  idir: IdentityProvider.IDIR,
-}
+const bceidBasicIdps = new Set(['bceidbasic'])
+const bceidBusinessIdps = new Set(['bceidbusiness'])
+const bceidIdps = new Set(['bceidbasic', 'bceidbusiness'])
+const idirIdps = new Set(['azureidir', 'idir'])
 
 /**
  * Gets the user-friendly display name (such as 'IDIR') for a given identity
@@ -24,33 +13,52 @@ const IDP_TOKEN_MAP: Record<string, IdentityProvider> = {
  * string, and if the string isn't recognized will return the input string
  * as-is.
  *
- * @param idpType - the raw identity provider string from the token.
+ * @param idp - the raw identity provider string from the token.
  * @returns The user-friendly display name for the identity provider.
  */
-export const identityProviderToDisplay = (
-  idpType: string | undefined,
-): string => {
-  if (!idpType) {
-    return ''
+export const identityProviderToDisplay = (idp: string | undefined): string => {
+  if (idp && bceidBasicIdps.has(idp.toLowerCase())) {
+    return 'Basic BCeID'
   }
 
-  return IDP_TOKEN_MAP[idpType.toLowerCase()] ?? idpType
+  if (idp && bceidBusinessIdps.has(idp.toLowerCase())) {
+    return 'Business BCeID'
+  }
+
+  if (isIdpIdir(idp)) {
+    return 'IDIR'
+  }
+
+  return idp ?? ''
 }
 
 /**
- * Gets the `IdentityProvider` enum value corresponding to a given identity
- * provider string from the token (such as 'azureidir').
+ * Gets the whether or not the user's identity provider corresponds to an
+ * identity provider that is BCeID ('bceidbasic', 'bceidboth' or
+ * 'bceidbusiness').
  *
  * @param idp - the raw identity provider string from the token.
- * @returns The `IdentityProvider` enum value.
- * @throws Error if the input string is empty or doesn't correspond to a known
- *   identity provider.
+ * @returns true if the identity provider is a BCeID IdP
  */
-export const resolveIdentityProvider = (idp: string): IdentityProvider => {
-  const resolved = IDP_TOKEN_MAP[idp.toLowerCase()]
-  if (!resolved) {
-    throw new Error(`Unknown identity provider: "${idp}"`)
+export const isIdpBceid = (idp: string | undefined): boolean => {
+  if (!idp) {
+    return false
   }
 
-  return resolved
+  return bceidIdps.has(idp.toLowerCase())
+}
+
+/**
+ * Gets the whether or not the user's identity provider corresponds to an
+ * identity provider that is IDIR ('azureidir' or 'idir').
+ *
+ * @param idp - the raw identity provider string from the token.
+ * @returns true if the identity provider is an IDIR IdP
+ */
+export const isIdpIdir = (idp: string | undefined): boolean => {
+  if (!idp) {
+    return false
+  }
+
+  return idirIdps.has(idp.toLowerCase())
 }
