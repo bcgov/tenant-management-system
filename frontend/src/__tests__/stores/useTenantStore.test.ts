@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
+
 import { makeRole, makeTenant, makeUser } from '@/__tests__/__factories__'
+
 import { type RoleApiData, type RoleId } from '@/models/role.model'
 import { type SsoUserApiData, toSsoUserId } from '@/models/ssouser.model'
 import {
@@ -16,7 +18,6 @@ import { useTenantStore } from '@/stores/useTenantStore'
 
 vi.mock('@/services/tenant.service', () => ({
   tenantService: {
-    createTenant: vi.fn(),
     addUser: vi.fn(),
     getTenant: vi.fn(),
     getUserTenants: vi.fn(),
@@ -70,32 +71,6 @@ describe('Tenant Store', () => {
     const store = useTenantStore()
     expect(store.tenants).toEqual([])
     expect(store.loading).toBe(false)
-  })
-
-  describe('addTenant', () => {
-    it('creates a tenant and handles upsert insertion', async () => {
-      const store = useTenantStore()
-      vi.mocked(tenantService.createTenant).mockResolvedValue(mockTenantApiData)
-
-      const result = await store.addTenant('Test', 'Ministry', makeUser())
-
-      expect(store.tenants).toHaveLength(1)
-      expect(result).toBeInstanceOf(Tenant)
-      expect(store.tenants[0].id).toBe(mockTenantApiData.id)
-    })
-
-    it('updates existing tenant in state during upsert', async () => {
-      const store = useTenantStore()
-      const existing = makeTenant({ id: mockTenantApiData.id, name: 'Old' })
-      store.tenants = [existing]
-
-      vi.mocked(tenantService.createTenant).mockResolvedValue(mockTenantApiData)
-
-      await store.addTenant('New', 'Min', makeUser())
-
-      expect(store.tenants).toHaveLength(1)
-      expect(store.tenants[0].name).toBe('Test Tenant')
-    })
   })
 
   describe('addTenantUser', () => {
@@ -222,8 +197,8 @@ describe('Tenant Store', () => {
       const store = useTenantStore()
       const roleStore = useRoleStore()
 
-      const role1 = makeRole({ id: 'role-1' as RoleId })
-      const role2 = makeRole({ id: 'role-2' as RoleId })
+      const role1 = makeRole({ id: 'role-1' })
+      const role2 = makeRole({ id: 'role-2' })
       roleStore.roles = [role1, role2]
 
       const user = makeUser({ id: toUserId('u-1') })
@@ -240,7 +215,7 @@ describe('Tenant Store', () => {
     it('uses fullRoleIds for filtering when provided', async () => {
       const store = useTenantStore()
       const roleStore = useRoleStore()
-      const role1 = makeRole({ id: 'role-1' as RoleId })
+      const role1 = makeRole({ id: 'role-1' })
       roleStore.roles = [role1]
 
       const user = makeUser({ id: toUserId('u-1') })

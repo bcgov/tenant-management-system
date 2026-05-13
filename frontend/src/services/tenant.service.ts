@@ -111,60 +111,6 @@ export const tenantService = {
   },
 
   /**
-   * Creates a new tenant with the specified name and ministry.
-   *
-   * @param name - The name of the tenant to create.
-   * @param ministryName - The name of the ministry associated with the tenant.
-   * @param user - The user that is creating the tenant.
-   * @returns A promise that resolves to the tenant data.
-   * @throws Will throw an error if the API request fails.
-   */
-  async createTenant(
-    name: string,
-    ministryName: string,
-    user: User,
-  ): Promise<TenantApiData> {
-    try {
-      const requestBody = {
-        ministryName,
-        name,
-        user: {
-          displayName: user.ssoUser.displayName,
-          email: user.ssoUser.email,
-          firstName: user.ssoUser.firstName,
-          idpType: user.ssoUser.idpType,
-          lastName: user.ssoUser.lastName,
-          ssoUserId: user.ssoUser.ssoUserId,
-          userName: user.ssoUser.userName,
-        },
-      }
-
-      const response = await api.post(`/tenants`, requestBody)
-
-      return response.data.data.tenant
-    } catch (error: unknown) {
-      logApiError('Error creating tenant', error)
-
-      // Handle HTTP 400 Bad Request (validation)
-      if (isValidationError(error)) {
-        const messageArray = error.response.data.details.body.map(
-          (item: { message: string }) => item.message,
-        )
-
-        throw new ValidationError(messageArray)
-      }
-
-      // Handle HTTP 409 Conflict (duplicate)
-      if (isDuplicateEntityError(error)) {
-        throw new DuplicateEntityError(error.response.data.message)
-      }
-
-      // Re-throw all other errors
-      throw error
-    }
-  },
-
-  /**
    * Retrieves the specified tenant.
    *
    * @param tenantId - The ID of the tenant.
