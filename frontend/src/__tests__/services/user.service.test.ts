@@ -10,29 +10,30 @@ const mockedUtils = vi.mocked(utils)
 
 mockedUtils.logApiError.mockImplementation(() => {})
 
-// Create mock functions in vi.hoisted to ensure they're available during module loading
-const { mockGet, mockPost, mockPut, mockDelete, mockPatch } = vi.hoisted(
+// Create mock functions in vi.hoisted to ensure they're available during module
+// loading.
+const { mockDelete, mockGet, mockPatch, mockPost, mockPut } = vi.hoisted(
   () => ({
+    mockDelete: vi.fn(),
     mockGet: vi.fn(),
+    mockPatch: vi.fn(),
     mockPost: vi.fn(),
     mockPut: vi.fn(),
-    mockDelete: vi.fn(),
-    mockPatch: vi.fn(),
   }),
 )
 
-// Mock the authenticated axios to return an object with HTTP methods
+// Mock the authenticated axios to return an object with HTTP methods.
 vi.mock('@/services/authenticated.axios', () => ({
   authenticatedAxios: () => ({
+    delete: mockDelete,
     get: mockGet,
+    patch: mockPatch,
     post: mockPost,
     put: mockPut,
-    delete: mockDelete,
-    patch: mockPatch,
   }),
 }))
 
-// Mock the constants
+// Mock the constants.
 vi.mock('@/utils/constants', () => ({
   IDIR_SEARCH_TYPE: {
     EMAIL: { value: 'email' },
@@ -318,7 +319,6 @@ describe('userService', () => {
     })
   })
 
-  //bceid searches
   describe('searchBCeIDDisplayName', () => {
     it('should search BCeID users by display name', async () => {
       const displayName = 'Smith'
@@ -383,6 +383,71 @@ describe('userService', () => {
       await expect(
         userService.searchBCeIDDisplayName(displayName),
       ).rejects.toThrow(error)
+    })
+  })
+
+  describe('searchBCeIDEmail', () => {
+    it('should search BCeID users by email', async () => {
+      const email = 'smith@gov.bc.ca'
+      const filteredUsers = [fakeBceidUsers[1]]
+      mockGet.mockResolvedValueOnce({ data: { data: filteredUsers } })
+
+      const result = await userService.searchBCeIDEmail(email)
+
+      expect(result).toEqual(filteredUsers)
+      expect(mockGet).toHaveBeenCalledWith(
+        '/users/bcgovssousers/bceid/search',
+        {
+          params: { email: email, bceidType: 'both' },
+        },
+      )
+    })
+
+    it('should handle case-insensitive searches', async () => {
+      const email = 'smith@gov.bc.ca'
+      mockGet.mockResolvedValueOnce({ data: { data: fakeBceidUsers } })
+
+      const result = await userService.searchBCeIDEmail(email)
+
+      expect(result).toEqual(fakeBceidUsers)
+      expect(mockGet).toHaveBeenCalledWith(
+        '/users/bcgovssousers/bceid/search',
+        {
+          params: { email: email, bceidType: 'both' },
+        },
+      )
+    })
+
+    it('should handle partial email searches', async () => {
+      const partialEmail = 'smith@'
+      mockGet.mockResolvedValueOnce({ data: { data: fakeBceidUsers } })
+
+      const result = await userService.searchBCeIDEmail(partialEmail)
+
+      expect(result).toEqual(fakeBceidUsers)
+      expect(mockGet).toHaveBeenCalledWith(
+        '/users/bcgovssousers/bceid/search',
+        {
+          params: { email: partialEmail, bceidType: 'both' },
+        },
+      )
+    })
+
+    it('should return empty array for no matches', async () => {
+      const email = 'nonexistent@gov.bc.ca'
+      mockGet.mockResolvedValueOnce({ data: { data: [] } })
+
+      const result = await userService.searchBCeIDEmail(email)
+
+      expect(result).toEqual([])
+    })
+
+    it('should propagate errors from _searchBCeIDUsers', async () => {
+      const email = 'smith@gov.bc.ca'
+      const error = new Error('Search failed')
+      mockGet.mockRejectedValueOnce(error)
+
+      await expect(userService.searchBCeIDEmail(email)).rejects.toThrow(error)
     })
   })
 
