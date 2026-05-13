@@ -116,6 +116,15 @@ describe('useAuthStore', () => {
       )
     })
 
+    it('does not set a user when JWT IdP is unknown', async () => {
+      const store = useAuthStore()
+      mockTokenParsed = { identity_provider: 'unknown' }
+
+      await expect(store.init()).rejects.toThrow(
+        'Unknown identity provider: "unknown"',
+      )
+    })
+
     it('rethrows when Keycloak init fails', async () => {
       const store = useAuthStore()
       mockInit.mockRejectedValue(new Error('Keycloak Init Failed'))
