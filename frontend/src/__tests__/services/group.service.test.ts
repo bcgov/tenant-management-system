@@ -163,6 +163,7 @@ describe('groupService', () => {
             displayName: fakeUser.ssoUser.displayName,
             email: fakeUser.ssoUser.email,
             firstName: fakeUser.ssoUser.firstName,
+            idpType: fakeUser.ssoUser.idpType,
             lastName: fakeUser.ssoUser.lastName,
             ssoUserId: fakeUser.ssoUser.ssoUserId,
             userName: fakeUser.ssoUser.userName,
