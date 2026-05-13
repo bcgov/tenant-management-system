@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest'
 
 import {
-  IdentityProvider,
   identityProviderToDisplay,
-  resolveIdentityProvider,
+  isIdpBceid,
+  isIdpIdir,
 } from '@/utils/identityProvider'
 
 describe('identityProviderToDisplay', () => {
@@ -45,43 +45,80 @@ describe('identityProviderToDisplay', () => {
   })
 })
 
-describe('resolveIdentityProvider', () => {
-  it('throws for empty string', () => {
-    expect(() => resolveIdentityProvider('')).toThrow(
-      'Unknown identity provider: ""',
-    )
+describe('isIdpBceid', () => {
+  it('resolves undefined to false', () => {
+    expect(isIdpBceid(undefined)).toBe(false)
   })
 
-  it('resolves azureidir to IDIR', () => {
-    expect(resolveIdentityProvider('azureidir')).toBe(IdentityProvider.IDIR)
+  it('resolves empty string to false', () => {
+    expect(isIdpBceid('')).toBe(false)
   })
 
-  it('resolves bceidbasic to BCeID', () => {
-    expect(resolveIdentityProvider('bceidbasic')).toBe(IdentityProvider.BCEID)
+  it('resolves azureidir to false', () => {
+    expect(isIdpBceid('azureidir')).toBe(false)
   })
 
-  it('resolves bceidboth to BCeID', () => {
-    expect(resolveIdentityProvider('bceidboth')).toBe(IdentityProvider.BCEID)
+  it('resolves bceidbasic to true', () => {
+    expect(isIdpBceid('bceidbasic')).toBe(true)
   })
 
-  it('resolves bceidbusiness to BCeID', () => {
-    expect(resolveIdentityProvider('bceidbusiness')).toBe(
-      IdentityProvider.BCEID,
-    )
+  it('resolves bceidboth to true', () => {
+    expect(isIdpBceid('bceidboth')).toBe(true)
   })
 
-  it('resolves idir to IDIR', () => {
-    expect(resolveIdentityProvider('idir')).toBe(IdentityProvider.IDIR)
+  it('resolves bceidbusiness to true', () => {
+    expect(isIdpBceid('bceidbusiness')).toBe(true)
+  })
+
+  it('resolves idir to false', () => {
+    expect(isIdpBceid('idir')).toBe(false)
+  })
+
+  it('resolves unrecognized IdP to false', () => {
+    expect(isIdpBceid('thisismyidir')).toBe(false)
   })
 
   it('is case-insensitive', () => {
-    expect(resolveIdentityProvider('AZUREIDIR')).toBe(IdentityProvider.IDIR)
-    expect(resolveIdentityProvider('AzureIdir')).toBe(IdentityProvider.IDIR)
+    expect(isIdpBceid('BCEIDBOTH')).toBe(true)
+    expect(isIdpBceid('BCeIDBoth')).toBe(true)
+  })
+})
+
+describe('isIdpIdir', () => {
+  it('resolves undefined to false', () => {
+    expect(isIdpIdir(undefined)).toBe(false)
   })
 
-  it('throws for unrecognized IDP', () => {
-    expect(() => resolveIdentityProvider('thisismyidir')).toThrow(
-      'Unknown identity provider: "thisismyidir"',
-    )
+  it('resolves empty string to false', () => {
+    expect(isIdpIdir('')).toBe(false)
+  })
+
+  it('resolves azureidir to true', () => {
+    expect(isIdpIdir('azureidir')).toBe(true)
+  })
+
+  it('resolves bceidbasic to false', () => {
+    expect(isIdpIdir('bceidbasic')).toBe(false)
+  })
+
+  it('resolves bceidboth to false', () => {
+    expect(isIdpIdir('bceidboth')).toBe(false)
+  })
+
+  it('resolves bceidbusiness to false', () => {
+    expect(isIdpIdir('bceidbusiness')).toBe(false)
+  })
+
+  it('resolves idir to true', () => {
+    expect(isIdpIdir('idir')).toBe(true)
+  })
+
+  it('resolves unrecognized IdP to false', () => {
+    expect(isIdpIdir('thisismyidir')).toBe(false)
+  })
+
+  it('is case-insensitive', () => {
+    expect(isIdpIdir('AZUREIDIR')).toBe(true)
+    expect(isIdpIdir('AzureIdir')).toBe(true)
   })
 })

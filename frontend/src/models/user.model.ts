@@ -128,7 +128,7 @@ export class User {
     const attributes = searchData.attributes
     const type = attributes.idir_username?.[0]
       ? 'idir'
-      : searchData.username?.includes('bceidbusiness')
+      : attributes.bceid_business_guid?.[0]
         ? 'bceidbusiness'
         : 'bceidbasic'
     const userId = toSsoUserId(

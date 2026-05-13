@@ -86,6 +86,7 @@ describe('Tenant Store', () => {
           displayName: 'Second User',
           email: 'second@example.com',
           firstName: 'Second',
+          idpType: 'azureidir',
           lastName: 'User',
           ssoUserId: toSsoUserId('sso-second'),
           userName: 'suser',
@@ -117,6 +118,19 @@ describe('Tenant Store', () => {
       const result = await promise
       expect(store.loading).toBe(false)
       expect(result.id).toBe(mockTenantApiData.id)
+    })
+
+    it('updates existing tenant in state during upsert', async () => {
+      const store = useTenantStore()
+      const existing = makeTenant({ id: mockTenantApiData.id, name: 'Old' })
+      store.tenants = [existing]
+
+      vi.mocked(tenantService.getTenant).mockResolvedValue(mockTenantApiData)
+
+      await store.fetchTenant(mockTenantApiData.id)
+
+      expect(store.tenants).toHaveLength(1)
+      expect(store.tenants[0].name).toBe('Test Tenant')
     })
   })
 

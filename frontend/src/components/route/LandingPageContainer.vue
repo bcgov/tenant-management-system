@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 
 import { config } from '@/services/config.service'
 import { useAuthStore } from '@/stores/useAuthStore'
+import { isIdpIdir } from '@/utils/identityProvider'
 
 // --- Store and Composable Setup ----------------------------------------------
 
@@ -20,7 +21,7 @@ const idirHint = computed(() => config.idirBroker)
 
 watchEffect(() => {
   if (authStore.isAuthenticated) {
-    if (authStore.authenticatedUser.ssoUser.idpType === 'IDIR') {
+    if (isIdpIdir(authStore.authenticatedUser.ssoUser.idpType)) {
       router.push('/tenants')
 
       return

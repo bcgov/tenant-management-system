@@ -81,30 +81,6 @@ export function makeRoleUserAdmin(): Role {
   return makeRole({ name: ROLES.USER_ADMIN.value })
 }
 
-// SsoUser Factory
-
-export function makeSsoUser(
-  overrides: Partial<{
-    displayName: string
-    email: string
-    firstName: string
-    idpType: string
-    lastName: string
-    ssoUserId: string
-    userName: string
-  }> = {},
-): SsoUser {
-  return new SsoUser(
-    toSsoUserId(overrides.ssoUserId ?? 'test-sso-user-id'),
-    overrides.userName ?? 'test-sso-user-user-name',
-    overrides.firstName ?? 'test-sso-user-first-name',
-    overrides.lastName ?? 'test-sso-user-last-name',
-    overrides.displayName ?? 'test-sso-user-display-name',
-    overrides.email ?? 'test-sso-user-email',
-    overrides.idpType ?? 'test-sso-user-idp-type',
-  )
-}
-
 // Service Factory
 
 export function makeService(
@@ -160,6 +136,30 @@ export function makeServiceRole(
     overrides.createdDate ?? 'test-service-created-date',
     overrides.updatedDate ?? 'test-service-updated-date',
     overrides.enabled ?? true,
+  )
+}
+
+// SsoUser Factory
+
+export function makeSsoUser(
+  overrides: Partial<{
+    displayName: string
+    email: string
+    firstName: string
+    idpType: string
+    lastName: string
+    ssoUserId: string
+    userName: string
+  }> = {},
+): SsoUser {
+  return new SsoUser(
+    toSsoUserId(overrides.ssoUserId ?? 'test-sso-user-id'),
+    overrides.userName ?? 'test-sso-user-user-name',
+    overrides.firstName ?? 'test-sso-user-first-name',
+    overrides.lastName ?? 'test-sso-user-last-name',
+    overrides.displayName ?? 'test-sso-user-display-name',
+    overrides.email ?? 'test-sso-user-email',
+    overrides.idpType ?? 'test-sso-user-idp-type',
   )
 }
 
@@ -228,11 +228,11 @@ export function makeUser(
 }
 
 export function makeUserBceid(): User {
-  return makeUser({ ssoUser: makeSsoUser({ idpType: 'BCeID' }) })
+  return makeUser({ ssoUser: makeSsoUser({ idpType: 'bceidboth' }) })
 }
 
 export function makeUserIdir(): User {
-  return makeUser({ ssoUser: makeSsoUser({ idpType: 'IDIR' }) })
+  return makeUser({ ssoUser: makeSsoUser({ idpType: 'azureidir' }) })
 }
 
 export function makeUserOperationsAdmin(): User {
