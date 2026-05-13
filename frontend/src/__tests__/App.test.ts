@@ -12,10 +12,6 @@ vi.mock('@/stores/useAuthStore', () => ({
   useAuthStore: () => currentAuthStore,
 }))
 
-vi.mock('vue-i18n', () => ({
-  useI18n: () => ({ t: (key: string) => key }),
-}))
-
 vi.mock('@/services/config.service', () => ({
   config: {
     oidc: { clientId: 'test', realm: 'test', serverUrl: 'http://test' },

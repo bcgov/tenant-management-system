@@ -1,6 +1,12 @@
 import { Group, toGroupId } from '@/models/group.model'
 import { GroupUser, toGroupUserId } from '@/models/groupuser.model'
 import { Role, toRoleId } from '@/models/role.model'
+import { Service, toServiceId } from '@/models/service.model'
+import {
+  ServiceRole,
+  toServiceRoleId,
+  type ServiceRoleId,
+} from '@/models/servicerole.model'
 import { SsoUser, toSsoUserId } from '@/models/ssouser.model'
 import { Tenant, toTenantId } from '@/models/tenant.model'
 import { TenantRequest, toTenantRequestId } from '@/models/tenantrequest.model'
@@ -96,6 +102,64 @@ export function makeSsoUser(
     overrides.displayName ?? 'test-sso-user-display-name',
     overrides.email ?? 'test-sso-user-email',
     overrides.idpType ?? 'test-sso-user-idp-type',
+  )
+}
+
+// Service Factory
+
+export function makeService(
+  overrides: Partial<{
+    clientIdentifier: string
+    createdBy: string
+    createdDate: string
+    description: string
+    id: string
+    isActive: boolean
+    name: string
+    serviceRoles: ServiceRole[]
+    updatedDate: string
+  }> = {},
+): Service {
+  return new Service(
+    toServiceId(overrides.id ?? 'test-service-id'),
+    overrides.name ?? 'test-service-name',
+    overrides.createdDate ?? 'test-service-created-date',
+    overrides.clientIdentifier ?? 'test-service-client-identifier',
+    overrides.createdBy ?? 'test-service-created-by',
+    overrides.description ?? 'test-service-description',
+    overrides.isActive ?? true,
+    overrides.updatedDate ?? 'test-service-updated-date',
+    overrides.serviceRoles ?? [makeServiceRole()],
+  )
+}
+
+// Service Role Factory
+
+export function makeServiceRole(
+  overrides: Partial<{
+    allowedIdentityProviders: string[]
+    createdBy: string
+    createdDate: string
+    description: string
+    enabled: boolean
+    id: ServiceRoleId
+    isDeleted: boolean
+    name: string
+    updatedDate: string
+    updatedBy: string
+  }> = {},
+): ServiceRole {
+  return new ServiceRole(
+    toServiceRoleId(overrides.id ?? 'test-service-role-id'),
+    overrides.name ?? 'test-service-role-name',
+    overrides.description ?? 'test-service-role-description',
+    overrides.allowedIdentityProviders ?? ['idir'],
+    overrides.createdBy ?? 'test-service-created-by',
+    overrides.updatedBy ?? 'test-service-updated-by',
+    overrides.isDeleted ?? false,
+    overrides.createdDate ?? 'test-service-created-date',
+    overrides.updatedDate ?? 'test-service-updated-date',
+    overrides.enabled ?? true,
   )
 }
 

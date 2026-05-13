@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest'
+
 import {
   IdentityProvider,
   identityProviderToDisplay,
@@ -14,9 +15,12 @@ describe('identityProviderToDisplay', () => {
     expect(identityProviderToDisplay('')).toBe('')
   })
 
-  // Real IDPs
   it('converts azureidir to IDIR display', () => {
     expect(identityProviderToDisplay('azureidir')).toBe('IDIR')
+  })
+
+  it('converts bceidbasic to BCeID display', () => {
+    expect(identityProviderToDisplay('bceidbasic')).toBe('BCeID')
   })
 
   it('converts bceidboth to BCeID display', () => {
@@ -27,13 +31,8 @@ describe('identityProviderToDisplay', () => {
     expect(identityProviderToDisplay('bceidbusiness')).toBe('BCeID')
   })
 
-  // Possible but unused IDPs
   it('converts idir to IDIR display', () => {
     expect(identityProviderToDisplay('idir')).toBe('IDIR')
-  })
-
-  it('converts bceidbasic to BCeID display', () => {
-    expect(identityProviderToDisplay('bceidbasic')).toBe('BCeID')
   })
 
   it('is case-insensitive', () => {
@@ -41,27 +40,24 @@ describe('identityProviderToDisplay', () => {
     expect(identityProviderToDisplay('AzureIdir')).toBe('IDIR')
   })
 
-  it('passes through unknown IDP as-is', () => {
+  it('passes through unknown IdP as-is', () => {
     expect(identityProviderToDisplay('someunknownidp')).toBe('someunknownidp')
   })
 })
 
 describe('resolveIdentityProvider', () => {
-  it('throws for undefined', () => {
-    expect(() => resolveIdentityProvider(undefined)).toThrow(
-      'identity provider is missing',
-    )
-  })
-
   it('throws for empty string', () => {
     expect(() => resolveIdentityProvider('')).toThrow(
-      'identity provider is missing',
+      'Unknown identity provider: ""',
     )
   })
 
-  // Real IDPs
   it('resolves azureidir to IDIR', () => {
     expect(resolveIdentityProvider('azureidir')).toBe(IdentityProvider.IDIR)
+  })
+
+  it('resolves bceidbasic to BCeID', () => {
+    expect(resolveIdentityProvider('bceidbasic')).toBe(IdentityProvider.BCEID)
   })
 
   it('resolves bceidboth to BCeID', () => {
@@ -74,13 +70,8 @@ describe('resolveIdentityProvider', () => {
     )
   })
 
-  // Possible but unused IDPs
   it('resolves idir to IDIR', () => {
     expect(resolveIdentityProvider('idir')).toBe(IdentityProvider.IDIR)
-  })
-
-  it('resolves bceidbasic to BCeID', () => {
-    expect(resolveIdentityProvider('bceidbasic')).toBe(IdentityProvider.BCEID)
   })
 
   it('is case-insensitive', () => {
@@ -88,7 +79,9 @@ describe('resolveIdentityProvider', () => {
     expect(resolveIdentityProvider('AzureIdir')).toBe(IdentityProvider.IDIR)
   })
 
-  it('returns undefined for unrecognized IDP', () => {
-    expect(resolveIdentityProvider('thisismyidir')).toBeUndefined()
+  it('throws for unrecognized IDP', () => {
+    expect(() => resolveIdentityProvider('thisismyidir')).toThrow(
+      'Unknown identity provider: "thisismyidir"',
+    )
   })
 })

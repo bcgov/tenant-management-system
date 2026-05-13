@@ -7,5 +7,6 @@ export class SessionExpiredError extends Error {
    */
   constructor() {
     super('Session Expired')
+    this.name = 'SessionExpiredError'
   }
 }

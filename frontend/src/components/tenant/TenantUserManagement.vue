@@ -4,7 +4,6 @@ import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 const { t } = useI18n()
 
-import GroupListContainer from '@/components/group/GroupListContainer.vue'
 import RoleDialog from '@/components/tenant/RoleDialog.vue'
 import UserSearch from '@/components/tenant/UserSearch.vue'
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
@@ -446,8 +445,6 @@ watch(selectAllRoles, () => {
     />
 
     <v-divider class="my-12" />
-
-    <GroupListContainer :tenant="tenant" />
   </v-container>
 </template>
 

@@ -9,7 +9,7 @@ export class ValidationError extends DomainError {
   /**
    * Constructs a new ValidationError.
    *
-   * @param userMessage - Optional user-friendly message to display.
+   * @param userMessage - User-friendly message to display.
    */
   constructor(userMessages: string[]) {
     super(

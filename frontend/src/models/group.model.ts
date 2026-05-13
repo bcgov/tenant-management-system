@@ -13,9 +13,9 @@ export type GroupApiData = {
   createdBy: string
 
   /**
-   * The username of who created the group, may be undefined.
+   * The display name of who created the group, may be undefined.
    */
-  createdByUserName?: string
+  createdByDisplayName?: string
 
   /**
    * ISO8601 date string (YYYY-MM-DD) when the group was created.
@@ -120,8 +120,8 @@ export class Group {
    * Note: The API returns 'createdDateTime' which is mapped to the
    * 'createdDate' property.
    *
-   * Note: The API may return 'createdByUserName', in which case it is used in
-   * preference to the createBy UUID.
+   * Note: The API may return 'createdByDisplayName', in which case it is used
+   * in preference to the createBy UUID.
    *
    * @param apiData - The raw group data from the API
    * @returns A new Group instance
@@ -132,7 +132,7 @@ export class Group {
       : []
 
     return new Group(
-      apiData.createdByUserName || apiData.createdBy,
+      apiData.createdByDisplayName || apiData.createdBy,
       apiData.createdDateTime,
       apiData.description,
       apiData.id,

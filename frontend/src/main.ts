@@ -71,11 +71,8 @@ export function handleInitError(error: unknown) {
     `
 }
 
-// Start the app initialization unless running the unit tests.
-if (import.meta.env.MODE !== 'test') {
-  try {
-    await initializeApp()
-  } catch (error) {
-    handleInitError(error)
-  }
+try {
+  await initializeApp()
+} catch (error) {
+  handleInitError(error)
 }

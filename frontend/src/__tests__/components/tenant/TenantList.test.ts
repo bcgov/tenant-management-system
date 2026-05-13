@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { createVuetify } from 'vuetify'
 
 import { makeTenant } from '@/__tests__/__factories__'
+
 import TenantList from '@/components/tenant/TenantList.vue'
 import TenantListCard from '@/components/tenant/TenantListCard.vue'
 import { type Tenant } from '@/models/tenant.model'

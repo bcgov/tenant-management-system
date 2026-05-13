@@ -68,42 +68,42 @@ describe('Tenant model', () => {
       createdDateTime: '2025-08-01',
       description: 'API description',
       id: 'tenant456' as TenantId,
-      name: 'API Tenant',
       ministryName: 'Ministry',
+      name: 'API Tenant',
       users: [
         {
           id: 'userA' as UserId,
           ssoUser: {
-            ssoUserId: toSsoUserId('ssoA'),
-            userName: 'userA',
-            firstName: 'FirstA',
-            lastName: 'LastA',
             displayName: 'DisplayA',
             email: 'a@example.com',
+            firstName: 'FirstA',
+            lastName: 'LastA',
+            ssoUserId: toSsoUserId('ssoA'),
+            userName: 'userA',
           },
           roles: [
             {
+              description: 'Owner role',
               id: toRoleId('r1'),
               name: ROLES.TENANT_OWNER.value,
-              description: 'Owner role',
             },
           ],
         },
         {
           id: 'userB' as UserId,
           ssoUser: {
-            ssoUserId: toSsoUserId('ssoB'),
-            userName: 'userB',
-            firstName: 'FirstB',
-            lastName: 'LastB',
             displayName: 'DisplayB',
             email: 'b@example.com',
+            firstName: 'FirstB',
+            lastName: 'LastB',
+            ssoUserId: toSsoUserId('ssoB'),
+            userName: 'userB',
           },
           roles: [
             {
+              description: 'Other role',
               id: toRoleId('r2'),
               name: 'SomeRole',
-              description: 'Other role',
             },
           ],
         },
@@ -116,21 +116,21 @@ describe('Tenant model', () => {
     expect(tenant.users).toHaveLength(apiData.users.length)
   })
 
-  it('fromApiData handles created by username', () => {
+  it('fromApiData handles created by display name', () => {
     const apiData = {
-      createdBy: 'creatorUuid',
+      createdBy: 'created-by-uuid',
+      createdByDisplayName: 'created-by-display-name',
       createdDateTime: '2025-08-01',
-      createdByUserName: 'creatorUserName',
       description: 'API description',
       id: 'tenant456' as TenantId,
-      name: 'API Tenant',
       ministryName: 'Ministry',
+      name: 'API Tenant',
       users: [],
     }
 
     const tenant = Tenant.fromApiData(apiData)
 
-    expect(tenant.createdBy).toEqual('creatorUserName')
+    expect(tenant.createdBy).toBe('created-by-display-name')
   })
 
   it('fromApiData handles null users gracefully', () => {
@@ -146,8 +146,8 @@ describe('Tenant model', () => {
       createdDateTime: '2025-08-01',
       description: 'API description',
       id: toTenantId('tenant789'),
-      name: 'API Tenant',
       ministryName: 'Ministry',
+      name: 'API Tenant',
       users: null,
     }
 
@@ -179,22 +179,22 @@ describe('Tenant model', () => {
 
   it('getOwners returns users with TENANT_OWNER role', () => {
     const ownerRole = makeRole({
+      description: 'Owner role',
       id: 'r1',
       name: ROLES.TENANT_OWNER.value,
-      description: 'Owner role',
     })
     const otherRole = makeRole({
+      description: 'Other role',
       id: 'r2',
       name: 'SomeOtherRole',
-      description: 'Other role',
     })
     const ownerUser = makeUser({
-      ssoUser: makeSsoUser({ ssoUserId: toSsoUserId('sso1') }),
       roles: [ownerRole],
+      ssoUser: makeSsoUser({ ssoUserId: toSsoUserId('sso1') }),
     })
     const otherUser = makeUser({
-      ssoUser: makeSsoUser({ ssoUserId: toSsoUserId('sso2') }),
       roles: [otherRole],
+      ssoUser: makeSsoUser({ ssoUserId: toSsoUserId('sso2') }),
     })
 
     const tenant = new Tenant(
@@ -215,7 +215,7 @@ describe('Tenant model', () => {
 it('userHasRole returns true if user has the role', () => {
   const roleName = ROLES.TENANT_OWNER.value
   const user = makeUser({
-    roles: [makeRole({ id: 'r1', name: roleName, description: 'Owner role' })],
+    roles: [makeRole({ description: 'Owner role', id: 'r1', name: roleName })],
   })
   const tenant = new Tenant(
     'creatorUser',
@@ -235,7 +235,7 @@ it('userHasRole returns false if user does not have the role or is not found', (
   const roleName = ROLES.TENANT_OWNER.value
   const user = makeUser({
     roles: [
-      makeRole({ id: 'r1', name: 'SomeOtherRole', description: 'Other role' }),
+      makeRole({ description: 'Other role', id: 'r1', name: 'SomeOtherRole' }),
     ],
   })
   const tenant = new Tenant(
@@ -255,7 +255,7 @@ it('userHasRole returns false if user does not have the role or is not found', (
   const unknownUser = makeUser({
     id: 'otherUser',
     roles: [
-      makeRole({ id: 'r2', name: 'SomeOtherRole', description: 'Other role' }),
+      makeRole({ description: 'Other role', id: 'r2', name: 'SomeOtherRole' }),
     ],
   })
 
