@@ -2,7 +2,9 @@
  * There are two broad classes of identity providers that are supported: BCeID
  * and IDIR.
  */
-const bceidIdps = new Set(['bceidbasic', 'bceidboth', 'bceidbusiness'])
+const bceidBasicIdps = new Set(['bceidbasic'])
+const bceidBusinessIdps = new Set(['bceidbusiness'])
+const bceidIdps = new Set(['bceidbasic', 'bceidbusiness'])
 const idirIdps = new Set(['azureidir', 'idir'])
 
 /**
@@ -15,8 +17,12 @@ const idirIdps = new Set(['azureidir', 'idir'])
  * @returns The user-friendly display name for the identity provider.
  */
 export const identityProviderToDisplay = (idp: string | undefined): string => {
-  if (isIdpBceid(idp)) {
-    return 'BCeID'
+  if (idp && bceidBasicIdps.has(idp.toLowerCase())) {
+    return 'Basic BCeID'
+  }
+
+  if (idp && bceidBusinessIdps.has(idp.toLowerCase())) {
+    return 'Business BCeID'
   }
 
   if (isIdpIdir(idp)) {

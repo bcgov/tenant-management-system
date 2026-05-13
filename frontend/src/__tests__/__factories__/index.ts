@@ -228,11 +228,11 @@ export function makeUser(
 }
 
 export function makeUserBceid(): User {
-  return makeUser({ ssoUser: makeSsoUser({ idpType: 'bceidboth' }) })
+  return makeUser({ ssoUser: makeSsoUser({ idpType: 'bceidbasic' }) })
 }
 
 export function makeUserIdir(): User {
-  return makeUser({ ssoUser: makeSsoUser({ idpType: 'azureidir' }) })
+  return makeUser({ ssoUser: makeSsoUser({ idpType: 'idir' }) })
 }
 
 export function makeUserOperationsAdmin(): User {

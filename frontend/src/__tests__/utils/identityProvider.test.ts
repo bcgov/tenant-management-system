@@ -20,15 +20,11 @@ describe('identityProviderToDisplay', () => {
   })
 
   it('converts bceidbasic to BCeID display', () => {
-    expect(identityProviderToDisplay('bceidbasic')).toBe('BCeID')
-  })
-
-  it('converts bceidboth to BCeID display', () => {
-    expect(identityProviderToDisplay('bceidboth')).toBe('BCeID')
+    expect(identityProviderToDisplay('bceidbasic')).toBe('Basic BCeID')
   })
 
   it('converts bceidbusiness to BCeID display', () => {
-    expect(identityProviderToDisplay('bceidbusiness')).toBe('BCeID')
+    expect(identityProviderToDisplay('bceidbusiness')).toBe('Business BCeID')
   })
 
   it('converts idir to IDIR display', () => {
@@ -62,10 +58,6 @@ describe('isIdpBceid', () => {
     expect(isIdpBceid('bceidbasic')).toBe(true)
   })
 
-  it('resolves bceidboth to true', () => {
-    expect(isIdpBceid('bceidboth')).toBe(true)
-  })
-
   it('resolves bceidbusiness to true', () => {
     expect(isIdpBceid('bceidbusiness')).toBe(true)
   })
@@ -79,8 +71,8 @@ describe('isIdpBceid', () => {
   })
 
   it('is case-insensitive', () => {
-    expect(isIdpBceid('BCEIDBOTH')).toBe(true)
-    expect(isIdpBceid('BCeIDBoth')).toBe(true)
+    expect(isIdpBceid('BCEIDBASIC')).toBe(true)
+    expect(isIdpBceid('BCeIDBasic')).toBe(true)
   })
 })
 
@@ -99,10 +91,6 @@ describe('isIdpIdir', () => {
 
   it('resolves bceidbasic to false', () => {
     expect(isIdpIdir('bceidbasic')).toBe(false)
-  })
-
-  it('resolves bceidboth to false', () => {
-    expect(isIdpIdir('bceidboth')).toBe(false)
   })
 
   it('resolves bceidbusiness to false', () => {
