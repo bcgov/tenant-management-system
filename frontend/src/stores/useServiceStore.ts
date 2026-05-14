@@ -6,7 +6,7 @@ import { type TenantId } from '@/models/tenant.model'
 import { serviceService } from '@/services/service.service'
 
 /**
- * Pinia store for managing services and tenant-specific services.
+ * Pinia store for managing services.
  */
 export const useServiceStore = defineStore('service', () => {
   const loading = ref(false)
@@ -55,9 +55,9 @@ export const useServiceStore = defineStore('service', () => {
   const fetchServices = async (): Promise<Service[]> => {
     loading.value = true
     try {
-      const services = await serviceService.getServices()
+      const serviceData = await serviceService.getServices()
 
-      return services.map(Service.fromApiData)
+      return serviceData.map(Service.fromApiData)
     } finally {
       loading.value = false
     }
@@ -75,10 +75,10 @@ export const useServiceStore = defineStore('service', () => {
   ): Promise<Service[]> => {
     loading.value = true
     try {
-      const services = await serviceService.getTenantServices(tenantId)
-      const tenantServices = services.map(Service.fromApiData)
+      const serviceData = await serviceService.getTenantServices(tenantId)
+      const tenantServices = serviceData.map(Service.fromApiData)
 
-      // Update the store with these services
+      // Update the store with these services.
       tenantServices.forEach(upsertService)
 
       return tenantServices
@@ -88,7 +88,7 @@ export const useServiceStore = defineStore('service', () => {
   }
 
   /**
-   * Retrieves a service by its ID from the store.
+   * Retrieves a service from the store by its ID.
    *
    * @param serviceId - The ID of the service.
    * @returns The service if found, otherwise undefined.
