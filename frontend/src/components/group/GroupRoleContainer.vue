@@ -55,7 +55,7 @@ const fetchServices = async () => {
       const groupValues = groupRoles.value[services.value[i].id] || {}
       //these often aren't in the same order but it needs to be
       const orderMap = new Map(
-        services.value[i].serviceRoles.map((obj, index) => [obj.id, index]),
+        services.value[i].roles.map((obj, index) => [obj.id, index]),
       )
 
       // Sort based on the map
@@ -93,7 +93,7 @@ const saveChanges = async () => {
   for (let i = 0; i < services.value.length; i++) {
     const groupValues = groupRoles.value[services.value[i].id] || {}
     const orderMap = new Map(
-      services.value[i].serviceRoles.map((obj, index) => [obj.id, index]),
+      services.value[i].roles.map((obj, index) => [obj.id, index]),
     )
 
     // Sort based on the map
@@ -280,7 +280,7 @@ const dialogButtons = computed(() => {
             }}</v-expansion-panel-title>
             <v-expansion-panel-text>
               <v-checkbox
-                v-for="(role, roleIndex) in service.serviceRoles"
+                v-for="(role, roleIndex) in service.roles"
                 :key="`checkbox-role-${role.id}`"
                 v-model="roleValues[serviceIndex][roleIndex]"
                 :color="editing ? 'primary' : ''"

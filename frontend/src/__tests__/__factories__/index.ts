@@ -90,10 +90,8 @@ export function makeService(
     createdDate: string
     description: string
     id: string
-    isActive: boolean
     name: string
-    serviceRoles: ServiceRole[]
-    updatedDate: string
+    roles: ServiceRole[]
   }> = {},
 ): Service {
   return new Service(
@@ -103,9 +101,7 @@ export function makeService(
     overrides.clientIdentifier ?? 'test-service-client-identifier',
     overrides.createdBy ?? 'test-service-created-by',
     overrides.description ?? 'test-service-description',
-    overrides.isActive ?? true,
-    overrides.updatedDate ?? 'test-service-updated-date',
-    overrides.serviceRoles ?? [makeServiceRole()],
+    overrides.roles ?? [makeServiceRole()],
   )
 }
 

@@ -29,11 +29,9 @@ describe('Service Store', () => {
     createdBy: 'user-1',
     createdDateTime: '2023-01-01T12:00:00Z',
     description: 'Test Service Description',
+    displayName: 'Test Service',
     id: serviceId,
-    isActive: true,
-    name: 'Test Service',
     roles: [],
-    updatedDateTime: '2023-01-02T12:00:00Z',
   }
 
   beforeEach(() => {
@@ -109,7 +107,7 @@ describe('Service Store', () => {
       store.services = [existing]
       const updatedApiData: ServiceApiData = {
         ...mockServiceApiData,
-        name: 'Updated Name',
+        displayName: 'Updated Name',
       }
       vi.mocked(serviceService.getTenantServices).mockResolvedValue([
         updatedApiData,

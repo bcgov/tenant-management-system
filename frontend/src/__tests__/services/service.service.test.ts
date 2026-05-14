@@ -19,25 +19,26 @@ const mockedUtils = vi.mocked(utils)
 
 mockedUtils.logApiError.mockImplementation(() => {})
 
-// Create mock functions in vi.hoisted to ensure they're available during module loading
-const { mockGet, mockPost, mockPut, mockDelete, mockPatch } = vi.hoisted(
+// Create mock functions in vi.hoisted to ensure they're available during module
+// loading.
+const { mockDelete, mockGet, mockPatch, mockPost, mockPut } = vi.hoisted(
   () => ({
+    mockDelete: vi.fn(),
     mockGet: vi.fn(),
+    mockPatch: vi.fn(),
     mockPost: vi.fn(),
     mockPut: vi.fn(),
-    mockDelete: vi.fn(),
-    mockPatch: vi.fn(),
   }),
 )
 
 // Mock the authenticated axios to return an object with HTTP methods
 vi.mock('@/services/authenticated.axios', () => ({
   authenticatedAxios: () => ({
+    delete: mockDelete,
     get: mockGet,
+    patch: mockPatch,
     post: mockPost,
     put: mockPut,
-    delete: mockDelete,
-    patch: mockPatch,
   }),
 }))
 
@@ -162,7 +163,7 @@ describe('serviceService', () => {
       )
 
       expect(mockedUtils.logApiError).toHaveBeenCalledWith(
-        'Error getting tenant connected services',
+        'Error getting tenant services',
         error,
       )
     })
@@ -233,7 +234,7 @@ describe('serviceService', () => {
       ).rejects.toThrow(error)
 
       expect(mockedUtils.logApiError).toHaveBeenCalledWith(
-        'Error getting tenant connected services',
+        'Error getting tenant group services',
         error,
       )
     })
@@ -279,7 +280,7 @@ describe('serviceService', () => {
       ).rejects.toThrow(error)
 
       expect(mockedUtils.logApiError).toHaveBeenCalledWith(
-        'Error updating connected services to group',
+        'Error updating tenant group service roles',
         error,
       )
     })

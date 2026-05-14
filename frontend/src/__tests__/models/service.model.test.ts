@@ -16,8 +16,6 @@ describe('Service model', () => {
       '',
       '',
       '',
-      false,
-      '',
       [],
     )
 
@@ -29,13 +27,11 @@ describe('Service model', () => {
   it('fromApiData creates Service instance correctly', () => {
     const apiData: ServiceApiData = {
       id: toServiceId('service456'),
-      name: 'API Service',
+      displayName: 'API Service',
       createdDateTime: '2025-08-01',
       clientIdentifier: 'client-789',
       createdBy: 'user-123',
       description: 'A service from API',
-      isActive: true,
-      updatedDateTime: '2025-08-02',
       roles: [
         {
           id: toServiceRoleId('role456'),
@@ -56,7 +52,7 @@ describe('Service model', () => {
 
     expect(service).toBeInstanceOf(Service)
     expect(service.id).toBe(apiData.id)
-    expect(service.name).toBe(apiData.name)
+    expect(service.name).toBe(apiData.displayName)
     expect(service.createdDate).toBe(apiData.createdDateTime)
   })
 })

@@ -86,7 +86,7 @@ export class Service {
   /**
    * The roles in available in the service.
    */
-  serviceRoles: ServiceRole[]
+  roles: ServiceRole[]
 
   /**
    * Creates a new Service instance.
@@ -103,15 +103,15 @@ export class Service {
     clientIdentifier: string,
     createdBy: string,
     description: string,
-    serviceRoles: ServiceRole[],
+    roles: ServiceRole[],
   ) {
-    this.createdDate = createdDate
-    this.id = id
-    this.name = name
     this.clientIdentifier = clientIdentifier
     this.createdBy = createdBy
+    this.createdDate = createdDate
     this.description = description
-    this.serviceRoles = serviceRoles
+    this.id = id
+    this.name = name
+    this.roles = roles
   }
 
   /**
@@ -124,7 +124,7 @@ export class Service {
    * @returns A new Service instance
    */
   static fromApiData(apiData: ServiceApiData): Service {
-    const serviceRoles = apiData.roles.map(ServiceRole.fromApiData)
+    const roles = apiData.roles.map(ServiceRole.fromApiData)
 
     return new Service(
       apiData.id,
@@ -133,7 +133,7 @@ export class Service {
       apiData.clientIdentifier,
       apiData.createdBy,
       apiData.description,
-      serviceRoles,
+      roles,
     )
   }
 }
