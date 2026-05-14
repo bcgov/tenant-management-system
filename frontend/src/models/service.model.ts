@@ -1,5 +1,7 @@
-import { type ServiceRoleApiData } from './servicerole.model'
-import { ServiceRole } from './servicerole.model'
+import {
+  ServiceRole,
+  type ServiceRoleApiData,
+} from '@/models/servicerole.model'
 
 export type ServiceId = string & { readonly __brand: 'ServiceId' }
 export const toServiceId = (id: string): ServiceId => id as ServiceId
@@ -31,31 +33,19 @@ export type ServiceApiData = {
   description: string
 
   /**
+   * Display name of the service.
+   */
+  displayName: string
+
+  /**
    * Unique identifier for the service.
    */
   id: ServiceId
 
   /**
-   * Whether or not the service is active.
-   */
-  isActive: boolean
-
-  /**
-   * Display name of the service.
-   */
-  name: string
-
-  /**
    * The roles in available in the service.
    */
   roles: ServiceRoleApiData[]
-
-  /**
-   * ISO8601 date string (YYYY-MM-DD) when service was created.
-   *
-   * Note: This is mapped from 'updatedDateTime' in the API.
-   */
-  updatedDateTime: string
 }
 
 export class Service {
@@ -72,7 +62,9 @@ export class Service {
   id: ServiceId
 
   /**
-   * Display name of the service.
+   * The name of the service.
+   *
+   * Note: This is mapped from 'displayName' in the API.
    */
   name: string
 
@@ -90,18 +82,6 @@ export class Service {
    * Description of the service.
    */
   description: string
-
-  /**
-   * Whether or not the service is active.
-   */
-  isActive: boolean
-
-  /**
-   * ISO8601 date string (YYYY-MM-DD) when service was created.
-   *
-   * Note: This is mapped from 'updatedDateTime' in the API.
-   */
-  updatedDate: string
 
   /**
    * The roles in available in the service.
@@ -123,8 +103,6 @@ export class Service {
     clientIdentifier: string,
     createdBy: string,
     description: string,
-    isActive: boolean,
-    updatedDate: string,
     serviceRoles: ServiceRole[],
   ) {
     this.createdDate = createdDate
@@ -133,8 +111,6 @@ export class Service {
     this.clientIdentifier = clientIdentifier
     this.createdBy = createdBy
     this.description = description
-    this.isActive = isActive
-    this.updatedDate = updatedDate
     this.serviceRoles = serviceRoles
   }
 
@@ -152,13 +128,11 @@ export class Service {
 
     return new Service(
       apiData.id,
-      apiData.name,
+      apiData.displayName,
       apiData.createdDateTime,
       apiData.clientIdentifier,
       apiData.createdBy,
       apiData.description,
-      apiData.isActive,
-      apiData.updatedDateTime,
       serviceRoles,
     )
   }
