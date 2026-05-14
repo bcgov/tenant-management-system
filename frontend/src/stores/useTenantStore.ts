@@ -40,29 +40,6 @@ export const useTenantStore = defineStore('tenant', () => {
   // Exported Methods
 
   /**
-   * Creates a new tenant and adds it to the store.
-   *
-   * @param name - The name of the tenant.
-   * @param ministryName - The ministry name of the tenant.
-   * @param user - The user creating the tenant.
-   * @returns A promise that resolves to the created tenant.
-   */
-  const addTenant = async (
-    name: string,
-    ministryName: string,
-    user: User,
-  ): Promise<Tenant> => {
-    const apiResponse = await tenantService.createTenant(
-      name,
-      ministryName,
-      user,
-    )
-    const tenant = Tenant.fromApiData(apiResponse)
-
-    return upsertTenant(tenant)
-  }
-
-  /**
    * Adds a user to a tenant.
    *
    * @param tenant - The tenant to add the user to.
@@ -223,7 +200,6 @@ export const useTenantStore = defineStore('tenant', () => {
     loading,
     tenants,
 
-    addTenant,
     addTenantUser,
     fetchTenant,
     fetchTenants,

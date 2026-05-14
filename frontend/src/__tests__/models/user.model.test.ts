@@ -58,9 +58,11 @@ describe('User model', () => {
       email: 'business@example.com',
       firstName: 'Business',
       lastName: 'User',
-      username: String.raw`bceidbusiness\someuser`,
+      username: 'Someuser',
       attributes: {
-        bceid_user_guid: ['businessGuid'],
+        bceid_business_guid: ['businessGuid'],
+        bceid_business_name: ['businessName'],
+        bceid_user_guid: ['userGuid'],
         display_name: ['Business Display'],
       },
     }
@@ -68,7 +70,7 @@ describe('User model', () => {
     const user = User.fromSearchData(searchData)
 
     expect(user.ssoUser.idpType).toBe('bceidbusiness')
-    expect(user.id).toBe('businessGuid')
+    expect(user.id).toBe('userGuid')
   })
 
   it('fromSearchData sets type to bceidbasic when username does not include bceidbusiness', () => {

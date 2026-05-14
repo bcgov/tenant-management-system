@@ -33,27 +33,25 @@ vi.mock('keycloak-js', () => ({
 
 const makeIdirToken = (
   overrides: Partial<KeycloakTokenParsed> = {},
-): KeycloakTokenParsed =>
-  ({
-    identity_provider: 'idir',
-    idir_user_guid: '123',
-    idir_username: 'jdoe',
-    given_name: 'John',
-    family_name: 'Doe',
-    display_name: 'John Doe',
-    email: 'john@test.com',
-    ...overrides,
-  }) as KeycloakTokenParsed
+): KeycloakTokenParsed => ({
+  identity_provider: 'idir',
+  idir_user_guid: '123',
+  idir_username: 'jdoe',
+  given_name: 'John',
+  family_name: 'Doe',
+  display_name: 'John Doe',
+  email: 'john@test.com',
+  ...overrides,
+})
 
 const makeBceidToken = (
   overrides: Partial<KeycloakTokenParsed> = {},
-): KeycloakTokenParsed =>
-  ({
-    identity_provider: 'bceidbasic',
-    bceid_user_guid: '456',
-    bceid_username: 'bceid_user',
-    ...overrides,
-  }) as KeycloakTokenParsed
+): KeycloakTokenParsed => ({
+  identity_provider: 'bceidbasic',
+  bceid_user_guid: '456',
+  bceid_username: 'bceid_user',
+  ...overrides,
+})
 
 describe('useAuthStore', () => {
   beforeEach(() => {
@@ -67,7 +65,7 @@ describe('useAuthStore', () => {
 
     mockInit.mockResolvedValue(true)
     mockUpdateToken.mockResolvedValue(true)
-    mockTokenParsed = {} as KeycloakTokenParsed
+    mockTokenParsed = {}
   })
 
   describe('init', () => {
@@ -115,6 +113,15 @@ describe('useAuthStore', () => {
 
       await expect(store.init()).rejects.toThrow(
         'Authentication is missing the identity_provider',
+      )
+    })
+
+    it('does not set a user when JWT IdP is unknown', async () => {
+      const store = useAuthStore()
+      mockTokenParsed = { identity_provider: 'unknown' }
+
+      await expect(store.init()).rejects.toThrow(
+        'Unknown identity provider: "unknown"',
       )
     })
 

@@ -27,7 +27,7 @@ const user = computed(() => {
     <AppNavigation />
 
     <v-main>
-      <v-container class="fluid mt-10 px-12">
+      <v-container>
         <div v-if="loggedOut" class="my-3 text-center">
           <h2>{{ $t('general.sessionExpired') }}</h2>
           <p>{{ $t('general.sessionExpiredDesc') }}</p>
