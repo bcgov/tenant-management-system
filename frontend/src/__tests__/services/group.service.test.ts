@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { makeUser } from '@/__tests__/__factories__'
+import { makeSsoUser, makeUser } from '@/__tests__/__factories__'
 
 import { type GroupId } from '@/models/group.model'
 import { type GroupUserId } from '@/models/groupuser.model'
@@ -57,6 +57,9 @@ describe('groupService', () => {
   }
 
   const fakeUser = makeUser()
+  const fakeAzureUser = makeUser({
+    ssoUser: makeSsoUser({ idpType: 'azureidir' }),
+  })
 
   const fakeGroupUser = {
     id: groupUserId,
@@ -167,6 +170,34 @@ describe('groupService', () => {
             lastName: fakeUser.ssoUser.lastName,
             ssoUserId: fakeUser.ssoUser.ssoUserId,
             userName: fakeUser.ssoUser.userName,
+          },
+        },
+      )
+    })
+
+    it('should return the group user handling azureidir', async () => {
+      mockPost.mockResolvedValueOnce({
+        data: { data: { groupUser: fakeGroupUser } },
+      })
+
+      const result = await groupService.addUserToGroup(
+        tenantId,
+        groupId,
+        fakeAzureUser,
+      )
+
+      expect(result).toEqual(fakeGroupUser)
+      expect(mockPost).toHaveBeenCalledWith(
+        `/tenants/${tenantId}/groups/${groupId}/users`,
+        {
+          user: {
+            displayName: fakeAzureUser.ssoUser.displayName,
+            email: fakeAzureUser.ssoUser.email,
+            firstName: fakeAzureUser.ssoUser.firstName,
+            idpType: 'idir',
+            lastName: fakeAzureUser.ssoUser.lastName,
+            ssoUserId: fakeAzureUser.ssoUser.ssoUserId,
+            userName: fakeAzureUser.ssoUser.userName,
           },
         },
       )
