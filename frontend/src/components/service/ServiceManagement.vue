@@ -32,7 +32,7 @@ const selectedServiceId = ref('')
 
 const availableServices = computed(() => {
   return props.services.filter(
-    (service) => !props.tenantServices.includes(service),
+    (service) => !props.tenantServices.some((ts) => ts.id === service.id),
   )
 })
 
