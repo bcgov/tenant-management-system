@@ -9,24 +9,6 @@ const api = authenticatedAxios()
 
 export const serviceService = {
   /**
-   * Retrieves all active connected services.
-   *
-   * @returns A promise that resolves to an array of service data.
-   * @throws Will throw an error if the API request fails.
-   */
-  async getAllSharedServices(): Promise<ServiceApiData[]> {
-    try {
-      const response = await api.get('/shared-services')
-
-      return response.data.data.sharedServices
-    } catch (error) {
-      logApiError('Error getting all connected services', error)
-
-      throw error
-    }
-  },
-
-  /**
    * Adds an existing connected service with a tenant.
    *
    * @param tenantId - The unique identifier of the tenant.
@@ -57,19 +39,18 @@ export const serviceService = {
   },
 
   /**
-   * Retrieves all connected services associated with a specific tenant.
+   * Retrieves all active connected services.
    *
-   * @param tenantId - The unique identifier of the tenant.
    * @returns A promise that resolves to an array of service data.
    * @throws Will throw an error if the API request fails.
    */
-  async getTenantServices(tenantId: TenantId): Promise<ServiceApiData[]> {
+  async getAllSharedServices(): Promise<ServiceApiData[]> {
     try {
-      const response = await api.get(`/tenants/${tenantId}/shared-services`)
+      const response = await api.get('/shared-services')
 
       return response.data.data.sharedServices
     } catch (error) {
-      logApiError('Error getting tenant connected services', error)
+      logApiError('Error getting all connected services', error)
 
       throw error
     }
@@ -89,6 +70,25 @@ export const serviceService = {
       const response = await api.get(
         `/tenants/${tenantId}/groups/${groupId}/shared-services/shared-service-roles`,
       )
+
+      return response.data.data.sharedServices
+    } catch (error) {
+      logApiError('Error getting tenant connected services', error)
+
+      throw error
+    }
+  },
+
+  /**
+   * Retrieves all connected services associated with a specific tenant.
+   *
+   * @param tenantId - The unique identifier of the tenant.
+   * @returns A promise that resolves to an array of service data.
+   * @throws Will throw an error if the API request fails.
+   */
+  async getTenantServices(tenantId: TenantId): Promise<ServiceApiData[]> {
+    try {
+      const response = await api.get(`/tenants/${tenantId}/shared-services`)
 
       return response.data.data.sharedServices
     } catch (error) {

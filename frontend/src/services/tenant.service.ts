@@ -57,29 +57,6 @@ export const tenantService = {
   },
 
   /**
-   * Removes a user from the specified tenant.
-   *
-   * @param tenantId - The unique identifier of the tenant.
-   * @param userId - The id of the user to remove
-   * @returns A promise that resolves when the request succeeds.
-   * @throws Will throw an error if the API request fails.
-   */
-  async removeUser(tenantId: TenantId, userId: UserId): Promise<void> {
-    try {
-      await api.delete(`/tenants/${tenantId}/users/${userId}`)
-    } catch (error: unknown) {
-      logApiError('Error removing user from tenant', error)
-
-      // Handle HTTP 409 Conflict (cannot remove last owner)
-      if (isDuplicateEntityError(error)) {
-        throw new DuplicateEntityError(error.response.data.message)
-      }
-
-      throw error
-    }
-  },
-
-  /**
    * Assigns a role to a user within a specific tenant.
    *
    * This sends a PUT request to the API endpoint to assign the given role
@@ -210,6 +187,29 @@ export const tenantService = {
       return response.data.data.users
     } catch (error) {
       logApiError('Error getting tenant users', error)
+
+      throw error
+    }
+  },
+
+  /**
+   * Removes a user from the specified tenant.
+   *
+   * @param tenantId - The unique identifier of the tenant.
+   * @param userId - The id of the user to remove
+   * @returns A promise that resolves when the request succeeds.
+   * @throws Will throw an error if the API request fails.
+   */
+  async removeUser(tenantId: TenantId, userId: UserId): Promise<void> {
+    try {
+      await api.delete(`/tenants/${tenantId}/users/${userId}`)
+    } catch (error: unknown) {
+      logApiError('Error removing user from tenant', error)
+
+      // Handle HTTP 409 Conflict (cannot remove last owner)
+      if (isDuplicateEntityError(error)) {
+        throw new DuplicateEntityError(error.response.data.message)
+      }
 
       throw error
     }
