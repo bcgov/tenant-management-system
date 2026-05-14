@@ -39,12 +39,12 @@ export const serviceService = {
   },
 
   /**
-   * Retrieves all active connected services.
+   * Retrieves all active services.
    *
    * @returns A promise that resolves to an array of service data.
    * @throws Will throw an error if the API request fails.
    */
-  async getAllSharedServices(): Promise<ServiceApiData[]> {
+  async getServices(): Promise<ServiceApiData[]> {
     try {
       const response = await api.get('/shared-services')
 

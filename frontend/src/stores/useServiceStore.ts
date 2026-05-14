@@ -48,14 +48,14 @@ export const useServiceStore = defineStore('service', () => {
   }
 
   /**
-   * Fetches all connected services from the API and updates the store.
+   * Fetches all services from the API and updates the store.
    *
    * @returns A promise that resolves to the list of all services.
    */
   const fetchServices = async (): Promise<Service[]> => {
     loading.value = true
     try {
-      const services = await serviceService.getAllSharedServices()
+      const services = await serviceService.getServices()
 
       return services.map(Service.fromApiData)
     } finally {

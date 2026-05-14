@@ -76,13 +76,13 @@ describe('serviceService', () => {
     vi.clearAllMocks()
   })
 
-  describe('getAllSharedServices', () => {
+  describe('getServices', () => {
     it('should return all connected services on success', async () => {
       mockGet.mockResolvedValueOnce({
         data: { data: { sharedServices: fakeSharedServices } },
       })
 
-      const result = await serviceService.getAllSharedServices()
+      const result = await serviceService.getServices()
 
       expect(result).toEqual(fakeSharedServices)
       expect(mockGet).toHaveBeenCalledWith('/shared-services')
@@ -92,7 +92,7 @@ describe('serviceService', () => {
       const error = new Error('Failed to fetch connected services')
       mockGet.mockRejectedValueOnce(error)
 
-      await expect(serviceService.getAllSharedServices()).rejects.toThrow(error)
+      await expect(serviceService.getServices()).rejects.toThrow(error)
     })
   })
 

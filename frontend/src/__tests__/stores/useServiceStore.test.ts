@@ -14,8 +14,8 @@ import { useServiceStore } from '@/stores/useServiceStore'
 
 vi.mock('@/services/service.service', () => ({
   serviceService: {
+    getServices: vi.fn(),
     addServiceToTenant: vi.fn(),
-    getAllSharedServices: vi.fn(),
     getTenantServices: vi.fn(),
   },
 }))
@@ -61,7 +61,7 @@ describe('Service Store', () => {
   describe('fetchServices', () => {
     it('manages loading state and returns mapped services without updating state', async () => {
       const store = useServiceStore()
-      vi.mocked(serviceService.getAllSharedServices).mockResolvedValue([
+      vi.mocked(serviceService.getServices).mockResolvedValue([
         mockServiceApiData,
       ])
 
@@ -79,9 +79,7 @@ describe('Service Store', () => {
 
     it('sets loading to false even if fetch fails', async () => {
       const store = useServiceStore()
-      vi.mocked(serviceService.getAllSharedServices).mockRejectedValue(
-        new Error('Fail'),
-      )
+      vi.mocked(serviceService.getServices).mockRejectedValue(new Error('Fail'))
 
       await expect(store.fetchServices()).rejects.toThrow('Fail')
 
