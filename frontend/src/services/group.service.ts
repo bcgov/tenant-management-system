@@ -39,7 +39,11 @@ export const groupService = {
           firstName: user.ssoUser.firstName,
           // Force the idpType to be idir when it is azureidir, for the specific
           // case of the current user adding themselves when creating a group.
-          idpType: user.isIdir() ? 'idir' : user.ssoUser.idpType,
+          // TODO: this is hacky but the backend doesn't handle our own IdP.
+          idpType:
+            user.ssoUser.idpType === 'azureidir'
+              ? 'idir'
+              : user.ssoUser.idpType,
           lastName: user.ssoUser.lastName,
           ssoUserId: user.ssoUser.ssoUserId,
           userName: user.ssoUser.userName,
