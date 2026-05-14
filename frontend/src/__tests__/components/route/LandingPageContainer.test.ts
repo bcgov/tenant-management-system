@@ -6,12 +6,14 @@ import { makeUserBceid, makeUserIdir } from '@/__tests__/__factories__'
 import { createMockAuthStore } from '@/__tests__/__helpers__/useAuthStore.mock'
 
 import LandingPageContainer from '@/components/route/LandingPageContainer.vue'
+import vuetify from '@/plugins/vuetify'
 
 let currentAuthStore = createMockAuthStore()
 
 vi.mock('@/stores/useAuthStore', () => ({
   useAuthStore: () => currentAuthStore,
 }))
+
 const mockPush = vi.fn()
 vi.mock('vue-router', () => ({
   useRouter: () => ({ push: mockPush }),
@@ -28,6 +30,7 @@ vi.mock('@/services/config.service', () => ({
 const mountComponent = () =>
   mount(LandingPageContainer, {
     global: {
+      plugins: [vuetify],
       stubs: {
         'v-btn': {
           props: ['class', 'color', 'variant'],

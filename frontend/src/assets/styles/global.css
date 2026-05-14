@@ -13,12 +13,24 @@ a:hover {
   text-decoration: underline;
 }
 
+h1 {
+  font: var(--bcds-typography-bold-h1);
+}
+
 h2 {
   font: var(--bcds-typography-bold-h2);
 }
 
+h3 {
+  font: var(--bcds-typography-bold-h3);
+}
+
 h4 {
   font: var(--bcds-typography-bold-h4);
+}
+
+h5 {
+  font: var(--bcds-typography-bold-h5);
 }
 
 h6 {
