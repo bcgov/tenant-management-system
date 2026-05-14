@@ -4,6 +4,7 @@ import {
   type SsoUserApiData,
   toSsoUserId,
 } from '@/models/ssouser.model'
+import { isIdpBceid, isIdpIdir } from '@/utils/identityProvider'
 
 export type UserId = string & { readonly __brand: 'UserId' }
 export const toUserId = (id: string): UserId => id as UserId
@@ -162,5 +163,23 @@ export class User {
       // Roles are not provided in search results
       [],
     )
+  }
+
+  /**
+   * Gets whether or not this user is a BCeID (basic or business) user.
+   *
+   * @returns true if a BCeID user, false otherwise.
+   */
+  isBceid(): boolean {
+    return isIdpBceid(this.ssoUser.idpType)
+  }
+
+  /**
+   * Gets whether or not this user is an IDIR (azureidir or idir) user.
+   *
+   * @returns true if an IDIR user, false otherwise.
+   */
+  isIdir(): boolean {
+    return isIdpIdir(this.ssoUser.idpType)
   }
 }
