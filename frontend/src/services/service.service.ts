@@ -9,10 +9,10 @@ const api = authenticatedAxios()
 
 export const serviceService = {
   /**
-   * Adds an existing connected service with a tenant.
+   * Adds an existing service to a tenant.
    *
    * @param tenantId - The unique identifier of the tenant.
-   * @param serviceId - The unique identifier of the connected service.
+   * @param serviceId - The unique identifier of the service.
    * @returns A promise that resolves when the request succeeds.
    * @throws Will throw an error if the API request fails.
    */
@@ -32,14 +32,14 @@ export const serviceService = {
 
       return response.data.data
     } catch (error) {
-      logApiError('Error adding connected service to tenant', error)
+      logApiError('Error adding service to tenant', error)
 
       throw error
     }
   },
 
   /**
-   * Retrieves all active services.
+   * Retrieves the active services.
    *
    * @returns A promise that resolves to an array of service data.
    * @throws Will throw an error if the API request fails.
@@ -50,14 +50,14 @@ export const serviceService = {
 
       return response.data.data.sharedServices
     } catch (error) {
-      logApiError('Error getting all connected services', error)
+      logApiError('Error getting services', error)
 
       throw error
     }
   },
 
   /**
-   * Retrieves all connected services associated with a group.
+   * Retrieves all services associated with a group.
    *
    * @param tenantId - The unique identifier of the tenant.
    * @param groupId - The unique identifier of the group.
@@ -73,14 +73,14 @@ export const serviceService = {
 
       return response.data.data.sharedServices
     } catch (error) {
-      logApiError('Error getting tenant connected services', error)
+      logApiError('Error getting tenant group services', error)
 
       throw error
     }
   },
 
   /**
-   * Retrieves all connected services associated with a specific tenant.
+   * Retrieves the services associated with a tenant.
    *
    * @param tenantId - The unique identifier of the tenant.
    * @returns A promise that resolves to an array of service data.
@@ -92,12 +92,19 @@ export const serviceService = {
 
       return response.data.data.sharedServices
     } catch (error) {
-      logApiError('Error getting tenant connected services', error)
+      logApiError('Error getting tenant services', error)
 
       throw error
     }
   },
 
+  /**
+   * Updates the roles for a group within a tenant.
+   *
+   * @param tenantId the ID of the tenant being updated.
+   * @param groupId the ID of the group being updated.
+   * @param data the group roles that are being updated.
+   */
   async updateTenantGroupServices(
     tenantId: TenantId,
     groupId: GroupId,
@@ -111,7 +118,7 @@ export const serviceService = {
 
       return response.data.data
     } catch (error) {
-      logApiError('Error updating connected services to group', error)
+      logApiError('Error updating tenant group service roles', error)
 
       throw error
     }
