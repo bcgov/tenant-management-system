@@ -626,6 +626,200 @@ paths:
               schema:
                 $ref: '#/components/schemas/InternalServerErrorResponse'
 
+  /v1/users/bcgovssousers/idir/search:
+    get:
+      summary: Search BC Gov SSO IDIR users
+      description: |
+        Searches IDIR users through the BC Gov SSO API and returns the upstream response.
+        At least one search parameter must be provided. When `dedup=true`, duplicate
+        records with the same `attributes.idir_user_guid[0]` are collapsed and the most
+        complete record is retained.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: firstName
+          in: query
+          required: false
+          schema:
+            type: string
+            minLength: 2
+          description: Search by first name
+          example: John
+        - name: lastName
+          in: query
+          required: false
+          schema:
+            type: string
+            minLength: 2
+          description: Search by last name
+          example: Doe
+        - name: email
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Search by email address
+          example: john.doe@gov.bc.ca
+        - name: guid
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Search by IDIR user GUID
+          example: F45AFBBD68C51D6F956BA3A1DE1878A1
+        - name: dedup
+          in: query
+          required: false
+          schema:
+            type: boolean
+          description: Deduplicate results by IDIR user GUID when true
+          example: true
+      responses:
+        '200':
+          description: IDIR users successfully retrieved from BC Gov SSO
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BCGovSSOIdirSearchResponse'
+              examples:
+                idirUsers:
+                  summary: IDIR search results
+                  value:
+                    data:
+                      - firstName: Jordan
+                        lastName: Smith
+                        email: jordan.smith@gov.bc.ca
+                        username: a1b2c3d4e5f6478899aabbccddeeff00@idir
+                        attributes:
+                          idir_user_guid: ['A1B2C3D4E5F6478899AABBCCDDEEFF00']
+                          idir_username: ['JSMITH']
+                          display_name: ['Smith, Jordan CITZ:EX']
+        '400':
+          description: Invalid input or BC Gov SSO bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+
+  /v1/users/bcgovssousers/bceid/search:
+    get:
+      summary: Search BC Gov SSO BCeID users
+      description: |
+        Searches basic and/or business BCeID users through the BC Gov SSO API and returns
+        the upstream response. `bceidType` and at least one search parameter are required.
+        When `dedup=true`, duplicate records with the same
+        `attributes.bceid_user_guid[0]` are collapsed and the most complete record is retained.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: bceidType
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [basic, business, both]
+          description: BCeID account type to search
+          example: basic
+        - name: guid
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Search by BCeID user GUID
+          example: F45AFBBD68C51D6F956BA3A1DE1878B1
+        - name: displayName
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Search by display name
+          example: Test User
+        - name: username
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Search by BCeID username
+          example: testuser
+        - name: email
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Search by email address
+          example: test.user@example.com
+        - name: dedup
+          in: query
+          required: false
+          schema:
+            type: boolean
+          description: Deduplicate results by BCeID user GUID when true
+          example: true
+      responses:
+        '200':
+          description: BCeID users successfully retrieved from BC Gov SSO
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BCGovSSOBceidSearchResponse'
+              examples:
+                basicBceidUsers:
+                  summary: Basic BCeID search results
+                  value:
+                    data:
+                      - firstName: Taylor
+                        lastName: Example
+                        email: taylor.example@example.com
+                        username: 0f1e2d3c4b5a69788796a5b4c3d2e1f0@bceidboth
+                        attributes:
+                          bceid_user_guid: ['0F1E2D3C4B5A69788796A5B4C3D2E1F0']
+                          bceid_username: ['taylor12345']
+                          display_name: ['Taylor Example']
+                businessBceidUsers:
+                  summary: Business BCeID search results
+                  value:
+                    data:
+                      - firstName: Morgan
+                        lastName: Business
+                        email: morgan.business@example.com
+                        username: 1234567890abcdef1234567890abcdef@bceidboth
+                        attributes:
+                          bceid_business_guid: ['9F8E7D6C5B4A39281726354433221100']
+                          bceid_business_name: ['Example Business']
+                          bceid_user_guid: ['1234567890ABCDEF1234567890ABCDEF']
+                          bceid_username: ['businessuser1']
+                          display_name: ['Morgan Business']
+        '400':
+          description: Invalid input or BC Gov SSO BCeID bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+
   /v1/tenants/{tenantId}/users/{tenantUserId}/roles:
     post:
       summary: Assign roles to a user in a tenant
@@ -3095,6 +3289,124 @@ components:
           type: string
           format: date-time
           example: '2024-03-21T10:00:00Z'
+
+    BCGovSSOAttributeMap:
+      type: object
+      description: Attribute map returned by BC Gov SSO. Values are usually string arrays.
+      additionalProperties:
+        type: array
+        items:
+          type: string
+      example:
+        display_name: ['Doe, John']
+
+    BCGovSSOIdirUser:
+      type: object
+      description: IDIR user record returned by BC Gov SSO. Additional upstream fields may be present.
+      additionalProperties: true
+      properties:
+        firstName:
+          type: string
+          example: John
+        lastName:
+          type: string
+          example: Doe
+        email:
+          type: string
+          nullable: true
+          example: john.doe@gov.bc.ca
+        username:
+          type: string
+          example: guid-1@idir
+        attributes:
+          allOf:
+            - $ref: '#/components/schemas/BCGovSSOAttributeMap'
+            - type: object
+              properties:
+                idir_user_guid:
+                  type: array
+                  items:
+                    type: string
+                  example: ['A1B2C3D4E5F6478899AABBCCDDEEFF00']
+                idir_username:
+                  type: array
+                  items:
+                    type: string
+                  example: ['JDOE']
+                display_name:
+                  type: array
+                  items:
+                    type: string
+                  example: ['Doe, John']
+
+    BCGovSSOBceidUser:
+      type: object
+      description: BCeID user record returned by BC Gov SSO. Additional upstream fields may be present.
+      additionalProperties: true
+      properties:
+        firstName:
+          type: string
+          example: Test
+        lastName:
+          type: string
+          example: User
+        email:
+          type: string
+          nullable: true
+          example: test.user@example.com
+        username:
+          type: string
+          example: testuser@bceidbasic
+        attributes:
+          allOf:
+            - $ref: '#/components/schemas/BCGovSSOAttributeMap'
+            - type: object
+              properties:
+                bceid_user_guid:
+                  type: array
+                  items:
+                    type: string
+                  example: ['0F1E2D3C4B5A69788796A5B4C3D2E1F0']
+                bceid_username:
+                  type: array
+                  items:
+                    type: string
+                  example: ['TESTUSER']
+                display_name:
+                  type: array
+                  items:
+                    type: string
+                  example: ['Test User']
+                bceid_business_guid:
+                  type: array
+                  items:
+                    type: string
+                  example: ['9F8E7D6C5B4A39281726354433221100']
+                bceid_business_name:
+                  type: array
+                  items:
+                    type: string
+                  example: ['Example Business']
+
+    BCGovSSOIdirSearchResponse:
+      type: object
+      description: Pass-through BC Gov SSO IDIR search response.
+      additionalProperties: true
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/BCGovSSOIdirUser'
+
+    BCGovSSOBceidSearchResponse:
+      type: object
+      description: Pass-through BC Gov SSO BCeID search response.
+      additionalProperties: true
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/BCGovSSOBceidUser'
 
     Role:
       type: object
