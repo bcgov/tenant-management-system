@@ -167,7 +167,7 @@ export class TMRepository {
     const creator = await this.manager.findOne(SSOUser, {
       where: { ssoUserId },
     })
-    return creator?.userName
+    return creator?.displayName
   }
 
   private async getSsoUser(ssoUserId: string) {

@@ -194,6 +194,9 @@ describe('Tenant Management API', () => {
       ;(mockTMRepository.saveGroup as jest.Mock).mockImplementation(
         async () => mockGroup as unknown as Group,
       )
+      ;(mockTMRepository.getSsoUserDisplayName as jest.Mock).mockResolvedValue(
+        'Test User',
+      )
 
       const response = await request(app)
         .post(`/v1/tenants/${tenantId}/groups`)
@@ -207,6 +210,8 @@ describe('Tenant Management API', () => {
             name: mockGroup.name,
             description: mockGroup.description,
             tenant: { id: tenantId },
+            createdBy: 'test-user',
+            createdByDisplayName: 'Test User',
           },
         },
       })
@@ -252,6 +257,9 @@ describe('Tenant Management API', () => {
       ;(mockTMRepository.saveGroup as jest.Mock).mockImplementation(
         async () => mockGroupWithUser as unknown as Group,
       )
+      ;(mockTMRepository.getSsoUserDisplayName as jest.Mock).mockResolvedValue(
+        'Test User',
+      )
 
       const response = await request(app)
         .post(`/v1/tenants/${tenantId}/groups`)
@@ -263,6 +271,8 @@ describe('Tenant Management API', () => {
           group: {
             id: mockGroupWithUser.id,
             name: mockGroupWithUser.name,
+            createdBy: 'test-user',
+            createdByDisplayName: 'Test User',
             users: expect.arrayContaining([
               expect.objectContaining({
                 tenantUser: { id: tenantUserId },
