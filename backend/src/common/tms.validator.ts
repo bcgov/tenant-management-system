@@ -141,10 +141,6 @@ export default {
       lastName: Joi.string().min(2),
       email: Joi.string(),
       guid: Joi.string(),
-      dedup: Joi.alternatives().try(
-        Joi.boolean(),
-        Joi.string().valid('true', 'false', ''),
-      ),
     }).or('firstName', 'lastName', 'email', 'guid'),
   },
 
@@ -155,10 +151,6 @@ export default {
       displayName: Joi.string(),
       username: Joi.string(),
       email: Joi.string(),
-      dedup: Joi.alternatives().try(
-        Joi.boolean(),
-        Joi.string().valid('true', 'false', ''),
-      ),
     }).or('guid', 'displayName', 'username', 'email'),
   },
 
