@@ -124,10 +124,22 @@ export class TMService {
       updatedBy: req.decodedJwt?.idir_user_guid || 'system',
     }
     const updatedGroup: Group = await this.tmRepository.updateGroup(input)
+    const createdByDisplayName =
+      updatedGroup.createdBy === 'system'
+        ? 'system'
+        : updatedGroup.createdBy
+          ? await this.tmRepository.getSsoUserDisplayName(
+              updatedGroup.createdBy,
+            )
+          : undefined
 
     return {
       data: {
-        group: updatedGroup,
+        group: {
+          ...updatedGroup,
+          createdByDisplayName:
+            createdByDisplayName || updatedGroup.createdBy || undefined,
+        },
       },
     }
   }

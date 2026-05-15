@@ -412,6 +412,38 @@ describe('Tenant Management API', () => {
       expect(response.body.message).toBe('Validation Failed')
     })
 
+    it('should create a group with a single-character name', async () => {
+      const singleCharacterGroupData = {
+        ...validGroupData,
+        name: 'A',
+      }
+      const mockGroup = {
+        id: '123e4567-e89b-12d3-a456-426614174001',
+        name: singleCharacterGroupData.name,
+        description: singleCharacterGroupData.description,
+        tenant: { id: tenantId },
+        users: [],
+        sharedServiceRoles: [],
+        createdBy: 'system',
+        updatedBy: 'system',
+      }
+
+      mockTMRepository.saveGroup.mockResolvedValue(
+        mockGroup as unknown as SaveGroupResult,
+      )
+
+      const response = await request(app)
+        .post(`/v1/tenants/${tenantId}/groups`)
+        .send(singleCharacterGroupData)
+
+      expect(response.status).toBe(201)
+      expect(response.body.data.group).toMatchObject({
+        name: 'A',
+        createdBy: 'system',
+        createdByDisplayName: 'system',
+      })
+    })
+
     it('should handle very long group name', async () => {
       const longName = 'a'.repeat(500)
       const groupDataWithLongName = {
@@ -488,6 +520,9 @@ describe('Tenant Management API', () => {
       mockTMRepository.updateGroup.mockResolvedValue(
         mockUpdatedGroup as unknown as UpdateGroupResult,
       )
+      ;(mockTMRepository.getSsoUserDisplayName as jest.Mock).mockResolvedValue(
+        'Test User',
+      )
 
       const response = await request(app)
         .put(`/v1/tenants/${tenantId}/groups/${groupId}`)
@@ -501,6 +536,8 @@ describe('Tenant Management API', () => {
             name: validUpdateData.name,
             description: validUpdateData.description,
             tenant: { id: tenantId },
+            createdBy: 'test-user',
+            createdByDisplayName: 'Test User',
           },
         },
       })
@@ -675,6 +712,40 @@ describe('Tenant Management API', () => {
 
       expect(response.status).toBe(400)
       expect(response.body.message).toBe('Validation Failed')
+    })
+
+    it('should update a group with a single-character name', async () => {
+      const updateData = {
+        name: 'A',
+      }
+      const mockUpdatedGroup = {
+        id: groupId,
+        name: updateData.name,
+        description: 'Original Description',
+        tenant: { id: tenantId },
+        users: [],
+        createdBy: 'test-user',
+        updatedBy: 'test-user',
+      }
+
+      mockTMRepository.updateGroup.mockResolvedValue(
+        mockUpdatedGroup as unknown as UpdateGroupResult,
+      )
+      ;(mockTMRepository.getSsoUserDisplayName as jest.Mock).mockResolvedValue(
+        'Test User',
+      )
+
+      const response = await request(app)
+        .put(`/v1/tenants/${tenantId}/groups/${groupId}`)
+        .send(updateData)
+
+      expect(response.status).toBe(200)
+      expect(response.body.data.group).toMatchObject({
+        id: groupId,
+        name: 'A',
+        createdBy: 'test-user',
+        createdByDisplayName: 'Test User',
+      })
     })
   })
 

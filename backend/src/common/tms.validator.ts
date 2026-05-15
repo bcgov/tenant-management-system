@@ -251,7 +251,7 @@ export default {
       name: Joi.string()
         .min(1)
         .max(30)
-        .pattern(/^\S.*\S$/)
+        .pattern(/^\S(?:.*\S)?$/)
         .required(),
       description: Joi.string().min(1).max(500).optional(),
       tenantUserId: Joi.string().guid().optional(),
@@ -267,7 +267,7 @@ export default {
       name: Joi.string()
         .min(1)
         .max(30)
-        .pattern(/^\S.*\S$/)
+        .pattern(/^\S(?:.*\S)?$/)
         .optional(),
       description: Joi.string().min(1).max(500).optional(),
     }).options({ abortEarly: false, convert: false }),

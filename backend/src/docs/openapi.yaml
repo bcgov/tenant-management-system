@@ -2020,7 +2020,7 @@ paths:
                   type: string
                   minLength: 1
                   maxLength: 30
-                  pattern: '^\S.*\S$'
+                  pattern: '^\S(?:.*\S)?$'
                   example: 'Development Team'
                 description:
                   type: string
@@ -2259,7 +2259,7 @@ paths:
                   type: string
                   minLength: 1
                   maxLength: 30
-                  pattern: '^\S.*\S$'
+                  pattern: '^\S(?:.*\S)?$'
                   example: 'Updated Development Team'
                 description:
                   type: string
