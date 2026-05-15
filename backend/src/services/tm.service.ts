@@ -44,16 +44,20 @@ export class TMService {
         req.body.user?.ssoUserId || req.decodedJwt?.idir_user_guid || 'system',
     }
     const savedGroup: Group = await this.tmRepository.saveGroup(input)
-    if (savedGroup?.createdBy && savedGroup.createdBy !== 'system') {
-      const creatorDisplayName = await this.tmRepository.getSsoUserDisplayName(
-        savedGroup.createdBy,
-      )
-      savedGroup.createdBy = creatorDisplayName || savedGroup.createdBy
-    }
+    const createdByDisplayName =
+      savedGroup.createdBy === 'system'
+        ? 'system'
+        : savedGroup.createdBy
+          ? await this.tmRepository.getSsoUserDisplayName(savedGroup.createdBy)
+          : undefined
 
     return {
       data: {
-        group: savedGroup,
+        group: {
+          ...savedGroup,
+          createdByDisplayName:
+            createdByDisplayName || savedGroup.createdBy || undefined,
+        },
       },
     }
   }
@@ -120,10 +124,22 @@ export class TMService {
       updatedBy: req.decodedJwt?.idir_user_guid || 'system',
     }
     const updatedGroup: Group = await this.tmRepository.updateGroup(input)
+    const createdByDisplayName =
+      updatedGroup.createdBy === 'system'
+        ? 'system'
+        : updatedGroup.createdBy
+          ? await this.tmRepository.getSsoUserDisplayName(
+              updatedGroup.createdBy,
+            )
+          : undefined
 
     return {
       data: {
-        group: updatedGroup,
+        group: {
+          ...updatedGroup,
+          createdByDisplayName:
+            createdByDisplayName || updatedGroup.createdBy || undefined,
+        },
       },
     }
   }

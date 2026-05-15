@@ -141,10 +141,6 @@ export default {
       lastName: Joi.string().min(2),
       email: Joi.string(),
       guid: Joi.string(),
-      dedup: Joi.alternatives().try(
-        Joi.boolean(),
-        Joi.string().valid('true', 'false', ''),
-      ),
     }).or('firstName', 'lastName', 'email', 'guid'),
   },
 
@@ -155,10 +151,6 @@ export default {
       displayName: Joi.string(),
       username: Joi.string(),
       email: Joi.string(),
-      dedup: Joi.alternatives().try(
-        Joi.boolean(),
-        Joi.string().valid('true', 'false', ''),
-      ),
     }).or('guid', 'displayName', 'username', 'email'),
   },
 
@@ -251,7 +243,7 @@ export default {
       name: Joi.string()
         .min(1)
         .max(30)
-        .pattern(/^\S.*\S$/)
+        .pattern(/^\S(?:.*\S)?$/)
         .required(),
       description: Joi.string().min(1).max(500).optional(),
       tenantUserId: Joi.string().guid().optional(),
@@ -267,7 +259,7 @@ export default {
       name: Joi.string()
         .min(1)
         .max(30)
-        .pattern(/^\S.*\S$/)
+        .pattern(/^\S(?:.*\S)?$/)
         .optional(),
       description: Joi.string().min(1).max(500).optional(),
     }).options({ abortEarly: false, convert: false }),

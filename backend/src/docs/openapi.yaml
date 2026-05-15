@@ -631,9 +631,8 @@ paths:
       summary: Search BC Gov SSO IDIR users
       description: |
         Searches IDIR users through the BC Gov SSO API and returns the upstream response.
-        At least one search parameter must be provided. When `dedup=true`, duplicate
-        records with the same `attributes.idir_user_guid[0]` are collapsed and the most
-        complete record is retained.
+        At least one search parameter must be provided. Duplicate records with the same
+        `attributes.idir_user_guid[0]` are collapsed and the most complete record is retained.
       security:
         - bearerAuth: []
       parameters:
@@ -667,13 +666,6 @@ paths:
             type: string
           description: Search by IDIR user GUID
           example: F45AFBBD68C51D6F956BA3A1DE1878A1
-        - name: dedup
-          in: query
-          required: false
-          schema:
-            type: boolean
-          description: Deduplicate results by IDIR user GUID when true
-          example: true
       responses:
         '200':
           description: IDIR users successfully retrieved from BC Gov SSO
@@ -719,8 +711,8 @@ paths:
       description: |
         Searches basic and/or business BCeID users through the BC Gov SSO API and returns
         the upstream response. `bceidType` and at least one search parameter are required.
-        When `dedup=true`, duplicate records with the same
-        `attributes.bceid_user_guid[0]` are collapsed and the most complete record is retained.
+        Duplicate records with the same `attributes.bceid_user_guid[0]` are collapsed and
+        the most complete record is retained.
       security:
         - bearerAuth: []
       parameters:
@@ -760,13 +752,6 @@ paths:
             type: string
           description: Search by email address
           example: test.user@example.com
-        - name: dedup
-          in: query
-          required: false
-          schema:
-            type: boolean
-          description: Deduplicate results by BCeID user GUID when true
-          example: true
       responses:
         '200':
           description: BCeID users successfully retrieved from BC Gov SSO
@@ -2020,7 +2005,7 @@ paths:
                   type: string
                   minLength: 1
                   maxLength: 30
-                  pattern: '^\S.*\S$'
+                  pattern: '^\S(?:.*\S)?$'
                   example: 'Development Team'
                 description:
                   type: string
@@ -2259,7 +2244,7 @@ paths:
                   type: string
                   minLength: 1
                   maxLength: 30
-                  pattern: '^\S.*\S$'
+                  pattern: '^\S(?:.*\S)?$'
                   example: 'Updated Development Team'
                 description:
                   type: string

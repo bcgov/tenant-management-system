@@ -5650,7 +5650,7 @@ describe('Tenant API', () => {
       expect(response.body).toEqual(mockSearchResults)
     })
 
-    it('should deduplicate IDIR users by guid when dedup=true', async () => {
+    it('should deduplicate IDIR users by guid by default', async () => {
       const mockSearchResults = {
         data: [
           {
@@ -5701,7 +5701,7 @@ describe('Tenant API', () => {
 
       const response = await request(app)
         .get('/v1/users/bcgovssousers/idir/search')
-        .query({ email: 'john.doe@gov.bc.ca', dedup: 'true' })
+        .query({ email: 'john.doe@gov.bc.ca' })
 
       expect(response.status).toBe(200)
       expect(response.body).toEqual({
@@ -5743,6 +5743,15 @@ describe('Tenant API', () => {
       const response = await request(app)
         .get('/v1/users/bcgovssousers/idir/search')
         .query({ firstName: 'A' })
+
+      expect(response.status).toBe(400)
+      expect(response.body.message).toBe('Validation Failed')
+    })
+
+    it('should return 400 when dedup query parameter is provided', async () => {
+      const response = await request(app)
+        .get('/v1/users/bcgovssousers/idir/search')
+        .query({ email: 'john.doe@gov.bc.ca', dedup: 'true' })
 
       expect(response.status).toBe(400)
       expect(response.body.message).toBe('Validation Failed')
@@ -5906,7 +5915,7 @@ describe('Tenant API', () => {
       expect(response.body).toEqual(mockSearchResults)
     })
 
-    it('should deduplicate BCEID users by guid when dedup=true', async () => {
+    it('should deduplicate BCEID users by guid by default', async () => {
       const mockSearchResults = {
         data: [
           {
@@ -5960,7 +5969,6 @@ describe('Tenant API', () => {
         .query({
           bceidType: 'both',
           username: 'user1',
-          dedup: 'true',
         })
 
       expect(response.status).toBe(200)
@@ -6005,6 +6013,19 @@ describe('Tenant API', () => {
         .query({
           bceidType: 'invalid',
           guid: 'F45AFBBD68C51D6F956BA3A1DE1878B1',
+        })
+
+      expect(response.status).toBe(400)
+      expect(response.body.message).toBe('Validation Failed')
+    })
+
+    it('should return 400 when dedup query parameter is provided', async () => {
+      const response = await request(app)
+        .get('/v1/users/bcgovssousers/bceid/search')
+        .query({
+          bceidType: 'basic',
+          guid: 'F45AFBBD68C51D6F956BA3A1DE1878B1',
+          dedup: 'true',
         })
 
       expect(response.status).toBe(400)

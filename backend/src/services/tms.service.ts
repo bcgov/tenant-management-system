@@ -489,20 +489,10 @@ export class TMSService {
   public async searchBCGOVSSOUsers(req: Request) {
     try {
       const token: string = await this.getToken()
-      const { dedup, ...queryParams } = req.query
       const response = await axios.get(config.bcgovSsoApi.url, {
         headers: { Authorization: `Bearer ${token}` },
-        params: queryParams,
+        params: req.query,
       })
-
-      const dedupValue = dedup as unknown
-      const shouldDedup =
-        dedupValue === true ||
-        (typeof dedupValue === 'string' && dedupValue === 'true')
-
-      if (!shouldDedup) {
-        return response.data
-      }
 
       return this.dedupIdirSearchResults(response.data)
     } catch (error: unknown) {
@@ -535,19 +525,10 @@ export class TMSService {
   public async searchBCGOVSSOBceidUsers(req: Request) {
     try {
       const token: string = await this.getToken()
-      const { dedup, ...queryParams } = req.query
       const response = await axios.get(config.bcgovSsoApi.urlBceid, {
         headers: { Authorization: `Bearer ${token}` },
-        params: queryParams,
+        params: req.query,
       })
-      const dedupValue = dedup as unknown
-      const shouldDedup =
-        dedupValue === true ||
-        (typeof dedupValue === 'string' && dedupValue === 'true')
-
-      if (!shouldDedup) {
-        return response.data
-      }
 
       return this.dedupBceidSearchResults(response.data)
     } catch (error: unknown) {
