@@ -66,13 +66,13 @@ jobs:
         --set global.autoscaling=${{ inputs.autoscaling }}
         --set frontend.autoscaling.enabled=${{ inputs.autoscaling }}
         --set frontend.autoscaling.minReplicas=2
-        --set frontend.autoscaling.maxReplicas=3
+        --set frontend.autoscaling.maxReplicas=5
         --set frontend.deploymentStrategy=RollingUpdate
         --set frontend.pdb.enabled=true
         --set frontend.pdb.minAvailable=1
         --set backend.autoscaling.enabled=${{ inputs.autoscaling }}
         --set backend.autoscaling.minReplicas=2
-        --set backend.autoscaling.maxReplicas=3
+        --set backend.autoscaling.maxReplicas=5
         --set backend.deploymentStrategy=RollingUpdate
         --set backend.pdb.enabled=true
         --set backend.pdb.minAvailable=1
