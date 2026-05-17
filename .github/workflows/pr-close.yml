@@ -95,7 +95,7 @@ jobs:
           oc_server: ${{ vars.OC_SERVER }}
           release_name: cstar-db
           values_file: charts/crunchy/values-silver-dev.yml
-          force_cleanup: ${{ inputs.force_cleanup }}
+          force_cleanup: ${{ inputs.force_cleanup || true }}
   
   cleanup-db-gold-dev: # TODO move it off to another action later.
     name: Remove DB User from Crunchy
@@ -110,7 +110,7 @@ jobs:
           oc_server: ${{ vars.OC_SERVER }}
           release_name: cstar-db
           values_file: charts/crunchy/values-gold-dev.yml
-          force_cleanup: ${{ inputs.force_cleanup }}
+          force_cleanup: ${{ inputs.force_cleanup || true }}
   
   cleanup-db-golddr-dev: # TODO move it off to another action later.
     name: Remove DB User from Crunchy
@@ -125,4 +125,4 @@ jobs:
           oc_server: ${{ vars.OC_SERVER }}
           release_name: cstar-db
           values_file: charts/crunchy/values-golddr-dev.yml
-          force_cleanup: ${{ inputs.force_cleanup }}
+          force_cleanup: ${{ inputs.force_cleanup || true }}
