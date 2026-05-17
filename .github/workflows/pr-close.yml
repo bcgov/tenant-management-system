@@ -74,6 +74,7 @@ jobs:
 
   cleanup-db-silver-dev: # TODO move it off to another action later.
     name: Remove DB User from Crunchy
+    environment: silver-dev
     runs-on: ubuntu-24.04
     steps:
       - uses: bcgov/action-crunchy@a109166ff26880dc75676492a33b816ac0ce392f # v1.2.6
@@ -82,12 +83,12 @@ jobs:
           oc_namespace: ${{ secrets.OC_NAMESPACE }}
           oc_token: ${{ secrets.OC_TOKEN }}
           oc_server: ${{ vars.OC_SERVER }}
-          environment: silver-dev
           release_name: cstar-db
           values_file: charts/crunchy/values-silver-dev.yml
   
   cleanup-db-gold-dev: # TODO move it off to another action later.
     name: Remove DB User from Crunchy
+    environment: gold-dev
     runs-on: ubuntu-24.04
     steps:
       - uses: bcgov/action-crunchy@a109166ff26880dc75676492a33b816ac0ce392f # v1.2.6
@@ -96,12 +97,12 @@ jobs:
           oc_namespace: ${{ secrets.OC_NAMESPACE }}
           oc_token: ${{ secrets.OC_TOKEN }}
           oc_server: ${{ vars.OC_SERVER }}
-          environment: gold-dev
           release_name: cstar-db
           values_file: charts/crunchy/values-gold-dev.yml
   
   cleanup-db-golddr-dev: # TODO move it off to another action later.
     name: Remove DB User from Crunchy
+    environment: golddr-dev
     runs-on: ubuntu-24.04
     steps:
       - uses: bcgov/action-crunchy@a109166ff26880dc75676492a33b816ac0ce392f # v1.2.6
@@ -110,6 +111,5 @@ jobs:
           oc_namespace: ${{ secrets.OC_NAMESPACE }}
           oc_token: ${{ secrets.OC_TOKEN }}
           oc_server: ${{ vars.OC_SERVER }}
-          environment: golddr-dev
           release_name: cstar-db
           values_file: charts/crunchy/values-golddr-dev.yml
