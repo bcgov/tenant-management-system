@@ -39,16 +39,6 @@ jobs:
         id: pr
         run: echo pr=${{ steps.pr_no.outputs.pr || inputs.pr}} >> $GITHUB_OUTPUT
 
-  deploys-silver-dev:
-    name: Deploys Silver Dev - (${{ needs.vars.outputs.pr }})
-    needs: [vars]
-    uses: ./.github/workflows/silver-dev.yml
-    secrets: inherit
-    with:
-      release_name: cstar-dev
-      tag: ${{ needs.vars.outputs.pr }}
-      db_user: appproxy
-  
   deploys-gold-dev:
     name: Deploys Gold Dev - (${{ needs.vars.outputs.pr }})
     needs: [vars]
@@ -87,16 +77,6 @@ jobs:
       image_tag: dev
       target: dev
 
-  deploys-silver-test:
-    name: Deploys Silver Test - (${{ needs.vars.outputs.pr }})
-    needs: [vars, dev-tests]
-    uses: ./.github/workflows/silver-test.yml
-    secrets: inherit
-    with:
-      release_name: cstar-test
-      tag: ${{ needs.vars.outputs.pr }}
-      db_user: appproxy
-
   deploys-gold-test:
     name: Deploys Gold Test - (${{ needs.vars.outputs.pr }})
     needs: [vars, dev-tests]
@@ -134,16 +114,6 @@ jobs:
     with:
       image_tag: test
       target: test
-
-  deploys-silver-prod:
-    name: Deploys Silver Prod - (${{ needs.vars.outputs.pr }})
-    needs: [vars, test-tests]
-    uses: ./.github/workflows/silver-prod.yml
-    secrets: inherit
-    with:
-      release_name: cstar-prod
-      tag: ${{ needs.vars.outputs.pr }}
-      db_user: appproxy
 
   deploys-gold-prod:
     name: Deploys Gold Prod - (${{ needs.vars.outputs.pr }})

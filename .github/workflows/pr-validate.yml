@@ -18,9 +18,9 @@ jobs:
     uses: bcgov/quickstart-openshift-helpers/.github/workflows/.pr-validate.yml@ca6579bdadf383a2513397081f963889b92823a4 # v1.1.0
     with:
       markdown_links: |
-        - [Frontend](https://cstar-${{ github.event.number }}.apps.silver.devops.gov.bc.ca)
-        - [Backend](https://cstar-${{ github.event.number }}.apps.silver.devops.gov.bc.ca/api/v1)
-        - [OpenAPI](https://cstar-${{ github.event.number }}.apps.silver.devops.gov.bc.ca/api/v1/docs)
+        - [Frontend](https://cstar-${{ github.event.number }}.apps.gold.devops.gov.bc.ca)
+        - [Backend](https://cstar-${{ github.event.number }}.apps.gold.devops.gov.bc.ca/api/v1)
+        - [OpenAPI](https://cstar-${{ github.event.number }}.apps.gold.devops.gov.bc.ca/api/v1/docs)
 
   results:
     name: Validate Results

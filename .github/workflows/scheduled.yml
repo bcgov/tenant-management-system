@@ -83,4 +83,4 @@ jobs:
           artifact_name: ${{ matrix.name }}
           issue_title: 'ZAP Security Report: ${{ matrix.name }}'
           token: ${{ secrets.GITHUB_TOKEN }}
-          target: https://cstar-dev.apps.silver.devops.gov.bc.ca/${{ matrix.path }}
+          target: https://cstar-dev.apps.gold.devops.gov.bc.ca/${{ matrix.path }}
