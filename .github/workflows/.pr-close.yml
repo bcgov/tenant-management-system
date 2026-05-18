@@ -61,13 +61,13 @@ on:
         description: 'OpenShift token'
         required: false
       oc_server:
-        description: 'OpenShift server, defaults to https://api.silver.devops.gov.bc.ca:6443'
+        description: 'OpenShift server, defaults to https://api.gold.devops.gov.bc.ca:6443'
         required: false
 
 permissions: {}
 
 env:
-  DEFAULT_OC_SERVER: https://api.silver.devops.gov.bc.ca:6443
+  DEFAULT_OC_SERVER: https://api.gold.devops.gov.bc.ca:6443
 
 jobs:
   vars:

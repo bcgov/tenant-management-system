@@ -2523,7 +2523,7 @@ true
 			<td>global.domain</td>
 			<td>string</td>
 			<td><pre lang="json">
-"apps.silver.devops.gov.bc.ca"
+"apps.gold.devops.gov.bc.ca"
 </pre>
 </td>
 			<td></td>
@@ -5126,7 +5126,7 @@ true
 			<td>global.domain</td>
 			<td>string</td>
 			<td><pre lang="json">
-"apps.silver.devops.gov.bc.ca"
+"apps.gold.devops.gov.bc.ca"
 </pre>
 </td>
 			<td></td>

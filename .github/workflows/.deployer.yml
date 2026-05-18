@@ -22,7 +22,7 @@ on:
         required: false
         type: string
       oc_server:
-        default: https://api.silver.devops.gov.bc.ca:6443
+        default: https://api.gold.devops.gov.bc.ca:6443
         description: OpenShift server
         required: false
         type: string
