@@ -7,12 +7,22 @@ on:
         description: 'Release target to uninstall.  expects pr or dev,test,prod,etc'
         required: true
         type: string
+      force_cleanup:
+        description: 'Force database cleanup.  Sometimes we want to keep the db'
+        required: false
+        type: string
+        default: true
   workflow_call:
     inputs:
       target:
         description: 'Release target to uninstall.  expects pr or dev,test,prod,etc'
         required: true
         type: string
+      force_cleanup:
+        description: 'Force database cleanup.  Sometimes we want to keep the db'
+        required: false
+        type: string
+        default: true
   pull_request:
     types: [closed]
 
@@ -74,6 +84,7 @@ jobs:
 
   cleanup-db-silver-dev: # TODO move it off to another action later.
     name: Remove DB User from Crunchy
+    environment: silver-dev
     runs-on: ubuntu-24.04
     steps:
       - uses: bcgov/action-crunchy@a109166ff26880dc75676492a33b816ac0ce392f # v1.2.6
@@ -82,12 +93,13 @@ jobs:
           oc_namespace: ${{ secrets.OC_NAMESPACE }}
           oc_token: ${{ secrets.OC_TOKEN }}
           oc_server: ${{ vars.OC_SERVER }}
-          environment: silver-dev
           release_name: cstar-db
           values_file: charts/crunchy/values-silver-dev.yml
+          force_cleanup: ${{ inputs.force_cleanup || true }}
   
   cleanup-db-gold-dev: # TODO move it off to another action later.
     name: Remove DB User from Crunchy
+    environment: gold-dev
     runs-on: ubuntu-24.04
     steps:
       - uses: bcgov/action-crunchy@a109166ff26880dc75676492a33b816ac0ce392f # v1.2.6
@@ -96,12 +108,13 @@ jobs:
           oc_namespace: ${{ secrets.OC_NAMESPACE }}
           oc_token: ${{ secrets.OC_TOKEN }}
           oc_server: ${{ vars.OC_SERVER }}
-          environment: gold-dev
           release_name: cstar-db
           values_file: charts/crunchy/values-gold-dev.yml
+          force_cleanup: ${{ inputs.force_cleanup || true }}
   
   cleanup-db-golddr-dev: # TODO move it off to another action later.
     name: Remove DB User from Crunchy
+    environment: golddr-dev
     runs-on: ubuntu-24.04
     steps:
       - uses: bcgov/action-crunchy@a109166ff26880dc75676492a33b816ac0ce392f # v1.2.6
@@ -110,6 +123,6 @@ jobs:
           oc_namespace: ${{ secrets.OC_NAMESPACE }}
           oc_token: ${{ secrets.OC_TOKEN }}
           oc_server: ${{ vars.OC_SERVER }}
-          environment: golddr-dev
           release_name: cstar-db
           values_file: charts/crunchy/values-golddr-dev.yml
+          force_cleanup: ${{ inputs.force_cleanup || true }}
