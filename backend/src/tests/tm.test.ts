@@ -1744,36 +1744,52 @@ describe('Tenant Management API', () => {
         {
           id: '123e4567-e89b-12d3-a456-426614174002',
           name: 'Test Service 1',
+          displayName: 'Test Service 1 Display',
           clientIdentifier: 'test-service-1',
+          landingPageUrl: 'https://service1.example.com',
           description: 'Test Service 1 Description',
-          isActive: true,
-          roles: [
+          createdDateTime: new Date(),
+          updatedDateTime: new Date(),
+          createdBy: 'test-user',
+          updatedBy: 'test-user',
+          sharedServiceRoles: [
             {
               id: '123e4567-e89b-12d3-a456-426614174003',
               name: 'Admin Role',
               description: 'Administrator role',
               enabled: true,
+              createdDateTime: new Date(),
+              createdBy: 'test-user',
             },
             {
               id: '123e4567-e89b-12d3-a456-426614174004',
               name: 'User Role',
               description: 'User role',
               enabled: false,
+              createdDateTime: new Date(),
+              createdBy: 'test-user',
             },
           ],
         },
         {
           id: '123e4567-e89b-12d3-a456-426614174005',
           name: 'Test Service 2',
+          displayName: 'Test Service 2 Display',
           clientIdentifier: 'test-service-2',
+          landingPageUrl: 'https://service2.example.com',
           description: 'Test Service 2 Description',
-          isActive: true,
-          roles: [
+          createdDateTime: new Date(),
+          updatedDateTime: new Date(),
+          createdBy: 'test-user',
+          updatedBy: 'test-user',
+          sharedServiceRoles: [
             {
               id: '123e4567-e89b-12d3-a456-426614174006',
               name: 'Viewer Role',
               description: 'Viewer role',
               enabled: true,
+              createdDateTime: new Date(),
+              createdBy: 'test-user',
             },
           ],
         },
@@ -1794,10 +1810,11 @@ describe('Tenant Management API', () => {
             {
               id: '123e4567-e89b-12d3-a456-426614174002',
               name: 'Test Service 1',
+              displayName: 'Test Service 1 Display',
               clientIdentifier: 'test-service-1',
+              landingPageUrl: 'https://service1.example.com',
               description: 'Test Service 1 Description',
-              isActive: true,
-              roles: [
+              sharedServiceRoles: [
                 {
                   id: '123e4567-e89b-12d3-a456-426614174003',
                   name: 'Admin Role',
@@ -1815,10 +1832,11 @@ describe('Tenant Management API', () => {
             {
               id: '123e4567-e89b-12d3-a456-426614174005',
               name: 'Test Service 2',
+              displayName: 'Test Service 2 Display',
               clientIdentifier: 'test-service-2',
+              landingPageUrl: 'https://service2.example.com',
               description: 'Test Service 2 Description',
-              isActive: true,
-              roles: [
+              sharedServiceRoles: [
                 {
                   id: '123e4567-e89b-12d3-a456-426614174006',
                   name: 'Viewer Role',
@@ -1865,18 +1883,28 @@ describe('Tenant Management API', () => {
         {
           id: '123e4567-e89b-12d3-a456-426614174002',
           name: 'Alpha Service',
+          displayName: 'Alpha Service Display',
           clientIdentifier: 'alpha-service',
+          landingPageUrl: 'https://alpha.example.com',
           description: 'Alpha Service Description',
-          isActive: true,
-          roles: [],
+          createdDateTime: new Date(),
+          updatedDateTime: new Date(),
+          createdBy: 'test-user',
+          updatedBy: 'test-user',
+          sharedServiceRoles: [],
         },
         {
           id: '123e4567-e89b-12d3-a456-426614174005',
           name: 'Zebra Service',
+          displayName: 'Zebra Service Display',
           clientIdentifier: 'zebra-service',
+          landingPageUrl: 'https://zebra.example.com',
           description: 'Zebra Service Description',
-          isActive: true,
-          roles: [],
+          createdDateTime: new Date(),
+          updatedDateTime: new Date(),
+          createdBy: 'test-user',
+          updatedBy: 'test-user',
+          sharedServiceRoles: [],
         },
       ]
 
@@ -1988,36 +2016,52 @@ describe('Tenant Management API', () => {
         {
           id: '123e4567-e89b-12d3-a456-426614174002',
           name: 'Test Service 1',
+          displayName: 'Test Service 1 Display',
           clientIdentifier: 'test-service-1',
+          landingPageUrl: 'https://service1.example.com',
           description: 'Test Service 1 Description',
-          isActive: true,
-          roles: [
+          createdDateTime: new Date(),
+          updatedDateTime: new Date(),
+          createdBy: 'test-user',
+          updatedBy: 'test-user',
+          sharedServiceRoles: [
             {
               id: '123e4567-e89b-12d3-a456-426614174003',
               name: 'Admin Role',
               description: 'Administrator role',
               enabled: true,
+              createdDateTime: new Date(),
+              createdBy: 'test-user',
             },
             {
               id: '123e4567-e89b-12d3-a456-426614174004',
               name: 'User Role',
               description: 'User role',
               enabled: false,
+              createdDateTime: new Date(),
+              createdBy: 'test-user',
             },
           ],
         },
         {
           id: '123e4567-e89b-12d3-a456-426614174005',
           name: 'Test Service 2',
+          displayName: 'Test Service 2 Display',
           clientIdentifier: 'test-service-2',
+          landingPageUrl: 'https://service2.example.com',
           description: 'Test Service 2 Description',
-          isActive: true,
-          roles: [
+          createdDateTime: new Date(),
+          updatedDateTime: new Date(),
+          createdBy: 'test-user',
+          updatedBy: 'test-user',
+          sharedServiceRoles: [
             {
               id: '123e4567-e89b-12d3-a456-426614174006',
               name: 'Viewer Role',
               description: 'Viewer role',
               enabled: true,
+              createdDateTime: new Date(),
+              createdBy: 'test-user',
             },
           ],
         },
@@ -2040,7 +2084,9 @@ describe('Tenant Management API', () => {
             {
               id: '123e4567-e89b-12d3-a456-426614174002',
               name: 'Test Service 1',
-              roles: [
+              displayName: 'Test Service 1 Display',
+              landingPageUrl: 'https://service1.example.com',
+              sharedServiceRoles: [
                 {
                   id: '123e4567-e89b-12d3-a456-426614174003',
                   name: 'Admin Role',
@@ -2056,7 +2102,9 @@ describe('Tenant Management API', () => {
             {
               id: '123e4567-e89b-12d3-a456-426614174005',
               name: 'Test Service 2',
-              roles: [
+              displayName: 'Test Service 2 Display',
+              landingPageUrl: 'https://service2.example.com',
+              sharedServiceRoles: [
                 {
                   id: '123e4567-e89b-12d3-a456-426614174006',
                   name: 'Viewer Role',

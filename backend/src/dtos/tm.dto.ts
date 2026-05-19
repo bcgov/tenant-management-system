@@ -105,7 +105,9 @@ export interface GetSharedServiceRoleForGroupResultDto {
 export interface GetSharedServiceForGroupResultDto {
   id: string
   name: string
+  displayName: string
   clientIdentifier: string
+  landingPageUrl: string
   description: string | null
   createdDateTime: Date
   updatedDateTime: Date
