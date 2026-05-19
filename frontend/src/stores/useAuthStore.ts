@@ -98,6 +98,9 @@ export const useAuthStore = defineStore('auth', () => {
         tokenParsed.identity_provider,
       )
     } else if (isIdpBceid(tokenParsed.identity_provider)) {
+      // Note: both basic and business BCeIDs have "bceidboth" as the identity
+      // provider, so differentiate them on the existence of business data.
+
       ssoUser = new SsoUser(
         tokenParsed.bceid_user_guid,
         tokenParsed.bceid_username,
@@ -105,7 +108,7 @@ export const useAuthStore = defineStore('auth', () => {
         tokenParsed.family_name,
         tokenParsed.display_name,
         tokenParsed.email,
-        tokenParsed.identity_provider,
+        tokenParsed.bceid_business_guid ? 'bceidbusiness' : 'bceidbasic',
       )
     } else {
       throw new Error(

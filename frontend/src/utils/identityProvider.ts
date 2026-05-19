@@ -4,7 +4,7 @@
  */
 const bceidBasicIdps = new Set(['bceidbasic'])
 const bceidBusinessIdps = new Set(['bceidbusiness'])
-const bceidIdps = new Set(['bceidbasic', 'bceidbusiness'])
+const bceidIdps = new Set(['bceidbasic', 'bceidboth', 'bceidbusiness'])
 const idirIdps = new Set(['azureidir', 'idir'])
 
 /**
@@ -34,7 +34,7 @@ export const identityProviderToDisplay = (idp: string | undefined): string => {
 
 /**
  * Gets the whether or not the user's identity provider corresponds to an
- * identity provider that is BCeID ('bceidbasic', 'bceidboth' or
+ * identity provider that is BCeID ('bceidbasic', 'bceidboth', or
  * 'bceidbusiness').
  *
  * @param idp - the raw identity provider string from the token.

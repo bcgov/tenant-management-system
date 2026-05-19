@@ -44,12 +44,22 @@ const makeIdirToken = (
   ...overrides,
 })
 
-const makeBceidToken = (
+const makeBceidBasicToken = (
   overrides: Partial<KeycloakTokenParsed> = {},
 ): KeycloakTokenParsed => ({
-  identity_provider: 'bceidbasic',
+  identity_provider: 'bceidboth',
   bceid_user_guid: '456',
   bceid_username: 'bceid_user',
+  ...overrides,
+})
+
+const makeBceidBusinessToken = (
+  overrides: Partial<KeycloakTokenParsed> = {},
+): KeycloakTokenParsed => ({
+  identity_provider: 'bceidboth',
+  bceid_user_guid: '789',
+  bceid_username: 'bceid_business',
+  bceid_business_guid: 'abc123',
   ...overrides,
 })
 
@@ -78,15 +88,27 @@ describe('useAuthStore', () => {
       await store.init()
 
       expect(store.authenticatedUser.id).toBe('123')
+      expect(store.authenticatedUser.ssoUser.idpType).toBe('idir')
     })
 
     it('maps a BCeID user from the token', async () => {
       const store = useAuthStore()
-      mockTokenParsed = makeBceidToken()
+      mockTokenParsed = makeBceidBasicToken()
 
       await store.init()
 
       expect(store.authenticatedUser.id).toBe('456')
+      expect(store.authenticatedUser.ssoUser.idpType).toBe('bceidbasic')
+    })
+
+    it('maps a business BCeID user from the token', async () => {
+      const store = useAuthStore()
+      mockTokenParsed = makeBceidBusinessToken()
+
+      await store.init()
+
+      expect(store.authenticatedUser.id).toBe('789')
+      expect(store.authenticatedUser.ssoUser.idpType).toBe('bceidbusiness')
     })
 
     it('does not set a user when tokenParsed is null after authentication', async () => {
