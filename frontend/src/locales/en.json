@@ -10,8 +10,9 @@
     "save": "Save",
     "servicesLabel": "Connected Service | Connected Services",
     "servicesLabelLower": "connected service | connected services",
-    "sessionExpired": "Your session has expired. Please log in to continue.",
+    "sessionExpired": "Your session has timed out",
     "sessionExpiredDesc": "For security reasons, CSTAR automatically logs you out after a period of inactivity.",
+    "sessionExpiredDesc2": "Please log in again to continue where you left off.",
     "undoChanges": "Undo Changes"
   },
 

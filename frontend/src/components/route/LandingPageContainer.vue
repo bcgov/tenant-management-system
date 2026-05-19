@@ -2,6 +2,7 @@
 import { computed, watchEffect } from 'vue'
 import { useRouter } from 'vue-router'
 
+import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import { config } from '@/services/config.service'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { isIdpIdir } from '@/utils/identityProvider'
@@ -35,7 +36,7 @@ watchEffect(() => {
 <template>
   <v-container>
     <h1 class="mb-12 text-center">
-      Connected Services, Team Access and Roles (CSTAR)
+      Connected Services, Team Access, and Roles (CSTAR)
     </h1>
     <v-row>
       <v-col cols="12" lg="8">
@@ -56,34 +57,25 @@ watchEffect(() => {
         <p class="p-xlarge">Choose your login method:</p>
         <v-row class="pb-12">
           <v-col cols="12" lg="4">
-            <v-btn
-              color="primary"
-              variant="flat"
+            <ButtonPrimary
+              text="IDIR"
               block
               @click="authStore.login({ idpHint: idirHint })"
-            >
-              IDIR
-            </v-btn>
+            />
           </v-col>
           <v-col cols="12" lg="4">
-            <v-btn
-              color="primary"
-              variant="flat"
+            <ButtonPrimary
+              text="Basic BCeID"
               block
               @click="authStore.login({ idpHint: basicBceidHint })"
-            >
-              Basic BCeID
-            </v-btn>
+            />
           </v-col>
           <v-col cols="12" lg="4">
-            <v-btn
-              color="primary"
-              variant="flat"
+            <ButtonPrimary
+              text="Business BCeID"
               block
               @click="authStore.login({ idpHint: businessBceidHint })"
-            >
-              Business BCeID
-            </v-btn>
+            />
           </v-col>
         </v-row>
 
@@ -126,17 +118,3 @@ watchEffect(() => {
     </v-row>
   </v-container>
 </template>
-
-<style scoped>
-/* Same size as H5. */
-.p-xlarge {
-  font-size: 1.25rem;
-  line-height: 2.125rem;
-}
-
-/* Same size as H4. */
-.p-xxlarge {
-  font-size: 1.5rem;
-  line-height: 2.25rem;
-}
-</style>
