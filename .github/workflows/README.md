@@ -184,7 +184,7 @@ Runs on scheduled job (cronjob) or workflow dispatch.
 
 There is a long-lived custom route available to be assigned to specific Pull Request deployments. Add the label `demo` to that pull request or run the `DEMO Route` workflow.
 
-Typical route: `https://<REPO_NAME>-demo.apps.silver.devops.gov.bc.ca`
+Typical route: `https://<REPO_NAME>-demo.apps.gold.devops.gov.bc.ca`
 
 #### PR Label
 
@@ -256,7 +256,7 @@ OpenShift's service account token, different for every namespace. The OpenShift 
 
 Locate an OpenShift pipeline token:
 
-1. Login to the OpenShift cluster [Silver](https://console.apps.silver.devops.gov.bc.ca/)
+1. Login to the OpenShift cluster [Gold](https://console.apps.gold.devops.gov.bc.ca/)
 2. Select a namespace, such as DEV
 3. Click `Workloads` > `Secrets` (for Administrator view)
 4. Select `pipeline-token-...` or a similarly privileged token
@@ -306,7 +306,7 @@ The client ID for the login proxy server.
 OpenShift server address.
 
 - Consume: `${{ vars.OC_SERVER }}`
-- Value: `https://api.silver.devops.gov.bc.ca:6443`
+- Value: `https://api.gold.devops.gov.bc.ca:6443`
 
 ### Repository Secrets
 
