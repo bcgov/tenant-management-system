@@ -1,5 +1,8 @@
 import { type GroupId } from '@/models/group.model'
-import { type GroupServiceRole } from '@/models/groupservicerole.model'
+import {
+  type GroupService,
+  type GroupServiceApiData,
+} from '@/models/groupservice.model'
 import { type ServiceApiData, type ServiceId } from '@/models/service.model'
 import { type TenantId } from '@/models/tenant.model'
 import { authenticatedAxios } from '@/services/authenticated.axios'
@@ -64,8 +67,10 @@ export const serviceService = {
    * @returns A promise that resolves to an array of service data.
    * @throws Will throw an error if the API request fails.
    */
-  async getTenantGroupServices(tenantId: TenantId, groupId: GroupId) {
-    // TODO: return type is Promise<ServiceApiData[]>
+  async getTenantGroupServices(
+    tenantId: TenantId,
+    groupId: GroupId,
+  ): Promise<GroupServiceApiData[]> {
     try {
       const response = await api.get(
         `/tenants/${tenantId}/groups/${groupId}/shared-services/shared-service-roles`,
@@ -105,15 +110,25 @@ export const serviceService = {
    * @param groupId the ID of the group being updated.
    * @param data the group roles that are being updated.
    */
-  async updateTenantGroupServices(
+  async updateTenantGroupServiceRoles(
     tenantId: TenantId,
     groupId: GroupId,
-    data: GroupServiceRole,
+    groupServices: GroupService[],
   ): Promise<ServiceApiData[]> {
     try {
+      const payload = {
+        sharedServices: groupServices.map((service) => ({
+          id: service.id,
+          sharedServiceRoles: service.roles.map((role) => ({
+            id: role.id,
+            enabled: role.isEnabled === true,
+          })),
+        })),
+      }
+
       const response = await api.put(
         `/tenants/${tenantId}/groups/${groupId}/shared-services/shared-service-roles`,
-        data,
+        payload,
       )
 
       return response.data.data

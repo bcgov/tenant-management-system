@@ -11,77 +11,64 @@ export const toServiceId = (id: string): ServiceId => id as ServiceId
  */
 export type ServiceApiData = {
   /**
-   * Client identifier for the service.
+   * The client identifier for the service.
    */
   clientIdentifier: string
-
   /**
-   * Created by user identifier.
-   */
-  createdBy: string
-
-  /**
-   * ISO8601 date string (YYYY-MM-DD) when service was created.
+   * The ISO8601 date string (YYYY-MM-DD) when service was created.
    *
    * Note: This is mapped from 'createdDateTime' in the API.
    */
   createdDateTime: string
 
   /**
-   * Description of the service.
+   * The description of the service.
    */
   description: string
 
   /**
-   * Display name of the service.
+   * The display name of the service.
    */
   displayName: string
 
   /**
-   * Unique identifier for the service.
+   * The unique identifier for the service.
    */
   id: ServiceId
 
   /**
-   * The roles in available in the service.
+   * The roles available in the service.
    */
   roles: ServiceRoleApiData[]
 }
 
 export class Service {
   /**
-   * ISO8601 date string (YYYY-MM-DD) when service was created.
+   * The client identifier for the service.
+   */
+  clientIdentifier: string
+
+  /**
+   * The ISO8601 date string (YYYY-MM-DD) when service was created.
    *
    * Note: This is mapped from 'createdDateTime' in the API.
    */
   createdDate: string
 
   /**
-   * Unique identifier for the service.
-   */
-  id: ServiceId
-
-  /**
-   * The name of the service.
-   *
-   * Note: This is mapped from 'displayName' in the API.
-   */
-  name: string
-
-  /**
-   * Client identifier for the service.
-   */
-  clientIdentifier: string
-
-  /**
-   * Created by user identifier.
-   */
-  createdBy: string
-
-  /**
-   * Description of the service.
+   * The description of the service.
    */
   description: string
+
+  /**
+   * The display name of the service.
+   */
+  displayName: string
+
+  /**
+   * The unique identifier for the service.
+   */
+  id: ServiceId
 
   /**
    * The roles in available in the service.
@@ -91,26 +78,28 @@ export class Service {
   /**
    * Creates a new Service instance.
    *
-   * @param id - Unique identifier for the service
-   * @param name - Display name of the service
-   * @param createdDate - ISO8601 date string (YYYY-MM-DD) when service was
+   * @param id - The unique identifier for the service
+   * @param displayName - The display name of the service
+   * @param createdDate - The ISO8601 date string (YYYY-MM-DD) when service was
    *   created
+   * @param clientIdentifier - The client identifier for the service
+   * @param description - The description of the service
+   * @param roles - The roles in available in the service
+   * @returns A new Service instance
    */
   constructor(
     id: ServiceId,
-    name: string,
+    displayName: string,
     createdDate: string,
     clientIdentifier: string,
-    createdBy: string,
     description: string,
     roles: ServiceRole[],
   ) {
     this.clientIdentifier = clientIdentifier
-    this.createdBy = createdBy
     this.createdDate = createdDate
     this.description = description
+    this.displayName = displayName
     this.id = id
-    this.name = name
     this.roles = roles
   }
 
@@ -131,7 +120,6 @@ export class Service {
       apiData.displayName,
       apiData.createdDateTime,
       apiData.clientIdentifier,
-      apiData.createdBy,
       apiData.description,
       roles,
     )

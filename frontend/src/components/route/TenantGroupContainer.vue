@@ -7,7 +7,7 @@ import LoadingWrapper from '@/components/ui/LoadingWrapper.vue'
 import { useNotification } from '@/composables/useNotification'
 import { type GroupId } from '@/models/group.model'
 import { type TenantId } from '@/models/tenant.model'
-import { type GroupRoleType, useGroupStore } from '@/stores/useGroupStore'
+import { useGroupStore } from '@/stores/useGroupStore'
 import { useTenantStore } from '@/stores/useTenantStore'
 
 // --- Component Interface -----------------------------------------------------
@@ -22,18 +22,17 @@ const tenantStore = useTenantStore()
 
 // --- Computed Values ---------------------------------------------------------
 
-const enabledRolesCount = computed(
-  () =>
-    Object.values(groupStore.groupRoles as GroupRoleType)
-      .flat()
-      .filter((role) => role.enabled).length,
+const enabledRolesCount = computed(() =>
+  groupStore.groupServices.reduce(
+    (sum, service) => sum + service.enabledRolesCount,
+    0,
+  ),
 )
 
 const enabledServiceCount = computed(
   () =>
-    Object.values(groupStore.groupRoles as GroupRoleType).filter((roles) =>
-      roles.some((role) => role.enabled),
-    ).length,
+    groupStore.groupServices.filter((service) => service.hasEnabledRoles)
+      .length,
 )
 
 const group = computed(() => groupStore.getGroup(props.groupId))
@@ -50,9 +49,9 @@ onMounted(async () => {
   }
 
   try {
-    await groupStore.fetchRoles(props.tenantId, props.groupId)
+    await groupStore.fetchGroupServices(props.tenantId, props.groupId)
   } catch {
-    notification.error('Failed to load group roles')
+    notification.error('Failed to load group services')
   }
 
   try {

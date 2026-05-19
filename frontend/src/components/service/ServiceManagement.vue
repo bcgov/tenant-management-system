@@ -81,7 +81,7 @@ function handleAddService() {
           :headers="[
             {
               align: 'start',
-              key: 'name',
+              key: 'displayName',
               title: 'Service',
             },
             {
@@ -131,7 +131,7 @@ function handleAddService() {
             v-model="selectedServiceId"
             :items="availableServices"
             class="my-0"
-            item-title="name"
+            item-title="displayName"
             item-value="id"
             label="Select an option..."
             variant="outlined"

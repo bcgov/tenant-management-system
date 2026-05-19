@@ -10,7 +10,7 @@ import { serviceService } from '@/services/service.service'
  */
 export const useServiceStore = defineStore('service', () => {
   const loading = ref(false)
-  const services = ref<Service[]>([])
+  const tenantServices = ref<Service[]>([])
 
   // Private methods
 
@@ -21,11 +21,12 @@ export const useServiceStore = defineStore('service', () => {
    * @returns The inserted or updated service.
    */
   function upsertService(service: Service): Service {
-    const index = services.value.findIndex((s) => s.id === service.id)
+    const index = tenantServices.value.findIndex((s) => s.id === service.id)
+
     if (index === -1) {
-      services.value.push(service)
+      tenantServices.value.push(service)
     } else {
-      services.value[index] = service
+      tenantServices.value[index] = service
     }
 
     return service
@@ -49,6 +50,7 @@ export const useServiceStore = defineStore('service', () => {
 
   /**
    * Fetches all services from the API and updates the store.
+   * TODO: this does not update or even use the store, it's a bad passthrough.
    *
    * @returns A promise that resolves to the list of all services.
    */
@@ -64,11 +66,11 @@ export const useServiceStore = defineStore('service', () => {
   }
 
   /**
-   * Fetches services for a tenant from the API and updates the store.
+   * Fetches tenant services for a tenant from the API and updates the store.
    *
    * @param tenantId - The ID of the tenant.
-   * @returns A promise that resolves to the list of services associated with
-   *   the tenant.
+   * @returns A promise that resolves to the list of tenant services associated
+   *   with the tenant.
    */
   const fetchTenantServices = async (
     tenantId: TenantId,
@@ -76,34 +78,34 @@ export const useServiceStore = defineStore('service', () => {
     loading.value = true
     try {
       const serviceData = await serviceService.getTenantServices(tenantId)
-      const tenantServices = serviceData.map(Service.fromApiData)
+      const services = serviceData.map(Service.fromApiData)
 
-      // Update the store with these services.
-      tenantServices.forEach(upsertService)
+      // Update the store with these tenant services.
+      services.forEach(upsertService)
 
-      return tenantServices
+      return services
     } finally {
       loading.value = false
     }
   }
 
   /**
-   * Retrieves a service from the store by its ID.
+   * Retrieves a tenant service from the store by its ID.
    *
-   * @param serviceId - The ID of the service.
-   * @returns The service if found, otherwise undefined.
+   * @param tenantServiceId - The ID of the tenant service.
+   * @returns The tenant service if found, otherwise undefined.
    */
-  function getService(serviceId: ServiceId): Service | undefined {
-    return services.value.find((s) => s.id === serviceId)
+  function getTenantService(serviceId: ServiceId): Service | undefined {
+    return tenantServices.value.find((s) => s.id === serviceId)
   }
 
   return {
     loading,
-    services,
+    tenantServices,
 
     addServiceToTenant,
     fetchServices,
     fetchTenantServices,
-    getService,
+    getTenantService,
   }
 })

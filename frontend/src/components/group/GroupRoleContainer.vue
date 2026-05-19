@@ -1,137 +1,108 @@
 <script lang="ts" setup>
-import { storeToRefs } from 'pinia'
-import { computed, type Ref, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
+import LoginContainer from '@/components/auth/LoginContainer.vue'
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
+import LoadingWrapper from '@/components/ui/LoadingWrapper.vue'
 import SimpleDialog, {
   type DialogButton,
 } from '@/components/ui/SimpleDialog.vue'
 import { useNotification } from '@/composables/useNotification'
 import { type Group } from '@/models/group.model'
-import { type GroupServiceRole } from '@/models/groupservicerole.model'
-import {
-  SharedServiceArray,
-  SharedServiceRole,
-  type SharedServiceRoleId,
-} from '@/models/sharedservicerole.model'
+import { type GroupService } from '@/models/groupservice.model'
+import { type GroupServiceRoleId } from '@/models/groupservicerole.model'
 import { type Tenant } from '@/models/tenant.model'
 import { useGroupStore } from '@/stores/useGroupStore'
-import { useServiceStore } from '@/stores/useServiceStore'
 import { ROLES } from '@/utils/constants'
 import { currentUserHasRole } from '@/utils/permissions'
 
-// Props
-const props = defineProps<{
-  tenant: Tenant
-  group: Group
-}>()
-
-// Stores
-const serviceStore = useServiceStore()
-const groupStore = useGroupStore()
 const { t } = useI18n()
 
-// Refs
-const loadingServices: Ref<boolean> = ref(false)
-const { services } = storeToRefs(serviceStore)
-const { groupRoles } = storeToRefs(groupStore)
-const editing: Ref<boolean> = ref<boolean>(false)
-const roleValues = ref<{ [key: number]: boolean[] }>({}) // service Index -> role index -> hasRole
-const defaultState = ref<{ [key: number]: boolean[] }>({}) // serviceId -> roleIds -> hasRole
+// --- Component Interface -----------------------------------------------------
+
+const props = defineProps<{
+  group: Group
+  tenant: Tenant
+}>()
+
+// --- Store and Composable Setup ----------------------------------------------
+
+const groupStore = useGroupStore()
+const notification = useNotification()
+
+// --- Component State ---------------------------------------------------------
+
+const draft = ref<Map<GroupServiceRoleId, boolean>>(new Map())
+const editing = ref(false)
 const expanded = ref<string[]>([])
-const promptToContinue = ref<boolean>(false)
 const promptAction = ref<'undo' | 'clear' | null>(null)
+const promptToContinue = ref(false)
 
-// --- Helper functions -------------------------------------------------------
+// --- Computed Values ---------------------------------------------------------
 
-const fetchServices = async () => {
-  loadingServices.value = true
-  await groupStore.fetchRoles(props.tenant.id, props.group.id)
-  serviceStore.fetchTenantServices(props.tenant.id).then(() => {
-    loadingServices.value = false
-    for (let i = 0; i < services.value.length; i++) {
-      const groupValues = groupRoles.value[services.value[i].id] || {}
-      //these often aren't in the same order but it needs to be
-      const orderMap = new Map(
-        services.value[i].roles.map((obj, index) => [obj.id, index]),
-      )
+const canMakeChanges = computed(() => {
+  return (
+    currentUserHasRole(props.tenant, ROLES.TENANT_OWNER.value) ||
+    currentUserHasRole(props.tenant, ROLES.USER_ADMIN.value) ||
+    currentUserHasRole(props.tenant, ROLES.OPERATIONS_ADMIN.value)
+  )
+})
 
-      // Sort based on the map
-      const sortedGroupValues = [...groupValues].sort((a, b) => {
-        const indexA = orderMap.get(a.id) ?? Infinity
-        const indexB = orderMap.get(b.id) ?? Infinity
-        return indexA - indexB
-      })
-      roleValues.value[i] = sortedGroupValues.map((g) => g.enabled === true)
-      expanded.value[i] = services.value[i].name.toLowerCase()
-      defaultState.value[i] = sortedGroupValues.map((g) => g.enabled === true)
-    }
-  })
+const dialogButtons = computed(() => {
+  const buttons: DialogButton[] = [
+    {
+      text: t('general.cancel'),
+      action: 'cancel',
+      type: 'secondary',
+    },
+    {
+      text:
+        promptAction.value === 'clear'
+          ? t('general.clearAll')
+          : t('general.revert'),
+      action: 'confirm',
+      type: 'primary',
+    },
+  ]
+
+  return buttons
+})
+
+const dialogText = computed(() => {
+  if (promptAction.value === 'undo') {
+    return t('groups.undoRoleModalDesc')
+  } else if (promptAction.value === 'clear') {
+    return t('groups.clearAllRoleModalDesc')
+  }
+
+  return ''
+})
+
+const dialogTitle = computed(() => {
+  if (promptAction.value === 'undo') {
+    return t('groups.undoRoleModalTitle')
+  } else if (promptAction.value === 'clear') {
+    return t('groups.clearAllRoleModalTitle')
+  }
+
+  return ''
+})
+
+const groupServices = computed(() => groupStore.groupServices)
+
+// --- Component Methods -------------------------------------------------------
+
+const cancelEditing = () => {
+  draft.value.clear()
+  editing.value = false
 }
 
 const clearAll = () => {
-  for (const serviceIndex in roleValues.value) {
-    roleValues.value[serviceIndex] = roleValues.value[serviceIndex].map(
-      () => false,
-    )
+  for (const key of draft.value.keys()) {
+    draft.value.set(key, false)
   }
-}
-
-const undoChanges = () => {
-  for (const serviceIndex in roleValues.value) {
-    roleValues.value[serviceIndex] = [...defaultState.value[serviceIndex]]
-  }
-}
-
-const saveChanges = async () => {
-  const data: GroupServiceRole = {
-    sharedServices: [],
-  }
-
-  for (let i = 0; i < services.value.length; i++) {
-    const groupValues = groupRoles.value[services.value[i].id] || {}
-    const orderMap = new Map(
-      services.value[i].roles.map((obj, index) => [obj.id, index]),
-    )
-
-    // Sort based on the map
-    const sortedGroupValues = [...groupValues].sort((a, b) => {
-      const indexA = orderMap.get(a.id) ?? Infinity
-      const indexB = orderMap.get(b.id) ?? Infinity
-      return indexA - indexB
-    })
-    // TODO
-    const append: SharedServiceArray = new SharedServiceArray(
-      services.value[i].id as unknown as SharedServiceRoleId,
-      [],
-    )
-
-    for (let j = 0; j < sortedGroupValues.length; j++) {
-      // TODO
-      const val: SharedServiceRole = new SharedServiceRole(
-        sortedGroupValues[j].id as unknown as SharedServiceRoleId,
-        roleValues.value[i][j],
-      )
-      append.sharedServiceRoles.push(val)
-    }
-    data.sharedServices.push(append)
-  }
-
-  try {
-    await groupStore.updateRoles(props.tenant.id, props.group.id, data)
-    useNotification().success(
-      t('groups.sharedServicesSavedDesc'),
-      t('groups.sharedServicesSavedTitle'),
-    )
-  } catch (e) {
-    useNotification().error(
-      t('sharedServicesSaveErrorDesc', { error: (e as Error).message }),
-      t('sharedServicesSaveErrorTitle'),
-    )
-  }
-  editing.value = false
 }
 
 const handleDialogButtonClick = (action: string) => {
@@ -151,187 +122,192 @@ const openDialog = (action: 'undo' | 'clear') => {
   promptToContinue.value = true
 }
 
-const canMakeChanges = computed(() => {
-  return (
-    currentUserHasRole(props.tenant, ROLES.TENANT_OWNER.value) ||
-    currentUserHasRole(props.tenant, ROLES.USER_ADMIN.value) ||
-    currentUserHasRole(props.tenant, ROLES.OPERATIONS_ADMIN.value)
+const saveChanges = async () => {
+  const updated = groupServices.value.map((service) => ({
+    ...service,
+    roles: service.roles.map((role) => ({
+      ...role,
+      isEnabled: draft.value.get(role.id) ?? role.isEnabled,
+    })),
+  }))
+
+  try {
+    await groupStore.updateGroupRoles(
+      props.tenant.id,
+      props.group.id,
+      updated as GroupService[],
+    )
+    notification.success(
+      t('groups.sharedServicesSavedDesc'),
+      t('groups.sharedServicesSavedTitle'),
+    )
+    editing.value = false
+    draft.value.clear()
+  } catch {
+    notification.error(
+      t('groups.sharedServicesSaveErrorDesc'),
+      t('groups.sharedServicesSaveErrorTitle'),
+    )
+  }
+}
+
+const startEditing = () => {
+  draft.value = new Map(
+    groupServices.value.flatMap((service) =>
+      service.roles.map((role) => [role.id, role.isEnabled]),
+    ),
   )
-})
+  editing.value = true
+}
 
-// Watchers
+const undoChanges = () => {
+  draft.value = new Map(
+    groupServices.value.flatMap((service) =>
+      service.roles.map((role) => [role.id, role.isEnabled]),
+    ),
+  )
+}
 
-watch(
-  [props.tenant, props.group],
-  () => {
-    fetchServices()
-    // fetchRolesForServices()
-  },
-  { immediate: true },
-)
+// --- Component Lifecycle -----------------------------------------------------
 
-// Computed values
-const dialogTitle = computed(() => {
-  if (promptAction.value === 'undo') {
-    return t('groups.undoRoleModalTitle')
-  } else if (promptAction.value === 'clear') {
-    return t('groups.clearAllRoleModalTitle')
+onMounted(async () => {
+  try {
+    await groupStore.fetchGroupServices(props.tenant.id, props.group.id)
+
+    expanded.value = groupServices.value.map((service) =>
+      service.displayName.toLowerCase(),
+    )
+  } catch {
+    notification.error('Failed to load group services')
   }
-  return ''
-})
-
-const dialogText = computed(() => {
-  if (promptAction.value === 'undo') {
-    return t('groups.undoRoleModalDesc')
-  } else if (promptAction.value === 'clear') {
-    return t('groups.clearAllRoleModalDesc')
-  }
-  return ''
-})
-
-const dialogButtons = computed(() => {
-  const buttons: DialogButton[] = [
-    {
-      text: t('general.cancel'),
-      action: 'cancel',
-      type: 'secondary',
-    },
-    {
-      text:
-        promptAction.value === 'clear'
-          ? t('general.clearAll')
-          : t('general.revert'),
-      action: 'confirm',
-      type: 'primary',
-    },
-  ]
-  return buttons
 })
 </script>
 
 <template>
-  <v-container fluid>
-    <SimpleDialog
-      :buttons="dialogButtons"
-      :has-close="true"
-      :message="dialogText"
-      :model-value="promptToContinue"
-      :title="dialogTitle"
-      dialog-type="warning"
-      @button-click="handleDialogButtonClick"
-      @update:model-value="
-        (val: boolean) => {
-          promptToContinue = val
-        }
-      "
-    />
-    <v-row>
-      <v-col cols="12">
-        <h4>
-          {{
-            $t('groups.sharedServices', {
-              servicesLabel: $t('general.servicesLabel', 2),
-            })
-          }}
-        </h4>
-      </v-col>
-    </v-row>
-    <v-row>
-      <v-col cols="12">
-        <p>
-          {{
-            $t('groups.sharedServicesDesc', {
-              servicesLabel: $t('general.servicesLabel', 2),
-            })
-          }}
-        </p>
-      </v-col>
-    </v-row>
-    <v-row v-if="loadingServices">
-      <v-col class="text-center" cols="12">
-        <v-progress-circular indeterminate />
-      </v-col>
-    </v-row>
-    <v-row v-else-if="services.length === 0">
-      <v-col cols="12">
-        <p>{{ $t('groups.noServices') }}</p>
-      </v-col>
-    </v-row>
-    <v-row v-else class="darkened pa-4">
-      <!-- Edit button -->
-      <v-col cols="12">
-        <ButtonPrimary
-          v-if="!editing && canMakeChanges"
-          :text="$t('general.edit')"
-          @click="editing = true"
-        />
-      </v-col>
+  <LoginContainer>
+    <LoadingWrapper
+      :loading="!groupStore.groupServices"
+      loading-message="Loading group services..."
+    >
+      <SimpleDialog
+        :buttons="dialogButtons"
+        :has-close="true"
+        :message="dialogText"
+        :model-value="promptToContinue"
+        :title="dialogTitle"
+        dialog-type="warning"
+        @button-click="handleDialogButtonClick"
+        @update:model-value="
+          (val: boolean) => {
+            promptToContinue = val
+          }
+        "
+      />
+      <v-row>
+        <v-col cols="12">
+          <h4>
+            {{
+              $t('groups.sharedServices', {
+                servicesLabel: $t('general.servicesLabel', 2),
+              })
+            }}
+          </h4>
+        </v-col>
+      </v-row>
+      <v-row>
+        <v-col cols="12">
+          <p>
+            {{
+              $t('groups.sharedServicesDesc', {
+                servicesLabel: $t('general.servicesLabel', 2),
+              })
+            }}
+          </p>
+        </v-col>
+      </v-row>
+      <v-row v-if="groupServices.length === 0">
+        <v-col cols="12">
+          <p>{{ $t('groups.noServices') }}</p>
+        </v-col>
+      </v-row>
+      <v-row v-else class="darkened pa-4">
+        <!-- Edit button -->
+        <v-col cols="12">
+          <ButtonPrimary
+            v-if="!editing && canMakeChanges"
+            :text="$t('general.edit')"
+            @click="startEditing"
+          />
+        </v-col>
 
-      <!-- Checkbox panels -->
-      <v-col
-        v-for="(service, serviceIndex) in services"
-        :key="`col-service-${service.id}`"
-        cols="6"
-      >
-        <v-expansion-panels v-model="expanded[serviceIndex]" class="mb-4">
-          <v-expansion-panel :value="service.name.toLowerCase()">
-            <v-expansion-panel-title>{{
-              service.name
-            }}</v-expansion-panel-title>
-            <v-expansion-panel-text>
-              <v-checkbox
-                v-for="(role, roleIndex) in service.roles"
-                :key="`checkbox-role-${role.id}`"
-                v-model="roleValues[serviceIndex][roleIndex]"
-                :color="editing ? 'primary' : ''"
-                :disabled="!editing || !canMakeChanges"
-                :label="role.name"
-                class="noBackground"
-              >
-              </v-checkbox>
-            </v-expansion-panel-text>
-          </v-expansion-panel>
-        </v-expansion-panels>
-      </v-col>
-
-      <!-- save/cancel/reset buttons -->
-      <v-col v-if="canMakeChanges" class="text-right" cols="12">
-        <v-btn
-          :disabled="!editing"
-          class="mr-2"
-          variant="text"
-          @click="editing = false"
+        <!-- Checkbox panels -->
+        <v-col
+          v-for="(service, serviceIndex) in groupServices"
+          :key="`col-service-${service.id}`"
+          cols="6"
         >
-          {{ $t('general.cancel') }}
-        </v-btn>
+          <v-expansion-panels v-model="expanded[serviceIndex]" class="mb-4">
+            <v-expansion-panel :value="service.displayName.toLowerCase()">
+              <v-expansion-panel-title>{{
+                service.displayName
+              }}</v-expansion-panel-title>
+              <v-expansion-panel-text>
+                <v-checkbox
+                  v-for="role in service.roles"
+                  :key="`checkbox-role-${role.id}`"
+                  :color="editing ? 'primary' : ''"
+                  :disabled="!editing || !canMakeChanges"
+                  :label="role.name"
+                  :model-value="editing ? draft.get(role.id) : role.isEnabled"
+                  class="noBackground"
+                  @update:model-value="
+                    (val: boolean | null) => draft.set(role.id, val ?? false)
+                  "
+                />
+              </v-expansion-panel-text>
+            </v-expansion-panel>
+          </v-expansion-panels>
+        </v-col>
 
-        <v-btn
-          :class="`tms-button-secondary mr-2${editing ? ' text-error' : ''}`"
-          :disabled="!editing"
-          :variant="editing ? 'outlined' : 'flat'"
-          base-color="secondary"
-          border="sm opacity-100"
-          @click="openDialog('clear')"
-        >
-          {{ $t('general.clearAll') }}
-        </v-btn>
+        <!-- save/cancel/reset buttons -->
+        <v-col v-if="canMakeChanges" class="text-right" cols="12">
+          <v-btn
+            :disabled="!editing"
+            class="mr-2"
+            variant="text"
+            @click="cancelEditing"
+          >
+            {{ $t('general.cancel') }}
+          </v-btn>
 
-        <ButtonSecondary
-          :disabled="!editing"
-          :text="$t('general.undoChanges')"
-          class="mr-2"
-          @click="openDialog('undo')"
-        >
-        </ButtonSecondary>
+          <v-btn
+            :class="`tms-button-secondary mr-2${editing ? ' text-error' : ''}`"
+            :disabled="!editing"
+            :variant="editing ? 'outlined' : 'flat'"
+            base-color="secondary"
+            border="sm opacity-100"
+            @click="openDialog('clear')"
+          >
+            {{ $t('general.clearAll') }}
+          </v-btn>
 
-        <ButtonPrimary
-          :disabled="!editing"
-          :text="$t('general.save')"
-          @click="saveChanges"
-        />
-      </v-col>
-    </v-row>
-  </v-container>
+          <ButtonSecondary
+            :disabled="!editing"
+            :text="$t('general.undoChanges')"
+            class="mr-2"
+            @click="openDialog('undo')"
+          >
+          </ButtonSecondary>
+
+          <ButtonPrimary
+            :disabled="!editing"
+            :text="$t('general.save')"
+            @click="saveChanges"
+          />
+        </v-col>
+      </v-row>
+    </LoadingWrapper>
+  </LoginContainer>
 </template>
 
 <style scoped>

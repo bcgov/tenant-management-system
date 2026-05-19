@@ -6,24 +6,19 @@ import {
   type GroupDetailFields,
   type GroupId,
 } from '@/models/group.model'
-import { GroupServiceRole } from '@/models/groupservicerole.model'
+import { GroupService } from '@/models/groupservice.model'
 import { GroupUser, type GroupUserId } from '@/models/groupuser.model'
-import { ServiceRole } from '@/models/servicerole.model'
 import { type TenantId } from '@/models/tenant.model'
 import { User } from '@/models/user.model'
 import { groupService } from '@/services/group.service'
 import { serviceService } from '@/services/service.service'
-
-export type GroupRoleType = {
-  [key: string]: ServiceRole[]
-}
 
 /**
  * Pinia store for managing groups and group users.
  */
 export const useGroupStore = defineStore('group', () => {
   const groups = ref<Group[]>([])
-  const groupRoles = ref<GroupRoleType>({})
+  const groupServices = ref<GroupService[]>([])
   const loading = ref(false)
 
   // Private methods
@@ -138,7 +133,7 @@ export const useGroupStore = defineStore('group', () => {
   }
 
   /**
-   * Get the group service roles from the api (includes whether or not they are
+   * Get the group services from the api (includes whether or not they are
    * enabled).
    *
    * @param tenantId - The ID of the tenant.
@@ -146,32 +141,19 @@ export const useGroupStore = defineStore('group', () => {
    * @throws {Error} If the group is not found in the store.
    * @returns A promise that resolves when the roles are fetched.
    */
-  const fetchRoles = async (
+  const fetchGroupServices = async (
     tenantId: TenantId,
     groupId: GroupId,
   ): Promise<void> => {
-    // Grab the existing group from the store, to confirm the ID and for use
-    // later.
-    const group = getGroup(groupId)
-    if (!group) {
-      throw new Error(`Group with ID ${groupId} not found`)
-    }
-
-    const apiResponse = await serviceService.getTenantGroupServices(
-      tenantId,
-      groupId,
-    )
-    groupRoles.value = {}
-
-    // TODO: untangle this insanity.
-    for (const d of apiResponse) {
-      const ind = []
-      for (const r of d.sharedServiceRoles) {
-        const role = ServiceRole.fromApiData(r)
-        ind.push(role)
-      }
-
-      groupRoles.value[d.id] = ind
+    loading.value = true
+    try {
+      const groupServiceList = await serviceService.getTenantGroupServices(
+        tenantId,
+        groupId,
+      )
+      groupServices.value = groupServiceList.map(GroupService.fromApiData)
+    } finally {
+      loading.value = false
     }
   }
 
@@ -259,34 +241,32 @@ export const useGroupStore = defineStore('group', () => {
    * @throws {Error} If the group is not found in the store.
    * @returns A promise that resolves when the roles are updated.
    */
-  const updateRoles = async (
+  const updateGroupRoles = async (
     tenantId: TenantId,
     groupId: GroupId,
-    data: GroupServiceRole,
+    updatedGroupServices: GroupService[],
   ): Promise<void> => {
-    // Grab the existing group from the store, to confirm the ID and for use
-    // later.
-    const group = getGroup(groupId)
-    if (!group) {
-      throw new Error(`Group with ID ${groupId} not found`)
-    }
-
-    await serviceService.updateTenantGroupServices(tenantId, groupId, data)
+    await serviceService.updateTenantGroupServiceRoles(
+      tenantId,
+      groupId,
+      updatedGroupServices,
+    )
+    groupServices.value = updatedGroupServices
   }
 
   return {
     groups,
-    groupRoles,
+    groupServices,
     loading,
 
     addGroup,
     addGroupUser,
     fetchGroup,
     fetchGroups,
-    fetchRoles,
+    fetchGroupServices,
     getGroup,
     removeGroupUser,
     updateGroupDetails,
-    updateRoles,
+    updateGroupRoles,
   }
 })

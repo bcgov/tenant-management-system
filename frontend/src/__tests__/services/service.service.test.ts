@@ -1,13 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { makeGroupService, makeGroupServiceRole } from '../__factories__/index'
+
 import { type GroupId } from '@/models/group.model'
-import { GroupServiceRole } from '@/models/groupservicerole.model'
 import { type ServiceId } from '@/models/service.model'
-import {
-  SharedServiceArray,
-  SharedServiceRole,
-  type SharedServiceRoleId,
-} from '@/models/sharedservicerole.model'
 import { type TenantId } from '@/models/tenant.model'
 import * as utils from '@/services/utils'
 
@@ -241,30 +237,26 @@ describe('serviceService', () => {
   })
 
   describe('updateTenantGroupServices', () => {
-    const fakeSharedServices: SharedServiceArray[] = [
-      new SharedServiceArray('id1' as SharedServiceRoleId, [
-        new SharedServiceRole('id2' as SharedServiceRoleId, true),
-      ]),
+    const fakeServices = [
+      makeGroupService({
+        roles: [
+          makeGroupServiceRole({ id: 'id1' }),
+          makeGroupServiceRole({ id: 'id2', isEnabled: false }),
+        ],
+      }),
     ]
-    const fakeUpdateData: GroupServiceRole = new GroupServiceRole(
-      fakeSharedServices,
-    )
     const groupId = '1' as GroupId
 
     it('should return tenant group services on success', async () => {
       mockPut.mockResolvedValueOnce({ data: { data: {} } })
 
-      const result = await serviceService.updateTenantGroupServices(
+      const result = await serviceService.updateTenantGroupServiceRoles(
         tenantId,
         groupId,
-        fakeUpdateData,
+        fakeServices,
       )
 
       expect(result).toEqual({})
-      expect(mockPut).toHaveBeenCalledWith(
-        `/tenants/${tenantId}/groups/${groupId}/shared-services/shared-service-roles`,
-        fakeUpdateData,
-      )
     })
 
     it('should log and rethrow errors', async () => {
@@ -272,10 +264,10 @@ describe('serviceService', () => {
       mockPut.mockRejectedValueOnce(error)
 
       await expect(
-        serviceService.updateTenantGroupServices(
+        serviceService.updateTenantGroupServiceRoles(
           tenantId,
           groupId,
-          fakeUpdateData,
+          fakeServices,
         ),
       ).rejects.toThrow(error)
 

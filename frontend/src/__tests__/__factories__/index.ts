@@ -1,12 +1,13 @@
 import { Group, toGroupId } from '@/models/group.model'
+import { GroupService, toGroupServiceId } from '@/models/groupservice.model'
+import {
+  GroupServiceRole,
+  toGroupServiceRoleId,
+} from '@/models/groupservicerole.model'
 import { GroupUser, toGroupUserId } from '@/models/groupuser.model'
 import { Role, toRoleId } from '@/models/role.model'
 import { Service, toServiceId } from '@/models/service.model'
-import {
-  ServiceRole,
-  toServiceRoleId,
-  type ServiceRoleId,
-} from '@/models/servicerole.model'
+import { ServiceRole, toServiceRoleId } from '@/models/servicerole.model'
 import { SsoUser, toSsoUserId } from '@/models/ssouser.model'
 import { Tenant, toTenantId } from '@/models/tenant.model'
 import { TenantRequest, toTenantRequestId } from '@/models/tenantrequest.model'
@@ -32,6 +33,46 @@ export function makeGroup(
     toGroupId(overrides.id ?? 'test-group-id'),
     overrides.name ?? 'test-group-name',
     overrides.groupUsers ?? [],
+  )
+}
+
+// Group Service Factory
+
+export function makeGroupService(
+  overrides: Partial<{
+    clientIdentifier: string
+    description: string
+    displayName: string
+    id: string
+    roles: GroupServiceRole[]
+  }> = {},
+): GroupService {
+  return new GroupService(
+    toGroupServiceId(overrides.id ?? 'test-group-service-id'),
+    overrides.displayName ?? 'test-group-service-display-name',
+    overrides.clientIdentifier ?? 'test-group-service-client-identifier',
+    overrides.description ?? 'test-group-service-description',
+    overrides.roles ?? [makeGroupServiceRole()],
+  )
+}
+
+// Group Service Role Factory
+
+export function makeGroupServiceRole(
+  overrides: Partial<{
+    allowedIdentityProviders: string[]
+    description: string
+    id: string
+    isEnabled: boolean
+    name: string
+  }> = {},
+): GroupServiceRole {
+  return new GroupServiceRole(
+    toGroupServiceRoleId(overrides.id ?? 'test-group-service-role-id'),
+    overrides.name ?? 'test-group-service-role-name',
+    overrides.description ?? 'test-group-service-role-description',
+    overrides.allowedIdentityProviders ?? ['idir'],
+    overrides.isEnabled ?? false,
   )
 }
 
@@ -86,20 +127,18 @@ export function makeRoleUserAdmin(): Role {
 export function makeService(
   overrides: Partial<{
     clientIdentifier: string
-    createdBy: string
     createdDate: string
-    description: string
     id: string
-    name: string
+    description: string
+    displayName: string
     roles: ServiceRole[]
   }> = {},
 ): Service {
   return new Service(
     toServiceId(overrides.id ?? 'test-service-id'),
-    overrides.name ?? 'test-service-name',
+    overrides.displayName ?? 'test-service-display-name',
     overrides.createdDate ?? 'test-service-created-date',
     overrides.clientIdentifier ?? 'test-service-client-identifier',
-    overrides.createdBy ?? 'test-service-created-by',
     overrides.description ?? 'test-service-description',
     overrides.roles ?? [makeServiceRole()],
   )
@@ -113,12 +152,9 @@ export function makeServiceRole(
     createdBy: string
     createdDate: string
     description: string
-    enabled: boolean
-    id: ServiceRoleId
+    id: string
     isDeleted: boolean
     name: string
-    updatedDate: string
-    updatedBy: string
   }> = {},
 ): ServiceRole {
   return new ServiceRole(
@@ -127,11 +163,8 @@ export function makeServiceRole(
     overrides.description ?? 'test-service-role-description',
     overrides.allowedIdentityProviders ?? ['idir'],
     overrides.createdBy ?? 'test-service-created-by',
-    overrides.updatedBy ?? 'test-service-updated-by',
-    overrides.isDeleted ?? false,
     overrides.createdDate ?? 'test-service-created-date',
-    overrides.updatedDate ?? 'test-service-updated-date',
-    overrides.enabled ?? true,
+    overrides.isDeleted ?? false,
   )
 }
 
