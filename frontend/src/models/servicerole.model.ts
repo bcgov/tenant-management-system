@@ -29,11 +29,6 @@ export type ServiceRoleApiData = {
   description: string
 
   /**
-   * Whether or not the service role is enabled.
-   */
-  enabled?: boolean
-
-  /**
    * Unique identifier for the service role.
    */
   id: ServiceRoleId
@@ -47,18 +42,6 @@ export type ServiceRoleApiData = {
    * Name of the service role.
    */
   name: string
-
-  /**
-   * Updated by for this service role.
-   */
-  updatedBy: string
-
-  /**
-   * ISO8601 date string (YYYY-MM-DD) when service role was updated.
-   *
-   * Note: This is mapped from 'updateddateTime' in the API.
-   */
-  updatedDateTime: string
 }
 
 /**
@@ -88,11 +71,6 @@ export class ServiceRole {
   description: string
 
   /**
-   * Whether or not the service role is enabled.
-   */
-  enabled: boolean
-
-  /**
    * Unique identifier for the service role.
    */
   id: ServiceRoleId
@@ -108,18 +86,6 @@ export class ServiceRole {
   name: string
 
   /**
-   * Updated by for this service role.
-   */
-  updatedBy: string
-
-  /**
-   * ISO8601 date string (YYYY-MM-DD) when service role was updated.
-   *
-   * Note: This is mapped from 'updateddateTime' in the API.
-   */
-  updatedDate: string
-
-  /**
    * Creates a new Role instance.
    *
    * @param id - Unique identifier for the role
@@ -132,22 +98,16 @@ export class ServiceRole {
     description: string,
     allowedIdentityProviders: string[],
     createdBy: string,
-    updatedBy: string,
-    isDeleted: boolean,
     createdDate: string,
-    updatedDate: string,
-    enabled: boolean = false,
+    isDeleted: boolean,
   ) {
     this.description = description
     this.id = id
     this.name = name
     this.allowedIdentityProviders = allowedIdentityProviders
     this.createdBy = createdBy
-    this.updatedBy = updatedBy
-    this.isDeleted = isDeleted
     this.createdDate = createdDate
-    this.updatedDate = updatedDate
-    this.enabled = enabled
+    this.isDeleted = isDeleted
   }
 
   /**
@@ -163,11 +123,8 @@ export class ServiceRole {
       apiData.description,
       apiData.allowedIdentityProviders,
       apiData.createdBy,
-      apiData.updatedBy,
-      apiData.isDeleted,
       apiData.createdDateTime,
-      apiData.updatedDateTime,
-      apiData.enabled,
+      apiData.isDeleted,
     )
   }
 }

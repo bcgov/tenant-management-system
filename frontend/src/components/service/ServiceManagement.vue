@@ -2,7 +2,11 @@
 import { mdiMagnify } from '@mdi/js'
 import { computed, ref } from 'vue'
 
-import { type Service, type ServiceId } from '@/models/service.model'
+import {
+  type Service,
+  type ServiceId,
+  toServiceId,
+} from '@/models/service.model'
 import { type Tenant } from '@/models/tenant.model'
 import { ROLES } from '@/utils/constants'
 import { currentUserHasRole } from '@/utils/permissions'
@@ -10,7 +14,7 @@ import { currentUserHasRole } from '@/utils/permissions'
 // --- Component Interface -----------------------------------------------------
 
 const props = defineProps<{
-  allServices: Service[]
+  services: Service[]
   tenant: Tenant
   tenantServices: Service[]
 }>()
@@ -27,8 +31,8 @@ const selectedServiceId = ref('')
 // --- Computed Values ---------------------------------------------------------
 
 const availableServices = computed(() => {
-  return props.allServices.filter(
-    (service) => !props.tenantServices.includes(service),
+  return props.services.filter(
+    (service) => !props.tenantServices.some((ts) => ts.id === service.id),
   )
 })
 
@@ -40,8 +44,7 @@ const isTenantAdmin = computed(() => {
 
 function handleAddService() {
   if (selectedServiceId.value) {
-    // TODO
-    emit('add-service', selectedServiceId.value as ServiceId)
+    emit('add-service', toServiceId(selectedServiceId.value))
     selectedServiceId.value = ''
   }
 }
@@ -78,7 +81,7 @@ function handleAddService() {
           :headers="[
             {
               align: 'start',
-              key: 'name',
+              key: 'displayName',
               title: 'Service',
             },
             {
@@ -111,11 +114,11 @@ function handleAddService() {
         <v-col cols="12">
           <v-divider class="mb-12" />
           <h4 class="my-4">
-            Add an available {{ $t('general.servicesLabelLower', 2) }} to this
+            Add an available {{ $t('general.servicesLabelLower', 1) }} to this
             Tenant
           </h4>
           <p>
-            To add an available {{ $t('general.servicesLabelLower', 2) }} to
+            To add an available {{ $t('general.servicesLabelLower', 1) }} to
             this tenant, choose one from the dropdown and click 'Add Service' to
             confirm.
           </p>
@@ -128,7 +131,7 @@ function handleAddService() {
             v-model="selectedServiceId"
             :items="availableServices"
             class="my-0"
-            item-title="name"
+            item-title="displayName"
             item-value="id"
             label="Select an option..."
             variant="outlined"

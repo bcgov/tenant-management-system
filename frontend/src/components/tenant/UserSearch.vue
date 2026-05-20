@@ -26,6 +26,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (event: 'clear-search'): void
   (event: 'search', searchType: IdirSearchType, searchText: string): void
+  // TODO: what does it mean to select a null user?
   (event: 'select', user: User | null): void
 }>()
 

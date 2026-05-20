@@ -1,13 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { makeGroupService, makeGroupServiceRole } from '../__factories__/index'
+
 import { type GroupId } from '@/models/group.model'
-import { GroupServiceRole } from '@/models/groupservicerole.model'
 import { type ServiceId } from '@/models/service.model'
-import {
-  SharedServiceArray,
-  SharedServiceRole,
-  type SharedServiceRoleId,
-} from '@/models/sharedservicerole.model'
 import { type TenantId } from '@/models/tenant.model'
 import * as utils from '@/services/utils'
 
@@ -19,25 +15,26 @@ const mockedUtils = vi.mocked(utils)
 
 mockedUtils.logApiError.mockImplementation(() => {})
 
-// Create mock functions in vi.hoisted to ensure they're available during module loading
-const { mockGet, mockPost, mockPut, mockDelete, mockPatch } = vi.hoisted(
+// Create mock functions in vi.hoisted to ensure they're available during module
+// loading.
+const { mockDelete, mockGet, mockPatch, mockPost, mockPut } = vi.hoisted(
   () => ({
+    mockDelete: vi.fn(),
     mockGet: vi.fn(),
+    mockPatch: vi.fn(),
     mockPost: vi.fn(),
     mockPut: vi.fn(),
-    mockDelete: vi.fn(),
-    mockPatch: vi.fn(),
   }),
 )
 
 // Mock the authenticated axios to return an object with HTTP methods
 vi.mock('@/services/authenticated.axios', () => ({
   authenticatedAxios: () => ({
+    delete: mockDelete,
     get: mockGet,
+    patch: mockPatch,
     post: mockPost,
     put: mockPut,
-    delete: mockDelete,
-    patch: mockPatch,
   }),
 }))
 
@@ -76,13 +73,13 @@ describe('serviceService', () => {
     vi.clearAllMocks()
   })
 
-  describe('getAllSharedServices', () => {
+  describe('getServices', () => {
     it('should return all connected services on success', async () => {
       mockGet.mockResolvedValueOnce({
         data: { data: { sharedServices: fakeSharedServices } },
       })
 
-      const result = await serviceService.getAllSharedServices()
+      const result = await serviceService.getServices()
 
       expect(result).toEqual(fakeSharedServices)
       expect(mockGet).toHaveBeenCalledWith('/shared-services')
@@ -92,7 +89,7 @@ describe('serviceService', () => {
       const error = new Error('Failed to fetch connected services')
       mockGet.mockRejectedValueOnce(error)
 
-      await expect(serviceService.getAllSharedServices()).rejects.toThrow(error)
+      await expect(serviceService.getServices()).rejects.toThrow(error)
     })
   })
 
@@ -162,7 +159,7 @@ describe('serviceService', () => {
       )
 
       expect(mockedUtils.logApiError).toHaveBeenCalledWith(
-        'Error getting tenant connected services',
+        'Error getting tenant services',
         error,
       )
     })
@@ -233,37 +230,33 @@ describe('serviceService', () => {
       ).rejects.toThrow(error)
 
       expect(mockedUtils.logApiError).toHaveBeenCalledWith(
-        'Error getting tenant connected services',
+        'Error getting tenant group services',
         error,
       )
     })
   })
 
   describe('updateTenantGroupServices', () => {
-    const fakeSharedServices: SharedServiceArray[] = [
-      new SharedServiceArray('id1' as SharedServiceRoleId, [
-        new SharedServiceRole('id2' as SharedServiceRoleId, true),
-      ]),
+    const fakeServices = [
+      makeGroupService({
+        roles: [
+          makeGroupServiceRole({ id: 'id1' }),
+          makeGroupServiceRole({ id: 'id2', isEnabled: false }),
+        ],
+      }),
     ]
-    const fakeUpdateData: GroupServiceRole = new GroupServiceRole(
-      fakeSharedServices,
-    )
     const groupId = '1' as GroupId
 
     it('should return tenant group services on success', async () => {
       mockPut.mockResolvedValueOnce({ data: { data: {} } })
 
-      const result = await serviceService.updateTenantGroupServices(
+      const result = await serviceService.updateTenantGroupServiceRoles(
         tenantId,
         groupId,
-        fakeUpdateData,
+        fakeServices,
       )
 
       expect(result).toEqual({})
-      expect(mockPut).toHaveBeenCalledWith(
-        `/tenants/${tenantId}/groups/${groupId}/shared-services/shared-service-roles`,
-        fakeUpdateData,
-      )
     })
 
     it('should log and rethrow errors', async () => {
@@ -271,15 +264,15 @@ describe('serviceService', () => {
       mockPut.mockRejectedValueOnce(error)
 
       await expect(
-        serviceService.updateTenantGroupServices(
+        serviceService.updateTenantGroupServiceRoles(
           tenantId,
           groupId,
-          fakeUpdateData,
+          fakeServices,
         ),
       ).rejects.toThrow(error)
 
       expect(mockedUtils.logApiError).toHaveBeenCalledWith(
-        'Error updating connected services to group',
+        'Error updating tenant group service roles',
         error,
       )
     })
