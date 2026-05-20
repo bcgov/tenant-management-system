@@ -2877,6 +2877,116 @@ describe('Tenant API', () => {
     })
   })
 
+  describe('GET /v1/users/:ssoUserId/tenant-requests', () => {
+    const ssoUserId = 'F45AFBBD68C4466F956BA3A1D91878AD'
+    const mockTenantRequests = [
+      {
+        id: '123e4567-e89b-12d3-a456-426614174000',
+        name: 'Test Tenant',
+        ministryName: 'Test Ministry',
+        description: 'Test Description',
+        status: 'NEW',
+        requestedBy: {
+          id: '123e4567-e89b-12d3-a456-426614174001',
+          email: 'test@gov.bc.ca',
+          displayName: 'Test User',
+        },
+        requestedAt: new Date('2024-01-15'),
+        decisionedBy: null,
+        decisionedAt: null,
+        rejectionReason: null,
+        createdDateTime: new Date('2024-01-15'),
+        updatedDateTime: new Date('2024-01-15'),
+        createdBy: '123e4567e89b12d3a456426614174001',
+        updatedBy: '123e4567e89b12d3a456426614174001',
+      },
+    ] as unknown as GetTenantRequestsResult
+
+    beforeEach(() => {
+      app.get(
+        '/v1/users/:ssoUserId/tenant-requests',
+        validate(validator.getUserTenantRequests, {}, {}),
+        (req, res) => tmsController.getUserTenantRequests(req, res),
+      )
+
+      const validationErrorHandler: ErrorRequestHandler = (
+        err,
+        req,
+        res,
+        next,
+      ) => {
+        if (
+          err &&
+          typeof err === 'object' &&
+          'name' in err &&
+          (err as { name: string }).name === 'ValidationError'
+        ) {
+          return res
+            .status((err as { statusCode: number }).statusCode)
+            .json(err)
+        }
+        next(err)
+      }
+      app.use(validationErrorHandler)
+    })
+
+    it('should get pending tenant requests for a user by default', async () => {
+      mockTMSRepository.getTenantRequests.mockResolvedValue(mockTenantRequests)
+
+      const response = await request(app).get(
+        `/v1/users/${ssoUserId}/tenant-requests`,
+      )
+
+      expect(response.status).toBe(200)
+      expect(response.body).toMatchObject({
+        data: {
+          tenantRequests: [
+            {
+              id: mockTenantRequests[0].id,
+              name: mockTenantRequests[0].name,
+              ministryName: mockTenantRequests[0].ministryName,
+              description: mockTenantRequests[0].description,
+              status: 'NEW',
+              requestedBy: mockTenantRequests[0].requestedBy.displayName,
+            },
+          ],
+        },
+      })
+      expect(mockTMSRepository.getTenantRequests).toHaveBeenCalledWith({
+        status: 'NEW',
+        ssoUserId,
+      })
+    })
+
+    it('should return 400 when status parameter is provided', async () => {
+      const response = await request(app).get(
+        `/v1/users/${ssoUserId}/tenant-requests?status=APPROVED`,
+      )
+
+      expect(response.status).toBe(400)
+      expect(response.body.message).toBe('Validation Failed')
+      expect(mockTMSRepository.getTenantRequests).not.toHaveBeenCalled()
+    })
+
+    it('should return 500 when database error occurs', async () => {
+      mockTMSRepository.getTenantRequests.mockRejectedValue(
+        new Error('Database error'),
+      )
+
+      const response = await request(app).get(
+        `/v1/users/${ssoUserId}/tenant-requests`,
+      )
+
+      expect(response.status).toBe(500)
+      expect(response.body).toMatchObject({
+        errorMessage: 'Internal Server Error',
+        httpResponseCode: 500,
+        message: 'Database error',
+        name: 'Error occurred getting tenant requests',
+      })
+    })
+  })
+
   describe('POST /v1/shared-services', () => {
     const validSharedServiceData = {
       name: 'Test Shared Service',

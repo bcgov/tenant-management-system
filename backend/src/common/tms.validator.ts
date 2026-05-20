@@ -235,6 +235,13 @@ export default {
     }).optional(),
   },
 
+  getUserTenantRequests: {
+    params: Joi.object({
+      ssoUserId: Joi.string().min(2).required(),
+    }),
+    query: Joi.object({}).optional(),
+  },
+
   createGroup: {
     params: Joi.object({
       tenantId: Joi.string().guid().required(),

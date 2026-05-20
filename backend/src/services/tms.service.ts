@@ -863,6 +863,27 @@ export class TMSService {
     }
   }
 
+  public async getUserTenantRequests(req: Request) {
+    const input: GetTenantRequestsInputDto = {
+      status: 'NEW',
+      ssoUserId: req.params.ssoUserId,
+    }
+    const tenantRequests = await this.tmsRepository.getTenantRequests(input)
+
+    const formattedRequests = tenantRequests.map((request) => ({
+      ...request,
+      createdBy: request.requestedBy?.displayName || 'system',
+      requestedBy: request.requestedBy?.displayName,
+      decisionedBy: request.decisionedBy?.displayName,
+    }))
+
+    return {
+      data: {
+        tenantRequests: formattedRequests,
+      },
+    }
+  }
+
   public async getTenantUser(req: Request) {
     const expand: string[] =
       typeof req.query.expand === 'string'
