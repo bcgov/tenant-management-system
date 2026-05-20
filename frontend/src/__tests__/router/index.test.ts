@@ -7,6 +7,9 @@ import router from '@/router'
 vi.mock('@/components/route/BCeidLandingContainer.vue', () => ({
   default: { template: `<div>BCeidLandingContainer</div>` },
 }))
+vi.mock('@/components/route/GroupContainer.vue', () => ({
+  default: { template: `<div>GroupContainer</div>` },
+}))
 vi.mock('@/components/route/GroupListContainer.vue', () => ({
   default: { template: `<div>GroupListContainer</div>` },
 }))
@@ -30,9 +33,6 @@ vi.mock('@/components/route/SettingsTenantRequestContainer.vue', () => ({
 }))
 vi.mock('@/components/route/TenantContainer.vue', () => ({
   default: { template: `<div>TenantContainer<router-view /></div>` },
-}))
-vi.mock('@/components/route/TenantGroupContainer.vue', () => ({
-  default: { template: `<div>TenantGroupContainer</div>` },
 }))
 vi.mock('@/components/route/TenantListContainer.vue', () => ({
   default: { template: `<div>TenantListContainer</div>` },
@@ -90,7 +90,7 @@ describe('Vue Router', () => {
 
     expect(router.currentRoute.value.params.tenantId).toBe('123')
     expect(router.currentRoute.value.params.groupId).toBe('456')
-    expect(wrapper.text()).toContain('TenantGroupContainer')
+    expect(wrapper.text()).toContain('GroupContainer')
   })
 
   it('redirects unknown routes to home', async () => {

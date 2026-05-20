@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
+import GroupContainer from '@/components/route/GroupContainer.vue'
 import GroupListContainer from '@/components/route/GroupListContainer.vue'
 import GroupRoleContainer from '@/components/route/GroupRoleContainer.vue'
 import GroupUserContainer from '@/components/route/GroupUserContainer.vue'
@@ -10,7 +11,6 @@ import SettingsServiceContainer from '@/components/route/SettingsServiceContaine
 import SettingsTenantRequestContainer from '@/components/route/SettingsTenantRequestContainer.vue'
 import TenantContainer from '@/components/route/TenantContainer.vue'
 import TenantListContainer from '@/components/route/TenantListContainer.vue'
-import TenantGroupContainer from '@/components/route/TenantGroupContainer.vue'
 import TenantUserContainer from '@/components/route/TenantUserContainer.vue'
 
 const routes = [
@@ -42,7 +42,7 @@ const routes = [
       },
       {
         path: 'groups/:groupId',
-        component: TenantGroupContainer,
+        component: GroupContainer,
         children: [
           { path: 'members', component: GroupUserContainer },
           { path: 'roles', component: GroupRoleContainer },
