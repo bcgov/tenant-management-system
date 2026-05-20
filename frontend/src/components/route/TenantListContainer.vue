@@ -88,7 +88,7 @@ onMounted(async () => {
     :loading="!tenantStore.tenants"
     loading-message="Loading tenants..."
   >
-    <v-row class="mb-8">
+    <v-row class="mb-8 mt-12">
       <v-col cols="12">
         <ButtonPrimary text="Request New Tenant" @click="dialogOpen" />
       </v-col>

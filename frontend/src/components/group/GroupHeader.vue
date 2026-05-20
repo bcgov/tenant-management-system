@@ -51,7 +51,7 @@ const groupMembersCount = computed(() => props.group.groupUsers.length)
 
 <template>
   <v-sheet
-    class="px-10 py-4"
+    class="mt-12 px-10 py-4"
     color="surface-light-gray"
     @click="showDetail = !showDetail"
   >
