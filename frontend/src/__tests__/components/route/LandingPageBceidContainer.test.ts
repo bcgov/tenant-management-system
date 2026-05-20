@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { createMockAuthStore } from '@/__tests__/__helpers__/useAuthStore.mock'
 
-import BceidLandingContainer from '@/components/route/BCeidLandingContainer.vue'
+import LandingPageBceidContainer from '@/components/route/LandingPageBceidContainer.vue'
 
 let currentAuthStore = createMockAuthStore()
 
@@ -12,7 +12,7 @@ vi.mock('@/stores/useAuthStore', () => ({
 }))
 
 const mountComponent = () =>
-  mount(BceidLandingContainer, {
+  mount(LandingPageBceidContainer, {
     global: {
       mocks: {
         $t: (key: string) => key,
@@ -29,7 +29,7 @@ const mountComponent = () =>
     },
   })
 
-describe('BCeidLandingContainer.vue', () => {
+describe('LandingPageBceidContainer.vue', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     currentAuthStore = createMockAuthStore()

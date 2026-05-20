@@ -1,10 +1,10 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
-import BCeidLandingContainer from '@/components/route/BCeidLandingContainer.vue'
 import GroupListContainer from '@/components/route/GroupListContainer.vue'
 import GroupRoleContainer from '@/components/route/GroupRoleContainer.vue'
 import GroupUserContainer from '@/components/route/GroupUserContainer.vue'
 import LandingPageContainer from '@/components/route/LandingPageContainer.vue'
+import LandingPageBceidContainer from '@/components/route/LandingPageBceidContainer.vue'
 import ServiceManagementContainer from '@/components/route/ServiceManagementContainer.vue'
 import SettingsServiceContainer from '@/components/route/SettingsServiceContainer.vue'
 import SettingsTenantRequestContainer from '@/components/route/SettingsTenantRequestContainer.vue'
@@ -15,7 +15,7 @@ import TenantUserContainer from '@/components/route/TenantUserContainer.vue'
 
 const routes = [
   { path: '/', component: LandingPageContainer },
-  { path: '/bceid', component: BCeidLandingContainer },
+  { path: '/bceid', component: LandingPageBceidContainer },
   {
     path: '/settings',
     redirect: '/settings/requests',
