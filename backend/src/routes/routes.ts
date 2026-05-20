@@ -67,6 +67,14 @@ export class Routes {
           this.tmsController.getTenantsForUser(req, res),
       )
     app
+      .route(RoutesConstants.GET_USER_TENANT_REQUESTS)
+      .get(
+        checkJwt(),
+        validate(validator.getUserTenantRequests, {}, {}),
+        (req: Request, res: Response) =>
+          this.tmsController.getUserTenantRequests(req, res),
+      )
+    app
       .route(RoutesConstants.GET_TENANT_USERS)
       .get(
         checkJwt({ sharedServiceAccess: true }),

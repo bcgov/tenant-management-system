@@ -196,9 +196,17 @@ export interface GetUserTenantsInputDto {
   jwtAudience?: string
 }
 
-export interface GetTenantRequestsInputDto {
-  status?: 'NEW' | 'APPROVED' | 'REJECTED'
-}
+export type TenantRequestStatus = 'NEW' | 'APPROVED' | 'REJECTED'
+
+export type GetTenantRequestsInputDto =
+  | {
+      status?: TenantRequestStatus
+      ssoUserId?: undefined
+    }
+  | {
+      status: 'NEW'
+      ssoUserId: string
+    }
 
 export interface GetTenantUsersInputDto {
   tenantId: string

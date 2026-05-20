@@ -488,6 +488,22 @@ export class TMSController {
     }
   }
 
+  public async getUserTenantRequests(req: Request, res: Response) {
+    try {
+      const response = await this.tmsService.getUserTenantRequests(req)
+      res.status(200).send(response)
+    } catch (error: unknown) {
+      logger.error(getErrorMessage(error))
+      this.errorHandler.generalError(
+        res,
+        'Error occurred getting tenant requests',
+        getErrorMessage(error),
+        500,
+        'Internal Server Error',
+      )
+    }
+  }
+
   public async createSharedService(req: Request, res: Response) {
     try {
       const sharedService = await this.tmsService.createSharedService(req)

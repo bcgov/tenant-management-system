@@ -626,6 +626,61 @@ paths:
               schema:
                 $ref: '#/components/schemas/InternalServerErrorResponse'
 
+  /v1/users/{ssoUserId}/tenant-requests:
+    get:
+      summary: Get pending tenant requests for a user
+      description: |
+        Retrieves tenant requests submitted by a specific user. Requires JWT authentication.
+        Only pending requests with status `NEW` are returned.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: ssoUserId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The SSO user ID. Must match the authenticated token user.
+      responses:
+        '200':
+          description: Pending tenant requests for the user successfully retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      tenantRequests:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/TenantRequest'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        '403':
+          description: Forbidden - Requested user does not match token user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessDeniedResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+
   /v1/users/bcgovssousers/idir/search:
     get:
       summary: Search BC Gov SSO IDIR users

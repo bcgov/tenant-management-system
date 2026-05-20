@@ -1364,6 +1364,7 @@ export class TMSRepository {
 
   public async getTenantRequests(input: GetTenantRequestsInputDto) {
     const status = input.status
+    const ssoUserId = input.ssoUserId
     const queryBuilder = this.manager
       .createQueryBuilder(TenantRequest, 'tenantRequest')
       .leftJoinAndSelect('tenantRequest.requestedBy', 'requestedBy')
@@ -1372,6 +1373,12 @@ export class TMSRepository {
 
     if (status) {
       queryBuilder.where('tenantRequest.status = :status', { status })
+    }
+
+    if (ssoUserId) {
+      queryBuilder.andWhere('requestedBy.ssoUserId = :ssoUserId', {
+        ssoUserId,
+      })
     }
 
     const tenantRequests: TenantRequest[] = await queryBuilder.getMany()
