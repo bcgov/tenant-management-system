@@ -32,19 +32,19 @@ export const useUserStore = defineStore('user', () => {
   ) {
     loading.value = true
     try {
-      let response
+      let userSearchData
       switch (searchType) {
         case BCEID_SEARCH_TYPE.EMAIL.value:
-          response = await userService.searchBCeIDEmail(searchValue)
+          userSearchData = await userService.searchBCeIDEmail(searchValue)
           break
         case BCEID_SEARCH_TYPE.DISPLAY_NAME.value:
-          response = await userService.searchBCeIDDisplayName(searchValue)
+          userSearchData = await userService.searchBCeIDDisplayName(searchValue)
           break
         default:
           throw new Error(`Invalid search type: ${searchType}`)
       }
 
-      searchResults.value = response.map(User.fromSearchData)
+      searchResults.value = userSearchData.map(User.fromSearchData)
 
       return searchResults.value
     } finally {
@@ -66,22 +66,22 @@ export const useUserStore = defineStore('user', () => {
   ): Promise<User[]> {
     loading.value = true
     try {
-      let response
+      let userSearchData
       switch (searchType) {
         case IDIR_SEARCH_TYPE.EMAIL.value:
-          response = await userService.searchIdirEmail(searchValue)
+          userSearchData = await userService.searchIdirEmail(searchValue)
           break
         case IDIR_SEARCH_TYPE.FIRST_NAME.value:
-          response = await userService.searchIdirFirstName(searchValue)
+          userSearchData = await userService.searchIdirFirstName(searchValue)
           break
         case IDIR_SEARCH_TYPE.LAST_NAME.value:
-          response = await userService.searchIdirLastName(searchValue)
+          userSearchData = await userService.searchIdirLastName(searchValue)
           break
         default:
           throw new Error(`Invalid search type: ${searchType}`)
       }
 
-      searchResults.value = response.map(User.fromSearchData)
+      searchResults.value = userSearchData.map(User.fromSearchData)
 
       return searchResults.value
     } finally {

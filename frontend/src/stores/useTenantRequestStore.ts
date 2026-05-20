@@ -39,8 +39,8 @@ export const useTenantRequestStore = defineStore('tenantRequest', () => {
   const fetchTenantRequests = async (): Promise<void> => {
     loading.value = true
     try {
-      const tenantList = await tenantRequestService.getTenantRequests()
-      tenantRequests.value = tenantList.map(TenantRequest.fromApiData)
+      const tenantData = await tenantRequestService.getTenantRequests()
+      tenantRequests.value = tenantData.map(TenantRequest.fromApiData)
     } finally {
       loading.value = false
     }

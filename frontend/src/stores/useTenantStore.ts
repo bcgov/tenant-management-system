@@ -47,11 +47,43 @@ export const useTenantStore = defineStore('tenant', () => {
    * @returns A promise that resolves when the user is added to the tenant.
    */
   const addTenantUser = async (tenant: Tenant, user: User) => {
-    const apiResponse = await tenantService.addUser(tenant.id, user)
+    const userData = await tenantService.addUser(tenant.id, user)
 
     // Update tenant users after adding
-    const addedUser = User.fromApiData(apiResponse)
+    const addedUser = User.fromApiData(userData)
     tenant.users.push(addedUser)
+  }
+
+  /**
+   * Adds/Assigns roles from a user in a tenant. (removes those not in array)
+   *
+   * @param tenant - The tenant the user belongs to.
+   * @param userId - The ID of the user.
+   * @param roleIds - The IDs of the role to ensure are present.
+   * @throws {Error} If the user is not found in the tenant.
+   * @returns A promise that resolves when the roles are assigned.
+   */
+  const assignTenantUserRoles = async (
+    tenant: Tenant,
+    userId: UserId,
+    roleIds: RoleId[],
+    fullRoleIds?: string[],
+  ): Promise<void> => {
+    fullRoleIds ??= roleIds
+
+    const roleStore = useRoleStore()
+    await tenantService.assignUserRoles(tenant.id, userId, roleIds)
+
+    const user = tenant.users.find((u) => u.id === userId)
+    if (!user) {
+      throw new Error(`User with ID ${userId} not found in tenant ${tenant.id}`)
+    }
+
+    const newRoles = roleStore.roles.filter((role) => {
+      return fullRoleIds.includes(role.id)
+    })
+
+    user.roles = newRoles
   }
 
   /**
@@ -82,8 +114,8 @@ export const useTenantStore = defineStore('tenant', () => {
   const fetchTenants = async (userId: UserId): Promise<void> => {
     loading.value = true
     try {
-      const tenantList = await tenantService.getUserTenants(userId)
-      tenants.value = tenantList.map(Tenant.fromApiData)
+      const tenantData = await tenantService.getUserTenants(userId)
+      tenants.value = tenantData.map(Tenant.fromApiData)
     } finally {
       loading.value = false
     }
@@ -132,38 +164,6 @@ export const useTenantStore = defineStore('tenant', () => {
   }
 
   /**
-   * Adds/Assigns roles from a user in a tenant. (removes those not in array)
-   *
-   * @param tenant - The tenant the user belongs to.
-   * @param userId - The ID of the user.
-   * @param roleIds - The IDs of the role to ensure are present.
-   * @throws {Error} If the user is not found in the tenant.
-   * @returns A promise that resolves when the roles are assigned.
-   */
-  const assignTenantUserRoles = async (
-    tenant: Tenant,
-    userId: UserId,
-    roleIds: RoleId[],
-    fullRoleIds?: string[],
-  ): Promise<void> => {
-    fullRoleIds ??= roleIds
-
-    const roleStore = useRoleStore()
-    await tenantService.assignUserRoles(tenant.id, userId, roleIds)
-
-    const user = tenant.users.find((u) => u.id === userId)
-    if (!user) {
-      throw new Error(`User with ID ${userId} not found in tenant ${tenant.id}`)
-    }
-
-    const newRoles = roleStore.roles.filter((role) => {
-      return fullRoleIds.includes(role.id)
-    })
-
-    user.roles = newRoles
-  }
-
-  /**
    * Updates the details of a tenant.
    *
    * @param tenantId - The ID of the tenant to update.
@@ -189,11 +189,11 @@ export const useTenantStore = defineStore('tenant', () => {
       tenantDetails.description,
     )
 
-    const updatedTenant = Tenant.fromApiData(apiResponse)
+    const tenantData = Tenant.fromApiData(apiResponse)
 
-    tenant.name = updatedTenant.name
-    tenant.ministryName = updatedTenant.ministryName
-    tenant.description = updatedTenant.description
+    tenant.name = tenantData.name
+    tenant.ministryName = tenantData.ministryName
+    tenant.description = tenantData.description
   }
 
   return {
@@ -201,12 +201,12 @@ export const useTenantStore = defineStore('tenant', () => {
     tenants,
 
     addTenantUser,
+    assignTenantUserRoles,
     fetchTenant,
     fetchTenants,
     getTenant,
     removeTenantUser,
     removeTenantUserRole,
-    assignTenantUserRoles,
     updateTenantDetails,
   }
 })

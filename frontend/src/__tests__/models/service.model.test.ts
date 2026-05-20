@@ -11,31 +11,27 @@ describe('Service model', () => {
   it('constructor assigns all properties correctly', () => {
     const service = new Service(
       toServiceId('service123'),
-      'My Service',
-      '2025-08-01',
-      '',
-      '',
-      '',
-      false,
-      '',
+      'displayName',
+      'createdDate',
+      'clientIdentifier',
+      'description',
       [],
     )
 
+    expect(service.description).toBe('description')
+    expect(service.displayName).toBe('displayName')
+    expect(service.clientIdentifier).toBe('clientIdentifier')
+    expect(service.createdDate).toBe('createdDate')
     expect(service.id).toBe('service123')
-    expect(service.name).toBe('My Service')
-    expect(service.createdDate).toBe('2025-08-01')
   })
 
   it('fromApiData creates Service instance correctly', () => {
     const apiData: ServiceApiData = {
       id: toServiceId('service456'),
-      name: 'API Service',
+      displayName: 'API Service',
       createdDateTime: '2025-08-01',
       clientIdentifier: 'client-789',
-      createdBy: 'user-123',
       description: 'A service from API',
-      isActive: true,
-      updatedDateTime: '2025-08-02',
       roles: [
         {
           id: toServiceRoleId('role456'),
@@ -43,11 +39,8 @@ describe('Service model', () => {
           description: 'Standard user role',
           allowedIdentityProviders: [],
           createdBy: '',
-          enabled: true,
-          updatedBy: '',
-          isDeleted: false,
+          isDeleted: true,
           createdDateTime: '',
-          updatedDateTime: '',
         },
       ],
     }
@@ -55,8 +48,8 @@ describe('Service model', () => {
     const service = Service.fromApiData(apiData)
 
     expect(service).toBeInstanceOf(Service)
-    expect(service.id).toBe(apiData.id)
-    expect(service.name).toBe(apiData.name)
-    expect(service.createdDate).toBe(apiData.createdDateTime)
+    expect(service.id).toBe('service456')
+    expect(service.displayName).toBe('API Service')
+    expect(service.createdDate).toBe('2025-08-01')
   })
 })
