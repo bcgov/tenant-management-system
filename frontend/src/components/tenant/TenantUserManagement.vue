@@ -2,7 +2,6 @@
 import { mdiMagnify, mdiPlusBox } from '@mdi/js'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-const { t } = useI18n()
 
 import RoleDialog from '@/components/tenant/RoleDialog.vue'
 import UserSearch from '@/components/tenant/UserSearch.vue'
@@ -18,13 +17,6 @@ import { type User, type UserId } from '@/models/user.model'
 import { useGroupStore } from '@/stores/useGroupStore'
 import { type IdirSearchType, ROLES } from '@/utils/constants'
 import { currentUserHasRole } from '@/utils/permissions'
-
-// --- Stores ------------------------------------------------------------------
-
-// TODO: non-container components should not directly use stores - they should
-// emit events and let the parent container handle the store interactions.
-// Refactor this component to follow that pattern.
-const groupStore = useGroupStore()
 
 // --- Component Interface -----------------------------------------------------
 
@@ -44,49 +36,85 @@ const emit = defineEmits<{
   (event: 'remove-user', userId: UserId | undefined): void
 }>()
 
+// --- Store and Composable Setup ----------------------------------------------
+
+// TODO: non-container components should not directly use stores - they should
+// emit events and let the parent container handle the store interactions.
+// Refactor this component to follow that pattern.
+const groupStore = useGroupStore()
+
 // --- Component State ---------------------------------------------------------
 
-const confirmDialog = ref({
-  title: 'Confirm Role Removal',
-  message: 'Are you sure you want to remove this role from the user?',
-  buttons: [
-    { text: 'Cancel', action: 'cancel', type: 'secondary' as const },
-    { text: 'Remove', action: 'remove', type: 'primary' as const },
-  ],
-})
-const confirmDialogVisible = ref(false)
+const { t } = useI18n()
 
-const confirmOffboardDialogVisible = ref(false)
-const confirmOffboardDialog = ref({
-  title: t('users.offboardUserTitle'),
-  message: t('users.offboardUserMessage'),
+const addGroups = ref<boolean[]>([])
+
+const confirmDialog = ref({
   buttons: [
-    { text: t('general.cancel'), action: 'cancel', type: 'secondary' as const },
+    { action: 'cancel', text: 'Cancel', type: 'secondary' as const },
+    { action: 'remove', text: 'Remove', type: 'primary' as const },
+  ],
+  message: 'Are you sure you want to remove this role from the user?',
+  title: 'Confirm Role Removal',
+  visible: false,
+})
+
+const confirmOffboardDialog = ref({
+  buttons: [
+    { action: 'cancel', text: t('general.cancel'), type: 'secondary' as const },
     {
-      text: t('users.offboardUserAction'),
       action: 'remove',
-      type: 'secondary' as const,
+      text: t('users.offboardUserAction'),
+      type: 'primary' as const,
     },
   ],
+  message: t('users.offboardUserMessage'),
+  title: t('users.offboardUserTitle'),
+  visible: false,
 })
 
 const infoDialog = ref({
-  title: 'Action Blocked',
+  buttons: [{ action: 'ok', text: 'OK', type: 'primary' as const }],
   message: '',
-  buttons: [{ text: 'OK', action: 'ok', type: 'primary' as const }],
+  title: 'Action Blocked',
+  visible: false,
 })
-const infoDialogVisible = ref(false)
+
+const modifyingUserIndex = ref<number | null>(null)
 const pendingRole = ref<Role | null>(null)
 const pendingUser = ref<User | null>(null)
+const roleDialogVisible = ref(false)
+const selectAllGroups = ref(false)
+const selectAllRoles = ref(false)
 const selectedRoles = ref<Role[]>([])
 const selectedUser = ref<User | null>(null)
 const showSearch = ref(false)
 const userSearch = ref('')
-const roleDialogVisible = ref(false)
-const modifyingUserIndex = ref<number | null>(null)
-const selectAllGroups = ref(false)
-const selectAllRoles = ref(false)
-const addGroups = ref<boolean[]>([])
+
+// --- Watchers and Effects ----------------------------------------------------
+
+watch(groupStore.groups, (newGroups) => {
+  addGroups.value = []
+  for (const _ of newGroups) {
+    addGroups.value.push(selectAllGroups.value)
+  }
+})
+
+watch(selectAllGroups, () => {
+  addGroups.value = []
+  for (const _ of groupStore.groups) {
+    addGroups.value.push(selectAllGroups.value)
+  }
+})
+
+watch(selectAllRoles, () => {
+  selectedRoles.value = []
+  for (const role of roles.value) {
+    if (selectAllRoles.value) {
+      selectedRoles.value.push(role)
+    }
+  }
+})
 
 // --- Computed Values ---------------------------------------------------------
 
@@ -104,20 +132,12 @@ const roles = computed(() => props.possibleRoles ?? [])
 // --- Component Methods -------------------------------------------------------
 
 function confirmRemoveRole() {
-  if (pendingUser.value && pendingRole.value) {
+  if (pendingRole.value && pendingUser.value) {
     emit('remove-role', pendingUser.value.id, pendingRole.value.id)
   }
 
-  pendingUser.value = null
   pendingRole.value = null
-}
-
-function toggleSearch() {
-  showSearch.value = !showSearch.value
-  if (!showSearch.value) {
-    selectedUser.value = null
-    selectedRoles.value = []
-  }
+  pendingUser.value = null
 }
 
 function handleAddUser() {
@@ -154,6 +174,11 @@ function handleClearSearch() {
   emit('clear-search')
 }
 
+function handleCloseRoleDialog(open: boolean) {
+  roleDialogVisible.value = open
+  modifyingUserIndex.value = null
+}
+
 function handleConfirmButtonClick(action: string) {
   if (action === 'cancel') {
     pendingUser.value = null
@@ -186,6 +211,7 @@ function handleRemoveRole(user: User, role: Role) {
         'remove this role from the current user, assign the role to another ' +
         'user first.',
     )
+
     return
   }
 
@@ -195,12 +221,13 @@ function handleRemoveRole(user: User, role: Role) {
         'at least one role to remain in a tenant. To proceed, assign a new ' +
         'role to this user before removing the current one.',
     )
+
     return
   }
 
-  pendingUser.value = user
   pendingRole.value = role
-  confirmDialogVisible.value = true
+  pendingUser.value = user
+  confirmDialog.value.visible = true
 }
 
 function handleSearch(searchType: IdirSearchType, searchText: string) {
@@ -209,22 +236,6 @@ function handleSearch(searchType: IdirSearchType, searchText: string) {
 
 function handleUserSelected(user: User | null) {
   selectedUser.value = user
-}
-
-function showInfo(message: string) {
-  infoDialog.value.message = message
-  infoDialogVisible.value = true
-}
-
-function showOffboardDialog(user: User) {
-  pendingUser.value = user
-  confirmOffboardDialog.value.message = t('users.offboardUserMessage')
-  confirmOffboardDialogVisible.value = true
-}
-
-function handleCloseRoleDialog(open: boolean) {
-  roleDialogVisible.value = open
-  modifyingUserIndex.value = null
 }
 
 function showChangeRoles(user: User) {
@@ -238,28 +249,24 @@ function showChangeRoles(user: User) {
   }
 }
 
-watch(groupStore.groups, (newGroups) => {
-  addGroups.value = []
-  for (const _ of newGroups) {
-    addGroups.value.push(selectAllGroups.value)
-  }
-})
+function showInfo(message: string) {
+  infoDialog.value.message = message
+  infoDialog.value.visible = true
+}
 
-watch(selectAllGroups, () => {
-  addGroups.value = []
-  for (const _ of groupStore.groups) {
-    addGroups.value.push(selectAllGroups.value)
-  }
-})
+function showOffboardDialog(user: User) {
+  pendingUser.value = user
+  confirmOffboardDialog.value.message = t('users.offboardUserMessage')
+  confirmOffboardDialog.value.visible = true
+}
 
-watch(selectAllRoles, () => {
-  selectedRoles.value = []
-  for (const role of roles.value) {
-    if (selectAllRoles.value) {
-      selectedRoles.value.push(role)
-    }
+function toggleSearch() {
+  showSearch.value = !showSearch.value
+  if (!showSearch.value) {
+    selectedUser.value = null
+    selectedRoles.value = []
   }
-})
+}
 </script>
 
 <template>
@@ -411,7 +418,7 @@ watch(selectAllRoles, () => {
 
     <!-- Info dialog for single-button notifications -->
     <SimpleDialog
-      v-model="infoDialogVisible"
+      v-model="infoDialog.visible"
       :buttons="infoDialog.buttons"
       :message="infoDialog.message"
       :title="infoDialog.title"
@@ -419,7 +426,7 @@ watch(selectAllRoles, () => {
 
     <!-- Confirmation dialog for yes/no decisions -->
     <SimpleDialog
-      v-model="confirmDialogVisible"
+      v-model="confirmDialog.visible"
       :buttons="confirmDialog.buttons"
       :message="confirmDialog.message"
       :title="confirmDialog.title"
@@ -428,7 +435,7 @@ watch(selectAllRoles, () => {
 
     <!-- Confirm offboard user dialog -->
     <SimpleDialog
-      v-model="confirmOffboardDialogVisible"
+      v-model="confirmOffboardDialog.visible"
       :buttons="confirmOffboardDialog.buttons"
       :message="confirmOffboardDialog.message"
       :title="confirmOffboardDialog.title"

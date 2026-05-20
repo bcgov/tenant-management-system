@@ -4,6 +4,7 @@ import { computed, ref } from 'vue'
 
 import UserSearch from '@/components/group/UserSearch.vue'
 import FloatingActionButton from '@/components/ui/FloatingActionButton.vue'
+import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
 import SimpleDialog from '@/components/ui/SimpleDialog.vue'
 import UserTable from '@/components/user/UserTable.vue'
@@ -33,6 +34,7 @@ const emit = defineEmits<{
 // --- Component State ---------------------------------------------------------
 
 const groupUserToDelete = ref<GroupUser | null>(null)
+const selectedUser = ref<User | null>(null)
 const showDeleteDialog = ref(false)
 const showSearch = ref(false)
 
@@ -40,13 +42,13 @@ const showSearch = ref(false)
 
 const deleteDialogButtons = computed(() => [
   {
-    text: 'Cancel',
     action: 'cancel',
+    text: 'Cancel',
     type: 'secondary' as const,
   },
   {
-    text: 'Remove',
     action: 'remove',
+    text: 'Remove',
     type: 'primary' as const,
   },
 ])
@@ -62,8 +64,12 @@ const isUserAdmin = computed(() => {
 
 // --- Component Methods -------------------------------------------------------
 
-function handleAddUser(user: User) {
-  emit('add', user)
+function handleAddUser() {
+  if (!selectedUser.value) {
+    return
+  }
+
+  emit('add', selectedUser.value)
   toggleSearch()
 }
 
@@ -95,6 +101,10 @@ function handleDeleteDialogAction(action: string) {
 
 function handleSearch(searchType: IdirSearchType, searchText: string) {
   emit('search', searchType, searchText)
+}
+
+function handleUserSelected(user: User | null) {
+  selectedUser.value = user
 }
 
 function toggleSearch() {
@@ -147,12 +157,18 @@ function toggleSearch() {
           :tenant="tenant"
           @clear-search="handleClearSearch"
           @search="handleSearch"
-          @select="handleAddUser"
+          @select="handleUserSelected"
         />
 
         <v-row class="mt-8">
           <v-col :cols="12" class="d-flex justify-start">
             <ButtonSecondary class="me-4" text="Cancel" @click="handleCancel" />
+
+            <ButtonPrimary
+              :disabled="!selectedUser"
+              text="Add User"
+              @click="handleAddUser"
+            />
           </v-col>
         </v-row>
       </div>

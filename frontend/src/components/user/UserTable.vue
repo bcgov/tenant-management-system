@@ -36,16 +36,13 @@ const headerClass = 'bg-surface-light font-weight-bold text-body-small'
 
 const props = defineProps<{
   editUserRoles?: (user: User) => void
-  enableSelect?: boolean
   filter?: string
   handleRemoveRole?: (user: User, role: Role) => void
   selectUser?: (e: Event | null, r: RowPropsType) => boolean
   showActions?: boolean
-  showAdd?: boolean
   showEditRoles?: boolean
   showOffboardDialog?: (user: User) => void
   showRoles?: boolean
-  sortBy?: Array<{ key: string; order?: 'asc' | 'desc' }>
   tenant: Tenant
   users: Array<User> | Array<GroupUser>
   where: string
@@ -164,15 +161,6 @@ const headers: ComputedRef<TableHeaderItem[]> = computed(() => {
     })
   }
 
-  if (props.showAdd) {
-    rv.push({
-      align: 'center',
-      key: 'add',
-      sortable: false,
-      title: t('users.addUser'),
-    })
-  }
-
   return rv
 })
 
@@ -192,10 +180,6 @@ const moreThanOneTenantOwner = computed(() => {
 })
 
 const sortKey = computed(() => {
-  if (props.sortBy && props.sortBy.length > 0) {
-    return props.sortBy
-  }
-
   return [{ key: 'ssoUser.firstName' }]
 })
 
@@ -260,20 +244,19 @@ const selectRowItem = (e: Event, r: RowPropsType) => {
     hover
     return-object
     @click:row="
-      (event: Event, row: RowPropsType) =>
-        enableSelect && selectRowItem(event, row)
+      (event: Event, row: RowPropsType) => false && selectRowItem(event, row)
     "
   >
     <template #no-data>
       <div>
-        <h3 v-if="!showAdd" class="my-4">
+        <h3 class="my-4">
           {{ $t('users.noUsersYet', { where }) }}
         </h3>
         <p>
           {{ filter ? $t('users.noMatch') : $t('users.noUsersIn', { where }) }}
         </p>
         <v-btn
-          v-if="!showAdd && isUserAdmin"
+          v-if="isUserAdmin"
           class="mt-4"
           color="primary"
           variant="text"

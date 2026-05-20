@@ -6,6 +6,7 @@ import { useI18n } from 'vue-i18n'
 import AdministratorContainer from '@/components/auth/AdministratorContainer.vue'
 import LoginContainer from '@/components/auth/LoginContainer.vue'
 import TenantRequestDisplay from '@/components/tenantrequest/TenantRequestDisplay.vue'
+import EmptyState from '@/components/ui/EmptyState.vue'
 import { useNotification } from '@/composables/useNotification'
 import { DomainError } from '@/errors/domain/DomainError'
 import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
@@ -143,7 +144,7 @@ onMounted(async () => {
 <template>
   <LoginContainer>
     <AdministratorContainer>
-      <v-container class="px-0">
+      <v-container>
         <template v-if="selectedTenantRequest">
           <TenantRequestDisplay
             :is-duplicate-name="isDuplicateName"
@@ -168,6 +169,7 @@ onMounted(async () => {
           <v-row>
             <v-col cols="4">
               <v-text-field
+                v-if="tenantRequests.length > 0"
                 v-model="search"
                 :append-inner-icon="mdiMagnify"
                 label="Search"
@@ -211,6 +213,7 @@ onMounted(async () => {
                     title: 'Status',
                   },
                 ]"
+                :hide-default-footer="tenantRequests.length === 0"
                 :items="tenantRequests"
                 :search="search"
                 :sort-by="[{ key: 'createdDate', order: 'desc' }]"
@@ -221,11 +224,18 @@ onMounted(async () => {
                 @click:row="handleRowClick"
               >
                 <template #no-data>
-                  <v-alert type="info">{{
-                    search
-                      ? 'No tenant requests match your search criteria'
-                      : 'There are no tenant requests'
-                  }}</v-alert>
+                  <EmptyState
+                    v-if="search"
+                    body="Change your search criteria to match tenant requests"
+                    title="No matching tenant requests"
+                    variant="lookup"
+                  />
+                  <EmptyState
+                    v-else
+                    body="Tenant requests submitted by users will appear here"
+                    title="No tenant requests yet"
+                    variant="lookup"
+                  />
                 </template>
                 <template #[`item.status`]="{ item }">
                   <div
