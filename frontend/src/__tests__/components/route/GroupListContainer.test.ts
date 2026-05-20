@@ -4,7 +4,7 @@ import { nextTick } from 'vue'
 
 import { makeGroup, makeTenant, makeUser } from '@/__tests__/__factories__'
 
-import GroupListContainer from '@/components/group/GroupListContainer.vue'
+import GroupListContainer from '@/components/route/GroupListContainer.vue'
 import { DomainError } from '@/errors/domain/DomainError'
 import { ServerError } from '@/errors/domain/ServerError'
 import { Group } from '@/models/group.model'
@@ -115,7 +115,9 @@ describe('GroupListContainer.vue', () => {
   describe('handleGroupCreate Logic', () => {
     it('skips user addition if addUser is false', async () => {
       const addMock = vi.mocked(mockGroup.addGroup)
-      if (addMock) addMock.mockResolvedValue(makeGroup())
+      if (addMock) {
+        addMock.mockResolvedValue(makeGroup())
+      }
       const addUserSpy = vi.spyOn(mockGroup, 'addGroupUser')
 
       const wrapper = mountComponent()
@@ -134,10 +136,13 @@ describe('GroupListContainer.vue', () => {
       vi.mocked(currentUserHasRole).mockReturnValue(true)
 
       const addMock = vi.mocked(mockGroup.addGroup)
-      if (addMock) addMock.mockResolvedValue(makeGroup())
+      if (addMock) {
+        addMock.mockResolvedValue(makeGroup())
+      }
       const addUserMock = vi.mocked(mockGroup.addGroupUser)
-      if (addUserMock)
-        addUserMock.mockResolvedValue(undefined as unknown as void)
+      if (addUserMock) {
+        addUserMock.mockResolvedValue(undefined)
+      }
 
       const wrapper = mountComponent()
       const dialog = wrapper.getComponent({ name: 'GroupCreateDialog' })
@@ -159,7 +164,9 @@ describe('GroupListContainer.vue', () => {
 
       const srvError = new ServerError('Tech')
       Object.defineProperty(srvError, 'userMessage', { value: null })
-      if (addMock) addMock.mockRejectedValueOnce(srvError)
+      if (addMock) {
+        addMock.mockRejectedValueOnce(srvError)
+      }
       await dialog.vm.$emit('submit', { name: 'G' }, false)
       await nextTick()
       expect(mockNotify.error).toHaveBeenLastCalledWith(
@@ -168,10 +175,13 @@ describe('GroupListContainer.vue', () => {
 
       const user = makeUser()
       Object.assign(mockAuth, { authenticatedUser: user })
-      if (addMock) addMock.mockResolvedValue(makeGroup())
+      if (addMock) {
+        addMock.mockResolvedValue(makeGroup())
+      }
       const addUserMock = vi.mocked(mockGroup.addGroupUser)
-      if (addUserMock)
+      if (addUserMock) {
         addUserMock.mockRejectedValueOnce(new DomainError('E', 'Add Fail'))
+      }
 
       await dialog.vm.$emit('submit', { name: 'G' }, true)
       await nextTick()

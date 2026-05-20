@@ -4,9 +4,6 @@ import { type ComponentPublicInstance } from 'vue'
 
 import router from '@/router'
 
-vi.mock('@/components/group/GroupListContainer.vue', () => ({
-  default: { template: `<div>GroupListContainer</div>` },
-}))
 vi.mock('@/components/group/GroupRoleContainer.vue', () => ({
   default: { template: `<div>GroupRoleContainer</div>` },
 }))
@@ -15,6 +12,9 @@ vi.mock('@/components/group/UserManagementContainer.vue', () => ({
 }))
 vi.mock('@/components/route/BCeidLandingContainer.vue', () => ({
   default: { template: `<div>BCeidLandingContainer</div>` },
+}))
+vi.mock('@/components/route/GroupListContainer.vue', () => ({
+  default: { template: `<div>GroupListContainer</div>` },
 }))
 vi.mock('@/components/route/LandingPageContainer.vue', () => ({
   default: { template: `<div>LandingPageContainer</div>` },

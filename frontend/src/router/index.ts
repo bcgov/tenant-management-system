@@ -1,9 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
-import GroupListContainer from '@/components/group/GroupListContainer.vue'
 import GroupRoleContainer from '@/components/group/GroupRoleContainer.vue'
 import GroupUserManagementContainer from '@/components/group/UserManagementContainer.vue'
 import BCeidLandingContainer from '@/components/route/BCeidLandingContainer.vue'
+import GroupListContainer from '@/components/route/GroupListContainer.vue'
 import LandingPageContainer from '@/components/route/LandingPageContainer.vue'
 import SettingsServiceContainer from '@/components/route/SettingsServiceContainer.vue'
 import SettingsTenantRequestContainer from '@/components/route/SettingsTenantRequestContainer.vue'
