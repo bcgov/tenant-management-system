@@ -11,7 +11,7 @@ import {
   makeUser,
 } from '@/__tests__/__factories__'
 
-import TenantUserManagementContainer from '@/components/tenant/UserManagementContainer.vue'
+import TenantUserContainer from '@/components/route/TenantUserContainer.vue'
 import { useNotification } from '@/composables/useNotification'
 import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
 import { useGroupStore } from '@/stores/useGroupStore'
@@ -29,13 +29,13 @@ function child(wrapper: ReturnType<typeof mountComponent>) {
 }
 
 function mountComponent(tenant = makeTenant()) {
-  return mount(TenantUserManagementContainer, {
+  return mount(TenantUserContainer, {
     props: { tenant },
     global: { stubs: { TenantUserManagement: true } },
   })
 }
 
-describe('TenantUserManagementContainer', () => {
+describe('TenantUserContainer', () => {
   let groupStore: ReturnType<typeof useGroupStore>
   let roleStore: ReturnType<typeof useRoleStore>
   let tenantStore: ReturnType<typeof useTenantStore>

@@ -10,7 +10,7 @@ import {
   makeUser,
 } from '@/__tests__/__factories__'
 
-import GroupUserManagementContainer from '@/components/group/UserManagementContainer.vue'
+import GroupUserContainer from '@/components/route/GroupUserContainer.vue'
 import { useNotification } from '@/composables/useNotification'
 import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
 import { useGroupStore } from '@/stores/useGroupStore'
@@ -22,13 +22,13 @@ vi.mock('@/composables/useNotification', () => ({
 }))
 
 function mountComponent(group = makeGroup(), tenant = makeTenant()) {
-  return mount(GroupUserManagementContainer, {
+  return mount(GroupUserContainer, {
     props: { group, tenant },
     global: { stubs: { GroupUserManagement: true } },
   })
 }
 
-describe('GroupUserManagementContainer', () => {
+describe('GroupUserContainer', () => {
   let groupStore: ReturnType<typeof useGroupStore>
   let userStore: ReturnType<typeof useUserStore>
   let notificationMock: ReturnType<typeof useNotification>

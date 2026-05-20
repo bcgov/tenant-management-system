@@ -1,17 +1,17 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
-import GroupRoleContainer from '@/components/group/GroupRoleContainer.vue'
-import GroupUserManagementContainer from '@/components/group/UserManagementContainer.vue'
 import BCeidLandingContainer from '@/components/route/BCeidLandingContainer.vue'
 import GroupListContainer from '@/components/route/GroupListContainer.vue'
+import GroupRoleContainer from '@/components/route/GroupRoleContainer.vue'
+import GroupUserContainer from '@/components/route/GroupUserContainer.vue'
 import LandingPageContainer from '@/components/route/LandingPageContainer.vue'
+import ServiceManagementContainer from '@/components/route/ServiceManagementContainer.vue'
 import SettingsServiceContainer from '@/components/route/SettingsServiceContainer.vue'
 import SettingsTenantRequestContainer from '@/components/route/SettingsTenantRequestContainer.vue'
 import TenantContainer from '@/components/route/TenantContainer.vue'
 import TenantListContainer from '@/components/route/TenantListContainer.vue'
 import TenantGroupContainer from '@/components/route/TenantGroupContainer.vue'
-import ServiceManagementContainer from '@/components/service/ServiceManagementContainer.vue'
-import UserManagementContainer from '@/components/tenant/UserManagementContainer.vue'
+import TenantUserContainer from '@/components/route/TenantUserContainer.vue'
 
 const routes = [
   { path: '/', component: LandingPageContainer },
@@ -44,7 +44,7 @@ const routes = [
         path: 'groups/:groupId',
         component: TenantGroupContainer,
         children: [
-          { path: 'members', component: GroupUserManagementContainer },
+          { path: 'members', component: GroupUserContainer },
           { path: 'roles', component: GroupRoleContainer },
         ],
         props: true,
@@ -55,7 +55,7 @@ const routes = [
       },
       {
         path: 'users',
-        component: UserManagementContainer,
+        component: TenantUserContainer,
       },
     ],
   },

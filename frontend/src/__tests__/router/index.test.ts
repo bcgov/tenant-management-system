@@ -4,20 +4,23 @@ import { type ComponentPublicInstance } from 'vue'
 
 import router from '@/router'
 
-vi.mock('@/components/group/GroupRoleContainer.vue', () => ({
-  default: { template: `<div>GroupRoleContainer</div>` },
-}))
-vi.mock('@/components/group/UserManagementContainer.vue', () => ({
-  default: { template: `<div>GroupUserManagementContainer</div>` },
-}))
 vi.mock('@/components/route/BCeidLandingContainer.vue', () => ({
   default: { template: `<div>BCeidLandingContainer</div>` },
 }))
 vi.mock('@/components/route/GroupListContainer.vue', () => ({
   default: { template: `<div>GroupListContainer</div>` },
 }))
+vi.mock('@/components/route/GroupRoleContainer.vue', () => ({
+  default: { template: `<div>GroupRoleContainer</div>` },
+}))
+vi.mock('@/components/route/GroupUserContainer.vue', () => ({
+  default: { template: `<div>GroupUserContainer</div>` },
+}))
 vi.mock('@/components/route/LandingPageContainer.vue', () => ({
   default: { template: `<div>LandingPageContainer</div>` },
+}))
+vi.mock('@/components/route/ServiceManagementContainer.vue', () => ({
+  default: { template: `<div>ServiceManagementContainer</div>` },
 }))
 vi.mock('@/components/route/SettingsServiceContainer.vue', () => ({
   default: { template: `<div>SettingsServiceContainer</div>` },
@@ -34,11 +37,8 @@ vi.mock('@/components/route/TenantGroupContainer.vue', () => ({
 vi.mock('@/components/route/TenantListContainer.vue', () => ({
   default: { template: `<div>TenantListContainer</div>` },
 }))
-vi.mock('@/components/service/ServiceManagementContainer.vue', () => ({
-  default: { template: `<div>ServiceManagementContainer</div>` },
-}))
-vi.mock('@/components/tenant/UserManagementContainer.vue', () => ({
-  default: { template: `<div>UserManagementContainer</div>` },
+vi.mock('@/components/route/TenantUserContainer.vue', () => ({
+  default: { template: `<div>TenantUserContainer</div>` },
 }))
 
 const TestApp = { template: '<router-view />' }
