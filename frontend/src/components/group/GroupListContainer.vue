@@ -152,7 +152,6 @@ onMounted(async () => {
       <GroupList
         v-if="!groupStore.loading && groupStore.groups.length > 0"
         :groups="groupStore.groups"
-        :is-admin="isUserAdmin"
         @select="handleCardClick"
       />
       <v-container v-else>
