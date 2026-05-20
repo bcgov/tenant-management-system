@@ -2,7 +2,6 @@
 import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-import LoginContainer from '@/components/auth/LoginContainer.vue'
 import ServiceManagement from '@/components/service/ServiceManagement.vue'
 import LoadingWrapper from '@/components/ui/LoadingWrapper.vue'
 import { useNotification } from '@/composables/useNotification'
@@ -69,17 +68,15 @@ onMounted(async () => {
 </script>
 
 <template>
-  <LoginContainer>
-    <LoadingWrapper
-      :loading="!services || !tenantServices"
-      loading-message="Loading services..."
-    >
-      <ServiceManagement
-        :services="services"
-        :tenant="tenant"
-        :tenant-services="tenantServices"
-        @add-service="handleAddService"
-      />
-    </LoadingWrapper>
-  </LoginContainer>
+  <LoadingWrapper
+    :loading="!services || !tenantServices"
+    loading-message="Loading services..."
+  >
+    <ServiceManagement
+      :services="services"
+      :tenant="tenant"
+      :tenant-services="tenantServices"
+      @add-service="handleAddService"
+    />
+  </LoadingWrapper>
 </template>

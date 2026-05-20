@@ -103,10 +103,10 @@ function toggleSearch() {
 </script>
 
 <template>
-  <v-container class="px-0" fluid>
+  <v-container class="ms-6">
     <v-row>
       <v-col :cols="12">
-        <h4 class="mb-6 mt-12">Group Members</h4>
+        <h4>Group Members</h4>
         <UserTable
           :show-actions="isUserAdmin"
           :show-offboard-dialog="handleDeleteClick"

@@ -34,6 +34,7 @@ const showDetail = ref(false)
 
 // --- Watchers and Effects ----------------------------------------------------
 
+// Hide the detail view when the user clicks a different navigation item.
 watch(
   () => route.path,
   (newPath, oldPath) => {

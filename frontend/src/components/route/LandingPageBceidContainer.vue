@@ -9,7 +9,7 @@ const authStore = useAuthStore()
 </script>
 
 <template>
-  <v-container fluid>
+  <v-container>
     <v-row>
       <div class="text-center w-100">
         <v-icon :icon="mdiHumanGreeting" class="my-4 supersize" />

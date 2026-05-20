@@ -51,10 +51,10 @@ function handleAddService() {
 </script>
 
 <template>
-  <v-container class="px-0" fluid>
+  <v-container class="ms-6">
     <v-row>
       <v-col cols="12">
-        <h4 class="mb-6 mt-12">{{ $t('general.servicesLabel', 2) }}</h4>
+        <h4>{{ $t('general.servicesLabel', 2) }}</h4>
       </v-col>
     </v-row>
 

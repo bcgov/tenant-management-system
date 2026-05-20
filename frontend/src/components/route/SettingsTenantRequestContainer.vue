@@ -143,7 +143,7 @@ onMounted(async () => {
 <template>
   <LoginContainer>
     <AdministratorContainer>
-      <v-container class="px-0" fluid>
+      <v-container class="px-0">
         <template v-if="selectedTenantRequest">
           <TenantRequestDisplay
             :is-duplicate-name="isDuplicateName"

@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 
 import TenantUserManagement from '@/components/tenant/TenantUserManagement.vue'
+import LoadingWrapper from '@/components/ui/LoadingWrapper.vue'
 import { useNotification } from '@/composables/useNotification'
 import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
 import { Group } from '@/models/group.model'
@@ -157,16 +158,18 @@ onMounted(async () => {
 </script>
 
 <template>
-  <TenantUserManagement
-    :loading-search="isLoadingSearch"
-    :possible-roles="roles"
-    :search-results="searchResults"
-    :tenant="tenant"
-    @add="handleAddUser"
-    @cancel="searchResults = null"
-    @clear-search="handleClearSearch"
-    @remove-role="handleRemoveRole"
-    @remove-user="handleRemoveUser"
-    @search="handleUserSearch"
-  />
+  <LoadingWrapper :loading="!roles" loading-message="Loading roles...">
+    <TenantUserManagement
+      :loading-search="isLoadingSearch"
+      :possible-roles="roles"
+      :search-results="searchResults"
+      :tenant="tenant"
+      @add="handleAddUser"
+      @cancel="searchResults = null"
+      @clear-search="handleClearSearch"
+      @remove-role="handleRemoveRole"
+      @remove-user="handleRemoveUser"
+      @search="handleUserSearch"
+    />
+  </LoadingWrapper>
 </template>

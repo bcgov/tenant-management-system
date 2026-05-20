@@ -2,7 +2,6 @@
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-import LoginContainer from '@/components/auth/LoginContainer.vue'
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
 import LoadingWrapper from '@/components/ui/LoadingWrapper.vue'
@@ -184,25 +183,11 @@ onMounted(async () => {
 </script>
 
 <template>
-  <LoginContainer>
-    <LoadingWrapper
-      :loading="!groupStore.groupServices"
-      loading-message="Loading group services..."
-    >
-      <SimpleDialog
-        :buttons="dialogButtons"
-        :has-close="true"
-        :message="dialogText"
-        :model-value="promptToContinue"
-        :title="dialogTitle"
-        dialog-type="warning"
-        @button-click="handleDialogButtonClick"
-        @update:model-value="
-          (val: boolean) => {
-            promptToContinue = val
-          }
-        "
-      />
+  <LoadingWrapper
+    :loading="!groupServices"
+    loading-message="Loading group services..."
+  >
+    <v-container class="ms-6">
       <v-row>
         <v-col cols="12">
           <h4>
@@ -212,10 +197,6 @@ onMounted(async () => {
               })
             }}
           </h4>
-        </v-col>
-      </v-row>
-      <v-row>
-        <v-col cols="12">
           <p>
             {{
               $t('groups.sharedServicesDesc', {
@@ -306,8 +287,23 @@ onMounted(async () => {
           />
         </v-col>
       </v-row>
-    </LoadingWrapper>
-  </LoginContainer>
+
+      <SimpleDialog
+        :buttons="dialogButtons"
+        :has-close="true"
+        :message="dialogText"
+        :model-value="promptToContinue"
+        :title="dialogTitle"
+        dialog-type="warning"
+        @button-click="handleDialogButtonClick"
+        @update:model-value="
+          (val: boolean) => {
+            promptToContinue = val
+          }
+        "
+      />
+    </v-container>
+  </LoadingWrapper>
 </template>
 
 <style scoped>

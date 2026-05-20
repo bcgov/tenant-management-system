@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
 
-import LoginContainer from '@/components/auth/LoginContainer.vue'
 import GroupHeader from '@/components/group/GroupHeader.vue'
 import LoadingWrapper from '@/components/ui/LoadingWrapper.vue'
 import { useNotification } from '@/composables/useNotification'
@@ -63,19 +62,17 @@ onMounted(async () => {
 </script>
 
 <template>
-  <LoginContainer>
-    <LoadingWrapper
-      :loading="!group || !tenant"
-      loading-message="Loading group..."
-    >
-      <GroupHeader
-        :enabled-roles-count="enabledRolesCount"
-        :enabled-service-count="enabledServiceCount"
-        :group="group!"
-        :tenant="tenant!"
-      />
+  <LoadingWrapper
+    :loading="!group || !tenant"
+    loading-message="Loading group..."
+  >
+    <GroupHeader
+      :enabled-roles-count="enabledRolesCount"
+      :enabled-service-count="enabledServiceCount"
+      :group="group!"
+      :tenant="tenant!"
+    />
 
-      <router-view :group="group" :tenant="tenant" />
-    </LoadingWrapper>
-  </LoginContainer>
+    <router-view :group="group" :tenant="tenant" />
+  </LoadingWrapper>
 </template>

@@ -7,8 +7,8 @@ import router from '@/router'
 vi.mock('@/components/route/BCeidLandingContainer.vue', () => ({
   default: { template: `<div>BCeidLandingContainer</div>` },
 }))
-vi.mock('@/components/route/GroupContainer.vue', () => ({
-  default: { template: `<div>GroupContainer</div>` },
+vi.mock('@/components/route/GroupHeaderContainer.vue', () => ({
+  default: { template: `<div>GroupHeaderContainer</div>` },
 }))
 vi.mock('@/components/route/GroupListContainer.vue', () => ({
   default: { template: `<div>GroupListContainer</div>` },
@@ -22,20 +22,20 @@ vi.mock('@/components/route/GroupUserContainer.vue', () => ({
 vi.mock('@/components/route/LandingPageContainer.vue', () => ({
   default: { template: `<div>LandingPageContainer</div>` },
 }))
-vi.mock('@/components/route/ServiceManagementContainer.vue', () => ({
-  default: { template: `<div>ServiceManagementContainer</div>` },
-}))
 vi.mock('@/components/route/SettingsServiceContainer.vue', () => ({
   default: { template: `<div>SettingsServiceContainer</div>` },
 }))
 vi.mock('@/components/route/SettingsTenantRequestContainer.vue', () => ({
   default: { template: `<div>SettingsTenantRequestContainer</div>` },
 }))
-vi.mock('@/components/route/TenantContainer.vue', () => ({
-  default: { template: `<div>TenantContainer<router-view /></div>` },
+vi.mock('@/components/route/TenantHeaderContainer.vue', () => ({
+  default: { template: `<div>TenantHeaderContainer<router-view /></div>` },
 }))
 vi.mock('@/components/route/TenantListContainer.vue', () => ({
   default: { template: `<div>TenantListContainer</div>` },
+}))
+vi.mock('@/components/route/TenantServiceContainer.vue', () => ({
+  default: { template: `<div>TenantServiceContainer</div>` },
 }))
 vi.mock('@/components/route/TenantUserContainer.vue', () => ({
   default: { template: `<div>TenantUserContainer</div>` },
@@ -81,7 +81,7 @@ describe('Vue Router', () => {
     await router.isReady()
 
     expect(router.currentRoute.value.params.tenantId).toBe('123')
-    expect(wrapper.text()).toContain('TenantContainer')
+    expect(wrapper.text()).toContain('TenantHeaderContainer')
   })
 
   it('navigates to group with params', async () => {
@@ -90,7 +90,7 @@ describe('Vue Router', () => {
 
     expect(router.currentRoute.value.params.tenantId).toBe('123')
     expect(router.currentRoute.value.params.groupId).toBe('456')
-    expect(wrapper.text()).toContain('GroupContainer')
+    expect(wrapper.text()).toContain('GroupHeaderContainer')
   })
 
   it('redirects unknown routes to home', async () => {

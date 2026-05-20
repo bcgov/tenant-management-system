@@ -2,7 +2,6 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
-import LoginContainer from '@/components/auth/LoginContainer.vue'
 import GroupCreateDialog from '@/components/group/GroupCreateDialog.vue'
 import GroupList from '@/components/group/GroupList.vue'
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
@@ -135,12 +134,12 @@ onMounted(async () => {
 </script>
 
 <template>
-  <LoginContainer>
-    <LoadingWrapper
-      :loading="!groupStore.groups || !tenant"
-      loading-message="Loading groups..."
-    >
-      <h4 class="mb-6">Groups</h4>
+  <LoadingWrapper
+    :loading="!groupStore.groups"
+    loading-message="Loading groups..."
+  >
+    <v-container class="ms-6">
+      <h4>Groups</h4>
 
       <ButtonPrimary
         v-if="isUserAdmin"
@@ -178,6 +177,6 @@ onMounted(async () => {
         @clear-duplicate-error="isDuplicateName = false"
         @submit="handleGroupCreate"
       />
-    </LoadingWrapper>
-  </LoginContainer>
+    </v-container>
+  </LoadingWrapper>
 </template>

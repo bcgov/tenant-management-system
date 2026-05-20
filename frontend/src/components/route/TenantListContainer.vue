@@ -2,7 +2,6 @@
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
-import LoginContainer from '@/components/auth/LoginContainer.vue'
 import TenantList from '@/components/tenant/TenantList.vue'
 import TenantRequestDialog from '@/components/tenantrequest/TenantRequestDialog.vue'
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
@@ -85,25 +84,23 @@ onMounted(async () => {
 </script>
 
 <template>
-  <LoginContainer>
-    <LoadingWrapper
-      :loading="!tenantStore.tenants"
-      loading-message="Loading tenants..."
-    >
-      <v-row class="mb-8">
-        <v-col cols="12">
-          <ButtonPrimary text="Request New Tenant" @click="dialogOpen" />
-        </v-col>
-      </v-row>
+  <LoadingWrapper
+    :loading="!tenantStore.tenants"
+    loading-message="Loading tenants..."
+  >
+    <v-row class="mb-8">
+      <v-col cols="12">
+        <ButtonPrimary text="Request New Tenant" @click="dialogOpen" />
+      </v-col>
+    </v-row>
 
-      <TenantList :tenants="tenantStore.tenants" @select="handleCardClick" />
-    </LoadingWrapper>
+    <TenantList :tenants="tenantStore.tenants" @select="handleCardClick" />
+  </LoadingWrapper>
 
-    <TenantRequestDialog
-      v-model="dialogVisible"
-      :is-duplicate-name="isDuplicateName"
-      @clear-duplicate-error="isDuplicateName = false"
-      @submit="handleTenantSubmit"
-    />
-  </LoginContainer>
+  <TenantRequestDialog
+    v-model="dialogVisible"
+    :is-duplicate-name="isDuplicateName"
+    @clear-duplicate-error="isDuplicateName = false"
+    @submit="handleTenantSubmit"
+  />
 </template>

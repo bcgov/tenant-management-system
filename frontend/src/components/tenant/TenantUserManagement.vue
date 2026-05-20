@@ -263,10 +263,10 @@ watch(selectAllRoles, () => {
 </script>
 
 <template>
-  <v-container class="px-0" fluid>
+  <v-container class="ms-6">
     <v-row>
       <v-col cols="12">
-        <h4 class="mb-6 mt-12">
+        <h4>
           {{ $t('tenants.tenant', { count: 1 }) }}
           {{ $t('users.user', { count: 2 }) }}
         </h4>

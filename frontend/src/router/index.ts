@@ -1,16 +1,16 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
-import GroupContainer from '@/components/route/GroupContainer.vue'
+import GroupHeaderContainer from '@/components/route/GroupHeaderContainer.vue'
 import GroupListContainer from '@/components/route/GroupListContainer.vue'
 import GroupRoleContainer from '@/components/route/GroupRoleContainer.vue'
 import GroupUserContainer from '@/components/route/GroupUserContainer.vue'
 import LandingPageContainer from '@/components/route/LandingPageContainer.vue'
 import LandingPageBceidContainer from '@/components/route/LandingPageBceidContainer.vue'
-import ServiceManagementContainer from '@/components/route/ServiceManagementContainer.vue'
 import SettingsServiceContainer from '@/components/route/SettingsServiceContainer.vue'
 import SettingsTenantRequestContainer from '@/components/route/SettingsTenantRequestContainer.vue'
-import TenantContainer from '@/components/route/TenantContainer.vue'
+import TenantHeaderContainer from '@/components/route/TenantHeaderContainer.vue'
 import TenantListContainer from '@/components/route/TenantListContainer.vue'
+import TenantServiceContainer from '@/components/route/TenantServiceContainer.vue'
 import TenantUserContainer from '@/components/route/TenantUserContainer.vue'
 
 const routes = [
@@ -33,7 +33,7 @@ const routes = [
   { path: '/tenants', component: TenantListContainer },
   {
     path: '/tenants/:tenantId',
-    component: TenantContainer,
+    component: TenantHeaderContainer,
     props: true,
     children: [
       {
@@ -42,7 +42,7 @@ const routes = [
       },
       {
         path: 'groups/:groupId',
-        component: GroupContainer,
+        component: GroupHeaderContainer,
         children: [
           { path: 'members', component: GroupUserContainer },
           { path: 'roles', component: GroupRoleContainer },
@@ -51,7 +51,7 @@ const routes = [
       },
       {
         path: 'services',
-        component: ServiceManagementContainer,
+        component: TenantServiceContainer,
       },
       {
         path: 'users',

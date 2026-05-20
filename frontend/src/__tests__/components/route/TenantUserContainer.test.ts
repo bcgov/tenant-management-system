@@ -14,6 +14,7 @@ import {
 import TenantUserContainer from '@/components/route/TenantUserContainer.vue'
 import { useNotification } from '@/composables/useNotification'
 import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
+import vuetify from '@/plugins/vuetify'
 import { useGroupStore } from '@/stores/useGroupStore'
 import { useRoleStore } from '@/stores/useRoleStore'
 import { useTenantStore } from '@/stores/useTenantStore'
@@ -30,8 +31,8 @@ function child(wrapper: ReturnType<typeof mountComponent>) {
 
 function mountComponent(tenant = makeTenant()) {
   return mount(TenantUserContainer, {
+    global: { plugins: [vuetify], stubs: { TenantUserManagement: true } },
     props: { tenant },
-    global: { stubs: { TenantUserManagement: true } },
   })
 }
 
