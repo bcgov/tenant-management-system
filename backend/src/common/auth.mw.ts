@@ -38,6 +38,7 @@ declare global {
 
 interface CheckJwtOptions {
   sharedServiceAccess?: boolean
+  skipSsoUserParamMatch?: boolean
 }
 
 const determineBceidType = (
@@ -96,32 +97,32 @@ export const checkJwt = (options: CheckJwtOptions = {}) => {
         })
       }
 
+      if (req.params.ssoUserId && !options.skipSsoUserParamMatch) {
+        const tokenUserId: string | undefined =
+          req.decodedJwt?.idir_user_guid || req.decodedJwt?.bceid_user_guid
+        const requestedUserId: string = req.params.ssoUserId
+
+        if (tokenUserId !== requestedUserId) {
+          logger.error(
+            'User ID mismatch - token user does not match requested user',
+            {
+              tokenUserId,
+              requestedUserId,
+              sub: req.decodedJwt?.sub,
+            },
+          )
+
+          return res.status(403).json({
+            error: 'Forbidden',
+            message:
+              'Access denied - the requested user does not match the token user',
+            statusCode: 403,
+          })
+        }
+      }
+
       if (options.sharedServiceAccess) {
         req.isSharedServiceAccess = true
-
-        if (req.params.ssoUserId) {
-          const tokenUserId: string | undefined =
-            req.decodedJwt?.idir_user_guid || req.decodedJwt?.bceid_user_guid
-          const requestedUserId: string = req.params.ssoUserId
-
-          if (tokenUserId !== requestedUserId) {
-            logger.error(
-              'User ID mismatch - token user does not match requested user',
-              {
-                tokenUserId,
-                requestedUserId,
-                sub: req.decodedJwt?.sub,
-              },
-            )
-
-            return res.status(403).json({
-              error: 'Forbidden',
-              message:
-                'Access denied - the requested user does not match the token user',
-              statusCode: 403,
-            })
-          }
-        }
 
         if (req.decodedJwt) {
           const provider =
