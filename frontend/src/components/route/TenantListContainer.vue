@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
+import LoginContainer from '@/components/auth/LoginContainer.vue'
 import TenantList from '@/components/tenant/TenantList.vue'
 import TenantRequestDialog from '@/components/tenantrequest/TenantRequestDialog.vue'
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
@@ -78,46 +79,47 @@ const handleTenantSubmit = async (
 
 // --- Component Lifecycle -----------------------------------------------------
 
-onMounted(async () => {
-  try {
-    await tenantStore.fetchTenants(authStore.authenticatedUser.id)
-  } catch {
-    notification.error('Failed to fetch tenants')
-  }
-})
+tenantStore
+  .fetchTenants(authStore.authenticatedUser.id)
+  .catch(() => notification.error('Failed to fetch tenants'))
 </script>
 
 <template>
-  <LoadingWrapper :loading="!tenants" loading-message="Loading tenants...">
-    <v-container v-if="tenants.length === 0" class="fill-height">
-      <v-row class="center-align justify-center">
-        <v-col class="align-center d-flex flex-column" cols="auto">
-          <h1>No tenants yet</h1>
-          <p class="p-large">You don't currently have access to a tenant.</p>
+  <LoginContainer>
+    <LoadingWrapper
+      :loading="tenantStore.loading"
+      loading-message="Loading tenants..."
+    >
+      <v-container v-if="tenants.length === 0" class="fill-height">
+        <v-row class="center-align justify-center">
+          <v-col class="align-center d-flex flex-column" cols="auto">
+            <h1>No tenants yet</h1>
+            <p class="p-large">You don't currently have access to a tenant.</p>
 
-          <p>
+            <p>
+              <ButtonPrimary text="Request a Tenant" @click="dialogOpen" />
+            </p>
+
+            <span class="mt-12 p-small">
+              If your team already has a tenant, ask a tenant owner or user
+              admin to add you.
+            </span>
+            <span class="p-small">
+              <em>Requests are reviewed by the CSTAR team.</em>
+            </span>
+          </v-col>
+        </v-row>
+      </v-container>
+      <template v-else>
+        <v-row class="mb-8 mt-12">
+          <v-col cols="12">
             <ButtonPrimary text="Request a Tenant" @click="dialogOpen" />
-          </p>
-
-          <span class="mt-12 p-small">
-            If your team already has a tenant, ask a tenant owner or user admin
-            to add you.
-          </span>
-          <span class="p-small">
-            <em>Requests are reviewed by the CSTAR team.</em>
-          </span>
-        </v-col>
-      </v-row>
-    </v-container>
-    <template v-else>
-      <v-row class="mb-8 mt-12">
-        <v-col cols="12">
-          <ButtonPrimary text="Request a Tenant" @click="dialogOpen" />
-        </v-col>
-      </v-row>
-      <TenantList :tenants="tenants" @select="handleCardClick" />
-    </template>
-  </LoadingWrapper>
+          </v-col>
+        </v-row>
+        <TenantList :tenants="tenants" @select="handleCardClick" />
+      </template>
+    </LoadingWrapper>
+  </LoginContainer>
 
   <TenantRequestDialog
     v-model="dialogVisible"
