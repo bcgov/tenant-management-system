@@ -72,18 +72,16 @@ export const useServiceStore = defineStore('service', () => {
   /**
    * Fetches all services from the API and updates the store.
    *
-   * @returns A promise that resolves to the list of all services.
+   * @returns A promise that resolves when the API call completes.
    */
-  const fetchServices = async (): Promise<Service[]> => {
+  const fetchServices = async (): Promise<void> => {
     loading.value = true
     try {
       const serviceData = await serviceService.getServices()
-      const services = serviceData.map(Service.fromApiData)
+      const serviceObjects = serviceData.map(Service.fromApiData)
 
       // Update the store with these services.
-      services.forEach(upsertService)
-
-      return services
+      serviceObjects.forEach(upsertService)
     } finally {
       loading.value = false
     }
@@ -93,21 +91,17 @@ export const useServiceStore = defineStore('service', () => {
    * Fetches tenant services for a tenant from the API and updates the store.
    *
    * @param tenantId - The ID of the tenant.
-   * @returns A promise that resolves to the list of tenant services associated
-   *   with the tenant.
+   * @returns A promise that resolves when the API call completes.
    */
-  const fetchTenantServices = async (
-    tenantId: TenantId,
-  ): Promise<Service[]> => {
+  const fetchTenantServices = async (tenantId: TenantId): Promise<void> => {
     loading.value = true
     try {
       const tenantServiceData = await serviceService.getTenantServices(tenantId)
-      const tenantServices = tenantServiceData.map(Service.fromApiData)
+      const tenantServiceObjects = tenantServiceData.map(Service.fromApiData)
 
       // Update the store with these tenant services.
-      tenantServices.forEach(upsertTenantService)
-
-      return tenantServices
+      tenantServices.value = []
+      tenantServiceObjects.forEach(upsertTenantService)
     } finally {
       loading.value = false
     }
