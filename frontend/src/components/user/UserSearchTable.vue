@@ -76,9 +76,13 @@ const onRowClick = (_event: Event, { item }: { item: User }) => {
     @click:row="onRowClick"
   >
     <template #no-data>
-      <div>
-        <p>
-          {{ $t('users.noUsersIn', { where }) }}
+      <div class="my-8">
+        <h5 class="mb-2">
+          {{ $t('users.noMatch') }}
+        </h5>
+
+        <p class="mt-0">
+          Try adjusting the "Search by" and/or "Search text" fields
         </p>
       </div>
     </template>
