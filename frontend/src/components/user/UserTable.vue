@@ -11,6 +11,7 @@ import { useI18n } from 'vue-i18n'
 // TODO: sus
 import { type ItemSlotBase } from 'vuetify/lib/components/VDataTable/types.mjs'
 
+import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import { type GroupUser } from '@/models/groupuser.model'
 import { type Role } from '@/models/role.model'
 import { type Tenant } from '@/models/tenant.model'
@@ -236,7 +237,6 @@ const selectRowItem = (e: Event, r: RowPropsType) => {
     :row-props="colorRowItem"
     :search="filter"
     :sort-by="sortKey"
-    class="cursor-none"
     item-value="id"
     select-strategy="single"
     striped="even"
@@ -248,29 +248,21 @@ const selectRowItem = (e: Event, r: RowPropsType) => {
     "
   >
     <template #no-data>
-      <div>
-        <h3 class="my-4">
+      <div class="my-8">
+        <h5 class="mb-2">
           {{ $t('users.noUsersYet', { where }) }}
-        </h3>
-        <p>
+        </h5>
+
+        <p class="mt-0">
           {{ filter ? $t('users.noMatch') : $t('users.noUsersIn', { where }) }}
         </p>
-        <v-btn
+
+        <ButtonPrimary
           v-if="isUserAdmin"
+          :text="$t('users.noUsersAdd', { where })"
           class="mt-4"
-          color="primary"
-          variant="text"
           @click="emit('add-first-clicked')"
-        >
-          <v-icon
-            :icon="mdiPlusBox"
-            class="mr-2"
-            size="x-large"
-            style="transform: scale(1.5)"
-            start
-          />
-          {{ $t('users.noUsersAdd', { where }) }}
-        </v-btn>
+        />
       </div>
     </template>
     <template #[`item.roles`]="{ item }">
