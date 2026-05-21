@@ -24,7 +24,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 
-const headerClass = 'bg-surface-light font-weight-bold text-body-small'
+const headerClass = 'bg-surface-light-blue font-weight-bold text-body-small'
 
 const headers = [
   { key: 'ssoUser.firstName', title: t('users.firstName') },
