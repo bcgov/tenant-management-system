@@ -137,34 +137,37 @@ const handleGroupCreate = async (
 
 <template>
   <v-container class="ms-6">
-    <h4>Groups</h4>
+    <template v-if="groups.length > 0">
+      <h4>Groups</h4>
 
-    <ButtonPrimary
-      v-if="isUserAdmin"
-      class="mb-12"
-      text="Create a Group"
-      @click="dialogOpen"
-    />
+      <ButtonPrimary
+        v-if="isUserAdmin"
+        class="mb-12"
+        text="Create a Group"
+        @click="dialogOpen"
+      />
 
-    <GroupList
-      v-if="groups.length > 0"
-      :groups="groups"
-      @select="handleCardClick"
-    />
-    <v-container v-else>
-      <v-row class="justify-center">
-        <v-col cols="12" md="5">
-          <p class="mb-4 text-center">
+      <GroupList :groups="groups" @select="handleCardClick" />
+    </template>
+    <v-container v-else class="fill-height">
+      <v-row class="center-align justify-center">
+        <v-col class="align-center d-flex flex-column" cols="auto">
+          <h1>No groups yet</h1>
+          <p class="p-large">
             No groups have been created for this tenant yet.
             <span v-if="isUserAdmin">
-              Click Create a Group to get started.
+              Create your first group to get started.
             </span>
           </p>
-          <p class="text-center">
-            Groups let you manage access for multiple users at once. Assign
-            roles to a group instead of individual users to keep access
-            consistent and easier to manage.
+
+          <p v-if="isUserAdmin">
+            <ButtonPrimary text="Create a Group" @click="dialogOpen" />
           </p>
+
+          <span class="mt-12 p-small">
+            Groups help you manage access for multiple users at once and keep
+            role assignments consistent.
+          </span>
         </v-col>
       </v-row>
     </v-container>
