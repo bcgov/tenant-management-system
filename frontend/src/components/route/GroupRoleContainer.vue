@@ -1,41 +1,41 @@
 <script lang="ts" setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
-import LoadingWrapper from '@/components/ui/LoadingWrapper.vue'
 import SimpleDialog, {
   type DialogButton,
 } from '@/components/ui/SimpleDialog.vue'
 import { useNotification } from '@/composables/useNotification'
-import { type Group } from '@/models/group.model'
+import { type GroupId } from '@/models/group.model'
 import { type GroupService } from '@/models/groupservice.model'
 import { type GroupServiceRoleId } from '@/models/groupservicerole.model'
-import { type Tenant } from '@/models/tenant.model'
+import { type TenantId } from '@/models/tenant.model'
 import { useGroupStore } from '@/stores/useGroupStore'
+import { useTenantStore } from '@/stores/useTenantStore'
 import { ROLES } from '@/utils/constants'
 import { currentUserHasRole } from '@/utils/permissions'
-
-const { t } = useI18n()
 
 // --- Component Interface -----------------------------------------------------
 
 const props = defineProps<{
-  group: Group
-  tenant: Tenant
+  groupId: GroupId
+  tenantId: TenantId
 }>()
 
 // --- Store and Composable Setup ----------------------------------------------
 
 const groupStore = useGroupStore()
 const notification = useNotification()
+const tenantStore = useTenantStore()
 
 // --- Component State ---------------------------------------------------------
 
+const { t } = useI18n()
+
 const draft = ref<Map<GroupServiceRoleId, boolean>>(new Map())
 const editing = ref(false)
-const expanded = ref<string[]>([])
 const promptAction = ref<'undo' | 'clear' | null>(null)
 const promptToContinue = ref(false)
 
@@ -43,25 +43,24 @@ const promptToContinue = ref(false)
 
 const canMakeChanges = computed(() => {
   return (
-    currentUserHasRole(props.tenant, ROLES.TENANT_OWNER.value) ||
-    currentUserHasRole(props.tenant, ROLES.USER_ADMIN.value) ||
-    currentUserHasRole(props.tenant, ROLES.OPERATIONS_ADMIN.value)
+    currentUserHasRole(tenant.value, ROLES.TENANT_OWNER.value) ||
+    currentUserHasRole(tenant.value, ROLES.USER_ADMIN.value)
   )
 })
 
 const dialogButtons = computed(() => {
   const buttons: DialogButton[] = [
     {
-      text: t('general.cancel'),
       action: 'cancel',
+      text: t('general.cancel'),
       type: 'secondary',
     },
     {
+      action: 'confirm',
       text:
         promptAction.value === 'clear'
           ? t('general.clearAll')
           : t('general.revert'),
-      action: 'confirm',
       type: 'primary',
     },
   ]
@@ -89,7 +88,20 @@ const dialogTitle = computed(() => {
   return ''
 })
 
+const expanded = computed(() =>
+  groupStore.groupServices.map((service) => service.displayName.toLowerCase()),
+)
+
 const groupServices = computed(() => groupStore.groupServices)
+
+const tenant = computed(() => {
+  const tenant = tenantStore.getTenant(props.tenantId)
+  if (!tenant) {
+    throw new Error(`Tenant ${props.tenantId} not found`)
+  }
+
+  return tenant
+})
 
 // --- Component Methods -------------------------------------------------------
 
@@ -132,8 +144,8 @@ const saveChanges = async () => {
 
   try {
     await groupStore.updateGroupRoles(
-      props.tenant.id,
-      props.group.id,
+      props.tenantId,
+      props.groupId,
       updated as GroupService[],
     )
     notification.success(
@@ -166,144 +178,125 @@ const undoChanges = () => {
     ),
   )
 }
-
-// --- Component Lifecycle -----------------------------------------------------
-
-onMounted(async () => {
-  try {
-    await groupStore.fetchGroupServices(props.tenant.id, props.group.id)
-
-    expanded.value = groupServices.value.map((service) =>
-      service.displayName.toLowerCase(),
-    )
-  } catch {
-    notification.error('Failed to load group services')
-  }
-})
 </script>
 
 <template>
-  <LoadingWrapper
-    :loading="!groupServices"
-    loading-message="Loading group services..."
-  >
-    <v-container class="ms-6">
-      <v-row>
-        <v-col cols="12">
-          <h4>
-            {{
-              $t('groups.sharedServices', {
-                servicesLabel: $t('general.servicesLabel', 2),
-              })
-            }}
-          </h4>
-          <p>
-            {{
-              $t('groups.sharedServicesDesc', {
-                servicesLabel: $t('general.servicesLabel', 2),
-              })
-            }}
-          </p>
-        </v-col>
-      </v-row>
-      <v-row v-if="groupServices.length === 0">
-        <v-col cols="12">
-          <p>{{ $t('groups.noServices') }}</p>
-        </v-col>
-      </v-row>
-      <v-row v-else class="darkened pa-4">
-        <!-- Edit button -->
-        <v-col cols="12">
-          <ButtonPrimary
-            v-if="!editing && canMakeChanges"
-            :text="$t('general.edit')"
-            @click="startEditing"
-          />
-        </v-col>
+  <v-container class="ms-6">
+    <v-row>
+      <v-col cols="12">
+        <h4>
+          {{
+            $t('groups.sharedServices', {
+              servicesLabel: $t('general.servicesLabel', 2),
+            })
+          }}
+        </h4>
+        <p>
+          {{
+            $t('groups.sharedServicesDesc', {
+              servicesLabel: $t('general.servicesLabel', 2),
+            })
+          }}
+        </p>
+      </v-col>
+    </v-row>
+    <v-row v-if="groupServices.length === 0">
+      <v-col cols="12">
+        <p>{{ $t('groups.noServices') }}</p>
+      </v-col>
+    </v-row>
+    <v-row v-else class="darkened pa-4">
+      <!-- Edit button -->
+      <v-col cols="12">
+        <ButtonPrimary
+          v-if="!editing && canMakeChanges"
+          :text="$t('general.edit')"
+          @click="startEditing"
+        />
+      </v-col>
 
-        <!-- Checkbox panels -->
-        <v-col
-          v-for="(service, serviceIndex) in groupServices"
-          :key="`col-service-${service.id}`"
-          cols="6"
+      <!-- Checkbox panels -->
+      <v-col
+        v-for="(service, serviceIndex) in groupServices"
+        :key="`col-service-${service.id}`"
+        cols="6"
+      >
+        <v-expansion-panels v-model="expanded[serviceIndex]" class="mb-4">
+          <v-expansion-panel :value="service.displayName.toLowerCase()">
+            <v-expansion-panel-title>{{
+              service.displayName
+            }}</v-expansion-panel-title>
+            <v-expansion-panel-text>
+              <v-checkbox
+                v-for="role in service.roles"
+                :key="`checkbox-role-${role.id}`"
+                :color="editing ? 'primary' : ''"
+                :disabled="!editing || !canMakeChanges"
+                :label="role.name"
+                :model-value="editing ? draft.get(role.id) : role.isEnabled"
+                class="noBackground"
+                @update:model-value="
+                  (val: boolean | null) => draft.set(role.id, val ?? false)
+                "
+              />
+            </v-expansion-panel-text>
+          </v-expansion-panel>
+        </v-expansion-panels>
+      </v-col>
+
+      <!-- save/cancel/reset buttons -->
+      <v-col v-if="canMakeChanges" class="text-right" cols="12">
+        <v-btn
+          :disabled="!editing"
+          class="mr-2"
+          variant="text"
+          @click="cancelEditing"
         >
-          <v-expansion-panels v-model="expanded[serviceIndex]" class="mb-4">
-            <v-expansion-panel :value="service.displayName.toLowerCase()">
-              <v-expansion-panel-title>{{
-                service.displayName
-              }}</v-expansion-panel-title>
-              <v-expansion-panel-text>
-                <v-checkbox
-                  v-for="role in service.roles"
-                  :key="`checkbox-role-${role.id}`"
-                  :color="editing ? 'primary' : ''"
-                  :disabled="!editing || !canMakeChanges"
-                  :label="role.name"
-                  :model-value="editing ? draft.get(role.id) : role.isEnabled"
-                  class="noBackground"
-                  @update:model-value="
-                    (val: boolean | null) => draft.set(role.id, val ?? false)
-                  "
-                />
-              </v-expansion-panel-text>
-            </v-expansion-panel>
-          </v-expansion-panels>
-        </v-col>
+          {{ $t('general.cancel') }}
+        </v-btn>
 
-        <!-- save/cancel/reset buttons -->
-        <v-col v-if="canMakeChanges" class="text-right" cols="12">
-          <v-btn
-            :disabled="!editing"
-            class="mr-2"
-            variant="text"
-            @click="cancelEditing"
-          >
-            {{ $t('general.cancel') }}
-          </v-btn>
+        <v-btn
+          :class="`tms-button-secondary mr-2${editing ? ' text-error' : ''}`"
+          :disabled="!editing"
+          :variant="editing ? 'outlined' : 'flat'"
+          base-color="secondary"
+          border="sm opacity-100"
+          @click="openDialog('clear')"
+        >
+          {{ $t('general.clearAll') }}
+        </v-btn>
 
-          <v-btn
-            :class="`tms-button-secondary mr-2${editing ? ' text-error' : ''}`"
-            :disabled="!editing"
-            :variant="editing ? 'outlined' : 'flat'"
-            base-color="secondary"
-            border="sm opacity-100"
-            @click="openDialog('clear')"
-          >
-            {{ $t('general.clearAll') }}
-          </v-btn>
+        <ButtonSecondary
+          :disabled="!editing"
+          :text="$t('general.undoChanges')"
+          class="mr-2"
+          @click="openDialog('undo')"
+        >
+        </ButtonSecondary>
 
-          <ButtonSecondary
-            :disabled="!editing"
-            :text="$t('general.undoChanges')"
-            class="mr-2"
-            @click="openDialog('undo')"
-          >
-          </ButtonSecondary>
+        <ButtonPrimary
+          :disabled="!editing"
+          :text="$t('general.save')"
+          @click="saveChanges"
+        />
+      </v-col>
+    </v-row>
 
-          <ButtonPrimary
-            :disabled="!editing"
-            :text="$t('general.save')"
-            @click="saveChanges"
-          />
-        </v-col>
-      </v-row>
-
-      <SimpleDialog
-        :buttons="dialogButtons"
-        :has-close="true"
-        :message="dialogText"
-        :model-value="promptToContinue"
-        :title="dialogTitle"
-        dialog-type="warning"
-        @button-click="handleDialogButtonClick"
-        @update:model-value="
-          (val: boolean) => {
-            promptToContinue = val
-          }
-        "
-      />
-    </v-container>
-  </LoadingWrapper>
+    <SimpleDialog
+      :buttons="dialogButtons"
+      :has-close="true"
+      :message="dialogText"
+      :model-value="promptToContinue"
+      :title="dialogTitle"
+      dialog-type="warning"
+      @button-click="handleDialogButtonClick"
+      @update:model-value="
+        (val: boolean) => {
+          promptToContinue = val
+        }
+      "
+    />
+  </v-container>
 </template>
 
 <style scoped>

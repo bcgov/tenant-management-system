@@ -7,23 +7,20 @@ import AdministratorContainer from '@/components/auth/AdministratorContainer.vue
 import LoginContainer from '@/components/auth/LoginContainer.vue'
 import TenantRequestDisplay from '@/components/tenantrequest/TenantRequestDisplay.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
+import LoadingWrapper from '@/components/ui/LoadingWrapper.vue'
 import { useNotification } from '@/composables/useNotification'
 import { DomainError } from '@/errors/domain/DomainError'
 import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
 import { type TenantRequest } from '@/models/tenantrequest.model'
-import { useAuthStore } from '@/stores/useAuthStore'
 import { useTenantRequestStore } from '@/stores/useTenantRequestStore'
-import { useTenantStore } from '@/stores/useTenantStore'
 import { TENANT_REQUEST_STATUS } from '@/utils/constants'
 
 const { t } = useI18n()
 
 // --- Store and Composable Setup ----------------------------------------------
 
-const authStore = useAuthStore()
 const notification = useNotification()
 const tenantRequestStore = useTenantRequestStore()
-const tenantStore = useTenantStore()
 
 // --- Component State ---------------------------------------------------------
 
@@ -68,7 +65,7 @@ const handleApproved = async (name: string) => {
       name,
     )
     notification.success('Tenant Request has been successfully updated')
-    await tenantStore.fetchTenants(authStore.authenticatedUser.id)
+
     handleCancel()
   } catch (error) {
     if (error instanceof DuplicateEntityError) {
@@ -132,9 +129,17 @@ const handleRowClick = (_event: Event, { item }: { item: TenantRequest }) => {
 
 // --- Component Lifecycle -----------------------------------------------------
 
-tenantRequestStore
-  .fetchTenantRequests()
-  .catch(() => notification.error('Failed to load tenant request data'))
+// Use init() in setup instead of a top-level await, so that loading state is
+// set before first render. Look to Suspense when no longer experimental.
+const init = async () => {
+  try {
+    await tenantRequestStore.fetchTenantRequests()
+  } catch {
+    notification.error('Failed to load tenant request data')
+  }
+}
+
+init()
 </script>
 
 <template>

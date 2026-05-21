@@ -1,26 +1,26 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 import GroupCreateDialog from '@/components/group/GroupCreateDialog.vue'
 import GroupList from '@/components/group/GroupList.vue'
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
-import LoadingWrapper from '@/components/ui/LoadingWrapper.vue'
 import { useNotification } from '@/composables/useNotification'
 import { DomainError } from '@/errors/domain/DomainError'
 import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
 import { ServerError } from '@/errors/domain/ServerError'
 import { Group, type GroupDetailFields } from '@/models/group.model'
-import { Tenant } from '@/models/tenant.model'
+import { type TenantId } from '@/models/tenant.model'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { useGroupStore } from '@/stores/useGroupStore'
+import { useTenantStore } from '@/stores/useTenantStore'
 import { ROLES } from '@/utils/constants'
 import { currentUserHasRole } from '@/utils/permissions'
 
 // --- Component Interface -----------------------------------------------------
 
 const props = defineProps<{
-  tenant: Tenant
+  tenantId: TenantId
 }>()
 
 // --- Store and Composable Setup ----------------------------------------------
@@ -29,6 +29,7 @@ const authStore = useAuthStore()
 const groupStore = useGroupStore()
 const notification = useNotification()
 const router = useRouter()
+const tenantStore = useTenantStore()
 
 // --- Component State ---------------------------------------------------------
 
@@ -37,13 +38,24 @@ const isDuplicateName = ref(false)
 
 // --- Computed Values ---------------------------------------------------------
 
+const groups = computed(() => groupStore.groups)
+
 const isUserAdmin = computed(() => {
   // A tenant owner, by default, is also a user admin - even if they don't have
   // the USER_ADMIN role.
   return (
-    currentUserHasRole(props.tenant, ROLES.TENANT_OWNER.value) ||
-    currentUserHasRole(props.tenant, ROLES.USER_ADMIN.value)
+    currentUserHasRole(tenant.value, ROLES.TENANT_OWNER.value) ||
+    currentUserHasRole(tenant.value, ROLES.USER_ADMIN.value)
   )
+})
+
+const tenant = computed(() => {
+  const tenant = tenantStore.getTenant(props.tenantId)
+  if (!tenant) {
+    throw new Error(`Tenant ${props.tenantId} not found`)
+  }
+
+  return tenant
 })
 
 // --- Component Methods -------------------------------------------------------
@@ -56,7 +68,7 @@ const dialogClose = () => {
 const dialogOpen = () => (dialogVisible.value = true)
 
 const handleCardClick = (id: Group['id']) => {
-  router.push(`/tenants/${props.tenant.id}/groups/${id}/members`)
+  router.push(`/tenants/${props.tenantId}/groups/${id}/members`)
 }
 
 const handleGroupCreate = async (
@@ -67,7 +79,7 @@ const handleGroupCreate = async (
 
   try {
     group = await groupStore.addGroup(
-      props.tenant.id,
+      props.tenantId,
       groupDetails.name,
       groupDetails.description,
     )
@@ -102,7 +114,7 @@ const handleGroupCreate = async (
   if (addUser) {
     try {
       await groupStore.addGroupUser(
-        props.tenant.id,
+        props.tenantId,
         group.id,
         authStore.authenticatedUser,
       )
@@ -121,62 +133,47 @@ const handleGroupCreate = async (
     }
   }
 }
-
-// --- Component Lifecycle -----------------------------------------------------
-
-onMounted(async () => {
-  try {
-    await groupStore.fetchGroups(props.tenant.id)
-  } catch {
-    notification.error('Failed to load tenant groups')
-  }
-})
 </script>
 
 <template>
-  <LoadingWrapper
-    :loading="!groupStore.groups"
-    loading-message="Loading groups..."
-  >
-    <v-container class="ms-6">
-      <h4>Groups</h4>
+  <v-container class="ms-6">
+    <h4>Groups</h4>
 
-      <ButtonPrimary
-        v-if="isUserAdmin"
-        class="mb-12"
-        text="Create a Group"
-        @click="dialogOpen"
-      />
+    <ButtonPrimary
+      v-if="isUserAdmin"
+      class="mb-12"
+      text="Create a Group"
+      @click="dialogOpen"
+    />
 
-      <GroupList
-        v-if="!groupStore.loading && groupStore.groups.length > 0"
-        :groups="groupStore.groups"
-        @select="handleCardClick"
-      />
-      <v-container v-else>
-        <v-row class="justify-center">
-          <v-col cols="12" md="5">
-            <p class="mb-4 text-center">
-              No groups have been created for this tenant yet.
-              <span v-if="isUserAdmin"
-                >Click Create a Group to get started.</span
-              >
-            </p>
-            <p class="text-center">
-              Groups let you manage access for multiple users at once. Assign
-              roles to a group instead of individual users to keep access
-              consistent and easier to manage.
-            </p>
-          </v-col>
-        </v-row>
-      </v-container>
-
-      <GroupCreateDialog
-        v-model="dialogVisible"
-        :is-duplicate-name="isDuplicateName"
-        @clear-duplicate-error="isDuplicateName = false"
-        @submit="handleGroupCreate"
-      />
+    <GroupList
+      v-if="groups.length > 0"
+      :groups="groups"
+      @select="handleCardClick"
+    />
+    <v-container v-else>
+      <v-row class="justify-center">
+        <v-col cols="12" md="5">
+          <p class="mb-4 text-center">
+            No groups have been created for this tenant yet.
+            <span v-if="isUserAdmin">
+              Click Create a Group to get started.
+            </span>
+          </p>
+          <p class="text-center">
+            Groups let you manage access for multiple users at once. Assign
+            roles to a group instead of individual users to keep access
+            consistent and easier to manage.
+          </p>
+        </v-col>
+      </v-row>
     </v-container>
-  </LoadingWrapper>
+  </v-container>
+
+  <GroupCreateDialog
+    v-model="dialogVisible"
+    :is-duplicate-name="isDuplicateName"
+    @clear-duplicate-error="isDuplicateName = false"
+    @submit="handleGroupCreate"
+  />
 </template>

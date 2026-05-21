@@ -10,6 +10,7 @@ import { serviceService } from '@/services/service.service'
  */
 export const useServiceStore = defineStore('service', () => {
   const loading = ref(false)
+  const services = ref<Service[]>([])
   const tenantServices = ref<Service[]>([])
 
   // Private methods
@@ -21,15 +22,35 @@ export const useServiceStore = defineStore('service', () => {
    * @returns The inserted or updated service.
    */
   function upsertService(service: Service): Service {
-    const index = tenantServices.value.findIndex((s) => s.id === service.id)
+    const index = services.value.findIndex((s) => s.id === service.id)
 
     if (index === -1) {
-      tenantServices.value.push(service)
+      services.value.push(service)
     } else {
-      tenantServices.value[index] = service
+      services.value[index] = service
     }
 
     return service
+  }
+
+  /**
+   * Inserts or updates a tenant service in the store.
+   *
+   * @param tenantService - The tenant service to insert or update.
+   * @returns The inserted or updated tenant service.
+   */
+  function upsertTenantService(tenantService: Service): Service {
+    const index = tenantServices.value.findIndex(
+      (t) => t.id === tenantService.id,
+    )
+
+    if (index === -1) {
+      tenantServices.value.push(tenantService)
+    } else {
+      tenantServices.value[index] = tenantService
+    }
+
+    return tenantService
   }
 
   // Exported Methods
@@ -50,7 +71,6 @@ export const useServiceStore = defineStore('service', () => {
 
   /**
    * Fetches all services from the API and updates the store.
-   * TODO: this does not update or even use the store, it's a bad passthrough.
    *
    * @returns A promise that resolves to the list of all services.
    */
@@ -58,8 +78,12 @@ export const useServiceStore = defineStore('service', () => {
     loading.value = true
     try {
       const serviceData = await serviceService.getServices()
+      const services = serviceData.map(Service.fromApiData)
 
-      return serviceData.map(Service.fromApiData)
+      // Update the store with these services.
+      services.forEach(upsertService)
+
+      return services
     } finally {
       loading.value = false
     }
@@ -77,13 +101,13 @@ export const useServiceStore = defineStore('service', () => {
   ): Promise<Service[]> => {
     loading.value = true
     try {
-      const serviceData = await serviceService.getTenantServices(tenantId)
-      const services = serviceData.map(Service.fromApiData)
+      const tenantServiceData = await serviceService.getTenantServices(tenantId)
+      const tenantServices = tenantServiceData.map(Service.fromApiData)
 
       // Update the store with these tenant services.
-      services.forEach(upsertService)
+      tenantServices.forEach(upsertTenantService)
 
-      return services
+      return tenantServices
     } finally {
       loading.value = false
     }
@@ -101,6 +125,7 @@ export const useServiceStore = defineStore('service', () => {
 
   return {
     loading,
+    services,
     tenantServices,
 
     addServiceToTenant,

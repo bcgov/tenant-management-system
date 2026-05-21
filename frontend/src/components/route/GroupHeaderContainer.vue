@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, ref } from 'vue'
 
 import GroupHeader from '@/components/group/GroupHeader.vue'
-import LoadingWrapper from '@/components/ui/LoadingWrapper.vue'
 import { useNotification } from '@/composables/useNotification'
 import { type GroupId } from '@/models/group.model'
 import { type TenantId } from '@/models/tenant.model'
@@ -11,7 +10,10 @@ import { useTenantStore } from '@/stores/useTenantStore'
 
 // --- Component Interface -----------------------------------------------------
 
-const props = defineProps<{ groupId: GroupId; tenantId: TenantId }>()
+const props = defineProps<{
+  groupId: GroupId
+  tenantId: TenantId
+}>()
 
 // --- Store and Composable Setup ----------------------------------------------
 
@@ -40,32 +42,31 @@ const tenant = computed(() => tenantStore.getTenant(props.tenantId))
 
 // --- Component Lifecycle -----------------------------------------------------
 
-onMounted(async () => {
-  try {
-    await groupStore.fetchGroup(props.tenantId, props.groupId)
-  } catch {
+// Use init() in setup instead of a top-level await, so that loading state is
+// set before first render. Look to Suspense when no longer experimental.
+const initialized = ref(false)
+const init = async () => {
+  const [groupResult, groupServicesResult] = await Promise.allSettled([
+    groupStore.fetchGroup(props.tenantId, props.groupId),
+    groupStore.fetchGroupServices(props.tenantId, props.groupId),
+  ])
+
+  if (groupResult.status === 'rejected') {
     notification.error('Failed to load group')
   }
 
-  try {
-    await groupStore.fetchGroupServices(props.tenantId, props.groupId)
-  } catch {
-    notification.error('Failed to load group services')
+  if (groupServicesResult.status === 'rejected') {
+    notification.error('Failed to load group servicess')
   }
 
-  try {
-    await tenantStore.fetchTenant(props.tenantId)
-  } catch {
-    notification.error('Failed to load tenant')
-  }
-})
+  initialized.value = true
+}
+
+init()
 </script>
 
 <template>
-  <LoadingWrapper
-    :loading="!group || !tenant"
-    loading-message="Loading group..."
-  >
+  <template v-if="initialized">
     <GroupHeader
       :enabled-roles-count="enabledRolesCount"
       :enabled-service-count="enabledServiceCount"
@@ -73,6 +74,6 @@ onMounted(async () => {
       :tenant="tenant!"
     />
 
-    <router-view :group="group" :tenant="tenant" />
-  </LoadingWrapper>
+    <router-view />
+  </template>
 </template>

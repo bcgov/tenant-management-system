@@ -1,37 +1,35 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import ServiceManagement from '@/components/service/ServiceManagement.vue'
-import LoadingWrapper from '@/components/ui/LoadingWrapper.vue'
 import { useNotification } from '@/composables/useNotification'
-import { Service, type ServiceId } from '@/models/service.model'
-import { Tenant } from '@/models/tenant.model'
+import { type ServiceId } from '@/models/service.model'
+import { type TenantId } from '@/models/tenant.model'
 import { useServiceStore } from '@/stores/useServiceStore'
-
-const { t } = useI18n()
+import { useTenantStore } from '@/stores/useTenantStore'
 
 // --- Component Interface -----------------------------------------------------
 
 const props = defineProps<{
-  tenant: Tenant
+  tenantId: TenantId
 }>()
 
 // --- Store and Composable Setup ----------------------------------------------
 
 const notification = useNotification()
 const serviceStore = useServiceStore()
+const tenantStore = useTenantStore()
 
 // --- Component State ---------------------------------------------------------
 
-const services = ref<Service[]>([])
-const tenantServices = ref<Service[]>([])
+const { t } = useI18n()
 
 // --- Component Methods -------------------------------------------------------
 
 async function handleAddService(serviceId: ServiceId) {
   try {
-    await serviceStore.addServiceToTenant(props.tenant.id, serviceId)
+    await serviceStore.addServiceToTenant(props.tenantId, serviceId)
 
     // Find the added service and add it to tenantServices.
     const addedService = services.value.find(
@@ -51,32 +49,46 @@ async function handleAddService(serviceId: ServiceId) {
   }
 }
 
+// --- Computed Values ---------------------------------------------------------
+
+const services = computed(() => serviceStore.services)
+
+const tenant = computed(() => tenantStore.getTenant(props.tenantId))
+
+const tenantServices = computed(() => serviceStore.tenantServices)
+
 // --- Component Lifecycle -----------------------------------------------------
 
-onMounted(async () => {
-  try {
-    services.value = await serviceStore.fetchServices()
-    tenantServices.value = await serviceStore.fetchTenantServices(
-      props.tenant.id,
-    )
-  } catch {
-    // Just give one notification is there is a failure with either one, or more
-    // likely, failures with both.
+// Use init() in setup instead of a top-level await, so that loading state is
+// set before first render. Look to Suspense when no longer experimental.
+const initialized = ref(false)
+const init = async () => {
+  const [servicesResult, tenantServicesResult] = await Promise.allSettled([
+    serviceStore.fetchServices(),
+    serviceStore.fetchTenantServices(props.tenantId),
+  ])
+
+  if (servicesResult.status === 'rejected') {
     notification.error('Failed to load services')
   }
-})
+
+  if (tenantServicesResult.status === 'rejected') {
+    notification.error('Failed to load tenant services')
+  }
+
+  initialized.value = true
+}
+
+init()
 </script>
 
 <template>
-  <LoadingWrapper
-    :loading="!services || !tenantServices"
-    loading-message="Loading services..."
-  >
+  <template v-if="initialized">
     <ServiceManagement
       :services="services"
-      :tenant="tenant"
+      :tenant="tenant!"
       :tenant-services="tenantServices"
       @add-service="handleAddService"
     />
-  </LoadingWrapper>
+  </template>
 </template>

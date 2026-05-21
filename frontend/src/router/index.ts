@@ -14,8 +14,14 @@ import TenantServiceContainer from '@/components/route/TenantServiceContainer.vu
 import TenantUserContainer from '@/components/route/TenantUserContainer.vue'
 
 const routes = [
-  { path: '/', component: LandingPageContainer },
-  { path: '/bceid', component: LandingPageBceidContainer },
+  {
+    path: '/',
+    component: LandingPageContainer,
+  },
+  {
+    path: '/bceid',
+    component: LandingPageBceidContainer,
+  },
   {
     path: '/settings',
     redirect: '/settings/requests',
@@ -30,32 +36,53 @@ const routes = [
       },
     ],
   },
-  { path: '/tenants', component: TenantListContainer },
+  {
+    path: '/tenants',
+    component: TenantListContainer,
+  },
   {
     path: '/tenants/:tenantId',
     component: TenantHeaderContainer,
+
     props: true,
     children: [
       {
         path: 'groups',
         component: GroupListContainer,
+
+        props: true,
       },
       {
         path: 'groups/:groupId',
         component: GroupHeaderContainer,
-        children: [
-          { path: 'members', component: GroupUserContainer },
-          { path: 'roles', component: GroupRoleContainer },
-        ],
+
         props: true,
+        children: [
+          {
+            path: 'members',
+            component: GroupUserContainer,
+
+            props: true,
+          },
+          {
+            path: 'roles',
+            component: GroupRoleContainer,
+
+            props: true,
+          },
+        ],
       },
       {
         path: 'services',
         component: TenantServiceContainer,
+
+        props: true,
       },
       {
         path: 'users',
         component: TenantUserContainer,
+
+        props: true,
       },
     ],
   },

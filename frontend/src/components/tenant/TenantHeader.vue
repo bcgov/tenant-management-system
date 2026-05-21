@@ -48,72 +48,68 @@ const tenantUsersCount = computed(() => props.tenant.users.length)
 </script>
 
 <template>
-  <template v-if="!route.params.groupId">
-    <v-sheet
-      class="mt-12 px-10 py-4"
-      color="surface-light-gray"
-      @click="showDetail = !showDetail"
-    >
-      <v-row class="align-center">
-        <v-col>
-          <hgroup class="text-stack">
-            <p class="p-large">{{ tenant.name }}</p>
-            <p class="p-label">{{ tenant.ministryName }}</p>
-          </hgroup>
-        </v-col>
-        <v-col cols="auto">
-          <v-btn
-            :icon="showDetail ? mdiChevronUp : mdiChevronDown"
-            rounded="lg"
-            size="small"
-            variant="plain"
-          />
-        </v-col>
-      </v-row>
-    </v-sheet>
+  <v-sheet
+    class="mt-12 px-10 py-4"
+    color="surface-light-gray"
+    @click="showDetail = !showDetail"
+  >
+    <v-row class="align-center">
+      <v-col>
+        <hgroup class="text-stack">
+          <p class="p-large">{{ tenant.name }}</p>
+          <p class="p-label">{{ tenant.ministryName }}</p>
+        </hgroup>
+      </v-col>
+      <v-col cols="auto">
+        <v-btn
+          :icon="showDetail ? mdiChevronUp : mdiChevronDown"
+          rounded="lg"
+          size="small"
+          variant="plain"
+        />
+      </v-col>
+    </v-row>
+  </v-sheet>
 
-    <v-sheet v-if="showDetail" class="px-10 py-8">
-      <pre class="description p-small">{{ tenant.description }}</pre>
+  <v-sheet v-if="showDetail" class="px-10 py-8">
+    <pre class="description p-small">{{ tenant.description }}</pre>
 
-      <v-divider class="my-6" />
+    <v-divider class="my-6" />
 
-      <v-row class="align-center" style="column-gap: 8rem">
-        <v-col cols="12" md="3">
-          <StatBlock
-            :icon="mdiCalendarMonthOutline"
-            :value="tenant.createdDate"
-            label="Date Created"
-          />
-        </v-col>
-        <v-col cols="12" md="3">
-          <StatBlock
-            :icon="mdiAccountCircleOutline"
-            :value="tenant.createdBy"
-            label="Created By"
-          />
-        </v-col>
-      </v-row>
+    <v-row class="align-center" style="column-gap: 8rem">
+      <v-col cols="12" md="3">
+        <StatBlock
+          :icon="mdiCalendarMonthOutline"
+          :value="tenant.createdDate"
+          label="Date Created"
+        />
+      </v-col>
+      <v-col cols="12" md="3">
+        <StatBlock
+          :icon="mdiAccountCircleOutline"
+          :value="tenant.createdBy"
+          label="Created By"
+        />
+      </v-col>
+    </v-row>
 
-      <v-row class="align-center" style="column-gap: 8rem">
-        <v-col cols="12" md="3">
-          <StatBlock
-            :icon="mdiAccountMultipleOutline"
-            :value="tenantUsersCount"
-            label="Users"
-          />
-        </v-col>
-        <v-col cols="12" md="3">
-          <StatBlock
-            :icon="mdiAccountGroupOutline"
-            :value="tenantGroupsCount"
-            label="Groups"
-          />
-        </v-col>
-      </v-row>
-    </v-sheet>
-  </template>
-
-  <router-view :tenant="tenant" />
+    <v-row class="align-center" style="column-gap: 8rem">
+      <v-col cols="12" md="3">
+        <StatBlock
+          :icon="mdiAccountMultipleOutline"
+          :value="tenantUsersCount"
+          label="Users"
+        />
+      </v-col>
+      <v-col cols="12" md="3">
+        <StatBlock
+          :icon="mdiAccountGroupOutline"
+          :value="tenantGroupsCount"
+          label="Groups"
+        />
+      </v-col>
+    </v-row>
+  </v-sheet>
 </template>
 
 <style scoped>
