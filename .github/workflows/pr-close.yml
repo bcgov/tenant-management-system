@@ -73,10 +73,11 @@ jobs:
     steps:
       - uses: bcgov/action-crunchy@a109166ff26880dc75676492a33b816ac0ce392f # v1.2.6
         name: Remove PR Specific User
-        with:
+        secrets:
           oc_namespace: ${{ secrets.OC_NAMESPACE }}
           oc_token: ${{ secrets.OC_TOKEN }}
           oc_server: ${{ vars.OC_SERVER }}
+        with:
           release_name: cstar-db
           values_file: charts/crunchy/values-gold-dev.yml
           force_cleanup: ${{ inputs.force_cleanup || true }}
@@ -88,10 +89,11 @@ jobs:
     steps:
       - uses: bcgov/action-crunchy@a109166ff26880dc75676492a33b816ac0ce392f # v1.2.6
         name: Remove PR Specific User
-        with:
+        secrets:
           oc_namespace: ${{ secrets.OC_NAMESPACE }}
           oc_token: ${{ secrets.OC_TOKEN }}
           oc_server: ${{ vars.OC_SERVER }}
+        with:
           release_name: cstar-db
           values_file: charts/crunchy/values-golddr-dev.yml
           force_cleanup: ${{ inputs.force_cleanup || true }}
