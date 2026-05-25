@@ -8,6 +8,8 @@ import { type ServiceId } from '@/models/service.model'
 import { type TenantId } from '@/models/tenant.model'
 import { useServiceStore } from '@/stores/useServiceStore'
 import { useTenantStore } from '@/stores/useTenantStore'
+import { ROLES } from '@/utils/constants'
+import { currentUserHasRole } from '@/utils/permissions'
 
 // --- Component Interface -----------------------------------------------------
 
@@ -51,9 +53,20 @@ async function handleAddService(serviceId: ServiceId) {
 
 // --- Computed Values ---------------------------------------------------------
 
+const isAdmin = computed(() => {
+  return currentUserHasRole(tenant.value, ROLES.TENANT_OWNER.value)
+})
+
 const services = computed(() => serviceStore.services)
 
-const tenant = computed(() => tenantStore.getTenant(props.tenantId))
+const tenant = computed(() => {
+  const tenant = tenantStore.getTenant(props.tenantId)
+  if (!tenant) {
+    throw new Error(`Tenant ${props.tenantId} not found`)
+  }
+
+  return tenant
+})
 
 const tenantServices = computed(() => serviceStore.tenantServices)
 
@@ -84,7 +97,46 @@ init()
 
 <template>
   <template v-if="initialized">
+    <v-container v-if="tenantServices.length === 0" class="fill-height mt-12">
+      <v-row v-if="isAdmin" class="center-align justify-center">
+        <v-col class="align-center d-flex flex-column" cols="auto">
+          <h1>Connected Services</h1>
+          <p class="p-large">
+            Connected Services allow your tenant to manage access and assign
+            service roles to users and groups.
+          </p>
+
+          <v-divider class="my-12" style="width: 100%" />
+
+          <h3 class="mb-2">No Connected Services added yet</h3>
+          <p>
+            Add Connected Services to your tenant to make service roles
+            available to groups.
+          </p>
+
+          <ul>
+            <li>Select a Connected Service from the dropdown</li>
+            <li>Click Add Connected Service</li>
+            <li>Go to the Service Roles page to assign roles to groups</li>
+          </ul>
+        </v-col>
+      </v-row>
+      <v-row v-else class="center-align justify-center">
+        <v-col class="align-center d-flex flex-column" cols="auto">
+          <h1>No Connected Services available</h1>
+          <span class="p-large">
+            There are currently no Connected Services available to you in this
+            tenant.
+          </span>
+          <span class="p-large">
+            If you believe you should have access to a service, contact your
+            Tenant Owner.
+          </span>
+        </v-col>
+      </v-row>
+    </v-container>
     <ServiceManagement
+      v-else
       :services="services"
       :tenant="tenant!"
       :tenant-services="tenantServices"

@@ -33,26 +33,6 @@ export const useServiceStore = defineStore('service', () => {
     return service
   }
 
-  /**
-   * Inserts or updates a tenant service in the store.
-   *
-   * @param tenantService - The tenant service to insert or update.
-   * @returns The inserted or updated tenant service.
-   */
-  function upsertTenantService(tenantService: Service): Service {
-    const index = tenantServices.value.findIndex(
-      (t) => t.id === tenantService.id,
-    )
-
-    if (index === -1) {
-      tenantServices.value.push(tenantService)
-    } else {
-      tenantServices.value[index] = tenantService
-    }
-
-    return tenantService
-  }
-
   // Exported Methods
 
   /**
@@ -97,11 +77,7 @@ export const useServiceStore = defineStore('service', () => {
     loading.value = true
     try {
       const tenantServiceData = await serviceService.getTenantServices(tenantId)
-      const tenantServiceObjects = tenantServiceData.map(Service.fromApiData)
-
-      // Update the store with these tenant services.
-      tenantServices.value = []
-      tenantServiceObjects.forEach(upsertTenantService)
+      tenantServices.value = tenantServiceData.map(Service.fromApiData)
     } finally {
       loading.value = false
     }
