@@ -5,6 +5,6 @@
     "test": "cd collection && npx bru run --env default --noproxy"
   },
   "devDependencies": {
-    "@usebruno/cli": "^3.3.0"
+    "@usebruno/cli": "^3.4.0"
   }
 }
