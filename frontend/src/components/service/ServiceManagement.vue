@@ -41,7 +41,13 @@ function handleAddService(serviceId: ServiceId) {
 </script>
 
 <template>
-  <v-container>
+  <v-container
+    v-if="availableServices.length === 0 && tenantServices.length === 0"
+  >
+    <h3>Connected Services</h3>
+    <p>There are no Connected Services set up in this CSTAR environment.</p>
+  </v-container>
+  <v-container v-else>
     <template v-if="tenantServices.length === 0">
       <v-container class="text-center">
         <template v-if="isTenantOwner">
