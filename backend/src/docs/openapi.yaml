@@ -1237,7 +1237,6 @@ paths:
                     - lastName
                     - displayName
                     - ssoUserId
-                    - idpType
                   properties:
                     firstName:
                       type: string
@@ -1258,10 +1257,6 @@ paths:
                       type: string
                       format: email
                       example: 'john.Smith@example.com'
-                    idpType:
-                      type: string
-                      enum: ['idir', 'bceidbasic', 'bceidbusiness']
-                      example: 'idir'
       responses:
         '201':
           description: Tenant request successfully created
@@ -3737,7 +3732,6 @@ components:
             - lastName
             - displayName
             - ssoUserId
-            - idpType
           properties:
             firstName:
               type: string
@@ -3758,10 +3752,6 @@ components:
               type: string
               format: email
               example: 'john.Smith@example.com'
-            idpType:
-              type: string
-              enum: ['idir', 'bceidbasic', 'bceidbusiness']
-              example: 'idir'
 
     Group:
       type: object
