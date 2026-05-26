@@ -7,78 +7,80 @@ import {
 } from '@/models/ssouser.model'
 
 describe('SsoUser model', () => {
-  it('constructor assigns all properties correctly', () => {
-    const ssoUser = new SsoUser(
-      toSsoUserId('sso123'),
-      'jdoe',
-      'John',
-      'Doe',
-      'John Doe',
-      'jdoe@example.com',
-      'idir',
-    )
+  describe('constructor', () => {
+    it('assigns properties', () => {
+      const ssoUser = new SsoUser(
+        toSsoUserId('ssoUserId'),
+        'userName',
+        'firstName',
+        'lastName',
+        'displayName',
+        'email',
+        'idpType',
+      )
 
-    expect(ssoUser.ssoUserId).toBe('sso123')
-    expect(ssoUser.userName).toBe('jdoe')
-    expect(ssoUser.firstName).toBe('John')
-    expect(ssoUser.lastName).toBe('Doe')
-    expect(ssoUser.displayName).toBe('John Doe')
-    expect(ssoUser.email).toBe('jdoe@example.com')
+      expect(ssoUser.displayName).toBe('displayName')
+      expect(ssoUser.email).toBe('email')
+      expect(ssoUser.firstName).toBe('firstName')
+      expect(ssoUser.idpType).toBe('idpType')
+      expect(ssoUser.lastName).toBe('lastName')
+      expect(ssoUser.ssoUserId).toBe('ssoUserId')
+      expect(ssoUser.userName).toBe('userName')
+    })
+
+    it('handles missing optional fields', () => {
+      const ssoUser = new SsoUser(
+        toSsoUserId('ssoUserId'),
+        undefined,
+        'firstName',
+        'lastName',
+        'displayName',
+        undefined,
+        'idpType',
+      )
+
+      expect(ssoUser.email).toBeUndefined()
+      expect(ssoUser.userName).toBeUndefined()
+    })
   })
 
-  it('constructor works with missing optional fields', () => {
-    const ssoUser = new SsoUser(
-      toSsoUserId('sso456'),
-      undefined,
-      'Jane',
-      'Smith',
-      'Jane Smith',
-      undefined,
-      'idir',
-    )
+  describe('fromApiData', () => {
+    it('creates instance', () => {
+      const apiData: SsoUserApiData = {
+        displayName: 'displayName',
+        email: 'email',
+        firstName: 'firstName',
+        idpType: 'idpType',
+        lastName: 'lastName',
+        ssoUserId: toSsoUserId('ssoUserId'),
+        userName: 'userName',
+      }
 
-    expect(ssoUser.ssoUserId).toBe('sso456')
-    expect(ssoUser.userName).toBeUndefined()
-    expect(ssoUser.email).toBeUndefined()
-  })
+      const ssoUser = SsoUser.fromApiData(apiData)
 
-  it('fromApiData creates SsoUser instance correctly with all fields', () => {
-    const apiData: SsoUserApiData = {
-      ssoUserId: toSsoUserId('sso789'),
-      userName: 'jsmith',
-      firstName: 'Joe',
-      lastName: 'Smith',
-      displayName: 'Joe Smith',
-      email: 'joe.smith@example.com',
-      idpType: 'idir',
-    }
+      expect(ssoUser).toBeInstanceOf(SsoUser)
+      expect(ssoUser.displayName).toBe('displayName')
+      expect(ssoUser.email).toBe('email')
+      expect(ssoUser.firstName).toBe('firstName')
+      expect(ssoUser.idpType).toBe('idpType')
+      expect(ssoUser.lastName).toBe('lastName')
+      expect(ssoUser.ssoUserId).toBe('ssoUserId')
+      expect(ssoUser.userName).toBe('userName')
+    })
 
-    const ssoUser = SsoUser.fromApiData(apiData)
+    it('creates instance without optional fields', () => {
+      const apiData: SsoUserApiData = {
+        displayName: 'displayName',
+        firstName: 'firstName',
+        idpType: 'idpType',
+        lastName: 'lastName',
+        ssoUserId: toSsoUserId('ssoUserId'),
+      }
 
-    expect(ssoUser).toBeInstanceOf(SsoUser)
-    expect(ssoUser.ssoUserId).toBe(apiData.ssoUserId)
-    expect(ssoUser.userName).toBe(apiData.userName)
-    expect(ssoUser.firstName).toBe(apiData.firstName)
-    expect(ssoUser.lastName).toBe(apiData.lastName)
-    expect(ssoUser.displayName).toBe(apiData.displayName)
-    expect(ssoUser.email).toBe(apiData.email)
-  })
+      const ssoUser = SsoUser.fromApiData(apiData)
 
-  it('fromApiData creates SsoUser instance correctly without optional fields', () => {
-    const apiData: SsoUserApiData = {
-      displayName: 'Alice W.',
-      idpType: 'azureidir',
-      firstName: 'Alice',
-      lastName: 'Wonderland',
-      ssoUserId: toSsoUserId('sso101'),
-      // userName and email omitted intentionally
-    }
-
-    const ssoUser = SsoUser.fromApiData(apiData)
-
-    expect(ssoUser.userName).toBeUndefined()
-    expect(ssoUser.email).toBeUndefined()
-    expect(ssoUser.firstName).toBe(apiData.firstName)
-    expect(ssoUser.lastName).toBe(apiData.lastName)
+      expect(ssoUser.email).toBeUndefined()
+      expect(ssoUser.userName).toBeUndefined()
+    })
   })
 })

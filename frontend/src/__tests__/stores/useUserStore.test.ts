@@ -1,16 +1,17 @@
-import { setActivePinia, createPinia } from 'pinia'
+import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+
 import { User, type UserSearchApiData } from '@/models/user.model'
 import { userService } from '@/services/user.service'
 import { useUserStore } from '@/stores/useUserStore'
 
 vi.mock('@/services/user.service', () => ({
   userService: {
+    searchBCeIDDisplayName: vi.fn(),
+    searchBCeIDEmail: vi.fn(),
     searchIdirEmail: vi.fn(),
     searchIdirFirstName: vi.fn(),
     searchIdirLastName: vi.fn(),
-    searchBCeIDEmail: vi.fn(),
-    searchBCeIDDisplayName: vi.fn(),
   },
 }))
 
@@ -23,7 +24,6 @@ describe('useUserStore', () => {
     email: 'john.doe@gov.bc.ca',
     firstName: 'John',
     lastName: 'Doe',
-    username: 'jdoe',
   }
 
   beforeEach(() => {

@@ -3,15 +3,28 @@ import { GroupService, toGroupServiceId } from '@/models/groupservice.model'
 import {
   GroupServiceRole,
   toGroupServiceRoleId,
+  type GroupServiceRoleApiData,
 } from '@/models/groupservicerole.model'
-import { GroupUser, toGroupUserId } from '@/models/groupuser.model'
+import {
+  GroupUser,
+  type GroupUserApiData,
+  toGroupUserId,
+} from '@/models/groupuser.model'
 import { Role, toRoleId } from '@/models/role.model'
 import { Service, toServiceId } from '@/models/service.model'
-import { ServiceRole, toServiceRoleId } from '@/models/servicerole.model'
-import { SsoUser, toSsoUserId } from '@/models/ssouser.model'
+import {
+  ServiceRole,
+  type ServiceRoleApiData,
+  toServiceRoleId,
+} from '@/models/servicerole.model'
+import {
+  SsoUser,
+  type SsoUserApiData,
+  toSsoUserId,
+} from '@/models/ssouser.model'
 import { Tenant, toTenantId } from '@/models/tenant.model'
 import { TenantRequest, toTenantRequestId } from '@/models/tenantrequest.model'
-import { toUserId, User } from '@/models/user.model'
+import { toUserId, User, type UserApiData } from '@/models/user.model'
 import { ROLES } from '@/utils/constants'
 
 // Group Factory
@@ -76,6 +89,16 @@ export function makeGroupServiceRole(
   )
 }
 
+export function makeGroupServiceRoleApiData(): GroupServiceRoleApiData {
+  return {
+    allowedIdentityProviders: ['idir'],
+    description: 'test-group-service-role-description',
+    enabled: false,
+    id: 'test-group-service-role-id',
+    name: 'test-group-service-role-name',
+  }
+}
+
 // GroupUser Factory
 
 export function makeGroupUser(
@@ -88,6 +111,13 @@ export function makeGroupUser(
     toGroupUserId(overrides.id ?? 'test-group-user-id'),
     overrides.user ?? makeUser(),
   )
+}
+
+export function makeGroupUserApiData(): GroupUserApiData {
+  return {
+    id: toGroupUserId('api-group-user-id'),
+    user: makeUserApiData(),
+  }
 }
 
 // Role Factories
@@ -128,9 +158,9 @@ export function makeService(
   overrides: Partial<{
     clientIdentifier: string
     createdDate: string
-    id: string
     description: string
     displayName: string
+    id: string
     roles: ServiceRole[]
   }> = {},
 ): Service {
@@ -168,6 +198,18 @@ export function makeServiceRole(
   )
 }
 
+export function makeServiceRoleApiData(): ServiceRoleApiData {
+  return {
+    allowedIdentityProviders: [],
+    createdBy: 'service-role-created-by',
+    createdDateTime: 'service-role-created-date-time',
+    description: 'service-role-description',
+    id: toServiceRoleId('service-role-id'),
+    isDeleted: true,
+    name: 'service-role-name',
+  }
+}
+
 // SsoUser Factory
 
 export function makeSsoUser(
@@ -190,6 +232,18 @@ export function makeSsoUser(
     overrides.email ?? 'test-sso-user-email',
     overrides.idpType ?? 'test-sso-user-idp-type',
   )
+}
+
+export function makeSsoUserApiData(): SsoUserApiData {
+  return {
+    displayName: 'api-sso-user-display-name',
+    email: 'api-sso-user-email',
+    firstName: 'api-sso-user-first-name',
+    idpType: 'api-sso-user-idp-type',
+    lastName: 'api-sso-user-last-name',
+    ssoUserId: toSsoUserId('api-sso-user-id'),
+    userName: 'api-sso-user-user-name',
+  }
 }
 
 // Tenant Factory
@@ -266,4 +320,11 @@ export function makeUserIdir(): User {
 
 export function makeUserOperationsAdmin(): User {
   return makeUser({ roles: [makeRoleOperationsAdmin()] })
+}
+
+export function makeUserApiData(): UserApiData {
+  return {
+    id: toUserId('api-user-id'),
+    ssoUser: makeSsoUserApiData(),
+  }
 }

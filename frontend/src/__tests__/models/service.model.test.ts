@@ -1,55 +1,63 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  makeServiceRole,
+  makeServiceRoleApiData,
+} from '@/__tests__/__factories__'
+
+import {
   Service,
-  toServiceId,
   type ServiceApiData,
+  toServiceId,
 } from '@/models/service.model'
-import { toServiceRoleId } from '@/models/servicerole.model'
+import { ServiceRole } from '@/models/servicerole.model'
 
 describe('Service model', () => {
-  it('constructor assigns all properties correctly', () => {
-    const service = new Service(
-      toServiceId('service123'),
-      'displayName',
-      'createdDate',
-      'clientIdentifier',
-      'description',
-      [],
-    )
+  describe('constructor', () => {
+    it('assigns properties', () => {
+      const serviceRole = makeServiceRole()
+      const service = new Service(
+        toServiceId('id'),
+        'displayName',
+        'createdDate',
+        'clientIdentifier',
+        'description',
+        [serviceRole],
+      )
 
-    expect(service.description).toBe('description')
-    expect(service.displayName).toBe('displayName')
-    expect(service.clientIdentifier).toBe('clientIdentifier')
-    expect(service.createdDate).toBe('createdDate')
-    expect(service.id).toBe('service123')
+      expect(service.clientIdentifier).toBe('clientIdentifier')
+      expect(service.createdDate).toBe('createdDate')
+      expect(service.description).toBe('description')
+      expect(service.displayName).toBe('displayName')
+      expect(service.id).toBe('id')
+      expect(service.roles.length).toBe(1)
+      expect(service.roles[0]).toBe(serviceRole)
+    })
   })
 
-  it('fromApiData creates Service instance correctly', () => {
-    const apiData: ServiceApiData = {
-      id: toServiceId('service456'),
-      displayName: 'API Service',
-      createdDateTime: '2025-08-01',
-      clientIdentifier: 'client-789',
-      description: 'A service from API',
-      roles: [
-        {
-          id: toServiceRoleId('role456'),
-          name: 'User',
-          description: 'Standard user role',
-          allowedIdentityProviders: [],
-          createdBy: '',
-          isDeleted: true,
-          createdDateTime: '',
-        },
-      ],
-    }
+  describe('fromApiData', () => {
+    it('creates instance', () => {
+      const serviceRoleApiData = makeServiceRoleApiData()
+      const serviceRole = ServiceRole.fromApiData(serviceRoleApiData)
+      const apiData: ServiceApiData = {
+        id: toServiceId('id'),
+        displayName: 'displayName',
+        createdDateTime: 'createdDateTime',
+        clientIdentifier: 'clientIdentifier',
+        description: 'description',
+        roles: [serviceRoleApiData],
+      }
 
-    const service = Service.fromApiData(apiData)
+      const service = Service.fromApiData(apiData)
 
-    expect(service).toBeInstanceOf(Service)
-    expect(service.id).toBe('service456')
-    expect(service.displayName).toBe('API Service')
-    expect(service.createdDate).toBe('2025-08-01')
+      expect(service).toBeInstanceOf(Service)
+      expect(service.createdDate).toBe('createdDateTime')
+      expect(service.clientIdentifier).toBe('clientIdentifier')
+      expect(service.description).toBe('description')
+      expect(service.displayName).toBe('displayName')
+      expect(service.id).toBe('id')
+      expect(service.roles.length).toBe(1)
+      expect(service.roles[0]).toEqual(serviceRole)
+    })
   })
 })
