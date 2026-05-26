@@ -950,6 +950,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/InternalServerErrorResponse'
 
+  /v1/tenants/{tenantId}/users/{tenantUserId}/roles/{roleId}:
     delete:
       summary: Unassign a role from a user in a tenant
       description: Removes a role from a user within a tenant
