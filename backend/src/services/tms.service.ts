@@ -811,6 +811,7 @@ export class TMSService {
         displayName: req.decodedJwt?.display_name || 'System User',
         userName: req.decodedJwt?.preferred_username || 'system',
         email: req.decodedJwt?.email || 'system@gov.bc.ca',
+        idpType: req.idpType || 'idir',
       },
     }
     const response: UpdateTenantRequestStatusResultDto =

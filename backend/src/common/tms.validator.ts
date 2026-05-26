@@ -1,4 +1,9 @@
 import { Joi } from 'express-validation'
+import { TMSConstants } from './tms.constants'
+
+const idpTypeValidator = Joi.string()
+  .valid(...TMSConstants.IDP_TYPES)
+  .required()
 
 export default {
   createTenant: {
@@ -18,6 +23,7 @@ export default {
           userName: Joi.string().min(1).max(15).optional(),
           ssoUserId: Joi.string().required(), // will need to be updated to the right regex and length
           email: Joi.string().email().max(100).optional(),
+          idpType: idpTypeValidator,
         })
         .required(),
     }).options({ abortEarly: false, convert: false }),
@@ -36,9 +42,7 @@ export default {
           userName: Joi.string().min(1).max(15).optional(),
           ssoUserId: Joi.string().required(), // will need to be updated to the right regex and length
           email: Joi.string().email().max(100).optional(),
-          idpType: Joi.string()
-            .valid('idir', 'bceidbasic', 'bceidbusiness')
-            .optional(),
+          idpType: idpTypeValidator,
         })
         .required(),
       roles: Joi.array()
@@ -204,6 +208,7 @@ export default {
           userName: Joi.string().min(1).max(15).optional(),
           ssoUserId: Joi.string().required(),
           email: Joi.string().email().max(100).optional(),
+          idpType: idpTypeValidator,
         })
         .required(),
     }).options({ abortEarly: false, convert: false }),
@@ -286,9 +291,7 @@ export default {
           userName: Joi.string().min(1).max(15).optional(),
           ssoUserId: Joi.string().required(),
           email: Joi.string().email().max(100).optional(),
-          idpType: Joi.string()
-            .valid('idir', 'bceidbasic', 'bceidbusiness')
-            .optional(),
+          idpType: idpTypeValidator,
         })
         .required(),
     }).options({ abortEarly: false, convert: false }),

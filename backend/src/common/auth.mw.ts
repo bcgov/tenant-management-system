@@ -140,8 +140,21 @@ export const checkJwt = (options: CheckJwtOptions = {}) => {
             req.idpType = 'bceidbasic'
           } else if (provider === TMSConstants.BUSINESS_BCEID_PROVIDER) {
             req.idpType = 'bceidbusiness'
-          } else {
+          } else if (
+            provider === TMSConstants.IDIR_PROVIDER ||
+            provider === TMSConstants.AZURE_IDIR_PROVIDER
+          ) {
             req.idpType = 'idir'
+          } else if (provider) {
+            logger.error('Invalid provider for shared service access', {
+              provider,
+              sub: req.decodedJwt.sub,
+            })
+            return res.status(401).json({
+              error: 'Unauthorized',
+              message: 'Unsupported identity provider',
+              statusCode: 401,
+            })
           }
         }
       } else if (req.decodedJwt) {

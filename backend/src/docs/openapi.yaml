@@ -82,6 +82,7 @@ paths:
                   userName: 'JSMITH1'
                   ssoUserId: 'fd33f1cef7ca4b19a71104d4ecf7066b'
                   email: 'john.smith@gov.bc.ca'
+                  idpType: 'idir'
       responses:
         '201':
           description: Tenant successfully created
@@ -1236,6 +1237,7 @@ paths:
                     - lastName
                     - displayName
                     - ssoUserId
+                    - idpType
                   properties:
                     firstName:
                       type: string
@@ -1256,6 +1258,10 @@ paths:
                       type: string
                       format: email
                       example: 'john.Smith@example.com'
+                    idpType:
+                      type: string
+                      enum: ['idir', 'bceidbasic', 'bceidbusiness']
+                      example: 'idir'
       responses:
         '201':
           description: Tenant request successfully created
@@ -3232,6 +3238,7 @@ components:
         - lastName
         - displayName
         - ssoUserId
+        - idpType
       properties:
         firstName:
           type: string
@@ -3266,9 +3273,8 @@ components:
         idpType:
           type: string
           enum: ['idir', 'bceidbasic', 'bceidbusiness']
-          nullable: true
           example: 'idir'
-          description: "Identity Provider type. Defaults to 'idir' if not provided."
+          description: 'Identity Provider type.'
 
     User:
       type: object
@@ -3290,6 +3296,12 @@ components:
 
     SSOUser:
       type: object
+      required:
+        - ssoUserId
+        - firstName
+        - lastName
+        - displayName
+        - idpType
       properties:
         id:
           type: string
@@ -3318,7 +3330,6 @@ components:
         idpType:
           type: string
           enum: ['idir', 'bceidbasic', 'bceidbusiness']
-          nullable: true
           example: 'idir'
           description: 'Identity Provider type'
         createdDateTime:
@@ -3726,6 +3737,7 @@ components:
             - lastName
             - displayName
             - ssoUserId
+            - idpType
           properties:
             firstName:
               type: string
@@ -3746,6 +3758,10 @@ components:
               type: string
               format: email
               example: 'john.Smith@example.com'
+            idpType:
+              type: string
+              enum: ['idir', 'bceidbasic', 'bceidbusiness']
+              example: 'idir'
 
     Group:
       type: object
