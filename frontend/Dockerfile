@@ -1,4 +1,4 @@
-FROM node:22.22.2-trixie AS build
+FROM node:22.22.3-trixie AS build
 
 WORKDIR /app
 
@@ -15,7 +15,7 @@ RUN npm run build
 
 # -----------------------------------------------------------------------------
 
-FROM caddy:2.11.2-alpine
+FROM caddy:2.11.3-alpine
 
 RUN setcap -r /usr/bin/caddy
 
