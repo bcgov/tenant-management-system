@@ -1,5 +1,6 @@
 import { TenantUser } from '../entities/TenantUser'
 import { TenantUserRole } from '../entities/TenantUserRole'
+import { IdpType } from '../common/tms.constants'
 
 export interface CreateTenantInputDto {
   name: string
@@ -12,6 +13,7 @@ export interface CreateTenantInputDto {
     displayName: string
     userName?: string
     email?: string
+    idpType: IdpType
   }
 }
 
@@ -26,6 +28,7 @@ export interface CreateTenantRequestInputDto {
     displayName: string
     userName?: string
     email?: string
+    idpType: IdpType
   }
 }
 
@@ -104,6 +107,7 @@ export interface UpdateTenantRequestStatusInputDto {
     displayName: string
     userName: string
     email: string
+    idpType: IdpType
   }
 }
 
@@ -172,7 +176,7 @@ export interface AddTenantUserInputDto {
     displayName: string
     userName?: string
     email?: string
-    idpType?: 'idir' | 'bceidbasic' | 'bceidbusiness'
+    idpType: IdpType
   }
   roles?: string[]
   groups?: string[]

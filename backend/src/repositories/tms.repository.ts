@@ -4,7 +4,7 @@ import { SSOUser } from '../entities/SSOUser'
 import { Role } from '../entities/Role'
 import { EntityManager, FindManyOptions } from 'typeorm'
 import { In } from 'typeorm'
-import { TMSConstants } from '../common/tms.constants'
+import { IdpType, TMSConstants } from '../common/tms.constants'
 import { TenantUserRole } from '../entities/TenantUserRole'
 import { NotFoundError } from '../errors/NotFoundError'
 import { ConflictError } from '../errors/ConflictError'
@@ -82,6 +82,7 @@ export class TMSRepository {
             user.displayName,
             user.userName || '',
             user.email || '',
+            user.idpType,
           )
           tenantUser.ssoUser = ssoUser
           const tenant: Tenant = new Tenant()
@@ -356,7 +357,7 @@ export class TMSRepository {
   }
 
   private async getRoleIdsToAssign(
-    idpType: 'idir' | 'bceidbasic' | 'bceidbusiness' | undefined,
+    idpType: IdpType,
     requestedRoles: string[] | undefined,
   ) {
     if (idpType === 'bceidbasic' || idpType === 'bceidbusiness') {
@@ -1151,7 +1152,7 @@ export class TMSRepository {
     displayName: string,
     userName: string,
     email: string,
-    idpType?: string,
+    idpType: string,
   ) {
     let ssoUser = await this.manager.findOne(SSOUser, {
       where: { ssoUserId: ssoUserId },
@@ -1164,7 +1165,7 @@ export class TMSRepository {
       ssoUser.userName = userName
       ssoUser.ssoUserId = ssoUserId
       ssoUser.email = email ?? ''
-      ssoUser.idpType = idpType || 'idir'
+      ssoUser.idpType = idpType
       ssoUser.createdBy = ssoUserId
       ssoUser.updatedBy = ssoUserId
     }
@@ -1215,6 +1216,7 @@ export class TMSRepository {
           input.user.displayName,
           input.user.userName || '',
           input.user.email || '',
+          input.user.idpType,
         )
         tenantRequest.createdBy = input.user.ssoUserId
         tenantRequest.updatedBy = input.user.ssoUserId
@@ -1302,6 +1304,7 @@ export class TMSRepository {
               displayName: tenantRequest.requestedBy.displayName,
               userName: tenantRequest.requestedBy.userName,
               email: tenantRequest.requestedBy.email,
+              idpType: tenantRequest.requestedBy.idpType as IdpType,
             },
           }
           const savedTenant: Tenant = (await this.saveTenant(
@@ -1327,6 +1330,7 @@ export class TMSRepository {
           input.decisionedByUser.displayName,
           input.decisionedByUser.userName,
           input.decisionedByUser.email,
+          input.decisionedByUser.idpType,
         )
 
         opsAdminSSOUser = await transactionEntityManager.save(opsAdminSSOUser)

@@ -831,6 +831,7 @@ describe('Tenant Management API', () => {
           lastName: 'Smith',
           displayName: 'Jane Smith',
           ssoUserId: 'F45AFBBD68C51D6F956BA3A1DE1878A2',
+          idpType: 'idir',
         },
       }
 
@@ -878,6 +879,22 @@ describe('Tenant Management API', () => {
           },
         },
       })
+    })
+
+    it('should return 400 when user idpType is missing', async () => {
+      const invalidUserData = {
+        user: {
+          ...validUserData.user,
+          idpType: undefined,
+        },
+      }
+
+      const response = await request(app)
+        .post(`/v1/tenants/${tenantId}/groups/${groupId}/users`)
+        .send(invalidUserData)
+
+      expect(response.status).toBe(400)
+      expect(response.body.message).toBe('Validation Failed')
     })
 
     it('should fail when group does not exist', async () => {
