@@ -208,7 +208,6 @@ export default {
           userName: Joi.string().min(1).max(15).optional(),
           ssoUserId: Joi.string().required(),
           email: Joi.string().email().max(100).optional(),
-          idpType: idpTypeValidator,
         })
         .required(),
     }).options({ abortEarly: false, convert: false }),

@@ -618,7 +618,10 @@ export class TMSService {
       name: req.body.name,
       ministryName: req.body.ministryName,
       description: req.body.description,
-      user: req.body.user,
+      user: {
+        ...req.body.user,
+        idpType: req.idpType || 'idir',
+      },
     }
     const tenantRequest = (await this.tmsRepository.saveTenantRequest(
       input,

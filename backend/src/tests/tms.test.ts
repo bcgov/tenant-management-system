@@ -2186,7 +2186,6 @@ describe('Tenant API', () => {
         ssoUserId: 'F45AFBBD68C4466F956BA3A1D91878AD',
         userName: 'testuser',
         email: 'test@gov.bc.ca',
-        idpType: 'idir',
       },
     }
 
@@ -2233,6 +2232,7 @@ describe('Tenant API', () => {
           ssoUserId: validTenantRequestData.user.ssoUserId,
           userName: validTenantRequestData.user.userName,
           email: validTenantRequestData.user.email,
+          idpType: 'idir',
         },
         createdDateTime: new Date(),
         updatedDateTime: new Date(),
@@ -2267,26 +2267,12 @@ describe('Tenant API', () => {
           name: validTenantRequestData.name,
           ministryName: validTenantRequestData.ministryName,
           description: validTenantRequestData.description,
-          user: validTenantRequestData.user,
+          user: {
+            ...validTenantRequestData.user,
+            idpType: 'idir',
+          },
         }),
       )
-    })
-
-    it('should return 400 when user idpType is missing', async () => {
-      const invalidData = {
-        ...validTenantRequestData,
-        user: {
-          ...validTenantRequestData.user,
-          idpType: undefined,
-        },
-      }
-
-      const response = await request(app)
-        .post('/v1/tenant-requests')
-        .send(invalidData)
-
-      expect(response.status).toBe(400)
-      expect(response.body.message).toBe('Validation Failed')
     })
 
     it('should return 400 when required fields are missing', async () => {
@@ -2301,7 +2287,6 @@ describe('Tenant API', () => {
           ssoUserId: 'F45AFBBD68C4466F956BA3A1D91878AD',
           userName: 'testuser',
           email: 'test@gov.bc.ca',
-          idpType: 'idir',
         },
       }
 
