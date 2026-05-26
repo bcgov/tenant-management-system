@@ -1,0 +1,81 @@
+---
+name: Release
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  vars:
+    name: Set Variables
+    outputs:
+      pr: ${{ steps.pr.outputs.pr }}
+      release-name: ${{ steps.release-name.outputs.release-name }}
+      release-num: ${{ steps.release-name.outputs.release-num }}
+    runs-on: ubuntu-22.04
+    timeout-minutes: 1
+    steps:
+      # Get PR number for squash merges to main
+      - name: Get PR Number From Event
+        if: github.event_name == 'release'
+        id: pr_no
+        uses: bcgov/action-get-pr@main
+      - name: PR Number
+        id: pr
+        run: echo pr=${{ steps.pr_no.outputs.pr || inputs.pr}} >> $GITHUB_OUTPUT
+      - name: Release Name
+        id: release-name
+        run: |
+          echo release-name=$(curl https://api.github.com/repos/bcgov/onroutebc/releases/latest | jq -r .tag_name) >> $GITHUB_OUTPUT
+          echo release-num=V$(curl https://api.github.com/repos/bcgov/onroutebc/releases/latest | jq -r .tag_name | sed 's/[^0-9.]//g')  >> $GITHUB_OUTPUT
+ 
+  deploys-gold-prod:
+    name: Deploys Gold Prod - (${{ needs.vars.outputs.pr }})
+    needs: [vars]
+    uses: ./.github/workflows/gold-prod.yml
+    secrets: inherit
+    with:
+      release_name: cstar-prod
+      tag: ${{ needs.vars.outputs.pr }}
+      db_user: appproxy
+
+  promote-release:
+    name: Promote Images Release
+    needs: [vars, deploys-gold-prod]
+    runs-on: ubuntu-24.04
+    permissions:
+      packages: write
+    strategy:
+      matrix:
+        package: [migrations, backend, frontend]
+    timeout-minutes: 1
+    steps:
+      - uses: shrink/actions-docker-registry-tag@f04afd0559f66b288586792eb150f45136a927fa # v4.0.0
+        with:
+          registry: ghcr.io
+          repository: ${{ github.repository }}/${{ matrix.package }}
+          target: ${{ needs.vars.outputs.pr }}
+          tags: ${{ needs.vars.outputs.release-name }}
+
+  promote-prod:
+    name: Promote Images Prod
+    needs: [vars, deploys-gold-prod]
+    runs-on: ubuntu-24.04
+    permissions:
+      packages: write
+    strategy:
+      matrix:
+        package: [migrations, backend, frontend]
+    timeout-minutes: 1
+    steps:
+      - uses: shrink/actions-docker-registry-tag@f04afd0559f66b288586792eb150f45136a927fa # v4.0.0
+        with:
+          registry: ghcr.io
+          repository: ${{ github.repository }}/${{ matrix.package }}
+          target: ${{ needs.vars.outputs.pr }}
+          tags: prod
