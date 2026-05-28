@@ -4,17 +4,20 @@ import { type ComponentPublicInstance } from 'vue'
 
 import router from '@/router'
 
-vi.mock('@/components/group/GroupListContainer.vue', () => ({
-  default: { template: `<div>GroupListContainer</div>` },
-}))
-vi.mock('@/components/group/GroupRoleContainer.vue', () => ({
-  default: { template: `<div>GroupRoleContainer</div>` },
-}))
-vi.mock('@/components/group/UserManagementContainer.vue', () => ({
-  default: { template: `<div>GroupUserManagementContainer</div>` },
-}))
 vi.mock('@/components/route/BCeidLandingContainer.vue', () => ({
   default: { template: `<div>BCeidLandingContainer</div>` },
+}))
+vi.mock('@/components/route/GroupHeaderContainer.vue', () => ({
+  default: { template: `<div>GroupHeaderContainer</div>` },
+}))
+vi.mock('@/components/route/GroupListContainer.vue', () => ({
+  default: { template: `<div>GroupListContainer</div>` },
+}))
+vi.mock('@/components/route/GroupRoleContainer.vue', () => ({
+  default: { template: `<div>GroupRoleContainer</div>` },
+}))
+vi.mock('@/components/route/GroupUserContainer.vue', () => ({
+  default: { template: `<div>GroupUserContainer</div>` },
 }))
 vi.mock('@/components/route/LandingPageContainer.vue', () => ({
   default: { template: `<div>LandingPageContainer</div>` },
@@ -25,20 +28,17 @@ vi.mock('@/components/route/SettingsServiceContainer.vue', () => ({
 vi.mock('@/components/route/SettingsTenantRequestContainer.vue', () => ({
   default: { template: `<div>SettingsTenantRequestContainer</div>` },
 }))
-vi.mock('@/components/route/TenantContainer.vue', () => ({
-  default: { template: `<div>TenantContainer<router-view /></div>` },
-}))
-vi.mock('@/components/route/TenantGroupContainer.vue', () => ({
-  default: { template: `<div>TenantGroupContainer</div>` },
+vi.mock('@/components/route/TenantHeaderContainer.vue', () => ({
+  default: { template: `<div>TenantHeaderContainer<router-view /></div>` },
 }))
 vi.mock('@/components/route/TenantListContainer.vue', () => ({
   default: { template: `<div>TenantListContainer</div>` },
 }))
-vi.mock('@/components/service/ServiceManagementContainer.vue', () => ({
-  default: { template: `<div>ServiceManagementContainer</div>` },
+vi.mock('@/components/route/TenantServiceContainer.vue', () => ({
+  default: { template: `<div>TenantServiceContainer</div>` },
 }))
-vi.mock('@/components/tenant/UserManagementContainer.vue', () => ({
-  default: { template: `<div>UserManagementContainer</div>` },
+vi.mock('@/components/route/TenantUserContainer.vue', () => ({
+  default: { template: `<div>TenantUserContainer</div>` },
 }))
 
 const TestApp = { template: '<router-view />' }
@@ -81,7 +81,7 @@ describe('Vue Router', () => {
     await router.isReady()
 
     expect(router.currentRoute.value.params.tenantId).toBe('123')
-    expect(wrapper.text()).toContain('TenantContainer')
+    expect(wrapper.text()).toContain('TenantHeaderContainer')
   })
 
   it('navigates to group with params', async () => {
@@ -90,7 +90,7 @@ describe('Vue Router', () => {
 
     expect(router.currentRoute.value.params.tenantId).toBe('123')
     expect(router.currentRoute.value.params.groupId).toBe('456')
-    expect(wrapper.text()).toContain('TenantGroupContainer')
+    expect(wrapper.text()).toContain('GroupHeaderContainer')
   })
 
   it('redirects unknown routes to home', async () => {

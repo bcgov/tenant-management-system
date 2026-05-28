@@ -57,11 +57,6 @@ export type UserSearchApiData = {
    * Last name of the user.
    */
   lastName: string
-
-  /**
-   * Optional username of the user.
-   */
-  username?: string
 }
 
 /**
@@ -127,11 +122,15 @@ export class User {
     // The SSO API doesn't always return the expected fields - try to be lenient
     // but note that if the username is undefined then it will cause issues.
     const attributes = searchData.attributes
+    // TODO: is there ever a displayName?
+    const displayName =
+      attributes.display_name?.[0] ?? attributes.displayName?.[0] ?? ''
     const type = attributes.idir_username?.[0]
       ? 'idir'
       : attributes.bceid_business_guid?.[0]
         ? 'bceidbusiness'
         : 'bceidbasic'
+    // TODO: is there actually a userid?
     const userId = toSsoUserId(
       attributes.idir_user_guid?.[0] ??
         attributes.idir_userid?.[0] ??
@@ -143,8 +142,6 @@ export class User {
       attributes.idir_username?.[0] ??
       attributes.bceid_username?.[0] ??
       undefined
-    const displayName =
-      attributes.display_name?.[0] ?? attributes.displayName?.[0] ?? ''
 
     const ssoUser = new SsoUser(
       userId,

@@ -10,9 +10,11 @@ import {
   makeUser,
 } from '@/__tests__/__factories__'
 
-import GroupUserManagementContainer from '@/components/group/UserManagementContainer.vue'
+import GroupUserContainer from '@/components/route/GroupUserContainer.vue'
 import { useNotification } from '@/composables/useNotification'
 import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
+import { toGroupId } from '@/models/group.model'
+import { toTenantId } from '@/models/tenant.model'
 import { useGroupStore } from '@/stores/useGroupStore'
 import { useUserStore } from '@/stores/useUserStore'
 import { IDIR_SEARCH_TYPE } from '@/utils/constants'
@@ -21,14 +23,17 @@ vi.mock('@/composables/useNotification', () => ({
   useNotification: vi.fn(),
 }))
 
-function mountComponent(group = makeGroup(), tenant = makeTenant()) {
-  return mount(GroupUserManagementContainer, {
-    props: { group, tenant },
+function mountComponent(
+  groupId = toGroupId('g1'),
+  tenantId = toTenantId('t1'),
+) {
+  return mount(GroupUserContainer, {
+    props: { groupId, tenantId },
     global: { stubs: { GroupUserManagement: true } },
   })
 }
 
-describe('GroupUserManagementContainer', () => {
+describe('GroupUserContainer', () => {
   let groupStore: ReturnType<typeof useGroupStore>
   let userStore: ReturnType<typeof useUserStore>
   let notificationMock: ReturnType<typeof useNotification>
@@ -51,12 +56,12 @@ describe('GroupUserManagementContainer', () => {
 
   describe('handleAddUser', () => {
     it('calls addGroupUser, clears searchResults, and shows success notification', async () => {
-      const group = makeGroup()
-      const tenant = makeTenant()
+      const group = makeGroup({ id: 'g1' })
+      const tenant = makeTenant({ id: 't1' })
       const user = makeUser()
       groupStore.addGroupUser = vi.fn().mockResolvedValue(undefined)
 
-      const wrapper = mountComponent(group, tenant)
+      const wrapper = mountComponent(group.id, tenant.id)
       await wrapper
         .getComponent({ name: 'GroupUserManagement' })
         .vm.$emit('add', user)
@@ -83,7 +88,7 @@ describe('GroupUserManagementContainer', () => {
         .fn()
         .mockRejectedValue(new DuplicateEntityError())
 
-      const wrapper = mountComponent(group)
+      const wrapper = mountComponent(group.id)
       await wrapper
         .getComponent({ name: 'GroupUserManagement' })
         .vm.$emit('add', user)
@@ -134,11 +139,11 @@ describe('GroupUserManagementContainer', () => {
 
   describe('handleDeleteUser', () => {
     it('calls removeGroupUser and shows success notification', async () => {
-      const group = makeGroup()
-      const tenant = makeTenant()
+      const group = makeGroup({ id: 'g1' })
+      const tenant = makeTenant({ id: 't1' })
       groupStore.removeGroupUser = vi.fn().mockResolvedValue(undefined)
 
-      const wrapper = mountComponent(group, tenant)
+      const wrapper = mountComponent(group.id, tenant.id)
       await wrapper
         .getComponent({ name: 'GroupUserManagement' })
         .vm.$emit('delete', 'gu1')

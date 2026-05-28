@@ -1,28 +1,30 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 
 import GroupUserManagement from '@/components/group/GroupUserManagement.vue'
 import { useNotification } from '@/composables/useNotification'
 import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
-import { Group } from '@/models/group.model'
+import { type GroupId } from '@/models/group.model'
 import { type GroupUserId } from '@/models/groupuser.model'
-import { Tenant } from '@/models/tenant.model'
+import { type TenantId } from '@/models/tenant.model'
 import { User } from '@/models/user.model'
 import { useGroupStore } from '@/stores/useGroupStore'
+import { useTenantStore } from '@/stores/useTenantStore'
 import { useUserStore } from '@/stores/useUserStore'
 import { type IdirSearchType, IDIR_SEARCH_TYPE } from '@/utils/constants'
 
 // --- Component Interface -----------------------------------------------------
 
 const props = defineProps<{
-  group: Group
-  tenant: Tenant
+  groupId: GroupId
+  tenantId: TenantId
 }>()
 
 // --- Store and Composable Setup ----------------------------------------------
 
 const groupStore = useGroupStore()
 const notification = useNotification()
+const tenantStore = useTenantStore()
 const userStore = useUserStore()
 
 // --- Component State ---------------------------------------------------------
@@ -30,11 +32,16 @@ const userStore = useUserStore()
 const isLoadingSearch = ref(false)
 const searchResults = ref<User[] | null>(null)
 
+// --- Computed Values ---------------------------------------------------------
+
+const group = computed(() => groupStore.getGroup(props.groupId))
+const tenant = computed(() => tenantStore.getTenant(props.tenantId))
+
 // --- Component Methods -------------------------------------------------------
 
 async function handleAddUser(user: User) {
   try {
-    await groupStore.addGroupUser(props.tenant.id, props.group.id, user)
+    await groupStore.addGroupUser(props.tenantId, props.groupId, user)
     searchResults.value = null
     notification.success(
       'New user successfully added to this group',
@@ -59,11 +66,7 @@ async function handleClearSearch() {
 
 async function handleDeleteUser(groupUserId: GroupUserId) {
   try {
-    await groupStore.removeGroupUser(
-      props.tenant.id,
-      props.group.id,
-      groupUserId,
-    )
+    await groupStore.removeGroupUser(props.tenantId, props.groupId, groupUserId)
     notification.success(
       'User successfully removed from this group',
       'User Removed',
@@ -109,10 +112,10 @@ async function handleUserSearch(
 
 <template>
   <GroupUserManagement
-    :group="group"
+    :group="group!"
     :loading-search="isLoadingSearch"
     :search-results="searchResults"
-    :tenant="tenant"
+    :tenant="tenant!"
     @add="handleAddUser"
     @cancel="searchResults = null"
     @clear-search="handleClearSearch"

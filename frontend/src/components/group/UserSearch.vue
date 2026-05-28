@@ -2,7 +2,7 @@
 import { computed, ref, watch } from 'vue'
 
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
-import UserTable from '@/components/user/UserTable.vue'
+import UserSearchTable from '@/components/user/UserSearchTable.vue'
 import { type Tenant } from '@/models/tenant.model'
 import { type User } from '@/models/user.model'
 import { type IdirSearchType, IDIR_SEARCH_TYPE } from '@/utils/constants'
@@ -18,7 +18,7 @@ defineProps<{
 const emit = defineEmits<{
   (event: 'clear-search'): void
   (event: 'search', searchType: IdirSearchType, searchText: string): void
-  (event: 'select', user: User): void
+  (event: 'select', user: User | null): void
 }>()
 
 // --- Component State ---------------------------------------------------------
@@ -50,7 +50,7 @@ watch([searchText, searchType], () => {
 
 // Sort the results by the search type, so that it is updated whenever the user
 // changes the search type.
-const defaultSort = computed(() => [{ key: `ssoUser.${searchType.value}` }])
+const defaultSort = computed(() => `ssoUser.${searchType.value}`)
 
 // The SSO API will return a 400 if the search text is less than 2 characters.
 const isSearchEnabled = computed(() => {
@@ -59,12 +59,20 @@ const isSearchEnabled = computed(() => {
 
 // --- Component Methods -------------------------------------------------------
 
-function handleSearch() {
-  emit('search', searchType.value, searchText.value)
+function handleRowClicked(user: User | null) {
+  if (!user) {
+    emit('select', null)
+
+    return
+  }
+
+  // TODO: handle already added.
+
+  emit('select', user)
 }
 
-function handleSelectUser(user: User) {
-  emit('select', user)
+function handleSearch() {
+  emit('search', searchType.value, searchText.value)
 }
 </script>
 
@@ -99,14 +107,12 @@ function handleSelectUser(user: User) {
     <v-col cols="12">
       <h4 class="my-6">Search Results</h4>
 
-      <UserTable
-        :enable-select="true"
-        :show-add="true"
+      <UserSearchTable
         :sort-by="defaultSort"
         :tenant="tenant"
         :users="searchResults || []"
         where="group"
-        @add-clicked="(item) => handleSelectUser(item)"
+        @row-clicked="handleRowClicked"
       />
     </v-col>
   </v-row>

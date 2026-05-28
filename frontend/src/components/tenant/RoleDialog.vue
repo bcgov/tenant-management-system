@@ -7,7 +7,7 @@ import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
 import { useNotification } from '@/composables/useNotification'
 import { type RoleId } from '@/models/role.model'
-import { type Tenant } from '@/models/tenant.model'
+import { type Tenant, type TenantId } from '@/models/tenant.model'
 import { type User, type UserId } from '@/models/user.model'
 import { useRoleStore } from '@/stores/useRoleStore'
 import { useTenantStore } from '@/stores/useTenantStore'
@@ -167,7 +167,7 @@ const handleSave = async () => {
       for (const removeId of removeIds) {
         // TODO
         await tenantStore.removeTenantUserRole(
-          props.tenant as Tenant,
+          props.tenant?.id as TenantId,
           user?.value?.id as UserId,
           removeId as RoleId,
         )

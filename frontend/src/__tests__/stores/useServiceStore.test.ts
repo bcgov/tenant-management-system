@@ -57,7 +57,23 @@ describe('Service Store', () => {
   })
 
   describe('fetchServices', () => {
-    it('manages loading state and returns mapped services without updating state', async () => {
+    it('manages loading state and inserts state', async () => {
+      const store = useServiceStore()
+      store.services.push(
+        makeService({ id: serviceId, displayName: 'firstName' }),
+      )
+      vi.mocked(serviceService.getServices).mockResolvedValue([
+        mockServiceApiData,
+      ])
+
+      await store.fetchServices()
+
+      expect(store.services).toHaveLength(1)
+      expect(store.services[0].displayName).toBe(mockServiceApiData.displayName)
+      expect(store.tenantServices).toHaveLength(0)
+    })
+
+    it('manages loading state and updates state', async () => {
       const store = useServiceStore()
       vi.mocked(serviceService.getServices).mockResolvedValue([
         mockServiceApiData,
@@ -67,11 +83,10 @@ describe('Service Store', () => {
 
       expect(store.loading).toBe(true)
 
-      const result = await promise
+      await promise
 
       expect(store.loading).toBe(false)
-      expect(result).toHaveLength(1)
-      expect(result[0]).toBeInstanceOf(Service)
+      expect(store.services).toHaveLength(1)
       expect(store.tenantServices).toHaveLength(0)
     })
 
@@ -92,10 +107,9 @@ describe('Service Store', () => {
         mockServiceApiData,
       ])
 
-      const result = await store.fetchTenantServices(tenantId)
+      await store.fetchTenantServices(tenantId)
 
       expect(store.loading).toBe(false)
-      expect(result).toHaveLength(1)
       expect(store.tenantServices).toHaveLength(1)
       expect(store.tenantServices[0].id).toBe(serviceId)
       expect(store.tenantServices[0]).toBeInstanceOf(Service)

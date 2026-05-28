@@ -1,55 +1,40 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
-import { makeSsoUser, makeUser } from '@/__tests__/__factories__'
+import { makeUser, makeUserApiData } from '@/__tests__/__factories__'
 
-import { GroupUser, toGroupUserId } from '@/models/groupuser.model'
-import { Role } from '@/models/role.model'
-import { toUserId, User } from '@/models/user.model'
-
-const fakeSsoUser = makeSsoUser()
-
-const fakeUserData = {
-  id: 'user1',
-  ssoUser: fakeSsoUser,
-  roles: [] as Role[],
-}
-
-const fakeUser = makeUser({ ssoUser: fakeSsoUser })
+import {
+  GroupUser,
+  toGroupUserId,
+  type GroupUserApiData,
+} from '@/models/groupuser.model'
+import { User } from '@/models/user.model'
 
 describe('GroupUser model', () => {
-  let mockedUserInstance: User
+  describe('constructor', () => {
+    it('assigns properties', () => {
+      const user = makeUser()
 
-  beforeEach(() => {
-    mockedUserInstance = new User(
-      toUserId(fakeUserData.id),
-      fakeSsoUser,
-      fakeUserData.roles,
-    )
+      const groupUser = new GroupUser(toGroupUserId('id'), user)
 
-    vi.spyOn(User, 'fromApiData').mockImplementation(() => mockedUserInstance)
+      expect(groupUser.id).toBe('id')
+      expect(groupUser.user).toBe(user)
+    })
   })
 
-  afterEach(() => {
-    vi.restoreAllMocks()
-  })
+  describe('fromApiData', () => {
+    it('creates instance', () => {
+      const userApiData = makeUserApiData()
+      const user = User.fromApiData(userApiData)
+      const apiData: GroupUserApiData = {
+        id: toGroupUserId('id'),
+        user: userApiData,
+      }
 
-  it('constructor assigns properties correctly', () => {
-    const groupUser = new GroupUser(
-      toGroupUserId('groupUserId'),
-      mockedUserInstance,
-    )
-    expect(groupUser.id).toBe('groupUserId')
-    expect(groupUser.user).toBe(mockedUserInstance)
-  })
+      const groupUser = GroupUser.fromApiData(apiData)
 
-  it('fromApiData converts API data to GroupUser instance correctly', () => {
-    const apiData = new GroupUser(toGroupUserId('groupUser123'), fakeUser)
-
-    const groupUser = GroupUser.fromApiData(apiData)
-
-    expect(User.fromApiData).toHaveBeenCalledWith(apiData.user)
-    expect(groupUser).toBeInstanceOf(GroupUser)
-    expect(groupUser.id).toBe(apiData.id)
-    expect(groupUser.user).toBe(mockedUserInstance)
+      expect(groupUser).toBeInstanceOf(GroupUser)
+      expect(groupUser.id).toBe('id')
+      expect(groupUser.user).toEqual(user)
+    })
   })
 })

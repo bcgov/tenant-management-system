@@ -1,28 +1,26 @@
 <script setup lang="ts">
 import { mdiMagnify } from '@mdi/js'
-import { computed, onMounted, ref, type Ref } from 'vue'
+import { computed, ref, type Ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import AdministratorContainer from '@/components/auth/AdministratorContainer.vue'
 import LoginContainer from '@/components/auth/LoginContainer.vue'
 import TenantRequestDisplay from '@/components/tenantrequest/TenantRequestDisplay.vue'
+import EmptyState from '@/components/ui/EmptyState.vue'
+import LoadingWrapper from '@/components/ui/LoadingWrapper.vue'
 import { useNotification } from '@/composables/useNotification'
 import { DomainError } from '@/errors/domain/DomainError'
 import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
 import { type TenantRequest } from '@/models/tenantrequest.model'
-import { useAuthStore } from '@/stores/useAuthStore'
 import { useTenantRequestStore } from '@/stores/useTenantRequestStore'
-import { useTenantStore } from '@/stores/useTenantStore'
 import { TENANT_REQUEST_STATUS } from '@/utils/constants'
 
 const { t } = useI18n()
 
 // --- Store and Composable Setup ----------------------------------------------
 
-const authStore = useAuthStore()
 const notification = useNotification()
 const tenantRequestStore = useTenantRequestStore()
-const tenantStore = useTenantStore()
 
 // --- Component State ---------------------------------------------------------
 
@@ -67,7 +65,7 @@ const handleApproved = async (name: string) => {
       name,
     )
     notification.success('Tenant Request has been successfully updated')
-    await tenantStore.fetchTenants(authStore.authenticatedUser.id)
+
     handleCancel()
   } catch (error) {
     if (error instanceof DuplicateEntityError) {
@@ -131,120 +129,138 @@ const handleRowClick = (_event: Event, { item }: { item: TenantRequest }) => {
 
 // --- Component Lifecycle -----------------------------------------------------
 
-onMounted(async () => {
+// Use init() in setup instead of a top-level await, so that loading state is
+// set before first render. Look to Suspense when no longer experimental.
+const init = async () => {
   try {
     await tenantRequestStore.fetchTenantRequests()
   } catch {
     notification.error('Failed to load tenant request data')
   }
-})
+}
+
+init()
 </script>
 
 <template>
   <LoginContainer>
     <AdministratorContainer>
-      <v-container class="px-0" fluid>
-        <template v-if="selectedTenantRequest">
-          <TenantRequestDisplay
-            :is-duplicate-name="isDuplicateName"
-            :tenant-request="selectedTenantRequest"
-            @approved="handleApproved"
-            @cancel="handleCancel"
-            @clear-duplicate-error="isDuplicateName = false"
-            @rejected="handleRejected"
-          />
-        </template>
+      <LoadingWrapper
+        :loading="tenantRequestStore.loading"
+        loading-message="Loading tenant requests..."
+      >
+        <v-container>
+          <template v-if="selectedTenantRequest">
+            <TenantRequestDisplay
+              :is-duplicate-name="isDuplicateName"
+              :tenant-request="selectedTenantRequest"
+              @approved="handleApproved"
+              @cancel="handleCancel"
+              @clear-duplicate-error="isDuplicateName = false"
+              @rejected="handleRejected"
+            />
+          </template>
 
-        <template v-else>
-          <v-row>
-            <v-col cols="12">
-              <h4 class="mb-6 mt-12">Tenant Requests</h4>
-              <p class="mb-8">
-                Select a request to review details and approve or reject it.
-              </p>
-            </v-col>
-          </v-row>
+          <template v-else>
+            <v-row>
+              <v-col cols="12">
+                <h4 class="mb-6 mt-12">Tenant Requests</h4>
+                <p class="mb-8">
+                  Select a request to review details and approve or reject it.
+                </p>
+              </v-col>
+            </v-row>
 
-          <v-row>
-            <v-col cols="4">
-              <v-text-field
-                v-model="search"
-                :append-inner-icon="mdiMagnify"
-                label="Search"
-                variant="outlined"
-                clearable
-                hide-details
-                single-line
-              ></v-text-field>
-            </v-col>
-          </v-row>
+            <v-row>
+              <v-col cols="4">
+                <v-text-field
+                  v-if="tenantRequests.length > 0"
+                  v-model="search"
+                  :append-inner-icon="mdiMagnify"
+                  label="Search"
+                  variant="outlined"
+                  clearable
+                  hide-details
+                  single-line
+                ></v-text-field>
+              </v-col>
+            </v-row>
 
-          <v-row>
-            <v-col cols="12">
-              <v-data-table
-                :cell-props="getCellProps"
-                :header-props="{
-                  class: 'bg-surface-light font-weight-bold text-body-small',
-                }"
-                :headers="[
-                  {
-                    key: 'createdDate',
-                    title: 'Date of Request (YYYY-MM-DD)',
-                  },
-                  {
-                    key: 'createdBy',
-                    sortable: false,
-                    title: 'Requested By',
-                  },
-                  {
-                    key: 'ministryName',
-                    title: 'Ministry / Organization',
-                  },
-                  {
-                    key: 'name',
-                    sortable: false,
-                    title: 'Requested Tenant Name',
-                  },
-                  {
-                    align: 'end',
-                    key: 'status',
-                    title: 'Status',
-                  },
-                ]"
-                :items="tenantRequests"
-                :search="search"
-                :sort-by="[{ key: 'createdDate', order: 'desc' }]"
-                item-value="id"
-                striped="even"
-                fixed-header
-                hover
-                @click:row="handleRowClick"
-              >
-                <template #no-data>
-                  <v-alert type="info">{{
-                    search
-                      ? 'No tenant requests match your search criteria'
-                      : 'There are no tenant requests'
-                  }}</v-alert>
-                </template>
-                <template #[`item.status`]="{ item }">
-                  <div
-                    class="d-flex flex-wrap justify-end"
-                    style="gap: 8px; margin-block: 4px"
-                  >
-                    <v-chip
-                      :color="getStatusColor(item.status)"
-                      class="align-center d-inline-flex"
+            <v-row>
+              <v-col cols="12">
+                <v-data-table
+                  :cell-props="getCellProps"
+                  :header-props="{
+                    class: 'bg-surface-light font-weight-bold text-body-small',
+                  }"
+                  :headers="[
+                    {
+                      key: 'createdDate',
+                      title: 'Date of Request (YYYY-MM-DD)',
+                    },
+                    {
+                      key: 'createdBy',
+                      sortable: false,
+                      title: 'Requested By',
+                    },
+                    {
+                      key: 'ministryName',
+                      title: 'Ministry / Organization',
+                    },
+                    {
+                      key: 'name',
+                      sortable: false,
+                      title: 'Requested Tenant Name',
+                    },
+                    {
+                      align: 'end',
+                      key: 'status',
+                      title: 'Status',
+                    },
+                  ]"
+                  :hide-default-footer="tenantRequests.length === 0"
+                  :items="tenantRequests"
+                  :search="search"
+                  :sort-by="[{ key: 'createdDate', order: 'desc' }]"
+                  item-value="id"
+                  striped="even"
+                  fixed-header
+                  hover
+                  @click:row="handleRowClick"
+                >
+                  <template #no-data>
+                    <EmptyState
+                      v-if="search"
+                      body="Change your search criteria to match tenant requests"
+                      title="No matching tenant requests"
+                      variant="lookup"
+                    />
+                    <EmptyState
+                      v-else
+                      body="Tenant requests submitted by users will appear here"
+                      title="No tenant requests yet"
+                      variant="lookup"
+                    />
+                  </template>
+                  <template #[`item.status`]="{ item }">
+                    <div
+                      class="d-flex flex-wrap justify-end"
+                      style="gap: 8px; margin-block: 4px"
                     >
-                      {{ item.status }}
-                    </v-chip>
-                  </div>
-                </template>
-              </v-data-table>
-            </v-col>
-          </v-row>
-        </template>
-      </v-container>
+                      <v-chip
+                        :color="getStatusColor(item.status)"
+                        class="align-center d-inline-flex"
+                      >
+                        {{ item.status }}
+                      </v-chip>
+                    </div>
+                  </template>
+                </v-data-table>
+              </v-col>
+            </v-row>
+          </template>
+        </v-container>
+      </LoadingWrapper>
     </AdministratorContainer>
   </LoginContainer>
 </template>

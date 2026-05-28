@@ -129,7 +129,7 @@ export class Tenant {
     this.id = id
     this.name = name
     this.ministryName = ministryName
-    this.users = Array.isArray(users) ? users : []
+    this.users = users
   }
 
   /**
@@ -155,9 +155,7 @@ export class Tenant {
    * @returns A new Tenant instance
    */
   static fromApiData(apiData: TenantApiData): Tenant {
-    const users = Array.isArray(apiData.users)
-      ? apiData.users.map(User.fromApiData)
-      : []
+    const users = apiData.users.map(User.fromApiData)
 
     return new Tenant(
       apiData.createdByDisplayName || apiData.createdBy,
@@ -168,15 +166,6 @@ export class Tenant {
       apiData.ministryName,
       users,
     )
-  }
-
-  /**
-   * Returns the first user with the TENANT_OWNER role for this tenant.
-   *
-   * @returns The first User who is an owner, or undefined if no owners exist.
-   */
-  getFirstOwner(): User | undefined {
-    return this.getOwners()[0]
   }
 
   /**

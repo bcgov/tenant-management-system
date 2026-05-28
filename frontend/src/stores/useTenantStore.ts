@@ -46,10 +46,15 @@ export const useTenantStore = defineStore('tenant', () => {
    * @param user - The user to add to the tenant.
    * @returns A promise that resolves when the user is added to the tenant.
    */
-  const addTenantUser = async (tenant: Tenant, user: User) => {
-    const userData = await tenantService.addUser(tenant.id, user)
+  const addTenantUser = async (tenantId: TenantId, user: User) => {
+    const tenant = getTenant(tenantId)
+    if (!tenant) {
+      throw new Error(`Unknown tenantId: ${tenantId}`)
+    }
 
-    // Update tenant users after adding
+    const userData = await tenantService.addUser(tenantId, user)
+
+    // Add user to tenant so that it doesn't need to be fetched again.
     const addedUser = User.fromApiData(userData)
     tenant.users.push(addedUser)
   }
@@ -149,16 +154,21 @@ export const useTenantStore = defineStore('tenant', () => {
    * @returns A promise that resolves when the role is removed.
    */
   const removeTenantUserRole = async (
-    tenant: Tenant,
+    tenantId: TenantId,
     userId: UserId,
     roleId: RoleId,
   ): Promise<void> => {
-    await tenantService.removeUserRole(tenant.id, userId, roleId)
+    const tenant = getTenant(tenantId)
+    if (!tenant) {
+      throw new Error(`Unknown tenantId: ${tenantId}`)
+    }
 
     const user = tenant.users.find((u) => u.id === userId)
     if (!user) {
-      throw new Error(`User with ID ${userId} not found in tenant ${tenant.id}`)
+      throw new Error(`User with ID ${userId} not found in tenant ${tenantId}`)
     }
+
+    await tenantService.removeUserRole(tenantId, userId, roleId)
 
     user.roles = user.roles.filter((role: Role) => role.id !== roleId)
   }

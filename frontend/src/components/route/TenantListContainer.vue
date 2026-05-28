@@ -1,12 +1,11 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 import LoginContainer from '@/components/auth/LoginContainer.vue'
 import TenantList from '@/components/tenant/TenantList.vue'
 import TenantRequestDialog from '@/components/tenantrequest/TenantRequestDialog.vue'
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
-import LoadingWrapper from '@/components/ui/LoadingWrapper.vue'
 import { useNotification } from '@/composables/useNotification'
 import { DomainError } from '@/errors/domain/DomainError'
 import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
@@ -31,6 +30,10 @@ const dialogVisible = ref(false)
 
 // Special dialog validation for uniqueness of the name.
 const isDuplicateName = ref(false)
+
+// --- Computed Values ---------------------------------------------------------
+
+const tenants = computed(() => tenantStore.tenants)
 
 // --- Component Methods -------------------------------------------------------
 
@@ -75,35 +78,55 @@ const handleTenantSubmit = async (
 
 // --- Component Lifecycle -----------------------------------------------------
 
-onMounted(async () => {
+// Use init() in setup instead of a top-level await, so that loading state is
+// set before first render. Look to Suspense when no longer experimental.
+const init = async () => {
   try {
     await tenantStore.fetchTenants(authStore.authenticatedUser.id)
   } catch {
-    notification.error('Failed to fetch tenants')
+    notification.error('Failed to load tenants')
   }
-})
+}
+
+init()
 </script>
 
 <template>
   <LoginContainer>
-    <LoadingWrapper
-      :loading="!tenantStore.tenants"
-      loading-message="Loading tenants..."
-    >
-      <v-row class="mb-8">
-        <v-col cols="12">
-          <ButtonPrimary text="Request New Tenant" @click="dialogOpen" />
+    <v-container v-if="tenants.length === 0" class="fill-height">
+      <v-row class="center-align justify-center">
+        <v-col class="align-center d-flex flex-column" cols="auto">
+          <h1>No tenants yet</h1>
+          <p class="p-large">You don't currently have access to a tenant.</p>
+
+          <p>
+            <ButtonPrimary text="Request a Tenant" @click="dialogOpen" />
+          </p>
+
+          <span class="mt-12 p-small">
+            If your team already has a tenant, ask a tenant owner or user admin
+            to add you.
+          </span>
+          <span class="p-small">
+            <em>Requests are reviewed by the CSTAR team.</em>
+          </span>
         </v-col>
       </v-row>
-
-      <TenantList :tenants="tenantStore.tenants" @select="handleCardClick" />
-    </LoadingWrapper>
-
-    <TenantRequestDialog
-      v-model="dialogVisible"
-      :is-duplicate-name="isDuplicateName"
-      @clear-duplicate-error="isDuplicateName = false"
-      @submit="handleTenantSubmit"
-    />
+    </v-container>
+    <template v-else>
+      <v-row class="mb-8 mt-12">
+        <v-col cols="12">
+          <ButtonPrimary text="Request a Tenant" @click="dialogOpen" />
+        </v-col>
+      </v-row>
+      <TenantList :tenants="tenants" @select="handleCardClick" />
+    </template>
   </LoginContainer>
+
+  <TenantRequestDialog
+    v-model="dialogVisible"
+    :is-duplicate-name="isDuplicateName"
+    @clear-duplicate-error="isDuplicateName = false"
+    @submit="handleTenantSubmit"
+  />
 </template>

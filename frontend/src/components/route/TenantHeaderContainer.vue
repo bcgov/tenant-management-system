@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, ref } from 'vue'
+import { useRoute } from 'vue-router'
 
 import LoginContainer from '@/components/auth/LoginContainer.vue'
 import TenantHeader from '@/components/tenant/TenantHeader.vue'
-import LoadingWrapper from '@/components/ui/LoadingWrapper.vue'
 import { useNotification } from '@/composables/useNotification'
 import { type TenantId } from '@/models/tenant.model'
 import { useGroupStore } from '@/stores/useGroupStore'
@@ -18,6 +18,7 @@ const props = defineProps<{ tenantId: TenantId }>()
 const groupStore = useGroupStore()
 const notification = useNotification()
 const tenantStore = useTenantStore()
+const route = useRoute()
 
 // --- Computed Values ---------------------------------------------------------
 
@@ -27,28 +28,38 @@ const tenant = computed(() => tenantStore.getTenant(props.tenantId))
 
 // --- Component Lifecycle ---------------------------------------------------------
 
-onMounted(async () => {
-  try {
-    await groupStore.fetchGroups(props.tenantId)
-  } catch {
+// Use init() in setup instead of a top-level await, so that loading state is
+// set before first render. Look to Suspense when no longer experimental.
+const initialized = ref(false)
+const init = async () => {
+  const [groupsResult, tenantResult] = await Promise.allSettled([
+    groupStore.fetchGroups(props.tenantId),
+    tenantStore.fetchTenant(props.tenantId),
+  ])
+
+  if (groupsResult.status === 'rejected') {
     notification.error('Failed to load groups')
   }
 
-  try {
-    await tenantStore.fetchTenant(props.tenantId)
-  } catch {
+  if (tenantResult.status === 'rejected') {
     notification.error('Failed to load tenant')
   }
-})
+
+  initialized.value = true
+}
+
+init()
 </script>
 
 <template>
-  <LoginContainer>
-    <LoadingWrapper
-      :loading="!groups || !tenant"
-      loading-message="Loading tenant..."
-    >
-      <TenantHeader :groups="groups!" :tenant="tenant!" />
-    </LoadingWrapper>
-  </LoginContainer>
+  <template v-if="initialized">
+    <LoginContainer>
+      <TenantHeader
+        v-if="!route.params.groupId"
+        :groups="groups!"
+        :tenant="tenant!"
+      />
+      <router-view />
+    </LoginContainer>
+  </template>
 </template>

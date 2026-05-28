@@ -50,7 +50,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <v-container>
+  <v-container class="ma-0 pa-0">
     <v-row v-if="loading && showSpinner" class="align-center justify-center">
       <v-col class="text-center" cols="auto">
         <v-progress-circular data-test-id="spinner" indeterminate />
