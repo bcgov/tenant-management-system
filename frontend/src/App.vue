@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useRoute } from 'vue-router'
 
 import AppHeader from '@/components/layout/AppHeader.vue'
 import AppNavigation from '@/components/layout/AppNavigation.vue'
@@ -11,6 +12,7 @@ import { useAuthStore } from '@/stores/useAuthStore'
 // --- Store and Composable Setup ----------------------------------------------
 
 const authStore = useAuthStore()
+const route = useRoute()
 
 // --- Computed Values ---------------------------------------------------------
 
@@ -44,14 +46,17 @@ const user = computed(() => {
           <v-row class="justify-center mt-12">
             <v-col class="d-flex flex-column ga-6" cols="12" md="4" sm="6">
               <ButtonPrimary
+                data-test-id="buttonIdir"
                 text="Log in with IDIR"
                 @click="authStore.login({ idpHint: idirHint })"
               />
               <ButtonPrimary
+                data-test-id="buttonBceidBasic"
                 text="Log in with Basic BCeID"
                 @click="authStore.login({ idpHint: basicBceidHint })"
               />
               <ButtonPrimary
+                data-test-id="buttonBceidBusiness"
                 text="Log in with Business BCeID"
                 @click="authStore.login({ idpHint: businessBceidHint })"
               />
@@ -60,7 +65,7 @@ const user = computed(() => {
         </div>
 
         <!-- Router view for dynamic component rendering -->
-        <router-view v-else />
+        <router-view v-else :key="route.fullPath" />
       </v-container>
     </v-main>
   </v-app>
