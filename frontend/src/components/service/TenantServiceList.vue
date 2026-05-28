@@ -15,7 +15,7 @@ defineProps<{
       v-for="tenantService in tenantServices"
       :key="tenantService.id"
       cols="12"
-      md="3"
+      md="4"
     >
       <TenantServiceListCard :service="tenantService" />
     </v-col>

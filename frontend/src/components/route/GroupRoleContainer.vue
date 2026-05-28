@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
@@ -28,6 +29,7 @@ const props = defineProps<{
 
 const groupStore = useGroupStore()
 const notification = useNotification()
+const router = useRouter()
 const tenantStore = useTenantStore()
 
 // --- Component State ---------------------------------------------------------
@@ -40,13 +42,6 @@ const promptAction = ref<'undo' | 'clear' | null>(null)
 const promptToContinue = ref(false)
 
 // --- Computed Values ---------------------------------------------------------
-
-const canMakeChanges = computed(() => {
-  return (
-    currentUserHasRole(tenant.value, ROLES.TENANT_OWNER.value) ||
-    currentUserHasRole(tenant.value, ROLES.USER_ADMIN.value)
-  )
-})
 
 const dialogButtons = computed(() => {
   const buttons: DialogButton[] = [
@@ -94,6 +89,10 @@ const expanded = computed(() =>
 
 const groupServices = computed(() => groupStore.groupServices)
 
+const isTenantOwner = computed(() => {
+  return currentUserHasRole(tenant.value, ROLES.TENANT_OWNER.value)
+})
+
 const tenant = computed(() => {
   const tenant = tenantStore.getTenant(props.tenantId)
   if (!tenant) {
@@ -126,6 +125,10 @@ const handleDialogButtonClick = (action: string) => {
   }
   promptToContinue.value = false
   promptAction.value = null
+}
+
+const navigateToServices = () => {
+  router.push(`/tenants/${props.tenantId}/services`)
 }
 
 const openDialog = (action: 'undo' | 'clear') => {
@@ -181,7 +184,43 @@ const undoChanges = () => {
 </script>
 
 <template>
-  <v-container class="ms-6">
+  <v-container v-if="groupServices.length === 0" class="fill-height">
+    <v-row class="center-align justify-center">
+      <v-col class="align-center d-flex flex-column" cols="auto">
+        <template v-if="isTenantOwner">
+          <h1>No Connected Services added yet</h1>
+          <p class="p-large">
+            Service roles can only be assigned after Connected Services have
+            been added to your tenant.
+          </p>
+
+          <ol>
+            <li>Go to the Connected Services page</li>
+            <li>Add the Connected Service(s) your tenant needs</li>
+            <li>Return here to assign service roles to this group</li>
+          </ol>
+
+          <p>
+            <ButtonPrimary
+              text="Go to Connected Services"
+              @click="navigateToServices"
+            />
+          </p>
+        </template>
+        <template v-else>
+          <h1>No Service Roles available yet</h1>
+          <hgroup class="text-center text-stack">
+            <p class="p-large">
+              Connected Services must be added to this tenant before service
+              roles can be assigned to groups.
+            </p>
+            <p class="p-large">Contact your Tenant Owner for assistance.</p>
+          </hgroup>
+        </template>
+      </v-col>
+    </v-row>
+  </v-container>
+  <v-container v-else class="ms-6">
     <v-row>
       <v-col cols="12">
         <h4>
@@ -200,16 +239,12 @@ const undoChanges = () => {
         </p>
       </v-col>
     </v-row>
-    <v-row v-if="groupServices.length === 0">
-      <v-col cols="12">
-        <p>{{ $t('groups.noServices') }}</p>
-      </v-col>
-    </v-row>
-    <v-row v-else class="darkened pa-4">
+
+    <v-row class="darkened pa-4">
       <!-- Edit button -->
       <v-col cols="12">
         <ButtonPrimary
-          v-if="!editing && canMakeChanges"
+          v-if="!editing && isTenantOwner"
           :text="$t('general.edit')"
           @click="startEditing"
         />
@@ -231,7 +266,7 @@ const undoChanges = () => {
                 v-for="role in service.roles"
                 :key="`checkbox-role-${role.id}`"
                 :color="editing ? 'primary' : ''"
-                :disabled="!editing || !canMakeChanges"
+                :disabled="!editing || !isTenantOwner"
                 :label="role.name"
                 :model-value="editing ? draft.get(role.id) : role.isEnabled"
                 class="noBackground"
@@ -245,7 +280,7 @@ const undoChanges = () => {
       </v-col>
 
       <!-- save/cancel/reset buttons -->
-      <v-col v-if="canMakeChanges" class="text-right" cols="12">
+      <v-col v-if="isTenantOwner" class="text-right" cols="12">
         <v-btn
           :disabled="!editing"
           class="mr-2"
@@ -302,6 +337,10 @@ const undoChanges = () => {
 <style scoped>
 .darkened {
   background: rgb(var(--v-theme-surface-light-gray));
+}
+
+.text-stack p {
+  margin: 0;
 }
 
 .tms-button-secondary:disabled {

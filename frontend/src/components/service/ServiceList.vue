@@ -22,7 +22,7 @@ function handleAddService(id: Service['id']) {
 
 <template>
   <v-row>
-    <v-col v-for="service in services" :key="service.id" cols="12" md="3">
+    <v-col v-for="service in services" :key="service.id" cols="12" md="4">
       <ServiceListCard
         :is-tenant-owner="isTenantOwner"
         :service="service"
