@@ -3,7 +3,7 @@ import { createPinia, setActivePinia } from 'pinia'
 
 import { makeRole, makeTenant, makeUser } from '@/__tests__/__factories__'
 
-import { type RoleApiData, type RoleId } from '@/models/role.model'
+import { type RoleApiData, toRoleId } from '@/models/role.model'
 import { type SsoUserApiData, toSsoUserId } from '@/models/ssouser.model'
 import {
   Tenant,
@@ -41,7 +41,7 @@ describe('Tenant Store', () => {
 
   const mockRoleData: RoleApiData = {
     description: 'Admin Role',
-    id: 'role-1' as RoleId,
+    id: toRoleId('role-1'),
     name: 'ADMIN',
   }
 
@@ -77,8 +77,8 @@ describe('Tenant Store', () => {
     it('appends a second user to the tenant without removing the first', async () => {
       const store = useTenantStore()
       const initialUser = makeUser({ id: toUserId('user-existing') })
-      const tenant = makeTenant({ users: [initialUser] })
-
+      const tenant = makeTenant({ id: 'tenant-1', users: [initialUser] })
+      store.tenants.push(tenant)
       const secondUserData: UserApiData = {
         id: toUserId('user-second'),
         roles: [],
@@ -96,7 +96,7 @@ describe('Tenant Store', () => {
       vi.mocked(tenantService.addUser).mockResolvedValue(secondUserData)
 
       await store.addTenantUser(
-        tenant,
+        tenant.id,
         makeUser({ id: toUserId('user-to-add') }),
       )
 
@@ -104,6 +104,15 @@ describe('Tenant Store', () => {
       expect(tenant.users[0].id).toBe(initialUser.id)
       expect(tenant.users[1].id).toBe(secondUserData.id)
       expect(tenant.users[1]).toBeInstanceOf(User)
+    })
+
+    it('errors if the tenant does not exist', async () => {
+      const store = useTenantStore()
+      const user = makeUser()
+
+      await expect(
+        store.addTenantUser(toTenantId('fake-id'), user),
+      ).rejects.toThrow('Unknown tenantId: fake-id')
     })
   })
 
@@ -191,18 +200,31 @@ describe('Tenant Store', () => {
   describe('removeTenantUserRole', () => {
     it('removes role from specific user and throws if missing', async () => {
       const store = useTenantStore()
-      const roleId = 'role-1' as RoleId
+      const roleId = toRoleId('role-1')
       const user = makeUser({ id: toUserId('u-1') })
       user.roles = [makeRole({ id: roleId })]
-      const tenant = makeTenant()
+      const tenant = makeTenant({ id: 'tenant-1' })
       tenant.users = [user]
+      store.tenants.push(tenant)
 
-      await store.removeTenantUserRole(tenant, user.id, roleId)
+      await store.removeTenantUserRole(tenant.id, user.id, roleId)
 
       expect(user.roles).toHaveLength(0)
       await expect(
-        store.removeTenantUserRole(tenant, toUserId('fake'), roleId),
+        store.removeTenantUserRole(tenant.id, toUserId('fake'), roleId),
       ).rejects.toThrow('User with ID fake not found')
+    })
+
+    it('errors if the tenant does not exist', async () => {
+      const store = useTenantStore()
+
+      await expect(
+        store.removeTenantUserRole(
+          toTenantId('fake-id'),
+          toUserId('user-id'),
+          toRoleId('role-id'),
+        ),
+      ).rejects.toThrow('Unknown tenantId: fake-id')
     })
   })
 

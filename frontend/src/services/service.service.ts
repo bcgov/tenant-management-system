@@ -16,7 +16,6 @@ export const serviceService = {
    *
    * @param tenantId - The unique identifier of the tenant.
    * @param serviceId - The unique identifier of the service.
-   * @returns A promise that resolves when the request succeeds.
    * @throws Will throw an error if the API request fails.
    */
   async addServiceToTenant(
@@ -44,7 +43,6 @@ export const serviceService = {
   /**
    * Retrieves the active services.
    *
-   * @returns A promise that resolves to an array of service data.
    * @throws Will throw an error if the API request fails.
    */
   async getServices(): Promise<ServiceApiData[]> {
@@ -64,7 +62,6 @@ export const serviceService = {
    *
    * @param tenantId - The unique identifier of the tenant.
    * @param groupId - The unique identifier of the group.
-   * @returns A promise that resolves to an array of service data.
    * @throws Will throw an error if the API request fails.
    */
   async getTenantGroupServices(
@@ -88,7 +85,6 @@ export const serviceService = {
    * Retrieves the services associated with a tenant.
    *
    * @param tenantId - The unique identifier of the tenant.
-   * @returns A promise that resolves to an array of service data.
    * @throws Will throw an error if the API request fails.
    */
   async getTenantServices(tenantId: TenantId): Promise<ServiceApiData[]> {

@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
-import { User } from '@/models/user.model'
+import { User, type UserSearchApiData } from '@/models/user.model'
 import { userService } from '@/services/user.service'
 import {
   type BCeIDSearchType,
@@ -32,7 +32,7 @@ export const useUserStore = defineStore('user', () => {
   ) {
     loading.value = true
     try {
-      let userSearchData
+      let userSearchData: UserSearchApiData[] = []
       switch (searchType) {
         case BCEID_SEARCH_TYPE.EMAIL.value:
           userSearchData = await userService.searchBCeIDEmail(searchValue)
@@ -40,8 +40,6 @@ export const useUserStore = defineStore('user', () => {
         case BCEID_SEARCH_TYPE.DISPLAY_NAME.value:
           userSearchData = await userService.searchBCeIDDisplayName(searchValue)
           break
-        default:
-          throw new Error(`Invalid search type: ${searchType}`)
       }
 
       searchResults.value = userSearchData.map(User.fromSearchData)
@@ -66,7 +64,7 @@ export const useUserStore = defineStore('user', () => {
   ): Promise<User[]> {
     loading.value = true
     try {
-      let userSearchData
+      let userSearchData: UserSearchApiData[] = []
       switch (searchType) {
         case IDIR_SEARCH_TYPE.EMAIL.value:
           userSearchData = await userService.searchIdirEmail(searchValue)
@@ -77,8 +75,6 @@ export const useUserStore = defineStore('user', () => {
         case IDIR_SEARCH_TYPE.LAST_NAME.value:
           userSearchData = await userService.searchIdirLastName(searchValue)
           break
-        default:
-          throw new Error(`Invalid search type: ${searchType}`)
       }
 
       searchResults.value = userSearchData.map(User.fromSearchData)

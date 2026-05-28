@@ -1,12 +1,9 @@
 <script setup lang="ts">
-import { mdiMagnify } from '@mdi/js'
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 
-import {
-  type Service,
-  type ServiceId,
-  toServiceId,
-} from '@/models/service.model'
+import ServiceList from '@/components/service/ServiceList.vue'
+import TenantServiceList from '@/components/service/TenantServiceList.vue'
+import { type Service, type ServiceId } from '@/models/service.model'
 import { type Tenant } from '@/models/tenant.model'
 import { ROLES } from '@/utils/constants'
 import { currentUserHasRole } from '@/utils/permissions'
@@ -23,131 +20,75 @@ const emit = defineEmits<{
   (event: 'add-service', serviceId: ServiceId): void
 }>()
 
-// --- Component State ---------------------------------------------------------
-
-const search = ref('')
-const selectedServiceId = ref('')
-
 // --- Computed Values ---------------------------------------------------------
 
+// Available Services = Services - Tenant Services
 const availableServices = computed(() => {
   return props.services.filter(
     (service) => !props.tenantServices.some((ts) => ts.id === service.id),
   )
 })
 
-const isTenantAdmin = computed(() => {
+const isTenantOwner = computed(() => {
   return currentUserHasRole(props.tenant, ROLES.TENANT_OWNER.value)
 })
 
 // --- Component Methods -------------------------------------------------------
 
-function handleAddService() {
-  if (selectedServiceId.value) {
-    emit('add-service', toServiceId(selectedServiceId.value))
-    selectedServiceId.value = ''
-  }
+function handleAddService(serviceId: ServiceId) {
+  emit('add-service', serviceId)
 }
 </script>
 
 <template>
-  <v-container class="px-0" fluid>
-    <v-row>
-      <v-col cols="12">
-        <h4 class="mb-6 mt-12">{{ $t('general.servicesLabel', 2) }}</h4>
-      </v-col>
-    </v-row>
-
-    <v-row>
-      <v-col cols="4">
-        <v-text-field
-          v-model="search"
-          :append-inner-icon="mdiMagnify"
-          label="Search"
-          variant="outlined"
-          clearable
-          hide-details
-          single-line
-        ></v-text-field>
-      </v-col>
-    </v-row>
-
-    <v-row>
-      <v-col cols="12">
-        <v-data-table
-          :header-props="{
-            class: 'bg-surface-light font-weight-bold text-body-small',
-          }"
-          :headers="[
-            {
-              align: 'start',
-              key: 'displayName',
-              title: 'Service',
-            },
-            {
-              align: 'start',
-              key: 'createdDate',
-              title: 'Available Since',
-            },
-          ]"
-          :items="tenantServices"
-          :search="search"
-          :sort-by="[{ key: 'name' }]"
-          item-value="id"
-          striped="even"
-          fixed-header
-          hover
-        >
-          <template #no-data>
-            <v-alert type="info">{{
-              search
-                ? 'No services match your search criteria'
-                : 'No services are currently available'
-            }}</v-alert>
-          </template>
-        </v-data-table>
-      </v-col>
-    </v-row>
-
-    <template v-if="isTenantAdmin">
-      <v-row class="mt-6">
-        <v-col cols="12">
-          <v-divider class="mb-12" />
-          <h4 class="my-4">
-            Add an available {{ $t('general.servicesLabelLower', 1) }} to this
-            Tenant
-          </h4>
-          <p>
-            To add an available {{ $t('general.servicesLabelLower', 1) }} to
-            this tenant, choose one from the dropdown and click 'Add Service' to
-            confirm.
+  <v-container
+    v-if="availableServices.length === 0 && tenantServices.length === 0"
+  >
+    <h3>Connected Services</h3>
+    <p>There are no Connected Services set up in this CSTAR environment.</p>
+  </v-container>
+  <v-container v-else>
+    <template v-if="tenantServices.length === 0">
+      <v-container class="text-center">
+        <template v-if="isTenantOwner">
+          <h3>Add your first Connected Service</h3>
+          <p class="mt-0">
+            Add a Connected Service, then go to Service Roles to assign roles to
+            groups.
           </p>
-        </v-col>
-      </v-row>
-
-      <v-row class="mt-10">
-        <v-col cols="6">
-          <v-select
-            v-model="selectedServiceId"
-            :items="availableServices"
-            class="my-0"
-            item-title="displayName"
-            item-value="id"
-            label="Select an option..."
-            variant="outlined"
-            hide-details
-          ></v-select>
-        </v-col>
-        <v-col class="align-center d-flex" cols="6">
-          <v-btn
-            :disabled="!selectedServiceId"
-            color="primary"
-            @click="handleAddService"
-          >
-            Add Service
-          </v-btn>
-        </v-col>
-      </v-row>
+        </template>
+        <template v-else>
+          <h3>No Connected Services have been added</h3>
+          <p class="mt-0">Connected Services are managed by Tenant Owners.</p>
+        </template>
+      </v-container>
     </template>
+
+    <template v-if="tenantServices.length > 0">
+      <h3>{{ $t('general.servicesLabel', 2) }}</h3>
+      <TenantServiceList :tenant-services="tenantServices" />
+      <v-divider class="my-12" />
+    </template>
+
+    <h3 v-if="tenantServices.length > 0">Available Services</h3>
+
+    <template v-if="availableServices.length > 0">
+      <template v-if="tenantServices.length > 0">
+        <p v-if="isTenantOwner" class="mb-8">
+          Add a Connected Service, then go to Service Roles to assign roles to
+          groups.
+        </p>
+        <p v-else>Contact a Tenant Owner to request additional services.</p>
+      </template>
+      <ServiceList
+        :is-tenant-owner="isTenantOwner"
+        :services="availableServices"
+        @add-service="handleAddService"
+      />
+    </template>
+    <p v-else>
+      All available services have already been added to this tenant. Additional
+      connected services will appear here when they become available.
+    </p>
   </v-container>
 </template>

@@ -1,202 +1,206 @@
 import { describe, expect, it } from 'vitest'
 
-import { makeRole, makeSsoUser } from '@/__tests__/__factories__'
+import {
+  makeRole,
+  makeSsoUser,
+  makeSsoUserApiData,
+} from '@/__tests__/__factories__'
 
-import { Role } from '@/models/role.model'
 import { SsoUser } from '@/models/ssouser.model'
 import {
   toUserId,
   User,
   type UserApiData,
-  type UserId,
+  type UserSearchApiData,
 } from '@/models/user.model'
 
 describe('User model', () => {
-  it('constructor assigns properties correctly', () => {
-    const ssoUser = makeSsoUser()
-    const roles = [makeRole()]
+  describe('constructor', () => {
+    it('assigns properties', () => {
+      const roles = [makeRole()]
+      const ssoUser = makeSsoUser()
 
-    const user = new User(toUserId('user1'), ssoUser, roles)
+      const user = new User(toUserId('id'), ssoUser, roles)
 
-    expect(user.id).toBe('user1')
-    expect(user.ssoUser).toBe(ssoUser)
-    expect(user.roles).toEqual(roles)
+      expect(user.id).toBe('id')
+      expect(user.roles).toEqual(roles)
+      expect(user.ssoUser).toEqual(ssoUser)
+    })
   })
 
-  it('fromApiData converts API data to User instance correctly', () => {
-    const roles = [
-      makeRole({ name: 'role1', description: 'desc1' }),
-      makeRole({ name: 'role2', description: 'desc2' }),
-    ]
-    const apiData: UserApiData = {
-      id: 'userApi' as UserId,
-      ssoUser: makeSsoUser(),
-      roles,
-    }
+  describe('fromApiData', () => {
+    it('creates instance', () => {
+      const roles = [
+        makeRole({ name: 'name1', description: 'description1' }),
+        makeRole({ name: 'name2', description: 'description2' }),
+      ]
+      const ssoUserApiData = makeSsoUserApiData()
+      const ssoUser = SsoUser.fromApiData(ssoUserApiData)
+      const apiData: UserApiData = {
+        id: toUserId('id'),
+        roles,
+        ssoUser: ssoUserApiData,
+      }
 
-    const user = User.fromApiData(apiData)
+      const user = User.fromApiData(apiData)
 
-    expect(user.id).toBe(apiData.id)
-    expect(user.ssoUser).toBeInstanceOf(SsoUser)
-    expect(user.roles).toHaveLength(roles.length)
-    expect(user.roles[0]).toBeInstanceOf(Role)
+      expect(user.id).toBe(apiData.id)
+      expect(user.roles).toEqual(roles)
+      expect(user.ssoUser).toEqual(ssoUser)
+    })
+
+    it('handles missing roles', () => {
+      const apiData: UserApiData = {
+        id: toUserId('id'),
+        ssoUser: makeSsoUser(),
+      }
+
+      const user = User.fromApiData(apiData)
+
+      expect(user.roles).toEqual([])
+    })
   })
 
-  it('fromApiData handles missing roles gracefully', () => {
-    const apiData: UserApiData = {
-      id: toUserId('userApiNoRoles'),
-      ssoUser: makeSsoUser(),
-    }
+  describe('fromSearchData', () => {
+    it('creates instance for bceidbasic', () => {
+      const searchData: UserSearchApiData = {
+        attributes: {
+          bceid_user_guid: ['bceid_user_guid'],
+          display_name: ['display_name'],
+        },
+        email: 'email',
+        firstName: 'firstName',
+        lastName: 'lastName',
+      }
 
-    const user = User.fromApiData(apiData)
+      const user = User.fromSearchData(searchData)
 
-    expect(user.roles).toEqual([])
-  })
+      expect(user.id).toBe('bceid_user_guid')
+      expect(user.roles).toEqual([])
+      expect(user.ssoUser.displayName).toBe('display_name')
+      expect(user.ssoUser.email).toBe('email')
+      expect(user.ssoUser.firstName).toBe('firstName')
+      expect(user.ssoUser.idpType).toBe('bceidbasic')
+      expect(user.ssoUser.lastName).toBe('lastName')
+      expect(user.ssoUser.ssoUserId).toBe('bceid_user_guid')
+      expect(user.ssoUser.userName).toBeUndefined()
+    })
 
-  it('fromSearchData sets type to bceidbusiness when username includes bceidbusiness', () => {
-    const searchData = {
-      email: 'business@example.com',
-      firstName: 'Business',
-      lastName: 'User',
-      username: 'Someuser',
-      attributes: {
-        bceid_business_guid: ['businessGuid'],
-        bceid_business_name: ['businessName'],
-        bceid_user_guid: ['userGuid'],
-        display_name: ['Business Display'],
-      },
-    }
+    it('creates instance for bceidbusiness', () => {
+      const searchData: UserSearchApiData = {
+        attributes: {
+          bceid_business_guid: ['bceid_business_guid'],
+          bceid_business_name: ['bceid_business_name'],
+          bceid_user_guid: ['bceid_user_guid'],
+          display_name: ['display_name'],
+        },
+        email: 'email',
+        firstName: 'firstName',
+        lastName: 'lastName',
+      }
 
-    const user = User.fromSearchData(searchData)
+      const user = User.fromSearchData(searchData)
 
-    expect(user.ssoUser.idpType).toBe('bceidbusiness')
-    expect(user.id).toBe('userGuid')
-  })
+      expect(user.id).toBe('bceid_user_guid')
+      expect(user.roles).toEqual([])
+      expect(user.ssoUser.displayName).toBe('display_name')
+      expect(user.ssoUser.email).toBe('email')
+      expect(user.ssoUser.firstName).toBe('firstName')
+      expect(user.ssoUser.idpType).toBe('bceidbusiness')
+      expect(user.ssoUser.lastName).toBe('lastName')
+      expect(user.ssoUser.ssoUserId).toBe('bceid_user_guid')
+      expect(user.ssoUser.userName).toBeUndefined()
+    })
 
-  it('fromSearchData sets type to bceidbasic when username does not include bceidbusiness', () => {
-    const searchData = {
-      email: 'basic@example.com',
-      firstName: 'Basic',
-      lastName: 'User',
-      username: String.raw`bceidbasic\someuser`,
-      attributes: {
-        bceid_user_guid: ['basicGuid'],
-        display_name: ['Basic Display'],
-      },
-    }
+    it('creates instance for idir', () => {
+      const searchData: UserSearchApiData = {
+        attributes: {
+          display_name: ['display_name'],
+          idir_user_guid: ['idir_user_guid'],
+          idir_username: ['idir_username'],
+        },
+        email: 'email',
+        firstName: 'firstName',
+        lastName: 'lastName',
+      }
 
-    const user = User.fromSearchData(searchData)
+      const user = User.fromSearchData(searchData)
 
-    expect(user.ssoUser.idpType).toBe('bceidbasic')
-    expect(user.id).toBe('basicGuid')
-  })
+      expect(user.id).toBe('idir_user_guid')
+      expect(user.roles).toEqual([])
+      expect(user.ssoUser.displayName).toBe('display_name')
+      expect(user.ssoUser.email).toBe('email')
+      expect(user.ssoUser.firstName).toBe('firstName')
+      expect(user.ssoUser.idpType).toBe('idir')
+      expect(user.ssoUser.lastName).toBe('lastName')
+      expect(user.ssoUser.ssoUserId).toBe('idir_user_guid')
+      expect(user.ssoUser.userName).toBe('idir_username')
+    })
 
-  it('fromSearchData sets type to bceidbasic when username is undefined', () => {
-    const searchData = {
-      email: 'nousername@example.com',
-      firstName: 'No',
-      lastName: 'Username',
-      attributes: {
-        bceid_user_guid: ['noUsernameGuid'],
-        display_name: ['No Username Display'],
-      },
-    }
+    it('handles missing display_name and idir_username', () => {
+      const searchData: UserSearchApiData = {
+        attributes: {
+          idir_user_guid: ['idir_user_guid'],
+        },
+        email: 'email',
+        firstName: 'firstName',
+        lastName: 'lastName',
+      }
 
-    const user = User.fromSearchData(searchData)
-    expect(user.ssoUser.idpType).toBe('bceidbasic')
-  })
+      const user = User.fromSearchData(searchData)
 
-  it('fromSearchData creates User correctly with roles empty', () => {
-    const searchData = {
-      email: 'search@example.com',
-      firstName: 'FirstSearch',
-      lastName: 'LastSearch',
-      attributes: {
-        idir_user_guid: ['searchGuid'],
-        idir_username: ['searchUser'],
-        display_name: ['Search Display'],
-      },
-    }
+      expect(user.ssoUser.userName).toBeUndefined()
+      expect(user.ssoUser.displayName).toBe('')
+    })
 
-    const user = User.fromSearchData(searchData)
+    it('falls back to idir_userid', () => {
+      const searchData: UserSearchApiData = {
+        attributes: {
+          display_name: ['display_name'],
+          idir_userid: ['idir_userid'],
+        },
+        email: 'email',
+        firstName: 'firstName',
+        lastName: 'lastName',
+      }
 
-    expect(user.id).toBe('searchGuid')
-    expect(user.ssoUser.displayName).toBe('Search Display')
-    expect(user.roles).toEqual([])
-  })
+      const user = User.fromSearchData(searchData)
 
-  it('fromSearchData handles missing idir_userid and displayName gracefully', () => {
-    const searchData = {
-      email: 'missing@example.com',
-      firstName: 'FirstMissing',
-      lastName: 'LastMissing',
-      attributes: {
-        // missing idir_userid and displayName keys
-        idir_user_guid: ['guidMissing'],
-        // no display_name or displayName keys at all
-      },
-    }
+      expect(user.id).toBe('idir_userid')
+      expect(user.ssoUser.displayName).toBe('display_name')
+      expect(user.ssoUser.userName).toBeUndefined()
+    })
 
-    const user = User.fromSearchData(searchData)
+    it('returns empty userId', () => {
+      const searchData: UserSearchApiData = {
+        attributes: {
+          display_name: ['display_name'],
+        },
+        email: 'email',
+        firstName: 'firstName',
+        lastName: 'lastName',
+      }
 
-    // Falls back to idir_user_guid for userId
-    expect(user.id).toBe('guidMissing')
-    // username should be undefined (not present)
-    expect(user.ssoUser.userName).toBeUndefined()
-    // displayName fallback is '' empty string
-    expect(user.ssoUser.displayName).toBe('')
-  })
+      const user = User.fromSearchData(searchData)
 
-  it('fromSearchData falls back to idir_userid when idir_user_guid is missing', () => {
-    const searchData = {
-      email: 'fallback@example.com',
-      firstName: 'FallbackFirst',
-      lastName: 'FallbackLast',
-      attributes: {
-        // no idir_user_guid here to force fallback
-        idir_userid: ['fallbackUserId'],
-        display_name: ['Fallback DisplayName'],
-      },
-    }
+      expect(user.id).toBe('')
+      expect(user.ssoUser.displayName).toBe('display_name')
+      expect(user.ssoUser.userName).toBeUndefined()
+    })
 
-    const user = User.fromSearchData(searchData)
+    it('falls back to displayName', () => {
+      const searchData = {
+        attributes: {
+          displayName: ['displayName'],
+        },
+        email: 'email',
+        firstName: 'firstName',
+        lastName: 'lastName',
+      }
 
-    expect(user.id).toBe('fallbackUserId')
-    expect(user.ssoUser.userName).toBeUndefined()
-    expect(user.ssoUser.displayName).toBe('Fallback DisplayName')
-  })
+      const user = User.fromSearchData(searchData)
 
-  it('fromSearchData returns empty string userId when both idir_user_guid and idir_userid are missing', () => {
-    const searchData = {
-      email: 'emptyid@example.com',
-      firstName: 'Empty',
-      lastName: 'Id',
-      attributes: {
-        // no idir_user_guid or idir_userid keys
-        display_name: ['Empty DisplayName'],
-      },
-    }
-
-    const user = User.fromSearchData(searchData)
-
-    expect(user.id).toBe('')
-    expect(user.ssoUser.userName).toBeUndefined()
-    expect(user.ssoUser.displayName).toBe('Empty DisplayName')
-  })
-
-  it('fromSearchData uses attributes.displayName if attributes.display_name is missing', () => {
-    const searchData = {
-      email: 'displayname2@example.com',
-      firstName: 'First',
-      lastName: 'Last',
-      attributes: {
-        displayName: ['DisplayName Present'],
-        // no display_name key here
-      },
-    }
-
-    const user = User.fromSearchData(searchData)
-
-    expect(user.ssoUser.displayName).toBe('DisplayName Present')
+      expect(user.ssoUser.displayName).toBe('displayName')
+    })
   })
 })

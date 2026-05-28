@@ -1,10 +1,13 @@
 import { mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
+import { createVuetify } from 'vuetify'
 
 import { createMockAuthStore } from '@/__tests__/__helpers__/useAuthStore.mock'
 
 import App from '@/App.vue'
+
+const vuetify = createVuetify()
 
 let currentAuthStore = createMockAuthStore()
 
@@ -24,11 +27,11 @@ const mountApp = () =>
       mocks: {
         $t: (key: string) => key,
       },
+      plugins: [vuetify],
       stubs: {
         AppHeader: true,
         AppNavigation: true,
         AppNotifications: true,
-        LandingPageContainer: true,
         VApp: { template: '<div><slot /></div>' },
         VMain: { template: '<div><slot /></div>' },
         VContainer: { template: '<div><slot /></div>' },

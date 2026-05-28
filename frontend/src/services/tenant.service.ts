@@ -21,7 +21,6 @@ export const tenantService = {
    *
    * @param tenantId - The unique identifier of the tenant.
    * @param user - The user to add.
-   * @returns A promise that resolves to the user data.
    * @throws Will throw an error if the API request fails.
    */
   async addUser(tenantId: TenantId, user: User): Promise<UserApiData> {
@@ -66,7 +65,6 @@ export const tenantService = {
    * @param tenantId - The unique identifier of the tenant.
    * @param userId - The unique identifier of the user.
    * @param roleIds - The unique identifier of the role to assign.
-   * @returns A promise that resolves when the request succeeds.
    * @throws An error if the API request fails.
    */
   async assignUserRoles(
@@ -91,7 +89,6 @@ export const tenantService = {
    * Retrieves the specified tenant.
    *
    * @param tenantId - The ID of the tenant.
-   * @returns A promise that resolves to the tenant data.
    * @throws Will throw an error if the API request fails.
    */
   async getTenant(tenantId: TenantId): Promise<TenantApiData> {
@@ -112,7 +109,6 @@ export const tenantService = {
    * Retrieves the roles assigned within a specific tenant.
    *
    * @param tenantId - The unique identifier of the tenant.
-   * @returns A promise that resolves to an array of role data.
    * @throws Will throw an error if the API request fails.
    */
   async getTenantRoles(tenantId: TenantId): Promise<RoleApiData[]> {
@@ -132,7 +128,6 @@ export const tenantService = {
    *
    * @param tenantId - The unique identifier of the tenant.
    * @param userId - The unique identifier of the user.
-   * @returns A promise that resolves to an array of role data.
    * @throws Will throw an error if the API request fails.
    */
   async getUserRoles(
@@ -156,7 +151,6 @@ export const tenantService = {
    * Retrieves the tenants associated with the specified user.
    *
    * @param userId - The SSO user ID of the user.
-   * @returns A promise that resolves to an array of tenant data.
    * @throws Will throw an error if the API request fails.
    */
   async getUserTenants(userId: UserId): Promise<TenantApiData[]> {
@@ -177,7 +171,6 @@ export const tenantService = {
    * Retrieves all users associated with a specified tenant.
    *
    * @param tenantId - The unique identifier of the tenant.
-   * @returns A promise that resolves to an array of user data.
    * @throws Will throw an error if the API request fails.
    */
   async getUsers(tenantId: TenantId): Promise<UserApiData[]> {
@@ -197,7 +190,6 @@ export const tenantService = {
    *
    * @param tenantId - The unique identifier of the tenant.
    * @param userId - The id of the user to remove
-   * @returns A promise that resolves when the request succeeds.
    * @throws Will throw an error if the API request fails.
    */
   async removeUser(tenantId: TenantId, userId: UserId): Promise<void> {
@@ -225,7 +217,6 @@ export const tenantService = {
    * @param tenantId - The unique identifier of the tenant.
    * @param userId - The unique identifier of the user.
    * @param roleId - The unique identifier of the role to remove.
-   * @returns A promise that resolves when the request succeeds.
    * @throws An error if the API request fails.
    */
   async removeUserRole(
@@ -249,7 +240,6 @@ export const tenantService = {
    * @param name - The new name of the tenant.
    * @param ministryName - The new ministry name for the tenant.
    * @param description - The new description for the tenant.
-   * @returns A promise that resolves to the tenant data.
    * @throws Will throw an error if the API request fails.
    */
   async updateTenant(

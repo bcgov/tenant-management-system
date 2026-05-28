@@ -42,12 +42,12 @@ export function createMockAuthStore(overrides: MockAuthStoreOverrides = {}) {
       return state.user !== null
     },
 
-    login,
-
-    logout,
-
     get isSessionExpired() {
       return state.isSessionExpired
     },
+
+    login,
+
+    logout,
   }
 }

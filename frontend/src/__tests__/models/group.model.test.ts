@@ -1,77 +1,84 @@
 import { describe, expect, it } from 'vitest'
 
-import { makeGroupUser } from '@/__tests__/__factories__'
+import { makeGroupUser, makeGroupUserApiData } from '@/__tests__/__factories__'
 
-import { Group, toGroupId } from '@/models/group.model'
+import { Group, type GroupApiData, toGroupId } from '@/models/group.model'
 
 describe('Group model', () => {
-  it('constructor assigns all properties', () => {
-    const groupUsers = [makeGroupUser()]
+  describe('constructor', () => {
+    it('assigns properties', () => {
+      const groupUsers = [makeGroupUser()]
 
-    const group = new Group(
-      'created-by',
-      'created-date',
-      'description',
-      toGroupId('id'),
-      'name',
-      groupUsers,
-    )
+      const group = new Group(
+        'createdBy',
+        'createdDate',
+        'description',
+        toGroupId('id'),
+        'name',
+        groupUsers,
+      )
 
-    expect(group.createdBy).toBe('created-by')
-    expect(group.createdDate).toBe('created-date')
-    expect(group.description).toBe('description')
-    expect(group.id).toBe('id')
-    expect(group.name).toBe('name')
-    expect(group.groupUsers).toBe(groupUsers)
+      expect(group.createdBy).toBe('createdBy')
+      expect(group.createdDate).toBe('createdDate')
+      expect(group.description).toBe('description')
+      expect(group.groupUsers).toBe(groupUsers)
+      expect(group.id).toBe('id')
+      expect(group.name).toBe('name')
+    })
   })
 
-  it('fromApiData converts API data to Group instance', () => {
-    const apiData = {
-      createdBy: 'created-by',
-      createdDateTime: 'created-date-time',
-      description: 'description',
-      id: toGroupId('id'),
-      name: 'name',
-      users: [makeGroupUser()],
-    }
+  describe('fromApiData', () => {
+    it('creates instance', () => {
+      const apiData: GroupApiData = {
+        createdBy: 'createdBy',
+        createdDateTime: 'createdDateTime',
+        description: 'description',
+        id: toGroupId('id'),
+        name: 'name',
+        users: [makeGroupUserApiData()],
+      }
 
-    const group = Group.fromApiData(apiData)
+      const group = Group.fromApiData(apiData)
 
-    expect(group.createdBy).toBe('created-by')
-    expect(group.createdDate).toBe('created-date-time')
-    expect(group.description).toBe('description')
-    expect(group.id).toBe('id')
-    expect(group.name).toBe('name')
-    expect(group.groupUsers).toHaveLength(1)
-  })
+      expect(group).toBeInstanceOf(Group)
+      expect(group.createdBy).toBe('createdBy')
+      expect(group.createdDate).toBe('createdDateTime')
+      expect(group.description).toBe('description')
+      expect(group.groupUsers).toHaveLength(1)
+      expect(group.id).toBe('id')
+      expect(group.name).toBe('name')
+    })
 
-  it('fromApiData handles created by display name', () => {
-    const apiData = {
-      createdBy: 'created-by',
-      createdByDisplayName: 'created-by-display-name',
-      createdDateTime: 'created-date-time',
-      description: 'description',
-      id: toGroupId('id'),
-      name: 'name',
-      users: [makeGroupUser()],
-    }
+    it('handles created by display name', () => {
+      const apiData: GroupApiData = {
+        createdBy: 'createdBy',
+        createdByDisplayName: 'createdByDisplayName',
+        createdDateTime: 'createdDateTime',
+        description: 'description',
+        id: toGroupId('id'),
+        name: 'name',
+        users: [makeGroupUserApiData()],
+      }
 
-    const group = Group.fromApiData(apiData)
+      const group = Group.fromApiData(apiData)
 
-    expect(group.createdBy).toBe('created-by-display-name')
-  })
+      expect(group).toBeInstanceOf(Group)
+      expect(group.createdBy).toBe('createdByDisplayName')
+    })
 
-  it('fromApiData handles non-array users', () => {
-    const apiData = {
-      createdBy: 'created-by',
-      createdDateTime: 'created-date-time',
-      description: 'description',
-      id: toGroupId('id'),
-      name: 'name',
-    }
+    it('handles missing users', () => {
+      const apiData: GroupApiData = {
+        createdBy: 'createdBy',
+        createdDateTime: 'createdDateTime',
+        description: 'description',
+        id: toGroupId('id'),
+        name: 'name',
+      }
 
-    const group = Group.fromApiData(apiData)
+      const group = Group.fromApiData(apiData)
 
-    expect(group.groupUsers).toEqual([])
+      expect(group).toBeInstanceOf(Group)
+      expect(group.groupUsers).toEqual([])
+    })
   })
 })

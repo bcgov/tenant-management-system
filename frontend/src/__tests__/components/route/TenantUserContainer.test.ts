@@ -11,9 +11,11 @@ import {
   makeUser,
 } from '@/__tests__/__factories__'
 
-import TenantUserManagementContainer from '@/components/tenant/UserManagementContainer.vue'
+import TenantUserContainer from '@/components/route/TenantUserContainer.vue'
 import { useNotification } from '@/composables/useNotification'
 import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
+import { toTenantId } from '@/models/tenant.model'
+import vuetify from '@/plugins/vuetify'
 import { useGroupStore } from '@/stores/useGroupStore'
 import { useRoleStore } from '@/stores/useRoleStore'
 import { useTenantStore } from '@/stores/useTenantStore'
@@ -28,14 +30,14 @@ function child(wrapper: ReturnType<typeof mountComponent>) {
   return wrapper.getComponent({ name: 'TenantUserManagement' })
 }
 
-function mountComponent(tenant = makeTenant()) {
-  return mount(TenantUserManagementContainer, {
-    props: { tenant },
-    global: { stubs: { TenantUserManagement: true } },
+function mountComponent(tenantId = 't-1') {
+  return mount(TenantUserContainer, {
+    global: { plugins: [vuetify], stubs: { TenantUserManagement: true } },
+    props: { tenantId: toTenantId(tenantId) },
   })
 }
 
-describe('TenantUserManagementContainer', () => {
+describe('TenantUserContainer', () => {
   let groupStore: ReturnType<typeof useGroupStore>
   let roleStore: ReturnType<typeof useRoleStore>
   let tenantStore: ReturnType<typeof useTenantStore>
@@ -48,6 +50,9 @@ describe('TenantUserManagementContainer', () => {
     roleStore = useRoleStore()
     tenantStore = useTenantStore()
     userStore = useUserStore()
+
+    tenantStore = useTenantStore()
+    tenantStore.tenants = [makeTenant({ id: 't-1' })]
 
     notificationMock = {
       success: vi.fn(),
@@ -104,17 +109,19 @@ describe('TenantUserManagementContainer', () => {
 
   describe('handleAddUser', () => {
     it('calls addTenantUser, clears searchResults, and shows success notification', async () => {
-      const tenant = makeTenant()
       const user = makeUser()
       tenantStore.addTenantUser = vi.fn().mockResolvedValue(undefined)
+      const tenantId = 'tenant-1'
+      const tenant = makeTenant({ id: tenantId })
+      tenantStore.tenants.push(tenant)
       groupStore.addGroupUser = vi.fn().mockResolvedValue(undefined)
 
-      const wrapper = mountComponent(tenant)
+      const wrapper = mountComponent(tenantId)
       await child(wrapper).vm.$emit('add', user, [])
       await nextTick()
       await nextTick()
 
-      expect(tenantStore.addTenantUser).toHaveBeenCalledWith(tenant, user)
+      expect(tenantStore.addTenantUser).toHaveBeenCalledWith(tenantId, user)
       expect(notificationMock.success).toHaveBeenCalledWith(
         'New user successfully added to this tenant',
         'User Added',
@@ -123,28 +130,22 @@ describe('TenantUserManagementContainer', () => {
     })
 
     it('adds user to each provided group and shows group success notification', async () => {
-      const tenant = makeTenant()
       const user = makeUser()
       const groups = [makeGroup({ id: 'g1' }), makeGroup({ id: 'g2' })]
       tenantStore.addTenantUser = vi.fn().mockResolvedValue(undefined)
+      const tenantId = 'tenant-1'
+      const tenant = makeTenant({ id: tenantId })
+      tenantStore.tenants.push(tenant)
       groupStore.addGroupUser = vi.fn().mockResolvedValue(undefined)
 
-      const wrapper = mountComponent(tenant)
+      const wrapper = mountComponent(tenantId)
       await child(wrapper).vm.$emit('add', user, groups)
       await nextTick()
       await nextTick()
 
       expect(groupStore.addGroupUser).toHaveBeenCalledTimes(2)
-      expect(groupStore.addGroupUser).toHaveBeenCalledWith(
-        tenant.id,
-        'g1',
-        user,
-      )
-      expect(groupStore.addGroupUser).toHaveBeenCalledWith(
-        tenant.id,
-        'g2',
-        user,
-      )
+      expect(groupStore.addGroupUser).toHaveBeenCalledWith(tenantId, 'g1', user)
+      expect(groupStore.addGroupUser).toHaveBeenCalledWith(tenantId, 'g2', user)
       expect(notificationMock.success).toHaveBeenCalledWith(
         'New user succesfully added to groups',
         'User Added to Groups',
@@ -152,12 +153,14 @@ describe('TenantUserManagementContainer', () => {
     })
 
     it('does not show group success notification when groups array is empty', async () => {
-      const tenant = makeTenant()
       const user = makeUser()
       tenantStore.addTenantUser = vi.fn().mockResolvedValue(undefined)
+      const tenantId = 'tenant-1'
+      const tenant = makeTenant({ id: tenantId })
+      tenantStore.tenants.push(tenant)
       groupStore.addGroupUser = vi.fn().mockResolvedValue(undefined)
 
-      const wrapper = mountComponent(tenant)
+      const wrapper = mountComponent(tenantId)
       await child(wrapper).vm.$emit('add', user, [])
       await nextTick()
       await nextTick()
@@ -287,16 +290,18 @@ describe('TenantUserManagementContainer', () => {
 
   describe('handleRemoveRole', () => {
     it('calls removeTenantUserRole and shows success notification', async () => {
-      const tenant = makeTenant()
       tenantStore.removeTenantUserRole = vi.fn().mockResolvedValue(undefined)
+      const tenantId = 'tenant-1'
+      const tenant = makeTenant({ id: tenantId })
+      tenantStore.tenants.push(tenant)
 
-      const wrapper = mountComponent(tenant)
+      const wrapper = mountComponent(tenantId)
       await child(wrapper).vm.$emit('remove-role', 'u1', 'r1')
       await nextTick()
       await nextTick()
 
       expect(tenantStore.removeTenantUserRole).toHaveBeenCalledWith(
-        tenant,
+        tenantId,
         'u1',
         'r1',
       )
@@ -326,15 +331,17 @@ describe('TenantUserManagementContainer', () => {
 
   describe('handleRemoveUser', () => {
     it('calls removeTenantUser and shows success notification', async () => {
-      const tenant = makeTenant()
       tenantStore.removeTenantUser = vi.fn().mockResolvedValue(undefined)
+      const tenantId = 'tenant-1'
+      const tenant = makeTenant({ id: tenantId })
+      tenantStore.tenants.push(tenant)
 
-      const wrapper = mountComponent(tenant)
+      const wrapper = mountComponent(tenantId)
       await child(wrapper).vm.$emit('remove-user', 'u1')
       await nextTick()
       await nextTick()
 
-      expect(tenantStore.removeTenantUser).toHaveBeenCalledWith(tenant.id, 'u1')
+      expect(tenantStore.removeTenantUser).toHaveBeenCalledWith(tenantId, 'u1')
       expect(notificationMock.success).toHaveBeenCalledWith(
         'The user was successfully removed',
         'User Removed',
