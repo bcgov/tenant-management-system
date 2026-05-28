@@ -9,12 +9,7 @@ import {
   makeUser,
 } from '@/__tests__/__factories__'
 
-import {
-  Group,
-  type GroupApiData,
-  type GroupDetailFields,
-  type GroupId,
-} from '@/models/group.model'
+import { Group, type GroupApiData, type GroupId } from '@/models/group.model'
 import {
   GroupService,
   type GroupServiceApiData,
@@ -329,43 +324,6 @@ describe('Group Store', () => {
       )
 
       expect(group.groupUsers).toHaveLength(1)
-    })
-  })
-
-  describe('updateGroupDetails', () => {
-    it('updates name and description on the local group object', async () => {
-      const store = useGroupStore()
-      const group = makeGroup({ id: groupId, name: 'Old', description: 'Old' })
-      store.groups = [group]
-      const updatedData: GroupApiData = {
-        ...mockGroupApiData,
-        name: 'New Name',
-        description: 'New Desc',
-      }
-      vi.mocked(groupService.updateGroup).mockResolvedValue(updatedData)
-
-      await store.updateGroupDetails(tenantId, groupId, {
-        name: 'New Name',
-        description: 'New Desc',
-      })
-
-      expect(group.name).toBe('New Name')
-      expect(group.description).toBe('New Desc')
-    })
-
-    it('throws when group is not in the store', async () => {
-      const store = useGroupStore()
-
-      await expect(
-        store.updateGroupDetails(
-          tenantId,
-          'fake-id' as GroupId,
-          {
-            name: 'x',
-            description: 'x',
-          } as GroupDetailFields,
-        ),
-      ).rejects.toThrow('Group with ID fake-id not found')
     })
   })
 

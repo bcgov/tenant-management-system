@@ -8,7 +8,6 @@ export const roleService = {
   /**
    * Retrieves all the roles.
    *
-   * @returns A promise that resolves to an array of role data.
    * @throws Will throw an error if the API request fails.
    */
   async getRoles(): Promise<RoleApiData[]> {

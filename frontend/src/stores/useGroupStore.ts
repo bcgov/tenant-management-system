@@ -1,11 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
-import {
-  Group,
-  type GroupDetailFields,
-  type GroupId,
-} from '@/models/group.model'
+import { Group, type GroupId } from '@/models/group.model'
 import { GroupService } from '@/models/groupservice.model'
 import { GroupUser, type GroupUserId } from '@/models/groupuser.model'
 import { type TenantId } from '@/models/tenant.model'
@@ -198,41 +194,6 @@ export const useGroupStore = defineStore('group', () => {
   }
 
   /**
-   * Updates the details of a group.
-   *
-   * @param tenantId - The ID of the tenant.
-   * @param groupId - The ID of the group.
-   * @param groupDetails - The new group details.
-   * @throws {Error} If the group is not found in the store.
-   * @returns A promise that resolves when the group details are updated.
-   */
-  const updateGroupDetails = async (
-    tenantId: TenantId,
-    groupId: GroupId,
-    groupDetails: GroupDetailFields,
-  ): Promise<void> => {
-    // Grab the existing group from the store, to confirm the ID and for use
-    // later.
-    const group = getGroup(groupId)
-    if (!group) {
-      throw new Error(`Group with ID ${groupId} not found`)
-    }
-
-    const apiResponse = await groupService.updateGroup(
-      tenantId,
-      groupId,
-      groupDetails.name,
-      groupDetails.description,
-    )
-
-    const updatedGroup = Group.fromApiData(apiResponse)
-
-    // Update the group details in the store
-    group.name = updatedGroup.name
-    group.description = updatedGroup.description
-  }
-
-  /**
    * Updates the roles of a group.
    *
    * @param tenantId - The ID of the tenant.
@@ -266,7 +227,6 @@ export const useGroupStore = defineStore('group', () => {
     fetchGroupServices,
     getGroup,
     removeGroupUser,
-    updateGroupDetails,
     updateGroupRoles,
   }
 })

@@ -26,38 +26,47 @@ function setValidEnv() {
   import.meta.env.VITE_KEYCLOAK_URL = 'https://auth.example.com'
 }
 
-describe('loadConfig (env var path)', () => {
-  beforeEach(() => {
-    setValidEnv()
+describe('loadConfig', () => {
+  describe('environment variable path)', () => {
+    beforeEach(() => {
+      setValidEnv()
+    })
+
+    it('loads config successfully with all fields set', async () => {
+      await loadConfig()
+
+      expect(config.api.baseUrl).toBe('https://api.example.com')
+      expect(config.basicBceidBroker).toBe('basic-bceid')
+      expect(config.businessBceidBroker).toBe('business-bceid')
+      expect(config.idirBroker).toBe('idir')
+      expect(config.oidc.clientId).toBe('client-id')
+      expect(config.oidc.logoutUrl).toBe('https://logout.example.com')
+      expect(config.oidc.realm).toBe('myrealm')
+      expect(config.oidc.serverUrl).toBe('https://auth.example.com')
+    })
+
+    it('throws when a field is missing', async () => {
+      import.meta.env.VITE_API_BASE_URL = ''
+
+      const error = await loadConfig().catch((e) => e)
+
+      expect(error).toBeInstanceOf(ConfigError)
+      expect(error.message).toMatch(/api\.baseUrl/)
+    })
+
+    it('throws listing multiple missing fields', async () => {
+      import.meta.env.VITE_API_BASE_URL = ''
+      import.meta.env.VITE_KEYCLOAK_REALM = ''
+
+      const error = await loadConfig().catch((e) => e)
+
+      expect(error).toBeInstanceOf(ConfigError)
+      expect(error.message).toMatch(/api\.baseUrl/)
+      expect(error.message).toMatch(/oidc\.realm/)
+    })
   })
 
-  it('loads config successfully with all fields set', async () => {
-    await loadConfig()
-
-    expect(config.api.baseUrl).toBe('https://api.example.com')
-  })
-
-  it('throws when a field is missing', async () => {
-    import.meta.env.VITE_API_BASE_URL = ''
-
-    const error = await loadConfig().catch((e) => e)
-
-    expect(error).toBeInstanceOf(ConfigError)
-    expect(error.message).toMatch(/api\.baseUrl/)
-  })
-
-  it('throws listing all missing fields', async () => {
-    import.meta.env.VITE_API_BASE_URL = ''
-    import.meta.env.VITE_KEYCLOAK_REALM = ''
-
-    const error = await loadConfig().catch((e) => e)
-
-    expect(error).toBeInstanceOf(ConfigError)
-    expect(error.message).toMatch(/api\.baseUrl/)
-    expect(error.message).toMatch(/oidc\.realm/)
-  })
-
-  describe('loadConfig (fetch path)', () => {
+  describe('fetch path', () => {
     const validFetchConfig = {
       api: { baseUrl: 'https://api.example.com' },
       basicBceidBroker: 'basic-bceid',
@@ -82,6 +91,13 @@ describe('loadConfig (env var path)', () => {
       await loadConfig()
 
       expect(config.api.baseUrl).toBe('https://api.example.com')
+      expect(config.basicBceidBroker).toBe('basic-bceid')
+      expect(config.businessBceidBroker).toBe('business-bceid')
+      expect(config.idirBroker).toBe('idir')
+      expect(config.oidc.clientId).toBe('client-id')
+      expect(config.oidc.logoutUrl).toBe('https://logout.example.com')
+      expect(config.oidc.realm).toBe('myrealm')
+      expect(config.oidc.serverUrl).toBe('https://auth.example.com')
     })
 
     it('throws when response is not ok', async () => {
