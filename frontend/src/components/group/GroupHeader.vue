@@ -78,7 +78,7 @@ const groupMembersCount = computed(() => props.group.groupUsers.length)
 
     <v-divider class="my-6" />
 
-    <v-row class="align-center" style="column-gap: 8rem">
+    <v-row class="align-center">
       <v-col cols="12" md="3">
         <StatBlock
           :icon="mdiCalendarMonthOutline"
@@ -86,7 +86,7 @@ const groupMembersCount = computed(() => props.group.groupUsers.length)
           label="Date Created"
         />
       </v-col>
-      <v-col cols="12" md="3">
+      <v-col cols="12" md="9">
         <StatBlock
           :icon="mdiAccountCircleOutline"
           :value="group.createdBy"
@@ -95,7 +95,7 @@ const groupMembersCount = computed(() => props.group.groupUsers.length)
       </v-col>
     </v-row>
 
-    <v-row class="align-center" style="column-gap: 8rem">
+    <v-row class="align-center">
       <v-col cols="12" md="3">
         <StatBlock
           :icon="mdiAccountMultipleOutline"

@@ -76,7 +76,7 @@ const tenantUsersCount = computed(() => props.tenant.users.length)
 
     <v-divider class="my-6" />
 
-    <v-row class="align-center" style="column-gap: 8rem">
+    <v-row class="align-center">
       <v-col cols="12" md="3">
         <StatBlock
           :icon="mdiCalendarMonthOutline"
@@ -84,7 +84,7 @@ const tenantUsersCount = computed(() => props.tenant.users.length)
           label="Date Created"
         />
       </v-col>
-      <v-col cols="12" md="3">
+      <v-col cols="12" md="9">
         <StatBlock
           :icon="mdiAccountCircleOutline"
           :value="tenant.createdBy"
@@ -93,7 +93,7 @@ const tenantUsersCount = computed(() => props.tenant.users.length)
       </v-col>
     </v-row>
 
-    <v-row class="align-center" style="column-gap: 8rem">
+    <v-row class="align-center">
       <v-col cols="12" md="3">
         <StatBlock
           :icon="mdiAccountMultipleOutline"
