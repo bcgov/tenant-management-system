@@ -318,6 +318,7 @@ const selectRowItem = (e: Event, r: RowPropsType) => {
             v-for="(actionItem, i) in actionItems"
             :key="i"
             :value="i"
+            @click="actionItem.action && actionItem.action(item)"
           >
             <!--
               Disable the action when `actionItem.enabledCondition(item)` is
@@ -339,9 +340,7 @@ const selectRowItem = (e: Event, r: RowPropsType) => {
               </v-tooltip>
             </template>
             <template v-else>
-              <v-list-item-title
-                @click="actionItem.action && actionItem.action(item)"
-              >
+              <v-list-item-title>
                 <v-icon v-if="actionItem.icon" :icon="actionItem.icon" />
                 {{ actionItem.title }}
               </v-list-item-title>
