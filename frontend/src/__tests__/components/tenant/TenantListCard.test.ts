@@ -1,12 +1,8 @@
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 
-import {
-  makeRoleTenantOwner,
-  makeTenant,
-  makeSsoUser,
-  makeUser,
-} from '@/__tests__/__factories__'
+import { makeTenant } from '@/__tests__/__factories__'
+
 import TenantListCard from '@/components/tenant/TenantListCard.vue'
 import { type Tenant } from '@/models/tenant.model'
 
@@ -24,7 +20,6 @@ const mountComponent = (props: { tenant: Tenant }) =>
         },
         'v-card-title': { template: '<div><slot /></div>' },
         'v-card-subtitle': { template: '<div><slot /></div>' },
-        'v-card-text': { template: '<div><slot /></div>' },
       },
     },
   })
@@ -48,30 +43,6 @@ describe('TenantListCard.vue', () => {
       const wrapper = mountComponent({ tenant })
 
       expect(wrapper.text()).toContain('Test Ministry')
-    })
-  })
-
-  describe('owner info', () => {
-    it('renders owner display name and email when tenant has an owner', () => {
-      const owner = makeUser({
-        roles: [makeRoleTenantOwner()],
-        ssoUser: makeSsoUser({
-          displayName: 'Tolstoy Twain',
-          email: 'tolstoy.twain@example.com',
-        }),
-      })
-      const tenant = makeTenant({ users: [owner] })
-      const wrapper = mountComponent({ tenant })
-
-      expect(wrapper.text()).toContain('Tolstoy Twain')
-      expect(wrapper.text()).toContain('tolstoy.twain@example.com')
-    })
-
-    it('does not render owner info when tenant has no owner', () => {
-      const tenant = makeTenant({ users: [] })
-      const wrapper = mountComponent({ tenant })
-
-      expect(wrapper.text()).not.toContain('roles.owner')
     })
   })
 

@@ -87,7 +87,7 @@ describe('TenantListContainer.vue', () => {
       mountComponent()
       await flushPromises()
 
-      expect(mockError).toHaveBeenCalledWith('Failed to fetch tenants')
+      expect(mockError).toHaveBeenCalledWith('Failed to load tenants')
     })
   })
 

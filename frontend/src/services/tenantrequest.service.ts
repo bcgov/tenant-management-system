@@ -21,7 +21,6 @@ export const tenantRequestService = {
    *
    * @param tenantRequestDetails - The details of the tenant request to create.
    * @param user - The user that is creating the tenant request.
-   * @returns A promise that resolves when the request succeeds.
    * @throws Will throw an error if the API request fails.
    */
   async createTenantRequest(
@@ -69,7 +68,6 @@ export const tenantRequestService = {
   /**
    * Retrieves all the tenant requests.
    *
-   * @returns A promise that resolves to an array of tenant request data.
    * @throws Will throw an error if the API request fails.
    */
   async getTenantRequests(): Promise<TenantRequestApiData[]> {
@@ -92,7 +90,6 @@ export const tenantRequestService = {
    * @param rejectionReason - Optional rejection reason (required for REJECTED
    *     status).
    * @param tenantName - The new tenant name used when there is a name clash.
-   * @returns A promise that resolves when the request succeeds.
    * @throws Will throw an error if the API request fails.
    */
   async updateTenantRequestStatus(

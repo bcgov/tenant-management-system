@@ -1,16 +1,19 @@
 import { mount } from '@vue/test-utils'
+import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
 
 import { makeGroup, makeTenant, makeUser } from '@/__tests__/__factories__'
 
-import GroupListContainer from '@/components/group/GroupListContainer.vue'
+import GroupListContainer from '@/components/route/GroupListContainer.vue'
 import { DomainError } from '@/errors/domain/DomainError'
 import { ServerError } from '@/errors/domain/ServerError'
 import { Group } from '@/models/group.model'
+import { toTenantId } from '@/models/tenant.model'
 import { User } from '@/models/user.model'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { useGroupStore } from '@/stores/useGroupStore'
+import { useTenantStore } from '@/stores/useTenantStore'
 import { currentUserHasRole } from '@/utils/permissions'
 
 vi.mock('@/services/config.service', () => ({
@@ -33,13 +36,15 @@ vi.mock('@/utils/permissions', () => ({
 
 vi.mock('@/stores/useAuthStore', () => ({ useAuthStore: vi.fn() }))
 vi.mock('@/stores/useGroupStore', () => ({ useGroupStore: vi.fn() }))
+vi.mock('@/stores/useTenantStore', () => ({ useTenantStore: vi.fn() }))
 
 type AuthStoreMock = Partial<ReturnType<typeof useAuthStore>>
 type GroupStoreMock = Partial<ReturnType<typeof useGroupStore>>
+type TenantStoreMock = Partial<ReturnType<typeof useTenantStore>>
 
-const mountComponent = (tenant = makeTenant({ id: 't1' })) => {
+const mountComponent = (tenantId = 't1') => {
   return mount(GroupListContainer, {
-    props: { tenant },
+    props: { tenantId: toTenantId(tenantId) },
     global: {
       stubs: {
         GroupCreateDialog: {
@@ -75,13 +80,16 @@ describe('GroupListContainer.vue', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
+    setActivePinia(createPinia())
     mockAuth = { authenticatedUser: null as unknown as User }
     mockGroup = {
       addGroup: vi.fn(),
       addGroupUser: vi.fn(),
-      fetchGroups: vi.fn(),
       loading: false,
       groups: [] as Group[],
+    }
+    const mockTenant: TenantStoreMock = {
+      getTenant: vi.fn().mockReturnValue(makeTenant({ id: 't1' })),
     }
     vi.mocked(useAuthStore).mockReturnValue(
       mockAuth as ReturnType<typeof useAuthStore>,
@@ -89,14 +97,12 @@ describe('GroupListContainer.vue', () => {
     vi.mocked(useGroupStore).mockReturnValue(
       mockGroup as ReturnType<typeof useGroupStore>,
     )
+    vi.mocked(useTenantStore).mockReturnValue(
+      mockTenant as ReturnType<typeof useTenantStore>,
+    )
   })
 
   describe('Template and Lifecycle', () => {
-    it('fetches groups on mount', () => {
-      mountComponent()
-      expect(mockGroup.fetchGroups).toHaveBeenCalledWith('t1')
-    })
-
     it('renders empty state when no groups exist', () => {
       mockGroup.groups = []
       const wrapper = mountComponent()
@@ -115,7 +121,9 @@ describe('GroupListContainer.vue', () => {
   describe('handleGroupCreate Logic', () => {
     it('skips user addition if addUser is false', async () => {
       const addMock = vi.mocked(mockGroup.addGroup)
-      if (addMock) addMock.mockResolvedValue(makeGroup())
+      if (addMock) {
+        addMock.mockResolvedValue(makeGroup())
+      }
       const addUserSpy = vi.spyOn(mockGroup, 'addGroupUser')
 
       const wrapper = mountComponent()
@@ -134,10 +142,13 @@ describe('GroupListContainer.vue', () => {
       vi.mocked(currentUserHasRole).mockReturnValue(true)
 
       const addMock = vi.mocked(mockGroup.addGroup)
-      if (addMock) addMock.mockResolvedValue(makeGroup())
+      if (addMock) {
+        addMock.mockResolvedValue(makeGroup())
+      }
       const addUserMock = vi.mocked(mockGroup.addGroupUser)
-      if (addUserMock)
-        addUserMock.mockResolvedValue(undefined as unknown as void)
+      if (addUserMock) {
+        addUserMock.mockResolvedValue(undefined)
+      }
 
       const wrapper = mountComponent()
       const dialog = wrapper.getComponent({ name: 'GroupCreateDialog' })
@@ -159,7 +170,9 @@ describe('GroupListContainer.vue', () => {
 
       const srvError = new ServerError('Tech')
       Object.defineProperty(srvError, 'userMessage', { value: null })
-      if (addMock) addMock.mockRejectedValueOnce(srvError)
+      if (addMock) {
+        addMock.mockRejectedValueOnce(srvError)
+      }
       await dialog.vm.$emit('submit', { name: 'G' }, false)
       await nextTick()
       expect(mockNotify.error).toHaveBeenLastCalledWith(
@@ -168,10 +181,13 @@ describe('GroupListContainer.vue', () => {
 
       const user = makeUser()
       Object.assign(mockAuth, { authenticatedUser: user })
-      if (addMock) addMock.mockResolvedValue(makeGroup())
+      if (addMock) {
+        addMock.mockResolvedValue(makeGroup())
+      }
       const addUserMock = vi.mocked(mockGroup.addGroupUser)
-      if (addUserMock)
+      if (addUserMock) {
         addUserMock.mockRejectedValueOnce(new DomainError('E', 'Add Fail'))
+      }
 
       await dialog.vm.$emit('submit', { name: 'G' }, true)
       await nextTick()

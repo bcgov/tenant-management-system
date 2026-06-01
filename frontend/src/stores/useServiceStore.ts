@@ -10,6 +10,7 @@ import { serviceService } from '@/services/service.service'
  */
 export const useServiceStore = defineStore('service', () => {
   const loading = ref(false)
+  const services = ref<Service[]>([])
   const tenantServices = ref<Service[]>([])
 
   // Private methods
@@ -21,12 +22,12 @@ export const useServiceStore = defineStore('service', () => {
    * @returns The inserted or updated service.
    */
   function upsertService(service: Service): Service {
-    const index = tenantServices.value.findIndex((s) => s.id === service.id)
+    const index = services.value.findIndex((s) => s.id === service.id)
 
     if (index === -1) {
-      tenantServices.value.push(service)
+      services.value.push(service)
     } else {
-      tenantServices.value[index] = service
+      services.value[index] = service
     }
 
     return service
@@ -50,16 +51,17 @@ export const useServiceStore = defineStore('service', () => {
 
   /**
    * Fetches all services from the API and updates the store.
-   * TODO: this does not update or even use the store, it's a bad passthrough.
    *
-   * @returns A promise that resolves to the list of all services.
+   * @returns A promise that resolves when the API call completes.
    */
-  const fetchServices = async (): Promise<Service[]> => {
+  const fetchServices = async (): Promise<void> => {
     loading.value = true
     try {
       const serviceData = await serviceService.getServices()
+      const serviceObjects = serviceData.map(Service.fromApiData)
 
-      return serviceData.map(Service.fromApiData)
+      // Update the store with these services.
+      serviceObjects.forEach(upsertService)
     } finally {
       loading.value = false
     }
@@ -69,21 +71,13 @@ export const useServiceStore = defineStore('service', () => {
    * Fetches tenant services for a tenant from the API and updates the store.
    *
    * @param tenantId - The ID of the tenant.
-   * @returns A promise that resolves to the list of tenant services associated
-   *   with the tenant.
+   * @returns A promise that resolves when the API call completes.
    */
-  const fetchTenantServices = async (
-    tenantId: TenantId,
-  ): Promise<Service[]> => {
+  const fetchTenantServices = async (tenantId: TenantId): Promise<void> => {
     loading.value = true
     try {
-      const serviceData = await serviceService.getTenantServices(tenantId)
-      const services = serviceData.map(Service.fromApiData)
-
-      // Update the store with these tenant services.
-      services.forEach(upsertService)
-
-      return services
+      const tenantServiceData = await serviceService.getTenantServices(tenantId)
+      tenantServices.value = tenantServiceData.map(Service.fromApiData)
     } finally {
       loading.value = false
     }
@@ -101,6 +95,7 @@ export const useServiceStore = defineStore('service', () => {
 
   return {
     loading,
+    services,
     tenantServices,
 
     addServiceToTenant,

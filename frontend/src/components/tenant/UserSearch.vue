@@ -1,15 +1,10 @@
 <script setup lang="ts">
 import { mdiAlert, mdiClose } from '@mdi/js'
 import { computed, ref, watch } from 'vue'
-// TODO: sus
-import {
-  type ItemSlotBase,
-  type DataTableItem,
-} from 'vuetify/lib/components/VDataTable/types.mjs'
 
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
-import UserTable from '@/components/user/UserTable.vue'
+import UserSearchTable from '@/components/user/UserSearchTable.vue'
 import { type Tenant } from '@/models/tenant.model'
 import { type User } from '@/models/user.model'
 import { type IdirSearchType, IDIR_SEARCH_TYPE } from '@/utils/constants'
@@ -26,7 +21,6 @@ const props = defineProps<{
 const emit = defineEmits<{
   (event: 'clear-search'): void
   (event: 'search', searchType: IdirSearchType, searchText: string): void
-  // TODO: what does it mean to select a null user?
   (event: 'select', user: User | null): void
 }>()
 
@@ -46,10 +40,9 @@ const SEARCH_TYPES = [
   { title: IDIR_SEARCH_TYPE.EMAIL.title, value: IDIR_SEARCH_TYPE.EMAIL.value },
 ]
 
+const conflict = ref(false)
 const searchText = ref('')
 const searchType = ref<IdirSearchType>(IDIR_SEARCH_TYPE.FIRST_NAME.value)
-const conflict = ref(false)
-const internalItem = ref<DataTableItem<User>>({} as DataTableItem<User>)
 
 // --- Watchers and Effects ----------------------------------------------------
 
@@ -57,33 +50,11 @@ watch([searchText, searchType], () => {
   emit('clear-search')
 })
 
-type RowPropsType = ItemSlotBase<User>
-
-const selectUser = (e: Event | null, r: RowPropsType) => {
-  conflict.value = false
-  const index = props.currentUsers?.findIndex(
-    (u: User) => u.ssoUser.ssoUserId === r.item?.ssoUser.ssoUserId,
-  )
-  if (index !== -1) {
-    //remove the user from the selection
-    conflict.value = true
-    if (internalItem.value) {
-      internalItem.value = {} as DataTableItem<User>
-      r.toggleSelect(internalItem.value)
-    }
-    emit('select', null)
-    return false
-  }
-  internalItem.value = r.internalItem
-  emit('select', r.internalItem.value)
-  return true
-}
-
 // --- Computed Values ---------------------------------------------------------
 
 // Sort the results by the search type, so that it is updated whenever the user
 // changes the search type.
-const defaultSort = computed(() => [{ key: `ssoUser.${searchType.value}` }])
+const defaultSort = computed(() => `ssoUser.${searchType.value}`)
 
 // The SSO API will return a 400 if the search text is less than 2 characters.
 const isSearchEnabled = computed(() => {
@@ -91,6 +62,27 @@ const isSearchEnabled = computed(() => {
 })
 
 // --- Component Methods -------------------------------------------------------
+
+function handleRowClicked(user: User | null) {
+  if (!user) {
+    emit('select', null)
+
+    return
+  }
+
+  const alreadyAdded = props.currentUsers?.some(
+    (u) => u.ssoUser.ssoUserId === user.ssoUser.ssoUserId,
+  )
+
+  if (alreadyAdded) {
+    conflict.value = true
+    emit('select', null)
+
+    return
+  }
+
+  emit('select', user)
+}
 
 function handleSearch() {
   emit('search', searchType.value, searchText.value)
@@ -144,14 +136,12 @@ function handleSearch() {
     <v-col cols="12">
       <h4 class="my-6">Search Results</h4>
 
-      <UserTable
-        :enable-select="true"
-        :select-user="selectUser"
-        :show-add="true"
+      <UserSearchTable
         :sort-by="defaultSort"
         :tenant="tenant"
         :users="searchResults || []"
         where="tenant"
+        @row-clicked="handleRowClicked"
       />
     </v-col>
   </v-row>

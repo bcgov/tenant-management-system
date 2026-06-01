@@ -17,7 +17,6 @@ export const userService = {
    *
    * @param searchType - The type of search (email, displayName).
    * @param searchValue - The search value.
-   * @returns A promise that resolves to an array of user data.
    */
   async _searchBceidUsers(
     searchType: BCeIDSearchType,
@@ -44,7 +43,6 @@ export const userService = {
    *
    * @param searchType - The type of search (email, firstName, lastName).
    * @param searchValue - The search value.
-   * @returns A promise that resolves to an array of user data.
    */
   async _searchIdirUsers(
     searchType: IdirSearchType,
@@ -69,7 +67,6 @@ export const userService = {
    * Searches for BCeID users based on the display name.
    *
    * @param displayName - The display name substring to search.
-   * @returns A promise that resolves to an array of user data.
    */
   async searchBCeIDDisplayName(
     displayName: string,
@@ -84,7 +81,6 @@ export const userService = {
    * Searches for BCeID users based on the email.
    *
    * @param email - The email substring to search.
-   * @returns A promise that resolves to an array of user data.
    */
   async searchBCeIDEmail(email: string): Promise<UserSearchApiData[]> {
     return this._searchBceidUsers(BCEID_SEARCH_TYPE.EMAIL.value, email)
@@ -94,7 +90,6 @@ export const userService = {
    * Searches for IDIR users based on the email address.
    *
    * @param email - The email address substring to search.
-   * @returns A promise that resolves to an array of user data.
    */
   async searchIdirEmail(email: string): Promise<UserSearchApiData[]> {
     return this._searchIdirUsers(IDIR_SEARCH_TYPE.EMAIL.value, email)
@@ -104,7 +99,6 @@ export const userService = {
    * Searches for IDIR users based on the first name.
    *
    * @param firstName - The first name substring to search.
-   * @returns A promise that resolves to an array of user data.
    */
   async searchIdirFirstName(firstName: string): Promise<UserSearchApiData[]> {
     return this._searchIdirUsers(IDIR_SEARCH_TYPE.FIRST_NAME.value, firstName)
@@ -114,7 +108,6 @@ export const userService = {
    * Searches for IDIR users based on the last name.
    *
    * @param lastName - The last name substring to search.
-   * @returns A promise that resolves to an array of user data.
    */
   async searchIdirLastName(lastName: string): Promise<UserSearchApiData[]> {
     return this._searchIdirUsers(IDIR_SEARCH_TYPE.LAST_NAME.value, lastName)

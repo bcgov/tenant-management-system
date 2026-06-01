@@ -18,7 +18,9 @@ defineProps<{
 <template>
   <v-app-bar class="px-4" elevation="1">
     <v-toolbar-title class="align-center d-flex flex-grow-1">
-      <img alt="Logo" class="logo" src="/BCID_H_RGB_pos.svg" />
+      <router-link to="/">
+        <img alt="Logo" class="logo" src="/BCID_H_RGB_pos.svg" />
+      </router-link>
       <span class="app-title">
         Connected Services, Team Access, and Roles (CSTAR)
       </span>
