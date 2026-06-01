@@ -79,7 +79,7 @@ jobs:
 
   deploys-gold-test:
     name: Deploys Gold Test - (${{ needs.vars.outputs.pr }})
-    needs: [vars, dev-tests]
+    needs: [vars, promote-dev]
     uses: ./.github/workflows/gold-test.yml
     secrets: inherit
     with:
@@ -117,7 +117,7 @@ jobs:
 
   deploys-gold-prod:
     name: Deploys Gold Prod - (${{ needs.vars.outputs.pr }})
-    needs: [vars, test-tests]
+    needs: [vars, promote-test]
     uses: ./.github/workflows/gold-prod.yml
     secrets: inherit
     with:
