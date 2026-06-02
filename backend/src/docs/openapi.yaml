@@ -1247,6 +1247,7 @@ paths:
         Authentication: CSTAR audience token required.
 
         Creates a new request for a tenant with the specified details. Requires JWT authentication.
+        The requesting user is derived from the bearer token; clients do not need to send user context in the request body.
       security:
         - bearerAuth: []
       requestBody:
@@ -1258,7 +1259,6 @@ paths:
               required:
                 - name
                 - ministryName
-                - user
               properties:
                 name:
                   type: string
@@ -1276,6 +1276,8 @@ paths:
                   example: 'Tenant for managing road infrastructure'
                 user:
                   type: object
+                  deprecated: true
+                  description: Legacy client field. User identity is derived from the bearer token and this object is ignored for identity mapping.
                   required:
                     - firstName
                     - lastName
