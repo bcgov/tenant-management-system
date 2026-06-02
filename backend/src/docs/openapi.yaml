@@ -15,7 +15,10 @@ paths:
   /v1/health:
     get:
       summary: Health check endpoint
-      description: Checks the health status of the API service
+      description: |
+        Authentication: Not required.
+
+        Checks the health status of the API service
       responses:
         '200':
           description: Service is healthy
@@ -37,7 +40,10 @@ paths:
   /v1/tenants:
     post:
       summary: Create a new tenant
-      description: Creates a new tenant in the system. Requires JWT authentication and TMS.OPERATIONS_ADMIN role.
+      description: |
+        Authentication: CSTAR audience token required.
+
+        Creates a new tenant in the system. Requires JWT authentication and TMS.OPERATIONS_ADMIN role.
       security:
         - bearerAuth: []
       requestBody:
@@ -159,7 +165,10 @@ paths:
   /v1/tenants/{tenantId}/users:
     post:
       summary: Add a user to a tenant
-      description: Adds a new user to an existing tenant. Supports IDIR, basic BCeID, and business BCeID users. For IDIR users, roles are required. For BCeID users, roles are optional and will be overridden with SERVICE_USER role. Optionally adds the user to groups. Requires JWT authentication and TENANT_OWNER or USER_ADMIN role.
+      description: |
+        Authentication: CSTAR audience token required.
+
+        Adds a new user to an existing tenant. Supports IDIR, basic BCeID, and business BCeID users. For IDIR users, roles are required. For BCeID users, roles are optional and will be overridden with SERVICE_USER role. Optionally adds the user to groups. Requires JWT authentication and TENANT_OWNER or USER_ADMIN role.
       security:
         - bearerAuth: []
       parameters:
@@ -269,6 +278,8 @@ paths:
     get:
       summary: Get users for a tenant
       description: |
+        Authentication: Shared service audience token allowed.
+
         Retrieves all users associated with a tenant. Supports optional filtering by group IDs and shared service role IDs.
         If no filters are provided, returns all active users for the tenant.
         If filters are provided, returns only users that match the specified criteria (users in the specified groups AND/OR users whose groups have the specified shared service roles).
@@ -352,7 +363,10 @@ paths:
   /v1/tenants/{tenantId}/users/{tenantUserId}:
     get:
       summary: Get tenant user details
-      description: Retrieves details of a specific tenant user with optional expansions. Requires JWT authentication and tenant access.
+      description: |
+        Authentication: CSTAR audience token required.
+
+        Retrieves details of a specific tenant user with optional expansions. Requires JWT authentication and tenant access.
       security:
         - bearerAuth: []
       parameters:
@@ -501,7 +515,10 @@ paths:
                 $ref: '#/components/schemas/InternalServerErrorResponse'
     delete:
       summary: Remove tenant user
-      description: Removes a tenant user from a tenant. Soft-deletes the tenant user and role assignments, and removes the user from all groups. Prevents removing the last tenant owner. Requires JWT authentication and TENANT_OWNER or USER_ADMIN role.
+      description: |
+        Authentication: CSTAR audience token required.
+
+        Removes a tenant user from a tenant. Soft-deletes the tenant user and role assignments, and removes the user from all groups. Prevents removing the last tenant owner. Requires JWT authentication and TENANT_OWNER or USER_ADMIN role.
       security:
         - bearerAuth: []
       parameters:
@@ -563,6 +580,8 @@ paths:
     get:
       summary: Get tenants for a user
       description: |
+        Authentication: Shared service audience token allowed.
+
         Retrieves all tenants associated with a specific user. Requires JWT authentication.
         Response shape depends on `expand`:
         - without `expand`: returns basic tenant fields
@@ -631,6 +650,8 @@ paths:
     get:
       summary: Get pending tenant requests for a user
       description: |
+        Authentication: CSTAR audience token required.
+
         Retrieves tenant requests submitted by a specific user. Requires JWT authentication.
         Only pending requests with status `NEW` are returned.
       security:
@@ -686,6 +707,8 @@ paths:
     get:
       summary: Search BC Gov SSO IDIR users
       description: |
+        Authentication: CSTAR audience token required.
+
         Searches IDIR users through the BC Gov SSO API and returns the upstream response.
         At least one search parameter must be provided. Duplicate records with the same
         `attributes.idir_user_guid[0]` are collapsed and the most complete record is retained.
@@ -765,6 +788,8 @@ paths:
     get:
       summary: Search BC Gov SSO BCeID users
       description: |
+        Authentication: CSTAR audience token required.
+
         Searches basic and/or business BCeID users through the BC Gov SSO API and returns
         the upstream response. `bceidType` and at least one search parameter are required.
         Duplicate records with the same `attributes.bceid_user_guid[0]` are collapsed and
@@ -864,7 +889,10 @@ paths:
   /v1/tenants/{tenantId}/users/{tenantUserId}/roles:
     post:
       summary: Assign roles to a user in a tenant
-      description: Assigns one or more roles to a user within a tenant. Requires JWT authentication and TENANT_OWNER or USER_ADMIN role.
+      description: |
+        Authentication: CSTAR audience token required.
+
+        Assigns one or more roles to a user within a tenant. Requires JWT authentication and TENANT_OWNER or USER_ADMIN role.
       security:
         - bearerAuth: []
       parameters:
@@ -950,9 +978,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/InternalServerErrorResponse'
 
+  /v1/tenants/{tenantId}/users/{tenantUserId}/roles/{roleId}:
     delete:
       summary: Unassign a role from a user in a tenant
-      description: Removes a role from a user within a tenant
+      description: |
+        Authentication: CSTAR audience token required.
+
+        Removes a role from a user within a tenant
       parameters:
         - name: tenantId
           in: path
@@ -1012,7 +1044,10 @@ paths:
   /v1/tenants/{tenantId}:
     get:
       summary: Get tenant details
-      description: Retrieves details of a specific tenant. Requires JWT authentication and tenant access.
+      description: |
+        Authentication: CSTAR audience token required.
+
+        Retrieves details of a specific tenant. Requires JWT authentication and tenant access.
       security:
         - bearerAuth: []
       parameters:
@@ -1076,7 +1111,10 @@ paths:
 
     put:
       summary: Update tenant details
-      description: Updates the details of an existing tenant. Requires JWT authentication and TENANT_OWNER role.
+      description: |
+        Authentication: CSTAR audience token required.
+
+        Updates the details of an existing tenant. Requires JWT authentication and TENANT_OWNER role.
       security:
         - bearerAuth: []
       parameters:
@@ -1155,7 +1193,10 @@ paths:
   /v1/roles:
     get:
       summary: Get all available roles
-      description: Retrieves a list of all available roles in the system. Requires JWT authentication.
+      description: |
+        Authentication: CSTAR audience token required.
+
+        Retrieves a list of all available roles in the system. Requires JWT authentication.
       security:
         - bearerAuth: []
       responses:
@@ -1202,7 +1243,11 @@ paths:
   /v1/tenant-requests:
     post:
       summary: Create a new tenant request
-      description: Creates a new request for a tenant with the specified details. Requires JWT authentication.
+      description: |
+        Authentication: CSTAR audience token required.
+
+        Creates a new request for a tenant with the specified details. Requires JWT authentication.
+        The requesting user is derived from the bearer token; clients do not need to send user context in the request body.
       security:
         - bearerAuth: []
       requestBody:
@@ -1214,7 +1259,6 @@ paths:
               required:
                 - name
                 - ministryName
-                - user
               properties:
                 name:
                   type: string
@@ -1232,6 +1276,8 @@ paths:
                   example: 'Tenant for managing road infrastructure'
                 user:
                   type: object
+                  deprecated: true
+                  description: Legacy client field. User identity is derived from the bearer token and this object is ignored for identity mapping.
                   required:
                     - firstName
                     - lastName
@@ -1286,6 +1332,8 @@ paths:
     get:
       summary: Get all tenant requests
       description: |
+        Authentication: CSTAR audience token required.
+
         Retrieves a list of all tenant requests. Requires JWT authentication and TMS.OPERATIONS_ADMIN role.
         Results are ordered by request date (most recent first).
       security:
@@ -1374,6 +1422,8 @@ paths:
     patch:
       summary: Update the status of a tenant request
       description: |
+        Authentication: CSTAR audience token required.
+
         Updates the status of a tenant request. If approved, creates a new tenant.
         Requires JWT authentication and TMS.OPERATIONS_ADMIN role.
 
@@ -1579,7 +1629,10 @@ paths:
   /v1/shared-services:
     post:
       summary: Create a new shared service
-      description: Creates a new shared service with roles. Requires JWT authentication and TMS.OPERATIONS_ADMIN role.
+      description: |
+        Authentication: CSTAR audience token required.
+
+        Creates a new shared service with roles. Requires JWT authentication and TMS.OPERATIONS_ADMIN role.
       security:
         - bearerAuth: []
       requestBody:
@@ -1702,7 +1755,10 @@ paths:
                 $ref: '#/components/schemas/InternalServerErrorResponse'
     get:
       summary: Get all active shared services
-      description: Retrieves all shared services that are currently active. Returns shared services with their associated roles. Requires JWT authentication.
+      description: |
+        Authentication: CSTAR audience token required.
+
+        Retrieves all shared services that are currently active. Returns shared services with their associated roles. Requires JWT authentication.
       security:
         - bearerAuth: []
       responses:
@@ -1736,7 +1792,10 @@ paths:
   /v1/shared-services/{sharedServiceId}:
     put:
       summary: Update shared service
-      description: Updates shared service metadata. Requires JWT authentication and TMS.OPERATIONS_ADMIN role.
+      description: |
+        Authentication: CSTAR audience token required.
+
+        Updates shared service metadata. Requires JWT authentication and TMS.OPERATIONS_ADMIN role.
       security:
         - bearerAuth: []
       parameters:
@@ -1836,7 +1895,10 @@ paths:
   /v1/shared-services/{sharedServiceId}/status:
     patch:
       summary: Update shared service active status
-      description: Updates whether a shared service is active or inactive. Requires JWT authentication and TMS.OPERATIONS_ADMIN role.
+      description: |
+        Authentication: CSTAR audience token required.
+
+        Updates whether a shared service is active or inactive. Requires JWT authentication and TMS.OPERATIONS_ADMIN role.
       security:
         - bearerAuth: []
       parameters:
@@ -1912,7 +1974,10 @@ paths:
   /v1/tenants/{tenantId}/shared-services:
     post:
       summary: Associate a shared service to a tenant
-      description: Associates an existing shared service with a tenant. Requires JWT authentication and TENANT_OWNER role.
+      description: |
+        Authentication: CSTAR audience token required.
+
+        Associates an existing shared service with a tenant. Requires JWT authentication and TENANT_OWNER role.
       security:
         - bearerAuth: []
       parameters:
@@ -1977,7 +2042,10 @@ paths:
                 $ref: '#/components/schemas/InternalServerErrorResponse'
     get:
       summary: Get shared services associated with a tenant
-      description: Retrieves all shared services that are associated with a specific tenant. Returns shared services with their associated roles. Requires JWT authentication and tenant access.
+      description: |
+        Authentication: CSTAR audience token required.
+
+        Retrieves all shared services that are associated with a specific tenant. Returns shared services with their associated roles. Requires JWT authentication and tenant access.
       security:
         - bearerAuth: []
       parameters:
@@ -2037,7 +2105,10 @@ paths:
   /v1/tenants/{tenantId}/groups:
     post:
       summary: Create a new group in a tenant
-      description: Creates a new group within a tenant. Requires JWT authentication and TENANT_OWNER or USER_ADMIN role.
+      description: |
+        Authentication: CSTAR audience token required.
+
+        Creates a new group within a tenant. Requires JWT authentication and TENANT_OWNER or USER_ADMIN role.
       security:
         - bearerAuth: []
       parameters:
@@ -2124,6 +2195,8 @@ paths:
     get:
       summary: Get all groups for a tenant
       description: |
+        Authentication: Shared service audience token allowed.
+
         Retrieves groups for a tenant with different behavior based on access type:
 
         **TMS Users**: Returns ALL groups in the tenant.
@@ -2191,7 +2264,10 @@ paths:
   /v1/tenants/{tenantId}/groups/{groupId}:
     get:
       summary: Get a specific group in a tenant
-      description: Retrieves details of a specific group within a tenant. Requires JWT authentication and tenant access.
+      description: |
+        Authentication: CSTAR audience token required.
+
+        Retrieves details of a specific group within a tenant. Requires JWT authentication and tenant access.
       security:
         - bearerAuth: []
       parameters:
@@ -2271,7 +2347,10 @@ paths:
 
     put:
       summary: Update a group in a tenant
-      description: Updates an existing group within a tenant. Requires JWT authentication and TENANT_OWNER or USER_ADMIN role.
+      description: |
+        Authentication: CSTAR audience token required.
+
+        Updates an existing group within a tenant. Requires JWT authentication and TENANT_OWNER or USER_ADMIN role.
       security:
         - bearerAuth: []
       parameters:
@@ -2359,7 +2438,10 @@ paths:
   /v1/tenants/{tenantId}/groups/{groupId}/users:
     post:
       summary: Add a user to a group
-      description: Adds a user to an existing group within a tenant. Requires JWT authentication and TENANT_OWNER or USER_ADMIN role.
+      description: |
+        Authentication: CSTAR audience token required.
+
+        Adds a user to an existing group within a tenant. Requires JWT authentication and TENANT_OWNER or USER_ADMIN role.
       security:
         - bearerAuth: []
       parameters:
@@ -2441,7 +2523,10 @@ paths:
   /v1/tenants/{tenantId}/groups/{groupId}/users/{groupUserId}:
     delete:
       summary: Remove a user from a group
-      description: Removes a user from an existing group within a tenant. Requires JWT authentication and TENANT_OWNER or USER_ADMIN role.
+      description: |
+        Authentication: CSTAR audience token required.
+
+        Removes a user from an existing group within a tenant. Requires JWT authentication and TENANT_OWNER or USER_ADMIN role.
       security:
         - bearerAuth: []
       parameters:
@@ -2503,7 +2588,10 @@ paths:
   /v1/tenants/{tenantId}/groups/{groupId}/shared-services/shared-service-roles:
     get:
       summary: Get shared service roles for a group
-      description: Retrieves all shared service roles for a specific group, including assignment status. Requires JWT authentication and tenant access.
+      description: |
+        Authentication: Shared service audience token allowed.
+
+        Retrieves all shared service roles for a specific group, including assignment status. Requires JWT authentication and tenant access.
       security:
         - bearerAuth: []
       parameters:
@@ -2631,7 +2719,10 @@ paths:
 
     put:
       summary: Update shared service roles for a group
-      description: Bulk assign or unassign shared service roles to a group. Handles new assignments, soft deletes, and restoration of soft-deleted assignments. Requires JWT authentication and TENANT_OWNER or USER_ADMIN role.
+      description: |
+        Authentication: CSTAR audience token required.
+
+        Bulk assign or unassign shared service roles to a group. Handles new assignments, soft deletes, and restoration of soft-deleted assignments. Requires JWT authentication and TENANT_OWNER or USER_ADMIN role.
       security:
         - bearerAuth: []
       parameters:
@@ -2803,7 +2894,10 @@ paths:
   /v1/shared-services/{sharedServiceId}/shared-service-roles:
     post:
       summary: Add roles to a shared service
-      description: Adds one or more roles to an existing shared service. Requires JWT authentication and TMS.OPERATIONS_ADMIN role.
+      description: |
+        Authentication: CSTAR audience token required.
+
+        Adds one or more roles to an existing shared service. Requires JWT authentication and TMS.OPERATIONS_ADMIN role.
       security:
         - bearerAuth: []
       parameters:
@@ -2911,7 +3005,10 @@ paths:
   /v1/shared-services/{sharedServiceId}/shared-service-roles/{sharedServiceRoleId}:
     put:
       summary: Update a shared service role
-      description: Updates metadata for an existing shared service role. Requires JWT authentication and TMS.OPERATIONS_ADMIN role.
+      description: |
+        Authentication: CSTAR audience token required.
+
+        Updates metadata for an existing shared service role. Requires JWT authentication and TMS.OPERATIONS_ADMIN role.
       security:
         - bearerAuth: []
       parameters:
@@ -3009,7 +3106,10 @@ paths:
   /v1/tenants/{tenantId}/ssousers/{ssoUserId}/roles:
     get:
       summary: Get roles for an SSO user in a tenant
-      description: Retrieves all roles assigned to a specific SSO user within a tenant. Requires JWT authentication and shared service access.
+      description: |
+        Authentication: Shared service audience token allowed.
+
+        Retrieves all roles assigned to a specific SSO user within a tenant. Requires JWT authentication and shared service access.
       security:
         - bearerAuth: []
       parameters:
@@ -3069,7 +3169,10 @@ paths:
   /v1/tenants/{tenantId}/ssousers/{ssoUserId}/shared-service-roles:
     get:
       summary: Get effective shared service roles for an SSO user
-      description: Retrieves all effective shared service roles for a specific SSO user within a tenant, filtered by the JWT audience (client identifier). Roles are deduplicated and include the groups that grant each role. Only returns roles for the shared service matching the client identifier in the JWT token. Requires JWT authentication and shared service access.
+      description: |
+        Authentication: Shared service audience token allowed.
+
+        Retrieves all effective shared service roles for a specific SSO user within a tenant, filtered by the JWT audience (client identifier). Roles are deduplicated and include the groups that grant each role. Only returns roles for the shared service matching the client identifier in the JWT token. Requires JWT authentication and shared service access.
       security:
         - bearerAuth: []
       parameters:
@@ -3166,7 +3269,10 @@ paths:
   /v1/tenants/{tenantId}/users/{ssoUserId}/groups/shared-service-roles:
     get:
       summary: Get user groups with shared service roles
-      description: Retrieves all groups that a user belongs to, along with their enabled shared service roles that match the JWT audience. Only returns groups that have at least one enabled shared service role matching the client identifier in the JWT token. Requires JWT authentication.
+      description: |
+        Authentication: Shared service audience token allowed.
+
+        Retrieves all groups that a user belongs to, along with their enabled shared service roles that match the JWT audience. Only returns groups that have at least one enabled shared service role matching the client identifier in the JWT token. Requires JWT authentication.
       security:
         - bearerAuth: []
       parameters:
@@ -3338,7 +3444,8 @@ components:
 
     BCGovSSOAttributeMap:
       type: object
-      description: Attribute map returned by BC Gov SSO. Values are usually string arrays.
+      description: |
+        Attribute map returned by BC Gov SSO. Values are usually string arrays.
       additionalProperties:
         type: array
         items:
@@ -3348,7 +3455,8 @@ components:
 
     BCGovSSOIdirUser:
       type: object
-      description: IDIR user record returned by BC Gov SSO. Additional upstream fields may be present.
+      description: |
+        IDIR user record returned by BC Gov SSO. Additional upstream fields may be present.
       additionalProperties: true
       properties:
         firstName:
@@ -3387,7 +3495,8 @@ components:
 
     BCGovSSOBceidUser:
       type: object
-      description: BCeID user record returned by BC Gov SSO. Additional upstream fields may be present.
+      description: |
+        BCeID user record returned by BC Gov SSO. Additional upstream fields may be present.
       additionalProperties: true
       properties:
         firstName:
@@ -3436,7 +3545,8 @@ components:
 
     BCGovSSOIdirSearchResponse:
       type: object
-      description: Pass-through BC Gov SSO IDIR search response.
+      description: |
+        Pass-through BC Gov SSO IDIR search response.
       additionalProperties: true
       properties:
         data:
@@ -3446,7 +3556,8 @@ components:
 
     BCGovSSOBceidSearchResponse:
       type: object
-      description: Pass-through BC Gov SSO BCeID search response.
+      description: |
+        Pass-through BC Gov SSO BCeID search response.
       additionalProperties: true
       properties:
         data:

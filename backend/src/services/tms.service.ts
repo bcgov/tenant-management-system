@@ -613,15 +613,42 @@ export class TMSService {
     }
   }
 
+  private getTenantRequestUserFromToken(
+    req: Request,
+  ): CreateTenantRequestInputDto['user'] {
+    const bodyUser =
+      req.body.user && typeof req.body.user === 'object' ? req.body.user : {}
+    const decodedJwt = req.decodedJwt
+    const ssoUserId =
+      decodedJwt?.idir_user_guid ||
+      decodedJwt?.bceid_user_guid ||
+      bodyUser.ssoUserId
+    const firstName = decodedJwt?.given_name || bodyUser.firstName || ''
+    const lastName = decodedJwt?.family_name || bodyUser.lastName || ''
+    const displayName =
+      decodedJwt?.display_name ||
+      decodedJwt?.name ||
+      bodyUser.displayName ||
+      [firstName, lastName].filter(Boolean).join(' ') ||
+      ssoUserId
+
+    return {
+      ssoUserId,
+      firstName,
+      lastName,
+      displayName,
+      userName: decodedJwt?.idir_username || bodyUser.userName || '',
+      email: decodedJwt?.email || bodyUser.email || '',
+      idpType: req.idpType || bodyUser.idpType || 'idir',
+    }
+  }
+
   public async createTenantRequest(req: Request) {
     const input: CreateTenantRequestInputDto = {
       name: req.body.name,
       ministryName: req.body.ministryName,
       description: req.body.description,
-      user: {
-        ...req.body.user,
-        idpType: req.idpType || 'idir',
-      },
+      user: this.getTenantRequestUserFromToken(req),
     }
     const tenantRequest = (await this.tmsRepository.saveTenantRequest(
       input,
@@ -811,8 +838,9 @@ export class TMSService {
         ssoUserId: req.decodedJwt?.idir_user_guid || 'system',
         firstName: req.decodedJwt?.given_name || 'System',
         lastName: req.decodedJwt?.family_name || 'User',
-        displayName: req.decodedJwt?.display_name || 'System User',
-        userName: req.decodedJwt?.preferred_username || 'system',
+        displayName:
+          req.decodedJwt?.display_name || req.decodedJwt?.name || 'System User',
+        userName: req.decodedJwt?.idir_username || 'system',
         email: req.decodedJwt?.email || 'system@gov.bc.ca',
         idpType: req.idpType || 'idir',
       },
