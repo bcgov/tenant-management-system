@@ -1,5 +1,5 @@
 import request from 'supertest'
-import express, { type ErrorRequestHandler } from 'express'
+import express, { type ErrorRequestHandler, type Request } from 'express'
 import axios from 'axios'
 import { TMSRepository } from '../repositories/tms.repository'
 import { TMRepository } from '../repositories/tm.repository'
@@ -2513,6 +2513,51 @@ describe('Tenant API', () => {
           rejectionReason: undefined,
           tenantName: undefined,
           updatedBy: 'system',
+        }),
+      )
+    })
+
+    it('should map decisioned by userName from idir_username token claim', async () => {
+      mockTMSRepository.updateTenantRequestStatus.mockResolvedValue({
+        tenantRequest: {
+          id: requestId,
+          status: 'APPROVED',
+          requestedBy: {
+            id: '123e4567-e89b-12d3-a456-426614174001',
+            displayName: 'Test User',
+          },
+          decisionedBy: {
+            id: '123e4567-e89b-12d3-a456-426614174003',
+            displayName: 'Sethuraman, Shankar: JEDI: EX',
+          },
+        },
+      })
+
+      await tmsController.tmsService.updateTenantRequestStatus({
+        params: { requestId },
+        body: validApproveData,
+        idpType: 'idir',
+        decodedJwt: {
+          idir_user_guid: 'F45AFBBD68C44D6F956BA3A1D91878AD',
+          identity_provider: 'azureidir',
+          idir_username: 'SSETHURA',
+          preferred_username: 'f45afbbd68c44d6f956ba3a1d91878ad@azureidir',
+          given_name: 'Shankar',
+          family_name: 'Sethuraman',
+          display_name: 'Sethuraman, Shankar: JEDI: EX',
+          email: 'shankar.sethuraman@gov.bc.ca',
+        },
+      } as unknown as Request)
+
+      expect(mockTMSRepository.updateTenantRequestStatus).toHaveBeenCalledWith(
+        expect.objectContaining({
+          decisionedByUser: expect.objectContaining({
+            ssoUserId: 'F45AFBBD68C44D6F956BA3A1D91878AD',
+            userName: 'SSETHURA',
+            displayName: 'Sethuraman, Shankar: JEDI: EX',
+            email: 'shankar.sethuraman@gov.bc.ca',
+            idpType: 'idir',
+          }),
         }),
       )
     })

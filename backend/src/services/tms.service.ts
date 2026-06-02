@@ -838,8 +838,9 @@ export class TMSService {
         ssoUserId: req.decodedJwt?.idir_user_guid || 'system',
         firstName: req.decodedJwt?.given_name || 'System',
         lastName: req.decodedJwt?.family_name || 'User',
-        displayName: req.decodedJwt?.display_name || 'System User',
-        userName: req.decodedJwt?.preferred_username || 'system',
+        displayName:
+          req.decodedJwt?.display_name || req.decodedJwt?.name || 'System User',
+        userName: req.decodedJwt?.idir_username || 'system',
         email: req.decodedJwt?.email || 'system@gov.bc.ca',
         idpType: req.idpType || 'idir',
       },
