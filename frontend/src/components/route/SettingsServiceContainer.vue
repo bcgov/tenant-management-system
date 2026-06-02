@@ -172,6 +172,7 @@ init()
             </v-row>
 
             <ButtonPrimary
+              v-if="services.length > 0"
               class="mt-6"
               text="Add Connected Service"
               @click="handleAddService"

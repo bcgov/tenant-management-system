@@ -28,8 +28,10 @@ const handleAddServiceRole = () => {
 }
 
 const isDuplicateName = (index: number) => {
-  const name = props.serviceRoles[index]?.name
-  return props.serviceRoles.some((r, i) => i !== index && r.name === name)
+  const name = props.serviceRoles[index]?.name.trim()
+  return props.serviceRoles.some(
+    (r, i) => i !== index && r.name.trim() === name,
+  )
 }
 
 const validate = async () => {

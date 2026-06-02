@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { nextTick, ref, watch } from 'vue'
-import { VForm } from 'vuetify/components'
+import { VForm, VInput } from 'vuetify/components'
 
 import ServiceRoleList from '@/components/service/ServiceRoleList.vue'
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
@@ -30,6 +30,8 @@ const formData = ref<ServiceDetailFields>({
   roles: [],
 })
 const isFormValid = ref(false)
+
+const missingRolesError = ref<InstanceType<typeof VInput>>()
 
 const serviceRoleList = ref<InstanceType<typeof ServiceRoleList>>()
 
@@ -89,11 +91,12 @@ const handleAddServiceRole = async () => {
     identityProviders: [],
     name: '',
   } as ServiceRoleDetailFields)
-  await form.value?.validate()
+  await missingRolesError.value?.validate()
 }
 
-const handleRemoveServiceRole = (index: number) => {
+const handleRemoveServiceRole = async (index: number) => {
   formData.value.roles.splice(index, 1)
+  await missingRolesError.value?.validate()
 }
 
 const handleSubmit = async () => {
@@ -103,8 +106,17 @@ const handleSubmit = async () => {
   ])
 
   if (formResult?.valid && rolesValid) {
-    formData.value.name = formData.value.name.trim()
+    formData.value.clientIdentifier = formData.value.clientIdentifier.trim()
     formData.value.description = formData.value.description.trim()
+    formData.value.displayName = formData.value.displayName.trim()
+    formData.value.landingPageUrl = formData.value.landingPageUrl.trim()
+    formData.value.name = formData.value.name.trim()
+
+    formData.value.roles = formData.value.roles.map((role) => ({
+      ...role,
+      description: role.description.trim(),
+      name: role.name.trim(),
+    }))
 
     emit('submit', formData.value)
   }
@@ -205,6 +217,7 @@ const handleUpdateServiceRole = (
       </p>
 
       <v-input
+        ref="missingRolesError"
         :model-value="formData.roles"
         :rules="[rules.roleRequired]"
         hide-details="auto"
