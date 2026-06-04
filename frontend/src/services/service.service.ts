@@ -1,12 +1,22 @@
+import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
+import { ValidationError } from '@/errors/domain/ValidationError'
 import { type GroupId } from '@/models/group.model'
 import {
   type GroupService,
   type GroupServiceApiData,
 } from '@/models/groupservice.model'
-import { type ServiceApiData, type ServiceId } from '@/models/service.model'
+import {
+  type ServiceApiData,
+  type ServiceDetailFields,
+  type ServiceId,
+} from '@/models/service.model'
 import { type TenantId } from '@/models/tenant.model'
 import { authenticatedAxios } from '@/services/authenticated.axios'
-import { logApiError } from '@/services/utils'
+import {
+  isDuplicateEntityError,
+  isValidationError,
+  logApiError,
+} from '@/services/utils'
 
 const api = authenticatedAxios()
 
@@ -36,6 +46,59 @@ export const serviceService = {
     } catch (error) {
       logApiError('Error adding service to tenant', error)
 
+      throw error
+    }
+  },
+
+  /**
+   * Creates a new service with the specified details and user.
+   *
+   * @param serviceDetails - The details of the service to create.
+   * @throws Will throw an error if the API request fails.
+   */
+  async createService(
+    serviceDetails: ServiceDetailFields,
+  ): Promise<ServiceApiData> {
+    try {
+      const roles = []
+      for (const role of serviceDetails.roles) {
+        roles.push({
+          description: role.description,
+          allowedIdentityProviders: role.identityProviders,
+          name: role.name,
+        })
+      }
+
+      const requestBody = {
+        clientIdentifier: serviceDetails.clientIdentifier,
+        description: serviceDetails.description,
+        displayName: serviceDetails.displayName,
+        landingPageUrl: serviceDetails.landingPageUrl,
+        name: serviceDetails.name,
+        roles: roles,
+      }
+
+      const response = await api.post(`/shared-services`, requestBody)
+
+      return response.data.data.sharedService
+    } catch (error: unknown) {
+      logApiError('Error creating service', error)
+
+      // Handle HTTP 400 Bad Request (validation)
+      if (isValidationError(error)) {
+        const messageArray = error.response.data.details.body.map(
+          (item: { message: string }) => item.message,
+        )
+
+        throw new ValidationError(messageArray)
+      }
+
+      // Handle HTTP 409 Conflict (duplicate)
+      if (isDuplicateEntityError(error)) {
+        throw new DuplicateEntityError(error.response.data.message)
+      }
+
+      // Re-throw all other errors
       throw error
     }
   },

@@ -46,6 +46,7 @@ Every Vue component _must_:
   - Component State
   - Watchers and Effects
   - Computed Values
+  - Validation Rules
   - Component Methods
   - Component Lifecycle
 - The items within the above `<script>` sections are ordered alphabetically

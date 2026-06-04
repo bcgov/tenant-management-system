@@ -1,7 +1,11 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
-import { Service, type ServiceId } from '@/models/service.model'
+import {
+  Service,
+  type ServiceDetailFields,
+  type ServiceId,
+} from '@/models/service.model'
 import { type TenantId } from '@/models/tenant.model'
 import { serviceService } from '@/services/service.service'
 
@@ -47,6 +51,19 @@ export const useServiceStore = defineStore('service', () => {
     serviceId: ServiceId,
   ): Promise<void> => {
     await serviceService.addServiceToTenant(tenantId, serviceId)
+  }
+
+  /**
+   * Creates a new service.
+   *
+   * @param serviceDetails - The details of the service to create.
+   * @returns A promise that resolves when the service is created.
+   */
+  const createService = async (
+    serviceDetails: ServiceDetailFields,
+  ): Promise<void> => {
+    const service = await serviceService.createService(serviceDetails)
+    upsertService(Service.fromApiData(service))
   }
 
   /**
@@ -99,6 +116,7 @@ export const useServiceStore = defineStore('service', () => {
     tenantServices,
 
     addServiceToTenant,
+    createService,
     fetchServices,
     fetchTenantServices,
     getTenantService,
