@@ -45,14 +45,18 @@ export type ServiceRoleApiData = {
 }
 
 /**
+ * Utility type that represents the subset of Service Role properties used in
+ * the form that edits these fields.
+ */
+export type ServiceRoleDetailFields = Pick<
+  ServiceRole,
+  'description' | 'identityProviders' | 'name'
+>
+
+/**
  * Represents a service role within the system.
  */
 export class ServiceRole {
-  /**
-   * Allowed identity providers.
-   */
-  allowedIdentityProviders: string[]
-
   /**
    * Created by for this service role.
    */
@@ -76,6 +80,11 @@ export class ServiceRole {
   id: ServiceRoleId
 
   /**
+   * Identity providers that define which identities can use the role.
+   */
+  identityProviders: string[]
+
+  /**
    * Whether or not the service role is deleted.
    */
   isDeleted: boolean
@@ -96,7 +105,7 @@ export class ServiceRole {
     id: ServiceRoleId,
     name: string,
     description: string,
-    allowedIdentityProviders: string[],
+    identityProviders: string[],
     createdBy: string,
     createdDate: string,
     isDeleted: boolean,
@@ -104,7 +113,7 @@ export class ServiceRole {
     this.description = description
     this.id = id
     this.name = name
-    this.allowedIdentityProviders = allowedIdentityProviders
+    this.identityProviders = identityProviders
     this.createdBy = createdBy
     this.createdDate = createdDate
     this.isDeleted = isDeleted
