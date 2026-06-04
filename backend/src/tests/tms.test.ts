@@ -1,5 +1,5 @@
 import request from 'supertest'
-import express, { type ErrorRequestHandler } from 'express'
+import express, { type ErrorRequestHandler, type Request } from 'express'
 import axios from 'axios'
 import { TMSRepository } from '../repositories/tms.repository'
 import { TMRepository } from '../repositories/tm.repository'
@@ -2175,6 +2175,15 @@ describe('Tenant API', () => {
   })
 
   describe('POST /v1/tenant-requests', () => {
+    const tokenUser = {
+      firstName: 'Shankar',
+      lastName: 'Sethuraman',
+      displayName: 'Sethuraman, Shankar: JEDI: EX',
+      ssoUserId: 'F45AFBBD68C44D6F956BA3A1D91878AD',
+      userName: 'SSETHURA',
+      email: 'shankar.sethuraman@gov.bc.ca',
+      idpType: 'idir' as const,
+    }
     const validTenantRequestData = {
       name: 'Test Tenant Request',
       ministryName: 'Test Ministry',
@@ -2192,6 +2201,19 @@ describe('Tenant API', () => {
     beforeEach(() => {
       app.post(
         '/v1/tenant-requests',
+        (req, _res, next) => {
+          req.decodedJwt = {
+            idir_user_guid: tokenUser.ssoUserId,
+            identity_provider: 'azureidir',
+            idir_username: tokenUser.userName,
+            given_name: tokenUser.firstName,
+            family_name: tokenUser.lastName,
+            display_name: tokenUser.displayName,
+            email: tokenUser.email,
+          }
+          req.idpType = tokenUser.idpType
+          next()
+        },
         validate(validator.createTenantRequest, {}, {}),
         (req, res) => tmsController.createTenantRequest(req, res),
       )
@@ -2217,7 +2239,7 @@ describe('Tenant API', () => {
       app.use(validationErrorHandler)
     })
 
-    it('should create a tenant request successfully', async () => {
+    it('should create a tenant request using token user context', async () => {
       const mockTenantRequest = {
         id: '123e4567-e89b-12d3-a456-426614174000',
         name: validTenantRequestData.name,
@@ -2226,18 +2248,12 @@ describe('Tenant API', () => {
         status: 'NEW',
         requestedBy: {
           id: '123e4567-e89b-12d3-a456-426614174001',
-          firstName: validTenantRequestData.user.firstName,
-          lastName: validTenantRequestData.user.lastName,
-          displayName: validTenantRequestData.user.displayName,
-          ssoUserId: validTenantRequestData.user.ssoUserId,
-          userName: validTenantRequestData.user.userName,
-          email: validTenantRequestData.user.email,
-          idpType: 'idir',
+          ...tokenUser,
         },
         createdDateTime: new Date(),
         updatedDateTime: new Date(),
-        createdBy: validTenantRequestData.user.ssoUserId,
-        updatedBy: validTenantRequestData.user.ssoUserId,
+        createdBy: tokenUser.ssoUserId,
+        updatedBy: tokenUser.ssoUserId,
       }
 
       mockTMSRepository.saveTenantRequest.mockResolvedValue(
@@ -2267,10 +2283,44 @@ describe('Tenant API', () => {
           name: validTenantRequestData.name,
           ministryName: validTenantRequestData.ministryName,
           description: validTenantRequestData.description,
-          user: {
-            ...validTenantRequestData.user,
-            idpType: 'idir',
-          },
+          user: tokenUser,
+        }),
+      )
+    })
+
+    it('should create a tenant request when user is omitted from body', async () => {
+      const tenantRequestData = {
+        name: validTenantRequestData.name,
+        ministryName: validTenantRequestData.ministryName,
+        description: validTenantRequestData.description,
+      }
+      const mockTenantRequest = {
+        id: '123e4567-e89b-12d3-a456-426614174000',
+        ...tenantRequestData,
+        status: 'NEW',
+        requestedBy: {
+          id: '123e4567-e89b-12d3-a456-426614174001',
+          ...tokenUser,
+        },
+        createdDateTime: new Date(),
+        updatedDateTime: new Date(),
+        createdBy: tokenUser.ssoUserId,
+        updatedBy: tokenUser.ssoUserId,
+      }
+
+      mockTMSRepository.saveTenantRequest.mockResolvedValue(
+        mockTenantRequest as unknown as SaveTenantRequestResult,
+      )
+
+      const response = await request(app)
+        .post('/v1/tenant-requests')
+        .send(tenantRequestData)
+
+      expect(response.status).toBe(201)
+      expect(mockTMSRepository.saveTenantRequest).toHaveBeenCalledWith(
+        expect.objectContaining({
+          ...tenantRequestData,
+          user: tokenUser,
         }),
       )
     })
@@ -2463,6 +2513,51 @@ describe('Tenant API', () => {
           rejectionReason: undefined,
           tenantName: undefined,
           updatedBy: 'system',
+        }),
+      )
+    })
+
+    it('should map decisioned by userName from idir_username token claim', async () => {
+      mockTMSRepository.updateTenantRequestStatus.mockResolvedValue({
+        tenantRequest: {
+          id: requestId,
+          status: 'APPROVED',
+          requestedBy: {
+            id: '123e4567-e89b-12d3-a456-426614174001',
+            displayName: 'Test User',
+          },
+          decisionedBy: {
+            id: '123e4567-e89b-12d3-a456-426614174003',
+            displayName: 'Sethuraman, Shankar: JEDI: EX',
+          },
+        },
+      })
+
+      await tmsController.tmsService.updateTenantRequestStatus({
+        params: { requestId },
+        body: validApproveData,
+        idpType: 'idir',
+        decodedJwt: {
+          idir_user_guid: 'F45AFBBD68C44D6F956BA3A1D91878AD',
+          identity_provider: 'azureidir',
+          idir_username: 'SSETHURA',
+          preferred_username: 'f45afbbd68c44d6f956ba3a1d91878ad@azureidir',
+          given_name: 'Shankar',
+          family_name: 'Sethuraman',
+          display_name: 'Sethuraman, Shankar: JEDI: EX',
+          email: 'shankar.sethuraman@gov.bc.ca',
+        },
+      } as unknown as Request)
+
+      expect(mockTMSRepository.updateTenantRequestStatus).toHaveBeenCalledWith(
+        expect.objectContaining({
+          decisionedByUser: expect.objectContaining({
+            ssoUserId: 'F45AFBBD68C44D6F956BA3A1D91878AD',
+            userName: 'SSETHURA',
+            displayName: 'Sethuraman, Shankar: JEDI: EX',
+            email: 'shankar.sethuraman@gov.bc.ca',
+            idpType: 'idir',
+          }),
         }),
       )
     })

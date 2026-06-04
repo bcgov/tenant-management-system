@@ -209,7 +209,7 @@ export default {
           ssoUserId: Joi.string().required(),
           email: Joi.string().email().max(100).optional(),
         })
-        .required(),
+        .optional(),
     }).options({ abortEarly: false, convert: false }),
   },
 
