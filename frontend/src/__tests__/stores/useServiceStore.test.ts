@@ -29,9 +29,12 @@ describe('Service Store', () => {
     clientIdentifier: 'client-1',
     createdDateTime: '2026-01-01',
     description: 'Test Service Description',
-    displayName: 'Test Service',
+    displayName: 'Test Service Display Name',
+    name: 'Test Service Name',
+    landingPageUrl: 'https://test-service.com',
     id: serviceId,
     roles: [],
+    updatedDateTime: '2026-01-02',
   }
 
   beforeEach(() => {
@@ -69,7 +72,22 @@ describe('Service Store', () => {
       await store.fetchServices()
 
       expect(store.services).toHaveLength(1)
+      expect(store.services[0].clientIdentifier).toBe(
+        mockServiceApiData.clientIdentifier,
+      )
+      expect(store.services[0].createdDate).toBe(
+        mockServiceApiData.createdDateTime,
+      )
+      expect(store.services[0].description).toBe(mockServiceApiData.description)
       expect(store.services[0].displayName).toBe(mockServiceApiData.displayName)
+      expect(store.services[0].id).toBe(mockServiceApiData.id)
+      expect(store.services[0].landingPageUrl).toBe(
+        mockServiceApiData.landingPageUrl,
+      )
+      expect(store.services[0].name).toBe(mockServiceApiData.name)
+      expect(store.services[0].updatedDate).toBe(
+        mockServiceApiData.updatedDateTime,
+      )
       expect(store.tenantServices).toHaveLength(0)
     })
 
