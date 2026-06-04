@@ -87,10 +87,11 @@ jobs:
       tag: ${{ inputs.tag || steps.pr.outputs.pr }}
       triggered: ${{ steps.deploy.outputs.triggered }}
     steps:
-      - uses: bcgov/action-crunchy@a109166ff26880dc75676492a33b816ac0ce392f # v1.2.6
+      - uses: bcgov/action-crunchy@102fde6a063b58a958a735e34f399f01977683fd # v2.1.0+
         name: Deploy Crunchy
         id: deploy_crunchy
         with:
+          ref: ${{ github.ref }}
           oc_namespace: ${{ secrets.OC_NAMESPACE }}
           oc_token: ${{ secrets.OC_TOKEN }}
           oc_server: ${{ vars.OC_SERVER }}
@@ -98,6 +99,11 @@ jobs:
           environment: ${{ inputs.environment }}
           values_file: charts/crunchy/values-${{ inputs.environment || 'dev' }}.yml
           triggers: ${{ inputs.db_triggers }}
+          s3_access_key: ${{ secrets.s3_access_key }}
+          s3_secret_key: ${{ secrets.s3_secret_key }}
+          s3_bucket: ${{ secrets.s3_bucket }}
+          s3_endpoint: ${{ secrets.s3_endpoint }}
+          force_cleanup: true
 
       # Variables
       - if: inputs.tag  == ''
