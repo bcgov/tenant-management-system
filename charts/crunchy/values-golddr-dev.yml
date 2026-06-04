@@ -78,7 +78,7 @@ crunchy: # enable it for TEST and PROD, for PR based pipelines simply use single
       incrementalBackupSchedule:  0 0,4,12,16,20 * * * 
       volume:
         accessModes: "ReadWriteOnce"
-        storage: 5Gi
+        storage: 1.5Gi
         storageClassName: netapp-file-backup
     s3:
       enabled: true # if enabled, below must be provided
