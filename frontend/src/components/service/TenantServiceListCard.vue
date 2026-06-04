@@ -15,7 +15,7 @@ defineProps<{
     <v-card-title>{{ service.displayName }}</v-card-title>
     <v-card-subtitle>{{ service.description }}</v-card-subtitle>
     <v-card-text>
-      <v-icon :icon="mdiCheckCircleOutline" color="green" /> Added
+      <v-icon :icon="mdiCheckCircleOutline" color="success" /> Added
     </v-card-text>
   </v-card>
 </template>
