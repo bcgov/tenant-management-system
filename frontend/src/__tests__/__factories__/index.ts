@@ -161,15 +161,21 @@ export function makeService(
     description: string
     displayName: string
     id: string
+    landingPageUrl: string
+    name: string
     roles: ServiceRole[]
+    updatedDate: string
   }> = {},
 ): Service {
   return new Service(
     toServiceId(overrides.id ?? 'test-service-id'),
+    overrides.name ?? 'test-service-name',
     overrides.displayName ?? 'test-service-display-name',
     overrides.createdDate ?? 'test-service-created-date',
     overrides.clientIdentifier ?? 'test-service-client-identifier',
+    overrides.landingPageUrl ?? 'test-service-landing-page-url',
     overrides.description ?? 'test-service-description',
+    overrides.updatedDate ?? 'test-service-updated-date',
     overrides.roles ?? [makeServiceRole()],
   )
 }

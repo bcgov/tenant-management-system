@@ -18,10 +18,13 @@ describe('Service model', () => {
       const serviceRole = makeServiceRole()
       const service = new Service(
         toServiceId('id'),
+        'name',
         'displayName',
         'createdDate',
         'clientIdentifier',
+        'landingPageUrl',
         'description',
+        'updatedDate',
         [serviceRole],
       )
 
@@ -30,8 +33,11 @@ describe('Service model', () => {
       expect(service.description).toBe('description')
       expect(service.displayName).toBe('displayName')
       expect(service.id).toBe('id')
+      expect(service.landingPageUrl).toBe('landingPageUrl')
+      expect(service.name).toBe('name')
       expect(service.roles.length).toBe(1)
       expect(service.roles[0]).toBe(serviceRole)
+      expect(service.updatedDate).toBe('updatedDate')
     })
   })
 
@@ -45,7 +51,10 @@ describe('Service model', () => {
         createdDateTime: 'createdDateTime',
         clientIdentifier: 'clientIdentifier',
         description: 'description',
+        landingPageUrl: 'landingPageUrl',
+        name: 'name',
         roles: [serviceRoleApiData],
+        updatedDateTime: 'updatedDateTime',
       }
 
       const service = Service.fromApiData(apiData)
@@ -56,6 +65,8 @@ describe('Service model', () => {
       expect(service.description).toBe('description')
       expect(service.displayName).toBe('displayName')
       expect(service.id).toBe('id')
+      expect(service.landingPageUrl).toBe('landingPageUrl')
+      expect(service.name).toBe('name')
       expect(service.roles.length).toBe(1)
       expect(service.roles[0]).toEqual(serviceRole)
     })
