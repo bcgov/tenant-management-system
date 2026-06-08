@@ -22,7 +22,7 @@ const sortedTenants = computed(() => {
 
 // --- Component Methods -------------------------------------------------------
 
-function handleClick(id: Tenant['id']) {
+const handleClick = (id: Tenant['id']) => {
   emit('select', id)
 }
 </script>

@@ -35,7 +35,7 @@ const isTenantOwner = computed(() => {
 
 // --- Component Methods -------------------------------------------------------
 
-function handleAddService(serviceId: ServiceId) {
+const handleAddService = async (serviceId: ServiceId) => {
   emit('add-service', serviceId)
 }
 </script>

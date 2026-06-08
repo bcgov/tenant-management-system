@@ -18,11 +18,11 @@ const state = reactive<{ notifications: Notification[] }>({
  * @param type - The notification type (SUCCESS, ERROR, WARNING, INFO). Defaults
  *   to SUCCESS
  */
-function addNotification(
+const addNotification = (
   message: string,
   title: string,
   type: NotificationType = NotificationType.SUCCESS,
-) {
+) => {
   const id = crypto.randomUUID()
   const notification: Notification = { id, title, message, type }
   state.notifications.push(notification)
@@ -38,7 +38,7 @@ function addNotification(
  *
  * @param id - The unique identifier of the notification to remove
  */
-function removeNotification(id: string) {
+const removeNotification = (id: string) => {
   const index = state.notifications.findIndex((n) => n.id === id)
   if (index !== -1) {
     state.notifications.splice(index, 1)

@@ -7,54 +7,57 @@ import * as directives from 'vuetify/directives'
 
 import GroupCreateDialog from '@/components/group/GroupCreateDialog.vue'
 
-function makeVuetify() {
+const makeVuetify = () => {
   return createVuetify({ components, directives })
 }
 
-function mountDialog(
+const mountDialog = (
   props: { isDuplicateName?: boolean; modelValue?: boolean } = {},
-) {
+) => {
   return mount(GroupCreateDialog, {
     props: { isDuplicateName: false, modelValue: true, ...props },
     global: { plugins: [makeVuetify()] },
   })
 }
 
-function getNameInput() {
+const getNameInput = () => {
   return document.body.querySelector('input[type="text"]') as HTMLInputElement
 }
 
-function getTextarea() {
+const getTextarea = () => {
   return document.body.querySelector('textarea') as HTMLTextAreaElement
 }
 
-function getCheckbox() {
+const getCheckbox = () => {
   return document.body.querySelector(
     'input[type="checkbox"]',
   ) as HTMLInputElement
 }
 
-async function setName(value: string) {
+const setName = async (value: string) => {
   const el = getNameInput()
   el.value = value
   el.dispatchEvent(new Event('input'))
   await nextTick()
 }
 
-async function setDescription(value: string) {
+const setDescription = async (value: string) => {
   const el = getTextarea()
   el.value = value
   el.dispatchEvent(new Event('input'))
   await nextTick()
 }
 
-async function fillValidForm(name = 'My Group', description = 'A description') {
+const fillValidForm = async (
+  name = 'My Group',
+  description = 'A description',
+) => {
   await setName(name)
   await setDescription(description)
   await flushPromises()
 }
 
-async function clickSubmit(wrapper: ReturnType<typeof mountDialog>) {
+const clickSubmit = async (wrapper: ReturnType<typeof mountDialog>) => {
   await wrapper.findComponent({ name: 'ButtonPrimary' }).trigger('click')
   await flushPromises()
 }
