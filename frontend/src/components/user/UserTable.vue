@@ -64,26 +64,28 @@ const actionItems = computed(() => {
   const rv = []
   if (props.showEditRoles && props.editUserRoles) {
     rv.push({
-      title: t('users.editRolesAction'),
-      icon: mdiPencil,
       action: props.editUserRoles,
+      ariaLabel: 'Edit Tenant Roles',
       disabledCondition: () => {
         return false
       },
+      icon: mdiPencil,
+      title: t('users.editRolesAction'),
     })
   }
 
   if (isUserAdmin.value && props.showOffboardDialog) {
     rv.push({
-      title: t('users.offboardUserAction'),
       action: props.showOffboardDialog,
-      icon: mdiDeleteOutline,
+      ariaLabel: 'Offboard User',
       disabledCondition: (item: User) => {
         return !(
           moreThanOneTenantOwner.value ||
           !item.roles.some((r: Role) => r.name === ROLES.TENANT_OWNER.value)
         )
       },
+      icon: mdiDeleteOutline,
+      title: t('users.offboardUserAction'),
     })
   }
 
@@ -278,6 +280,7 @@ const selectRowItem = (e: Event, r: RowPropsType) => {
           {{ role.description }}
           <v-icon
             v-if="canRemoveRole(item, role) && handleRemoveRole"
+            :aria-label="`Remove Role ${role.description}`"
             :icon="mdiClose"
             class="ml-1 cursor-pointer"
             size="small"
@@ -308,6 +311,7 @@ const selectRowItem = (e: Event, r: RowPropsType) => {
         <template #activator="{ props: activatorProps }">
           <v-btn
             :icon="mdiDotsVertical"
+            aria-label="Open Menu"
             variant="text"
             v-bind="activatorProps"
           ></v-btn>
@@ -321,8 +325,8 @@ const selectRowItem = (e: Event, r: RowPropsType) => {
             @click="actionItem.action && actionItem.action(item)"
           >
             <!--
-              Disable the action when `actionItem.enabledCondition(item)` is
-              false. When disabled, show a tooltip explaining why and prevent
+              Disable the action when `actionItem.disabledCondition(item)` is
+              true. When disabled, show a tooltip explaining why and prevent
               clicks.
             -->
             <template v-if="actionItem.disabledCondition(item)">
@@ -341,7 +345,11 @@ const selectRowItem = (e: Event, r: RowPropsType) => {
             </template>
             <template v-else>
               <v-list-item-title>
-                <v-icon v-if="actionItem.icon" :icon="actionItem.icon" />
+                <v-icon
+                  v-if="actionItem.icon"
+                  :aria-label="actionItem.ariaLabel"
+                  :icon="actionItem.icon"
+                />
                 {{ actionItem.title }}
               </v-list-item-title>
             </template>
