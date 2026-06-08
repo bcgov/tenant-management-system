@@ -48,7 +48,7 @@ const tenant = computed(() => {
 
 // --- Component Methods -------------------------------------------------------
 
-async function handleAddUser(user: User, groups: Group[]) {
+const handleAddUser = async (user: User, groups: Group[]) => {
   let addToGroups = true
   try {
     await tenantStore.addTenantUser(props.tenantId, user)
@@ -91,11 +91,11 @@ async function handleAddUser(user: User, groups: Group[]) {
   }
 }
 
-async function handleClearSearch() {
+const handleClearSearch = async () => {
   searchResults.value = null
 }
 
-async function handleRemoveRole(userId: UserId, roleId: RoleId) {
+const handleRemoveRole = async (userId: UserId, roleId: RoleId) => {
   try {
     await tenantStore.removeTenantUserRole(props.tenantId, userId, roleId)
     notification.success(
@@ -108,7 +108,7 @@ async function handleRemoveRole(userId: UserId, roleId: RoleId) {
 }
 
 // TODO: why would you remove user for an undefined?
-async function handleRemoveUser(userId: UserId | undefined) {
+const handleRemoveUser = async (userId: UserId | undefined) => {
   try {
     if (!userId) {
       throw new Error('No user selected')
@@ -121,10 +121,10 @@ async function handleRemoveUser(userId: UserId | undefined) {
   }
 }
 
-async function handleUserSearch(
+const handleUserSearch = async (
   searchType: IdirSearchType,
   searchText: string,
-) {
+) => {
   isLoadingSearch.value = true
 
   try {

@@ -131,7 +131,7 @@ const roles = computed(() => props.possibleRoles ?? [])
 
 // --- Component Methods -------------------------------------------------------
 
-function confirmRemoveRole() {
+const confirmRemoveRole = () => {
   if (pendingRole.value && pendingUser.value) {
     emit('remove-role', pendingUser.value.id, pendingRole.value.id)
   }
@@ -140,7 +140,7 @@ function confirmRemoveRole() {
   pendingUser.value = null
 }
 
-function handleAddUser() {
+const handleAddUser = () => {
   if (!selectedUser.value || selectedRoles.value.length === 0) {
     return
   }
@@ -159,14 +159,14 @@ function handleAddUser() {
   toggleSearch()
 }
 
-function handleCancel() {
+const handleCancel = () => {
   emit('cancel')
   selectAllGroups.value = false
   selectAllRoles.value = false
   toggleSearch()
 }
 
-function handleClearSearch() {
+const handleClearSearch = () => {
   selectedUser.value = null
   selectedRoles.value = []
   selectAllGroups.value = false
@@ -174,12 +174,12 @@ function handleClearSearch() {
   emit('clear-search')
 }
 
-function handleCloseRoleDialog(open: boolean) {
+const handleCloseRoleDialog = (open: boolean) => {
   roleDialogVisible.value = open
   modifyingUserIndex.value = null
 }
 
-function handleConfirmButtonClick(action: string) {
+const handleConfirmButtonClick = (action: string) => {
   if (action === 'cancel') {
     pendingUser.value = null
     pendingRole.value = null
@@ -188,7 +188,7 @@ function handleConfirmButtonClick(action: string) {
   }
 }
 
-function handleOffboardButtonClick(action: string) {
+const handleOffboardButtonClick = (action: string) => {
   if (action === 'cancel') {
     pendingUser.value = null
   } else if (action === 'remove') {
@@ -197,7 +197,7 @@ function handleOffboardButtonClick(action: string) {
   }
 }
 
-function handleRemoveRole(user: User, role: Role) {
+const handleRemoveRole = (user: User, role: Role) => {
   if (!props.tenant) {
     return
   }
@@ -230,15 +230,15 @@ function handleRemoveRole(user: User, role: Role) {
   confirmDialog.value.visible = true
 }
 
-function handleSearch(searchType: IdirSearchType, searchText: string) {
+const handleSearch = (searchType: IdirSearchType, searchText: string) => {
   emit('search', searchType, searchText)
 }
 
-function handleUserSelected(user: User | null) {
+const handleUserSelected = (user: User | null) => {
   selectedUser.value = user
 }
 
-function showChangeRoles(user: User) {
+const showChangeRoles = (user: User) => {
   const uIndex = props.tenant.users.findIndex((u: User) => {
     return u.id === user.id
   })
@@ -249,18 +249,18 @@ function showChangeRoles(user: User) {
   }
 }
 
-function showInfo(message: string) {
+const showInfo = (message: string) => {
   infoDialog.value.message = message
   infoDialog.value.visible = true
 }
 
-function showOffboardDialog(user: User) {
+const showOffboardDialog = (user: User) => {
   pendingUser.value = user
   confirmOffboardDialog.value.message = t('users.offboardUserMessage')
   confirmOffboardDialog.value.visible = true
 }
 
-function toggleSearch() {
+const toggleSearch = () => {
   showSearch.value = !showSearch.value
   if (!showSearch.value) {
     selectedUser.value = null
