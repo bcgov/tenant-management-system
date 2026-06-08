@@ -23,10 +23,10 @@ vi.mock('@/composables/useNotification', () => ({
   useNotification: vi.fn(),
 }))
 
-function mountComponent(
+const mountComponent = (
   groupId = toGroupId('g1'),
   tenantId = toTenantId('t1'),
-) {
+) => {
   return mount(GroupUserContainer, {
     props: { groupId, tenantId },
     global: { stubs: { GroupUserManagement: true } },

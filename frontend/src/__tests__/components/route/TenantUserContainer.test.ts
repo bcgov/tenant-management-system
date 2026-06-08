@@ -26,11 +26,11 @@ vi.mock('@/composables/useNotification', () => ({
   useNotification: vi.fn(),
 }))
 
-function child(wrapper: ReturnType<typeof mountComponent>) {
+const child = (wrapper: ReturnType<typeof mountComponent>) => {
   return wrapper.getComponent({ name: 'TenantUserManagement' })
 }
 
-function mountComponent(tenantId = 't-1') {
+const mountComponent = (tenantId = 't-1') => {
   return mount(TenantUserContainer, {
     global: { plugins: [vuetify], stubs: { TenantUserManagement: true } },
     props: { tenantId: toTenantId(tenantId) },
