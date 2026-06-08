@@ -25,7 +25,7 @@ export const useServiceStore = defineStore('service', () => {
    * @param service - The service to insert or update.
    * @returns The inserted or updated service.
    */
-  function upsertService(service: Service): Service {
+  const upsertService = (service: Service): Service => {
     const index = services.value.findIndex((s) => s.id === service.id)
 
     if (index === -1) {
@@ -106,7 +106,7 @@ export const useServiceStore = defineStore('service', () => {
    * @param tenantServiceId - The ID of the tenant service.
    * @returns The tenant service if found, otherwise undefined.
    */
-  function getTenantService(serviceId: ServiceId): Service | undefined {
+  const getTenantService = (serviceId: ServiceId): Service | undefined => {
     return tenantServices.value.find((s) => s.id === serviceId)
   }
 

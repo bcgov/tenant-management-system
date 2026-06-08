@@ -17,7 +17,7 @@ const emit = defineEmits<{
 
 // --- Component Methods -------------------------------------------------------
 
-function handleClick() {
+const handleClick = () => {
   emit('click-add')
 }
 </script>

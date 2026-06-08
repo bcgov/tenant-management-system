@@ -26,11 +26,11 @@ const defaultProps = {
   tenant: mockTenant,
 }
 
-function createRoute(path = '/current-path'): ReturnType<typeof useRoute> {
+const createRoute = (path = '/current-path'): ReturnType<typeof useRoute> => {
   return reactive({ path }) as ReturnType<typeof useRoute>
 }
 
-function mountComponent(props = defaultProps) {
+const mountComponent = (props = defaultProps) => {
   return mount(GroupHeader, {
     props,
     global: {

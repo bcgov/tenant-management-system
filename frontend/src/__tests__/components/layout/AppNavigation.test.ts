@@ -44,9 +44,9 @@ const mockedCurrentUserIsOperationsAdmin = vi.mocked(
   currentUserIsOperationsAdmin,
 )
 
-function createRoute(
+const createRoute = (
   overrides: Partial<ReturnType<typeof useRoute>> = {},
-): ReturnType<typeof useRoute> {
+): ReturnType<typeof useRoute> => {
   return {
     path: '/tenants',
     params: {},
@@ -54,11 +54,11 @@ function createRoute(
   } as ReturnType<typeof useRoute>
 }
 
-function createDisplay(mobile = false): ReturnType<typeof useDisplay> {
+const createDisplay = (mobile = false): ReturnType<typeof useDisplay> => {
   return { mobile: ref(mobile) } as unknown as ReturnType<typeof useDisplay>
 }
 
-function mountComponent() {
+const mountComponent = () => {
   return mount(VLayout, {
     global: {
       plugins: [router, vuetify],

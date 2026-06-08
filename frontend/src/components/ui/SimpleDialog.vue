@@ -47,7 +47,7 @@ const emit = defineEmits<{
 
 // --- Component Methods -------------------------------------------------------
 
-function handleButtonClick(action: string) {
+const handleButtonClick = (action: string) => {
   emit('buttonClick', action)
   emit('update:modelValue', false)
 }

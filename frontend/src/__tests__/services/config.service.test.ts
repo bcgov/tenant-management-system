@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { ConfigError, config, loadConfig } from '@/services/config.service'
 
-function mockFetch(body: string, ok = true) {
+const mockFetch = (body: string, ok = true) => {
   vi.stubGlobal(
     'fetch',
     vi.fn().mockResolvedValue({
@@ -14,7 +14,7 @@ function mockFetch(body: string, ok = true) {
   )
 }
 
-function setValidEnv() {
+const setValidEnv = () => {
   import.meta.env.VITE_API_BASE_URL = 'https://api.example.com'
   import.meta.env.VITE_DISABLE_RUNTIME_CONFIG = 'true'
   import.meta.env.VITE_KEYCLOAK_BASIC_BCEID_HINT = 'basic-bceid'

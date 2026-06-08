@@ -26,7 +26,7 @@ export const useTenantStore = defineStore('tenant', () => {
    * @param tenant - The tenant to insert or update.
    * @returns The inserted or updated tenant.
    */
-  function upsertTenant(tenant: Tenant): Tenant {
+  const upsertTenant = (tenant: Tenant): Tenant => {
     const index = tenants.value.findIndex((t) => t.id === tenant.id)
     if (index === -1) {
       tenants.value.push(tenant)
@@ -132,11 +132,17 @@ export const useTenantStore = defineStore('tenant', () => {
    * @param tenantId - The ID of the tenant.
    * @returns The tenant if found, otherwise undefined.
    */
-  function getTenant(tenantId: TenantId): Tenant | undefined {
+  const getTenant = (tenantId: TenantId): Tenant | undefined => {
     return tenants.value.find((t) => t.id === tenantId)
   }
 
-  async function removeTenantUser(tenantId: TenantId, userId: UserId) {
+  /**
+   * Removes a user from a tenant.
+   *
+   * @param tenantId - the ID of the tenant.
+   * @param userId - the ID of the user.
+   */
+  const removeTenantUser = async (tenantId: TenantId, userId: UserId) => {
     await tenantService.removeUser(tenantId, userId)
     const tenant = getTenant(tenantId)
     if (tenant) {
