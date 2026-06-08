@@ -55,7 +55,7 @@ jobs:
       db_user: app-${{ github.event.number }}
       params:
         --set global.secrets.persist=false
-        --set global.secrets.databasePassword=${{ vars.outputs.password }}
+        --set global.secrets.databasePassword=${{ needs.vars.outputs.password }}
   
   tests:
     name: Tests
