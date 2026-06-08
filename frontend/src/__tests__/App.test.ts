@@ -40,7 +40,7 @@ const mountApp = () =>
         AppHeader: true,
         AppNavigation: true,
         AppNotifications: true,
-        'router-view': { template: '<div data-test="router-view" />' },
+        'router-view': { template: '<div data-testid="router-view" />' },
       },
     },
   })
@@ -64,11 +64,11 @@ describe('App.vue', () => {
     const wrapper = mountApp()
     await nextTick()
 
-    expect(wrapper.find('[data-test-id="buttonIdir"]').exists()).toBe(false)
-    expect(wrapper.find('[data-test-id="buttonBceidBasic"]').exists()).toBe(
+    expect(wrapper.find('[data-testid="buttonIdir"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="buttonBceidBasic"]').exists()).toBe(
       false,
     )
-    expect(wrapper.find('[data-test-id="buttonBceidBusiness"]').exists()).toBe(
+    expect(wrapper.find('[data-testid="buttonBceidBusiness"]').exists()).toBe(
       false,
     )
   })
@@ -79,11 +79,9 @@ describe('App.vue', () => {
     const wrapper = mountApp()
     await nextTick()
 
-    expect(wrapper.find('[data-test-id="buttonIdir"]').exists()).toBe(true)
-    expect(wrapper.find('[data-test-id="buttonBceidBasic"]').exists()).toBe(
-      true,
-    )
-    expect(wrapper.find('[data-test-id="buttonBceidBusiness"]').exists()).toBe(
+    expect(wrapper.find('[data-testid="buttonIdir"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="buttonBceidBasic"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="buttonBceidBusiness"]').exists()).toBe(
       true,
     )
   })
@@ -94,7 +92,7 @@ describe('App.vue', () => {
     const wrapper = mountApp()
     await nextTick()
 
-    await wrapper.find('[data-test-id="buttonIdir"]').trigger('click')
+    await wrapper.find('[data-testid="buttonIdir"]').trigger('click')
 
     expect(currentAuthStore.login).toHaveBeenCalledWith({ idpHint: 'idir' })
   })
@@ -105,7 +103,7 @@ describe('App.vue', () => {
     const wrapper = mountApp()
     await nextTick()
 
-    await wrapper.find('[data-test-id="buttonBceidBasic"]').trigger('click')
+    await wrapper.find('[data-testid="buttonBceidBasic"]').trigger('click')
 
     expect(currentAuthStore.login).toHaveBeenCalledWith({
       idpHint: 'basic-bceid',
@@ -118,7 +116,7 @@ describe('App.vue', () => {
     const wrapper = mountApp()
     await nextTick()
 
-    await wrapper.find('[data-test-id="buttonBceidBusiness"]').trigger('click')
+    await wrapper.find('[data-testid="buttonBceidBusiness"]').trigger('click')
 
     expect(currentAuthStore.login).toHaveBeenCalledWith({
       idpHint: 'business-bceid',
@@ -129,7 +127,7 @@ describe('App.vue', () => {
     const wrapper = mountApp()
     await nextTick()
 
-    expect(wrapper.find('[data-test="router-view"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="router-view"]').exists()).toBe(true)
   })
 
   it('passes null user to AppHeader when not authenticated', async () => {
