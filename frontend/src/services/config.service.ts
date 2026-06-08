@@ -31,7 +31,7 @@ export interface AppConfig {
  * @throws {ConfigError} If the config is missing required fields or is not an
  * object
  */
-function validateConfig(raw: unknown): AppConfig {
+const validateConfig = (raw: unknown): AppConfig => {
   if (!raw || typeof raw !== 'object') {
     throw new ConfigError('Config must be an object')
   }

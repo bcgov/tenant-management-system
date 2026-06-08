@@ -25,7 +25,7 @@ export const useGroupStore = defineStore('group', () => {
    * @param group - The group to insert or update.
    * @returns The inserted or updated group.
    */
-  function upsertGroup(group: Group): Group {
+  const upsertGroup = (group: Group): Group => {
     const index = groups.value.findIndex((g) => g.id === group.id)
     if (index === -1) {
       groups.value.push(group)
@@ -159,7 +159,7 @@ export const useGroupStore = defineStore('group', () => {
    * @param groupId - The ID of the group.
    * @returns The group if found, otherwise undefined.
    */
-  function getGroup(groupId: GroupId): Group | undefined {
+  const getGroup = (groupId: GroupId): Group | undefined => {
     return groups.value.find((g) => g.id === groupId)
   }
 
