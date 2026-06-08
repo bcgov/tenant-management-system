@@ -76,6 +76,7 @@ jobs:
         --set backend.pdb.enabled=true
         --set backend.pdb.minAvailable=1
         --set global.domain="apps.gold.devops.gov.bc.ca"
+        --set global.secrets.databasePassword=${{ secrets.DB_PASSWORD }}
         ${{ inputs.params }}
       tag: ${{ inputs.tag }}
 
@@ -103,5 +104,6 @@ jobs:
         --set backend.pdb.enabled=true
         --set backend.pdb.minAvailable=1
         --set global.domain="apps.golddr.devops.gov.bc.ca"
+        --set global.secrets.databasePassword=${{ secrets.DB_PASSWORD }}
         ${{ inputs.params }}
       tag: ${{ inputs.tag }}

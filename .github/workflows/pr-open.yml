@@ -12,18 +12,6 @@ concurrency:
 permissions: {}
 
 jobs:
-  vars:
-    runs-on: ubuntu-latest
-    outputs:
-      password: ${{ steps.password.outputs.password }}
-    steps:
-      - name: Generate password
-        id: password
-        run: |
-          PASSWORD=$(openssl rand -hex 24)
-          echo "::add-mask::$PASSWORD"
-          echo "password=$PASSWORD" >> "$GITHUB_OUTPUT"
-
   # https://github.com/bcgov/action-builder-ghcr
   builds:
     name: Builds
@@ -55,7 +43,6 @@ jobs:
       db_user: app-${{ github.event.number }}
       params:
         --set global.secrets.persist=false
-        --set-string global.secrets.databasePassword=${{ needs.vars.outputs.password }}
   
   tests:
     name: Tests
