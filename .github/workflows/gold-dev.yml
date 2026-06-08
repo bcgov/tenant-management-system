@@ -33,6 +33,11 @@ on:
         type: string
   workflow_call:
     inputs:
+      dr_enabled:
+        description: 'Deploy to golddr'  # Disable for sandboxing as standy cannot be setup easily to mirror
+        required: false
+        type: boolean
+        default: true
       release_name:
         description: 'Release name to use if defined'
         required: false
