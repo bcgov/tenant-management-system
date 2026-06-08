@@ -1,9 +1,4 @@
 /**
- * Development-only logger utility
- */
-const isDev = import.meta.env.DEV
-
-/**
  * Logs an error message and optional error object to the console (in
  * non-production environments).
  *
@@ -11,7 +6,7 @@ const isDev = import.meta.env.DEV
  * @param error - An optional error object for additional debugging context.
  */
 const logError = (message: string, error?: unknown) => {
-  if (isDev) {
+  if (import.meta.env.DEV) {
     if (error === undefined) {
       console.error(message)
     } else {
@@ -27,7 +22,7 @@ const logError = (message: string, error?: unknown) => {
  * @param error - An optional error object for additional debugging context.
  */
 const logWarning = (message: string, error?: unknown) => {
-  if (isDev) {
+  if (import.meta.env.DEV) {
     if (error === undefined) {
       console.warn(message)
     } else {

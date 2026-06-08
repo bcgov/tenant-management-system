@@ -7,16 +7,16 @@ describe('Logger', () => {
   beforeEach(() => {
     consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
     consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
-    vi.resetModules()
   })
 
   afterEach(() => {
     vi.restoreAllMocks()
+    vi.unstubAllEnvs()
   })
 
   describe('in development environment', () => {
     beforeEach(() => {
-      vi.stubEnv('NODE_ENV', 'development')
+      vi.stubEnv('DEV', true)
     })
 
     describe('error', () => {
@@ -91,7 +91,7 @@ describe('Logger', () => {
 
   describe('in production environment', () => {
     beforeEach(() => {
-      vi.stubEnv('NODE_ENV', 'production')
+      vi.stubEnv('DEV', false)
     })
 
     it('should not log error messages', async () => {
@@ -110,24 +110,9 @@ describe('Logger', () => {
     })
   })
 
-  describe('in test environment', () => {
-    beforeEach(() => {
-      vi.stubEnv('NODE_ENV', 'test')
-    })
-
-    it('should log in test environment (non-production)', async () => {
-      const { logger } = await import('@/utils/logger')
-      logger.error('Test error')
-      logger.warning('Test warning')
-
-      expect(consoleErrorSpy).toHaveBeenCalledTimes(1)
-      expect(consoleWarnSpy).toHaveBeenCalledTimes(1)
-    })
-  })
-
   describe('logger object structure', () => {
     beforeEach(() => {
-      vi.stubEnv('NODE_ENV', 'development')
+      vi.stubEnv('DEV', true)
     })
 
     it('should expose expected methods', async () => {
