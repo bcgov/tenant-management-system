@@ -184,6 +184,7 @@ jobs:
             # print the values.yaml file to see the values being used
             # Helm upgrade/rollout
             helm upgrade \
+              --set global.secrets.databasePassword=${{ secrets.DB_PASSWORD }} \
               --set-string backend.bcgovSsoApiClientId=${{ secrets.bcgov_sso_api_client_id }} \
               --set-string backend.bcgovSsoApiClientSecret=${{ secrets.bcgov_sso_api_client_secret }} \
               --set-string backend.bcgovSsoApiUrl=${{ vars.BCGOV_SSO_API_URL }} \
