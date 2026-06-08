@@ -12,6 +12,18 @@ concurrency:
 permissions: {}
 
 jobs:
+  vars:
+    runs-on: ubuntu-latest
+    outputs:
+      password: ${{ steps.password.outputs.password }}
+    steps:
+      - name: Generate password
+        id: password
+        run: |
+          PASSWORD=$(openssl rand -base64 24)
+          echo "::add-mask::$PASSWORD"
+          echo "password=$PASSWORD" >> "$GITHUB_OUTPUT"
+
   # https://github.com/bcgov/action-builder-ghcr
   builds:
     name: Builds
@@ -34,7 +46,7 @@ jobs:
 
   deploys-gold-dev:
     name: Deploys (${{ github.event.number }})
-    needs: [builds]
+    needs: [builds, vars]
     uses: ./.github/workflows/gold-dev.yml
     secrets: inherit
     with:
@@ -43,6 +55,7 @@ jobs:
       db_user: app-${{ github.event.number }}
       params:
         --set global.secrets.persist=false
+        --set global.secrets.databasePassword=${{ vars.outputs.password }}
   
   tests:
     name: Tests
