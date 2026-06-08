@@ -58,7 +58,7 @@ describe('LoginContainer.vue', () => {
   it('does not render slot content when not authenticated', () => {
     const wrapper = mountComponent()
 
-    expect(wrapper.find('[data-test-id="slot"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="slot"]').exists()).toBe(false)
   })
 
   it('does not render slot content when authenticated but not idir', () => {
@@ -66,7 +66,7 @@ describe('LoginContainer.vue', () => {
 
     const wrapper = mountComponent()
 
-    expect(wrapper.find('[data-test-id="slot"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="slot"]').exists()).toBe(false)
   })
 
   it('renders slot content when authenticated and idir', () => {
@@ -74,6 +74,6 @@ describe('LoginContainer.vue', () => {
 
     const wrapper = mountComponent()
 
-    expect(wrapper.find('[data-test-id="slot"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="slot"]').exists()).toBe(true)
   })
 })

@@ -46,17 +46,17 @@ const user = computed(() => {
           <v-row class="justify-center mt-12">
             <v-col class="d-flex flex-column ga-6" cols="12" md="4" sm="6">
               <ButtonPrimary
-                data-test-id="buttonIdir"
+                data-testid="buttonIdir"
                 text="Log in with IDIR"
                 @click="authStore.login({ idpHint: idirHint })"
               />
               <ButtonPrimary
-                data-test-id="buttonBceidBasic"
+                data-testid="buttonBceidBasic"
                 text="Log in with Basic BCeID"
                 @click="authStore.login({ idpHint: basicBceidHint })"
               />
               <ButtonPrimary
-                data-test-id="buttonBceidBusiness"
+                data-testid="buttonBceidBusiness"
                 text="Log in with Business BCeID"
                 @click="authStore.login({ idpHint: businessBceidHint })"
               />
