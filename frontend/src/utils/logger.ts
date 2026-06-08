@@ -1,7 +1,7 @@
 /**
  * Development-only logger utility
  */
-const isDev = process.env.NODE_ENV !== 'production'
+const isDev = import.meta.env.DEV
 
 /**
  * Logs an error message and optional error object to the console (in

@@ -2,9 +2,8 @@
   "compilerOptions": {
     "lib": [],
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.vitest.tsbuildinfo",
-    "types": ["node", "jsdom"]
+    "types": ["jsdom"]
   },
-  "exclude": [],
   "extends": "./tsconfig.app.json",
   "include": ["src/__tests__/**/*.ts", "env.d.ts", "vitest.setup.ts"]
 }
