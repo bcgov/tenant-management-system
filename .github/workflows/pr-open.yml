@@ -20,7 +20,7 @@ jobs:
       - name: Generate password
         id: password
         run: |
-          PASSWORD=$(openssl rand -base64 24)
+          PASSWORD=$(openssl rand -hex 24)
           echo "::add-mask::$PASSWORD"
           echo "password=$PASSWORD" >> "$GITHUB_OUTPUT"
 
@@ -55,7 +55,7 @@ jobs:
       db_user: app-${{ github.event.number }}
       params:
         --set global.secrets.persist=false
-        --set global.secrets.databasePassword=${{ needs.vars.outputs.password }}
+        --set string global.secrets.databasePassword=${{ needs.vars.outputs.password }}
   
   tests:
     name: Tests
