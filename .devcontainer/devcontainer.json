@@ -17,7 +17,8 @@
       "settings": {
         "database-client.telemetry.usesOnlineServices": false,
         "editor.defaultFormatter": "esbenp.prettier-vscode",
-        "editor.formatOnSave": true
+        "editor.formatOnSave": true,
+        "js/ts.tsdk.path": "node_modules/typescript/lib"
       }
     }
   },
