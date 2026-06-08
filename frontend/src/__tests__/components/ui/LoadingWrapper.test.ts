@@ -33,9 +33,9 @@ describe('LoadingWrapper.vue', () => {
   it('when not loading shows content', () => {
     const wrapper = mountComponent({ loading: false })
 
-    expect(wrapper.find('[data-test-id="content"]').exists()).toBe(true)
-    expect(wrapper.find('[data-test-id="message"]').exists()).toBe(false)
-    expect(wrapper.find('[data-test-id="spinner"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="content"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="message"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="spinner"]').exists()).toBe(false)
   })
 
   it('when loading shows spinner after no delay', async () => {
@@ -44,9 +44,9 @@ describe('LoadingWrapper.vue', () => {
     vi.runAllTimers()
     await wrapper.vm.$nextTick()
 
-    expect(wrapper.find('[data-test-id="content"]').exists()).toBe(false)
-    expect(wrapper.find('[data-test-id="message"]').exists()).toBe(false)
-    expect(wrapper.find('[data-test-id="spinner"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="content"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="message"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="spinner"]').exists()).toBe(true)
   })
 
   it('when loading shows no spinner before delay', async () => {
@@ -55,9 +55,9 @@ describe('LoadingWrapper.vue', () => {
     vi.advanceTimersByTime(100)
     await wrapper.vm.$nextTick()
 
-    expect(wrapper.find('[data-test-id="content"]').exists()).toBe(false)
-    expect(wrapper.find('[data-test-id="message"]').exists()).toBe(false)
-    expect(wrapper.find('[data-test-id="spinner"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="content"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="message"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="spinner"]').exists()).toBe(false)
   })
 
   it('when loading shows spinner after delay', async () => {
@@ -66,9 +66,9 @@ describe('LoadingWrapper.vue', () => {
     vi.advanceTimersByTime(300)
     await wrapper.vm.$nextTick()
 
-    expect(wrapper.find('[data-test-id="content"]').exists()).toBe(false)
-    expect(wrapper.find('[data-test-id="message"]').exists()).toBe(false)
-    expect(wrapper.find('[data-test-id="spinner"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="content"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="message"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="spinner"]').exists()).toBe(true)
   })
 
   it('when loading shows spinner and message after delay', async () => {
@@ -81,9 +81,9 @@ describe('LoadingWrapper.vue', () => {
     vi.advanceTimersByTime(300)
     await wrapper.vm.$nextTick()
 
-    expect(wrapper.find('[data-test-id="content"]').exists()).toBe(false)
-    expect(wrapper.find('[data-test-id="message"]').text()).toBe('Loading...')
-    expect(wrapper.find('[data-test-id="spinner"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="content"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="message"]').text()).toBe('Loading...')
+    expect(wrapper.find('[data-testid="spinner"]').exists()).toBe(true)
   })
 
   it('unmounts cleanly when there is no active timeout', () => {
@@ -105,14 +105,14 @@ describe('LoadingWrapper.vue', () => {
     const wrapper = mountComponent({ delayMilliseconds: 100, loading: true })
     vi.advanceTimersByTime(300)
     await wrapper.vm.$nextTick()
-    expect(wrapper.find('[data-test-id="content"]').exists()).toBe(false)
-    expect(wrapper.find('[data-test-id="spinner"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="content"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="spinner"]').exists()).toBe(true)
 
     await wrapper.setProps({ loading: false })
     await wrapper.vm.$nextTick()
 
-    expect(wrapper.find('[data-test-id="content"]').exists()).toBe(true)
-    expect(wrapper.find('[data-test-id="spinner"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="content"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="spinner"]').exists()).toBe(false)
   })
 
   it('clears the spinner on unmount', async () => {
@@ -122,6 +122,6 @@ describe('LoadingWrapper.vue', () => {
     vi.advanceTimersByTime(300)
     await wrapper.vm.$nextTick()
 
-    expect(wrapper.find('[data-test-id="spinner"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="spinner"]').exists()).toBe(false)
   })
 })

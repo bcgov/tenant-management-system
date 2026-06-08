@@ -36,7 +36,7 @@ describe('FloatingActionButton', () => {
 
   it('emits click event when clicked', async () => {
     const wrapper = mountComponent()
-    const btn = wrapper.find('[data-test-id="floating-action-button"]')
+    const btn = wrapper.find('[data-testid="floating-action-button"]')
 
     await btn.trigger('click')
 
@@ -45,7 +45,7 @@ describe('FloatingActionButton', () => {
 
   it('does not emit click event when disabled', async () => {
     const wrapper = mountComponent({ disabled: true })
-    const btn = wrapper.find('[data-test-id="floating-action-button"]')
+    const btn = wrapper.find('[data-testid="floating-action-button"]')
 
     await btn.trigger('click')
 

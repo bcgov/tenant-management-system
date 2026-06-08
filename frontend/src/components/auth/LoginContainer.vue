@@ -22,7 +22,7 @@ watchEffect(() => {
 </script>
 
 <template>
-  <div v-if="currentUserIsIdir()" data-test-id="slot">
+  <div v-if="currentUserIsIdir()" data-testid="slot">
     <slot />
   </div>
 </template>

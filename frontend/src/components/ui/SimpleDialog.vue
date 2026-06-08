@@ -72,7 +72,7 @@ const iconType = computed(() => {
   <v-dialog
     :max-width="maxWidth ? maxWidth : 500"
     :model-value="modelValue"
-    data-test-id="dialog"
+    data-testid="dialog"
     @update:model-value="$emit('update:modelValue', $event)"
   >
     <v-card>
@@ -82,17 +82,17 @@ const iconType = computed(() => {
             v-if="dialogType !== null"
             :color="dialogType"
             :icon="iconType"
-            data-test-id="icon"
+            data-testid="icon"
             size="small"
           />
         </template>
-        <v-card-title class="text-wrap" data-test-id="title">{{
+        <v-card-title class="text-wrap" data-testid="title">{{
           title
         }}</v-card-title>
         <template v-if="hasClose" #append>
           <v-btn
             :icon="mdiClose"
-            data-test-id="close"
+            data-testid="close"
             size="small"
             variant="text"
             @click="$emit('update:modelValue', false)"
@@ -100,8 +100,8 @@ const iconType = computed(() => {
         </template>
       </v-card-item>
       <v-card-text>
-        <div data-test-id="message">{{ message }}</div>
-        <div data-test-id="slot">
+        <div data-testid="message">{{ message }}</div>
+        <div data-testid="slot">
           <slot />
         </div>
       </v-card-text>
@@ -110,7 +110,7 @@ const iconType = computed(() => {
           :is="btn.type === 'primary' ? ButtonPrimary : ButtonSecondary"
           v-for="btn in buttons"
           :key="btn.action"
-          :data-test-id="`button-${btn.action}`"
+          :data-testid="`button-${btn.action}`"
           :text="btn.text"
           @click="handleButtonClick(btn.action)"
         />
