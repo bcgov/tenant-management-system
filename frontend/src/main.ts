@@ -12,7 +12,7 @@ import { ConfigError, loadConfig } from '@/services/config.service'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { logger } from '@/utils/logger'
 
-export async function initializeApp() {
+export const initializeApp = async () => {
   await loadConfig()
 
   const app = createApp(App)
@@ -42,7 +42,7 @@ export async function initializeApp() {
   app.mount('#app')
 }
 
-export function handleInitError(error: unknown) {
+export const handleInitError = (error: unknown) => {
   logger.error('Application initialization failed', error)
 
   // Show appropriate error message based on where it failed
