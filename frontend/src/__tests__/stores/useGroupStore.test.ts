@@ -9,22 +9,24 @@ import {
   makeUser,
 } from '@/__tests__/__factories__'
 
-import { Group, type GroupApiData, type GroupId } from '@/models/group.model'
+import { Group, type GroupApiData, toGroupId } from '@/models/group.model'
 import {
   GroupService,
   type GroupServiceApiData,
+  toGroupServiceId,
 } from '@/models/groupservice.model'
 import {
   GroupUser,
   type GroupUserApiData,
-  type GroupUserId,
+  toGroupUserId,
 } from '@/models/groupuser.model'
 import { toSsoUserId } from '@/models/ssouser.model'
-import { type TenantId } from '@/models/tenant.model'
+import { toTenantId } from '@/models/tenant.model'
 import { toUserId, type UserApiData } from '@/models/user.model'
 import { groupService } from '@/services/group.service'
 import { serviceService } from '@/services/service.service'
 import { useGroupStore } from '@/stores/useGroupStore'
+import { toGroupServiceRoleId } from '@/models/groupservicerole.model'
 
 vi.mock('@/services/group.service', () => ({
   groupService: {
@@ -45,8 +47,8 @@ vi.mock('@/services/service.service', () => ({
 }))
 
 describe('Group Store', () => {
-  const tenantId = 't-1' as TenantId
-  const groupId = 'g-1' as GroupId
+  const tenantId = toTenantId('t-1')
+  const groupId = toGroupId('g-1')
 
   const mockUserApiData: UserApiData = {
     id: toUserId('u-123'),
@@ -63,7 +65,7 @@ describe('Group Store', () => {
   }
 
   const mockGroupUserApi: GroupUserApiData = {
-    id: 'gu-1' as GroupUserId,
+    id: toGroupUserId('gu-1'),
     user: mockUserApiData,
   }
 
@@ -77,13 +79,13 @@ describe('Group Store', () => {
   }
 
   const mockGroupServiceApiData: GroupServiceApiData = {
-    id: 'service-1',
+    id: toGroupServiceId('service-1'),
     displayName: 'Test Service',
     clientIdentifier: 'test-client',
     description: 'Test Service Desc',
     sharedServiceRoles: [
       {
-        id: 'role-1',
+        id: toGroupServiceRoleId('role-1'),
         name: 'Test Role',
         description: 'Test Role Desc',
         allowedIdentityProviders: ['idir'],
@@ -150,7 +152,7 @@ describe('Group Store', () => {
       const store = useGroupStore()
 
       await expect(
-        store.addGroupUser(tenantId, 'fake-id' as GroupId, makeUser()),
+        store.addGroupUser(tenantId, toGroupId('fake-id'), makeUser()),
       ).rejects.toThrow('Group with ID fake-id not found')
     })
   })
@@ -276,14 +278,14 @@ describe('Group Store', () => {
     it('returns undefined if not found', () => {
       const store = useGroupStore()
 
-      expect(store.getGroup('missing' as GroupId)).toBeUndefined()
+      expect(store.getGroup(toGroupId('missing'))).toBeUndefined()
     })
   })
 
   describe('removeGroupUser', () => {
     it('removes the correct user from the group', async () => {
       const store = useGroupStore()
-      const targetUserId = 'target-id' as GroupUserId
+      const targetUserId = toGroupUserId('target-id')
       const group = makeGroup({ id: groupId })
       group.groupUsers = [
         makeGroupUser({ id: 'other-id' }),
@@ -305,8 +307,8 @@ describe('Group Store', () => {
       await expect(
         store.removeGroupUser(
           tenantId,
-          'fake-id' as GroupId,
-          'gu-1' as GroupUserId,
+          toGroupId('fake-id'),
+          toGroupUserId('gu-1'),
         ),
       ).rejects.toThrow('Group with ID fake-id not found')
     })
@@ -320,7 +322,7 @@ describe('Group Store', () => {
       await store.removeGroupUser(
         tenantId,
         groupId,
-        'missing-id' as GroupUserId,
+        toGroupUserId('missing-id'),
       )
 
       expect(group.groupUsers).toHaveLength(1)

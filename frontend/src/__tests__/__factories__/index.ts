@@ -94,7 +94,7 @@ export const makeGroupServiceRoleApiData = (): GroupServiceRoleApiData => {
     allowedIdentityProviders: ['idir'],
     description: 'test-group-service-role-description',
     enabled: false,
-    id: 'test-group-service-role-id',
+    id: toGroupServiceRoleId('test-group-service-role-id'),
     name: 'test-group-service-role-name',
   }
 }

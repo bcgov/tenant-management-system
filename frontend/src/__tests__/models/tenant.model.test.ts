@@ -9,12 +9,7 @@ import {
 } from '@/__tests__/__factories__'
 
 import { toSsoUserId } from '@/models/ssouser.model'
-import {
-  Tenant,
-  type TenantApiData,
-  type TenantId,
-  toTenantId,
-} from '@/models/tenant.model'
+import { Tenant, type TenantApiData, toTenantId } from '@/models/tenant.model'
 import { User } from '@/models/user.model'
 import { ROLES } from '@/utils/constants'
 
@@ -51,7 +46,7 @@ describe('Tenant model', () => {
         createdBy: 'createdBy',
         createdDateTime: 'createdDateTime',
         description: 'description',
-        id: 'id' as TenantId,
+        id: toTenantId('id'),
         ministryName: 'ministryName',
         name: 'name',
         users: [userApiData],
@@ -75,7 +70,7 @@ describe('Tenant model', () => {
         createdByDisplayName: 'createdByDisplayName',
         createdDateTime: 'createdDateTime',
         description: 'description',
-        id: 'id' as TenantId,
+        id: toTenantId('id'),
         ministryName: 'ministryName',
         name: 'name',
         users: [],
