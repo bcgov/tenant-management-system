@@ -87,7 +87,8 @@ jobs:
       tag: ${{ inputs.tag || steps.pr.outputs.pr }}
       triggered: ${{ steps.deploy.outputs.triggered }}
     steps:
-      - uses: bcgov/action-crunchy@102fde6a063b58a958a735e34f399f01977683fd # v2.1.0+
+      #- uses: bcgov/action-crunchy@102fde6a063b58a958a735e34f399f01977683fd # v2.1.0+
+      - uses: bcgov/action-crunchy@feat/custom_user_passwords # v2.1.0+
         name: Deploy Crunchy
         id: deploy_crunchy
         with:
@@ -102,6 +103,7 @@ jobs:
           s3_secret_key: ${{ secrets.s3_secret_key }}
           s3_bucket: ${{ secrets.s3_bucket }}
           s3_endpoint: ${{ secrets.s3_endpoint }}
+          custom_pguser_password: ${{ secrets.db_password }}
 
       # Variables
       - if: inputs.tag  == ''

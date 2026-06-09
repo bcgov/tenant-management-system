@@ -38,7 +38,6 @@ jobs:
     uses: ./.github/workflows/gold-dev.yml
     secrets: inherit
     with:
-      dr_enabled: false
       release_name: cstar-${{ github.event.number }}
       tag: ${{ github.event.number }}
       db_user: app-${{ github.event.number }}
