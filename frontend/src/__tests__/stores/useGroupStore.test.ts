@@ -13,6 +13,7 @@ import { Group, type GroupApiData, toGroupId } from '@/models/group.model'
 import {
   GroupService,
   type GroupServiceApiData,
+  toGroupServiceId,
 } from '@/models/groupservice.model'
 import {
   GroupUser,
@@ -25,6 +26,7 @@ import { toUserId, type UserApiData } from '@/models/user.model'
 import { groupService } from '@/services/group.service'
 import { serviceService } from '@/services/service.service'
 import { useGroupStore } from '@/stores/useGroupStore'
+import { toGroupServiceRoleId } from '@/models/groupservicerole.model'
 
 vi.mock('@/services/group.service', () => ({
   groupService: {
@@ -77,13 +79,13 @@ describe('Group Store', () => {
   }
 
   const mockGroupServiceApiData: GroupServiceApiData = {
-    id: 'service-1',
+    id: toGroupServiceId('service-1'),
     displayName: 'Test Service',
     clientIdentifier: 'test-client',
     description: 'Test Service Desc',
     sharedServiceRoles: [
       {
-        id: 'role-1',
+        id: toGroupServiceRoleId('role-1'),
         name: 'Test Role',
         description: 'Test Role Desc',
         allowedIdentityProviders: ['idir'],
