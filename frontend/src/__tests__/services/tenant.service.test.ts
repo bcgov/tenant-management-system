@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { makeRole, makeSsoUser, makeUser } from '../__factories__'
+import { makeRole, makeSsoUser, makeUser } from '@/__tests__/__factories__'
 
-import { type RoleId } from '@/models/role.model'
-import { type SsoUserId } from '@/models/ssouser.model'
-import { type TenantId } from '@/models/tenant.model'
-import { type UserId } from '@/models/user.model'
+import { toRoleId } from '@/models/role.model'
+import { toSsoUserId } from '@/models/ssouser.model'
+import { toTenantId } from '@/models/tenant.model'
+import { toUserId } from '@/models/user.model'
 import * as utils from '@/services/utils'
 
 vi.mock('@/services/utils', () => ({
@@ -21,24 +21,24 @@ mockedUtils.isValidationError.mockReturnValue(false)
 mockedUtils.logApiError.mockImplementation(() => {})
 
 // Create mock functions in vi.hoisted to ensure they're available during module loading
-const { mockGet, mockPost, mockPut, mockDelete, mockPatch } = vi.hoisted(
+const { mockDelete, mockGet, mockPatch, mockPost, mockPut } = vi.hoisted(
   () => ({
+    mockDelete: vi.fn(),
     mockGet: vi.fn(),
+    mockPatch: vi.fn(),
     mockPost: vi.fn(),
     mockPut: vi.fn(),
-    mockDelete: vi.fn(),
-    mockPatch: vi.fn(),
   }),
 )
 
 // Mock the authenticated axios to return an object with HTTP methods
 vi.mock('@/services/authenticated.axios', () => ({
   authenticatedAxios: () => ({
+    delete: mockDelete,
     get: mockGet,
+    patch: mockPatch,
     post: mockPost,
     put: mockPut,
-    delete: mockDelete,
-    patch: mockPatch,
   }),
 }))
 
@@ -47,10 +47,10 @@ import { ValidationError } from '@/errors/domain/ValidationError'
 import { tenantService } from '@/services/tenant.service'
 
 describe('tenantService', () => {
-  const tenantId = '1' as TenantId
-  const userId = '123' as UserId
-  const roleId = '456' as RoleId
-  const ssoUserId = '789' as SsoUserId
+  const tenantId = toTenantId('1')
+  const userId = toUserId('123')
+  const roleId = toRoleId('456')
+  const ssoUserId = toSsoUserId('789')
 
   const fakeRole = makeRole({ id: roleId })
 

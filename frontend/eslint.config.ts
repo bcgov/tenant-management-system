@@ -170,6 +170,16 @@ const config = [
   {
     ...pluginVitest.configs.recommended,
     files: ['src/__tests__/**/*.ts'],
+    languageOptions: {
+      parser: tsParser,
+      parserOptions: {
+        ecmaVersion: 'latest',
+        project: ['./tsconfig.vitest.json', './tsconfig.app.json'],
+        sourceType: 'module',
+      },
+    },
+    plugins: { ...pluginVitest.configs.recommended.plugins },
+    rules: { ...pluginVitest.configs.recommended.rules },
   },
 
   // Cypress test files
