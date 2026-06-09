@@ -29,7 +29,7 @@ export type GroupServiceApiData = {
   /**
    * The unique identifier for the group service.
    */
-  id: string
+  id: GroupServiceId
 
   /**
    * The roles available in the group service.
@@ -100,7 +100,7 @@ export class GroupService {
     const roles = apiData.sharedServiceRoles.map(GroupServiceRole.fromApiData)
 
     return new GroupService(
-      toGroupServiceId(apiData.id),
+      apiData.id,
       apiData.displayName,
       apiData.clientIdentifier,
       apiData.description,
