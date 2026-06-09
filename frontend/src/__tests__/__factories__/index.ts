@@ -29,7 +29,7 @@ import { ROLES } from '@/utils/constants'
 
 // Group Factory
 
-export function makeGroup(
+export const makeGroup = (
   overrides: Partial<{
     createdBy: string
     createdDate: string
@@ -38,7 +38,7 @@ export function makeGroup(
     id: string
     name: string
   }> = {},
-): Group {
+): Group => {
   return new Group(
     overrides.createdBy ?? 'test-group-created-by',
     overrides.createdDate ?? 'test-group-created-date',
@@ -51,7 +51,7 @@ export function makeGroup(
 
 // Group Service Factory
 
-export function makeGroupService(
+export const makeGroupService = (
   overrides: Partial<{
     clientIdentifier: string
     description: string
@@ -59,7 +59,7 @@ export function makeGroupService(
     id: string
     roles: GroupServiceRole[]
   }> = {},
-): GroupService {
+): GroupService => {
   return new GroupService(
     toGroupServiceId(overrides.id ?? 'test-group-service-id'),
     overrides.displayName ?? 'test-group-service-display-name',
@@ -71,7 +71,7 @@ export function makeGroupService(
 
 // Group Service Role Factory
 
-export function makeGroupServiceRole(
+export const makeGroupServiceRole = (
   overrides: Partial<{
     allowedIdentityProviders: string[]
     description: string
@@ -79,7 +79,7 @@ export function makeGroupServiceRole(
     isEnabled: boolean
     name: string
   }> = {},
-): GroupServiceRole {
+): GroupServiceRole => {
   return new GroupServiceRole(
     toGroupServiceRoleId(overrides.id ?? 'test-group-service-role-id'),
     overrides.name ?? 'test-group-service-role-name',
@@ -89,7 +89,7 @@ export function makeGroupServiceRole(
   )
 }
 
-export function makeGroupServiceRoleApiData(): GroupServiceRoleApiData {
+export const makeGroupServiceRoleApiData = (): GroupServiceRoleApiData => {
   return {
     allowedIdentityProviders: ['idir'],
     description: 'test-group-service-role-description',
@@ -101,19 +101,19 @@ export function makeGroupServiceRoleApiData(): GroupServiceRoleApiData {
 
 // GroupUser Factory
 
-export function makeGroupUser(
+export const makeGroupUser = (
   overrides: Partial<{
     id: string
     user: User
   }> = {},
-): GroupUser {
+): GroupUser => {
   return new GroupUser(
     toGroupUserId(overrides.id ?? 'test-group-user-id'),
     overrides.user ?? makeUser(),
   )
 }
 
-export function makeGroupUserApiData(): GroupUserApiData {
+export const makeGroupUserApiData = (): GroupUserApiData => {
   return {
     id: toGroupUserId('api-group-user-id'),
     user: makeUserApiData(),
@@ -122,13 +122,13 @@ export function makeGroupUserApiData(): GroupUserApiData {
 
 // Role Factories
 
-export function makeRole(
+export const makeRole = (
   overrides: Partial<{
     description: string
     id: string
     name: string
   }> = {},
-): Role {
+): Role => {
   return new Role(
     toRoleId(overrides.id ?? 'test-role-id'),
     overrides.name ?? 'test-role-name',
@@ -136,25 +136,25 @@ export function makeRole(
   )
 }
 
-export function makeRoleOperationsAdmin(): Role {
+export const makeRoleOperationsAdmin = (): Role => {
   return makeRole({ name: ROLES.OPERATIONS_ADMIN.value })
 }
 
-export function makeRoleServiceUser(): Role {
+export const makeRoleServiceUser = (): Role => {
   return makeRole({ name: ROLES.SERVICE_USER.value })
 }
 
-export function makeRoleTenantOwner(): Role {
+export const makeRoleTenantOwner = (): Role => {
   return makeRole({ name: ROLES.TENANT_OWNER.value })
 }
 
-export function makeRoleUserAdmin(): Role {
+export const makeRoleUserAdmin = (): Role => {
   return makeRole({ name: ROLES.USER_ADMIN.value })
 }
 
 // Service Factory
 
-export function makeService(
+export const makeService = (
   overrides: Partial<{
     clientIdentifier: string
     createdDate: string
@@ -166,7 +166,7 @@ export function makeService(
     roles: ServiceRole[]
     updatedDate: string
   }> = {},
-): Service {
+): Service => {
   return new Service(
     toServiceId(overrides.id ?? 'test-service-id'),
     overrides.name ?? 'test-service-name',
@@ -182,7 +182,7 @@ export function makeService(
 
 // Service Role Factory
 
-export function makeServiceRole(
+export const makeServiceRole = (
   overrides: Partial<{
     allowedIdentityProviders: string[]
     createdBy: string
@@ -192,7 +192,7 @@ export function makeServiceRole(
     isDeleted: boolean
     name: string
   }> = {},
-): ServiceRole {
+): ServiceRole => {
   return new ServiceRole(
     toServiceRoleId(overrides.id ?? 'test-service-role-id'),
     overrides.name ?? 'test-service-role-name',
@@ -204,7 +204,7 @@ export function makeServiceRole(
   )
 }
 
-export function makeServiceRoleApiData(): ServiceRoleApiData {
+export const makeServiceRoleApiData = (): ServiceRoleApiData => {
   return {
     allowedIdentityProviders: [],
     createdBy: 'service-role-created-by',
@@ -218,7 +218,7 @@ export function makeServiceRoleApiData(): ServiceRoleApiData {
 
 // SsoUser Factory
 
-export function makeSsoUser(
+export const makeSsoUser = (
   overrides: Partial<{
     displayName: string
     email: string
@@ -228,7 +228,7 @@ export function makeSsoUser(
     ssoUserId: string
     userName: string
   }> = {},
-): SsoUser {
+): SsoUser => {
   return new SsoUser(
     toSsoUserId(overrides.ssoUserId ?? 'test-sso-user-id'),
     overrides.userName ?? 'test-sso-user-user-name',
@@ -240,7 +240,7 @@ export function makeSsoUser(
   )
 }
 
-export function makeSsoUserApiData(): SsoUserApiData {
+export const makeSsoUserApiData = (): SsoUserApiData => {
   return {
     displayName: 'api-sso-user-display-name',
     email: 'api-sso-user-email',
@@ -254,7 +254,7 @@ export function makeSsoUserApiData(): SsoUserApiData {
 
 // Tenant Factory
 
-export function makeTenant(
+export const makeTenant = (
   overrides: Partial<{
     createdBy: string
     createdDate: string
@@ -264,7 +264,7 @@ export function makeTenant(
     name: string
     users: User[]
   }> = {},
-): Tenant {
+): Tenant => {
   return new Tenant(
     overrides.createdBy ?? 'test-tenant-created-by',
     overrides.createdDate ?? 'test-tenant-created-date',
@@ -278,7 +278,7 @@ export function makeTenant(
 
 // Tenant Request Factory
 
-export function makeTenantRequest(
+export const makeTenantRequest = (
   overrides: Partial<{
     createdBy: string
     createdDate: string
@@ -288,7 +288,7 @@ export function makeTenantRequest(
     name: string
     status: string
   }> = {},
-): TenantRequest {
+): TenantRequest => {
   return new TenantRequest(
     overrides.createdBy ?? 'test-tenant-request-created-by',
     overrides.createdDate ?? 'test-tenant-request-created-date',
@@ -302,13 +302,13 @@ export function makeTenantRequest(
 
 // User Factories
 
-export function makeUser(
+export const makeUser = (
   overrides: Partial<{
     id: string
     roles: Role[]
     ssoUser: SsoUser
   }> = {},
-): User {
+): User => {
   return new User(
     toUserId(overrides.id ?? 'test-user-id'),
     overrides.ssoUser ?? makeSsoUser(),
@@ -316,19 +316,19 @@ export function makeUser(
   )
 }
 
-export function makeUserBceid(): User {
+export const makeUserBceid = (): User => {
   return makeUser({ ssoUser: makeSsoUser({ idpType: 'bceidbasic' }) })
 }
 
-export function makeUserIdir(): User {
+export const makeUserIdir = (): User => {
   return makeUser({ ssoUser: makeSsoUser({ idpType: 'idir' }) })
 }
 
-export function makeUserOperationsAdmin(): User {
+export const makeUserOperationsAdmin = (): User => {
   return makeUser({ roles: [makeRoleOperationsAdmin()] })
 }
 
-export function makeUserApiData(): UserApiData {
+export const makeUserApiData = (): UserApiData => {
   return {
     id: toUserId('api-user-id'),
     ssoUser: makeSsoUserApiData(),

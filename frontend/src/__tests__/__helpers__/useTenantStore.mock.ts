@@ -18,12 +18,12 @@ vi.mock('@/stores/useTenantStore', () => ({
   }),
 }))
 
-export function mockTenantStore(tenants: Tenant[] = []) {
+export const mockTenantStore = (tenants: Tenant[] = []) => {
   storeState.tenants = tenants
   mockFetchTenants.mockResolvedValue(undefined)
 }
 
-export function mockTenantStoreFetchError(error = new Error('Failed')) {
+export const mockTenantStoreFetchError = (error = new Error('Failed')) => {
   mockFetchTenants.mockRejectedValue(error)
 }
 

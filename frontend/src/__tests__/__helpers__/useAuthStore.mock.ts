@@ -14,7 +14,7 @@ type MockAuthStoreOverrides = Partial<{
   user: User | null
 }>
 
-export function createMockAuthStore(overrides: MockAuthStoreOverrides = {}) {
+export const createMockAuthStore = (overrides: MockAuthStoreOverrides = {}) => {
   const state = reactive({
     isSessionExpired: overrides.isSessionExpired ?? false,
     user: overrides.user === undefined ? makeUser() : overrides.user,

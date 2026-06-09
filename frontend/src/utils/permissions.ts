@@ -10,7 +10,10 @@ import { ROLES } from '@/utils/constants'
  * @returns True if the current user has the specified role in the tenant, false
  *   otherwise.
  */
-export function currentUserHasRole(tenant: Tenant, roleName: string): boolean {
+export const currentUserHasRole = (
+  tenant: Tenant,
+  roleName: string,
+): boolean => {
   const authStore = useAuthStore()
   if (!authStore.isAuthenticated) {
     return false
@@ -24,7 +27,7 @@ export function currentUserHasRole(tenant: Tenant, roleName: string): boolean {
  *
  * @returns True if the current user is a BCeID user, false otherwise.
  */
-export function currentUserIsBceid(): boolean {
+export const currentUserIsBceid = (): boolean => {
   const authStore = useAuthStore()
   if (!authStore.isAuthenticated) {
     return false
@@ -38,7 +41,7 @@ export function currentUserIsBceid(): boolean {
  *
  * @returns True if the current user is an IDIR user, false otherwise.
  */
-export function currentUserIsIdir(): boolean {
+export const currentUserIsIdir = (): boolean => {
   const authStore = useAuthStore()
   if (!authStore.isAuthenticated) {
     return false
@@ -55,7 +58,7 @@ export function currentUserIsIdir(): boolean {
  *
  * @returns True if the current user is an operations admin, false otherwise.
  */
-export function currentUserIsOperationsAdmin(): boolean {
+export const currentUserIsOperationsAdmin = (): boolean => {
   const authStore = useAuthStore()
   if (!authStore.isAuthenticated) {
     return false
