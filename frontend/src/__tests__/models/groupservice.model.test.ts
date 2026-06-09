@@ -3,14 +3,9 @@ import { describe, expect, it } from 'vitest'
 import {
   makeGroupService,
   makeGroupServiceRole,
-  makeGroupServiceRoleApiData,
 } from '@/__tests__/__factories__'
 
-import {
-  GroupService,
-  type GroupServiceApiData,
-  toGroupServiceId,
-} from '@/models/groupservice.model'
+import { GroupService, toGroupServiceId } from '@/models/groupservice.model'
 
 describe('GroupService model', () => {
   describe('constructor', () => {
@@ -73,27 +68,6 @@ describe('GroupService model', () => {
       })
 
       expect(groupService.enabledRolesCount).toBe(2)
-    })
-  })
-
-  describe('fromApiData', () => {
-    it('creates instance', () => {
-      const apiData: GroupServiceApiData = {
-        clientIdentifier: 'clientIdentifier',
-        description: 'description',
-        displayName: 'displayName',
-        id: toGroupServiceId('id'),
-        sharedServiceRoles: [makeGroupServiceRoleApiData()],
-      }
-
-      const service = GroupService.fromApiData(apiData)
-
-      expect(service).toBeInstanceOf(GroupService)
-      expect(service.clientIdentifier).toBe('clientIdentifier')
-      expect(service.description).toBe('description')
-      expect(service.displayName).toBe('displayName')
-      expect(service.id).toBe('id')
-      expect(service.roles).toHaveLength(1)
     })
   })
 

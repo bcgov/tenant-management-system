@@ -1,7 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
-import { User, type UserSearchApiData } from '@/models/user.model'
+import { userMapper, type UserSearchApiData } from '@/mappers/user.mapper'
+import { User } from '@/models/user.model'
 import { userService } from '@/services/user.service'
 import {
   type BCeIDSearchType,
@@ -42,7 +43,7 @@ export const useUserStore = defineStore('user', () => {
           break
       }
 
-      searchResults.value = userSearchData.map(User.fromSearchData)
+      searchResults.value = userSearchData.map(userMapper.fromSearchData)
 
       return searchResults.value
     } finally {
@@ -77,7 +78,7 @@ export const useUserStore = defineStore('user', () => {
           break
       }
 
-      searchResults.value = userSearchData.map(User.fromSearchData)
+      searchResults.value = userSearchData.map(userMapper.fromSearchData)
 
       return searchResults.value
     } finally {

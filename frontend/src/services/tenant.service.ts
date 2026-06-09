@@ -1,8 +1,11 @@
 import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
 import { ValidationError } from '@/errors/domain/ValidationError'
-import { type RoleApiData, type RoleId } from '@/models/role.model'
-import { type TenantApiData, type TenantId } from '@/models/tenant.model'
-import { User, type UserApiData, type UserId } from '@/models/user.model'
+import { type RoleApiData } from '@/mappers/role.mapper'
+import { type TenantApiData } from '@/mappers/tenant.mapper'
+import { type UserApiData } from '@/mappers/user.mapper'
+import { type RoleId } from '@/models/role.model'
+import { type TenantId } from '@/models/tenant.model'
+import { User, type UserId } from '@/models/user.model'
 import { authenticatedAxios } from '@/services/authenticated.axios'
 import {
   isDuplicateEntityError,
