@@ -34,7 +34,7 @@ describe('GroupServiceRole model', () => {
         allowedIdentityProviders: ['allowedIdentityProvider'],
         description: 'description',
         enabled: true,
-        id: 'id',
+        id: toGroupServiceRoleId('id'),
         name: 'name',
       }
 

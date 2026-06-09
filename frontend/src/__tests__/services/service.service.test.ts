@@ -1,10 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { makeGroupService, makeGroupServiceRole } from '../__factories__/index'
+import {
+  makeGroupService,
+  makeGroupServiceRole,
+} from '@/__tests__/__factories__/index'
 
-import { type GroupId } from '@/models/group.model'
-import { type ServiceId } from '@/models/service.model'
-import { type TenantId } from '@/models/tenant.model'
+import { toGroupId } from '@/models/group.model'
+import { toServiceId } from '@/models/service.model'
+import { toTenantId } from '@/models/tenant.model'
 import * as utils from '@/services/utils'
 
 vi.mock('@/services/utils', () => ({
@@ -41,8 +44,8 @@ vi.mock('@/services/authenticated.axios', () => ({
 import { serviceService } from '@/services/service.service'
 
 describe('serviceService', () => {
-  const tenantId = '1' as TenantId
-  const serviceId = '123' as ServiceId
+  const tenantId = toTenantId('1')
+  const serviceId = toServiceId('123')
 
   const fakeSharedService = {
     id: serviceId,
@@ -187,7 +190,7 @@ describe('serviceService', () => {
       ],
     }
 
-    const groupId = '1' as GroupId
+    const groupId = toGroupId('1')
 
     it('should return tenant group services on success', async () => {
       mockGet.mockResolvedValueOnce({
@@ -245,7 +248,7 @@ describe('serviceService', () => {
         ],
       }),
     ]
-    const groupId = '1' as GroupId
+    const groupId = toGroupId('1')
 
     it('should return tenant group services on success', async () => {
       mockPut.mockResolvedValueOnce({ data: { data: {} } })

@@ -28,7 +28,7 @@ export type GroupServiceRoleApiData = {
   /**
    * Unique identifier for the group service role.
    */
-  id: string
+  id: GroupServiceRoleId
 
   /**
    * Name of the group service role.
@@ -93,7 +93,7 @@ export class GroupServiceRole {
    */
   static fromApiData(apiData: GroupServiceRoleApiData): GroupServiceRole {
     return new GroupServiceRole(
-      toGroupServiceRoleId(apiData.id),
+      apiData.id,
       apiData.name,
       apiData.description,
       apiData.allowedIdentityProviders,
