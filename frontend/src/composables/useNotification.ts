@@ -117,6 +117,6 @@ export const notification = {
  *
  * @returns The notification object with all available methods
  */
-export function useNotification() {
+export const useNotification = () => {
   return notification
 }
