@@ -3,15 +3,18 @@ import { createPinia, setActivePinia } from 'pinia'
 
 import { makeRole, makeTenant, makeUser } from '@/__tests__/__factories__'
 
-import { type RoleApiData, toRoleId } from '@/models/role.model'
-import { type SsoUserApiData, toSsoUserId } from '@/models/ssouser.model'
+import { type RoleApiData } from '@/mappers/role.mapper'
+import { type SsoUserApiData } from '@/mappers/ssouser.mapper'
+import { type TenantApiData } from '@/mappers/tenant.mapper'
+import { type UserApiData } from '@/mappers/user.mapper'
+import { toRoleId } from '@/models/role.model'
+import { toSsoUserId } from '@/models/ssouser.model'
 import {
   Tenant,
-  type TenantApiData,
   type TenantDetailFields,
   toTenantId,
 } from '@/models/tenant.model'
-import { User, type UserApiData, toUserId } from '@/models/user.model'
+import { User, toUserId } from '@/models/user.model'
 import { tenantService } from '@/services/tenant.service'
 import { useRoleStore } from '@/stores/useRoleStore'
 import { useTenantStore } from '@/stores/useTenantStore'

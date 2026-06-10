@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
+import { roleMapper } from '@/mappers/role.mapper'
 import { Role } from '@/models/role.model'
 import { roleService } from '@/services/role.service'
 
@@ -23,7 +24,7 @@ export const useRoleStore = defineStore('role', () => {
     loading.value = true
     try {
       const roleData = await roleService.getRoles()
-      roles.value = roleData.map(Role.fromApiData)
+      roles.value = roleData.map(roleMapper.fromApiData)
     } finally {
       loading.value = false
     }

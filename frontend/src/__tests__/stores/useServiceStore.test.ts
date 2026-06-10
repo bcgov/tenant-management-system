@@ -1,13 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 
-import { makeService } from '@/__tests__/__factories__/index'
+import { makeService } from '@/__tests__/__factories__'
 
-import {
-  Service,
-  type ServiceApiData,
-  toServiceId,
-} from '@/models/service.model'
+import { type ServiceApiData } from '@/mappers/service.mapper'
+import { Service, toServiceId } from '@/models/service.model'
 import { toTenantId } from '@/models/tenant.model'
 import { serviceService } from '@/services/service.service'
 import { useServiceStore } from '@/stores/useServiceStore'

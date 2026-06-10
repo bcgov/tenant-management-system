@@ -9,20 +9,16 @@ import {
   makeUser,
 } from '@/__tests__/__factories__'
 
-import { Group, type GroupApiData, toGroupId } from '@/models/group.model'
-import {
-  GroupService,
-  type GroupServiceApiData,
-  toGroupServiceId,
-} from '@/models/groupservice.model'
-import {
-  GroupUser,
-  type GroupUserApiData,
-  toGroupUserId,
-} from '@/models/groupuser.model'
+import { type GroupApiData } from '@/mappers/group.mapper'
+import { type GroupServiceApiData } from '@/mappers/groupservice.mapper'
+import { type GroupUserApiData } from '@/mappers/groupuser.mapper'
+import { type UserApiData } from '@/mappers/user.mapper'
+import { Group, toGroupId } from '@/models/group.model'
+import { GroupService, toGroupServiceId } from '@/models/groupservice.model'
+import { GroupUser, toGroupUserId } from '@/models/groupuser.model'
 import { toSsoUserId } from '@/models/ssouser.model'
 import { toTenantId } from '@/models/tenant.model'
-import { toUserId, type UserApiData } from '@/models/user.model'
+import { toUserId } from '@/models/user.model'
 import { groupService } from '@/services/group.service'
 import { serviceService } from '@/services/service.service'
 import { useGroupStore } from '@/stores/useGroupStore'

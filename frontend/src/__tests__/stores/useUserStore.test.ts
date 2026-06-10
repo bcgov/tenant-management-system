@@ -1,7 +1,8 @@
 import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { User, type UserSearchApiData } from '@/models/user.model'
+import { type UserSearchApiData } from '@/mappers/user.mapper'
+import { User } from '@/models/user.model'
 import { userService } from '@/services/user.service'
 import { useUserStore } from '@/stores/useUserStore'
 
