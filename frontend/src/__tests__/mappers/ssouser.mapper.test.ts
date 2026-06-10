@@ -39,6 +39,7 @@ describe('SsoUser mapper', () => {
 
       const ssoUser = ssoUserMapper.fromApiData(apiData)
 
+      expect(ssoUser).toBeInstanceOf(SsoUser)
       expect(ssoUser.email).toBeUndefined()
       expect(ssoUser.userName).toBeUndefined()
     })

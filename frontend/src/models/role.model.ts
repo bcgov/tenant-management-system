@@ -6,26 +6,26 @@ export const toRoleId = (id: string): RoleId => id as RoleId
  */
 export class Role {
   /**
-   * Description of the role.
+   * The description of the role.
    */
   description: string
 
   /**
-   * Unique identifier for the role.
+   * The unique identifier for the role.
    */
   id: RoleId
 
   /**
-   * Name of the role.
+   * The name of the role.
    */
   name: string
 
   /**
    * Creates a new Role instance.
    *
-   * @param id - Unique identifier for the role.
-   * @param name - Name of the role.
-   * @param description - Description of the role.
+   * @param id - The unique identifier for the role.
+   * @param name - The name of the role.
+   * @param description - The description of the role.
    */
   constructor(id: RoleId, name: string, description: string) {
     this.description = description

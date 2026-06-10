@@ -19,29 +19,29 @@ export type GroupApiData = {
   createdByDisplayName?: string
 
   /**
-   * ISO8601 date string (YYYY-MM-DD) when the group was created.
+   * The ISO8601 date string (YYYY-MM-DD) for when the group was created.
    *
-   * Note: This is mapped from 'createdDateTime' in the API.
+   * Note: This is mapped to 'createdDate' in the model.
    */
   createdDateTime: string
 
   /**
-   * Description of the group.
+   * The description of the group.
    */
   description: string
 
   /**
-   * Unique identifier for the group.
+   * The unique identifier for the group.
    */
   id: GroupId
 
   /**
-   * Display name of the group.
+   * The name of the group.
    */
   name: string
 
   /**
-   * Array of group users associated with this group, may be undefined.
+   * The array of group users associated with this group, may be undefined.
    */
   users?: GroupUserApiData[]
 }
@@ -54,10 +54,10 @@ export const groupMapper = {
    * 'createdDate' property.
    *
    * Note: The API may return 'createdByDisplayName', in which case it is used
-   * in preference to the createBy UUID.
+   * in preference to the createdBy UUID.
    *
-   * @param apiData - The raw group data from the API
-   * @returns A new Group instance
+   * @param apiData - The raw group data from the API.
+   * @returns A new Group instance.
    */
   fromApiData: (apiData: GroupApiData): Group => {
     const groupUsers = Array.isArray(apiData.users)

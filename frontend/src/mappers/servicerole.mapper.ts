@@ -5,39 +5,39 @@ import { ServiceRole, type ServiceRoleId } from '@/models/servicerole.model'
  */
 export type ServiceRoleApiData = {
   /**
-   * Allowed identity providers.
+   * The allowed identity providers.
    */
   allowedIdentityProviders: string[]
 
   /**
-   * Created by for this service role.
+   * The user who created this service role.
    */
   createdBy: string
 
   /**
-   * ISO8601 date string (YYYY-MM-DD) when service role was created.
+   * The ISO8601 date string (YYYY-MM-DD) when service role was created.
    *
    * Note: This is mapped from 'createdDateTime' in the API.
    */
   createdDateTime: string
 
   /**
-   * Description of the service role.
+   * The description of the service role.
    */
   description: string
 
   /**
-   * Unique identifier for the service role.
+   * The unique identifier for the service role.
    */
   id: ServiceRoleId
 
   /**
-   * Whether or not the service role is deleted.
+   * The enabled status of the service role.
    */
   isDeleted: boolean
 
   /**
-   * Name of the service role.
+   * The name of the service role.
    */
   name: string
 }

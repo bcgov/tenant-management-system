@@ -43,13 +43,13 @@ export class SsoUser {
   /**
    * Creates a new SsoUser instance.
    *
-   * @param ssoUserId - The unique SSO user ID
-   * @param userName - The username (optional)
-   * @param firstName - The user's first name
-   * @param lastName - The user's last name
-   * @param displayName - The display name of the user
-   * @param email - The user's email address (optional)
-   * @param idpType - The identity provider type (optional)
+   * @param ssoUserId - The unique SSO user ID.
+   * @param userName - The username (optional).
+   * @param firstName - The user's first name.
+   * @param lastName - The user's last name.
+   * @param displayName - The display name of the user.
+   * @param email - The user's email address (optional).
+   * @param idpType - The identity provider type.
    */
   constructor(
     ssoUserId: SsoUserId,

@@ -8,7 +8,7 @@ export const toGroupUserId = (id: string): GroupUserId => id as GroupUserId
  */
 export class GroupUser {
   /**
-   * Unique identifier for the group user.
+   * The unique identifier for the group user.
    */
   id: GroupUserId
 
@@ -20,7 +20,7 @@ export class GroupUser {
   /**
    * Creates a new GroupUser instance.
    *
-   * @param id - Unique identifier for the group user.
+   * @param id - The unique identifier for the group user.
    * @param user - The user associated with the group user.
    */
   constructor(id: GroupUserId, user: User) {

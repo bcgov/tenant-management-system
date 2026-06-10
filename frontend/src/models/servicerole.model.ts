@@ -16,29 +16,29 @@ export type ServiceRoleDetailFields = Pick<
  */
 export class ServiceRole {
   /**
-   * Created by for this service role.
+   * The identifier of the user who created this service role.
    */
   createdBy: string
 
   /**
-   * ISO8601 date string (YYYY-MM-DD) when service role was created.
+   * The ISO8601 date string (YYYY-MM-DD) when service role was created.
    *
    * Note: This is mapped from 'createdDateTime' in the API.
    */
   createdDate: string
 
   /**
-   * Description of the service role.
+   * The description of the service role.
    */
   description: string
 
   /**
-   * Unique identifier for the service role.
+   * The unique identifier for the service role.
    */
   id: ServiceRoleId
 
   /**
-   * Identity providers that define which identities can use the role.
+   * The identity providers that define which identities can use the role.
    */
   identityProviders: string[]
 
@@ -48,16 +48,24 @@ export class ServiceRole {
   isDeleted: boolean
 
   /**
-   * Name of the service role.
+   * The name of the service role.
    */
   name: string
 
   /**
-   * Creates a new Role instance.
+   * Creates a new ServiceRole instance.
    *
-   * @param id - Unique identifier for the role
-   * @param name - Name of the role
-   * @param description - Description of the role
+   * @param id - The unique identifier for the service role.
+   * @param name - The name of the service role.
+   * @param description - The description of the service role.
+   * @param identityProviders - The identity providers that define which
+   *   identities can use the role.
+   * @param createdBy - The identifier of the user who created this service
+   *   role.
+   * @param createdDate - The ISO8601 date string (YYYY-MM-DD) when service role
+   *   was created.
+   * @param isDeleted - Whether or not the service role is deleted.
+   * @returns A new ServiceRole instance.
    */
   constructor(
     id: ServiceRoleId,

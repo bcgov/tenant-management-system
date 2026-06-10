@@ -25,5 +25,17 @@ describe('GroupServiceRole model', () => {
       expect(groupServiceRole.isEnabled).toBe(true)
       expect(groupServiceRole.name).toBe('name')
     })
+
+    it('handles empty allowed identity providers', () => {
+      const groupServiceRole = new GroupServiceRole(
+        toGroupServiceRoleId('id'),
+        'name',
+        'description',
+        [],
+        true,
+      )
+
+      expect(groupServiceRole.allowedIdentityProviders.length).toBe(0)
+    })
   })
 })

@@ -31,5 +31,21 @@ describe('Service model', () => {
       expect(service.roles[0]).toBe(serviceRole)
       expect(service.updatedDate).toBe('updatedDate')
     })
+
+    it('handles empty service roles', () => {
+      const service = new Service(
+        toServiceId('id'),
+        'name',
+        'displayName',
+        'createdDate',
+        'clientIdentifier',
+        'landingPageUrl',
+        'description',
+        'updatedDate',
+        [],
+      )
+
+      expect(service.roles.length).toBe(0)
+    })
   })
 })

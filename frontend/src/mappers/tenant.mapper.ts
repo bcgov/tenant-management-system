@@ -16,34 +16,34 @@ export type TenantApiData = {
   createdByDisplayName?: string
 
   /**
-   * ISO8601 date string (YYYY-MM-DD) when tenant was created.
+   * The ISO8601 date string (YYYY-MM-DD) when tenant was created.
    *
    * Note: This is mapped from 'createdDateTime' in the API.
    */
   createdDateTime: string
 
   /**
-   * Description of the tenant.
+   * The description of the tenant.
    */
   description: string
 
   /**
-   * Unique identifier for the tenant.
+   * The unique identifier for the tenant.
    */
   id: TenantId
 
   /**
-   * Associated ministry or organization name.
+   * The associated ministry or organization name.
    */
   ministryName: string
 
   /**
-   * Display name of the tenant.
+   * The display name of the tenant.
    */
   name: string
 
   /**
-   * Array of users associated with this tenant.
+   * The users associated with this tenant.
    */
   users: UserApiData[]
 }
@@ -56,7 +56,7 @@ export const tenantMapper = {
    * 'createdDate' property.
    *
    * Note: The API may return 'createdByDisplayName', in which case it is used
-   * in preference to the createBy UUID.
+   * in preference to the createdBy UUID.
    *
    * @param apiData - The raw tenant data from the API.
    * @returns A new Tenant instance.

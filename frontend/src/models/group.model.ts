@@ -19,29 +19,29 @@ export class Group {
   createdBy: string
 
   /**
-   * ISO8601 date string (YYYY-MM-DD) when the group was created.
+   * The ISO8601 date string (YYYY-MM-DD) for when the group was created.
    *
    * Note: This is mapped from 'createdDateTime' in the API.
    */
   createdDate: string
 
   /**
-   * Description of the group.
+   * The description of the group.
    */
   description: string
 
   /**
-   * Unique identifier for the group.
+   * The unique identifier for the group.
    */
   id: GroupId
 
   /**
-   * Display name of the group.
+   * The name of the group.
    */
   name: string
 
   /**
-   * Array of group users associated with this group.
+   * The array of group users associated with this group.
    */
   groupUsers: GroupUser[]
 
@@ -49,12 +49,12 @@ export class Group {
    * Creates a new Group instance.
    *
    * @param createdBy - The identity of who created the group.
-   * @param createdDate - ISO8601 date string (YYYY-MM-DD) when group was
-   *   created.
-   * @param description - Description of the group.
-   * @param id - Unique identifier for the group.
-   * @param name - Display name of the group.
-   * @param groupUsers - Array of group users associated with this group.
+   * @param createdDate - The ISO8601 date string (YYYY-MM-DD) for when the
+   *   group was created.
+   * @param description - The description of the group.
+   * @param id - The unique identifier for the group.
+   * @param name - The name of the group.
+   * @param groupUsers - The array of group users associated with this group.
    */
   constructor(
     createdBy: string,

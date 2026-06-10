@@ -10,26 +10,26 @@ export const toUserId = (id: string): UserId => id as UserId
  */
 export class User {
   /**
-   * Unique identifier for the user.
+   * The unique identifier for the user.
    */
   id: UserId
 
   /**
-   * Array of roles assigned to the user.
+   * The roles assigned to the user.
    */
   roles: Role[]
 
   /**
-   * SSO user details.
+   * The SSO user details.
    */
   ssoUser: SsoUser
 
   /**
    * Creates a new User instance.
    *
-   * @param id - Unique identifier for the user.
+   * @param id - The unique identifier for the user.
    * @param ssoUser - The associated SSO user details.
-   * @param roles - Array of roles assigned to the user (default empty array).
+   * @param roles - The roles assigned to the user (default empty array).
    */
   constructor(id: UserId, ssoUser: SsoUser, roles: Role[] = []) {
     this.id = id

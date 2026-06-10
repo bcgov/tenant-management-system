@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
-  makeRole,
+  makeRoleApiData,
   makeSsoUser,
   makeSsoUserApiData,
 } from '@/__tests__/__factories__'
@@ -13,26 +13,26 @@ import {
   type UserSearchApiData,
 } from '@/mappers/user.mapper'
 import { toUserId } from '@/models/user.model'
+import { roleMapper } from '@/mappers/role.mapper'
 
 describe('User mapper', () => {
   describe('fromApiData', () => {
     it('creates instance', () => {
-      const roles = [
-        makeRole({ name: 'name1', description: 'description1' }),
-        makeRole({ name: 'name2', description: 'description2' }),
-      ]
+      const roleApiData = makeRoleApiData()
+      const role = roleMapper.fromApiData(roleApiData)
       const ssoUserApiData = makeSsoUserApiData()
       const ssoUser = ssoUserMapper.fromApiData(ssoUserApiData)
       const apiData: UserApiData = {
         id: toUserId('id'),
-        roles,
+        roles: [roleApiData],
         ssoUser: ssoUserApiData,
       }
 
       const user = userMapper.fromApiData(apiData)
 
-      expect(user.id).toBe(apiData.id)
-      expect(user.roles).toEqual(roles)
+      expect(user.id).toBe('id')
+      expect(user.roles.length).toEqual(1)
+      expect(user.roles[0]).toEqual(role)
       expect(user.ssoUser).toEqual(ssoUser)
     })
 

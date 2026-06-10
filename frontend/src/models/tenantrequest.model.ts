@@ -21,29 +21,29 @@ export class TenantRequest {
   createdBy: string
 
   /**
-   * ISO8601 date string (YYYY-MM-DD) when the tenant request was created.
+   * The ISO8601 date string (YYYY-MM-DD) when the tenant request was created.
    *
    * Note: This is mapped from 'createdDateTime' in the API.
    */
   createdDate: string
 
   /**
-   * Description of the tenant request.
+   * The description of the tenant request.
    */
   description: string
 
   /**
-   * Unique identifier for the tenant request.
+   * The unique identifier for the tenant request.
    */
   id: TenantRequestId
 
   /**
-   * Associated ministry or organization name.
+   * The associated ministry or organization name.
    */
   ministryName: string
 
   /**
-   * Display name of the tenant request.
+   * The display name of the tenant request.
    */
   name: string
 
@@ -53,23 +53,23 @@ export class TenantRequest {
   rejectionReason: string
 
   /**
-   * Status of the tenant request: APPROVED, NEW, or REJECTED.
+   * The status of the tenant request: APPROVED, NEW, or REJECTED.
    */
   status: string
 
   /**
    * Creates a new Tenant Request instance.
    *
-   * @param createdBy - The identity of who created the tenant request
-   * @param createdDate - ISO8601 date string (YYYY-MM-DD) when tenant request
-   *   was created
-   * @param description - Description of the tenant request
-   * @param id - Unique identifier for the tenant request
-   * @param name - Display name of the tenant request
-   * @param ministryName - Associated ministry or organization name
-   * @param status - Status of the tenant request
-   *
    * Note: rejectionReason is initialized to an empty string by default.
+   *
+   * @param createdBy - The identity of who created the tenant request.
+   * @param createdDate - The ISO8601 date string (YYYY-MM-DD) when tenant
+   *   request was created.
+   * @param description - The description of the tenant request.
+   * @param id - The unique identifier for the tenant request.
+   * @param name - The display name of the tenant request.
+   * @param ministryName - The associated ministry or organization name.
+   * @param status - The status of the tenant request.
    */
   constructor(
     createdBy: string,

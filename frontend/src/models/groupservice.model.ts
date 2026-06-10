@@ -33,12 +33,12 @@ export class GroupService {
   /**
    * Creates a new GroupService instance.
    *
-   * @param id - The unique identifier for the group service
-   * @param displayName - The display name of the group service
-   * @param clientIdentifier - The client identifier for the group service
-   * @param description - The description of the group service
-   * @param roles - The roles available in the group service
-   * @returns A new GroupService instance
+   * @param id - The unique identifier for the group service.
+   * @param displayName - The display name of the group service.
+   * @param clientIdentifier - The client identifier for the group service.
+   * @param description - The description of the group service.
+   * @param roles - The roles available in the group service.
+   * @returns A new GroupService instance.
    */
   constructor(
     id: GroupServiceId,

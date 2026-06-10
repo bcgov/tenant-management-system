@@ -6,17 +6,17 @@ export const toGroupServiceRoleId = (id: string): GroupServiceRoleId =>
 
 export class GroupServiceRole {
   /**
-   * Allowed identity providers.
+   * The allowed identity providers.
    */
   allowedIdentityProviders: string[]
 
   /**
-   * Description of the group service role.
+   * The description of the group service role.
    */
   description: string
 
   /**
-   * Unique identifier for the group service role.
+   * The unique identifier for the group service role.
    */
   id: GroupServiceRoleId
 
@@ -28,17 +28,17 @@ export class GroupServiceRole {
   isEnabled: boolean
 
   /**
-   * Name of the group service role.
+   * The name of the group service role.
    */
   name: string
 
   /**
    * Creates a new GroupServiceRole instance.
    *
-   * @param id - Unique identifier for the group service role.
-   * @param name - Name of the group service role.
-   * @param description - Description of the group service role.
-   * @param allowedIdentityProviders - Allowed identity providers.
+   * @param id - The unique identifier for the group service role.
+   * @param name - The name of the group service role.
+   * @param description - The description of the group service role.
+   * @param allowedIdentityProviders - The allowed identity providers.
    * @param isEnabled - Whether or not the group service role is enabled.
    */
   constructor(

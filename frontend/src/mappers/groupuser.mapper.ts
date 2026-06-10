@@ -8,7 +8,7 @@ import { type GroupUserId } from '@/models/groupuser.model'
  */
 export type GroupUserApiData = {
   /**
-   * Unique identifier for the group user.
+   * The unique identifier for the group user.
    */
   id: GroupUserId
 
@@ -26,8 +26,6 @@ export const groupUserMapper = {
    * Creates a GroupUser instance from API response data.
    *
    * @param apiData - The raw group user data from the API.
-   * @param apiData.id - Unique identifier for the group user.
-   * @param apiData.user - Raw user data to be converted to a User instance.
    * @returns A new GroupUser instance.
    */
   fromApiData: (apiData: GroupUserApiData): GroupUser => {

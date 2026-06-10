@@ -26,6 +26,18 @@ describe('GroupService model', () => {
       expect(service.id).toBe('id')
       expect(service.roles).toBe(groupServiceRoles)
     })
+
+    it('handles empty group service roles', () => {
+      const service = new GroupService(
+        toGroupServiceId('id'),
+        'displayName',
+        'clientIdentifier',
+        'description',
+        [],
+      )
+
+      expect(service.roles).toEqual([])
+    })
   })
 
   describe('enabledRolesCount', () => {
@@ -72,7 +84,7 @@ describe('GroupService model', () => {
   })
 
   describe('hasEnabledRoles', () => {
-    it('false for empty', () => {
+    it('is false for empty', () => {
       const groupService = makeGroupService({
         roles: [],
       })
@@ -80,7 +92,7 @@ describe('GroupService model', () => {
       expect(groupService.hasEnabledRoles).toBe(false)
     })
 
-    it('false', () => {
+    it('is false for all disabled', () => {
       const groupService = makeGroupService({
         roles: [
           makeGroupServiceRole({ id: 'id1', isEnabled: false }),
@@ -91,7 +103,7 @@ describe('GroupService model', () => {
       expect(groupService.hasEnabledRoles).toBe(false)
     })
 
-    it('true', () => {
+    it('is true for one enabled role', () => {
       const groupService = makeGroupService({
         roles: [
           makeGroupServiceRole({ id: 'id1', isEnabled: false }),
@@ -102,7 +114,7 @@ describe('GroupService model', () => {
       expect(groupService.hasEnabledRoles).toBe(true)
     })
 
-    it('true for multiples', () => {
+    it('is true for multiple enabled roles', () => {
       const groupService = makeGroupService({
         roles: [
           makeGroupServiceRole({ id: 'id1', isEnabled: true }),

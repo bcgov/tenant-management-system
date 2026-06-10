@@ -28,5 +28,20 @@ describe('GroupService mapper', () => {
       expect(service.id).toBe('id')
       expect(service.roles).toHaveLength(1)
     })
+
+    it('handles empty shared service roles', () => {
+      const apiData: GroupServiceApiData = {
+        clientIdentifier: 'clientIdentifier',
+        description: 'description',
+        displayName: 'displayName',
+        id: toGroupServiceId('id'),
+        sharedServiceRoles: [],
+      }
+
+      const service = groupServiceMapper.fromApiData(apiData)
+
+      expect(service).toBeInstanceOf(GroupService)
+      expect(service.roles).toHaveLength(0)
+    })
   })
 })

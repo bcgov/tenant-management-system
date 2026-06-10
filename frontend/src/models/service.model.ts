@@ -69,17 +69,17 @@ export class Service {
   /**
    * Creates a new Service instance.
    *
-   * @param id - The unique identifier for the service
-   * @param name - The name of the service
-   * @param displayName - The display name of the service
+   * @param id - The unique identifier for the service.
+   * @param name - The name of the service.
+   * @param displayName - The display name of the service.
    * @param createdDate - The ISO8601 date string (YYYY-MM-DD) when service was
-   *   created
-   * @param clientIdentifier - The client identifier for the service
-   * @param landingPageUrl - The URL for the landing page of the service
-   * @param description - The description of the service
-   * @param roles - The roles in available in the service
-   * @param updatedDate - When the service was last updated
-   * @returns A new Service instance
+   *   created.
+   * @param clientIdentifier - The client identifier for the service.
+   * @param landingPageUrl - The URL for the landing page of the service.
+   * @param description - The description of the service.
+   * @param roles - The roles in available in the service.
+   * @param updatedDate - When the service was last updated.
+   * @returns A new Service instance.
    */
   constructor(
     id: ServiceId,

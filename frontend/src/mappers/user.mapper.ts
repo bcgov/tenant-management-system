@@ -18,7 +18,7 @@ export type UserApiData = {
   ssoUser: SsoUserApiData
 
   /**
-   * Array of roles assigned to the user, which may be undefined.
+   * The roles assigned to the user, which may be undefined.
    */
   roles?: RoleApiData[]
 }

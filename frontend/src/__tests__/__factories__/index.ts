@@ -1,5 +1,6 @@
 import { type GroupServiceRoleApiData } from '@/mappers/groupservicerole.mapper'
 import { type GroupUserApiData } from '@/mappers/groupuser.mapper'
+import { type RoleApiData } from '@/mappers/role.mapper'
 import { type ServiceRoleApiData } from '@/mappers/servicerole.mapper'
 import { type SsoUserApiData } from '@/mappers/ssouser.mapper'
 import { type UserApiData } from '@/mappers/user.mapper'
@@ -142,6 +143,14 @@ export const makeRoleTenantOwner = (): Role => {
 
 export const makeRoleUserAdmin = (): Role => {
   return makeRole({ name: ROLES.USER_ADMIN.value })
+}
+
+export const makeRoleApiData = (): RoleApiData => {
+  return {
+    description: 'api-role-description',
+    id: toRoleId('api-role-id'),
+    name: 'api-role-name',
+  }
 }
 
 // Service Factory

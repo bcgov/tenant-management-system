@@ -12,14 +12,41 @@ describe('Service mapper', () => {
       const serviceRoleApiData = makeServiceRoleApiData()
       const serviceRole = serviceRoleMapper.fromApiData(serviceRoleApiData)
       const apiData: ServiceApiData = {
-        id: toServiceId('id'),
-        displayName: 'displayName',
-        createdDateTime: 'createdDateTime',
         clientIdentifier: 'clientIdentifier',
+        createdDateTime: 'createdDateTime',
         description: 'description',
+        displayName: 'displayName',
+        id: toServiceId('id'),
         landingPageUrl: 'landingPageUrl',
         name: 'name',
         roles: [serviceRoleApiData],
+        updatedDateTime: 'updatedDateTime',
+      }
+
+      const service = serviceMapper.fromApiData(apiData)
+
+      expect(service).toBeInstanceOf(Service)
+      expect(service.clientIdentifier).toBe('clientIdentifier')
+      expect(service.createdDate).toBe('createdDateTime')
+      expect(service.description).toBe('description')
+      expect(service.displayName).toBe('displayName')
+      expect(service.id).toBe('id')
+      expect(service.landingPageUrl).toBe('landingPageUrl')
+      expect(service.name).toBe('name')
+      expect(service.roles.length).toBe(1)
+      expect(service.roles[0]).toEqual(serviceRole)
+    })
+
+    it('handles empty roles', () => {
+      const apiData: ServiceApiData = {
+        clientIdentifier: 'clientIdentifier',
+        createdDateTime: 'createdDateTime',
+        description: 'description',
+        displayName: 'displayName',
+        id: toServiceId('id'),
+        landingPageUrl: 'landingPageUrl',
+        name: 'name',
+        roles: [],
         updatedDateTime: 'updatedDateTime',
       }
 
@@ -33,8 +60,7 @@ describe('Service mapper', () => {
       expect(service.id).toBe('id')
       expect(service.landingPageUrl).toBe('landingPageUrl')
       expect(service.name).toBe('name')
-      expect(service.roles.length).toBe(1)
-      expect(service.roles[0]).toEqual(serviceRole)
+      expect(service.roles.length).toBe(0)
     })
   })
 })

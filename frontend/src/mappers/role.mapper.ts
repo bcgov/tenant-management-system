@@ -10,12 +10,12 @@ export type RoleApiData = {
   description: string
 
   /**
-   * Unique identifier for the role.
+   * The unique identifier for the role.
    */
   id: RoleId
 
   /**
-   *  Name of the role.
+   * The name of the role.
    */
   name: string
 }

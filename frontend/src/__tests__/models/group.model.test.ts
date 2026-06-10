@@ -25,5 +25,18 @@ describe('Group model', () => {
       expect(group.id).toBe('id')
       expect(group.name).toBe('name')
     })
+
+    it('handles empty group users', () => {
+      const group = new Group(
+        'createdBy',
+        'createdDate',
+        'description',
+        toGroupId('id'),
+        'name',
+        [],
+      )
+
+      expect(group.groupUsers).toEqual([])
+    })
   })
 })

@@ -4,7 +4,7 @@ import {
   type TenantRequestApiData,
   tenantRequestMapper,
 } from '@/mappers/tenantrequest.mapper'
-import { toTenantRequestId } from '@/models/tenantrequest.model'
+import { TenantRequest, toTenantRequestId } from '@/models/tenantrequest.model'
 
 describe('TenantRequest mapper', () => {
   describe('fromApiData', () => {
@@ -22,6 +22,7 @@ describe('TenantRequest mapper', () => {
 
       const tenantRequest = tenantRequestMapper.fromApiData(apiData)
 
+      expect(tenantRequest).toBeInstanceOf(TenantRequest)
       expect(tenantRequest.createdBy).toBe('createdBy')
       expect(tenantRequest.createdDate).toBe('createdDateTime')
       expect(tenantRequest.description).toBe('description')
@@ -32,7 +33,7 @@ describe('TenantRequest mapper', () => {
       expect(tenantRequest.status).toBe('status')
     })
 
-    it('handles created by username', () => {
+    it('handles created by user name', () => {
       const apiData: TenantRequestApiData = {
         createdBy: 'createdBy',
         createdByUserName: 'createdByUserName',
@@ -47,6 +48,7 @@ describe('TenantRequest mapper', () => {
 
       const tenantRequest = tenantRequestMapper.fromApiData(apiData)
 
+      expect(tenantRequest).toBeInstanceOf(TenantRequest)
       expect(tenantRequest.createdBy).toBe('createdByUserName')
     })
 
@@ -63,6 +65,7 @@ describe('TenantRequest mapper', () => {
 
       const tenantRequest = tenantRequestMapper.fromApiData(apiData)
 
+      expect(tenantRequest).toBeInstanceOf(TenantRequest)
       expect(tenantRequest.rejectionReason).toBe('')
     })
   })

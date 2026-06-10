@@ -16,5 +16,13 @@ describe('User model', () => {
       expect(user.roles).toEqual(roles)
       expect(user.ssoUser).toEqual(ssoUser)
     })
+
+    it('handles empty roles', () => {
+      const ssoUser = makeSsoUser()
+
+      const user = new User(toUserId('id'), ssoUser, [])
+
+      expect(user.roles.length).toBe(0)
+    })
   })
 })

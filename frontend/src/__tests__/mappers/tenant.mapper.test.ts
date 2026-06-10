@@ -4,7 +4,7 @@ import { makeUserApiData } from '@/__tests__/__factories__'
 
 import { type TenantApiData, tenantMapper } from '@/mappers/tenant.mapper'
 import { userMapper } from '@/mappers/user.mapper'
-import { toTenantId } from '@/models/tenant.model'
+import { Tenant, toTenantId } from '@/models/tenant.model'
 
 describe('Tenant mapper', () => {
   describe('fromApiData', () => {
@@ -23,6 +23,7 @@ describe('Tenant mapper', () => {
 
       const tenant = tenantMapper.fromApiData(apiData)
 
+      expect(tenant).toBeInstanceOf(Tenant)
       expect(tenant.createdBy).toBe('createdBy')
       expect(tenant.createdDate).toBe('createdDateTime')
       expect(tenant.description).toBe('description')
@@ -42,12 +43,30 @@ describe('Tenant mapper', () => {
         id: toTenantId('id'),
         ministryName: 'ministryName',
         name: 'name',
+        users: [makeUserApiData()],
+      }
+
+      const tenant = tenantMapper.fromApiData(apiData)
+
+      expect(tenant).toBeInstanceOf(Tenant)
+      expect(tenant.createdBy).toBe('createdByDisplayName')
+    })
+
+    it('handles empty users', () => {
+      const apiData: TenantApiData = {
+        createdBy: 'createdBy',
+        createdDateTime: 'createdDateTime',
+        description: 'description',
+        id: toTenantId('id'),
+        ministryName: 'ministryName',
+        name: 'name',
         users: [],
       }
 
       const tenant = tenantMapper.fromApiData(apiData)
 
-      expect(tenant.createdBy).toBe('createdByDisplayName')
+      expect(tenant).toBeInstanceOf(Tenant)
+      expect(tenant.users.length).toBe(0)
     })
   })
 })
