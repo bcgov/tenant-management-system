@@ -1,65 +1,10 @@
 import {
   ServiceRole,
-  type ServiceRoleApiData,
   type ServiceRoleDetailFields,
 } from '@/models/servicerole.model'
 
 export type ServiceId = string & { readonly __brand: 'ServiceId' }
 export const toServiceId = (id: string): ServiceId => id as ServiceId
-
-/**
- * The shape of the data that comes from the API.
- */
-export type ServiceApiData = {
-  /**
-   * The client identifier for the service.
-   */
-  clientIdentifier: string
-
-  /**
-   * The ISO8601 date string (YYYY-MM-DD) when service was created.
-   *
-   * Note: This is mapped from 'createdDateTime' in the API.
-   */
-  createdDateTime: string
-
-  /**
-   * The description of the service.
-   */
-  description: string
-
-  /**
-   * The display name of the service.
-   */
-  displayName: string
-
-  /**
-   * The unique identifier for the service.
-   */
-  id: ServiceId
-
-  /**
-   * The URL for the landing page of the service.
-   */
-  landingPageUrl: string
-
-  /**
-   * The name of the service.
-   */
-  name: string
-
-  /**
-   * The roles available in the service.
-   */
-  roles: ServiceRoleApiData[]
-
-  /**
-   * The ISO8601 date string (YYYY-MM-DD) when service was last updated.
-   *
-   * Note: This maps to 'updatedDate' in the model.
-   */
-  updatedDateTime: string
-}
 
 /**
  * Utility type that represents the subset of Service properties used in the
@@ -124,17 +69,17 @@ export class Service {
   /**
    * Creates a new Service instance.
    *
-   * @param id - The unique identifier for the service
-   * @param name - The name of the service
-   * @param displayName - The display name of the service
+   * @param id - The unique identifier for the service.
+   * @param name - The name of the service.
+   * @param displayName - The display name of the service.
    * @param createdDate - The ISO8601 date string (YYYY-MM-DD) when service was
-   *   created
-   * @param clientIdentifier - The client identifier for the service
-   * @param landingPageUrl - The URL for the landing page of the service
-   * @param description - The description of the service
-   * @param roles - The roles in available in the service
-   * @param updatedDate - When the service was last updated
-   * @returns A new Service instance
+   *   created.
+   * @param clientIdentifier - The client identifier for the service.
+   * @param landingPageUrl - The URL for the landing page of the service.
+   * @param description - The description of the service.
+   * @param roles - The roles in available in the service.
+   * @param updatedDate - When the service was last updated.
+   * @returns A new Service instance.
    */
   constructor(
     id: ServiceId,
@@ -156,30 +101,5 @@ export class Service {
     this.landingPageUrl = landingPageUrl
     this.roles = roles
     this.updatedDate = updatedDate
-  }
-
-  /**
-   * Creates a Service instance from API response data.
-   *
-   * Note: The API returns 'createdDateTime' which is mapped to the
-   * 'createdDate' property.
-   *
-   * @param apiData - The raw service data from the API
-   * @returns A new Service instance
-   */
-  static fromApiData(apiData: ServiceApiData): Service {
-    const roles = apiData.roles.map(ServiceRole.fromApiData)
-
-    return new Service(
-      apiData.id,
-      apiData.name,
-      apiData.displayName,
-      apiData.createdDateTime,
-      apiData.clientIdentifier,
-      apiData.landingPageUrl,
-      apiData.description,
-      apiData.updatedDateTime,
-      roles,
-    )
   }
 }

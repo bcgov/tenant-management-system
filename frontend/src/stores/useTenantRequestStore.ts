@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
+import { tenantRequestMapper } from '@/mappers/tenantrequest.mapper'
 import {
   TenantRequest,
   type TenantRequestDetailFields,
@@ -40,7 +41,7 @@ export const useTenantRequestStore = defineStore('tenantRequest', () => {
     loading.value = true
     try {
       const tenantData = await tenantRequestService.getTenantRequests()
-      tenantRequests.value = tenantData.map(TenantRequest.fromApiData)
+      tenantRequests.value = tenantData.map(tenantRequestMapper.fromApiData)
     } finally {
       loading.value = false
     }

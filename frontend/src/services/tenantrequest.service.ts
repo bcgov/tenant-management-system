@@ -6,8 +6,8 @@ import {
 } from '@/services/utils'
 import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
 import { ValidationError } from '@/errors/domain/ValidationError'
+import { type TenantRequestApiData } from '@/mappers/tenantrequest.mapper'
 import {
-  type TenantRequestApiData,
   type TenantRequestDetailFields,
   type TenantRequestId,
 } from '@/models/tenantrequest.model'

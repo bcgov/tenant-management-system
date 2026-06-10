@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   makeGroupService,
   makeGroupServiceRole,
-} from '@/__tests__/__factories__/index'
+} from '@/__tests__/__factories__'
 
 import { toGroupId } from '@/models/group.model'
 import { toServiceId } from '@/models/service.model'

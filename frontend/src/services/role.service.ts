@@ -1,4 +1,4 @@
-import { type RoleApiData } from '@/models/role.model'
+import { type RoleApiData } from '@/mappers/role.mapper'
 import { authenticatedAxios } from '@/services/authenticated.axios'
 import { logApiError } from '@/services/utils'
 

@@ -1,30 +1,23 @@
+import { type GroupServiceRoleApiData } from '@/mappers/groupservicerole.mapper'
+import { type GroupUserApiData } from '@/mappers/groupuser.mapper'
+import { type RoleApiData } from '@/mappers/role.mapper'
+import { type ServiceRoleApiData } from '@/mappers/servicerole.mapper'
+import { type SsoUserApiData } from '@/mappers/ssouser.mapper'
+import { type UserApiData } from '@/mappers/user.mapper'
 import { Group, toGroupId } from '@/models/group.model'
 import { GroupService, toGroupServiceId } from '@/models/groupservice.model'
 import {
   GroupServiceRole,
   toGroupServiceRoleId,
-  type GroupServiceRoleApiData,
 } from '@/models/groupservicerole.model'
-import {
-  GroupUser,
-  type GroupUserApiData,
-  toGroupUserId,
-} from '@/models/groupuser.model'
+import { GroupUser, toGroupUserId } from '@/models/groupuser.model'
 import { Role, toRoleId } from '@/models/role.model'
 import { Service, toServiceId } from '@/models/service.model'
-import {
-  ServiceRole,
-  type ServiceRoleApiData,
-  toServiceRoleId,
-} from '@/models/servicerole.model'
-import {
-  SsoUser,
-  type SsoUserApiData,
-  toSsoUserId,
-} from '@/models/ssouser.model'
+import { ServiceRole, toServiceRoleId } from '@/models/servicerole.model'
+import { SsoUser, toSsoUserId } from '@/models/ssouser.model'
 import { Tenant, toTenantId } from '@/models/tenant.model'
 import { TenantRequest, toTenantRequestId } from '@/models/tenantrequest.model'
-import { toUserId, User, type UserApiData } from '@/models/user.model'
+import { toUserId, User } from '@/models/user.model'
 import { ROLES } from '@/utils/constants'
 
 // Group Factory
@@ -150,6 +143,14 @@ export const makeRoleTenantOwner = (): Role => {
 
 export const makeRoleUserAdmin = (): Role => {
   return makeRole({ name: ROLES.USER_ADMIN.value })
+}
+
+export const makeRoleApiData = (): RoleApiData => {
+  return {
+    description: 'api-role-description',
+    id: toRoleId('api-role-id'),
+    name: 'api-role-name',
+  }
 }
 
 // Service Factory

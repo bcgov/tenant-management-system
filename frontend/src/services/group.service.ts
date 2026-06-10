@@ -1,10 +1,9 @@
 import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
 import { ValidationError } from '@/errors/domain/ValidationError'
-import { type GroupApiData, type GroupId } from '@/models/group.model'
-import {
-  type GroupUserApiData,
-  type GroupUserId,
-} from '@/models/groupuser.model'
+import { type GroupApiData } from '@/mappers/group.mapper'
+import { type GroupUserApiData } from '@/mappers/groupuser.mapper'
+import { type GroupId } from '@/models/group.model'
+import { type GroupUserId } from '@/models/groupuser.model'
 import { type TenantId } from '@/models/tenant.model'
 import { User } from '@/models/user.model'
 import { authenticatedAxios } from '@/services/authenticated.axios'

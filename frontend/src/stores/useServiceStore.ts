@@ -8,6 +8,7 @@ import {
 } from '@/models/service.model'
 import { type TenantId } from '@/models/tenant.model'
 import { serviceService } from '@/services/service.service'
+import { serviceMapper } from '@/mappers/service.mapper'
 
 /**
  * Pinia store for managing services.
@@ -63,7 +64,7 @@ export const useServiceStore = defineStore('service', () => {
     serviceDetails: ServiceDetailFields,
   ): Promise<void> => {
     const service = await serviceService.createService(serviceDetails)
-    upsertService(Service.fromApiData(service))
+    upsertService(serviceMapper.fromApiData(service))
   }
 
   /**
@@ -75,7 +76,7 @@ export const useServiceStore = defineStore('service', () => {
     loading.value = true
     try {
       const serviceData = await serviceService.getServices()
-      const serviceObjects = serviceData.map(Service.fromApiData)
+      const serviceObjects = serviceData.map(serviceMapper.fromApiData)
 
       // Update the store with these services.
       serviceObjects.forEach(upsertService)
@@ -94,7 +95,7 @@ export const useServiceStore = defineStore('service', () => {
     loading.value = true
     try {
       const tenantServiceData = await serviceService.getTenantServices(tenantId)
-      tenantServices.value = tenantServiceData.map(Service.fromApiData)
+      tenantServices.value = tenantServiceData.map(serviceMapper.fromApiData)
     } finally {
       loading.value = false
     }
