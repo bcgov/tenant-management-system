@@ -16,7 +16,6 @@ const route = useRoute()
 
 // --- Computed Values ---------------------------------------------------------
 
-const basicBceidHint = computed(() => config.basicBceidBroker)
 const businessBceidHint = computed(() => config.businessBceidBroker)
 const idirHint = computed(() => config.idirBroker)
 
@@ -49,11 +48,6 @@ const user = computed(() => {
                 data-testid="buttonIdir"
                 text="Log in with IDIR"
                 @click="authStore.login({ idpHint: idirHint })"
-              />
-              <ButtonPrimary
-                data-testid="buttonBceidBasic"
-                text="Log in with Basic BCeID"
-                @click="authStore.login({ idpHint: basicBceidHint })"
               />
               <ButtonPrimary
                 data-testid="buttonBceidBusiness"

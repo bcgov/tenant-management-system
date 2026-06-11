@@ -14,7 +14,6 @@ const router = useRouter()
 
 // --- Computed Values ---------------------------------------------------------
 
-const basicBceidHint = computed(() => config.basicBceidBroker)
 const businessBceidHint = computed(() => config.businessBceidBroker)
 const idirHint = computed(() => config.idirBroker)
 
@@ -61,13 +60,6 @@ watchEffect(() => {
               text="IDIR"
               block
               @click="authStore.login({ idpHint: idirHint })"
-            />
-          </v-col>
-          <v-col cols="12" lg="4">
-            <ButtonPrimary
-              text="Basic BCeID"
-              block
-              @click="authStore.login({ idpHint: basicBceidHint })"
             />
           </v-col>
           <v-col cols="12" lg="4">

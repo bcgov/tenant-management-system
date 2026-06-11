@@ -317,8 +317,8 @@ export const makeUser = (
   )
 }
 
-export const makeUserBceid = (): User => {
-  return makeUser({ ssoUser: makeSsoUser({ idpType: 'bceidbasic' }) })
+export const makeUserBceidBusiness = (): User => {
+  return makeUser({ ssoUser: makeSsoUser({ idpType: 'bceidbusiness' }) })
 }
 
 export const makeUserIdir = (): User => {

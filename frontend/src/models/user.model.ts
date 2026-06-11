@@ -1,6 +1,6 @@
 import { Role } from '@/models/role.model'
 import { SsoUser } from '@/models/ssouser.model'
-import { isIdpBceid, isIdpIdir } from '@/utils/identityProvider'
+import { isIdpBceidBusiness, isIdpIdir } from '@/utils/identityProvider'
 
 export type UserId = string & { readonly __brand: 'UserId' }
 export const toUserId = (id: string): UserId => id as UserId
@@ -38,12 +38,12 @@ export class User {
   }
 
   /**
-   * Gets whether or not this user is a BCeID (basic or business) user.
+   * Gets whether or not this user is a business BCeID user.
    *
    * @returns true if a BCeID user, false otherwise.
    */
   isBceid(): boolean {
-    return isIdpBceid(this.ssoUser.idpType)
+    return isIdpBceidBusiness(this.ssoUser.idpType)
   }
 
   /**

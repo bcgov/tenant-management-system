@@ -15,8 +15,7 @@
             "api": {
                 "baseUrl": "/api/v1"
             },
-            "basicBceidBroker": "bceidboth",
-            "businessBceidBroker": "bceidboth",
+            "businessBceidBroker": "bceidbusiness",
             "idirBroker": "azureidir",
             "oidc": {
                 "clientId": "{$LOGIN_PROXY_CLIENT_ID}",
