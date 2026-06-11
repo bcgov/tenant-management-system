@@ -17,7 +17,6 @@ const mockFetch = (body: string, ok = true) => {
 const setValidEnv = () => {
   import.meta.env.VITE_API_BASE_URL = 'https://api.example.com'
   import.meta.env.VITE_DISABLE_RUNTIME_CONFIG = 'true'
-  import.meta.env.VITE_KEYCLOAK_BASIC_BCEID_HINT = 'basic-bceid'
   import.meta.env.VITE_KEYCLOAK_BUSINESS_BCEID_HINT = 'business-bceid'
   import.meta.env.VITE_KEYCLOAK_CLIENT_ID = 'client-id'
   import.meta.env.VITE_KEYCLOAK_IDIR_HINT = 'idir'
@@ -36,7 +35,6 @@ describe('loadConfig', () => {
       await loadConfig()
 
       expect(config.api.baseUrl).toBe('https://api.example.com')
-      expect(config.basicBceidBroker).toBe('basic-bceid')
       expect(config.businessBceidBroker).toBe('business-bceid')
       expect(config.idirBroker).toBe('idir')
       expect(config.oidc.clientId).toBe('client-id')
@@ -69,7 +67,6 @@ describe('loadConfig', () => {
   describe('fetch path', () => {
     const validFetchConfig = {
       api: { baseUrl: 'https://api.example.com' },
-      basicBceidBroker: 'basic-bceid',
       businessBceidBroker: 'business-bceid',
       idirBroker: 'idir',
       oidc: {
@@ -91,7 +88,6 @@ describe('loadConfig', () => {
       await loadConfig()
 
       expect(config.api.baseUrl).toBe('https://api.example.com')
-      expect(config.basicBceidBroker).toBe('basic-bceid')
       expect(config.businessBceidBroker).toBe('business-bceid')
       expect(config.idirBroker).toBe('idir')
       expect(config.oidc.clientId).toBe('client-id')

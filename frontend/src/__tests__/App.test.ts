@@ -18,7 +18,6 @@ vi.mock('vue-router', () => ({
 
 vi.mock('@/services/config.service', () => ({
   config: {
-    basicBceidBroker: 'basic-bceid',
     businessBceidBroker: 'business-bceid',
     idirBroker: 'idir',
     oidc: { clientId: 'test', realm: 'test', serverUrl: 'http://test' },
@@ -65,9 +64,6 @@ describe('App.vue', () => {
     await nextTick()
 
     expect(wrapper.find('[data-testid="buttonIdir"]').exists()).toBe(false)
-    expect(wrapper.find('[data-testid="buttonBceidBasic"]').exists()).toBe(
-      false,
-    )
     expect(wrapper.find('[data-testid="buttonBceidBusiness"]').exists()).toBe(
       false,
     )
@@ -80,7 +76,6 @@ describe('App.vue', () => {
     await nextTick()
 
     expect(wrapper.find('[data-testid="buttonIdir"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="buttonBceidBasic"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="buttonBceidBusiness"]').exists()).toBe(
       true,
     )
@@ -95,19 +90,6 @@ describe('App.vue', () => {
     await wrapper.find('[data-testid="buttonIdir"]').trigger('click')
 
     expect(currentAuthStore.login).toHaveBeenCalledWith({ idpHint: 'idir' })
-  })
-
-  it('calls login with basic bceid hint when Basic BCeID button is clicked', async () => {
-    currentAuthStore = createMockAuthStore({ isSessionExpired: true })
-
-    const wrapper = mountApp()
-    await nextTick()
-
-    await wrapper.find('[data-testid="buttonBceidBasic"]').trigger('click')
-
-    expect(currentAuthStore.login).toHaveBeenCalledWith({
-      idpHint: 'basic-bceid',
-    })
   })
 
   it('calls login with business bceid hint when Business BCeID button is clicked', async () => {

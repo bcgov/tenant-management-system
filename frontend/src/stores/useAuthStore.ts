@@ -10,7 +10,7 @@ import { SsoUser } from '@/models/ssouser.model'
 import { toUserId, User } from '@/models/user.model'
 import { config } from '@/services/config.service'
 import { ROLES } from '@/utils/constants'
-import { isIdpBceid, isIdpIdir } from '@/utils/identityProvider'
+import { isIdpBceidBusiness, isIdpIdir } from '@/utils/identityProvider'
 import { logger } from '@/utils/logger'
 
 type LoginState = 'anonymous' | 'authenticated' | 'expired'
@@ -97,10 +97,7 @@ export const useAuthStore = defineStore('auth', () => {
         tokenParsed.email,
         tokenParsed.identity_provider,
       )
-    } else if (isIdpBceid(tokenParsed.identity_provider)) {
-      // Note: both basic and business BCeIDs have "bceidboth" as the identity
-      // provider, so differentiate them on the existence of business data.
-
+    } else if (isIdpBceidBusiness(tokenParsed.identity_provider)) {
       ssoUser = new SsoUser(
         tokenParsed.bceid_user_guid,
         tokenParsed.bceid_username,
@@ -108,7 +105,7 @@ export const useAuthStore = defineStore('auth', () => {
         tokenParsed.family_name,
         tokenParsed.display_name,
         tokenParsed.email,
-        tokenParsed.bceid_business_guid ? 'bceidbusiness' : 'bceidbasic',
+        tokenParsed.identity_provider,
       )
     } else {
       throw new Error(

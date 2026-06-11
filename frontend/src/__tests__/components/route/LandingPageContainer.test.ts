@@ -2,7 +2,7 @@ import { mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
 
-import { makeUserBceid, makeUserIdir } from '@/__tests__/__factories__'
+import { makeUserBceidBusiness, makeUserIdir } from '@/__tests__/__factories__'
 import { createMockAuthStore } from '@/__tests__/__helpers__/useAuthStore.mock'
 
 import LandingPageContainer from '@/components/route/LandingPageContainer.vue'
@@ -21,7 +21,6 @@ vi.mock('vue-router', () => ({
 
 vi.mock('@/services/config.service', () => ({
   config: {
-    basicBceidBroker: 'basic-bceid-hint',
     businessBceidBroker: 'business-bceid-hint',
     idirBroker: 'idir-hint',
   },
@@ -51,10 +50,9 @@ describe('LandingPageContainer.vue', () => {
     const wrapper = mountComponent()
     const buttons = wrapper.findAll('button')
 
-    expect(buttons).toHaveLength(3)
+    expect(buttons).toHaveLength(2)
     expect(buttons[0].text()).toContain('IDIR')
-    expect(buttons[1].text()).toContain('Basic BCeID')
-    expect(buttons[2].text()).toContain('Business BCeID')
+    expect(buttons[1].text()).toContain('Business BCeID')
   })
 
   it('calls login with idirHint when IDIR button is clicked', async () => {
@@ -66,18 +64,9 @@ describe('LandingPageContainer.vue', () => {
     })
   })
 
-  it('calls login with basicBceidHint when Basic BCeID button is clicked', async () => {
-    const wrapper = mountComponent()
-    await wrapper.findAll('button')[1].trigger('click')
-
-    expect(currentAuthStore.login).toHaveBeenCalledWith({
-      idpHint: 'basic-bceid-hint',
-    })
-  })
-
   it('calls login with businessBceidHint when Business BCeID button is clicked', async () => {
     const wrapper = mountComponent()
-    await wrapper.findAll('button')[2].trigger('click')
+    await wrapper.findAll('button')[1].trigger('click')
 
     expect(currentAuthStore.login).toHaveBeenCalledWith({
       idpHint: 'business-bceid-hint',
@@ -97,7 +86,7 @@ describe('LandingPageContainer.vue', () => {
 
   it('redirects to /bceid when authenticated as BCeID', async () => {
     currentAuthStore = createMockAuthStore({
-      user: makeUserBceid(),
+      user: makeUserBceidBusiness(),
     })
 
     mountComponent()
