@@ -150,7 +150,7 @@ export default {
 
   searchBCGOVSSOBceidUsers: {
     query: Joi.object({
-      bceidType: Joi.string().valid('basic', 'business', 'both').required(),
+      bceidType: Joi.string().valid('basic', 'business', 'both').optional(),
       guid: Joi.string(),
       displayName: Joi.string(),
       username: Joi.string(),

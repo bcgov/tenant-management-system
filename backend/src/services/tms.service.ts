@@ -525,9 +525,13 @@ export class TMSService {
   public async searchBCGOVSSOBceidUsers(req: Request) {
     try {
       const token: string = await this.getToken()
+      const params = {
+        ...req.query,
+        bceidType: 'business',
+      }
       const response = await axios.get(config.bcgovSsoApi.urlBceid, {
         headers: { Authorization: `Bearer ${token}` },
-        params: req.query,
+        params,
       })
 
       return this.dedupBceidSearchResults(response.data)

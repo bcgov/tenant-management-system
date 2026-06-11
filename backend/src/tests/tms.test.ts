@@ -6089,14 +6089,14 @@ describe('Tenant API', () => {
       app.use(validationErrorHandler)
     })
 
-    it('should search BCEID users by guid successfully', async () => {
+    it('should accept basic BCEID search requests for backward compatibility', async () => {
       const mockSearchResults = {
         data: [
           {
             guid: 'F45AFBBD68C51D6F956BA3A1DE1878B1',
             displayName: 'Test User',
             username: 'testuser',
-            bceidType: 'basic',
+            bceidType: 'business',
           },
         ],
       }
@@ -6137,14 +6137,14 @@ describe('Tenant API', () => {
       expect(response.body).toEqual(mockSearchResults)
     })
 
-    it('should search BCEID users by username successfully', async () => {
+    it('should accept both BCEID search requests for backward compatibility', async () => {
       const mockSearchResults = {
         data: [
           {
             guid: 'F45AFBBD68C51D6F956BA3A1DE1878B3',
             displayName: 'Username User',
             username: 'usernameuser',
-            bceidType: 'both',
+            bceidType: 'business',
           },
         ],
       }
@@ -6159,6 +6159,50 @@ describe('Tenant API', () => {
 
       expect(response.status).toBe(200)
       expect(response.body).toEqual(mockSearchResults)
+    })
+
+    it('should override basic BCEID search requests to business before calling BC GOV SSO', async () => {
+      const mockSearchResults = {
+        data: [
+          {
+            firstName: 'Business',
+            lastName: 'User',
+            email: 'business.user@example.com',
+            username: 'business.user@bceidbusiness',
+            attributes: {
+              bceid_user_guid: ['GUID-1'],
+              bceid_username: ['BUSINESSUSER'],
+              display_name: ['Business User'],
+              bceid_business_guid: ['BUSINESS-GUID-1'],
+            },
+          },
+        ],
+      }
+
+      jest
+        .spyOn(
+          tmsController.tmsService as unknown as {
+            getToken: () => Promise<string>
+          },
+          'getToken',
+        )
+        .mockResolvedValue('mock-access-token')
+      jest.spyOn(axios, 'get').mockResolvedValue({ data: mockSearchResults })
+
+      const response = await request(app)
+        .get('/v1/users/bcgovssousers/bceid/search')
+        .query({
+          bceidType: 'basic',
+          username: 'business.user',
+        })
+
+      expect(response.status).toBe(200)
+      expect(axios.get).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({
+          params: { bceidType: 'business', username: 'business.user' },
+        }),
+      )
     })
 
     it('should deduplicate BCEID users by guid by default', async () => {
@@ -6224,7 +6268,7 @@ describe('Tenant API', () => {
       expect(axios.get).toHaveBeenCalledWith(
         expect.any(String),
         expect.objectContaining({
-          params: { bceidType: 'both', username: 'user1' },
+          params: { bceidType: 'business', username: 'user1' },
         }),
       )
     })
@@ -6244,13 +6288,19 @@ describe('Tenant API', () => {
       expect(response.body).toEqual(mockSearchResults)
     })
 
-    it('should return 400 when bceidType is missing', async () => {
+    it('should default to business when bceidType is missing', async () => {
+      const mockSearchResults = { data: [] }
+
+      jest
+        .spyOn(tmsController.tmsService, 'searchBCGOVSSOBceidUsers')
+        .mockResolvedValue(mockSearchResults as unknown)
+
       const response = await request(app)
         .get('/v1/users/bcgovssousers/bceid/search')
         .query({ guid: 'F45AFBBD68C51D6F956BA3A1DE1878B1' })
 
-      expect(response.status).toBe(400)
-      expect(response.body.message).toBe('Validation Failed')
+      expect(response.status).toBe(200)
+      expect(response.body).toEqual(mockSearchResults)
     })
 
     it('should return 400 when bceidType is invalid', async () => {

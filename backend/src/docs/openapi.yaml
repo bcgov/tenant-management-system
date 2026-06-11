@@ -790,8 +790,10 @@ paths:
       description: |
         Authentication: CSTAR audience token required.
 
-        Searches basic and/or business BCeID users through the BC Gov SSO API and returns
-        the upstream response. `bceidType` and at least one search parameter are required.
+        Searches Business BCeID users through the BC Gov SSO API and returns
+        the upstream response. `bceidType` is accepted for backward compatibility,
+        but the backend always sends `business` to BC Gov SSO. At least one search
+        parameter is required.
         Duplicate records with the same `attributes.bceid_user_guid[0]` are collapsed and
         the most complete record is retained.
       security:
@@ -799,12 +801,12 @@ paths:
       parameters:
         - name: bceidType
           in: query
-          required: true
+          required: false
           schema:
             type: string
             enum: [basic, business, both]
-          description: BCeID account type to search
-          example: basic
+          description: Accepted for backward compatibility. The backend always searches Business BCeID.
+          example: business
         - name: guid
           in: query
           required: false
@@ -841,18 +843,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/BCGovSSOBceidSearchResponse'
               examples:
-                basicBceidUsers:
-                  summary: Basic BCeID search results
-                  value:
-                    data:
-                      - firstName: Taylor
-                        lastName: Example
-                        email: taylor.example@example.com
-                        username: 0f1e2d3c4b5a69788796a5b4c3d2e1f0@bceidboth
-                        attributes:
-                          bceid_user_guid: ['0F1E2D3C4B5A69788796A5B4C3D2E1F0']
-                          bceid_username: ['taylor12345']
-                          display_name: ['Taylor Example']
                 businessBceidUsers:
                   summary: Business BCeID search results
                   value:
