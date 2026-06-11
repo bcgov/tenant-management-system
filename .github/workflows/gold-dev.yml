@@ -4,6 +4,11 @@ permissions: {}
 on:
   workflow_dispatch:
     inputs:
+      dr_enabled:
+        description: 'Deploy to golddr'  # Disable for sandboxing as standy cannot be setup easily to mirror
+        required: false
+        type: boolean
+        default: true
       release_name:
         description: 'Release name to use if defined'
         required: false
@@ -28,6 +33,11 @@ on:
         type: string
   workflow_call:
     inputs:
+      dr_enabled:
+        description: 'Deploy to golddr'  # Disable for sandboxing as standy cannot be setup easily to mirror
+        required: false
+        type: boolean
+        default: true
       release_name:
         description: 'Release name to use if defined'
         required: false
@@ -80,6 +90,7 @@ jobs:
       tag: ${{ inputs.tag }}
 
   deploy-golddr-dev:
+    if:  inputs.dr_enabled == 'true'
     name: Deploys Dev (Golddr)
     uses: ./.github/workflows/.deployer.yml
     secrets: inherit
