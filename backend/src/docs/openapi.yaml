@@ -168,7 +168,7 @@ paths:
       description: |
         Authentication: CSTAR audience token required.
 
-        Adds a new user to an existing tenant. Supports IDIR, basic BCeID, and business BCeID users. For IDIR users, roles are required. For BCeID users, roles are optional and will be overridden with SERVICE_USER role. Optionally adds the user to groups. Requires JWT authentication and TENANT_OWNER or USER_ADMIN role.
+        Adds a new user to an existing tenant. Supports IDIR and Business BCeID users. Basic BCeID is not supported. For IDIR users, roles are required. For Business BCeID users, roles are optional and will be overridden with SERVICE_USER role. Optionally adds the user to groups. Requires JWT authentication and TENANT_OWNER or USER_ADMIN role.
       security:
         - bearerAuth: []
       parameters:
@@ -198,7 +198,7 @@ paths:
                   minItems: 1
                   maxItems: 3
                   description: |
-                    Required for IDIR users. Optional for BCeID users (will be overridden with SERVICE_USER role).
+                    Required for IDIR users. Optional for Business BCeID users (will be overridden with SERVICE_USER role).
                     If not provided for IDIR users, validation will fail.
                   example: ['14c6bb48-54e2-4ce0-9bbd-af4982fff13b']
                 groups:
@@ -239,7 +239,7 @@ paths:
                                   $ref: '#/components/schemas/Group'
                                 description: Groups the user was added to (if groups were provided in request)
         '400':
-          description: Invalid input - IDIR users must provide roles, BCeID users roles are optional
+          description: Invalid input - IDIR users must provide roles, Business BCeID users roles are optional, and Basic BCeID is not supported
           content:
             application/json:
               schema:
@@ -3363,9 +3363,9 @@ components:
           example: 'John@gov.bc.ca'
         idpType:
           type: string
-          enum: ['idir', 'bceidbasic', 'bceidbusiness']
+          enum: ['idir', 'bceidbusiness']
           example: 'idir'
-          description: 'Identity Provider type.'
+          description: 'Identity Provider type for create/update payloads. Basic BCeID is not supported.'
 
     User:
       type: object

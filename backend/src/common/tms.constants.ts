@@ -11,7 +11,6 @@ export class TMSConstants {
   public static BCEID_BOTH_PROVIDER = 'bceidboth'
   public static IDP_TYPES: IdpType[] = [
     TMSConstants.IDIR_PROVIDER,
-    TMSConstants.BASIC_BCEID_PROVIDER,
     TMSConstants.BUSINESS_BCEID_PROVIDER,
   ]
   public static TENANT_REQUEST_INVALID_STATUS = 'TENANT_REQUEST_INVALID_STATUS'

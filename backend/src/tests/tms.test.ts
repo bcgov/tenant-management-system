@@ -278,6 +278,22 @@ describe('Tenant API', () => {
       expect(response.body.message).toBe('Validation Failed')
     })
 
+    it('should return 400 when creating a tenant with a bceidbasic user', async () => {
+      const invalidData = {
+        ...validTenantData,
+        user: {
+          ...validTenantData.user,
+          idpType: 'bceidbasic',
+        },
+      }
+
+      const response = await request(app).post('/v1/tenants').send(invalidData)
+
+      expect(response.status).toBe(400)
+      expect(response.body.message).toBe('Validation Failed')
+      expect(mockTMSRepository.saveTenant).not.toHaveBeenCalled()
+    })
+
     it('should return 400 when ministry name is missing', async () => {
       const invalidData = {
         name: validTenantData.name,
@@ -767,7 +783,7 @@ describe('Tenant API', () => {
       expect([201, 400, 404]).toContain(response.status)
     })
 
-    it('should allow bceidbasic user without roles', async () => {
+    it('should return 400 when adding a bceidbasic user to a tenant', async () => {
       const bceidUserData = {
         user: {
           ...validUserData.user,
@@ -775,35 +791,14 @@ describe('Tenant API', () => {
           displayName: 'Basic BCEID User',
         },
       }
-      const mockResponse = {
-        savedTenantUser: {
-          id: '123e4567-e89b-12d3-a456-426614174001',
-          displayName: bceidUserData.user.displayName,
-          ssoUserId: validUserData.user.ssoUserId,
-        },
-        roleAssignments: [
-          {
-            role: {
-              id: '123e4567-e89b-12d3-a456-426614174002',
-              name: TMSConstants.SERVICE_USER,
-            },
-          },
-        ],
-        tenantUserId: '123e4567-e89b-12d3-a456-426614174001',
-      }
-
-      mockTMSRepository.addTenantUsers.mockResolvedValue(
-        mockResponse as unknown as AddTenantUsersResult,
-      )
-      mockTMRepository.addUserToGroups.mockResolvedValue([])
 
       const response = await request(app)
         .post(`/v1/tenants/${tenantId}/users`)
         .send(bceidUserData)
 
-      expect(response.status).toBe(201)
-      const callArgs = mockTMSRepository.addTenantUsers.mock.calls[0]
-      expect(callArgs[0].user.idpType).toBe('bceidbasic')
+      expect(response.status).toBe(400)
+      expect(response.body.message).toBe('Validation Failed')
+      expect(mockTMSRepository.addTenantUsers).not.toHaveBeenCalled()
     })
 
     it('should allow bceidbusiness user without roles', async () => {
