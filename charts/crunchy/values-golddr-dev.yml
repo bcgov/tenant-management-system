@@ -4,7 +4,7 @@ global:
 crunchy: # enable it for TEST and PROD, for PR based pipelines simply use single postgres
   enabled: true
   postgresVersion: 17
-  postGISVersion: '3.4'
+  postGISVersion: ~
   imagePullPolicy: IfNotPresent
   # Enable Standby below to create a standby cluster from the same backup location as the primary cluster.
   standby:
@@ -113,8 +113,8 @@ crunchy: # enable it for TEST and PROD, for PR based pipelines simply use single
   patroni:
     postgresql:
       pg_hba:
-        - "host all all 0.0.0.0/0 md5"
-        - "host all all ::1/128 md5"
+        - "host all all 0.0.0.0/0 scram-sha-256"
+        - "host all all ::1/128 scram-sha-256"
       parameters:
         wal_retrieve_retry_interval: 30000 # set to prevent excessive queries to object storage from the standby cluster
         shared_buffers: 128MB # default is 128MB; a good tuned default for shared_buffers is 25% of the memory allocated to the pod
