@@ -87,12 +87,10 @@ jobs:
       tag: ${{ inputs.tag || steps.pr.outputs.pr }}
       triggered: ${{ steps.deploy.outputs.triggered }}
     steps:
-      #- uses: bcgov/action-crunchy@102fde6a063b58a958a735e34f399f01977683fd # v2.1.0+
-      - uses: bcgov/action-crunchy@feat/custom_user_passwords # v2.1.0+
+      - uses: bcgov/action-crunchy@102fde6a063b58a958a735e34f399f01977683fd # v2.1.0+
         name: Deploy Crunchy
         id: deploy_crunchy
         with:
-          ref: feat/custom_user_passwords
           oc_namespace: ${{ secrets.OC_NAMESPACE }}
           oc_token: ${{ secrets.OC_TOKEN }}
           oc_server: ${{ vars.OC_SERVER }}
@@ -104,7 +102,6 @@ jobs:
           s3_secret_key: ${{ secrets.s3_secret_key }}
           s3_bucket: ${{ secrets.s3_bucket }}
           s3_endpoint: ${{ secrets.s3_endpoint }}
-          custom_pguser_password: ${{ secrets.db_password }}
 
       # Variables
       - if: inputs.tag  == ''
@@ -195,7 +192,6 @@ jobs:
               --set-string global.repository=${{ github.repository }} \
               --set-string global.tag="${{ steps.vars.outputs.tag }}" \
               --set-string global.config.databaseUser="${{ inputs.db_user }}" \
-              --set-string global.secrets.databasePassword=${{ secrets.db_password }} \
               --set-string global.databaseAlias="${{ steps.deploy_crunchy.outputs.release }}-crunchy" \
               --set-string global.loginProxy.clientId="${{ vars.LOGIN_PROXY_CLIENT_ID }}" \
               --set-string global.loginProxy.hostName="${{ vars.LOGIN_PROXY_HOST_NAME }}" \
