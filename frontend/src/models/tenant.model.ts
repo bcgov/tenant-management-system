@@ -1,56 +1,9 @@
 import { type SsoUserId } from '@/models/ssouser.model'
-import { User, type UserApiData } from '@/models/user.model'
+import { User } from '@/models/user.model'
 import { ROLES } from '@/utils/constants'
 
 export type TenantId = string & { readonly __brand: 'TenantId' }
 export const toTenantId = (id: string): TenantId => id as TenantId
-
-/**
- * The shape of the data that comes from the API.
- */
-export type TenantApiData = {
-  /**
-   * The UUID of who created the tenant.
-   */
-  createdBy: string
-
-  /**
-   * The display name of who created the tenant, may be undefined.
-   */
-  createdByDisplayName?: string
-
-  /**
-   * ISO8601 date string (YYYY-MM-DD) when tenant was created.
-   *
-   * Note: This is mapped from 'createdDateTime' in the API.
-   */
-  createdDateTime: string
-
-  /**
-   * Description of the tenant.
-   */
-  description: string
-
-  /**
-   * Unique identifier for the tenant.
-   */
-  id: TenantId
-
-  /**
-   * Associated ministry or organization name.
-   */
-  ministryName: string
-
-  /**
-   * Display name of the tenant.
-   */
-  name: string
-
-  /**
-   * Array of users associated with this tenant.
-   */
-  users: UserApiData[]
-}
 
 /**
  * Utility type that represents the subset of Tenant properties used in the form
@@ -71,48 +24,48 @@ export class Tenant {
   createdBy: string
 
   /**
-   * ISO8601 date string (YYYY-MM-DD) when tenant was created.
+   * The ISO8601 date string (YYYY-MM-DD) when tenant was created.
    *
    * Note: This is mapped from 'createdDateTime' in the API.
    */
   createdDate: string
 
   /**
-   * Description of the tenant.
+   * The description of the tenant.
    */
   description: string
 
   /**
-   * Unique identifier for the tenant.
+   * The unique identifier for the tenant.
    */
   id: TenantId
 
   /**
-   * Associated ministry or organization name.
+   * The associated ministry or organization name.
    */
   ministryName: string
 
   /**
-   * Display name of the tenant.
+   * The display name of the tenant.
    */
   name: string
 
   /**
-   * Array of users associated with this tenant.
+   * The users associated with this tenant.
    */
   users: User[]
 
   /**
    * Creates a new Tenant instance.
    *
-   * @param createdBy - The identity of who created the tenant
-   * @param createdDate - ISO8601 date string (YYYY-MM-DD) when tenant was
-   *   created
-   * @param description - Description of the tenant
-   * @param id - Unique identifier for the tenant
-   * @param name - Display name of the tenant
-   * @param ministryName - Associated ministry or organization name
-   * @param users - Array of users associated with this tenant
+   * @param createdBy - The identity of who created the tenant.
+   * @param createdDate - The ISO8601 date string (YYYY-MM-DD) when tenant was
+   *   created.
+   * @param description - The description of the tenant.
+   * @param id - The unique identifier for the tenant.
+   * @param name - The display name of the tenant.
+   * @param ministryName - The associated ministry or organization name.
+   * @param users - The users associated with this tenant.
    */
   constructor(
     createdBy: string,
@@ -135,37 +88,11 @@ export class Tenant {
   /**
    * Finds a user in the tenant's users array by their SSO User ID.
    *
-   * @param ssoUserId - The SSO User ID of the user to find
-   * @returns The User if found, or undefined if not found
+   * @param ssoUserId - The SSO User ID of the user to find.
+   * @returns The User if found, or undefined if not found.
    */
   findUser(ssoUserId: SsoUserId): User | undefined {
     return this.users.find((user) => user.ssoUser.ssoUserId === ssoUserId)
-  }
-
-  /**
-   * Creates a Tenant instance from API response data.
-   *
-   * Note: The API returns 'createdDateTime' which is mapped to the
-   * 'createdDate' property.
-   *
-   * Note: The API may return 'createdByDisplayName', in which case it is used
-   * in preference to the createBy UUID.
-   *
-   * @param apiData - The raw tenant data from the API
-   * @returns A new Tenant instance
-   */
-  static fromApiData(apiData: TenantApiData): Tenant {
-    const users = apiData.users.map(User.fromApiData)
-
-    return new Tenant(
-      apiData.createdByDisplayName || apiData.createdBy,
-      apiData.createdDateTime,
-      apiData.description,
-      apiData.id,
-      apiData.name,
-      apiData.ministryName,
-      users,
-    )
   }
 
   /**
@@ -183,9 +110,9 @@ export class Tenant {
   /**
    * Checks if a user has a specific role within this tenant.
    *
-   * @param user - The user to check
-   * @param roleName - The name of the role to check for
-   * @returns True if the user exists and has the role, false otherwise
+   * @param user - The user to check.
+   * @param roleName - The name of the role to check for.
+   * @returns True if the user exists and has the role, false otherwise.
    */
   userHasRole(user: User, roleName: string): boolean {
     const tenantUser = this.findUser(user.ssoUser.ssoUserId)

@@ -1,7 +1,8 @@
 import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { Role, type RoleApiData, toRoleId } from '@/models/role.model'
+import { type RoleApiData } from '@/mappers/role.mapper'
+import { Role, toRoleId } from '@/models/role.model'
 import { roleService } from '@/services/role.service'
 import { useRoleStore } from '@/stores/useRoleStore'
 
