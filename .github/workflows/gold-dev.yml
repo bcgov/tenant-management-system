@@ -90,7 +90,7 @@ jobs:
       tag: ${{ inputs.tag }}
 
   deploy-golddr-dev:
-    if:  inputs.dr_enabled == 'true'
+    if:  inputs.dr_enabled == true
     name: Deploys Dev (Golddr)
     uses: ./.github/workflows/.deployer.yml
     secrets: inherit
