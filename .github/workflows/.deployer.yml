@@ -48,10 +48,6 @@ on:
         default: false
         required: false
         type: boolean
-      db_triggers:
-        description: Paths used to trigger a database deployment; e.g. ('charts/crunchy/')
-        required: false
-        type: string
 
       ### Usually a bad idea / not recommended
       release_name:
@@ -87,22 +83,6 @@ jobs:
       tag: ${{ inputs.tag || steps.pr.outputs.pr }}
       triggered: ${{ steps.deploy.outputs.triggered }}
     steps:
-      - uses: bcgov/action-crunchy@102fde6a063b58a958a735e34f399f01977683fd # v2.1.0+
-        name: Deploy Crunchy
-        id: deploy_crunchy
-        with:
-          oc_namespace: ${{ secrets.OC_NAMESPACE }}
-          oc_token: ${{ secrets.OC_TOKEN }}
-          oc_server: ${{ vars.OC_SERVER }}
-          release_name: cstar-db
-          environment: ${{ inputs.environment }}
-          values_file: charts/crunchy/values-${{ inputs.environment || 'dev' }}.yml
-          triggers: ${{ inputs.db_triggers }}
-          s3_access_key: ${{ secrets.s3_access_key }}
-          s3_secret_key: ${{ secrets.s3_secret_key }}
-          s3_bucket: ${{ secrets.s3_bucket }}
-          s3_endpoint: ${{ secrets.s3_endpoint }}
-
       # Variables
       - if: inputs.tag  == ''
         id: pr

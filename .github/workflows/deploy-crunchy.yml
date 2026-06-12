@@ -1,0 +1,64 @@
+name: Crunchy Deployer
+
+on:
+  workflow_dispatch:
+    inputs:
+      cluster:
+        description: Cluster to target (gold, golddr); 
+        required: false
+        type: choice
+        options:
+          - gold
+          - golddr
+      environment:
+        description: Environment name; 
+        required: false
+        type: choice
+        options:
+          - dev
+          - test
+          - prod
+      triggers:
+        description: Paths used to trigger a database deployment; e.g. ('charts/crunchy/')
+        required: false
+        type: string
+  workflow_call:
+    inputs:
+      cluster:
+        description: Cluster to target (gold, golddr); 
+        required: false
+        type: string
+      environment:
+        description: Environment name; 
+        required: false
+        type: string
+      triggers:
+        description: Paths used to trigger a database deployment; e.g. ('charts/crunchy/')
+        required: false
+        type: string
+jobs:
+  deploy-crunchy:
+    name: Crunchy
+    environment:
+      name: ${{ inputs.cluster }}-${{ inputs.environment }}
+    runs-on: ubuntu-24.04
+  outputs:
+    release: ${{ steps.deploy_crunchy.outputs.release }}
+    cluster: ${{ steps.deploy_crunchy.outputs.cluster }}
+    steps:
+      - uses: bcgov/action-crunchy@102fde6a063b58a958a735e34f399f01977683fd # v2.1.0+
+        name: Deploy
+        id: deploy_crunchy
+        with:
+          oc_namespace: ${{ secrets.OC_NAMESPACE }}
+          oc_token: ${{ secrets.OC_TOKEN }}
+          oc_server: ${{ vars.OC_SERVER }}
+          release_name: cstar-db
+          environment: ${{ inputs.cluster }}-${{ inputs.environment }}
+          values_file: charts/crunchy/values-${{ inputs.environment }}.yml
+          triggers: ${{ inputs.triggers }}
+          s3_access_key: ${{ secrets.s3_access_key }}
+          s3_secret_key: ${{ secrets.s3_secret_key }}
+          s3_bucket: ${{ secrets.s3_bucket }}
+          s3_endpoint: ${{ secrets.s3_endpoint }}
+
