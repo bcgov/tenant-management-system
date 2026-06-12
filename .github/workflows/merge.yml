@@ -45,6 +45,7 @@ jobs:
     uses: ./.github/workflows/gold-dev.yml
     secrets: inherit
     with:
+      dr_enabled: true
       release_name: cstar-dev
       tag: ${{ needs.vars.outputs.pr }}
       db_user: appproxy
