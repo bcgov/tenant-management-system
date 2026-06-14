@@ -150,7 +150,7 @@ export default {
 
   searchBCGOVSSOBceidUsers: {
     query: Joi.object({
-      bceidType: Joi.string().valid('basic', 'business', 'both').optional(),
+      bceidType: Joi.string().valid('business').optional(),
       guid: Joi.string(),
       displayName: Joi.string(),
       username: Joi.string(),
@@ -352,14 +352,7 @@ export default {
               .required(),
             description: Joi.string().min(1).max(255).optional(),
             allowedIdentityProviders: Joi.array()
-              .items(
-                Joi.string().valid(
-                  'idir',
-                  'azureidir',
-                  'bceidbasic',
-                  'bceidbusiness',
-                ),
-              )
+              .items(Joi.string().valid('idir', 'azureidir', 'bceidbusiness'))
               .allow(null)
               .optional(),
           }),
@@ -502,14 +495,7 @@ export default {
               .required(),
             description: Joi.string().min(1).max(255).optional(),
             allowedIdentityProviders: Joi.array()
-              .items(
-                Joi.string().valid(
-                  'idir',
-                  'azureidir',
-                  'bceidbasic',
-                  'bceidbusiness',
-                ),
-              )
+              .items(Joi.string().valid('idir', 'azureidir', 'bceidbusiness'))
               .allow(null)
               .optional(),
           }),
@@ -533,14 +519,7 @@ export default {
         .optional(),
       description: Joi.string().min(1).max(255).allow(null).optional(),
       allowedIdentityProviders: Joi.array()
-        .items(
-          Joi.string().valid(
-            'idir',
-            'azureidir',
-            'bceidbasic',
-            'bceidbusiness',
-          ),
-        )
+        .items(Joi.string().valid('idir', 'azureidir', 'bceidbusiness'))
         .allow(null)
         .optional(),
     })

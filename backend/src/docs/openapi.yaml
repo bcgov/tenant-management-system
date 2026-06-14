@@ -168,7 +168,7 @@ paths:
       description: |
         Authentication: CSTAR audience token required.
 
-        Adds a new user to an existing tenant. Supports IDIR and Business BCeID users. Basic BCeID is not supported. For IDIR users, roles are required. For Business BCeID users, roles are optional and will be overridden with SERVICE_USER role. Optionally adds the user to groups. Requires JWT authentication and TENANT_OWNER or USER_ADMIN role.
+        Adds a new user to an existing tenant. Supports IDIR and Business BCeID users. For IDIR users, roles are required. For Business BCeID users, roles are optional and will be overridden with SERVICE_USER role. Optionally adds the user to groups. Requires JWT authentication and TENANT_OWNER or USER_ADMIN role.
       security:
         - bearerAuth: []
       parameters:
@@ -239,7 +239,7 @@ paths:
                                   $ref: '#/components/schemas/Group'
                                 description: Groups the user was added to (if groups were provided in request)
         '400':
-          description: Invalid input - IDIR users must provide roles, Business BCeID users roles are optional, and Basic BCeID is not supported
+          description: Invalid input - IDIR users must provide roles, Business BCeID users roles are optional
           content:
             application/json:
               schema:
@@ -477,7 +477,6 @@ paths:
                                                 [
                                                   'idir',
                                                   'azureidir',
-                                                  'bceidbasic',
                                                   'bceidbusiness',
                                                 ]
                                             nullable: true
@@ -791,9 +790,7 @@ paths:
         Authentication: CSTAR audience token required.
 
         Searches Business BCeID users through the BC Gov SSO API and returns
-        the upstream response. `bceidType` is accepted for backward compatibility,
-        but the backend always sends `business` to BC Gov SSO. At least one search
-        parameter is required.
+        the upstream response. At least one search parameter is required.
         Duplicate records with the same `attributes.bceid_user_guid[0]` are collapsed and
         the most complete record is retained.
       security:
@@ -804,8 +801,8 @@ paths:
           required: false
           schema:
             type: string
-            enum: [basic, business, both]
-          description: Accepted for backward compatibility. The backend always searches Business BCeID.
+            enum: [business]
+          description: BCeID account type to search.
           example: business
         - name: guid
           in: query
@@ -850,7 +847,7 @@ paths:
                       - firstName: Morgan
                         lastName: Business
                         email: morgan.business@example.com
-                        username: 1234567890abcdef1234567890abcdef@bceidboth
+                        username: 1234567890abcdef1234567890abcdef@bceidbusiness
                         attributes:
                           bceid_business_guid: ['9F8E7D6C5B4A39281726354433221100']
                           bceid_business_name: ['Example Business']
@@ -1696,7 +1693,7 @@ paths:
                         items:
                           type: string
                           enum:
-                            ['idir', 'azureidir', 'bceidbasic', 'bceidbusiness']
+                            ['idir', 'azureidir', 'bceidbusiness']
                         nullable: true
                         example: ['idir', 'bceidbusiness']
                         description: 'List of identity providers allowed to access this role. If null or empty, all identity providers are allowed.'
@@ -2929,7 +2926,7 @@ paths:
                         items:
                           type: string
                           enum:
-                            ['idir', 'azureidir', 'bceidbasic', 'bceidbusiness']
+                            ['idir', 'azureidir', 'bceidbusiness']
                         nullable: true
                         example: ['idir']
                         description: 'List of identity providers allowed to access this role. If null or empty, all identity providers are allowed.'
@@ -3039,7 +3036,7 @@ paths:
                   type: array
                   items:
                     type: string
-                    enum: ['idir', 'azureidir', 'bceidbasic', 'bceidbusiness']
+                    enum: ['idir', 'azureidir', 'bceidbusiness']
                   nullable: true
                   example: ['idir', 'bceidbusiness']
                   description: 'List of identity providers allowed to access this role. If null or empty, all identity providers are allowed.'
@@ -3365,7 +3362,7 @@ components:
           type: string
           enum: ['idir', 'bceidbusiness']
           example: 'idir'
-          description: 'Identity Provider type for create/update payloads. Basic BCeID is not supported.'
+          description: 'Identity Provider type.'
 
     User:
       type: object
@@ -3420,7 +3417,7 @@ components:
           example: 'John@gov.bc.ca'
         idpType:
           type: string
-          enum: ['idir', 'bceidbasic', 'bceidbusiness']
+          enum: ['idir', 'bceidbusiness']
           example: 'idir'
           description: 'Identity Provider type'
         createdDateTime:
@@ -3501,7 +3498,7 @@ components:
           example: test.user@example.com
         username:
           type: string
-          example: testuser@bceidbasic
+          example: testuser@bceidbusiness
         attributes:
           allOf:
             - $ref: '#/components/schemas/BCGovSSOAttributeMap'
@@ -4104,7 +4101,7 @@ components:
           type: array
           items:
             type: string
-            enum: ['idir', 'azureidir', 'bceidbasic', 'bceidbusiness']
+            enum: ['idir', 'azureidir', 'bceidbusiness']
           nullable: true
           example: ['idir', 'bceidbusiness']
           description: 'List of identity providers allowed to access this role. If null or empty, all identity providers are allowed.'

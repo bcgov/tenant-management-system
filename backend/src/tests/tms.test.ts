@@ -278,22 +278,6 @@ describe('Tenant API', () => {
       expect(response.body.message).toBe('Validation Failed')
     })
 
-    it('should return 400 when creating a tenant with a bceidbasic user', async () => {
-      const invalidData = {
-        ...validTenantData,
-        user: {
-          ...validTenantData.user,
-          idpType: 'bceidbasic',
-        },
-      }
-
-      const response = await request(app).post('/v1/tenants').send(invalidData)
-
-      expect(response.status).toBe(400)
-      expect(response.body.message).toBe('Validation Failed')
-      expect(mockTMSRepository.saveTenant).not.toHaveBeenCalled()
-    })
-
     it('should return 400 when ministry name is missing', async () => {
       const invalidData = {
         name: validTenantData.name,
@@ -781,24 +765,6 @@ describe('Tenant API', () => {
         .send(userDataWithDuplicateGroups)
 
       expect([201, 400, 404]).toContain(response.status)
-    })
-
-    it('should return 400 when adding a bceidbasic user to a tenant', async () => {
-      const bceidUserData = {
-        user: {
-          ...validUserData.user,
-          idpType: 'bceidbasic',
-          displayName: 'Basic BCEID User',
-        },
-      }
-
-      const response = await request(app)
-        .post(`/v1/tenants/${tenantId}/users`)
-        .send(bceidUserData)
-
-      expect(response.status).toBe(400)
-      expect(response.body.message).toBe('Validation Failed')
-      expect(mockTMSRepository.addTenantUsers).not.toHaveBeenCalled()
     })
 
     it('should allow bceidbusiness user without roles', async () => {
@@ -6084,30 +6050,6 @@ describe('Tenant API', () => {
       app.use(validationErrorHandler)
     })
 
-    it('should accept basic BCEID search requests for backward compatibility', async () => {
-      const mockSearchResults = {
-        data: [
-          {
-            guid: 'F45AFBBD68C51D6F956BA3A1DE1878B1',
-            displayName: 'Test User',
-            username: 'testuser',
-            bceidType: 'business',
-          },
-        ],
-      }
-
-      jest
-        .spyOn(tmsController.tmsService, 'searchBCGOVSSOBceidUsers')
-        .mockResolvedValue(mockSearchResults as unknown)
-
-      const response = await request(app)
-        .get('/v1/users/bcgovssousers/bceid/search')
-        .query({ bceidType: 'basic', guid: 'F45AFBBD68C51D6F956BA3A1DE1878B1' })
-
-      expect(response.status).toBe(200)
-      expect(response.body).toEqual(mockSearchResults)
-    })
-
     it('should search BCEID users by displayName successfully', async () => {
       const mockSearchResults = {
         data: [
@@ -6132,31 +6074,7 @@ describe('Tenant API', () => {
       expect(response.body).toEqual(mockSearchResults)
     })
 
-    it('should accept both BCEID search requests for backward compatibility', async () => {
-      const mockSearchResults = {
-        data: [
-          {
-            guid: 'F45AFBBD68C51D6F956BA3A1DE1878B3',
-            displayName: 'Username User',
-            username: 'usernameuser',
-            bceidType: 'business',
-          },
-        ],
-      }
-
-      jest
-        .spyOn(tmsController.tmsService, 'searchBCGOVSSOBceidUsers')
-        .mockResolvedValue(mockSearchResults as unknown)
-
-      const response = await request(app)
-        .get('/v1/users/bcgovssousers/bceid/search')
-        .query({ bceidType: 'both', username: 'usernameuser' })
-
-      expect(response.status).toBe(200)
-      expect(response.body).toEqual(mockSearchResults)
-    })
-
-    it('should override basic BCEID search requests to business before calling BC GOV SSO', async () => {
+    it('should search business BCEID users before calling BC GOV SSO', async () => {
       const mockSearchResults = {
         data: [
           {
@@ -6187,7 +6105,7 @@ describe('Tenant API', () => {
       const response = await request(app)
         .get('/v1/users/bcgovssousers/bceid/search')
         .query({
-          bceidType: 'basic',
+          bceidType: 'business',
           username: 'business.user',
         })
 
@@ -6207,7 +6125,7 @@ describe('Tenant API', () => {
             firstName: 'Master',
             lastName: '',
             email: '',
-            username: 'guid-1@bceidboth',
+            username: 'guid-1@bceidbusiness',
             attributes: {
               bceid_user_guid: ['GUID-1'],
               bceid_username: ['USER1'],
@@ -6218,7 +6136,7 @@ describe('Tenant API', () => {
             firstName: 'Master',
             lastName: 'Chief',
             email: 'master.chief@example.com',
-            username: 'guid-1@bceidboth',
+            username: 'guid-1@bceidbusiness',
             attributes: {
               bceid_user_guid: ['GUID-1'],
               bceid_username: ['USER1'],
@@ -6229,7 +6147,7 @@ describe('Tenant API', () => {
             firstName: 'Shankar',
             lastName: 'Sethuraman',
             email: 'shankar@example.com',
-            username: 'guid-2@bceidboth',
+            username: 'guid-2@bceidbusiness',
             attributes: {
               bceid_user_guid: ['GUID-2'],
               bceid_username: ['USER2'],
@@ -6252,7 +6170,7 @@ describe('Tenant API', () => {
       const response = await request(app)
         .get('/v1/users/bcgovssousers/bceid/search')
         .query({
-          bceidType: 'both',
+          bceidType: 'business',
           username: 'user1',
         })
 
@@ -6277,7 +6195,7 @@ describe('Tenant API', () => {
 
       const response = await request(app)
         .get('/v1/users/bcgovssousers/bceid/search')
-        .query({ bceidType: 'basic', guid: 'NONEXISTENT' })
+        .query({ bceidType: 'business', guid: 'NONEXISTENT' })
 
       expect(response.status).toBe(200)
       expect(response.body).toEqual(mockSearchResults)
@@ -6314,7 +6232,7 @@ describe('Tenant API', () => {
       const response = await request(app)
         .get('/v1/users/bcgovssousers/bceid/search')
         .query({
-          bceidType: 'basic',
+          bceidType: 'business',
           guid: 'F45AFBBD68C51D6F956BA3A1DE1878B1',
           dedup: 'true',
         })
@@ -6341,7 +6259,7 @@ describe('Tenant API', () => {
 
       const response = await request(app)
         .get('/v1/users/bcgovssousers/bceid/search')
-        .query({ bceidType: 'basic', guid: 'invalid' })
+        .query({ bceidType: 'business', guid: 'invalid' })
 
       expect(response.status).toBe(400)
       expect(response.body).toMatchObject({
@@ -6361,7 +6279,10 @@ describe('Tenant API', () => {
 
       const response = await request(app)
         .get('/v1/users/bcgovssousers/bceid/search')
-        .query({ bceidType: 'basic', guid: 'F45AFBBD68C51D6F956BA3A1DE1878B1' })
+        .query({
+          bceidType: 'business',
+          guid: 'F45AFBBD68C51D6F956BA3A1DE1878B1',
+        })
 
       expect(response.status).toBe(500)
       expect(response.body).toMatchObject({
