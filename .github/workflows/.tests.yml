@@ -12,6 +12,10 @@ on:
         description: PR number, dev, test or prod
         default: ${{ github.event.number }}
         type: string
+    secrets:
+      Username: ${{ secrets.IDIR_USERNAME }}
+      Password: ${{ secrets.IDIR_PASSWORD }}
+      MFA_CODE: ${{ secrets.MFA_CODE }}
 
 env:
   DOMAIN: apps.gold.devops.gov.bc.ca
@@ -104,20 +108,20 @@ jobs:
 
       - name: Run Tests
         env:
-          CYPRESS_BASE_URL: https://${{ env.PREFIX }}.${{ env.DOMAIN }}/
-          CI: 'true'
-          TERM: xterm
-        run: |
-          npx cypress run
+          BASE_URL: https://${{ env.PREFIX }}.${{ env.DOMAIN }}/
+          IDIR_USERNAME: ${{ secrets.Username }}
+          IDIR_PASSWORD: ${{ secrets.Password }}
+          MFA_CODE: ${{ secrets.MFA_CODE }}
 
-      - uses: actions/upload-artifact@v6
+        run: npx playwright test
+
+      - name: Upload Playwright screenshots on failure
+        uses: actions/upload-artifact@v6
         if: failure()
-        name: upload results
         with:
-          name: cypress-results
+          name: playwright-screenshots
           path: |
-            ./frontend/cypress/screenshots
-            ./frontend/cypress/videos
+            ./frontend/test-results
           retention-days: 7
 
   load-tests:
