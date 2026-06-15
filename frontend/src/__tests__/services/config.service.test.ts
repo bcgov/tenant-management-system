@@ -17,9 +17,9 @@ const mockFetch = (body: string, ok = true) => {
 const setValidEnv = () => {
   import.meta.env.VITE_API_BASE_URL = 'https://api.example.com'
   import.meta.env.VITE_DISABLE_RUNTIME_CONFIG = 'true'
-  import.meta.env.VITE_KEYCLOAK_BUSINESS_BCEID_HINT = 'business-bceid'
   import.meta.env.VITE_KEYCLOAK_CLIENT_ID = 'client-id'
-  import.meta.env.VITE_KEYCLOAK_IDIR_HINT = 'idir'
+  import.meta.env.VITE_KEYCLOAK_HINT_BCEID_BUSINESS = 'business-bceid'
+  import.meta.env.VITE_KEYCLOAK_HINT_IDIR = 'idir'
   import.meta.env.VITE_KEYCLOAK_LOGOUT_URL = 'https://logout.example.com'
   import.meta.env.VITE_KEYCLOAK_REALM = 'myrealm'
   import.meta.env.VITE_KEYCLOAK_URL = 'https://auth.example.com'

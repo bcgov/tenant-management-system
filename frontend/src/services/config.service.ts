@@ -70,8 +70,8 @@ export async function loadConfig(): Promise<void> {
       api: {
         baseUrl: import.meta.env.VITE_API_BASE_URL,
       },
-      businessBceidBroker: import.meta.env.VITE_KEYCLOAK_BUSINESS_BCEID_HINT,
-      idirBroker: import.meta.env.VITE_KEYCLOAK_IDIR_HINT,
+      businessBceidBroker: import.meta.env.VITE_KEYCLOAK_HINT_BCEID_BUSINESS,
+      idirBroker: import.meta.env.VITE_KEYCLOAK_HINT_IDIR,
       oidc: {
         clientId: import.meta.env.VITE_KEYCLOAK_CLIENT_ID,
         logoutUrl: import.meta.env.VITE_KEYCLOAK_LOGOUT_URL,
