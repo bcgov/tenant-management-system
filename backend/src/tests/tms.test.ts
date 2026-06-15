@@ -6118,6 +6118,35 @@ describe('Tenant API', () => {
       )
     })
 
+    it('should accept both BCEID search type and call BC GOV SSO with business', async () => {
+      const mockSearchResults = { data: [] }
+
+      jest
+        .spyOn(
+          tmsController.tmsService as unknown as {
+            getToken: () => Promise<string>
+          },
+          'getToken',
+        )
+        .mockResolvedValue('mock-access-token')
+      jest.spyOn(axios, 'get').mockResolvedValue({ data: mockSearchResults })
+
+      const response = await request(app)
+        .get('/v1/users/bcgovssousers/bceid/search')
+        .query({
+          bceidType: 'both',
+          username: 'business.user',
+        })
+
+      expect(response.status).toBe(200)
+      expect(axios.get).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({
+          params: { bceidType: 'business', username: 'business.user' },
+        }),
+      )
+    })
+
     it('should deduplicate BCEID users by guid by default', async () => {
       const mockSearchResults = {
         data: [
