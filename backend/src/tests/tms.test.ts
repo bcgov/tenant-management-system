@@ -6074,7 +6074,7 @@ describe('Tenant API', () => {
       expect(response.body).toEqual(mockSearchResults)
     })
 
-    it('should search business BCEID users before calling BC GOV SSO', async () => {
+    it('should search BCEID users with both type before filtering to business users', async () => {
       const mockSearchResults = {
         data: [
           {
@@ -6113,13 +6113,39 @@ describe('Tenant API', () => {
       expect(axios.get).toHaveBeenCalledWith(
         expect.any(String),
         expect.objectContaining({
-          params: { bceidType: 'business', username: 'business.user' },
+          params: { bceidType: 'both', username: 'business.user' },
         }),
       )
     })
 
-    it('should accept both BCEID search type and call BC GOV SSO with business', async () => {
-      const mockSearchResults = { data: [] }
+    it('should accept both BCEID search type and filter out basic BCEID users', async () => {
+      const mockSearchResults = {
+        data: [
+          {
+            firstName: 'Basic',
+            lastName: 'User',
+            email: 'basic.user@example.com',
+            username: 'basic.user@bceidboth',
+            attributes: {
+              bceid_user_guid: ['BASIC-GUID-1'],
+              bceid_username: ['BASICUSER'],
+              display_name: ['Basic User'],
+            },
+          },
+          {
+            firstName: 'Business',
+            lastName: 'User',
+            email: 'business.user@example.com',
+            username: 'business.user@bceidboth',
+            attributes: {
+              bceid_user_guid: ['BUSINESS-USER-GUID-1'],
+              bceid_username: ['BUSINESSUSER'],
+              display_name: ['Business User'],
+              bceid_business_guid: ['BUSINESS-GUID-1'],
+            },
+          },
+        ],
+      }
 
       jest
         .spyOn(
@@ -6139,10 +6165,13 @@ describe('Tenant API', () => {
         })
 
       expect(response.status).toBe(200)
+      expect(response.body).toEqual({
+        data: [mockSearchResults.data[1]],
+      })
       expect(axios.get).toHaveBeenCalledWith(
         expect.any(String),
         expect.objectContaining({
-          params: { bceidType: 'business', username: 'business.user' },
+          params: { bceidType: 'both', username: 'business.user' },
         }),
       )
     })
@@ -6159,6 +6188,7 @@ describe('Tenant API', () => {
               bceid_user_guid: ['GUID-1'],
               bceid_username: ['USER1'],
               display_name: ['Master Chief'],
+              bceid_business_guid: ['BUSINESS-GUID-1'],
             },
           },
           {
@@ -6170,6 +6200,7 @@ describe('Tenant API', () => {
               bceid_user_guid: ['GUID-1'],
               bceid_username: ['USER1'],
               display_name: ['Master Chief'],
+              bceid_business_guid: ['BUSINESS-GUID-1'],
             },
           },
           {
@@ -6181,6 +6212,7 @@ describe('Tenant API', () => {
               bceid_user_guid: ['GUID-2'],
               bceid_username: ['USER2'],
               display_name: ['Shankar Sethuraman'],
+              bceid_business_guid: ['BUSINESS-GUID-2'],
             },
           },
         ],
@@ -6210,7 +6242,7 @@ describe('Tenant API', () => {
       expect(axios.get).toHaveBeenCalledWith(
         expect.any(String),
         expect.objectContaining({
-          params: { bceidType: 'business', username: 'user1' },
+          params: { bceidType: 'both', username: 'user1' },
         }),
       )
     })

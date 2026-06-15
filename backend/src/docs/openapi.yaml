@@ -789,10 +789,11 @@ paths:
       description: |
         Authentication: CSTAR audience token required.
 
-        Searches Business BCeID users through the BC Gov SSO API and returns
-        the upstream response. `bceidType=both` is accepted for frontend compatibility,
-        but the backend sends `business` to BC Gov SSO. At least one search
-        parameter is required.
+        Searches Business BCeID users through the BC Gov SSO API. CSTAR queries
+        the upstream API with `bceidType=both` because Business BCeID records are
+        returned through that provider shape, then returns only records with
+        `attributes.bceid_business_guid`.
+        At least one search parameter is required.
         Duplicate records with the same `attributes.bceid_user_guid[0]` are collapsed and
         the most complete record is retained.
       security:
@@ -804,7 +805,7 @@ paths:
           schema:
             type: string
             enum: [business, both]
-          description: BCeID account type to search. `both` is normalized to `business` by the backend.
+          description: BCeID account type accepted by CSTAR. Upstream search uses `both`, then CSTAR returns only Business BCeID records.
           example: business
         - name: guid
           in: query
