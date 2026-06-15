@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "run-p type-check \"build-only {@}\" --",
+    "build": "npm run type-check && npm run build-only",
     "preview": "vite preview",
     "test:unit": "npm run type-check-tests && vitest",
     "prepare": "cypress install",
@@ -51,7 +51,6 @@
     "eslint-plugin-vuetify": "^2.7.2",
     "jiti": "^2.4.2",
     "jsdom": "^26.0.0",
-    "npm-run-all2": "^7.0.2",
     "prettier": "^3.8.1",
     "start-server-and-test": "^2.0.13",
     "typescript": "^6.0.3",
