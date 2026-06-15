@@ -14,8 +14,8 @@ const router = useRouter()
 
 // --- Computed Values ---------------------------------------------------------
 
-const businessBceidHint = computed(() => config.businessBceidBroker)
-const idirHint = computed(() => config.idirBroker)
+const hintBceidBusiness = computed(() => config.oidc.hintBceidBusiness)
+const hintIdir = computed(() => config.oidc.hintIdir)
 
 // --- Watchers and Effects ----------------------------------------------------
 
@@ -59,14 +59,14 @@ watchEffect(() => {
             <ButtonPrimary
               text="IDIR"
               block
-              @click="authStore.login({ idpHint: idirHint })"
+              @click="authStore.login({ idpHint: hintIdir })"
             />
           </v-col>
           <v-col cols="12" lg="4">
             <ButtonPrimary
               text="Business BCeID"
               block
-              @click="authStore.login({ idpHint: businessBceidHint })"
+              @click="authStore.login({ idpHint: hintBceidBusiness })"
             />
           </v-col>
         </v-row>

@@ -18,9 +18,13 @@ vi.mock('vue-router', () => ({
 
 vi.mock('@/services/config.service', () => ({
   config: {
-    businessBceidBroker: 'business-bceid',
-    idirBroker: 'idir',
-    oidc: { clientId: 'test', realm: 'test', serverUrl: 'http://test' },
+    oidc: {
+      clientId: 'test',
+      hintBceidBusiness: 'business-bceid',
+      hintIdir: 'idir',
+      realm: 'test',
+      serverUrl: 'http://test',
+    },
   },
 }))
 

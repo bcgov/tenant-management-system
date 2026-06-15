@@ -35,9 +35,9 @@ describe('loadConfig', () => {
       await loadConfig()
 
       expect(config.api.baseUrl).toBe('https://api.example.com')
-      expect(config.businessBceidBroker).toBe('business-bceid')
-      expect(config.idirBroker).toBe('idir')
       expect(config.oidc.clientId).toBe('client-id')
+      expect(config.oidc.hintBceidBusiness).toBe('business-bceid')
+      expect(config.oidc.hintIdir).toBe('idir')
       expect(config.oidc.logoutUrl).toBe('https://logout.example.com')
       expect(config.oidc.realm).toBe('myrealm')
       expect(config.oidc.serverUrl).toBe('https://auth.example.com')
@@ -67,10 +67,10 @@ describe('loadConfig', () => {
   describe('fetch path', () => {
     const validFetchConfig = {
       api: { baseUrl: 'https://api.example.com' },
-      businessBceidBroker: 'business-bceid',
-      idirBroker: 'idir',
       oidc: {
         clientId: 'client-id',
+        hintBceidBusiness: 'business-bceid',
+        hintIdir: 'idir',
         logoutUrl: 'https://logout.example.com',
         realm: 'myrealm',
         serverUrl: 'https://auth.example.com',
@@ -88,9 +88,9 @@ describe('loadConfig', () => {
       await loadConfig()
 
       expect(config.api.baseUrl).toBe('https://api.example.com')
-      expect(config.businessBceidBroker).toBe('business-bceid')
-      expect(config.idirBroker).toBe('idir')
       expect(config.oidc.clientId).toBe('client-id')
+      expect(config.oidc.hintBceidBusiness).toBe('business-bceid')
+      expect(config.oidc.hintIdir).toBe('idir')
       expect(config.oidc.logoutUrl).toBe('https://logout.example.com')
       expect(config.oidc.realm).toBe('myrealm')
       expect(config.oidc.serverUrl).toBe('https://auth.example.com')

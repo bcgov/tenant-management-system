@@ -21,8 +21,10 @@ vi.mock('vue-router', () => ({
 
 vi.mock('@/services/config.service', () => ({
   config: {
-    businessBceidBroker: 'business-bceid-hint',
-    idirBroker: 'idir-hint',
+    oidc: {
+      hintBceidBusiness: 'hint-bceid-business',
+      hintIdir: 'hint-idir',
+    },
   },
 }))
 
@@ -60,7 +62,7 @@ describe('LandingPageContainer.vue', () => {
     await wrapper.findAll('button')[0].trigger('click')
 
     expect(currentAuthStore.login).toHaveBeenCalledWith({
-      idpHint: 'idir-hint',
+      idpHint: 'hint-idir',
     })
   })
 
@@ -69,7 +71,7 @@ describe('LandingPageContainer.vue', () => {
     await wrapper.findAll('button')[1].trigger('click')
 
     expect(currentAuthStore.login).toHaveBeenCalledWith({
-      idpHint: 'business-bceid-hint',
+      idpHint: 'hint-bceid-business',
     })
   })
 
