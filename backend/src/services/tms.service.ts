@@ -200,6 +200,37 @@ export class TMSService {
     return bceidUserGuid[0]
   }
 
+  private hasBceidBusinessGuid(user: unknown): boolean {
+    if (!user || typeof user !== 'object') {
+      return false
+    }
+
+    const attributes = (user as { attributes?: unknown }).attributes
+    if (!attributes || typeof attributes !== 'object') {
+      return false
+    }
+
+    const businessGuid = (attributes as { bceid_business_guid?: unknown })
+      .bceid_business_guid
+    return Array.isArray(businessGuid) && typeof businessGuid[0] === 'string'
+  }
+
+  private filterBceidBusinessSearchResults(payload: unknown) {
+    if (!payload || typeof payload !== 'object') {
+      return payload
+    }
+
+    const data = (payload as { data?: unknown }).data
+    if (!Array.isArray(data)) {
+      return payload
+    }
+
+    return {
+      ...(payload as Record<string, unknown>),
+      data: data.filter((user) => this.hasBceidBusinessGuid(user)),
+    }
+  }
+
   private getBceidUserCompletenessScore(user: unknown): number {
     if (!user || typeof user !== 'object') {
       return 0
@@ -527,14 +558,16 @@ export class TMSService {
       const token: string = await this.getToken()
       const params = {
         ...req.query,
-        bceidType: 'business',
+        bceidType: 'both',
       }
       const response = await axios.get(config.bcgovSsoApi.urlBceid, {
         headers: { Authorization: `Bearer ${token}` },
         params,
       })
 
-      return this.dedupBceidSearchResults(response.data)
+      return this.dedupBceidSearchResults(
+        this.filterBceidBusinessSearchResults(response.data),
+      )
     } catch (error: unknown) {
       logger.error(getErrorMessage(error))
       if (
