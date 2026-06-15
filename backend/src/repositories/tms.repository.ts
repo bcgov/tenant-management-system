@@ -360,7 +360,7 @@ export class TMSRepository {
     idpType: IdpType,
     requestedRoles: string[] | undefined,
   ) {
-    if (idpType === 'bceidbasic' || idpType === 'bceidbusiness') {
+    if (idpType === 'bceidbusiness') {
       const serviceUserRole: Role[] = await this.findRoles(
         [TMSConstants.SERVICE_USER],
         null,
