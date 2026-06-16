@@ -37,11 +37,6 @@ jobs:
           npm ci
           npm run build
 
-      - uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./docs-site/build
-
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
