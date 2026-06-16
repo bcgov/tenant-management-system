@@ -16,6 +16,8 @@ permissions: {}
 jobs:
   publish:
     name: Publish
+    environment:
+      name: github-pages
     permissions:
       contents: write
       pages: write
