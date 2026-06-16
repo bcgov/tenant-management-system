@@ -45,6 +45,8 @@ backend:
   #-- the token URL, used for looking up BCeID users
   bcgovTokenUrl: ~
   #-- enable or disable backend
+  tmsAudience: ~
+    #-- TODO: fill me 
   enabled: true
   #-- log level for the backend
   logLevel: 'info'
