@@ -36,6 +36,9 @@ jobs:
           cd docs-site
           npm ci
           npm run build
+        env:
+          DOCS_URL: https://bcgov.github.io/
+          DOCS_BASE_URL: /tenant-management-system/
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
