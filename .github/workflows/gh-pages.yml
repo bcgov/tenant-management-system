@@ -2,8 +2,6 @@ name: gh-pages
 
 on:
   workflow_dispatch:
-  pull_request:
-    types: [labeled, opened, reopened, synchronize]
   push:
     branches:
       - main
