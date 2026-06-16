@@ -55,14 +55,14 @@ watchEffect(() => {
 
         <p class="p-xlarge">Choose your login method:</p>
         <v-row class="pb-12">
-          <v-col cols="12" lg="4">
+          <v-col cols="12" lg="6">
             <ButtonPrimary
               text="IDIR"
               block
               @click="authStore.login({ idpHint: hintIdir })"
             />
           </v-col>
-          <v-col cols="12" lg="4">
+          <v-col cols="12" lg="6">
             <ButtonPrimary
               text="Business BCeID"
               block
