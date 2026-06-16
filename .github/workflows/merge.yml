@@ -18,7 +18,7 @@ on:
 concurrency:
   # Do not interrupt previous workflows
   group: ${{ github.workflow }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 permissions: {}
 
