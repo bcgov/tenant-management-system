@@ -19,7 +19,7 @@ jobs:
   publish:
     name: Publish
     permissions:
-      contents: push
+      contents: write
       pages: write
       id-token: write
     runs-on: ubuntu-22.04
