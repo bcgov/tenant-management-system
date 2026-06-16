@@ -558,7 +558,7 @@ export class TMSService {
       const token: string = await this.getToken()
       const params = {
         ...req.query,
-        bceidType: 'both',
+        bceidType: 'business',
       }
       const response = await axios.get(config.bcgovSsoApi.urlBceid, {
         headers: { Authorization: `Bearer ${token}` },
