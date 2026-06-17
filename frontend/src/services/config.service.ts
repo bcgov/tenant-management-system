@@ -11,11 +11,10 @@ export interface AppConfig {
   api: {
     baseUrl: string
   }
-  basicBceidBroker: string
-  businessBceidBroker: string
-  idirBroker: string
   oidc: {
     clientId: string
+    hintBceidBusiness: string
+    hintIdir: string
     logoutUrl: string
     realm: string
     serverUrl: string
@@ -42,10 +41,9 @@ const validateConfig = (raw: unknown): AppConfig => {
 
   const required: [string, unknown][] = [
     ['api.baseUrl', api?.baseUrl],
-    ['basicBceidBroker', config.basicBceidBroker],
-    ['businessBceidBroker', config.businessBceidBroker],
-    ['idirBroker', config.idirBroker],
     ['oidc.clientId', oidc?.clientId],
+    ['oidc.hintBceidBusiness', oidc?.hintBceidBusiness],
+    ['oidc.hintIdir', oidc?.hintIdir],
     ['oidc.logoutUrl', oidc?.logoutUrl],
     ['oidc.realm', oidc?.realm],
     ['oidc.serverUrl', oidc?.serverUrl],
@@ -72,11 +70,10 @@ export async function loadConfig(): Promise<void> {
       api: {
         baseUrl: import.meta.env.VITE_API_BASE_URL,
       },
-      basicBceidBroker: import.meta.env.VITE_KEYCLOAK_BASIC_BCEID_HINT,
-      businessBceidBroker: import.meta.env.VITE_KEYCLOAK_BUSINESS_BCEID_HINT,
-      idirBroker: import.meta.env.VITE_KEYCLOAK_IDIR_HINT,
       oidc: {
         clientId: import.meta.env.VITE_KEYCLOAK_CLIENT_ID,
+        hintBceidBusiness: import.meta.env.VITE_KEYCLOAK_HINT_BCEID_BUSINESS,
+        hintIdir: import.meta.env.VITE_KEYCLOAK_HINT_IDIR,
         logoutUrl: import.meta.env.VITE_KEYCLOAK_LOGOUT_URL,
         realm: import.meta.env.VITE_KEYCLOAK_REALM,
         serverUrl: import.meta.env.VITE_KEYCLOAK_URL,

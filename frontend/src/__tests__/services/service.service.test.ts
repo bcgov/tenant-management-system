@@ -172,7 +172,7 @@ describe('serviceService', () => {
     const fakeSharedGroupServices = {
       id: 'f454ab17-c0dd-46b3-8bce-b56874df57f4',
       name: 'CHEFS',
-      clientIdentifier: 'tenant-management-system-6014',
+      clientIdentifier: 'client-identifier',
       description: 'chefs service local',
       createdDateTime: '2025-10-29',
       updatedDateTime: '2025-10-29',

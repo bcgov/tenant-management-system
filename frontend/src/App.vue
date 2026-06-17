@@ -16,9 +16,8 @@ const route = useRoute()
 
 // --- Computed Values ---------------------------------------------------------
 
-const basicBceidHint = computed(() => config.basicBceidBroker)
-const businessBceidHint = computed(() => config.businessBceidBroker)
-const idirHint = computed(() => config.idirBroker)
+const hintBceidBusiness = computed(() => config.oidc.hintBceidBusiness)
+const hintIdir = computed(() => config.oidc.hintIdir)
 
 const loggedOut = computed(() => authStore.isSessionExpired)
 
@@ -48,17 +47,12 @@ const user = computed(() => {
               <ButtonPrimary
                 data-testid="buttonIdir"
                 text="Log in with IDIR"
-                @click="authStore.login({ idpHint: idirHint })"
-              />
-              <ButtonPrimary
-                data-testid="buttonBceidBasic"
-                text="Log in with Basic BCeID"
-                @click="authStore.login({ idpHint: basicBceidHint })"
+                @click="authStore.login({ idpHint: hintIdir })"
               />
               <ButtonPrimary
                 data-testid="buttonBceidBusiness"
                 text="Log in with Business BCeID"
-                @click="authStore.login({ idpHint: businessBceidHint })"
+                @click="authStore.login({ idpHint: hintBceidBusiness })"
               />
             </v-col>
           </v-row>

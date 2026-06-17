@@ -5,7 +5,7 @@ import {
   makeSsoUser,
   makeTenant,
   makeUser,
-  makeUserBceid,
+  makeUserBceidBusiness,
   makeUserIdir,
   makeUserOperationsAdmin,
 } from '@/__tests__/__factories__'
@@ -71,7 +71,7 @@ describe('permissions', () => {
 
   describe('currentUserIsBCeID', () => {
     it('returns true when the current user is BCeID', () => {
-      currentAuthStore = createMockAuthStore({ user: makeUserBceid() })
+      currentAuthStore = createMockAuthStore({ user: makeUserBceidBusiness() })
 
       expect(currentUserIsBceid()).toBe(true)
     })
@@ -97,7 +97,7 @@ describe('permissions', () => {
     })
 
     it('returns false when the current user is IDIR', () => {
-      currentAuthStore = createMockAuthStore({ user: makeUserBceid() })
+      currentAuthStore = createMockAuthStore({ user: makeUserBceidBusiness() })
 
       expect(currentUserIsIdir()).toBe(false)
     })

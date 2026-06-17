@@ -49,30 +49,6 @@ describe('User mapper', () => {
   })
 
   describe('fromSearchData', () => {
-    it('creates instance for bceidbasic', () => {
-      const searchData: UserSearchApiData = {
-        attributes: {
-          bceid_user_guid: ['bceid_user_guid'],
-          display_name: ['display_name'],
-        },
-        email: 'email',
-        firstName: 'firstName',
-        lastName: 'lastName',
-      }
-
-      const user = userMapper.fromSearchData(searchData)
-
-      expect(user.id).toBe('bceid_user_guid')
-      expect(user.roles).toEqual([])
-      expect(user.ssoUser.displayName).toBe('display_name')
-      expect(user.ssoUser.email).toBe('email')
-      expect(user.ssoUser.firstName).toBe('firstName')
-      expect(user.ssoUser.idpType).toBe('bceidbasic')
-      expect(user.ssoUser.lastName).toBe('lastName')
-      expect(user.ssoUser.ssoUserId).toBe('bceid_user_guid')
-      expect(user.ssoUser.userName).toBeUndefined()
-    })
-
     it('creates instance for bceidbusiness', () => {
       const searchData: UserSearchApiData = {
         attributes: {

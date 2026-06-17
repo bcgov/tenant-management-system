@@ -16,7 +16,7 @@ const mockInit = vi.fn().mockResolvedValue(true)
 const mockLogin = vi.fn()
 const mockLogout = vi.fn()
 const mockUpdateToken = vi.fn().mockResolvedValue(true)
-let mockTokenParsed: KeycloakTokenParsed | null = {} as KeycloakTokenParsed
+let mockTokenParsed: KeycloakTokenParsed | null = {}
 
 vi.mock('keycloak-js', () => ({
   default: class MockKeycloak {
@@ -44,19 +44,10 @@ const makeIdirToken = (
   ...overrides,
 })
 
-const makeBceidBasicToken = (
-  overrides: Partial<KeycloakTokenParsed> = {},
-): KeycloakTokenParsed => ({
-  identity_provider: 'bceidboth',
-  bceid_user_guid: '456',
-  bceid_username: 'bceid_user',
-  ...overrides,
-})
-
 const makeBceidBusinessToken = (
   overrides: Partial<KeycloakTokenParsed> = {},
 ): KeycloakTokenParsed => ({
-  identity_provider: 'bceidboth',
+  identity_provider: 'bceidbusiness',
   bceid_user_guid: '789',
   bceid_username: 'bceid_business',
   bceid_business_guid: 'abc123',
@@ -89,16 +80,6 @@ describe('useAuthStore', () => {
 
       expect(store.authenticatedUser.id).toBe('123')
       expect(store.authenticatedUser.ssoUser.idpType).toBe('idir')
-    })
-
-    it('maps a BCeID user from the token', async () => {
-      const store = useAuthStore()
-      mockTokenParsed = makeBceidBasicToken()
-
-      await store.init()
-
-      expect(store.authenticatedUser.id).toBe('456')
-      expect(store.authenticatedUser.ssoUser.idpType).toBe('bceidbasic')
     })
 
     it('maps a business BCeID user from the token', async () => {

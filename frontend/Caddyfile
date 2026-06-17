@@ -15,11 +15,10 @@
             "api": {
                 "baseUrl": "/api/v1"
             },
-            "basicBceidBroker": "bceidboth",
-            "businessBceidBroker": "bceidboth",
-            "idirBroker": "azureidir",
             "oidc": {
                 "clientId": "{$LOGIN_PROXY_CLIENT_ID}",
+                "hintBceidBusiness": "bceidbusiness",
+                "hintIdir": "azureidir",
                 "logoutUrl": "https://{$LOGIN_PROXY_HOST_NAME}/auth/realms/standard/protocol/openid-connect/logout",
                 "realm": "standard",
                 "serverUrl": "https://{$LOGIN_PROXY_HOST_NAME}/auth"
