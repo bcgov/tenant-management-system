@@ -6074,7 +6074,7 @@ describe('Tenant API', () => {
       expect(response.body).toEqual(mockSearchResults)
     })
 
-    it('should search BCEID users with both type before filtering to business users', async () => {
+    it('should search BCEID users with business type before filtering to business users', async () => {
       const mockSearchResults = {
         data: [
           {
@@ -6113,7 +6113,7 @@ describe('Tenant API', () => {
       expect(axios.get).toHaveBeenCalledWith(
         expect.any(String),
         expect.objectContaining({
-          params: { bceidType: 'both', username: 'business.user' },
+          params: { bceidType: 'business', username: 'business.user' },
         }),
       )
     })
@@ -6171,7 +6171,7 @@ describe('Tenant API', () => {
       expect(axios.get).toHaveBeenCalledWith(
         expect.any(String),
         expect.objectContaining({
-          params: { bceidType: 'both', username: 'business.user' },
+          params: { bceidType: 'business', username: 'business.user' },
         }),
       )
     })
@@ -6242,7 +6242,7 @@ describe('Tenant API', () => {
       expect(axios.get).toHaveBeenCalledWith(
         expect.any(String),
         expect.objectContaining({
-          params: { bceidType: 'both', username: 'user1' },
+          params: { bceidType: 'business', username: 'user1' },
         }),
       )
     })
