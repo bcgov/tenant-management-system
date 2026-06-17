@@ -2,9 +2,7 @@
  * There are two broad classes of identity providers that are supported: BCeID
  * and IDIR.
  */
-const bceidBasicIdps = new Set(['bceidbasic'])
-const bceidBusinessIdps = new Set(['bceidbusiness'])
-const bceidIdps = new Set(['bceidbasic', 'bceidboth', 'bceidbusiness'])
+const bceidBusinessIdp = 'bceidbusiness'
 const idirIdps = new Set(['azureidir', 'idir'])
 
 /**
@@ -17,11 +15,7 @@ const idirIdps = new Set(['azureidir', 'idir'])
  * @returns The user-friendly display name for the identity provider.
  */
 export const identityProviderToDisplay = (idp: string | undefined): string => {
-  if (idp && bceidBasicIdps.has(idp.toLowerCase())) {
-    return 'Basic BCeID'
-  }
-
-  if (idp && bceidBusinessIdps.has(idp.toLowerCase())) {
+  if (idp === bceidBusinessIdp) {
     return 'Business BCeID'
   }
 
@@ -34,18 +28,17 @@ export const identityProviderToDisplay = (idp: string | undefined): string => {
 
 /**
  * Gets the whether or not the user's identity provider corresponds to an
- * identity provider that is BCeID ('bceidbasic', 'bceidboth', or
- * 'bceidbusiness').
+ * identity provider that is BCeID ('bceidbusiness').
  *
  * @param idp - the raw identity provider string from the token.
- * @returns true if the identity provider is a BCeID IdP
+ * @returns true if the identity provider is a BCeID IdP.
  */
-export const isIdpBceid = (idp: string | undefined): boolean => {
+export const isIdpBceidBusiness = (idp: string | undefined): boolean => {
   if (!idp) {
     return false
   }
 
-  return bceidIdps.has(idp.toLowerCase())
+  return idp.toLowerCase() === bceidBusinessIdp
 }
 
 /**
@@ -53,7 +46,7 @@ export const isIdpBceid = (idp: string | undefined): boolean => {
  * identity provider that is IDIR ('azureidir' or 'idir').
  *
  * @param idp - the raw identity provider string from the token.
- * @returns true if the identity provider is an IDIR IdP
+ * @returns true if the identity provider is an IDIR IdP.
  */
 export const isIdpIdir = (idp: string | undefined): boolean => {
   if (!idp) {

@@ -14,9 +14,8 @@ const router = useRouter()
 
 // --- Computed Values ---------------------------------------------------------
 
-const basicBceidHint = computed(() => config.basicBceidBroker)
-const businessBceidHint = computed(() => config.businessBceidBroker)
-const idirHint = computed(() => config.idirBroker)
+const hintBceidBusiness = computed(() => config.oidc.hintBceidBusiness)
+const hintIdir = computed(() => config.oidc.hintIdir)
 
 // --- Watchers and Effects ----------------------------------------------------
 
@@ -56,25 +55,18 @@ watchEffect(() => {
 
         <p class="p-xlarge">Choose your login method:</p>
         <v-row class="pb-12">
-          <v-col cols="12" lg="4">
+          <v-col cols="12" lg="6">
             <ButtonPrimary
               text="IDIR"
               block
-              @click="authStore.login({ idpHint: idirHint })"
+              @click="authStore.login({ idpHint: hintIdir })"
             />
           </v-col>
-          <v-col cols="12" lg="4">
-            <ButtonPrimary
-              text="Basic BCeID"
-              block
-              @click="authStore.login({ idpHint: basicBceidHint })"
-            />
-          </v-col>
-          <v-col cols="12" lg="4">
+          <v-col cols="12" lg="6">
             <ButtonPrimary
               text="Business BCeID"
               block
-              @click="authStore.login({ idpHint: businessBceidHint })"
+              @click="authStore.login({ idpHint: hintBceidBusiness })"
             />
           </v-col>
         </v-row>

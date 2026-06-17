@@ -88,11 +88,7 @@ export const userMapper = {
     // TODO: is there ever a displayName?
     const displayName =
       attributes.display_name?.[0] ?? attributes.displayName?.[0] ?? ''
-    const type = attributes.idir_username?.[0]
-      ? 'idir'
-      : attributes.bceid_business_guid?.[0]
-        ? 'bceidbusiness'
-        : 'bceidbasic'
+    const type = attributes.idir_username?.[0] ? 'idir' : 'bceidbusiness'
     // TODO: is there actually a userid?
     const userId = toSsoUserId(
       attributes.idir_user_guid?.[0] ??

@@ -26,7 +26,7 @@ export const userService = {
       const response = await api.get('/users/bcgovssousers/bceid/search', {
         params: {
           [searchType]: searchValue,
-          bceidType: 'both',
+          bceidType: 'business',
         },
       })
 
