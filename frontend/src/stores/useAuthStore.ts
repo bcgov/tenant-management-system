@@ -117,11 +117,11 @@ export const useAuthStore = defineStore('auth', () => {
     const tokenRoles = tokenParsed.client_roles || []
     if (tokenRoles.includes(ROLES.OPERATIONS_ADMIN.value)) {
       roles.push(
-        new Role(
-          toRoleId('unused_id'),
-          ROLES.OPERATIONS_ADMIN.value,
-          ROLES.OPERATIONS_ADMIN.title,
-        ),
+        new Role({
+          description: ROLES.OPERATIONS_ADMIN.title,
+          id: toRoleId('unused_id'),
+          name: ROLES.OPERATIONS_ADMIN.value,
+        }),
       )
     }
 

@@ -28,6 +28,10 @@ export const roleMapper = {
    * @returns A new Role instance.
    */
   fromApiData: (apiData: RoleApiData): Role => {
-    return new Role(apiData.id, apiData.name, apiData.description)
+    return new Role({
+      description: apiData.description,
+      id: apiData.id,
+      name: apiData.name,
+    })
   },
 }

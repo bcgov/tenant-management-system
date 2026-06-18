@@ -122,11 +122,11 @@ export const makeRole = (
     name: string
   }> = {},
 ): Role => {
-  return new Role(
-    toRoleId(overrides.id ?? 'test-role-id'),
-    overrides.name ?? 'test-role-name',
-    overrides.description ?? 'test-role-description',
-  )
+  return new Role({
+    description: overrides.description ?? 'test-role-description',
+    id: toRoleId(overrides.id ?? 'test-role-id'),
+    name: overrides.name ?? 'test-role-name',
+  })
 }
 
 export const makeRoleOperationsAdmin = (): Role => {
