@@ -32,14 +32,14 @@ export const makeGroup = (
     name: string
   }> = {},
 ): Group => {
-  return new Group(
-    overrides.createdBy ?? 'test-group-created-by',
-    overrides.createdDate ?? 'test-group-created-date',
-    overrides.description ?? 'test-group-description',
-    toGroupId(overrides.id ?? 'test-group-id'),
-    overrides.name ?? 'test-group-name',
-    overrides.groupUsers ?? [],
-  )
+  return new Group({
+    createdBy: overrides.createdBy ?? 'test-group-created-by',
+    createdDate: overrides.createdDate ?? 'test-group-created-date',
+    description: overrides.description ?? 'test-group-description',
+    groupUsers: overrides.groupUsers ?? [],
+    id: toGroupId(overrides.id ?? 'test-group-id'),
+    name: overrides.name ?? 'test-group-name',
+  })
 }
 
 // Group Service Factory
