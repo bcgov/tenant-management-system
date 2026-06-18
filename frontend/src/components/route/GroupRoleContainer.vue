@@ -89,8 +89,13 @@ const expanded = computed(() =>
 
 const groupServices = computed(() => groupStore.groupServices)
 
-const isTenantOwner = computed(() => {
-  return currentUserHasRole(tenant.value, ROLES.TENANT_OWNER.value)
+// A tenant owner, by default, is also a user admin - even if they don't have
+// the USER_ADMIN role.
+const isUserAdmin = computed(() => {
+  return (
+    currentUserHasRole(tenant.value, ROLES.TENANT_OWNER.value) ||
+    currentUserHasRole(tenant.value, ROLES.USER_ADMIN.value)
+  )
 })
 
 const tenant = computed(() => {
@@ -187,7 +192,7 @@ const undoChanges = () => {
   <v-container v-if="groupServices.length === 0" class="fill-height">
     <v-row class="center-align justify-center">
       <v-col class="align-center d-flex flex-column" cols="auto">
-        <template v-if="isTenantOwner">
+        <template v-if="isUserAdmin">
           <h1>No Connected Services added yet</h1>
           <p class="p-large">
             Service roles can only be assigned after Connected Services have
@@ -244,7 +249,7 @@ const undoChanges = () => {
       <!-- Edit button -->
       <v-col cols="12">
         <ButtonPrimary
-          v-if="!editing && isTenantOwner"
+          v-if="!editing && isUserAdmin"
           :text="$t('general.edit')"
           @click="startEditing"
         />
@@ -266,7 +271,7 @@ const undoChanges = () => {
                 v-for="role in service.roles"
                 :key="`checkbox-role-${role.id}`"
                 :color="editing ? 'primary' : ''"
-                :disabled="!editing || !isTenantOwner"
+                :disabled="!editing || !isUserAdmin"
                 :label="role.name"
                 :model-value="editing ? draft.get(role.id) : role.isEnabled"
                 class="noBackground"
@@ -280,7 +285,7 @@ const undoChanges = () => {
       </v-col>
 
       <!-- save/cancel/reset buttons -->
-      <v-col v-if="isTenantOwner" class="text-right" cols="12">
+      <v-col v-if="isUserAdmin" class="text-right" cols="12">
         <v-btn
           :disabled="!editing"
           class="mr-2"
