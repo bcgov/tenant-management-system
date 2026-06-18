@@ -100,10 +100,10 @@ export const makeGroupUser = (
     user: User
   }> = {},
 ): GroupUser => {
-  return new GroupUser(
-    toGroupUserId(overrides.id ?? 'test-group-user-id'),
-    overrides.user ?? makeUser(),
-  )
+  return new GroupUser({
+    id: toGroupUserId(overrides.id ?? 'test-group-user-id'),
+    user: overrides.user ?? makeUser(),
+  })
 }
 
 export const makeGroupUserApiData = (): GroupUserApiData => {
