@@ -8,17 +8,17 @@ describe('Service model', () => {
   describe('constructor', () => {
     it('assigns properties', () => {
       const serviceRole = makeServiceRole()
-      const service = new Service(
-        toServiceId('id'),
-        'name',
-        'displayName',
-        'createdDate',
-        'clientIdentifier',
-        'landingPageUrl',
-        'description',
-        'updatedDate',
-        [serviceRole],
-      )
+      const service = new Service({
+        clientIdentifier: 'clientIdentifier',
+        createdDate: 'createdDate',
+        description: 'description',
+        displayName: 'displayName',
+        id: toServiceId('id'),
+        landingPageUrl: 'landingPageUrl',
+        name: 'name',
+        roles: [serviceRole],
+        updatedDate: 'updatedDate',
+      })
 
       expect(service.clientIdentifier).toBe('clientIdentifier')
       expect(service.createdDate).toBe('createdDate')
@@ -33,17 +33,17 @@ describe('Service model', () => {
     })
 
     it('handles empty service roles', () => {
-      const service = new Service(
-        toServiceId('id'),
-        'name',
-        'displayName',
-        'createdDate',
-        'clientIdentifier',
-        'landingPageUrl',
-        'description',
-        'updatedDate',
-        [],
-      )
+      const service = new Service({
+        clientIdentifier: 'clientIdentifier',
+        createdDate: 'createdDate',
+        description: 'description',
+        displayName: 'displayName',
+        id: toServiceId('id'),
+        landingPageUrl: 'landingPageUrl',
+        name: 'name',
+        roles: [],
+        updatedDate: 'updatedDate',
+      })
 
       expect(service.roles.length).toBe(0)
     })

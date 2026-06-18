@@ -168,17 +168,18 @@ export const makeService = (
     updatedDate: string
   }> = {},
 ): Service => {
-  return new Service(
-    toServiceId(overrides.id ?? 'test-service-id'),
-    overrides.name ?? 'test-service-name',
-    overrides.displayName ?? 'test-service-display-name',
-    overrides.createdDate ?? 'test-service-created-date',
-    overrides.clientIdentifier ?? 'test-service-client-identifier',
-    overrides.landingPageUrl ?? 'test-service-landing-page-url',
-    overrides.description ?? 'test-service-description',
-    overrides.updatedDate ?? 'test-service-updated-date',
-    overrides.roles ?? [makeServiceRole()],
-  )
+  return new Service({
+    clientIdentifier:
+      overrides.clientIdentifier ?? 'test-service-client-identifier',
+    createdDate: overrides.createdDate ?? 'test-service-created-date',
+    description: overrides.description ?? 'test-service-description',
+    displayName: overrides.displayName ?? 'test-service-display-name',
+    id: toServiceId(overrides.id ?? 'test-service-id'),
+    landingPageUrl: overrides.landingPageUrl ?? 'test-service-landing-page-url',
+    name: overrides.name ?? 'test-service-name',
+    roles: overrides.roles ?? [makeServiceRole()],
+    updatedDate: overrides.updatedDate ?? 'test-service-updated-date',
+  })
 }
 
 // Service Role Factory
