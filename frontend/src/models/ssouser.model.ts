@@ -2,6 +2,19 @@ export type SsoUserId = string & { readonly __brand: 'SSOUserId' }
 export const toSsoUserId = (id: string): SsoUserId => id as SsoUserId
 
 /**
+ * Configuration options required to instantiate a SsoUser.
+ */
+export type SsoUserConfig = {
+  displayName: string
+  email?: string
+  firstName: string
+  idpType: string
+  lastName: string
+  ssoUserId: SsoUserId
+  userName?: string
+}
+
+/**
  * Represents a single SSO user.
  */
 export class SsoUser {
@@ -43,29 +56,16 @@ export class SsoUser {
   /**
    * Creates a new SsoUser instance.
    *
-   * @param ssoUserId - The unique SSO user ID.
-   * @param userName - The username (optional).
-   * @param firstName - The user's first name.
-   * @param lastName - The user's last name.
-   * @param displayName - The display name of the user.
-   * @param email - The user's email address (optional).
-   * @param idpType - The identity provider type.
+   * @param config - The configuration properties for the SSO user.
+   * @returns A new SsoUser instance.
    */
-  constructor(
-    ssoUserId: SsoUserId,
-    userName: string | undefined,
-    firstName: string,
-    lastName: string,
-    displayName: string,
-    email: string | undefined,
-    idpType: string,
-  ) {
-    this.displayName = displayName
-    this.email = email
-    this.firstName = firstName
-    this.idpType = idpType
-    this.lastName = lastName
-    this.ssoUserId = ssoUserId
-    this.userName = userName
+  constructor(config: SsoUserConfig) {
+    this.displayName = config.displayName
+    this.email = config.email
+    this.firstName = config.firstName
+    this.idpType = config.idpType
+    this.lastName = config.lastName
+    this.ssoUserId = config.ssoUserId
+    this.userName = config.userName
   }
 }

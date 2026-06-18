@@ -88,25 +88,25 @@ export const useAuthStore = defineStore('auth', () => {
 
     let ssoUser
     if (isIdpIdir(tokenParsed.identity_provider)) {
-      ssoUser = new SsoUser(
-        tokenParsed.idir_user_guid,
-        tokenParsed.idir_username,
-        tokenParsed.given_name,
-        tokenParsed.family_name,
-        tokenParsed.display_name,
-        tokenParsed.email,
-        tokenParsed.identity_provider,
-      )
+      ssoUser = new SsoUser({
+        displayName: tokenParsed.display_name,
+        email: tokenParsed.email,
+        firstName: tokenParsed.given_name,
+        idpType: tokenParsed.identity_provider,
+        lastName: tokenParsed.family_name,
+        ssoUserId: tokenParsed.idir_user_guid,
+        userName: tokenParsed.idir_username,
+      })
     } else if (isIdpBceidBusiness(tokenParsed.identity_provider)) {
-      ssoUser = new SsoUser(
-        tokenParsed.bceid_user_guid,
-        tokenParsed.bceid_username,
-        tokenParsed.given_name,
-        tokenParsed.family_name,
-        tokenParsed.display_name,
-        tokenParsed.email,
-        tokenParsed.identity_provider,
-      )
+      ssoUser = new SsoUser({
+        displayName: tokenParsed.display_name,
+        email: tokenParsed.email,
+        firstName: tokenParsed.given_name,
+        idpType: tokenParsed.identity_provider,
+        lastName: tokenParsed.family_name,
+        ssoUserId: tokenParsed.bceid_user_guid,
+        userName: tokenParsed.bceid_username,
+      })
     } else {
       throw new Error(
         `Unknown identity provider: "${tokenParsed.identity_provider}"`,

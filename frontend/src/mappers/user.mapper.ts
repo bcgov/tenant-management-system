@@ -88,9 +88,9 @@ export const userMapper = {
     // TODO: is there ever a displayName?
     const displayName =
       attributes.display_name?.[0] ?? attributes.displayName?.[0] ?? ''
-    const type = attributes.idir_username?.[0] ? 'idir' : 'bceidbusiness'
+    const idpType = attributes.idir_username?.[0] ? 'idir' : 'bceidbusiness'
     // TODO: is there actually a userid?
-    const userId = toSsoUserId(
+    const ssoUserId = toSsoUserId(
       attributes.idir_user_guid?.[0] ??
         attributes.idir_userid?.[0] ??
         attributes.bceid_user_guid?.[0] ??
@@ -102,19 +102,19 @@ export const userMapper = {
       attributes.bceid_username?.[0] ??
       undefined
 
-    const ssoUser = new SsoUser(
-      userId,
-      username,
-      searchData.firstName,
-      searchData.lastName,
+    const ssoUser = new SsoUser({
       displayName,
-      searchData.email,
-      type,
-    )
+      email: searchData.email,
+      firstName: searchData.firstName,
+      idpType,
+      lastName: searchData.lastName,
+      ssoUserId,
+      userName: username,
+    })
 
     return new User({
       // TODO: We don't know the user ID, so duplicate the SsoUserId
-      id: toUserId(userId),
+      id: toUserId(ssoUserId),
       // Roles are not provided in search results
       roles: [],
       ssoUser: ssoUser,

@@ -231,15 +231,15 @@ export const makeSsoUser = (
     userName: string
   }> = {},
 ): SsoUser => {
-  return new SsoUser(
-    toSsoUserId(overrides.ssoUserId ?? 'test-sso-user-id'),
-    overrides.userName ?? 'test-sso-user-user-name',
-    overrides.firstName ?? 'test-sso-user-first-name',
-    overrides.lastName ?? 'test-sso-user-last-name',
-    overrides.displayName ?? 'test-sso-user-display-name',
-    overrides.email ?? 'test-sso-user-email',
-    overrides.idpType ?? 'test-sso-user-idp-type',
-  )
+  return new SsoUser({
+    displayName: overrides.displayName ?? 'test-sso-user-display-name',
+    email: overrides.email ?? 'test-sso-user-email',
+    firstName: overrides.firstName ?? 'test-sso-user-first-name',
+    idpType: overrides.idpType ?? 'test-sso-user-idp-type',
+    lastName: overrides.lastName ?? 'test-sso-user-last-name',
+    ssoUserId: toSsoUserId(overrides.ssoUserId ?? 'test-sso-user-id'),
+    userName: overrides.userName ?? 'test-sso-user-user-name',
+  })
 }
 
 export const makeSsoUserApiData = (): SsoUserApiData => {
