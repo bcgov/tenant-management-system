@@ -288,18 +288,21 @@ export const makeTenantRequest = (
     id: string
     ministryName: string
     name: string
+    rejectionReason: string
     status: string
   }> = {},
 ): TenantRequest => {
-  return new TenantRequest(
-    overrides.createdBy ?? 'test-tenant-request-created-by',
-    overrides.createdDate ?? 'test-tenant-request-created-date',
-    overrides.description ?? 'test-tenant-request-description',
-    toTenantRequestId(overrides.id ?? 'test-tenant-request-id'),
-    overrides.ministryName ?? 'test-tenant-request-ministry-name',
-    overrides.name ?? 'test-tenant-request-name',
-    overrides.status ?? 'test-tenant-request-status',
-  )
+  return new TenantRequest({
+    createdBy: overrides.createdBy ?? 'test-tenant-request-created-by',
+    createdDate: overrides.createdDate ?? 'test-tenant-request-created-date',
+    description: overrides.description ?? 'test-tenant-request-description',
+    id: toTenantRequestId(overrides.id ?? 'test-tenant-request-id'),
+    ministryName: overrides.ministryName ?? 'test-tenant-request-ministry-name',
+    name: overrides.name ?? 'test-tenant-request-name',
+    rejectionReason:
+      overrides.rejectionReason ?? 'test-tenant-request-rejection-reason',
+    status: overrides.status ?? 'test-tenant-request-status',
+  })
 }
 
 // User Factories

@@ -12,6 +12,20 @@ export type TenantRequestDetailFields = Pick<
 >
 
 /**
+ * Configuration options required to instantiate a TenantRequest.
+ */
+export type TenantRequestConfig = {
+  createdBy: string
+  createdDate: string
+  description: string
+  id: TenantRequestId
+  ministryName: string
+  name: string
+  rejectionReason?: string
+  status: string
+}
+
+/**
  * Represents a tenant request in the system.
  */
 export class TenantRequest {
@@ -58,35 +72,21 @@ export class TenantRequest {
   status: string
 
   /**
-   * Creates a new Tenant Request instance.
+   * Creates a new TenantRequest instance.
    *
    * Note: rejectionReason is initialized to an empty string by default.
    *
-   * @param createdBy - The identity of who created the tenant request.
-   * @param createdDate - The ISO8601 date string (YYYY-MM-DD) when tenant
-   *   request was created.
-   * @param description - The description of the tenant request.
-   * @param id - The unique identifier for the tenant request.
-   * @param name - The display name of the tenant request.
-   * @param ministryName - The associated ministry or organization name.
-   * @param status - The status of the tenant request.
+   * @param config - The configuration properties for the service.
+   * @returns A new TenantRequest instance.
    */
-  constructor(
-    createdBy: string,
-    createdDate: string,
-    description: string,
-    id: TenantRequestId,
-    name: string,
-    ministryName: string,
-    status: string,
-  ) {
-    this.createdBy = createdBy
-    this.createdDate = createdDate
-    this.description = description
-    this.id = id
-    this.name = name
-    this.ministryName = ministryName
-    this.rejectionReason = ''
-    this.status = status
+  constructor(config: TenantRequestConfig) {
+    this.createdBy = config.createdBy
+    this.createdDate = config.createdDate
+    this.description = config.description
+    this.id = config.id
+    this.ministryName = config.ministryName
+    this.name = config.name
+    this.rejectionReason = config.rejectionReason || ''
+    this.status = config.status
   }
 }
