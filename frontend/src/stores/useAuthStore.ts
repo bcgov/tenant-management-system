@@ -130,7 +130,7 @@ export const useAuthStore = defineStore('auth', () => {
     // rather than currentUser.ssoUser.ssoUserId. For the sake of future
     // developer sanity the correct ID location should be used, and this User.id
     // should be set to something like ''
-    return new User(toUserId(ssoUser.ssoUserId), ssoUser, roles)
+    return new User({ id: toUserId(ssoUser.ssoUserId), roles, ssoUser })
   }
 
   // Exported Methods

@@ -314,11 +314,11 @@ export const makeUser = (
     ssoUser: SsoUser
   }> = {},
 ): User => {
-  return new User(
-    toUserId(overrides.id ?? 'test-user-id'),
-    overrides.ssoUser ?? makeSsoUser(),
-    overrides.roles ?? [],
-  )
+  return new User({
+    id: toUserId(overrides.id ?? 'test-user-id'),
+    roles: overrides.roles ?? [],
+    ssoUser: overrides.ssoUser ?? makeSsoUser(),
+  })
 }
 
 export const makeUserBceidBusiness = (): User => {

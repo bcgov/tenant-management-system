@@ -6,6 +6,15 @@ export type UserId = string & { readonly __brand: 'UserId' }
 export const toUserId = (id: string): UserId => id as UserId
 
 /**
+ * Configuration options required to instantiate a Service.
+ */
+export type UserConfig = {
+  id: UserId
+  roles: Role[]
+  ssoUser: SsoUser
+}
+
+/**
  * Represents a user in the system.
  */
 export class User {
@@ -27,14 +36,13 @@ export class User {
   /**
    * Creates a new User instance.
    *
-   * @param id - The unique identifier for the user.
-   * @param ssoUser - The associated SSO user details.
-   * @param roles - The roles assigned to the user (default empty array).
+   * @param config - The configuration properties for the user.
+   * @returns A new User instance.
    */
-  constructor(id: UserId, ssoUser: SsoUser, roles: Role[] = []) {
-    this.id = id
-    this.roles = roles
-    this.ssoUser = ssoUser
+  constructor(config: UserConfig) {
+    this.id = config.id
+    this.roles = config.roles
+    this.ssoUser = config.ssoUser
   }
 
   /**
