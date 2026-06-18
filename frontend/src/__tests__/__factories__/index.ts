@@ -53,13 +53,14 @@ export const makeGroupService = (
     roles: GroupServiceRole[]
   }> = {},
 ): GroupService => {
-  return new GroupService(
-    toGroupServiceId(overrides.id ?? 'test-group-service-id'),
-    overrides.displayName ?? 'test-group-service-display-name',
-    overrides.clientIdentifier ?? 'test-group-service-client-identifier',
-    overrides.description ?? 'test-group-service-description',
-    overrides.roles ?? [makeGroupServiceRole()],
-  )
+  return new GroupService({
+    clientIdentifier:
+      overrides.clientIdentifier ?? 'test-group-service-client-identifier',
+    description: overrides.description ?? 'test-group-service-description',
+    displayName: overrides.displayName ?? 'test-group-service-display-name',
+    id: toGroupServiceId(overrides.id ?? 'test-group-service-id'),
+    roles: overrides.roles ?? [makeGroupServiceRole()],
+  })
 }
 
 // Group Service Role Factory

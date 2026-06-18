@@ -49,12 +49,12 @@ export const groupServiceMapper = {
       groupServiceRoleMapper.fromApiData,
     )
 
-    return new GroupService(
-      apiData.id,
-      apiData.displayName,
-      apiData.clientIdentifier,
-      apiData.description,
+    return new GroupService({
+      clientIdentifier: apiData.clientIdentifier,
+      description: apiData.description,
+      displayName: apiData.displayName,
+      id: apiData.id,
       roles,
-    )
+    })
   },
 }

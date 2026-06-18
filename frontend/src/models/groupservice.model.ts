@@ -4,6 +4,17 @@ export type GroupServiceId = string & { readonly __brand: 'GroupServiceId' }
 export const toGroupServiceId = (id: string): GroupServiceId =>
   id as GroupServiceId
 
+/**
+ * Configuration options required to instantiate a GroupService.
+ */
+export type GroupServiceConfig = {
+  clientIdentifier: string
+  description: string
+  displayName: string
+  id: GroupServiceId
+  roles: GroupServiceRole[]
+}
+
 export class GroupService {
   /**
    * The client identifier for the group service.
@@ -33,25 +44,15 @@ export class GroupService {
   /**
    * Creates a new GroupService instance.
    *
-   * @param id - The unique identifier for the group service.
-   * @param displayName - The display name of the group service.
-   * @param clientIdentifier - The client identifier for the group service.
-   * @param description - The description of the group service.
-   * @param roles - The roles available in the group service.
+   * @param config - The configuration properties for the group service.
    * @returns A new GroupService instance.
    */
-  constructor(
-    id: GroupServiceId,
-    displayName: string,
-    clientIdentifier: string,
-    description: string,
-    roles: GroupServiceRole[],
-  ) {
-    this.clientIdentifier = clientIdentifier
-    this.description = description
-    this.displayName = displayName
-    this.id = id
-    this.roles = roles
+  constructor(config: GroupServiceConfig) {
+    this.clientIdentifier = config.clientIdentifier
+    this.description = config.description
+    this.displayName = config.displayName
+    this.id = config.id
+    this.roles = config.roles
   }
 
   /**
