@@ -267,15 +267,15 @@ export const makeTenant = (
     users: User[]
   }> = {},
 ): Tenant => {
-  return new Tenant(
-    overrides.createdBy ?? 'test-tenant-created-by',
-    overrides.createdDate ?? 'test-tenant-created-date',
-    overrides.description ?? 'test-tenant-description',
-    toTenantId(overrides.id ?? 'test-tenant-id'),
-    overrides.name ?? 'test-tenant-name',
-    overrides.ministryName ?? 'test-tenant-ministry-name',
-    overrides.users ?? [makeUser()],
-  )
+  return new Tenant({
+    createdBy: overrides.createdBy ?? 'test-tenant-created-by',
+    createdDate: overrides.createdDate ?? 'test-tenant-created-date',
+    description: overrides.description ?? 'test-tenant-description',
+    id: toTenantId(overrides.id ?? 'test-tenant-id'),
+    ministryName: overrides.ministryName ?? 'test-tenant-ministry-name',
+    name: overrides.name ?? 'test-tenant-name',
+    users: overrides.users ?? [makeUser()],
+  })
 }
 
 // Tenant Request Factory
