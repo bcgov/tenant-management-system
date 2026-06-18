@@ -67,20 +67,22 @@ export const makeGroupService = (
 
 export const makeGroupServiceRole = (
   overrides: Partial<{
-    allowedIdentityProviders: string[]
     description: string
     id: string
+    identityProviders: string[]
     isEnabled: boolean
     name: string
   }> = {},
 ): GroupServiceRole => {
-  return new GroupServiceRole(
-    toGroupServiceRoleId(overrides.id ?? 'test-group-service-role-id'),
-    overrides.name ?? 'test-group-service-role-name',
-    overrides.description ?? 'test-group-service-role-description',
-    overrides.allowedIdentityProviders ?? ['idir'],
-    overrides.isEnabled ?? false,
-  )
+  return new GroupServiceRole({
+    description: overrides.description ?? 'test-group-service-role-description',
+    id: toGroupServiceRoleId(overrides.id ?? 'test-group-service-role-id'),
+    identityProviders: overrides.identityProviders ?? [
+      'test-group-service-role-identity-provider',
+    ],
+    isEnabled: overrides.isEnabled ?? false,
+    name: overrides.name ?? 'test-group-service-role-name',
+  })
 }
 
 export const makeGroupServiceRoleApiData = (): GroupServiceRoleApiData => {

@@ -4,12 +4,18 @@ export type GroupServiceRoleId = string & {
 export const toGroupServiceRoleId = (id: string): GroupServiceRoleId =>
   id as GroupServiceRoleId
 
-export class GroupServiceRole {
-  /**
-   * The allowed identity providers.
-   */
-  allowedIdentityProviders: string[]
+/**
+ * Configuration options required to instantiate a GroupServiceRole.
+ */
+export type GroupServiceRoleConfig = {
+  description: string
+  id: GroupServiceRoleId
+  identityProviders: string[]
+  isEnabled: boolean
+  name: string
+}
 
+export class GroupServiceRole {
   /**
    * The description of the group service role.
    */
@@ -19,6 +25,14 @@ export class GroupServiceRole {
    * The unique identifier for the group service role.
    */
   id: GroupServiceRoleId
+
+  /**
+   * The allowed identity providers.
+   *
+   * Note that this is mapped from the API data "allowedIdentityProviders"
+   * field.
+   */
+  identityProviders: string[]
 
   /**
    * Whether or not the group service role is enabled.
@@ -35,23 +49,14 @@ export class GroupServiceRole {
   /**
    * Creates a new GroupServiceRole instance.
    *
-   * @param id - The unique identifier for the group service role.
-   * @param name - The name of the group service role.
-   * @param description - The description of the group service role.
-   * @param allowedIdentityProviders - The allowed identity providers.
-   * @param isEnabled - Whether or not the group service role is enabled.
+   * @param config - The configuration properties for the group service role.
+   * @returns A new GroupServiceRole instance.
    */
-  constructor(
-    id: GroupServiceRoleId,
-    name: string,
-    description: string,
-    allowedIdentityProviders: string[],
-    isEnabled: boolean,
-  ) {
-    this.description = description
-    this.id = id
-    this.name = name
-    this.allowedIdentityProviders = allowedIdentityProviders
-    this.isEnabled = isEnabled
+  constructor(config: GroupServiceRoleConfig) {
+    this.description = config.description
+    this.id = config.id
+    this.identityProviders = config.identityProviders
+    this.isEnabled = config.isEnabled
+    this.name = config.name
   }
 }
