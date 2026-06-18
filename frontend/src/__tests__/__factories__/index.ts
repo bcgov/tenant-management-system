@@ -186,7 +186,7 @@ export const makeService = (
 
 export const makeServiceRole = (
   overrides: Partial<{
-    allowedIdentityProviders: string[]
+    identityProviders: string[]
     createdBy: string
     createdDate: string
     description: string
@@ -195,15 +195,17 @@ export const makeServiceRole = (
     name: string
   }> = {},
 ): ServiceRole => {
-  return new ServiceRole(
-    toServiceRoleId(overrides.id ?? 'test-service-role-id'),
-    overrides.name ?? 'test-service-role-name',
-    overrides.description ?? 'test-service-role-description',
-    overrides.allowedIdentityProviders ?? ['idir'],
-    overrides.createdBy ?? 'test-service-created-by',
-    overrides.createdDate ?? 'test-service-created-date',
-    overrides.isDeleted ?? false,
-  )
+  return new ServiceRole({
+    createdBy: overrides.createdBy ?? 'test-service-created-by',
+    createdDate: overrides.createdDate ?? 'test-service-created-date',
+    description: overrides.description ?? 'test-service-role-description',
+    id: toServiceRoleId(overrides.id ?? 'test-service-role-id'),
+    identityProviders: overrides.identityProviders ?? [
+      'test-service-role-identity-provider',
+    ],
+    isDeleted: overrides.isDeleted ?? false,
+    name: overrides.name ?? 'test-service-role-name',
+  })
 }
 
 export const makeServiceRoleApiData = (): ServiceRoleApiData => {
