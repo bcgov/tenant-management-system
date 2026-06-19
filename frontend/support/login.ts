@@ -1,10 +1,14 @@
 import { expect, type Page } from '@playwright/test'
-import { generate } from 'otplib/functional'
+import { authenticator } from '@otplib/preset-default'
 import * as dotenv from 'dotenv'
-import path from 'path' // <-- import dotenv
+import path from 'path'
+import fs from 'fs'
 
-// Load .env reliably
-//dotenv.config({ path: path.resolve(__dirname, '.env') })
+// Load .env from the frontend root directory (where playwright runs from)
+const envPath = path.join(process.cwd(), '.env')
+if (fs.existsSync(envPath)) {
+  dotenv.config({ path: envPath })
+}
 
 export function formsettings() {
   if (
@@ -24,16 +28,12 @@ export function formsettings() {
 
 export async function login(page: Page) {
   const { username, password, mfaCode } = formsettings()
-  await page.goto('/')
-  await page.click('[data-testid="login-button"]')
   await page.fill('input[type="email"]', username)
   await page.click('input[type="submit"]')
   await page.fill('input[name="passwd"]', password)
   await page.click('input[type="submit"]')
 
-  const token = await generate({
-    secret: mfaCode,
-  })
+  const token = authenticator.generate(mfaCode)
   console.log('Generated OTP:', token)
   await page.fill('input[name="otc"]', token)
   await page.click('input[type="submit"]')
