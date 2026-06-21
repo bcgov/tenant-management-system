@@ -144,7 +144,7 @@ frontend:
     tls:
       - hosts:
         - "{{tpl .Values.frontend.ingress.host .}}"
-        secretName: "{{regexFind \"(dev|test|demo|prod)\" .Release.Name | default dev}}-tls"
+        secretName: "{{ regexFind \"(dev|test|demo|prod)\" .Release.Name | default \"dev\" }}-tls"
     host: "{{.Release.Name}}-frontend.{{.Values.global.domain}}"
   pdb:
     enabled: false # enable it in PRODUCTION for having pod disruption budget.

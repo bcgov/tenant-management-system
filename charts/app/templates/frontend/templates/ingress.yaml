@@ -15,7 +15,7 @@ apiVersion: extensions/v1beta1
 {{- end }}
 kind: Ingress
 metadata:
-  name: {{ include "frontend.fullname" . }}
+  name: {{ include "frontend.fullname" $ }}
   {{- if and .Values.frontend.ingress .Values.frontend.ingress.labels }}
   {{- with .Values.frontend.ingress.labels }}
   labels:
@@ -39,7 +39,7 @@ spec:
         {{- range .hosts }}
         - {{tpl . $ | quote }} #https://stackoverflow.com/a/67815474
         {{- end }}
-      secretName: {{ .secretName }}
+      secretName: {{ tpl .secretName $ }}
     {{- end }}
   {{- end }}
   rules:
@@ -55,11 +55,11 @@ spec:
             backend:
               {{- if semverCompare ">=1.19-0" $.Capabilities.KubeVersion.GitVersion }}
               service:
-                name: {{ include "frontend.fullname" . }}
+                name: {{ include "frontend.fullname" $ }}
                 port:
                   number: 80
               {{- else }}
-              serviceName: {{ include "frontend.fullname" . }}
+              serviceName: {{ include "frontend.fullname" $ }}
               servicePort: 80
               {{- end }}
           {{- end }}
