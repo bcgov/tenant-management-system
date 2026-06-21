@@ -1,5 +1,4 @@
 ---
-{{- if .Values.frontend.enabled }}
 {{- if .Values.frontend.ingress -}}
 {{- if .Values.frontend.ingress.enabled -}}
 {{- if and .Values.frontend.ingress.className (not (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion)) }}
@@ -20,7 +19,7 @@ metadata:
   {{- if and .Values.frontend.ingress .Values.frontend.ingress.labels }}
   {{- with .Values.frontend.ingress.labels }}
   labels:
-    {{- include "frontend.labels" . | nindent 4 }}
+    {{- toYaml . | nindent 4 }}
   {{- end }}
   {{- end }}
   {{- if and .Values.frontend.ingress .Values.frontend.ingress.annotations }}
@@ -65,6 +64,5 @@ spec:
               {{- end }}
           {{- end }}
     {{- end }}
-{{- end }}
 {{- end }}
 {{- end }}
