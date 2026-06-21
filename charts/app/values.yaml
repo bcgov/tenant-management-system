@@ -146,6 +146,7 @@ frontend:
         - "{{ tpl (index .Values.frontend.ingress.hosts 0).host . }}"
         secretName: "{{ regexFind \"(dev|test|demo|prod)\" .Release.Name | default \"dev\" }}-tls"
     hosts: 
+      - host: "dev.connect.digital.gov.bc.ca"
       - host: "{{.Release.Name}}-frontend.{{.Values.global.domain}}"
         paths:
           - path: /
