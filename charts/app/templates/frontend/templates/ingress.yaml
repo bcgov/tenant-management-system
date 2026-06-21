@@ -1,6 +1,8 @@
 ---
 {{- if .Values.frontend.ingress -}}
 {{- if .Values.frontend.ingress.enabled -}}
+{{- $fullName := include "frontend.fullname" . -}}
+{{- $svcPort := (index .Values.frontend.service.ports 0).port }}
 {{- if and .Values.frontend.ingress.className (not (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion)) }}
   {{- if not (hasKey .Values.frontend.ingress.annotations "kubernetes.io/ingress.class") }}
   {{- $_ := set .Values.frontend.ingress.annotations "kubernetes.io/ingress.class" .Values.frontend.ingress.className}}
@@ -15,7 +17,7 @@ apiVersion: extensions/v1beta1
 {{- end }}
 kind: Ingress
 metadata:
-  name: {{ include "frontend.fullname" $ }}
+  name: {{ $fullName }}
   {{- if and .Values.frontend.ingress .Values.frontend.ingress.labels }}
   {{- with .Values.frontend.ingress.labels }}
   labels:
@@ -55,12 +57,12 @@ spec:
             backend:
               {{- if semverCompare ">=1.19-0" $.Capabilities.KubeVersion.GitVersion }}
               service:
-                name: {{ include "frontend.fullname" $ }}
+                name: {{ $fullName }}
                 port:
-                  number: 80
+                  number: {{ $svcPort }}
               {{- else }}
-              serviceName: {{ include "frontend.fullname" $ }}
-              servicePort: 80
+              serviceName: {{ $fullName }}
+              servicePort: {{ $svcPort }}
               {{- end }}
           {{- end }}
     {{- end }}

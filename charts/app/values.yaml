@@ -143,9 +143,13 @@ frontend:
       haproxy.router.openshift.io/disable_cookies: 'true'
     tls:
       - hosts:
-        - "{{tpl .Values.frontend.ingress.host .}}"
+        - "{{ tpl (index .Values.frontend.ingress.hosts 0).host . }}"
         secretName: "{{ regexFind \"(dev|test|demo|prod)\" .Release.Name | default \"dev\" }}-tls"
-    host: "{{.Release.Name}}-frontend.{{.Values.global.domain}}"
+    hosts: 
+      - host: "{{.Release.Name}}-frontend.{{.Values.global.domain}}"
+        paths:
+          - path: /
+            pathType: ImplementationSpecific
   pdb:
     enabled: false # enable it in PRODUCTION for having pod disruption budget.
     minAvailable: 1 # the minimum number of pods that must be available during the disruption budget.
