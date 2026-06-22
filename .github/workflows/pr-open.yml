@@ -41,7 +41,7 @@ jobs:
       release_name: cstar-${{ github.event.number }}
       tag: ${{ github.event.number }}
       db_user: app-${{ github.event.number }}
-  
+
   tests:
     name: Tests
     needs: [deploys-gold-dev]
@@ -50,6 +50,10 @@ jobs:
     uses: ./.github/workflows/.tests.yml
     with:
       image_tag: ${{ github.event.number }}
+    secrets:
+      Username: ${{ secrets.IDIR_USERNAME }}
+      Password: ${{ secrets.IDIR_PASSWORD }}
+      MFA_CODE: ${{ secrets.MFA_CODE }}
 
   zap:
     name: ZAP Security Scan

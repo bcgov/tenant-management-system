@@ -13,9 +13,9 @@ on:
         default: ${{ github.event.number }}
         type: string
     secrets:
-      IDIR_USERNAME:
+      Username:
         required: true
-      IDIR_PASSWORD:
+      Password:
         required: true
       MFA_CODE:
         required: true
@@ -96,7 +96,7 @@ jobs:
       run:
         working-directory: frontend
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v6
         name: Checkout
@@ -111,15 +111,14 @@ jobs:
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps
-        working-directory: frontend
 
       - name: Run Playwright tests
         run: npx playwright test
-        working-directory: frontend
+
         env:
           BASE_URL: https://${{ env.PREFIX }}.${{ env.DOMAIN }}/
-          IDIR_USERNAME: ${{ secrets.IDIR_USERNAME }}
-          IDIR_PASSWORD: ${{ secrets.IDIR_PASSWORD }}
+          Username: ${{ secrets.Username }}
+          Password: ${{ secrets.Password }}
           MFA_CODE: ${{ secrets.MFA_CODE }}
 
       - name: Upload Playwright report
@@ -127,7 +126,8 @@ jobs:
         if: always()
         with:
           name: playwright-report
-          path: '${{ github.workspace }}/integration/playwright/playwright-report'
+          path: |
+            ./frontend/playwright-report
           if-no-files-found: ignore
 
       - name: Upload Playwright screenshots on failure
