@@ -9,14 +9,14 @@ describe('Group model', () => {
     it('assigns properties', () => {
       const groupUsers = [makeGroupUser()]
 
-      const group = new Group(
-        'createdBy',
-        'createdDate',
-        'description',
-        toGroupId('id'),
-        'name',
+      const group = new Group({
+        createdBy: 'createdBy',
+        createdDate: 'createdDate',
+        description: 'description',
         groupUsers,
-      )
+        id: toGroupId('id'),
+        name: 'name',
+      })
 
       expect(group.createdBy).toBe('createdBy')
       expect(group.createdDate).toBe('createdDate')
@@ -27,14 +27,14 @@ describe('Group model', () => {
     })
 
     it('handles empty group users', () => {
-      const group = new Group(
-        'createdBy',
-        'createdDate',
-        'description',
-        toGroupId('id'),
-        'name',
-        [],
-      )
+      const group = new Group({
+        createdBy: 'createdBy',
+        createdDate: 'createdDate',
+        description: 'description',
+        id: toGroupId('id'),
+        groupUsers: [],
+        name: 'name',
+      })
 
       expect(group.groupUsers).toEqual([])
     })

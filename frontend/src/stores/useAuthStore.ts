@@ -88,25 +88,25 @@ export const useAuthStore = defineStore('auth', () => {
 
     let ssoUser
     if (isIdpIdir(tokenParsed.identity_provider)) {
-      ssoUser = new SsoUser(
-        tokenParsed.idir_user_guid,
-        tokenParsed.idir_username,
-        tokenParsed.given_name,
-        tokenParsed.family_name,
-        tokenParsed.display_name,
-        tokenParsed.email,
-        tokenParsed.identity_provider,
-      )
+      ssoUser = new SsoUser({
+        displayName: tokenParsed.display_name,
+        email: tokenParsed.email,
+        firstName: tokenParsed.given_name,
+        idpType: tokenParsed.identity_provider,
+        lastName: tokenParsed.family_name,
+        ssoUserId: tokenParsed.idir_user_guid,
+        userName: tokenParsed.idir_username,
+      })
     } else if (isIdpBceidBusiness(tokenParsed.identity_provider)) {
-      ssoUser = new SsoUser(
-        tokenParsed.bceid_user_guid,
-        tokenParsed.bceid_username,
-        tokenParsed.given_name,
-        tokenParsed.family_name,
-        tokenParsed.display_name,
-        tokenParsed.email,
-        tokenParsed.identity_provider,
-      )
+      ssoUser = new SsoUser({
+        displayName: tokenParsed.display_name,
+        email: tokenParsed.email,
+        firstName: tokenParsed.given_name,
+        idpType: tokenParsed.identity_provider,
+        lastName: tokenParsed.family_name,
+        ssoUserId: tokenParsed.bceid_user_guid,
+        userName: tokenParsed.bceid_username,
+      })
     } else {
       throw new Error(
         `Unknown identity provider: "${tokenParsed.identity_provider}"`,
@@ -117,11 +117,11 @@ export const useAuthStore = defineStore('auth', () => {
     const tokenRoles = tokenParsed.client_roles || []
     if (tokenRoles.includes(ROLES.OPERATIONS_ADMIN.value)) {
       roles.push(
-        new Role(
-          toRoleId('unused_id'),
-          ROLES.OPERATIONS_ADMIN.value,
-          ROLES.OPERATIONS_ADMIN.title,
-        ),
+        new Role({
+          description: ROLES.OPERATIONS_ADMIN.title,
+          id: toRoleId('unused_id'),
+          name: ROLES.OPERATIONS_ADMIN.value,
+        }),
       )
     }
 
@@ -130,7 +130,7 @@ export const useAuthStore = defineStore('auth', () => {
     // rather than currentUser.ssoUser.ssoUserId. For the sake of future
     // developer sanity the correct ID location should be used, and this User.id
     // should be set to something like ''
-    return new User(toUserId(ssoUser.ssoUserId), ssoUser, roles)
+    return new User({ id: toUserId(ssoUser.ssoUserId), roles, ssoUser })
   }
 
   // Exported Methods

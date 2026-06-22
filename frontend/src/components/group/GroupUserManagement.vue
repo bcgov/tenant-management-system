@@ -83,8 +83,11 @@ const handleClearSearch = () => {
 }
 
 const handleDeleteClick = (user: User) => {
-  // TODO
-  const groupUser = new GroupUser(user.id as unknown as GroupUserId, user)
+  const groupUser = new GroupUser({
+    // TODO
+    id: user.id as unknown as GroupUserId,
+    user,
+  })
 
   showDeleteDialog.value = true
   groupUserToDelete.value = groupUser

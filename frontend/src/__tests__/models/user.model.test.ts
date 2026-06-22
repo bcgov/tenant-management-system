@@ -10,7 +10,7 @@ describe('User model', () => {
       const roles = [makeRole()]
       const ssoUser = makeSsoUser()
 
-      const user = new User(toUserId('id'), ssoUser, roles)
+      const user = new User({ id: toUserId('id'), roles, ssoUser })
 
       expect(user.id).toBe('id')
       expect(user.roles).toEqual(roles)
@@ -20,7 +20,7 @@ describe('User model', () => {
     it('handles empty roles', () => {
       const ssoUser = makeSsoUser()
 
-      const user = new User(toUserId('id'), ssoUser, [])
+      const user = new User({ id: toUserId('id'), roles: [], ssoUser })
 
       expect(user.roles.length).toBe(0)
     })

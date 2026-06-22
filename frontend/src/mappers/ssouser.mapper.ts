@@ -48,14 +48,14 @@ export const ssoUserMapper = {
    * @returns A new SsoUser instance.
    */
   fromApiData: (apiData: SsoUserApiData): SsoUser => {
-    return new SsoUser(
-      apiData.ssoUserId,
-      apiData.userName,
-      apiData.firstName,
-      apiData.lastName,
-      apiData.displayName,
-      apiData.email,
-      apiData.idpType,
-    )
+    return new SsoUser({
+      displayName: apiData.displayName,
+      email: apiData.email,
+      firstName: apiData.firstName,
+      idpType: apiData.idpType,
+      lastName: apiData.lastName,
+      ssoUserId: apiData.ssoUserId,
+      userName: apiData.userName,
+    })
   },
 }

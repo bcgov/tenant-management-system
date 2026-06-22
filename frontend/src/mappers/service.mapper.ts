@@ -71,16 +71,16 @@ export const serviceMapper = {
   fromApiData: (apiData: ServiceApiData) => {
     const roles = apiData.roles.map(serviceRoleMapper.fromApiData)
 
-    return new Service(
-      apiData.id,
-      apiData.name,
-      apiData.displayName,
-      apiData.createdDateTime,
-      apiData.clientIdentifier,
-      apiData.landingPageUrl,
-      apiData.description,
-      apiData.updatedDateTime,
+    return new Service({
+      clientIdentifier: apiData.clientIdentifier,
+      createdDate: apiData.createdDateTime,
+      description: apiData.description,
+      displayName: apiData.displayName,
+      id: apiData.id,
+      landingPageUrl: apiData.landingPageUrl,
+      name: apiData.name,
       roles,
-    )
+      updatedDate: apiData.updatedDateTime,
+    })
   },
 }

@@ -5,15 +5,15 @@ import { SsoUser, toSsoUserId } from '@/models/ssouser.model'
 describe('SsoUser model', () => {
   describe('constructor', () => {
     it('assigns properties', () => {
-      const ssoUser = new SsoUser(
-        toSsoUserId('ssoUserId'),
-        'userName',
-        'firstName',
-        'lastName',
-        'displayName',
-        'email',
-        'idpType',
-      )
+      const ssoUser = new SsoUser({
+        displayName: 'displayName',
+        email: 'email',
+        firstName: 'firstName',
+        idpType: 'idpType',
+        lastName: 'lastName',
+        ssoUserId: toSsoUserId('ssoUserId'),
+        userName: 'userName',
+      })
 
       expect(ssoUser.displayName).toBe('displayName')
       expect(ssoUser.email).toBe('email')
@@ -25,15 +25,13 @@ describe('SsoUser model', () => {
     })
 
     it('handles missing optional fields', () => {
-      const ssoUser = new SsoUser(
-        toSsoUserId('ssoUserId'),
-        undefined,
-        'firstName',
-        'lastName',
-        'displayName',
-        undefined,
-        'idpType',
-      )
+      const ssoUser = new SsoUser({
+        displayName: 'displayName',
+        firstName: 'firstName',
+        idpType: 'idpType',
+        lastName: 'lastName',
+        ssoUserId: toSsoUserId('ssoUserId'),
+      })
 
       expect(ssoUser.email).toBeUndefined()
       expect(ssoUser.userName).toBeUndefined()

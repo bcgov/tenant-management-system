@@ -15,6 +15,19 @@ export type TenantDetailFields = Pick<
 >
 
 /**
+ * Configuration options required to instantiate a Tenant.
+ */
+export type TenantConfig = {
+  createdBy: string
+  createdDate: string
+  description: string
+  id: TenantId
+  ministryName: string
+  name: string
+  users: User[]
+}
+
+/**
  * Represents a tenant in the system.
  */
 export class Tenant {
@@ -58,31 +71,17 @@ export class Tenant {
   /**
    * Creates a new Tenant instance.
    *
-   * @param createdBy - The identity of who created the tenant.
-   * @param createdDate - The ISO8601 date string (YYYY-MM-DD) when tenant was
-   *   created.
-   * @param description - The description of the tenant.
-   * @param id - The unique identifier for the tenant.
-   * @param name - The display name of the tenant.
-   * @param ministryName - The associated ministry or organization name.
-   * @param users - The users associated with this tenant.
+   * @param config - The configuration properties for the tenant.
+   * @returns A new Tenant instance.
    */
-  constructor(
-    createdBy: string,
-    createdDate: string,
-    description: string,
-    id: TenantId,
-    name: string,
-    ministryName: string,
-    users: User[],
-  ) {
-    this.createdBy = createdBy
-    this.createdDate = createdDate
-    this.description = description
-    this.id = id
-    this.name = name
-    this.ministryName = ministryName
-    this.users = users
+  constructor(config: TenantConfig) {
+    this.createdBy = config.createdBy
+    this.createdDate = config.createdDate
+    this.description = config.description
+    this.id = config.id
+    this.name = config.name
+    this.ministryName = config.ministryName
+    this.users = config.users
   }
 
   /**

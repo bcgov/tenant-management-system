@@ -64,13 +64,13 @@ export const groupMapper = {
       ? apiData.users.map(groupUserMapper.fromApiData)
       : []
 
-    return new Group(
-      apiData.createdByDisplayName || apiData.createdBy,
-      apiData.createdDateTime,
-      apiData.description,
-      apiData.id,
-      apiData.name,
+    return new Group({
+      createdBy: apiData.createdByDisplayName || apiData.createdBy,
+      createdDate: apiData.createdDateTime,
+      description: apiData.description,
       groupUsers,
-    )
+      id: apiData.id,
+      name: apiData.name,
+    })
   },
 }

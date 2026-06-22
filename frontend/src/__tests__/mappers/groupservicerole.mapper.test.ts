@@ -23,8 +23,8 @@ describe('GroupServiceRole mapper', () => {
       const groupServiceRole = groupServiceRoleMapper.fromApiData(apiData)
 
       expect(groupServiceRole).toBeInstanceOf(GroupServiceRole)
-      expect(groupServiceRole.allowedIdentityProviders).toHaveLength(1)
-      expect(groupServiceRole.allowedIdentityProviders[0]).toBe(
+      expect(groupServiceRole.identityProviders).toHaveLength(1)
+      expect(groupServiceRole.identityProviders[0]).toBe(
         'allowedIdentityProvider',
       )
       expect(groupServiceRole.description).toBe('description')
@@ -45,7 +45,7 @@ describe('GroupServiceRole mapper', () => {
       const groupServiceRole = groupServiceRoleMapper.fromApiData(apiData)
 
       expect(groupServiceRole).toBeInstanceOf(GroupServiceRole)
-      expect(groupServiceRole.allowedIdentityProviders).toHaveLength(0)
+      expect(groupServiceRole.identityProviders).toHaveLength(0)
     })
   })
 })

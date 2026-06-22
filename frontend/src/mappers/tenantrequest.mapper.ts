@@ -63,17 +63,16 @@ export const tenantRequestMapper = {
    * @returns A new TenantRequest instance.
    */
   fromApiData: (apiData: TenantRequestApiData): TenantRequest => {
-    const tenantRequest = new TenantRequest(
-      apiData.createdByUserName || apiData.createdBy,
-      apiData.createdDateTime,
-      apiData.description,
-      apiData.id,
-      apiData.name,
-      apiData.ministryName,
-      apiData.status,
-    )
-
-    tenantRequest.rejectionReason = apiData.rejectionReason || ''
+    const tenantRequest = new TenantRequest({
+      createdBy: apiData.createdByUserName || apiData.createdBy,
+      createdDate: apiData.createdDateTime,
+      description: apiData.description,
+      id: apiData.id,
+      ministryName: apiData.ministryName,
+      name: apiData.name,
+      rejectionReason: apiData.rejectionReason,
+      status: apiData.status,
+    })
 
     return tenantRequest
   },

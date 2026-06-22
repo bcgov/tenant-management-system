@@ -9,7 +9,7 @@ describe('GroupUser model', () => {
     it('assigns properties', () => {
       const user = makeUser()
 
-      const groupUser = new GroupUser(toGroupUserId('id'), user)
+      const groupUser = new GroupUser({ id: toGroupUserId('id'), user })
 
       expect(groupUser.id).toBe('id')
       expect(groupUser.user).toBe(user)

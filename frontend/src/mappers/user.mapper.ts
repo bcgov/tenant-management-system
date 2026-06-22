@@ -13,14 +13,14 @@ export type UserApiData = {
   id: UserId
 
   /**
-   * SSO user details.
-   */
-  ssoUser: SsoUserApiData
-
-  /**
    * The roles assigned to the user, which may be undefined.
    */
   roles?: RoleApiData[]
+
+  /**
+   * SSO user details.
+   */
+  ssoUser: SsoUserApiData
 }
 
 /**
@@ -57,8 +57,8 @@ export const userMapper = {
   /**
    * Creates a User instance from API response data.
    *
-   * @param apiData - The raw user data from the API
-   * @returns A new User instance
+   * @param apiData - The raw user data from the API.
+   * @returns A new User instance.
    */
   fromApiData: (apiData: UserApiData): User => {
     const roles = Array.isArray(apiData.roles)
@@ -67,7 +67,7 @@ export const userMapper = {
     const ssoUser = ssoUserMapper.fromApiData(apiData.ssoUser)
     const userId = apiData.id
 
-    return new User(userId, ssoUser, roles)
+    return new User({ id: userId, roles, ssoUser: ssoUser })
   },
 
   /**
@@ -77,9 +77,9 @@ export const userMapper = {
    * This method attempts to handle missing fields gracefully, but if the
    * username is undefined it could cause issues.
    *
-   * @param searchData - The raw user search data
+   * @param searchData - The raw user search data.
    * @returns A new User instance with no roles (roles are not provided in
-   *   search results)
+   *   search results).
    */
   fromSearchData: (searchData: UserSearchApiData): User => {
     // The SSO API doesn't always return the expected fields - try to be lenient
@@ -88,9 +88,9 @@ export const userMapper = {
     // TODO: is there ever a displayName?
     const displayName =
       attributes.display_name?.[0] ?? attributes.displayName?.[0] ?? ''
-    const type = attributes.idir_username?.[0] ? 'idir' : 'bceidbusiness'
+    const idpType = attributes.idir_username?.[0] ? 'idir' : 'bceidbusiness'
     // TODO: is there actually a userid?
-    const userId = toSsoUserId(
+    const ssoUserId = toSsoUserId(
       attributes.idir_user_guid?.[0] ??
         attributes.idir_userid?.[0] ??
         attributes.bceid_user_guid?.[0] ??
@@ -102,22 +102,22 @@ export const userMapper = {
       attributes.bceid_username?.[0] ??
       undefined
 
-    const ssoUser = new SsoUser(
-      userId,
-      username,
-      searchData.firstName,
-      searchData.lastName,
+    const ssoUser = new SsoUser({
       displayName,
-      searchData.email,
-      type,
-    )
+      email: searchData.email,
+      firstName: searchData.firstName,
+      idpType,
+      lastName: searchData.lastName,
+      ssoUserId,
+      userName: username,
+    })
 
-    return new User(
-      // We don't know the user ID, so duplicate the SsoUserId
-      toUserId(userId),
-      ssoUser,
+    return new User({
+      // TODO: We don't know the user ID, so duplicate the SsoUserId
+      id: toUserId(ssoUserId),
       // Roles are not provided in search results
-      [],
-    )
+      roles: [],
+      ssoUser: ssoUser,
+    })
   },
 }
