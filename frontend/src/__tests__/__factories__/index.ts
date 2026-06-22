@@ -32,14 +32,14 @@ export const makeGroup = (
     name: string
   }> = {},
 ): Group => {
-  return new Group(
-    overrides.createdBy ?? 'test-group-created-by',
-    overrides.createdDate ?? 'test-group-created-date',
-    overrides.description ?? 'test-group-description',
-    toGroupId(overrides.id ?? 'test-group-id'),
-    overrides.name ?? 'test-group-name',
-    overrides.groupUsers ?? [],
-  )
+  return new Group({
+    createdBy: overrides.createdBy ?? 'test-group-created-by',
+    createdDate: overrides.createdDate ?? 'test-group-created-date',
+    description: overrides.description ?? 'test-group-description',
+    groupUsers: overrides.groupUsers ?? [],
+    id: toGroupId(overrides.id ?? 'test-group-id'),
+    name: overrides.name ?? 'test-group-name',
+  })
 }
 
 // Group Service Factory
@@ -53,33 +53,36 @@ export const makeGroupService = (
     roles: GroupServiceRole[]
   }> = {},
 ): GroupService => {
-  return new GroupService(
-    toGroupServiceId(overrides.id ?? 'test-group-service-id'),
-    overrides.displayName ?? 'test-group-service-display-name',
-    overrides.clientIdentifier ?? 'test-group-service-client-identifier',
-    overrides.description ?? 'test-group-service-description',
-    overrides.roles ?? [makeGroupServiceRole()],
-  )
+  return new GroupService({
+    clientIdentifier:
+      overrides.clientIdentifier ?? 'test-group-service-client-identifier',
+    description: overrides.description ?? 'test-group-service-description',
+    displayName: overrides.displayName ?? 'test-group-service-display-name',
+    id: toGroupServiceId(overrides.id ?? 'test-group-service-id'),
+    roles: overrides.roles ?? [makeGroupServiceRole()],
+  })
 }
 
 // Group Service Role Factory
 
 export const makeGroupServiceRole = (
   overrides: Partial<{
-    allowedIdentityProviders: string[]
     description: string
     id: string
+    identityProviders: string[]
     isEnabled: boolean
     name: string
   }> = {},
 ): GroupServiceRole => {
-  return new GroupServiceRole(
-    toGroupServiceRoleId(overrides.id ?? 'test-group-service-role-id'),
-    overrides.name ?? 'test-group-service-role-name',
-    overrides.description ?? 'test-group-service-role-description',
-    overrides.allowedIdentityProviders ?? ['idir'],
-    overrides.isEnabled ?? false,
-  )
+  return new GroupServiceRole({
+    description: overrides.description ?? 'test-group-service-role-description',
+    id: toGroupServiceRoleId(overrides.id ?? 'test-group-service-role-id'),
+    identityProviders: overrides.identityProviders ?? [
+      'test-group-service-role-identity-provider',
+    ],
+    isEnabled: overrides.isEnabled ?? false,
+    name: overrides.name ?? 'test-group-service-role-name',
+  })
 }
 
 export const makeGroupServiceRoleApiData = (): GroupServiceRoleApiData => {
@@ -100,10 +103,10 @@ export const makeGroupUser = (
     user: User
   }> = {},
 ): GroupUser => {
-  return new GroupUser(
-    toGroupUserId(overrides.id ?? 'test-group-user-id'),
-    overrides.user ?? makeUser(),
-  )
+  return new GroupUser({
+    id: toGroupUserId(overrides.id ?? 'test-group-user-id'),
+    user: overrides.user ?? makeUser(),
+  })
 }
 
 export const makeGroupUserApiData = (): GroupUserApiData => {
@@ -122,11 +125,11 @@ export const makeRole = (
     name: string
   }> = {},
 ): Role => {
-  return new Role(
-    toRoleId(overrides.id ?? 'test-role-id'),
-    overrides.name ?? 'test-role-name',
-    overrides.description ?? 'test-role-description',
-  )
+  return new Role({
+    description: overrides.description ?? 'test-role-description',
+    id: toRoleId(overrides.id ?? 'test-role-id'),
+    name: overrides.name ?? 'test-role-name',
+  })
 }
 
 export const makeRoleOperationsAdmin = (): Role => {
@@ -168,24 +171,25 @@ export const makeService = (
     updatedDate: string
   }> = {},
 ): Service => {
-  return new Service(
-    toServiceId(overrides.id ?? 'test-service-id'),
-    overrides.name ?? 'test-service-name',
-    overrides.displayName ?? 'test-service-display-name',
-    overrides.createdDate ?? 'test-service-created-date',
-    overrides.clientIdentifier ?? 'test-service-client-identifier',
-    overrides.landingPageUrl ?? 'test-service-landing-page-url',
-    overrides.description ?? 'test-service-description',
-    overrides.updatedDate ?? 'test-service-updated-date',
-    overrides.roles ?? [makeServiceRole()],
-  )
+  return new Service({
+    clientIdentifier:
+      overrides.clientIdentifier ?? 'test-service-client-identifier',
+    createdDate: overrides.createdDate ?? 'test-service-created-date',
+    description: overrides.description ?? 'test-service-description',
+    displayName: overrides.displayName ?? 'test-service-display-name',
+    id: toServiceId(overrides.id ?? 'test-service-id'),
+    landingPageUrl: overrides.landingPageUrl ?? 'test-service-landing-page-url',
+    name: overrides.name ?? 'test-service-name',
+    roles: overrides.roles ?? [makeServiceRole()],
+    updatedDate: overrides.updatedDate ?? 'test-service-updated-date',
+  })
 }
 
 // Service Role Factory
 
 export const makeServiceRole = (
   overrides: Partial<{
-    allowedIdentityProviders: string[]
+    identityProviders: string[]
     createdBy: string
     createdDate: string
     description: string
@@ -194,15 +198,17 @@ export const makeServiceRole = (
     name: string
   }> = {},
 ): ServiceRole => {
-  return new ServiceRole(
-    toServiceRoleId(overrides.id ?? 'test-service-role-id'),
-    overrides.name ?? 'test-service-role-name',
-    overrides.description ?? 'test-service-role-description',
-    overrides.allowedIdentityProviders ?? ['idir'],
-    overrides.createdBy ?? 'test-service-created-by',
-    overrides.createdDate ?? 'test-service-created-date',
-    overrides.isDeleted ?? false,
-  )
+  return new ServiceRole({
+    createdBy: overrides.createdBy ?? 'test-service-created-by',
+    createdDate: overrides.createdDate ?? 'test-service-created-date',
+    description: overrides.description ?? 'test-service-role-description',
+    id: toServiceRoleId(overrides.id ?? 'test-service-role-id'),
+    identityProviders: overrides.identityProviders ?? [
+      'test-service-role-identity-provider',
+    ],
+    isDeleted: overrides.isDeleted ?? false,
+    name: overrides.name ?? 'test-service-role-name',
+  })
 }
 
 export const makeServiceRoleApiData = (): ServiceRoleApiData => {
@@ -230,15 +236,15 @@ export const makeSsoUser = (
     userName: string
   }> = {},
 ): SsoUser => {
-  return new SsoUser(
-    toSsoUserId(overrides.ssoUserId ?? 'test-sso-user-id'),
-    overrides.userName ?? 'test-sso-user-user-name',
-    overrides.firstName ?? 'test-sso-user-first-name',
-    overrides.lastName ?? 'test-sso-user-last-name',
-    overrides.displayName ?? 'test-sso-user-display-name',
-    overrides.email ?? 'test-sso-user-email',
-    overrides.idpType ?? 'test-sso-user-idp-type',
-  )
+  return new SsoUser({
+    displayName: overrides.displayName ?? 'test-sso-user-display-name',
+    email: overrides.email ?? 'test-sso-user-email',
+    firstName: overrides.firstName ?? 'test-sso-user-first-name',
+    idpType: overrides.idpType ?? 'test-sso-user-idp-type',
+    lastName: overrides.lastName ?? 'test-sso-user-last-name',
+    ssoUserId: toSsoUserId(overrides.ssoUserId ?? 'test-sso-user-id'),
+    userName: overrides.userName ?? 'test-sso-user-user-name',
+  })
 }
 
 export const makeSsoUserApiData = (): SsoUserApiData => {
@@ -266,15 +272,15 @@ export const makeTenant = (
     users: User[]
   }> = {},
 ): Tenant => {
-  return new Tenant(
-    overrides.createdBy ?? 'test-tenant-created-by',
-    overrides.createdDate ?? 'test-tenant-created-date',
-    overrides.description ?? 'test-tenant-description',
-    toTenantId(overrides.id ?? 'test-tenant-id'),
-    overrides.name ?? 'test-tenant-name',
-    overrides.ministryName ?? 'test-tenant-ministry-name',
-    overrides.users ?? [makeUser()],
-  )
+  return new Tenant({
+    createdBy: overrides.createdBy ?? 'test-tenant-created-by',
+    createdDate: overrides.createdDate ?? 'test-tenant-created-date',
+    description: overrides.description ?? 'test-tenant-description',
+    id: toTenantId(overrides.id ?? 'test-tenant-id'),
+    ministryName: overrides.ministryName ?? 'test-tenant-ministry-name',
+    name: overrides.name ?? 'test-tenant-name',
+    users: overrides.users ?? [makeUser()],
+  })
 }
 
 // Tenant Request Factory
@@ -287,18 +293,21 @@ export const makeTenantRequest = (
     id: string
     ministryName: string
     name: string
+    rejectionReason: string
     status: string
   }> = {},
 ): TenantRequest => {
-  return new TenantRequest(
-    overrides.createdBy ?? 'test-tenant-request-created-by',
-    overrides.createdDate ?? 'test-tenant-request-created-date',
-    overrides.description ?? 'test-tenant-request-description',
-    toTenantRequestId(overrides.id ?? 'test-tenant-request-id'),
-    overrides.ministryName ?? 'test-tenant-request-ministry-name',
-    overrides.name ?? 'test-tenant-request-name',
-    overrides.status ?? 'test-tenant-request-status',
-  )
+  return new TenantRequest({
+    createdBy: overrides.createdBy ?? 'test-tenant-request-created-by',
+    createdDate: overrides.createdDate ?? 'test-tenant-request-created-date',
+    description: overrides.description ?? 'test-tenant-request-description',
+    id: toTenantRequestId(overrides.id ?? 'test-tenant-request-id'),
+    ministryName: overrides.ministryName ?? 'test-tenant-request-ministry-name',
+    name: overrides.name ?? 'test-tenant-request-name',
+    rejectionReason:
+      overrides.rejectionReason ?? 'test-tenant-request-rejection-reason',
+    status: overrides.status ?? 'test-tenant-request-status',
+  })
 }
 
 // User Factories
@@ -310,11 +319,11 @@ export const makeUser = (
     ssoUser: SsoUser
   }> = {},
 ): User => {
-  return new User(
-    toUserId(overrides.id ?? 'test-user-id'),
-    overrides.ssoUser ?? makeSsoUser(),
-    overrides.roles ?? [],
-  )
+  return new User({
+    id: toUserId(overrides.id ?? 'test-user-id'),
+    roles: overrides.roles ?? [],
+    ssoUser: overrides.ssoUser ?? makeSsoUser(),
+  })
 }
 
 export const makeUserBceidBusiness = (): User => {

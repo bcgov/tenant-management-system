@@ -12,13 +12,13 @@ describe('GroupService model', () => {
     it('assigns properties', () => {
       const groupServiceRoles = [makeGroupServiceRole()]
 
-      const service = new GroupService(
-        toGroupServiceId('id'),
-        'displayName',
-        'clientIdentifier',
-        'description',
-        groupServiceRoles,
-      )
+      const service = new GroupService({
+        clientIdentifier: 'clientIdentifier',
+        description: 'description',
+        displayName: 'displayName',
+        id: toGroupServiceId('id'),
+        roles: groupServiceRoles,
+      })
 
       expect(service.clientIdentifier).toBe('clientIdentifier')
       expect(service.description).toBe('description')
@@ -28,13 +28,13 @@ describe('GroupService model', () => {
     })
 
     it('handles empty group service roles', () => {
-      const service = new GroupService(
-        toGroupServiceId('id'),
-        'displayName',
-        'clientIdentifier',
-        'description',
-        [],
-      )
+      const service = new GroupService({
+        clientIdentifier: 'clientIdentifier',
+        description: 'description',
+        displayName: 'displayName',
+        id: toGroupServiceId('id'),
+        roles: [],
+      })
 
       expect(service.roles).toEqual([])
     })

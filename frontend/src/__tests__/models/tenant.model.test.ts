@@ -15,15 +15,15 @@ describe('Tenant model', () => {
   describe('constructor', () => {
     it('assigns properties', () => {
       const user = makeUser()
-      const tenant = new Tenant(
-        'createdBy',
-        'createdDate',
-        'description',
-        toTenantId('id'),
-        'name',
-        'ministryName',
-        [user],
-      )
+      const tenant = new Tenant({
+        createdBy: 'createdBy',
+        createdDate: 'createdDate',
+        description: 'description',
+        id: toTenantId('id'),
+        ministryName: 'ministryName',
+        name: 'name',
+        users: [user],
+      })
 
       expect(tenant.createdBy).toBe('createdBy')
       expect(tenant.createdDate).toBe('createdDate')

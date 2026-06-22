@@ -4,6 +4,14 @@ export type GroupUserId = string & { readonly __brand: 'GroupUserId' }
 export const toGroupUserId = (id: string): GroupUserId => id as GroupUserId
 
 /**
+ * Configuration options required to instantiate a GroupUser.
+ */
+export type GroupUserConfig = {
+  id: GroupUserId
+  user: User
+}
+
+/**
  * Represents a user within a group.
  */
 export class GroupUser {
@@ -20,11 +28,11 @@ export class GroupUser {
   /**
    * Creates a new GroupUser instance.
    *
-   * @param id - The unique identifier for the group user.
-   * @param user - The user associated with the group user.
+   * @param config - The configuration properties for the group user.
+   * @returns A new GroupUser instance.
    */
-  constructor(id: GroupUserId, user: User) {
-    this.id = id
-    this.user = user
+  constructor(config: GroupUserConfig) {
+    this.id = config.id
+    this.user = config.user
   }
 }

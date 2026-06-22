@@ -2,6 +2,15 @@ export type RoleId = string & { readonly __brand: 'RoleId' }
 export const toRoleId = (id: string): RoleId => id as RoleId
 
 /**
+ * Configuration options required to instantiate a Role.
+ */
+export type RoleConfig = {
+  description: string
+  id: RoleId
+  name: string
+}
+
+/**
  * Represents a role within the system.
  */
 export class Role {
@@ -23,13 +32,12 @@ export class Role {
   /**
    * Creates a new Role instance.
    *
-   * @param id - The unique identifier for the role.
-   * @param name - The name of the role.
-   * @param description - The description of the role.
+   * @param config - The configuration properties for the role.
+   * @returns A new Role instance.
    */
-  constructor(id: RoleId, name: string, description: string) {
-    this.description = description
-    this.id = id
-    this.name = name
+  constructor(config: RoleConfig) {
+    this.description = config.description
+    this.id = config.id
+    this.name = config.name
   }
 }

@@ -64,14 +64,14 @@ export const tenantMapper = {
   fromApiData: (apiData: TenantApiData): Tenant => {
     const users = apiData.users.map(userMapper.fromApiData)
 
-    return new Tenant(
-      apiData.createdByDisplayName || apiData.createdBy,
-      apiData.createdDateTime,
-      apiData.description,
-      apiData.id,
-      apiData.name,
-      apiData.ministryName,
+    return new Tenant({
+      createdBy: apiData.createdByDisplayName || apiData.createdBy,
+      createdDate: apiData.createdDateTime,
+      description: apiData.description,
+      id: apiData.id,
+      ministryName: apiData.ministryName,
+      name: apiData.name,
       users,
-    )
+    })
   },
 }

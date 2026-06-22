@@ -50,14 +50,14 @@ export const serviceRoleMapper = {
    * @returns A new ServiceRole instance.
    */
   fromApiData: (apiData: ServiceRoleApiData) => {
-    return new ServiceRole(
-      apiData.id,
-      apiData.name,
-      apiData.description,
-      apiData.allowedIdentityProviders,
-      apiData.createdBy,
-      apiData.createdDateTime,
-      apiData.isDeleted,
-    )
+    return new ServiceRole({
+      createdBy: apiData.createdBy,
+      createdDate: apiData.createdDateTime,
+      description: apiData.description,
+      id: apiData.id,
+      identityProviders: apiData.allowedIdentityProviders,
+      isDeleted: apiData.isDeleted,
+      name: apiData.name,
+    })
   },
 }

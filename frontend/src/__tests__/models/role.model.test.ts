@@ -5,7 +5,11 @@ import { Role, toRoleId } from '@/models/role.model'
 describe('Role model', () => {
   describe('constructor', () => {
     it('assigns properties', () => {
-      const role = new Role(toRoleId('id'), 'name', 'description')
+      const role = new Role({
+        description: 'description',
+        id: toRoleId('id'),
+        name: 'name',
+      })
 
       expect(role.description).toBe('description')
       expect(role.id).toBe('id')

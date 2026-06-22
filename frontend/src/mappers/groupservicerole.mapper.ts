@@ -9,6 +9,8 @@ import {
 export type GroupServiceRoleApiData = {
   /**
    * The allowed identity providers.
+   *
+   * Note that this is mapped to the object "identityProviders" field.
    */
   allowedIdentityProviders: string[]
 
@@ -43,12 +45,12 @@ export const groupServiceRoleMapper = {
    * @returns A new GroupServiceRole instance.
    */
   fromApiData: (apiData: GroupServiceRoleApiData): GroupServiceRole => {
-    return new GroupServiceRole(
-      apiData.id,
-      apiData.name,
-      apiData.description,
-      apiData.allowedIdentityProviders,
-      apiData.enabled,
-    )
+    return new GroupServiceRole({
+      description: apiData.description,
+      id: apiData.id,
+      identityProviders: apiData.allowedIdentityProviders,
+      isEnabled: apiData.enabled,
+      name: apiData.name,
+    })
   },
 }

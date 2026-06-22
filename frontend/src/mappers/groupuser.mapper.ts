@@ -31,6 +31,6 @@ export const groupUserMapper = {
   fromApiData: (apiData: GroupUserApiData): GroupUser => {
     const user = userMapper.fromApiData(apiData.user)
 
-    return new GroupUser(apiData.id, user)
+    return new GroupUser({ id: apiData.id, user })
   },
 }

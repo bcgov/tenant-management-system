@@ -12,6 +12,19 @@ export type ServiceRoleDetailFields = Pick<
 >
 
 /**
+ * Configuration options required to instantiate a Service.
+ */
+export type ServiceRoleConfig = {
+  createdBy: string
+  createdDate: string
+  description: string
+  id: ServiceRoleId
+  identityProviders: string[]
+  isDeleted: boolean
+  name: string
+}
+
+/**
  * Represents a service role within the system.
  */
 export class ServiceRole {
@@ -55,33 +68,16 @@ export class ServiceRole {
   /**
    * Creates a new ServiceRole instance.
    *
-   * @param id - The unique identifier for the service role.
-   * @param name - The name of the service role.
-   * @param description - The description of the service role.
-   * @param identityProviders - The identity providers that define which
-   *   identities can use the role.
-   * @param createdBy - The identifier of the user who created this service
-   *   role.
-   * @param createdDate - The ISO8601 date string (YYYY-MM-DD) when service role
-   *   was created.
-   * @param isDeleted - Whether or not the service role is deleted.
+   * @param config - The configuration properties for the service role.
    * @returns A new ServiceRole instance.
    */
-  constructor(
-    id: ServiceRoleId,
-    name: string,
-    description: string,
-    identityProviders: string[],
-    createdBy: string,
-    createdDate: string,
-    isDeleted: boolean,
-  ) {
-    this.description = description
-    this.id = id
-    this.name = name
-    this.identityProviders = identityProviders
-    this.createdBy = createdBy
-    this.createdDate = createdDate
-    this.isDeleted = isDeleted
+  constructor(config: ServiceRoleConfig) {
+    this.createdBy = config.createdBy
+    this.createdDate = config.createdDate
+    this.description = config.description
+    this.id = config.id
+    this.identityProviders = config.identityProviders
+    this.isDeleted = config.isDeleted
+    this.name = config.name
   }
 }

@@ -10,6 +10,18 @@ export const toGroupId = (id: string): GroupId => id as GroupId
 export type GroupDetailFields = Pick<Group, 'description' | 'name'>
 
 /**
+ * Configuration options required to instantiate a Service.
+ */
+export type GroupConfig = {
+  createdBy: string
+  createdDate: string
+  description: string
+  id: GroupId
+  name: string
+  groupUsers: GroupUser[]
+}
+
+/**
  * Represents a group in the system.
  */
 export class Group {
@@ -48,27 +60,15 @@ export class Group {
   /**
    * Creates a new Group instance.
    *
-   * @param createdBy - The identity of who created the group.
-   * @param createdDate - The ISO8601 date string (YYYY-MM-DD) for when the
-   *   group was created.
-   * @param description - The description of the group.
-   * @param id - The unique identifier for the group.
-   * @param name - The name of the group.
-   * @param groupUsers - The array of group users associated with this group.
+   * @param config - The configuration properties for the group.
+   * @returns A new Group instance.
    */
-  constructor(
-    createdBy: string,
-    createdDate: string,
-    description: string,
-    id: GroupId,
-    name: string,
-    groupUsers: GroupUser[],
-  ) {
-    this.createdBy = createdBy
-    this.createdDate = createdDate
-    this.description = description
-    this.id = id
-    this.name = name
-    this.groupUsers = groupUsers
+  constructor(config: GroupConfig) {
+    this.createdBy = config.createdBy
+    this.createdDate = config.createdDate
+    this.description = config.description
+    this.id = config.id
+    this.groupUsers = config.groupUsers
+    this.name = config.name
   }
 }
