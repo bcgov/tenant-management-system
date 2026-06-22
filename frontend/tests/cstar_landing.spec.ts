@@ -11,19 +11,21 @@ test.describe.serial('Landing page tests', () => {
 
   test.afterAll(async () => {
     //Logout after tests — logout lives inside the user dropdown, so open it first
-    //await sharedPage.click('[data-testid="logout-button"]')
+    await sharedPage.getByText('Logout').click()
     await sharedPage.context().close()
   })
 
   test('Checks the login functionality', async () => {
     await sharedPage.goto('/')
-    await expect(
-      sharedPage.locator('[data-testid="login-button"]'),
-    ).toBeVisible()
+    await sharedPage
+      .getByTestId('button-primary')
+      .filter({ hasText: 'IDIR' })
+      .click()
     await login(sharedPage)
   })
 
   test('Checks the navigation links', async () => {
-    await expect(sharedPage.locator('[data-testid="help-nav"]')).toBeVisible()
+    await expect(sharedPage.getByText('All Tenants')).toBeVisible()
+    await expect(sharedPage.getByText('Request a Tenant')).toBeVisible()
   })
 })
