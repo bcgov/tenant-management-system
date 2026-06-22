@@ -4,6 +4,7 @@ import { ref } from 'vue'
 import { tenantMapper } from '@/mappers/tenant.mapper'
 import { userMapper } from '@/mappers/user.mapper'
 import { Role, type RoleId } from '@/models/role.model'
+import { type SsoUserId } from '@/models/ssouser.model'
 import {
   Tenant,
   type TenantDetailFields,
@@ -114,14 +115,14 @@ export const useTenantStore = defineStore('tenant', () => {
   /**
    * Fetches all tenants for a given user from the API and updates the store.
    *
-   * @param userId - The ID of the user.
+   * @param ssoUserId - The ID of the SSO user.
    * @returns A promise that resolves when the tenants are fetched and the store
    *   is updated.
    */
-  const fetchTenants = async (userId: UserId): Promise<void> => {
+  const fetchTenants = async (ssoUserId: SsoUserId): Promise<void> => {
     loading.value = true
     try {
-      const tenantData = await tenantService.getUserTenants(userId)
+      const tenantData = await tenantService.getUserTenants(ssoUserId)
       tenants.value = tenantData.map(tenantMapper.fromApiData)
     } finally {
       loading.value = false

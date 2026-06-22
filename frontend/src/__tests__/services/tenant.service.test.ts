@@ -261,7 +261,7 @@ describe('tenantService', () => {
         data: { data: { tenants: userTenants } },
       })
 
-      const result = await tenantService.getUserTenants(userId)
+      const result = await tenantService.getUserTenants(toSsoUserId(userId))
 
       expect(result).toEqual(userTenants)
       expect(mockGet).toHaveBeenCalledWith(
@@ -273,7 +273,9 @@ describe('tenantService', () => {
       const error = new Error('User not found')
       mockGet.mockRejectedValueOnce(error)
 
-      await expect(tenantService.getUserTenants(userId)).rejects.toThrow(error)
+      await expect(
+        tenantService.getUserTenants(toSsoUserId(userId)),
+      ).rejects.toThrow(error)
 
       expect(mockedUtils.logApiError).toHaveBeenCalledWith(
         'Error getting users tenants',

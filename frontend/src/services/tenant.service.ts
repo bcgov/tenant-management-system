@@ -4,6 +4,7 @@ import { type RoleApiData } from '@/mappers/role.mapper'
 import { type TenantApiData } from '@/mappers/tenant.mapper'
 import { type UserApiData } from '@/mappers/user.mapper'
 import { type RoleId } from '@/models/role.model'
+import { type SsoUserId } from '@/models/ssouser.model'
 import { type TenantId } from '@/models/tenant.model'
 import { User, type UserId } from '@/models/user.model'
 import { authenticatedAxios } from '@/services/authenticated.axios'
@@ -153,13 +154,13 @@ export const tenantService = {
   /**
    * Retrieves the tenants associated with the specified user.
    *
-   * @param userId - The SSO user ID of the user.
+   * @param ssoUserId - The SSO user ID of the user.
    * @throws Will throw an error if the API request fails.
    */
-  async getUserTenants(userId: UserId): Promise<TenantApiData[]> {
+  async getUserTenants(ssoUserId: SsoUserId): Promise<TenantApiData[]> {
     try {
       const response = await api.get(
-        `/users/${userId}/tenants?expand=tenantUserRoles`,
+        `/users/${ssoUserId}/tenants?expand=tenantUserRoles`,
       )
 
       return response.data.data.tenants
