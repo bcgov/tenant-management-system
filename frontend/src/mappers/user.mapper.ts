@@ -82,20 +82,11 @@ export const userMapper = {
    *   search results).
    */
   fromSearchData: (searchData: UserSearchApiData): User => {
-    // The SSO API doesn't always return the expected fields - try to be lenient
-    // but note that if the username is undefined then it will cause issues.
     const attributes = searchData.attributes
-    // TODO: is there ever a displayName?
-    const displayName =
-      attributes.display_name?.[0] ?? attributes.displayName?.[0] ?? ''
+    const displayName = attributes.display_name?.[0] ?? ''
     const idpType = attributes.idir_username?.[0] ? 'idir' : 'bceidbusiness'
-    // TODO: is there actually a userid?
     const ssoUserId = toSsoUserId(
-      attributes.idir_user_guid?.[0] ??
-        attributes.idir_userid?.[0] ??
-        attributes.bceid_user_guid?.[0] ??
-        attributes.bceid_userid?.[0] ??
-        '',
+      attributes.idir_user_guid?.[0] ?? attributes.bceid_user_guid?.[0] ?? '',
     )
     const username =
       attributes.idir_username?.[0] ??

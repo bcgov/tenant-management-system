@@ -116,24 +116,6 @@ describe('User mapper', () => {
       expect(user.ssoUser.displayName).toBe('')
     })
 
-    it('falls back to idir_userid', () => {
-      const searchData: UserSearchApiData = {
-        attributes: {
-          display_name: ['display_name'],
-          idir_userid: ['idir_userid'],
-        },
-        email: 'email',
-        firstName: 'firstName',
-        lastName: 'lastName',
-      }
-
-      const user = userMapper.fromSearchData(searchData)
-
-      expect(user.id).toBe('idir_userid')
-      expect(user.ssoUser.displayName).toBe('display_name')
-      expect(user.ssoUser.userName).toBeUndefined()
-    })
-
     it('returns empty userId', () => {
       const searchData: UserSearchApiData = {
         attributes: {
@@ -149,21 +131,6 @@ describe('User mapper', () => {
       expect(user.id).toBe('')
       expect(user.ssoUser.displayName).toBe('display_name')
       expect(user.ssoUser.userName).toBeUndefined()
-    })
-
-    it('falls back to displayName', () => {
-      const searchData = {
-        attributes: {
-          displayName: ['displayName'],
-        },
-        email: 'email',
-        firstName: 'firstName',
-        lastName: 'lastName',
-      }
-
-      const user = userMapper.fromSearchData(searchData)
-
-      expect(user.ssoUser.displayName).toBe('displayName')
     })
   })
 })
