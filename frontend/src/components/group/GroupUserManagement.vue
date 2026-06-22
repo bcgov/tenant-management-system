@@ -64,7 +64,7 @@ const isUserAdmin = computed(() => {
 
 // --- Component Methods -------------------------------------------------------
 
-function handleAddUser() {
+const handleAddUser = () => {
   if (!selectedUser.value) {
     return
   }
@@ -73,24 +73,27 @@ function handleAddUser() {
   toggleSearch()
 }
 
-function handleCancel() {
+const handleCancel = () => {
   emit('cancel')
   toggleSearch()
 }
 
-function handleClearSearch() {
+const handleClearSearch = () => {
   emit('clear-search')
 }
 
-function handleDeleteClick(user: User) {
-  // TODO
-  const groupUser = new GroupUser(user.id as unknown as GroupUserId, user)
+const handleDeleteClick = (user: User) => {
+  const groupUser = new GroupUser({
+    // TODO
+    id: user.id as unknown as GroupUserId,
+    user,
+  })
 
   showDeleteDialog.value = true
   groupUserToDelete.value = groupUser
 }
 
-function handleDeleteDialogAction(action: string) {
+const handleDeleteDialogAction = (action: string) => {
   if (action === 'remove' && groupUserToDelete.value) {
     emit('delete', groupUserToDelete.value.id)
   }
@@ -99,15 +102,15 @@ function handleDeleteDialogAction(action: string) {
   groupUserToDelete.value = null
 }
 
-function handleSearch(searchType: IdirSearchType, searchText: string) {
+const handleSearch = (searchType: IdirSearchType, searchText: string) => {
   emit('search', searchType, searchText)
 }
 
-function handleUserSelected(user: User | null) {
+const handleUserSelected = (user: User | null) => {
   selectedUser.value = user
 }
 
-function toggleSearch() {
+const toggleSearch = () => {
   showSearch.value = !showSearch.value
 }
 </script>

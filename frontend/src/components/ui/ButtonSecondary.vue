@@ -21,7 +21,7 @@ const emit = defineEmits<{
     base-color="secondary"
     border="opacity-100 sm"
     class="cstar-button-secondary"
-    data-test-id="button-secondary"
+    data-testid="button-secondary"
     variant="flat"
     @click="emit('click')"
   >

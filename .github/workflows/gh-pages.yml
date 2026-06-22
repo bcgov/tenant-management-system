@@ -1,0 +1,49 @@
+name: gh-pages
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+concurrency:
+  # Do not interrupt previous workflows
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  publish:
+    name: Publish
+    environment:
+      name: github-pages
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+    runs-on: ubuntu-22.04
+    timeout-minutes: 1
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: |
+          cd docs-site
+          npm ci
+          npm run build
+        env:
+          DOCS_URL: https://bcgov.github.io/
+          DOCS_BASE_URL: /tenant-management-system/
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './docs-site/build'
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4

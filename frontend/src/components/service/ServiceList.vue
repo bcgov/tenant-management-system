@@ -15,7 +15,7 @@ const emit = defineEmits<{
 
 // --- Component Methods -------------------------------------------------------
 
-function handleAddService(id: Service['id']) {
+const handleAddService = (id: Service['id']) => {
   emit('add-service', id)
 }
 </script>

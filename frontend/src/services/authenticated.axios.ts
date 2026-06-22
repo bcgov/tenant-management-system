@@ -12,7 +12,7 @@ import { useAuthStore } from '@/stores/useAuthStore'
  *     (1 minute).
  * @returns An Axios instance with auth headers and the given timeout.
  */
-export function authenticatedAxios(timeout = 60000): AxiosInstance {
+export const authenticatedAxios = (timeout = 60000): AxiosInstance => {
   const instance = axios.create({ timeout })
 
   instance.interceptors.request.use(async (cfg) => {

@@ -8,12 +8,12 @@ vi.mock('@/stores/useTenantRequestStore', () => ({
   }),
 }))
 
-export function mockTenantRequestStore() {
+export const mockTenantRequestStore = () => {
   mockCreateTenantRequest.mockResolvedValue(undefined)
 }
 
 export const mockTenantRequestStoreCreateTenantRequest = mockCreateTenantRequest
 
-export function mockTenantRequestStoreError(error: Error) {
+export const mockTenantRequestStoreError = (error: Error) => {
   mockCreateTenantRequest.mockRejectedValue(error)
 }

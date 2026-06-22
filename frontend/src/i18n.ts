@@ -6,7 +6,7 @@ import { createI18n, type I18n } from 'vue-i18n'
 // the app or in the browser settings.
 export const SUPPORT_LOCALES = ['en']
 
-export function setI18nLanguage(i18n: I18n, locale: string) {
+export const setI18nLanguage = (i18n: I18n, locale: string) => {
   i18n.global.locale = locale
   if (typeof document !== 'undefined') {
     document.querySelector('html')?.setAttribute('lang', locale)

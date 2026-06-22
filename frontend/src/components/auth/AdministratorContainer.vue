@@ -15,7 +15,7 @@ const isOperationsAdmin = computed(() => currentUserIsOperationsAdmin())
 
 // --- Component Methods -------------------------------------------------------
 
-function handleDialogAction(action: string) {
+const handleDialogAction = (action: string) => {
   if (action === 'ok') {
     router.push('/tenants')
   }

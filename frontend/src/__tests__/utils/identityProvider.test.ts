@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 
 import {
   identityProviderToDisplay,
-  isIdpBceid,
+  isIdpBceidBusiness,
   isIdpIdir,
 } from '@/utils/identityProvider'
 
@@ -17,10 +17,6 @@ describe('identityProviderToDisplay', () => {
 
   it('converts azureidir to IDIR display', () => {
     expect(identityProviderToDisplay('azureidir')).toBe('IDIR')
-  })
-
-  it('converts bceidbasic to BCeID display', () => {
-    expect(identityProviderToDisplay('bceidbasic')).toBe('Basic BCeID')
   })
 
   it('converts bceidbusiness to BCeID display', () => {
@@ -41,38 +37,42 @@ describe('identityProviderToDisplay', () => {
   })
 })
 
-describe('isIdpBceid', () => {
+describe('isIdpBceidBusiness', () => {
   it('resolves undefined to false', () => {
-    expect(isIdpBceid(undefined)).toBe(false)
+    expect(isIdpBceidBusiness(undefined)).toBe(false)
   })
 
   it('resolves empty string to false', () => {
-    expect(isIdpBceid('')).toBe(false)
+    expect(isIdpBceidBusiness('')).toBe(false)
   })
 
   it('resolves azureidir to false', () => {
-    expect(isIdpBceid('azureidir')).toBe(false)
+    expect(isIdpBceidBusiness('azureidir')).toBe(false)
   })
 
-  it('resolves bceidbasic to true', () => {
-    expect(isIdpBceid('bceidbasic')).toBe(true)
+  it('resolves bceidbasic to false', () => {
+    expect(isIdpBceidBusiness('bceidbasic')).toBe(false)
+  })
+
+  it('resolves bceidboth to false', () => {
+    expect(isIdpBceidBusiness('bceidboth')).toBe(false)
   })
 
   it('resolves bceidbusiness to true', () => {
-    expect(isIdpBceid('bceidbusiness')).toBe(true)
+    expect(isIdpBceidBusiness('bceidbusiness')).toBe(true)
   })
 
   it('resolves idir to false', () => {
-    expect(isIdpBceid('idir')).toBe(false)
+    expect(isIdpBceidBusiness('idir')).toBe(false)
   })
 
   it('resolves unrecognized IdP to false', () => {
-    expect(isIdpBceid('thisismyidir')).toBe(false)
+    expect(isIdpBceidBusiness('thisismyidir')).toBe(false)
   })
 
   it('is case-insensitive', () => {
-    expect(isIdpBceid('BCEIDBASIC')).toBe(true)
-    expect(isIdpBceid('BCeIDBasic')).toBe(true)
+    expect(isIdpBceidBusiness('BCEIDBUSINESS')).toBe(true)
+    expect(isIdpBceidBusiness('BCeIDBusiness')).toBe(true)
   })
 })
 
@@ -91,6 +91,10 @@ describe('isIdpIdir', () => {
 
   it('resolves bceidbasic to false', () => {
     expect(isIdpIdir('bceidbasic')).toBe(false)
+  })
+
+  it('resolves bceidboth to false', () => {
+    expect(isIdpBceidBusiness('bceidboth')).toBe(false)
   })
 
   it('resolves bceidbusiness to false', () => {

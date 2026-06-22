@@ -63,7 +63,7 @@ const isSearchEnabled = computed(() => {
 
 // --- Component Methods -------------------------------------------------------
 
-function handleRowClicked(user: User | null) {
+const handleRowClicked = (user: User | null) => {
   if (!user) {
     emit('select', null)
 
@@ -84,7 +84,7 @@ function handleRowClicked(user: User | null) {
   emit('select', user)
 }
 
-function handleSearch() {
+const handleSearch = () => {
   emit('search', searchType.value, searchText.value)
 }
 </script>

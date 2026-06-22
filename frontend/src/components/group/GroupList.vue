@@ -14,7 +14,7 @@ const emit = defineEmits<{
 
 // --- Component Methods -------------------------------------------------------
 
-function handleClick(id: Group['id']) {
+const handleClick = (id: Group['id']) => {
   emit('select', id)
 }
 </script>

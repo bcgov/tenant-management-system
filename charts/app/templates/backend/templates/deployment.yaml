@@ -94,7 +94,7 @@ spec:
             - name: PORT
               value: "{{ .Values.backend.service.targetPort }}"
             - name: TMS_AUDIENCE
-              value: "{{ .Values.global.loginProxy.clientId }}"
+              value: "{{ .Values.backend.tmsAudience }}"
           ports:
             - name: http
               containerPort: {{ .Values.backend.service.targetPort }}

@@ -5,32 +5,25 @@ import {
   makeSsoUser,
   makeTenant,
   makeUser,
-  makeUserApiData,
 } from '@/__tests__/__factories__'
 
 import { toSsoUserId } from '@/models/ssouser.model'
-import {
-  Tenant,
-  type TenantApiData,
-  type TenantId,
-  toTenantId,
-} from '@/models/tenant.model'
-import { User } from '@/models/user.model'
+import { Tenant, toTenantId } from '@/models/tenant.model'
 import { ROLES } from '@/utils/constants'
 
 describe('Tenant model', () => {
   describe('constructor', () => {
     it('assigns properties', () => {
       const user = makeUser()
-      const tenant = new Tenant(
-        'createdBy',
-        'createdDate',
-        'description',
-        toTenantId('id'),
-        'name',
-        'ministryName',
-        [user],
-      )
+      const tenant = new Tenant({
+        createdBy: 'createdBy',
+        createdDate: 'createdDate',
+        description: 'description',
+        id: toTenantId('id'),
+        ministryName: 'ministryName',
+        name: 'name',
+        users: [user],
+      })
 
       expect(tenant.createdBy).toBe('createdBy')
       expect(tenant.createdDate).toBe('createdDate')
@@ -43,54 +36,10 @@ describe('Tenant model', () => {
     })
   })
 
-  describe('fromApiData', () => {
-    it('creates instance', () => {
-      const userApiData = makeUserApiData()
-      const user = User.fromApiData(userApiData)
-      const apiData: TenantApiData = {
-        createdBy: 'createdBy',
-        createdDateTime: 'createdDateTime',
-        description: 'description',
-        id: 'id' as TenantId,
-        ministryName: 'ministryName',
-        name: 'name',
-        users: [userApiData],
-      }
-
-      const tenant = Tenant.fromApiData(apiData)
-
-      expect(tenant.createdBy).toBe('createdBy')
-      expect(tenant.createdDate).toBe('createdDateTime')
-      expect(tenant.description).toBe('description')
-      expect(tenant.id).toBe('id')
-      expect(tenant.ministryName).toBe('ministryName')
-      expect(tenant.name).toBe('name')
-      expect(tenant.users.length).toBe(1)
-      expect(tenant.users[0]).toEqual(user)
-    })
-
-    it('handles created by display name', () => {
-      const apiData = {
-        createdBy: 'createdBy',
-        createdByDisplayName: 'createdByDisplayName',
-        createdDateTime: 'createdDateTime',
-        description: 'description',
-        id: 'id' as TenantId,
-        ministryName: 'ministryName',
-        name: 'name',
-        users: [],
-      }
-
-      const tenant = Tenant.fromApiData(apiData)
-
-      expect(tenant.createdBy).toBe('createdByDisplayName')
-    })
-  })
-
   describe('findUser', () => {
     it('returns the matching user', () => {
       const ssoUserId = toSsoUserId('sso1')
-      const user = makeUser({ ssoUser: makeSsoUser({ ssoUserId }) })
+      const user = makeUser({ ssoUser: makeSsoUser({ ssoUserId: ssoUserId }) })
       const tenant = makeTenant({ users: [user] })
 
       expect(tenant.findUser(ssoUserId)).toEqual(user)
@@ -98,7 +47,7 @@ describe('Tenant model', () => {
 
     it('returns not defined when not found', () => {
       const ssoUserId = toSsoUserId('sso1')
-      const user = makeUser({ ssoUser: makeSsoUser({ ssoUserId }) })
+      const user = makeUser({ ssoUser: makeSsoUser({ ssoUserId: ssoUserId }) })
       const tenant = makeTenant({ users: [user] })
 
       expect(tenant.findUser(toSsoUserId('not-found'))).toBeUndefined()

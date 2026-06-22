@@ -1,7 +1,7 @@
 import { mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { makeUserBceid } from '@/__tests__/__factories__'
+import { makeUserBceidBusiness } from '@/__tests__/__factories__'
 import { createMockAuthStore } from '@/__tests__/__helpers__/useAuthStore.mock'
 
 import LoginContainer from '@/components/auth/LoginContainer.vue'
@@ -47,7 +47,7 @@ describe('LoginContainer.vue', () => {
   })
 
   it('redirects to /bceid when bceid', () => {
-    currentAuthStore = createMockAuthStore({ user: makeUserBceid() })
+    currentAuthStore = createMockAuthStore({ user: makeUserBceidBusiness() })
     vi.mocked(permissions.currentUserIsBceid).mockReturnValue(true)
 
     mountComponent()
@@ -58,15 +58,15 @@ describe('LoginContainer.vue', () => {
   it('does not render slot content when not authenticated', () => {
     const wrapper = mountComponent()
 
-    expect(wrapper.find('[data-test-id="slot"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="slot"]').exists()).toBe(false)
   })
 
   it('does not render slot content when authenticated but not idir', () => {
-    currentAuthStore = createMockAuthStore({ user: makeUserBceid() })
+    currentAuthStore = createMockAuthStore({ user: makeUserBceidBusiness() })
 
     const wrapper = mountComponent()
 
-    expect(wrapper.find('[data-test-id="slot"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="slot"]').exists()).toBe(false)
   })
 
   it('renders slot content when authenticated and idir', () => {
@@ -74,6 +74,6 @@ describe('LoginContainer.vue', () => {
 
     const wrapper = mountComponent()
 
-    expect(wrapper.find('[data-test-id="slot"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="slot"]').exists()).toBe(true)
   })
 })

@@ -1,4 +1,4 @@
-import { type UserSearchApiData } from '@/models/user.model'
+import { type UserSearchApiData } from '@/mappers/user.mapper'
 import { authenticatedAxios } from '@/services/authenticated.axios'
 import { logApiError } from '@/services/utils'
 import {
@@ -26,7 +26,7 @@ export const userService = {
       const response = await api.get('/users/bcgovssousers/bceid/search', {
         params: {
           [searchType]: searchValue,
-          bceidType: 'both',
+          bceidType: 'business',
         },
       })
 

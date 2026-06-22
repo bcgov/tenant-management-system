@@ -39,7 +39,7 @@ const tenant = computed(() => tenantStore.getTenant(props.tenantId))
 
 // --- Component Methods -------------------------------------------------------
 
-async function handleAddUser(user: User) {
+const handleAddUser = async (user: User) => {
   try {
     await groupStore.addGroupUser(props.tenantId, props.groupId, user)
     searchResults.value = null
@@ -60,11 +60,11 @@ async function handleAddUser(user: User) {
   }
 }
 
-async function handleClearSearch() {
+const handleClearSearch = async () => {
   searchResults.value = null
 }
 
-async function handleDeleteUser(groupUserId: GroupUserId) {
+const handleDeleteUser = async (groupUserId: GroupUserId) => {
   try {
     await groupStore.removeGroupUser(props.tenantId, props.groupId, groupUserId)
     notification.success(
@@ -76,10 +76,10 @@ async function handleDeleteUser(groupUserId: GroupUserId) {
   }
 }
 
-async function handleUserSearch(
+const handleUserSearch = async (
   searchType: IdirSearchType,
   searchText: string,
-) {
+) => {
   isLoadingSearch.value = true
 
   try {

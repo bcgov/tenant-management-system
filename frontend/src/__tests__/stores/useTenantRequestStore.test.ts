@@ -4,8 +4,11 @@ import { createPinia, setActivePinia } from 'pinia'
 import { makeUser } from '@/__tests__/__factories__'
 
 import {
-  TenantRequest,
   type TenantRequestApiData,
+  tenantRequestMapper,
+} from '@/mappers/tenantrequest.mapper'
+import {
+  TenantRequest,
   type TenantRequestDetailFields,
   toTenantRequestId,
 } from '@/models/tenantrequest.model'
@@ -105,7 +108,7 @@ describe('Tenant Request Store', () => {
     it('updates specific properties and service parameters', async () => {
       const store = useTenantRequestStore()
       const targetId = toTenantRequestId('target-uuid')
-      const initialRequest = TenantRequest.fromApiData({
+      const initialRequest = tenantRequestMapper.fromApiData({
         id: targetId,
         createdBy: 'system',
         createdDateTime: '2023-01-01',
@@ -141,7 +144,7 @@ describe('Tenant Request Store', () => {
     it('does not update rejectionReason if parameter is undefined', async () => {
       const store = useTenantRequestStore()
       const targetId = toTenantRequestId('target-uuid')
-      const initialRequest = TenantRequest.fromApiData({
+      const initialRequest = tenantRequestMapper.fromApiData({
         id: targetId,
         createdBy: 'system',
         createdDateTime: '2023-01-01',

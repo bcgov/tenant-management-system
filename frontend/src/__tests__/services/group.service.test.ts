@@ -2,9 +2,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { makeSsoUser, makeUser } from '@/__tests__/__factories__'
 
-import { type GroupId } from '@/models/group.model'
-import { type GroupUserId } from '@/models/groupuser.model'
-import { type TenantId } from '@/models/tenant.model'
+import { toGroupId } from '@/models/group.model'
+import { toGroupUserId } from '@/models/groupuser.model'
+import { toTenantId } from '@/models/tenant.model'
 import * as utils from '@/services/utils'
 
 vi.mock('@/services/utils', () => ({
@@ -46,9 +46,9 @@ import { ValidationError } from '@/errors/domain/ValidationError'
 import { groupService } from '@/services/group.service'
 
 describe('groupService', () => {
-  const tenantId = '1' as TenantId
-  const groupId = '123' as GroupId
-  const groupUserId = '456' as GroupUserId
+  const tenantId = toTenantId('1')
+  const groupId = toGroupId('123')
+  const groupUserId = toGroupUserId('456')
 
   const fakeGroup = {
     id: groupId,
