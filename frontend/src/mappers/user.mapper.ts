@@ -103,10 +103,9 @@ export const userMapper = {
       userName: username,
     })
 
+    // The User ID and roles are not provided in search results
     return new User({
-      // TODO: We don't know the user ID, so duplicate the SsoUserId
-      id: toUserId(ssoUserId),
-      // Roles are not provided in search results
+      id: toUserId(''),
       roles: [],
       ssoUser: ssoUser,
     })

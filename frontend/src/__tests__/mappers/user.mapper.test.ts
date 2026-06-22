@@ -64,7 +64,7 @@ describe('User mapper', () => {
 
       const user = userMapper.fromSearchData(searchData)
 
-      expect(user.id).toBe('bceid_user_guid')
+      expect(user.id).toBe('')
       expect(user.roles).toEqual([])
       expect(user.ssoUser.displayName).toBe('display_name')
       expect(user.ssoUser.email).toBe('email')
@@ -89,7 +89,7 @@ describe('User mapper', () => {
 
       const user = userMapper.fromSearchData(searchData)
 
-      expect(user.id).toBe('idir_user_guid')
+      expect(user.id).toBe('')
       expect(user.roles).toEqual([])
       expect(user.ssoUser.displayName).toBe('display_name')
       expect(user.ssoUser.email).toBe('email')
