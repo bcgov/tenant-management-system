@@ -80,6 +80,18 @@ jobs:
         with:
           fetch-depth: 0 # full history to improve Sonar's analysis
 
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci --ignore-scripts
+
+      - name: Install docs-site dependencies
+        working-directory: docs-site
+        run: npm ci --ignore-scripts
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci --ignore-scripts
+
       - name: Download backend coverage
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
@@ -99,10 +111,9 @@ jobs:
         with:
           args: >
             -Dsonar.coverage.exclusions=**/types/**,**/__tests__/**,**/src/tests/**
-            -Dsonar.exclusions=**/coverage/**,**/node_modules/**,**/dist/**,**/*.config.ts
+            -Dsonar.exclusions=**/coverage/**,**/node_modules/**,**/dist/**,**/*.config.ts,**/*.ico,**/*.png
             -Dsonar.javascript.lcov.reportPaths=backend/coverage/lcov.info,frontend/coverage/lcov.info
             -Dsonar.organization=bcgov-sonarcloud
-            -Dsonar.projectBaseDir=.
             -Dsonar.projectKey=bcgov_tenant-management-system
             -Dsonar.projectName=tenant-management-system
             -Dsonar.sources=.
