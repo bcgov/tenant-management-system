@@ -44,7 +44,7 @@ jobs:
       db_user: app-${{ github.event.number }}
       params:
         --set global.secrets.persist=false
-        --set frontend.ingress.tls=""
+        --set frontend.ingress.hosts[0].host=dev.connect.digital.gov.bc.ca
   
   tests:
     name: Tests
