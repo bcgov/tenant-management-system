@@ -53,7 +53,7 @@ jobs:
       checks: write
     uses: ./.github/workflows/.tests.yml
     with:
-      prefix: cstar-${{ github.event.number }}
+      prefix: cstar-${{ github.event.number }}-frontend
       domain: apps.gold.devops.gov.bc.ca
       image_tag: ${{ github.event.number }}
 
