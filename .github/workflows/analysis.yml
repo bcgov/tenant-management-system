@@ -111,7 +111,7 @@ jobs:
         with:
           args: >
             -Dsonar.coverage.exclusions=**/types/**,**/__tests__/**,**/src/tests/**
-            -Dsonar.exclusions=**/coverage/**,**/node_modules/**,**/dist/**,**/*.config.ts,**/*.ico,**/*.png
+            -Dsonar.exclusions=**/coverage/**,**/node_modules/**,**/dist/**,**/*.config.ts,**/*.ico,**/*.png,**/*.sql
             -Dsonar.javascript.lcov.reportPaths=backend/coverage/lcov.info,frontend/coverage/lcov.info
             -Dsonar.organization=bcgov-sonarcloud
             -Dsonar.projectKey=bcgov_tenant-management-system
