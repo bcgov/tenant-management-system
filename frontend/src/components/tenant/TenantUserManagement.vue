@@ -32,8 +32,7 @@ const emit = defineEmits<{
   (event: 'cancel' | 'clear-search'): void
   (event: 'remove-role', userId: UserId, roleId: RoleId): void
   (event: 'search', searchType: IdirSearchType, searchText: string): void
-  // TODO: what does it mean to remove an undefined user?
-  (event: 'remove-user', userId: UserId | undefined): void
+  (event: 'remove-user', userId: UserId): void
 }>()
 
 // --- Store and Composable Setup ----------------------------------------------
@@ -191,8 +190,10 @@ const handleConfirmButtonClick = (action: string) => {
 const handleOffboardButtonClick = (action: string) => {
   if (action === 'cancel') {
     pendingUser.value = null
-  } else if (action === 'remove') {
-    emit('remove-user', pendingUser.value?.id)
+  } else if (action === 'remove' && pendingUser.value) {
+    // When the action is remove the pendingUser.value should never be null, but
+    // the guard simplifies the emit signature.
+    emit('remove-user', pendingUser.value.id)
     pendingUser.value = null
   }
 }

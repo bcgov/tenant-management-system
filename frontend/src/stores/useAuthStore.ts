@@ -119,18 +119,13 @@ export const useAuthStore = defineStore('auth', () => {
       roles.push(
         new Role({
           description: ROLES.OPERATIONS_ADMIN.title,
-          id: toRoleId('unused_id'),
+          id: toRoleId(''),
           name: ROLES.OPERATIONS_ADMIN.value,
         }),
       )
     }
 
-    // TODO: The User.id is being set to the SsoUser.ssoUserId, which is not
-    // correct. This is convenient for calling the API as it's currentUser.id
-    // rather than currentUser.ssoUser.ssoUserId. For the sake of future
-    // developer sanity the correct ID location should be used, and this User.id
-    // should be set to something like ''
-    return new User({ id: toUserId(ssoUser.ssoUserId), roles, ssoUser })
+    return new User({ id: toUserId(''), roles, ssoUser })
   }
 
   // Exported Methods

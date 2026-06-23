@@ -107,8 +107,7 @@ const handleRemoveRole = async (userId: UserId, roleId: RoleId) => {
   }
 }
 
-// TODO: why would you remove user for an undefined?
-const handleRemoveUser = async (userId: UserId | undefined) => {
+const handleRemoveUser = async (userId: UserId) => {
   try {
     if (!userId) {
       throw new Error('No user selected')

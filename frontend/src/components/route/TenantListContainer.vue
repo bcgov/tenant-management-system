@@ -82,7 +82,9 @@ const handleTenantSubmit = async (
 // set before first render. Look to Suspense when no longer experimental.
 const init = async () => {
   try {
-    await tenantStore.fetchTenants(authStore.authenticatedUser.id)
+    await tenantStore.fetchTenants(
+      authStore.authenticatedUser.ssoUser.ssoUserId,
+    )
   } catch {
     notification.error('Failed to load tenants')
   }

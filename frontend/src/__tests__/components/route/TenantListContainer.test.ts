@@ -79,7 +79,9 @@ describe('TenantListContainer.vue', () => {
       mountComponent()
       await flushPromises()
 
-      expect(mockTenantStoreFetchTenants).toHaveBeenCalledWith(user.id)
+      expect(mockTenantStoreFetchTenants).toHaveBeenCalledWith(
+        user.ssoUser.ssoUserId,
+      )
     })
 
     it('shows an error notification if fetching tenants fails', async () => {
