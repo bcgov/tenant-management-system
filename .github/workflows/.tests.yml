@@ -10,7 +10,7 @@ on:
         type: string
       target:
         description: PR number, dev, test or prod
-        default: ${{ github.event.number }}
+        default: ${{ github.event.number }}-frontend
         type: string
 
 env:

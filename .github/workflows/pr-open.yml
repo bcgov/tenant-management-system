@@ -76,7 +76,7 @@ jobs:
         with:
           allow_issue_writing: false
           artifact_name: zap-${{ matrix.name }}-pr${{ github.event.number }}
-          target: https://cstar-${{ github.event.number }}.apps.gold.devops.gov.bc.ca/${{ matrix.path }}
+          target: https://cstar-${{ github.event.number }}-frontend.apps.gold.devops.gov.bc.ca/${{ matrix.path }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
   results:
