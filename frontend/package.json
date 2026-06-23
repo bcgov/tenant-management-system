@@ -14,7 +14,10 @@
     "type-check-tests": "vue-tsc --noEmit -p tsconfig.vitest.json",
     "lint": "eslint . --ext .ts,.tsx,.vue",
     "lint:fix": "eslint . --ext .ts,.tsx,.vue --fix",
-    "format": "prettier --write src/"
+    "format": "prettier --write src/",
+    "test": "playwright test",
+    "test:e2e": "node --env-file=.env ./node_modules/@playwright/test/cli.js test",
+    "test:e2e:headed": "node --env-file=.env ./node_modules/@playwright/test/cli.js test --headed"
   },
   "dependencies": {
     "@bcgov/design-tokens": "^4.0.0",
@@ -28,6 +31,7 @@
     "vuetify": "^4.0.5"
   },
   "devDependencies": {
+    "@otplib/preset-default": "^12.0.1",
     "@playwright/test": "^1.60.0",
     "@tsconfig/node22": "^22.0.5",
     "@types/jsdom": "^21.1.7",
@@ -40,7 +44,6 @@
     "@vue/eslint-config-prettier": "^10.2.0",
     "@vue/test-utils": "^2.4.10",
     "@vue/tsconfig": "^0.9.1",
-    "dotenv": "^17.4.2",
     "eslint": "^10.1.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.5",
@@ -49,8 +52,6 @@
     "jiti": "^2.4.2",
     "jsdom": "^26.0.0",
     "npm-run-all2": "^7.0.2",
-    "otplib": "^13.4.1",
-    "@otplib/preset-default": "^12.0.1",
     "prettier": "^3.8.1",
     "start-server-and-test": "^2.0.13",
     "typescript": "^6.0.3",

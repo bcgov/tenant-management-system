@@ -1,14 +1,6 @@
+/// <reference types="node" />
 import { expect, type Page } from '@playwright/test'
 import { authenticator } from '@otplib/preset-default'
-import * as dotenv from 'dotenv'
-import path from 'path'
-import fs from 'fs'
-
-// Load .env from the frontend root directory (where playwright runs from)
-const envPath = path.join(process.cwd(), '.env')
-if (fs.existsSync(envPath)) {
-  dotenv.config({ path: envPath })
-}
 
 export function formsettings() {
   if (
