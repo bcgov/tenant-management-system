@@ -21,7 +21,6 @@ const emit = defineEmits<{
 
 const IDENTITY_PROVIDERS = [
   { label: 'IDIR', value: 'idir' },
-  { label: 'Basic BCeID', value: 'bceidbasic' },
   { label: 'Business BCeID', value: 'bceidbusiness' },
 ]
 

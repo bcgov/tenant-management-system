@@ -33,8 +33,7 @@ declare global {
     interface Request {
       decodedJwt?: DecodedJwt
       isSharedServiceAccess?: boolean
-      bceidType?: 'bceidbasic' | 'bceidbusiness'
-      idpType?: 'idir' | 'bceidbasic' | 'bceidbusiness'
+      idpType?: 'idir' | 'bceidbusiness'
     }
   }
 }
@@ -42,15 +41,6 @@ declare global {
 interface CheckJwtOptions {
   sharedServiceAccess?: boolean
   skipSsoUserParamMatch?: boolean
-}
-
-const determineBceidType = (
-  decodedJwt: DecodedJwt,
-): 'bceidbasic' | 'bceidbusiness' => {
-  if (decodedJwt.bceid_business_guid) {
-    return 'bceidbusiness'
-  }
-  return 'bceidbasic'
 }
 
 const createJwtMiddleware = (options: CheckJwtOptions = {}) => {
@@ -132,15 +122,23 @@ export const checkJwt = (options: CheckJwtOptions = {}) => {
             req.decodedJwt.idp || req.decodedJwt.identity_provider
 
           if (provider === TMSConstants.BCEID_BOTH_PROVIDER) {
-            req.bceidType = determineBceidType(req.decodedJwt)
-            req.idpType = req.bceidType
-            logger.info('BCeID type determined for shared service', {
-              bceidType: req.bceidType,
-              sub: req.decodedJwt.sub,
-              hasBusinessGuid: !!req.decodedJwt.bceid_business_guid,
-            })
-          } else if (provider === TMSConstants.BASIC_BCEID_PROVIDER) {
-            req.idpType = 'bceidbasic'
+            if (req.decodedJwt.bceid_business_guid) {
+              req.idpType = 'bceidbusiness'
+              logger.info('Business BCeID determined for shared service', {
+                sub: req.decodedJwt.sub,
+                hasBusinessGuid: true,
+              })
+            } else {
+              logger.error('Unsupported identity provider', {
+                provider,
+                sub: req.decodedJwt.sub,
+              })
+              return res.status(401).json({
+                error: 'Unauthorized',
+                message: 'Unsupported identity provider',
+                statusCode: 401,
+              })
+            }
           } else if (provider === TMSConstants.BUSINESS_BCEID_PROVIDER) {
             req.idpType = 'bceidbusiness'
           } else if (

@@ -1,6 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
+import { tenantMapper } from '@/mappers/tenant.mapper'
+import { userMapper } from '@/mappers/user.mapper'
 import { Role, type RoleId } from '@/models/role.model'
 import {
   Tenant,
@@ -26,7 +28,7 @@ export const useTenantStore = defineStore('tenant', () => {
    * @param tenant - The tenant to insert or update.
    * @returns The inserted or updated tenant.
    */
-  function upsertTenant(tenant: Tenant): Tenant {
+  const upsertTenant = (tenant: Tenant): Tenant => {
     const index = tenants.value.findIndex((t) => t.id === tenant.id)
     if (index === -1) {
       tenants.value.push(tenant)
@@ -55,7 +57,7 @@ export const useTenantStore = defineStore('tenant', () => {
     const userData = await tenantService.addUser(tenantId, user)
 
     // Add user to tenant so that it doesn't need to be fetched again.
-    const addedUser = User.fromApiData(userData)
+    const addedUser = userMapper.fromApiData(userData)
     tenant.users.push(addedUser)
   }
 
@@ -101,7 +103,7 @@ export const useTenantStore = defineStore('tenant', () => {
     loading.value = true
     try {
       const tenantData = await tenantService.getTenant(tenantId)
-      const tenant = Tenant.fromApiData(tenantData)
+      const tenant = tenantMapper.fromApiData(tenantData)
 
       return upsertTenant(tenant)
     } finally {
@@ -120,7 +122,7 @@ export const useTenantStore = defineStore('tenant', () => {
     loading.value = true
     try {
       const tenantData = await tenantService.getUserTenants(userId)
-      tenants.value = tenantData.map(Tenant.fromApiData)
+      tenants.value = tenantData.map(tenantMapper.fromApiData)
     } finally {
       loading.value = false
     }
@@ -132,11 +134,17 @@ export const useTenantStore = defineStore('tenant', () => {
    * @param tenantId - The ID of the tenant.
    * @returns The tenant if found, otherwise undefined.
    */
-  function getTenant(tenantId: TenantId): Tenant | undefined {
+  const getTenant = (tenantId: TenantId): Tenant | undefined => {
     return tenants.value.find((t) => t.id === tenantId)
   }
 
-  async function removeTenantUser(tenantId: TenantId, userId: UserId) {
+  /**
+   * Removes a user from a tenant.
+   *
+   * @param tenantId - the ID of the tenant.
+   * @param userId - the ID of the user.
+   */
+  const removeTenantUser = async (tenantId: TenantId, userId: UserId) => {
     await tenantService.removeUser(tenantId, userId)
     const tenant = getTenant(tenantId)
     if (tenant) {
@@ -199,7 +207,7 @@ export const useTenantStore = defineStore('tenant', () => {
       tenantDetails.description,
     )
 
-    const tenantData = Tenant.fromApiData(apiResponse)
+    const tenantData = tenantMapper.fromApiData(apiResponse)
 
     tenant.name = tenantData.name
     tenant.ministryName = tenantData.ministryName

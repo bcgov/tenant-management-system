@@ -35,7 +35,7 @@ on:
         required: false
         type: string
       triggers:
-        description: Paths used to trigger a deployment; e.g. ('./backend/' './frontend/)
+        description: Paths used to trigger a deployment; e.g. ('./backend/' './frontend/')
         required: false
         type: string
       db_user:
@@ -87,7 +87,7 @@ jobs:
       tag: ${{ inputs.tag || steps.pr.outputs.pr }}
       triggered: ${{ steps.deploy.outputs.triggered }}
     steps:
-      - uses: bcgov/action-crunchy@a109166ff26880dc75676492a33b816ac0ce392f # v1.2.6
+      - uses: bcgov/action-crunchy@102fde6a063b58a958a735e34f399f01977683fd # v2.1.0+
         name: Deploy Crunchy
         id: deploy_crunchy
         with:
@@ -98,6 +98,10 @@ jobs:
           environment: ${{ inputs.environment }}
           values_file: charts/crunchy/values-${{ inputs.environment || 'dev' }}.yml
           triggers: ${{ inputs.db_triggers }}
+          s3_access_key: ${{ secrets.s3_access_key }}
+          s3_secret_key: ${{ secrets.s3_secret_key }}
+          s3_bucket: ${{ secrets.s3_bucket }}
+          s3_endpoint: ${{ secrets.s3_endpoint }}
 
       # Variables
       - if: inputs.tag  == ''
@@ -180,6 +184,7 @@ jobs:
             # print the values.yaml file to see the values being used
             # Helm upgrade/rollout
             helm upgrade \
+              --set-string backend.tmsAudience=${{ vars.tms_audience }} \
               --set-string backend.bcgovSsoApiClientId=${{ secrets.bcgov_sso_api_client_id }} \
               --set-string backend.bcgovSsoApiClientSecret=${{ secrets.bcgov_sso_api_client_secret }} \
               --set-string backend.bcgovSsoApiUrl=${{ vars.BCGOV_SSO_API_URL }} \

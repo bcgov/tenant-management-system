@@ -3,33 +3,40 @@ import { describe, expect, it } from 'vitest'
 import {
   makeGroupService,
   makeGroupServiceRole,
-  makeGroupServiceRoleApiData,
 } from '@/__tests__/__factories__'
 
-import {
-  GroupService,
-  type GroupServiceApiData,
-  toGroupServiceId,
-} from '@/models/groupservice.model'
+import { GroupService, toGroupServiceId } from '@/models/groupservice.model'
 
 describe('GroupService model', () => {
   describe('constructor', () => {
     it('assigns properties', () => {
       const groupServiceRoles = [makeGroupServiceRole()]
 
-      const service = new GroupService(
-        toGroupServiceId('id'),
-        'displayName',
-        'clientIdentifier',
-        'description',
-        groupServiceRoles,
-      )
+      const service = new GroupService({
+        clientIdentifier: 'clientIdentifier',
+        description: 'description',
+        displayName: 'displayName',
+        id: toGroupServiceId('id'),
+        roles: groupServiceRoles,
+      })
 
       expect(service.clientIdentifier).toBe('clientIdentifier')
       expect(service.description).toBe('description')
       expect(service.displayName).toBe('displayName')
       expect(service.id).toBe('id')
       expect(service.roles).toBe(groupServiceRoles)
+    })
+
+    it('handles empty group service roles', () => {
+      const service = new GroupService({
+        clientIdentifier: 'clientIdentifier',
+        description: 'description',
+        displayName: 'displayName',
+        id: toGroupServiceId('id'),
+        roles: [],
+      })
+
+      expect(service.roles).toEqual([])
     })
   })
 
@@ -76,29 +83,8 @@ describe('GroupService model', () => {
     })
   })
 
-  describe('fromApiData', () => {
-    it('creates instance', () => {
-      const apiData: GroupServiceApiData = {
-        clientIdentifier: 'clientIdentifier',
-        description: 'description',
-        displayName: 'displayName',
-        id: toGroupServiceId('id'),
-        sharedServiceRoles: [makeGroupServiceRoleApiData()],
-      }
-
-      const service = GroupService.fromApiData(apiData)
-
-      expect(service).toBeInstanceOf(GroupService)
-      expect(service.clientIdentifier).toBe('clientIdentifier')
-      expect(service.description).toBe('description')
-      expect(service.displayName).toBe('displayName')
-      expect(service.id).toBe('id')
-      expect(service.roles).toHaveLength(1)
-    })
-  })
-
   describe('hasEnabledRoles', () => {
-    it('false for empty', () => {
+    it('is false for empty', () => {
       const groupService = makeGroupService({
         roles: [],
       })
@@ -106,7 +92,7 @@ describe('GroupService model', () => {
       expect(groupService.hasEnabledRoles).toBe(false)
     })
 
-    it('false', () => {
+    it('is false for all disabled', () => {
       const groupService = makeGroupService({
         roles: [
           makeGroupServiceRole({ id: 'id1', isEnabled: false }),
@@ -117,7 +103,7 @@ describe('GroupService model', () => {
       expect(groupService.hasEnabledRoles).toBe(false)
     })
 
-    it('true', () => {
+    it('is true for one enabled role', () => {
       const groupService = makeGroupService({
         roles: [
           makeGroupServiceRole({ id: 'id1', isEnabled: false }),
@@ -128,7 +114,7 @@ describe('GroupService model', () => {
       expect(groupService.hasEnabledRoles).toBe(true)
     })
 
-    it('true for multiples', () => {
+    it('is true for multiple enabled roles', () => {
       const groupService = makeGroupService({
         roles: [
           makeGroupServiceRole({ id: 'id1', isEnabled: true }),

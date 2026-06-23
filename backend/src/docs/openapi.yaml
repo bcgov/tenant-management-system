@@ -168,7 +168,7 @@ paths:
       description: |
         Authentication: CSTAR audience token required.
 
-        Adds a new user to an existing tenant. Supports IDIR, basic BCeID, and business BCeID users. For IDIR users, roles are required. For BCeID users, roles are optional and will be overridden with SERVICE_USER role. Optionally adds the user to groups. Requires JWT authentication and TENANT_OWNER or USER_ADMIN role.
+        Adds a new user to an existing tenant. Supports IDIR and Business BCeID users. For IDIR users, roles are required. For Business BCeID users, roles are optional and will be overridden with SERVICE_USER role. Optionally adds the user to groups. Requires JWT authentication and TENANT_OWNER or USER_ADMIN role.
       security:
         - bearerAuth: []
       parameters:
@@ -198,7 +198,7 @@ paths:
                   minItems: 1
                   maxItems: 3
                   description: |
-                    Required for IDIR users. Optional for BCeID users (will be overridden with SERVICE_USER role).
+                    Required for IDIR users. Optional for Business BCeID users (will be overridden with SERVICE_USER role).
                     If not provided for IDIR users, validation will fail.
                   example: ['14c6bb48-54e2-4ce0-9bbd-af4982fff13b']
                 groups:
@@ -239,7 +239,7 @@ paths:
                                   $ref: '#/components/schemas/Group'
                                 description: Groups the user was added to (if groups were provided in request)
         '400':
-          description: Invalid input - IDIR users must provide roles, BCeID users roles are optional
+          description: Invalid input - IDIR users must provide roles, Business BCeID users roles are optional
           content:
             application/json:
               schema:
@@ -477,7 +477,6 @@ paths:
                                                 [
                                                   'idir',
                                                   'azureidir',
-                                                  'bceidbasic',
                                                   'bceidbusiness',
                                                 ]
                                             nullable: true
@@ -790,8 +789,11 @@ paths:
       description: |
         Authentication: CSTAR audience token required.
 
-        Searches basic and/or business BCeID users through the BC Gov SSO API and returns
-        the upstream response. `bceidType` and at least one search parameter are required.
+        Searches Business BCeID users through the BC Gov SSO API. CSTAR queries
+        the upstream API with `bceidType=both` because Business BCeID records are
+        returned through that provider shape, then returns only records with
+        `attributes.bceid_business_guid`.
+        At least one search parameter is required.
         Duplicate records with the same `attributes.bceid_user_guid[0]` are collapsed and
         the most complete record is retained.
       security:
@@ -799,12 +801,12 @@ paths:
       parameters:
         - name: bceidType
           in: query
-          required: true
+          required: false
           schema:
             type: string
-            enum: [basic, business, both]
-          description: BCeID account type to search
-          example: basic
+            enum: [business, both]
+          description: BCeID account type accepted by CSTAR. Upstream search uses `both`, then CSTAR returns only Business BCeID records.
+          example: business
         - name: guid
           in: query
           required: false
@@ -841,18 +843,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/BCGovSSOBceidSearchResponse'
               examples:
-                basicBceidUsers:
-                  summary: Basic BCeID search results
-                  value:
-                    data:
-                      - firstName: Taylor
-                        lastName: Example
-                        email: taylor.example@example.com
-                        username: 0f1e2d3c4b5a69788796a5b4c3d2e1f0@bceidboth
-                        attributes:
-                          bceid_user_guid: ['0F1E2D3C4B5A69788796A5B4C3D2E1F0']
-                          bceid_username: ['taylor12345']
-                          display_name: ['Taylor Example']
                 businessBceidUsers:
                   summary: Business BCeID search results
                   value:
@@ -860,7 +850,7 @@ paths:
                       - firstName: Morgan
                         lastName: Business
                         email: morgan.business@example.com
-                        username: 1234567890abcdef1234567890abcdef@bceidboth
+                        username: 1234567890abcdef1234567890abcdef@bceidbusiness
                         attributes:
                           bceid_business_guid: ['9F8E7D6C5B4A39281726354433221100']
                           bceid_business_name: ['Example Business']
@@ -1706,7 +1696,7 @@ paths:
                         items:
                           type: string
                           enum:
-                            ['idir', 'azureidir', 'bceidbasic', 'bceidbusiness']
+                            ['idir', 'azureidir', 'bceidbusiness']
                         nullable: true
                         example: ['idir', 'bceidbusiness']
                         description: 'List of identity providers allowed to access this role. If null or empty, all identity providers are allowed.'
@@ -2939,7 +2929,7 @@ paths:
                         items:
                           type: string
                           enum:
-                            ['idir', 'azureidir', 'bceidbasic', 'bceidbusiness']
+                            ['idir', 'azureidir', 'bceidbusiness']
                         nullable: true
                         example: ['idir']
                         description: 'List of identity providers allowed to access this role. If null or empty, all identity providers are allowed.'
@@ -3049,7 +3039,7 @@ paths:
                   type: array
                   items:
                     type: string
-                    enum: ['idir', 'azureidir', 'bceidbasic', 'bceidbusiness']
+                    enum: ['idir', 'azureidir', 'bceidbusiness']
                   nullable: true
                   example: ['idir', 'bceidbusiness']
                   description: 'List of identity providers allowed to access this role. If null or empty, all identity providers are allowed.'
@@ -3373,7 +3363,7 @@ components:
           example: 'John@gov.bc.ca'
         idpType:
           type: string
-          enum: ['idir', 'bceidbasic', 'bceidbusiness']
+          enum: ['idir', 'bceidbusiness']
           example: 'idir'
           description: 'Identity Provider type.'
 
@@ -3430,7 +3420,7 @@ components:
           example: 'John@gov.bc.ca'
         idpType:
           type: string
-          enum: ['idir', 'bceidbasic', 'bceidbusiness']
+          enum: ['idir', 'bceidbusiness']
           example: 'idir'
           description: 'Identity Provider type'
         createdDateTime:
@@ -3511,7 +3501,7 @@ components:
           example: test.user@example.com
         username:
           type: string
-          example: testuser@bceidbasic
+          example: testuser@bceidbusiness
         attributes:
           allOf:
             - $ref: '#/components/schemas/BCGovSSOAttributeMap'
@@ -4114,7 +4104,7 @@ components:
           type: array
           items:
             type: string
-            enum: ['idir', 'azureidir', 'bceidbasic', 'bceidbusiness']
+            enum: ['idir', 'azureidir', 'bceidbusiness']
           nullable: true
           example: ['idir', 'bceidbusiness']
           description: 'List of identity providers allowed to access this role. If null or empty, all identity providers are allowed.'

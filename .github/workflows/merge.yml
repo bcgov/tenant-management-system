@@ -18,7 +18,7 @@ on:
 concurrency:
   # Do not interrupt previous workflows
   group: ${{ github.workflow }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 permissions: {}
 
@@ -45,9 +45,12 @@ jobs:
     uses: ./.github/workflows/gold-dev.yml
     secrets: inherit
     with:
+      dr_enabled: true
       release_name: cstar-dev
       tag: ${{ needs.vars.outputs.pr }}
       db_user: appproxy
+      params:
+        --set frontend.ingress.hosts[0].host=dev.connect.digital.gov.bc.ca
   
   promote-dev:
     name: Promote Images
@@ -86,6 +89,8 @@ jobs:
       release_name: cstar-test
       tag: ${{ needs.vars.outputs.pr }}
       db_user: appproxy
+      params:
+        --set frontend.ingress.hosts[0].host=test.connect.digital.gov.bc.ca
   
   promote-test:
     name: Promote Images
@@ -124,6 +129,8 @@ jobs:
       release_name: cstar-prod
       tag: ${{ needs.vars.outputs.pr }}
       db_user: appproxy
+      params:
+        --set frontend.ingress.hosts[0].host=connect.digital.gov.bc.ca
 
   promote-prod:
     name: Promote Images Prod

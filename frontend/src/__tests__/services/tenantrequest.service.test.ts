@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { makeUser } from '../__factories__'
+import { makeUser } from '@/__tests__/__factories__'
 
 import * as utils from '@/services/utils'
 
@@ -17,24 +17,24 @@ mockedUtils.isValidationError.mockReturnValue(false)
 mockedUtils.logApiError.mockImplementation(() => {})
 
 // Create mock functions in vi.hoisted to ensure they're available during module loading
-const { mockGet, mockPost, mockPut, mockDelete, mockPatch } = vi.hoisted(
+const { mockDelete, mockGet, mockPatch, mockPost, mockPut } = vi.hoisted(
   () => ({
+    mockDelete: vi.fn(),
     mockGet: vi.fn(),
+    mockPatch: vi.fn(),
     mockPost: vi.fn(),
     mockPut: vi.fn(),
-    mockDelete: vi.fn(),
-    mockPatch: vi.fn(),
   }),
 )
 
 // Mock the authenticated axios to return an object with HTTP methods
 vi.mock('@/services/authenticated.axios', () => ({
   authenticatedAxios: () => ({
+    delete: mockDelete,
     get: mockGet,
+    patch: mockPatch,
     post: mockPost,
     put: mockPut,
-    delete: mockDelete,
-    patch: mockPatch,
   }),
 }))
 
@@ -42,12 +42,12 @@ import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
 import { ValidationError } from '@/errors/domain/ValidationError'
 import {
   type TenantRequestDetailFields,
-  type TenantRequestId,
+  toTenantRequestId,
 } from '@/models/tenantrequest.model'
 import { tenantRequestService } from '@/services/tenantrequest.service'
 
 describe('tenantRequestService', () => {
-  const requestId = '123' as TenantRequestId
+  const requestId = toTenantRequestId('123')
 
   const fakeUser = makeUser()
 

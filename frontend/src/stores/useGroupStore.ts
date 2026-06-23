@@ -1,9 +1,12 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
+import { groupMapper } from '@/mappers/group.mapper'
+import { groupServiceMapper } from '@/mappers/groupservice.mapper'
+import { groupUserMapper } from '@/mappers/groupuser.mapper'
 import { Group, type GroupId } from '@/models/group.model'
 import { GroupService } from '@/models/groupservice.model'
-import { GroupUser, type GroupUserId } from '@/models/groupuser.model'
+import { type GroupUserId } from '@/models/groupuser.model'
 import { type TenantId } from '@/models/tenant.model'
 import { User } from '@/models/user.model'
 import { groupService } from '@/services/group.service'
@@ -25,7 +28,7 @@ export const useGroupStore = defineStore('group', () => {
    * @param group - The group to insert or update.
    * @returns The inserted or updated group.
    */
-  function upsertGroup(group: Group): Group {
+  const upsertGroup = (group: Group): Group => {
     const index = groups.value.findIndex((g) => g.id === group.id)
     if (index === -1) {
       groups.value.push(group)
@@ -52,7 +55,7 @@ export const useGroupStore = defineStore('group', () => {
     description: string,
   ): Promise<Group> => {
     const response = await groupService.createGroup(tenantId, name, description)
-    const group = Group.fromApiData(response)
+    const group = groupMapper.fromApiData(response)
 
     return upsertGroup(group)
   }
@@ -85,7 +88,7 @@ export const useGroupStore = defineStore('group', () => {
     )
 
     // Update group users after adding
-    const addedUser = GroupUser.fromApiData(apiResponse)
+    const addedUser = groupUserMapper.fromApiData(apiResponse)
     group.groupUsers.push(addedUser)
   }
 
@@ -103,7 +106,7 @@ export const useGroupStore = defineStore('group', () => {
     loading.value = true
     try {
       const groupData = await groupService.getGroup(tenantId, groupId)
-      const group = Group.fromApiData(groupData)
+      const group = groupMapper.fromApiData(groupData)
 
       return upsertGroup(group)
     } finally {
@@ -122,7 +125,7 @@ export const useGroupStore = defineStore('group', () => {
     loading.value = true
     try {
       const groupList = await groupService.getTenantGroups(tenantId)
-      groups.value = groupList.map(Group.fromApiData)
+      groups.value = groupList.map(groupMapper.fromApiData)
     } finally {
       loading.value = false
     }
@@ -147,7 +150,7 @@ export const useGroupStore = defineStore('group', () => {
         tenantId,
         groupId,
       )
-      groupServices.value = groupServiceList.map(GroupService.fromApiData)
+      groupServices.value = groupServiceList.map(groupServiceMapper.fromApiData)
     } finally {
       loading.value = false
     }
@@ -159,7 +162,7 @@ export const useGroupStore = defineStore('group', () => {
    * @param groupId - The ID of the group.
    * @returns The group if found, otherwise undefined.
    */
-  function getGroup(groupId: GroupId): Group | undefined {
+  const getGroup = (groupId: GroupId): Group | undefined => {
     return groups.value.find((g) => g.id === groupId)
   }
 

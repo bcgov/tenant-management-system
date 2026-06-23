@@ -17,7 +17,7 @@ const emit = defineEmits<{
     :disabled="disabled"
     :prepend-icon="icon"
     class="cstar-button-tertiary"
-    data-test-id="button-tertiary"
+    data-testid="button-tertiary"
     variant="text"
     @click="emit('click')"
   >

@@ -36,7 +36,7 @@ describe('ButtonTertiary', () => {
 
   it('emits click event when clicked', async () => {
     const wrapper = mountComponent()
-    const btn = wrapper.find('[data-test-id="button-tertiary"]')
+    const btn = wrapper.find('[data-testid="button-tertiary"]')
 
     await btn.trigger('click')
 
@@ -45,7 +45,7 @@ describe('ButtonTertiary', () => {
 
   it('does not emit click event when disabled', async () => {
     const wrapper = mountComponent({ disabled: true })
-    const btn = wrapper.find('[data-test-id="button-tertiary"]')
+    const btn = wrapper.find('[data-testid="button-tertiary"]')
 
     await btn.trigger('click')
 

@@ -90,7 +90,7 @@ describe('userService', () => {
       expect(mockGet).toHaveBeenCalledWith(
         '/users/bcgovssousers/bceid/search',
         {
-          params: { displayName: displayName, bceidType: 'both' },
+          params: { displayName: displayName, bceidType: 'business' },
         },
       )
     })
@@ -105,7 +105,7 @@ describe('userService', () => {
       expect(mockGet).toHaveBeenCalledWith(
         '/users/bcgovssousers/bceid/search',
         {
-          params: { displayName: displayName, bceidType: 'both' },
+          params: { displayName: displayName, bceidType: 'business' },
         },
       )
     })
@@ -120,7 +120,7 @@ describe('userService', () => {
       expect(mockGet).toHaveBeenCalledWith(
         '/users/bcgovssousers/bceid/search',
         {
-          params: { displayName: partialName, bceidType: 'both' },
+          params: { displayName: partialName, bceidType: 'business' },
         },
       )
     })
@@ -157,7 +157,7 @@ describe('userService', () => {
       expect(mockGet).toHaveBeenCalledWith(
         '/users/bcgovssousers/bceid/search',
         {
-          params: { email: email, bceidType: 'both' },
+          params: { email: email, bceidType: 'business' },
         },
       )
     })
@@ -172,7 +172,7 @@ describe('userService', () => {
       expect(mockGet).toHaveBeenCalledWith(
         '/users/bcgovssousers/bceid/search',
         {
-          params: { email: email, bceidType: 'both' },
+          params: { email: email, bceidType: 'business' },
         },
       )
     })
@@ -187,7 +187,7 @@ describe('userService', () => {
       expect(mockGet).toHaveBeenCalledWith(
         '/users/bcgovssousers/bceid/search',
         {
-          params: { email: partialEmail, bceidType: 'both' },
+          params: { email: partialEmail, bceidType: 'business' },
         },
       )
     })

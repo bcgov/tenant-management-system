@@ -1,7 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
-import { User, type UserSearchApiData } from '@/models/user.model'
+import { userMapper, type UserSearchApiData } from '@/mappers/user.mapper'
+import { User } from '@/models/user.model'
 import { userService } from '@/services/user.service'
 import {
   type BCeIDSearchType,
@@ -26,10 +27,10 @@ export const useUserStore = defineStore('user', () => {
    * @returns A promise that resolves to an array of user data.
    * @throws {Error} If the search type is invalid.
    */
-  async function _searchBceidUsers(
+  const _searchBceidUsers = async (
     searchType: BCeIDSearchType,
     searchValue: string,
-  ) {
+  ) => {
     loading.value = true
     try {
       let userSearchData: UserSearchApiData[] = []
@@ -42,7 +43,7 @@ export const useUserStore = defineStore('user', () => {
           break
       }
 
-      searchResults.value = userSearchData.map(User.fromSearchData)
+      searchResults.value = userSearchData.map(userMapper.fromSearchData)
 
       return searchResults.value
     } finally {
@@ -58,10 +59,10 @@ export const useUserStore = defineStore('user', () => {
    * @returns A promise that resolves to an array of User objects.
    * @throws {Error} If the search type is invalid.
    */
-  async function _searchIdirUsers(
+  const _searchIdirUsers = async (
     searchType: IdirSearchType,
     searchValue: string,
-  ): Promise<User[]> {
+  ): Promise<User[]> => {
     loading.value = true
     try {
       let userSearchData: UserSearchApiData[] = []
@@ -77,7 +78,7 @@ export const useUserStore = defineStore('user', () => {
           break
       }
 
-      searchResults.value = userSearchData.map(User.fromSearchData)
+      searchResults.value = userSearchData.map(userMapper.fromSearchData)
 
       return searchResults.value
     } finally {
@@ -91,7 +92,7 @@ export const useUserStore = defineStore('user', () => {
    * @param displayName - The display name substring to search.
    * @returns A promise that resolves to an array of user data.
    */
-  async function searchBCeIDDisplayName(displayName: string) {
+  const searchBCeIDDisplayName = async (displayName: string) => {
     return _searchBceidUsers(BCEID_SEARCH_TYPE.DISPLAY_NAME.value, displayName)
   }
 
@@ -101,7 +102,7 @@ export const useUserStore = defineStore('user', () => {
    * @param email - The email address substring to search.
    * @returns A promise that resolves to an array of user data.
    */
-  async function searchBCeIDEmail(email: string) {
+  const searchBCeIDEmail = async (email: string) => {
     return _searchBceidUsers(BCEID_SEARCH_TYPE.EMAIL.value, email)
   }
 
@@ -111,7 +112,7 @@ export const useUserStore = defineStore('user', () => {
    * @param email - The email address substring to search.
    * @returns A promise that resolves to an array of user data.
    */
-  async function searchIdirEmail(email: string) {
+  const searchIdirEmail = async (email: string) => {
     return _searchIdirUsers(IDIR_SEARCH_TYPE.EMAIL.value, email)
   }
 
@@ -121,7 +122,7 @@ export const useUserStore = defineStore('user', () => {
    * @param firstName - The first name substring to search.
    * @returns A promise that resolves to an array of user data.
    */
-  async function searchIdirFirstName(firstName: string) {
+  const searchIdirFirstName = async (firstName: string) => {
     return _searchIdirUsers(IDIR_SEARCH_TYPE.FIRST_NAME.value, firstName)
   }
 
@@ -131,7 +132,7 @@ export const useUserStore = defineStore('user', () => {
    * @param lastName - The last name substring to search.
    * @returns A promise that resolves to an array of user data.
    */
-  async function searchIdirLastName(lastName: string) {
+  const searchIdirLastName = async (lastName: string) => {
     return _searchIdirUsers(IDIR_SEARCH_TYPE.LAST_NAME.value, lastName)
   }
 

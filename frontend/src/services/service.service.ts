@@ -1,12 +1,10 @@
 import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
 import { ValidationError } from '@/errors/domain/ValidationError'
+import { type GroupServiceApiData } from '@/mappers/groupservice.mapper'
+import { type ServiceApiData } from '@/mappers/service.mapper'
 import { type GroupId } from '@/models/group.model'
+import { type GroupService } from '@/models/groupservice.model'
 import {
-  type GroupService,
-  type GroupServiceApiData,
-} from '@/models/groupservice.model'
-import {
-  type ServiceApiData,
   type ServiceDetailFields,
   type ServiceId,
 } from '@/models/service.model'

@@ -22,7 +22,7 @@ const tenantStore = useTenantStore()
 
 // --- Component Methods -------------------------------------------------------
 
-async function handleAddService(serviceId: ServiceId) {
+const handleAddService = async (serviceId: ServiceId) => {
   try {
     await serviceStore.addServiceToTenant(props.tenantId, serviceId)
 

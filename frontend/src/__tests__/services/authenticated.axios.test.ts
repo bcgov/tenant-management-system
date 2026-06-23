@@ -22,7 +22,7 @@ beforeEach(() => {
   currentAuthStore = createMockAuthStore()
 })
 
-function getSuccessInterceptor() {
+const getSuccessInterceptor = () => {
   const instance = authenticatedAxios()
   const handler = instance.interceptors.request.handlers?.[0]
 
@@ -33,7 +33,7 @@ function getSuccessInterceptor() {
   return handler.fulfilled
 }
 
-function getResponseInterceptor() {
+const getResponseInterceptor = () => {
   const instance = authenticatedAxios()
   const handler = instance.interceptors.response.handlers?.[0]
 

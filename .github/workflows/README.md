@@ -348,18 +348,8 @@ Locate the SSO API client secret:
 1. Download or copy the API Account information
 1. Use the `clientSecret` value
 
-**`SONAR_TOKEN_BACKEND`**
+**`SONAR_TOKEN`**
 
-SonarCloud is being used for code quality, and the backend code has its own token.
+SonarCloud is being used for code quality.
 
-- Consume: `${{ secrets.SONAR_TOKEN_BACKEND }}`
-
-Unfortunately this token is tied to a user and not the project in SonarCloud.
-
-**`SONAR_TOKEN_FRONTEND`**
-
-SonarCloud is being used for code quality, and the frontend code has its own token.
-
-- Consume: `${{ secrets.SONAR_TOKEN_FRONTEND }}`
-
-Unfortunately this token is tied to a user and not the project in SonarCloud.
+- Consume: `${{ secrets.SONAR_TOKEN }}`
