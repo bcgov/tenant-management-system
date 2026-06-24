@@ -1,5 +1,5 @@
 import { test, expect, Page } from '@playwright/test'
-import { login } from '../support/login'
+import { login } from '../../support/login'
 
 let sharedPage: Page
 

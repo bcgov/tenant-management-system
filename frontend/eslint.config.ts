@@ -2,7 +2,6 @@ import tsEslint from '@typescript-eslint/eslint-plugin'
 import pluginVue from 'eslint-plugin-vue'
 import pluginVuetify from 'eslint-plugin-vuetify'
 import pluginVitest from '@vitest/eslint-plugin'
-import pluginCypress from 'eslint-plugin-cypress'
 import tsParser from '@typescript-eslint/parser'
 import vueParser from 'vue-eslint-parser'
 import skipFormatting from '@vue/eslint-config-prettier/skip-formatting'
@@ -73,7 +72,6 @@ const config = [
           './tsconfig.app.json',
           './tsconfig.node.json',
           './tsconfig.vitest.json',
-          'cypress/tsconfig.json',
         ],
         sourceType: 'module',
       },
@@ -180,15 +178,6 @@ const config = [
     },
     plugins: { ...pluginVitest.configs.recommended.plugins },
     rules: { ...pluginVitest.configs.recommended.rules },
-  },
-
-  // Cypress test files
-  {
-    ...pluginCypress.configs.recommended,
-    files: [
-      'cypress/e2e/**/*.{cy,spec}.{js,ts,jsx,tsx}',
-      'cypress/support/**/*.{js,ts,jsx,tsx}',
-    ],
   },
 
   ...pluginVuetify.configs['flat/recommended-v4'],

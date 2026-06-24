@@ -52,8 +52,8 @@ jobs:
     with:
       image_tag: ${{ github.event.number }}
     secrets:
-      Username: ${{ secrets.IDIR_USERNAME }}
-      Password: ${{ secrets.IDIR_PASSWORD }}
+      Username: ${{ secrets.E2E_IDIR_USERNAME }}
+      Password: ${{ secrets.E2E_IDIR_PASSWORD }}
       MFA_CODE: ${{ secrets.MFA_CODE }}
 
   zap:

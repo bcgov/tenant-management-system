@@ -1,7 +1,7 @@
 import { defineConfig } from '@playwright/test'
 
 export default defineConfig({
-  testDir: './tests',
+  testDir: './tests/e2e',
   fullyParallel: false,
   workers: 1,
 
@@ -15,7 +15,7 @@ export default defineConfig({
   },
 
   reporter: [['html', { open: 'never' }]],
-  outputDir: 'test-results',
+  outputDir: 'tests/e2e/test-results',
 
   projects: [
     {

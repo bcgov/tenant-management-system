@@ -4,16 +4,16 @@ import { authenticator } from '@otplib/preset-default'
 
 export function formsettings() {
   if (
-    !process.env.IDIR_USERNAME ||
-    !process.env.IDIR_PASSWORD ||
+    !process.env.E2E_IDIR_USERNAME ||
+    !process.env.E2E_IDIR_PASSWORD ||
     !process.env.MFA_CODE
   ) {
     throw new Error('Missing env variables')
   }
 
   return {
-    username: process.env.IDIR_USERNAME,
-    password: process.env.IDIR_PASSWORD,
+    username: process.env.E2E_IDIR_USERNAME,
+    password: process.env.E2E_IDIR_PASSWORD,
     mfaCode: process.env.MFA_CODE,
   }
 }

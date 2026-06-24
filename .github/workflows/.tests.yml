@@ -117,8 +117,8 @@ jobs:
 
         env:
           BASE_URL: https://${{ env.PREFIX }}.${{ env.DOMAIN }}/
-          IDIR_USERNAME: ${{ secrets.Username }}
-          IDIR_PASSWORD: ${{ secrets.Password }}
+          E2E_IDIR_USERNAME: ${{ secrets.Username }}
+          E2E_IDIR_PASSWORD: ${{ secrets.Password }}
           MFA_CODE: ${{ secrets.MFA_CODE }}
 
       - name: Upload Playwright report
