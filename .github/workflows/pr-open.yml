@@ -50,6 +50,8 @@ jobs:
       checks: write
     uses: ./.github/workflows/.tests.yml
     with:
+      prefix: cstar-${{ github.event.number }}-frontend
+      domain: apps.gold.devops.gov.bc.ca
       image_tag: ${{ github.event.number }}
     secrets:
       Username: ${{ secrets.E2E_IDIR_USERNAME }}
@@ -77,7 +79,7 @@ jobs:
         with:
           allow_issue_writing: false
           artifact_name: zap-${{ matrix.name }}-pr${{ github.event.number }}
-          target: https://cstar-${{ github.event.number }}.apps.gold.devops.gov.bc.ca/${{ matrix.path }}
+          target: https://cstar-${{ github.event.number }}-frontend.apps.gold.devops.gov.bc.ca/${{ matrix.path }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
   results:
