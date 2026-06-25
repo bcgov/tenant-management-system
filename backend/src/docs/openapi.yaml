@@ -6,9 +6,9 @@ info:
 servers:
   - url: http://localhost:4144
     description: Local dev server
-  - url: https://cstar-dev.apps.gold.devops.gov.bc.ca/api
+  - url: https://dev.connect.digital.gov.bc.ca/api
     description: DEV env api
-  - url: https://cstar-test.apps.gold.devops.gov.bc.ca/api
+  - url: https://test.connect.digital.gov.bc.ca/api
     description: TEST env api
 
 paths:
