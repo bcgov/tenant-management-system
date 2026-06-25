@@ -1948,6 +1948,38 @@ export class TMSRepository {
     return sharedServiceExists
   }
 
+  public async getActiveSharedServiceByClientIdentifier(
+    clientIdentifier: string,
+    transactionEntityManager?: EntityManager,
+  ) {
+    transactionEntityManager = transactionEntityManager
+      ? transactionEntityManager
+      : this.manager
+    return await transactionEntityManager
+      .createQueryBuilder(SharedService, 'ss')
+      .where('ss.clientIdentifier = :clientIdentifier', { clientIdentifier })
+      .andWhere('ss.isActive = :isActive', { isActive: true })
+      .getOne()
+  }
+
+  public async checkIfUserIsTenantMember(
+    tenantId: string,
+    ssoUserId: string,
+    transactionEntityManager?: EntityManager,
+  ) {
+    transactionEntityManager = transactionEntityManager
+      ? transactionEntityManager
+      : this.manager
+    return await transactionEntityManager
+      .createQueryBuilder()
+      .from(TenantUser, 'tu')
+      .innerJoin('tu.ssoUser', 'su')
+      .where('tu.tenant.id = :tenantId', { tenantId })
+      .andWhere('su.ssoUserId = :ssoUserId', { ssoUserId })
+      .andWhere('tu.isDeleted = :isDeleted', { isDeleted: false })
+      .getExists()
+  }
+
   public async checkIfSharedServiceDisplayNameExists(
     displayName: string,
     transactionEntityManager?: EntityManager,

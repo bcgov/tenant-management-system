@@ -1,5 +1,8 @@
 export class RoutesConstants {
   public static HEALTH = '/v1/health'
+  public static CREATE_ASSERTION = '/v1/assertions'
+  public static GET_ASSERTION_JWKS = '/v1/assertions/jwks'
+  public static GET_ASSERTION_WELL_KNOWN = '/v1/.well-known/cstar-assertions'
   public static CREATE_TENANTS = '/v1/tenants'
   public static ADD_TENANT_USERS = '/v1/tenants/:tenantId/users'
   public static GET_USER_TENANTS = '/v1/users/:ssoUserId/tenants'

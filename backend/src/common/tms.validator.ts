@@ -6,6 +6,13 @@ const idpTypeValidator = Joi.string()
   .required()
 
 export default {
+  createAssertion: {
+    body: Joi.object({
+      tenantId: Joi.string().guid().required(),
+      targetServiceClientId: Joi.string().min(1).max(55).required(),
+    }).options({ abortEarly: false, convert: false }),
+  },
+
   createTenant: {
     body: Joi.object({
       name: Joi.string()

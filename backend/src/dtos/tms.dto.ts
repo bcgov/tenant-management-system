@@ -2,6 +2,13 @@ import { TenantUser } from '../entities/TenantUser'
 import { TenantUserRole } from '../entities/TenantUserRole'
 import { IdpType } from '../common/tms.constants'
 
+export interface CreateAssertionInputDto {
+  tenantId: string
+  targetServiceClientId: string
+  sourceServiceClientId: string
+  ssoUserId: string
+}
+
 export interface CreateTenantInputDto {
   name: string
   ministryName: string

@@ -2,6 +2,7 @@ import { Application, NextFunction, Request, Response } from 'express'
 import { RoutesConstants } from '../common/routes.constants'
 import { TMSController } from '../controllers/tms.controller'
 import { TMController } from '../controllers/tm.controller'
+import { AssertionController } from '../controllers/assertion.controller'
 import { validate, ValidationError } from 'express-validation'
 import validator from '../common/tms.validator'
 import { checkJwt } from '../common/auth.mw'
@@ -14,6 +15,7 @@ import logger from '../common/logger'
 export class Routes {
   public tmsController: TMSController = new TMSController()
   public tmController: TMController = new TMController()
+  public assertionController: AssertionController = new AssertionController()
 
   public routes(app: Application) {
     // Proxy swagger docs endpoints to /v1/docs for access through frontend
@@ -31,6 +33,24 @@ export class Routes {
     app
       .route(RoutesConstants.HEALTH)
       .get((req: Request, res: Response) => this.tmsController.health(req, res))
+    app
+      .route(RoutesConstants.GET_ASSERTION_WELL_KNOWN)
+      .get((req: Request, res: Response) =>
+        this.assertionController.getAssertionWellKnown(req, res),
+      )
+    app
+      .route(RoutesConstants.GET_ASSERTION_JWKS)
+      .get((req: Request, res: Response) =>
+        this.assertionController.getAssertionJwks(req, res),
+      )
+    app
+      .route(RoutesConstants.CREATE_ASSERTION)
+      .post(
+        checkJwt({ sharedServiceAccess: true }),
+        validate(validator.createAssertion, {}, {}),
+        (req: Request, res: Response) =>
+          this.assertionController.createAssertion(req, res),
+      )
     app
       .route(RoutesConstants.CREATE_TENANTS)
       .post(

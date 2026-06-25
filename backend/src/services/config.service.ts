@@ -7,6 +7,13 @@ export class ConfigError extends Error {
 
 export interface AppConfig {
   allowedOrigins: string[]
+  assertions: {
+    expiresInSeconds: number
+    issuer: string
+    keyId: string
+    privateKey: string
+    publicKey: string
+  }
   bcgovSsoApi: {
     clientId: string
     clientSecret: string
@@ -41,12 +48,18 @@ export interface AppConfig {
  */
 function validateConfig(raw: unknown): AppConfig {
   const config = raw as Record<string, unknown>
+  const assertions = config.assertions as Record<string, unknown> | undefined
   const bcgovSsoApi = config.bcgovSsoApi as Record<string, unknown> | undefined
   const oidc = config.oidc as Record<string, unknown> | undefined
   const postgres = config.postgres as Record<string, unknown> | undefined
 
   const required: [string, unknown][] = [
     ['ALLOWED_ORIGINS', config.allowedOrigins],
+    ['ASSERTION_EXPIRES_IN_SECONDS', assertions?.expiresInSeconds],
+    ['ASSERTION_ISSUER', assertions?.issuer],
+    ['ASSERTION_KEY_ID', assertions?.keyId],
+    ['ASSERTION_PRIVATE_KEY', assertions?.privateKey],
+    ['ASSERTION_PUBLIC_KEY', assertions?.publicKey],
     ['BCGOV_SSO_API_CLIENT_ID', bcgovSsoApi?.clientId],
     ['BCGOV_SSO_API_CLIENT_SECRET', bcgovSsoApi?.clientSecret],
     ['BCGOV_SSO_API_URL', bcgovSsoApi?.url],
@@ -90,6 +103,15 @@ export function loadConfig() {
     allowedOrigins: process.env.ALLOWED_ORIGINS
       ? process.env.ALLOWED_ORIGINS.split(',')
       : ['*'],
+    assertions: {
+      expiresInSeconds: process.env.ASSERTION_EXPIRES_IN_SECONDS
+        ? Number.parseInt(process.env.ASSERTION_EXPIRES_IN_SECONDS, 10)
+        : 600,
+      issuer: process.env.ASSERTION_ISSUER,
+      keyId: process.env.ASSERTION_KEY_ID,
+      privateKey: process.env.ASSERTION_PRIVATE_KEY,
+      publicKey: process.env.ASSERTION_PUBLIC_KEY,
+    },
     bcgovSsoApi: {
       clientId: process.env.BCGOV_SSO_API_CLIENT_ID,
       clientSecret: process.env.BCGOV_SSO_API_CLIENT_SECRET,
