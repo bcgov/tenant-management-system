@@ -37,6 +37,138 @@ paths:
         '503':
           description: Service is unhealthy
 
+  /v1/assertions:
+    post:
+      summary: Create a CSTAR tenant assertion
+      description: |
+        Authentication: Connected service user token required.
+
+        Creates a short-lived, stateless JWT signed by CSTAR for use when one
+        connected service invokes another connected service.
+
+        The source service client identifier and user identifier are derived
+        from the bearer token. The request identifies the tenant context and
+        target service. CSTAR issues the assertion only when:
+
+        - the source service is registered and active;
+        - the target service is registered and active;
+        - both services are associated with the requested tenant; and
+        - the authenticated user is an active member of the requested tenant.
+
+        The assertion audience is the target service client identifier. The
+        source service is represented by the `azp` claim. The assertion does
+        not contain roles for the target service.
+
+        The target service must validate the assertion signature against the
+        CSTAR JWKS, and validate the issuer, audience, algorithm and expiry
+        before trusting the tenant identifier.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAssertionRequest'
+            example:
+              tenantId: 'ed6c7cd9-3698-46b1-9074-889518abe3ca'
+              targetServiceClientId: 'chefs-frontend-5299-66'
+      responses:
+        '201':
+          description: Assertion successfully created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateAssertionResponse'
+              example:
+                data:
+                  assertion: 'eyJhbGciOiJSUzI1NiIsImtpZCI6ImFzc2VydGlvbi1rZXktMSIsInR5cCI6IkpXVCJ9...'
+                  tokenType: 'Bearer'
+                  expiresIn: 600
+                  expiresAt: '2026-06-25T18:19:27.000Z'
+        '400':
+          description: Invalid request or required token claim is missing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestResponse'
+        '401':
+          description: Bearer token is missing or invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        '403':
+          description: Source service, target service, or user is not associated with the requested tenant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        '404':
+          description: Source or target shared service was not found or is inactive
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+        '500':
+          description: Assertion signing failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+
+  /v1/assertions/jwks:
+    get:
+      summary: Get CSTAR assertion signing keys
+      description: |
+        Authentication: Not required.
+
+        Returns the public JSON Web Key Set used by connected services to
+        validate CSTAR assertion signatures. Private key material is never
+        returned.
+      security: []
+      responses:
+        '200':
+          description: CSTAR assertion public keys
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssertionJwks'
+        '500':
+          description: Public key could not be loaded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+
+  /v1/.well-known/cstar-assertions:
+    get:
+      summary: Get CSTAR assertion configuration
+      description: |
+        Authentication: Not required.
+
+        Returns the issuer, assertion endpoint, JWKS endpoint and supported
+        signing algorithms for CSTAR assertions.
+      security: []
+      responses:
+        '200':
+          description: CSTAR assertion configuration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssertionWellKnown'
+              example:
+                issuer: 'https://connect.digital.gov.bc.ca/api'
+                jwks_uri: 'https://connect.digital.gov.bc.ca/api/v1/assertions/jwks'
+                assertion_endpoint: 'https://connect.digital.gov.bc.ca/api/v1/assertions'
+                id_token_signing_alg_values_supported: ['RS256']
+        '500':
+          description: Assertion configuration could not be loaded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+
   /v1/tenants:
     post:
       summary: Create a new tenant
@@ -3322,6 +3454,133 @@ paths:
 
 components:
   schemas:
+    CreateAssertionRequest:
+      type: object
+      required:
+        - tenantId
+        - targetServiceClientId
+      additionalProperties: false
+      properties:
+        tenantId:
+          type: string
+          format: uuid
+          description: Tenant context requested for the target service.
+          example: 'ed6c7cd9-3698-46b1-9074-889518abe3ca'
+        targetServiceClientId:
+          type: string
+          minLength: 1
+          maxLength: 55
+          description: |
+            Registered client identifier for the target connected service.
+            This value becomes the assertion `aud` claim.
+          example: 'chefs-frontend-5299-66'
+
+    CreateAssertionResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: object
+          required:
+            - assertion
+            - tokenType
+            - expiresIn
+            - expiresAt
+          properties:
+            assertion:
+              type: string
+              format: jwt
+              description: |
+                RS256-signed CSTAR JWT. The token contains standard `iss`,
+                `sub`, `aud`, `iat`, `exp` and `jti` claims, the source service
+                client identifier in `azp`, and the tenant identifier in
+                `cstar.tenantId`.
+            tokenType:
+              type: string
+              enum: ['Bearer']
+              example: 'Bearer'
+            expiresIn:
+              type: integer
+              minimum: 1
+              description: Assertion lifetime in seconds.
+              example: 600
+            expiresAt:
+              type: string
+              format: date-time
+              description: Assertion expiry time in UTC.
+              example: '2026-06-25T18:19:27.000Z'
+
+    AssertionWellKnown:
+      type: object
+      required:
+        - issuer
+        - jwks_uri
+        - assertion_endpoint
+        - id_token_signing_alg_values_supported
+      properties:
+        issuer:
+          type: string
+          format: uri
+          description: Expected value of the assertion `iss` claim.
+        jwks_uri:
+          type: string
+          format: uri
+          description: Public JWKS endpoint used to validate assertion signatures.
+        assertion_endpoint:
+          type: string
+          format: uri
+          description: Endpoint used to create CSTAR assertions.
+        id_token_signing_alg_values_supported:
+          type: array
+          items:
+            type: string
+            enum: ['RS256']
+
+    AssertionJwks:
+      type: object
+      required:
+        - keys
+      properties:
+        keys:
+          type: array
+          items:
+            $ref: '#/components/schemas/AssertionJwk'
+
+    AssertionJwk:
+      type: object
+      required:
+        - kty
+        - n
+        - e
+        - alg
+        - kid
+        - use
+      properties:
+        kty:
+          type: string
+          enum: ['RSA']
+          example: 'RSA'
+        n:
+          type: string
+          description: Base64url-encoded RSA modulus.
+        e:
+          type: string
+          description: Base64url-encoded RSA exponent.
+          example: 'AQAB'
+        alg:
+          type: string
+          enum: ['RS256']
+          example: 'RS256'
+        kid:
+          type: string
+          description: Key identifier matched against the assertion JWT header.
+          example: 'assertion-key-1'
+        use:
+          type: string
+          enum: ['sig']
+          example: 'sig'
+
     BasicUser:
       type: object
       required:
