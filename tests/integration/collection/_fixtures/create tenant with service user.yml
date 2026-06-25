@@ -19,6 +19,7 @@ http:
           "displayName": "Saramago, Salman CITZ:EX",
           "email": "Salman.Saramago@gov.bc.ca",
           "firstName": "Salman",
+          "idpType": "idir",
           "lastName": "Saramago",
           "ssoUserId": "23BCA2E3B9C6408595322A138F9EF5CA",
           "userName": "SSARAMAG"
