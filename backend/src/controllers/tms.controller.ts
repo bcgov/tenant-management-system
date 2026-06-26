@@ -4,7 +4,6 @@ import { ErrorHandler, getErrorMessage } from '../common/error.handler'
 import { NotFoundError } from '../errors/NotFoundError'
 import { ConflictError } from '../errors/ConflictError'
 import { BadRequestError } from '../errors/BadRequestError'
-import logger from '../common/logger'
 import { ForbiddenError } from '../errors/ForbiddenError'
 
 export class TMSController {
@@ -24,7 +23,6 @@ export class TMSController {
       const tenantResponse = await this.tmsService.createTenant(req)
       res.status(201).send(tenantResponse)
     } catch (error: unknown) {
-      logger.error(getErrorMessage(error))
       if (error instanceof ConflictError) {
         this.errorHandler.generalError(
           res,
@@ -50,7 +48,6 @@ export class TMSController {
       const response = await this.tmsService.addTenantUser(req)
       res.status(201).send(response)
     } catch (error: unknown) {
-      logger.error(getErrorMessage(error))
       if (error instanceof NotFoundError) {
         this.errorHandler.generalError(
           res,
@@ -84,7 +81,6 @@ export class TMSController {
       const tenants = await this.tmsService.getTenantsForUser(req)
       res.status(200).send(tenants)
     } catch (error: unknown) {
-      logger.error(getErrorMessage(error))
       this.errorHandler.generalError(
         res,
         'Error occurred getting tenants for a user',
@@ -100,7 +96,6 @@ export class TMSController {
       const users = await this.tmsService.getUsersForTenant(req)
       res.status(200).send(users)
     } catch (error: unknown) {
-      logger.error(getErrorMessage(error))
       this.errorHandler.generalError(
         res,
         'Error occurred getting users for a tenant',
@@ -116,7 +111,6 @@ export class TMSController {
       const role = await this.tmsService.createRoles(req)
       res.status(201).send(role)
     } catch (error: unknown) {
-      logger.error(getErrorMessage(error))
       if (error instanceof NotFoundError) {
         this.errorHandler.generalError(
           res,
@@ -150,7 +144,6 @@ export class TMSController {
       const userRole = await this.tmsService.assignUserRoles(req)
       res.status(201).send(userRole)
     } catch (error: unknown) {
-      logger.error(getErrorMessage(error))
       if (error instanceof NotFoundError) {
         this.errorHandler.generalError(
           res,
@@ -184,7 +177,6 @@ export class TMSController {
       const roles = await this.tmsService.getTenantRoles(req)
       return res.status(200).send(roles)
     } catch (error: unknown) {
-      logger.error(getErrorMessage(error))
       if (error instanceof NotFoundError) {
         this.errorHandler.generalError(
           res,
@@ -210,7 +202,6 @@ export class TMSController {
       const roles = await this.tmsService.getUserRoles(req)
       return res.status(200).send(roles)
     } catch (error: unknown) {
-      logger.error(getErrorMessage(error))
       if (error instanceof NotFoundError) {
         this.errorHandler.generalError(
           res,
@@ -236,7 +227,6 @@ export class TMSController {
       await this.tmsService.unassignUserRoles(req)
       return res.status(204).send()
     } catch (error: unknown) {
-      logger.error(getErrorMessage(error))
       if (error instanceof NotFoundError) {
         this.errorHandler.generalError(
           res,
@@ -270,7 +260,6 @@ export class TMSController {
       const users = await this.tmsService.searchBCGOVSSOUsers(req)
       return res.status(200).send(users)
     } catch (error: unknown) {
-      logger.error(getErrorMessage(error))
       if (error instanceof BadRequestError) {
         this.errorHandler.generalError(
           res,
@@ -296,7 +285,6 @@ export class TMSController {
       const users = await this.tmsService.searchBCGOVSSOBceidUsers(req)
       return res.status(200).send(users)
     } catch (error: unknown) {
-      logger.error(getErrorMessage(error))
       if (error instanceof BadRequestError) {
         this.errorHandler.generalError(
           res,
@@ -322,7 +310,6 @@ export class TMSController {
       const tenant = await this.tmsService.getTenant(req)
       return res.status(200).send(tenant)
     } catch (error: unknown) {
-      logger.error(getErrorMessage(error))
       if (error instanceof NotFoundError) {
         this.errorHandler.generalError(
           res,
@@ -356,7 +343,6 @@ export class TMSController {
       const tenant = await this.tmsService.updateTenant(req)
       return res.status(200).send(tenant)
     } catch (error: unknown) {
-      logger.error(getErrorMessage(error))
       if (error instanceof NotFoundError) {
         this.errorHandler.generalError(
           res,
@@ -390,7 +376,6 @@ export class TMSController {
       const roles = await this.tmsService.getRolesForSSOUser(req)
       return res.status(200).send(roles)
     } catch (error: unknown) {
-      logger.error(getErrorMessage(error))
       if (error instanceof NotFoundError) {
         this.errorHandler.generalError(
           res,
@@ -416,7 +401,6 @@ export class TMSController {
       const tenantRequest = await this.tmsService.createTenantRequest(req)
       res.status(201).send(tenantRequest)
     } catch (error: unknown) {
-      logger.error(getErrorMessage(error))
       if (error instanceof ConflictError) {
         this.errorHandler.generalError(
           res,
@@ -442,7 +426,6 @@ export class TMSController {
       const response = await this.tmsService.updateTenantRequestStatus(req)
       res.status(200).send(response)
     } catch (error: unknown) {
-      logger.error(getErrorMessage(error))
       if (error instanceof NotFoundError) {
         this.errorHandler.generalError(
           res,
@@ -477,7 +460,6 @@ export class TMSController {
       const response = await this.tmsService.getTenantRequests(req)
       res.status(200).send(response)
     } catch (error: unknown) {
-      logger.error(getErrorMessage(error))
       this.errorHandler.generalError(
         res,
         'Error occurred getting tenant requests',
@@ -493,7 +475,6 @@ export class TMSController {
       const response = await this.tmsService.getUserTenantRequests(req)
       res.status(200).send(response)
     } catch (error: unknown) {
-      logger.error(getErrorMessage(error))
       this.errorHandler.generalError(
         res,
         'Error occurred getting tenant requests',
@@ -509,7 +490,6 @@ export class TMSController {
       const sharedService = await this.tmsService.createSharedService(req)
       res.status(201).send(sharedService)
     } catch (error: unknown) {
-      logger.error(getErrorMessage(error))
       if (error instanceof ConflictError) {
         this.errorHandler.generalError(
           res,
@@ -535,7 +515,6 @@ export class TMSController {
       const sharedService = await this.tmsService.updateSharedService(req)
       res.status(200).send(sharedService)
     } catch (error: unknown) {
-      logger.error(getErrorMessage(error))
       if (error instanceof ConflictError) {
         this.errorHandler.generalError(
           res,
@@ -569,7 +548,6 @@ export class TMSController {
       const result = await this.tmsService.addSharedServiceRoles(req)
       res.status(201).send(result)
     } catch (error: unknown) {
-      logger.error(getErrorMessage(error))
       if (error instanceof ConflictError) {
         this.errorHandler.generalError(
           res,
@@ -603,7 +581,6 @@ export class TMSController {
       const result = await this.tmsService.updateSharedServiceRole(req)
       res.status(200).send(result)
     } catch (error: unknown) {
-      logger.error(getErrorMessage(error))
       if (error instanceof ConflictError) {
         this.errorHandler.generalError(
           res,
@@ -637,7 +614,6 @@ export class TMSController {
       const result = await this.tmsService.updateSharedServiceStatus(req)
       res.status(200).send(result)
     } catch (error: unknown) {
-      logger.error(getErrorMessage(error))
       if (error instanceof ConflictError) {
         this.errorHandler.generalError(
           res,
@@ -671,7 +647,6 @@ export class TMSController {
       await this.tmsService.associateSharedServiceToTenant(req)
       res.status(201).send()
     } catch (error: unknown) {
-      logger.error(getErrorMessage(error))
       if (error instanceof NotFoundError) {
         this.errorHandler.generalError(
           res,
@@ -705,7 +680,6 @@ export class TMSController {
       const sharedServices = await this.tmsService.getAllActiveSharedServices()
       res.status(200).send(sharedServices)
     } catch (error: unknown) {
-      logger.error(getErrorMessage(error))
       this.errorHandler.generalError(
         res,
         'Error occurred getting active shared services',
@@ -722,7 +696,6 @@ export class TMSController {
         await this.tmsService.getSharedServicesForTenant(req)
       res.status(200).send(sharedServices)
     } catch (error: unknown) {
-      logger.error(getErrorMessage(error))
       this.errorHandler.generalError(
         res,
         'Error occurred getting shared services for tenant',
@@ -738,7 +711,6 @@ export class TMSController {
       await this.tmsService.removeTenantUser(req)
       res.status(204).send()
     } catch (error: unknown) {
-      logger.error(getErrorMessage(error))
       if (error instanceof NotFoundError) {
         this.errorHandler.generalError(
           res,
@@ -780,7 +752,6 @@ export class TMSController {
       const tenantUserResponse = await this.tmsService.getTenantUser(req)
       res.status(200).send(tenantUserResponse)
     } catch (error: unknown) {
-      logger.error(getErrorMessage(error))
       if (error instanceof NotFoundError) {
         this.errorHandler.generalError(
           res,

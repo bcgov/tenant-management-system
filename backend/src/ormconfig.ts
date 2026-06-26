@@ -17,6 +17,7 @@ const dbConfig = {
   synchronize: false,
   logging: config.logLevel === 'debug',
   logger: new TypeOrmLogger(),
+  maxQueryExecutionTime: 1000,
   entities: [path.join(__dirname, 'entities/**/*.{js,ts}')],
   migrations: [path.join(__dirname, 'migrations/**/*.{js,ts}')],
   subscribers: [path.join(__dirname, 'subscriber/**/*.{js,ts}')],

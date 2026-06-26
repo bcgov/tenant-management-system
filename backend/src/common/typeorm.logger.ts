@@ -13,8 +13,8 @@ export class TypeOrmLogger implements Logger {
     })
   }
 
-  public logQuerySlow(time: number, query: string) {
-    logger.warn('Slow database query', { query, time })
+  public logQuerySlow(time: number, _query: string) {
+    logger.error('Slow database query', { time })
   }
 
   public logSchemaBuild(message: string) {
@@ -32,7 +32,7 @@ export class TypeOrmLogger implements Logger {
   ) {
     const text = String(message)
     if (level === 'warn') {
-      logger.warn(text)
+      logger.debug(text)
       return
     }
     logger.debug(text)

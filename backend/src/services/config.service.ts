@@ -56,7 +56,6 @@ function validateConfig(raw: unknown): AppConfig {
     ['BCGOV_TOKEN_URL', bcgovSsoApi?.tokenUrl],
     ['ISSUER', oidc?.issuer],
     ['JWKS_URI', oidc?.jwksUri],
-    ['LOG_LEVEL', config.logLevel],
     ['PORT', config.port],
     ['POSTGRES_DATABASE', postgres?.database],
     ['POSTGRES_HOST', postgres?.host],

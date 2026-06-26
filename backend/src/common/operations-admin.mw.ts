@@ -12,7 +12,7 @@ export const checkOperationsAdmin = (
     const roles = req.decodedJwt?.client_roles || []
 
     if (!roles.includes('TMS.OPERATIONS_ADMIN')) {
-      logger.warn(
+      logger.error(
         'Access denied: User does not have required role: TMS.OPERATIONS_ADMIN',
         {
           userId: req.decodedJwt?.idir_user_guid,
