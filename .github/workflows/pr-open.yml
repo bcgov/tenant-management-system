@@ -42,10 +42,7 @@ jobs:
       release_name: cstar-${{ github.event.number }}
       tag: ${{ github.event.number }}
       db_user: app-${{ github.event.number }}
-      params:
-        --set global.secrets.persist=false
-        --set frontend.ingress.tls=""
-  
+
   tests:
     name: Tests
     needs: [deploys-gold-dev]
@@ -56,6 +53,10 @@ jobs:
       prefix: cstar-${{ github.event.number }}-frontend
       domain: apps.gold.devops.gov.bc.ca
       image_tag: ${{ github.event.number }}
+    secrets:
+      Username: ${{ secrets.E2E_IDIR_USERNAME }}
+      Password: ${{ secrets.E2E_IDIR_PASSWORD }}
+      MFA_CODE: ${{ secrets.MFA_CODE }}
 
   zap:
     name: ZAP Security Scan

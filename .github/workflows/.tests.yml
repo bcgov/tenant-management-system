@@ -20,6 +20,13 @@ on:
         description: PR number, dev, test or prod
         default: ${{ github.event.number }}-frontend
         type: string
+    secrets:
+      Username:
+        required: true
+      Password:
+        required: true
+      MFA_CODE:
+        required: true
 
 env:
   DOMAIN: ${{ inputs.domain }}
@@ -97,7 +104,7 @@ jobs:
       run:
         working-directory: frontend
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v6
         name: Checkout
@@ -110,22 +117,34 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run Tests
-        env:
-          CYPRESS_BASE_URL: https://${{ env.PREFIX }}.${{ env.DOMAIN }}/
-          CI: 'true'
-          TERM: xterm
-        run: |
-          npx cypress run
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
 
-      - uses: actions/upload-artifact@v6
-        if: failure()
-        name: upload results
+      - name: Run Playwright tests
+        run: npx playwright test
+
+        env:
+          BASE_URL: https://${{ env.PREFIX }}.${{ env.DOMAIN }}/
+          E2E_IDIR_USERNAME: ${{ secrets.Username }}
+          E2E_IDIR_PASSWORD: ${{ secrets.Password }}
+          MFA_CODE: ${{ secrets.MFA_CODE }}
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v6
+        if: always()
         with:
-          name: cypress-results
+          name: playwright-report
           path: |
-            ./frontend/cypress/screenshots
-            ./frontend/cypress/videos
+            ./frontend/playwright-report
+          if-no-files-found: ignore
+
+      - name: Upload Playwright screenshots on failure
+        uses: actions/upload-artifact@v6
+        if: failure()
+        with:
+          name: playwright-screenshots
+          path: |
+            ./frontend/test-results
           retention-days: 7
 
   load-tests:
