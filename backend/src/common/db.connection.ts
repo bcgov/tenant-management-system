@@ -1,4 +1,5 @@
 import { DataSource } from 'typeorm'
+import logger from './logger'
 
 const config = require('../ormconfig')
 
@@ -10,7 +11,7 @@ export const connection = AppDataSource
 
 AppDataSource.initialize()
   .then(async () => {
-    console.warn(`Connected to database: ${config.host}`)
+    logger.info('Connected to database', { host: config.host })
 
     // Create the extension for calling uuid_generate_v4() in the migrations.
     // Note that this extension is not needed because modern PostgreSQL has the
@@ -26,8 +27,11 @@ AppDataSource.initialize()
     // Set the search path to always use tms schema first
     await AppDataSource.query(`SET search_path TO "${config.schema}", public`)
 
-    console.warn(`Using schema: ${config.schema}`)
+    logger.info('Database schema configured', { schema: config.schema })
   })
-  .catch((err) => {
-    console.error('Error during Data Source initialization', err)
+  .catch((error: unknown) => {
+    logger.error('Database initialization failed', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    })
   })

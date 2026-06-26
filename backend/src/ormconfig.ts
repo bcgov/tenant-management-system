@@ -1,5 +1,6 @@
 import path from 'node:path'
 import { config, loadConfig } from './services/config.service'
+import { TypeOrmLogger } from './common/typeorm.logger'
 
 // Load the configuration when running for migrations. When running as part of
 // the app this does nothing as main.ts has already loaded the configuration.
@@ -14,7 +15,8 @@ const dbConfig = {
   database: config.postgres.database,
   schema: 'tms',
   synchronize: false,
-  logging: true,
+  logging: config.logLevel === 'debug',
+  logger: new TypeOrmLogger(),
   entities: [path.join(__dirname, 'entities/**/*.{js,ts}')],
   migrations: [path.join(__dirname, 'migrations/**/*.{js,ts}')],
   subscribers: [path.join(__dirname, 'subscriber/**/*.{js,ts}')],
