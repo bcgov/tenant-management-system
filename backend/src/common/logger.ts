@@ -30,6 +30,9 @@ function getLogger(): winston.Logger {
 }
 
 const loggerWithContext = {
+  debug: (message: string, meta = {}) => {
+    getLogger().debug(message, { requestId: rTracer.id(), ...meta })
+  },
   info: (message: string, meta = {}) => {
     getLogger().info(message, { requestId: rTracer.id(), ...meta })
   },

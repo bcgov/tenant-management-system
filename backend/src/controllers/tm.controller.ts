@@ -4,7 +4,6 @@ import { ErrorHandler, getErrorMessage } from '../common/error.handler'
 import { NotFoundError } from '../errors/NotFoundError'
 import { ConflictError } from '../errors/ConflictError'
 import { UnauthorizedError } from '../errors/UnauthorizedError'
-import logger from '../common/logger'
 
 export class TMController {
   tmService: TMService = new TMService()
@@ -15,7 +14,6 @@ export class TMController {
       const groupResponse = await this.tmService.createGroup(req)
       res.status(201).send(groupResponse)
     } catch (error: unknown) {
-      logger.error(getErrorMessage(error))
       if (error instanceof ConflictError) {
         this.errorHandler.generalError(
           res,
@@ -49,7 +47,6 @@ export class TMController {
       const groupUserResponse = await this.tmService.addGroupUser(req)
       res.status(201).send(groupUserResponse)
     } catch (error: unknown) {
-      logger.error(getErrorMessage(error))
       if (error instanceof ConflictError) {
         this.errorHandler.generalError(
           res,
@@ -83,7 +80,6 @@ export class TMController {
       const groupResponse = await this.tmService.updateGroup(req)
       res.status(200).send(groupResponse)
     } catch (error: unknown) {
-      logger.error(getErrorMessage(error))
       if (error instanceof ConflictError) {
         this.errorHandler.generalError(
           res,
@@ -117,7 +113,6 @@ export class TMController {
       await this.tmService.removeGroupUser(req)
       res.status(204).send()
     } catch (error: unknown) {
-      logger.error(getErrorMessage(error))
       if (error instanceof ConflictError) {
         this.errorHandler.generalError(
           res,
@@ -151,7 +146,6 @@ export class TMController {
       const groupResponse = await this.tmService.getGroup(req)
       res.status(200).send(groupResponse)
     } catch (error: unknown) {
-      logger.error(getErrorMessage(error))
       if (error instanceof NotFoundError) {
         this.errorHandler.generalError(
           res,
@@ -177,7 +171,6 @@ export class TMController {
       const groupsResponse = await this.tmService.getTenantGroups(req)
       res.status(200).send(groupsResponse)
     } catch (error: unknown) {
-      logger.error(getErrorMessage(error))
       if (error instanceof NotFoundError) {
         this.errorHandler.generalError(
           res,
@@ -204,7 +197,6 @@ export class TMController {
         await this.tmService.getSharedServiceRolesForGroup(req)
       res.status(200).send(sharedServiceRolesResponse)
     } catch (error: unknown) {
-      logger.error(getErrorMessage(error))
       if (error instanceof NotFoundError) {
         this.errorHandler.generalError(
           res,
@@ -231,7 +223,6 @@ export class TMController {
         await this.tmService.updateSharedServiceRolesForGroup(req)
       res.status(200).send(sharedServiceRolesResponse)
     } catch (error: unknown) {
-      logger.error(getErrorMessage(error))
       if (error instanceof NotFoundError) {
         this.errorHandler.generalError(
           res,
@@ -269,7 +260,6 @@ export class TMController {
         await this.tmService.getUserGroupsWithSharedServiceRoles(req)
       res.status(200).send(result)
     } catch (error: unknown) {
-      logger.error(getErrorMessage(error))
       if (error instanceof NotFoundError) {
         this.errorHandler.generalError(
           res,
@@ -303,7 +293,6 @@ export class TMController {
       const result = await this.tmService.getEffectiveSharedServiceRoles(req)
       res.status(200).send(result)
     } catch (error: unknown) {
-      logger.error(getErrorMessage(error))
       if (error instanceof NotFoundError) {
         this.errorHandler.generalError(
           res,

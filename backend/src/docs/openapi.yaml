@@ -6,9 +6,9 @@ info:
 servers:
   - url: http://localhost:4144
     description: Local dev server
-  - url: https://cstar-dev.apps.gold.devops.gov.bc.ca/api
+  - url: https://dev.connect.digital.gov.bc.ca/api
     description: DEV env api
-  - url: https://cstar-test.apps.gold.devops.gov.bc.ca/api
+  - url: https://test.connect.digital.gov.bc.ca/api
     description: TEST env api
 
 paths:
@@ -852,7 +852,8 @@ paths:
                         email: morgan.business@example.com
                         username: 1234567890abcdef1234567890abcdef@bceidbusiness
                         attributes:
-                          bceid_business_guid: ['9F8E7D6C5B4A39281726354433221100']
+                          bceid_business_guid:
+                            ['9F8E7D6C5B4A39281726354433221100']
                           bceid_business_name: ['Example Business']
                           bceid_user_guid: ['1234567890ABCDEF1234567890ABCDEF']
                           bceid_username: ['businessuser1']
@@ -1695,8 +1696,7 @@ paths:
                         type: array
                         items:
                           type: string
-                          enum:
-                            ['idir', 'azureidir', 'bceidbusiness']
+                          enum: ['idir', 'azureidir', 'bceidbusiness']
                         nullable: true
                         example: ['idir', 'bceidbusiness']
                         description: 'List of identity providers allowed to access this role. If null or empty, all identity providers are allowed.'
@@ -2928,8 +2928,7 @@ paths:
                         type: array
                         items:
                           type: string
-                          enum:
-                            ['idir', 'azureidir', 'bceidbusiness']
+                          enum: ['idir', 'azureidir', 'bceidbusiness']
                         nullable: true
                         example: ['idir']
                         description: 'List of identity providers allowed to access this role. If null or empty, all identity providers are allowed.'
