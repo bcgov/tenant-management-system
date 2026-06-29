@@ -1,4 +1,3 @@
-# Values from bcgov/quickstart-openshift
 global:
   config:
     dbName: app #test
@@ -86,7 +85,7 @@ crunchy: # enable it for TEST and PROD, for PR based pipelines simply use single
       bucket:  # DO NOT UPLOAD TO GITHUB
       endpoint: # DO NOT UPLOAD TO GITHUB
       accessKey:  # DO NOT UPLOAD TO GITHUB
-      secretKey:  # DO NOT UPLOAD TO GITHUB
+      secretKey:  # DO NOT UPLOAD TO GITHUB 
       fullBackupSchedule: 0 9 * * * # make sure to provide values here, if s3 is enabled.
       incrementalBackupSchedule: 30 0,4,12,16,20 * * * # make sure to provide values here, if s3 is enabled.
     manual:
