@@ -5,6 +5,8 @@ export class ConfigError extends Error {
   }
 }
 
+export type LogLevel = 'error' | 'info' | 'debug'
+
 export interface AppConfig {
   allowedOrigins: string[]
   bcgovSsoApi: {
@@ -14,7 +16,7 @@ export interface AppConfig {
     url: string
     urlBceid: string
   }
-  logLevel: string
+  logLevel: LogLevel
   oidc: {
     issuer: string
     jwksUri: string
@@ -54,7 +56,6 @@ function validateConfig(raw: unknown): AppConfig {
     ['BCGOV_TOKEN_URL', bcgovSsoApi?.tokenUrl],
     ['ISSUER', oidc?.issuer],
     ['JWKS_URI', oidc?.jwksUri],
-    ['LOG_LEVEL', config.logLevel],
     ['PORT', config.port],
     ['POSTGRES_DATABASE', postgres?.database],
     ['POSTGRES_HOST', postgres?.host],
@@ -70,6 +71,13 @@ function validateConfig(raw: unknown): AppConfig {
   if (missing.length) {
     throw new ConfigError(
       `Config is missing required fields:\n${missing.join('\n')}`,
+    )
+  }
+
+  const supportedLogLevels: LogLevel[] = ['error', 'info', 'debug']
+  if (!supportedLogLevels.includes(config.logLevel as LogLevel)) {
+    throw new ConfigError(
+      `LOG_LEVEL must be one of: ${supportedLogLevels.join(', ')}`,
     )
   }
 
@@ -97,7 +105,7 @@ export function loadConfig() {
       url: process.env.BCGOV_SSO_API_URL,
       urlBceid: process.env.BCGOV_SSO_API_URL_BCEID,
     },
-    logLevel: process.env.LOG_LEVEL?.toLowerCase() || 'info',
+    logLevel: (process.env.LOG_LEVEL?.toLowerCase() || 'info') as LogLevel,
     oidc: {
       issuer: process.env.ISSUER,
       jwksUri: process.env.JWKS_URI,

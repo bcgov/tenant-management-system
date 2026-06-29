@@ -7,40 +7,46 @@ import { RoutesConstants } from './routes.constants'
 import { TMSConstants } from './tms.constants'
 import { config } from '../services/config.service'
 
-interface DecodedJwt {
-  idir_user_guid?: string
-  bceid_user_guid?: string
-  bceid_business_guid?: string
-  aud?: string
-  audience?: string
-  client_roles?: string[]
-  sub?: string
-  idp?: string
-  identity_provider?: string
-  idir_username?: string
-  given_name?: string
-  family_name?: string
-  name?: string
-  display_name?: string
-  preferred_username?: string
-  user_principal_name?: string
-  email?: string
-  [key: string]: unknown
-}
-
-declare global {
-  namespace Express {
-    interface Request {
-      decodedJwt?: DecodedJwt
-      isSharedServiceAccess?: boolean
-      idpType?: 'idir' | 'bceidbusiness'
-    }
-  }
-}
-
 interface CheckJwtOptions {
   sharedServiceAccess?: boolean
   skipSsoUserParamMatch?: boolean
+}
+
+interface JwtValidationError extends Error {
+  code?: string
+  inner?: {
+    message?: string
+  }
+}
+
+const getAuthenticationFailureReason = (error: JwtValidationError): string => {
+  const message = `${error.message} ${error.inner?.message || ''}`.toLowerCase()
+
+  if (message.includes('missing') || message.includes('bearer')) {
+    return 'missing_token'
+  }
+  if (message.includes('expired')) {
+    return 'token_expired'
+  }
+  if (message.includes('audience')) {
+    return 'invalid_audience'
+  }
+  if (message.includes('issuer')) {
+    return 'invalid_issuer'
+  }
+  if (message.includes('signature')) {
+    return 'invalid_signature'
+  }
+
+  return 'invalid_token'
+}
+
+const logJwtValidationError = (message: string, error: JwtValidationError) => {
+  logger.error(message, {
+    reason: getAuthenticationFailureReason(error),
+    code: error.code,
+    error: error.inner?.message || error.message,
+  })
 }
 
 const createJwtMiddleware = (options: CheckJwtOptions = {}) => {
@@ -51,7 +57,11 @@ const createJwtMiddleware = (options: CheckJwtOptions = {}) => {
       cache: true,
       jwksUri: config.oidc.jwksUri,
       handleSigningKeyError: (err, cb) => {
-        logger.error('Error:', { error: err?.message, stack: err?.stack })
+        logger.error('JWT signing key lookup failed', {
+          reason: 'jwks_error',
+          error: err?.message,
+          stack: err?.stack,
+        })
         cb(new UnauthorizedError('Error occurred during authentication'))
       },
     }),
@@ -61,12 +71,11 @@ const createJwtMiddleware = (options: CheckJwtOptions = {}) => {
     requestProperty: 'decodedJwt',
     getToken: function fromHeaderOrQuerystring(req) {
       const authHeader = req.headers.authorization
-      if (authHeader && authHeader.split(' ')[0] === 'Bearer') {
-        const token = authHeader.split(' ')[1]
-        logger.info('Token found:')
+      const [scheme, token] = authHeader?.split(' ') || []
+      if (scheme === 'Bearer' && token) {
         return token
       }
-      throw new UnauthorizedError('Error occurred during authentication')
+      throw new UnauthorizedError('Bearer token is missing or invalid')
     },
   }).unless({ path: [RoutesConstants.HEALTH] })
 }
@@ -77,11 +86,10 @@ export const checkJwt = (options: CheckJwtOptions = {}) => {
   return (req: Request, res: Response, next: NextFunction) => {
     middleware(req, res, (err) => {
       if (err) {
-        logger.error('JWT Validation Error:', {
-          error: err.message,
-          code: err.code,
-          inner: err.inner?.message,
-        })
+        logJwtValidationError(
+          'JWT validation failed',
+          err as JwtValidationError,
+        )
 
         return res.status(401).json({
           error: 'Unauthorized',
@@ -96,14 +104,10 @@ export const checkJwt = (options: CheckJwtOptions = {}) => {
         const requestedUserId: string = req.params.ssoUserId
 
         if (tokenUserId !== requestedUserId) {
-          logger.error(
-            'User ID mismatch - token user does not match requested user',
-            {
-              tokenUserId,
-              requestedUserId,
-              sub: req.decodedJwt?.sub,
-            },
-          )
+          logger.error('JWT user does not match requested user', {
+            reason: 'user_mismatch',
+            route: req.route?.path,
+          })
 
           return res.status(403).json({
             error: 'Forbidden',
@@ -124,14 +128,13 @@ export const checkJwt = (options: CheckJwtOptions = {}) => {
           if (provider === TMSConstants.BCEID_BOTH_PROVIDER) {
             if (req.decodedJwt.bceid_business_guid) {
               req.idpType = 'bceidbusiness'
-              logger.info('Business BCeID determined for shared service', {
-                sub: req.decodedJwt.sub,
-                hasBusinessGuid: true,
+              logger.debug('Identity provider resolved', {
+                provider: 'bceidbusiness',
               })
             } else {
               logger.error('Unsupported identity provider', {
+                reason: 'unsupported_identity_provider',
                 provider,
-                sub: req.decodedJwt.sub,
               })
               return res.status(401).json({
                 error: 'Unauthorized',
@@ -148,8 +151,8 @@ export const checkJwt = (options: CheckJwtOptions = {}) => {
             req.idpType = 'idir'
           } else if (provider) {
             logger.error('Invalid provider for shared service access', {
+              reason: 'unsupported_identity_provider',
               provider,
-              sub: req.decodedJwt.sub,
             })
             return res.status(401).json({
               error: 'Unauthorized',
@@ -166,8 +169,8 @@ export const checkJwt = (options: CheckJwtOptions = {}) => {
           provider !== TMSConstants.AZURE_IDIR_PROVIDER
         ) {
           logger.error('Invalid provider - TMS endpoints require IDIR access', {
+            reason: 'unsupported_identity_provider',
             provider,
-            sub: req.decodedJwt.sub,
             expectedProvider: [
               TMSConstants.IDIR_PROVIDER,
               TMSConstants.AZURE_IDIR_PROVIDER,
@@ -193,10 +196,8 @@ export const extractOidcSub = (
   next: NextFunction,
 ) => {
   if (req.decodedJwt) {
-    logger.info('Authenticated request', {
-      sub: req.decodedJwt.sub,
-      //   token: req.headers.authorization?.split(' ')[1]?.substring(0, 20) + '...',
-      decodedJwt: req.decodedJwt,
+    logger.debug('Authenticated request', {
+      provider: req.decodedJwt.idp || req.decodedJwt.identity_provider,
     })
     next()
   } else {
@@ -207,19 +208,12 @@ export const extractOidcSub = (
 
 export const jwtErrorHandler = (
   err: unknown,
-  req: Request,
+  _req: Request,
   res: Response,
   next: NextFunction,
 ) => {
   if (err instanceof Error && err.name === 'UnauthorizedError') {
-    logger.error('JWT Validation Error (fallback):', {
-      error: err.message,
-      code: 'code' in err ? (err as { code?: string }).code : undefined,
-      inner:
-        'inner' in err
-          ? (err as { inner?: { message?: string } }).inner?.message
-          : undefined,
-    })
+    logJwtValidationError('JWT validation failed', err as JwtValidationError)
 
     return res.status(401).json({
       error: 'Unauthorized',

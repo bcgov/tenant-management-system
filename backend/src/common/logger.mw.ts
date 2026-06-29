@@ -23,14 +23,6 @@ export const requestLoggingMiddleware = (
     return next()
   }
 
-  logger.info('Incoming request', {
-    method: req.method,
-    url: req.url,
-    params: req.params,
-    query: req.query,
-    body: req.method !== 'GET' ? req.body : undefined,
-  })
-
   const responseWithFlag = res as ResponseWithLoggingFlag
 
   if (!responseWithFlag._loggedResponse) {
@@ -39,10 +31,11 @@ export const requestLoggingMiddleware = (
     res.send = function (body: unknown) {
       if (!responseWithFlag._loggedResponse) {
         const responseTime = Date.now() - startTime
+        const route = req.route?.path || 'unmatched'
 
-        logger.info('Outgoing response', {
+        logger.info('Request completed', {
           method: req.method,
-          url: req.url,
+          route,
           statusCode: res.statusCode,
           responseTime: `${responseTime}ms`,
         })
