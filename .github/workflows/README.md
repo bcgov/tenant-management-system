@@ -1,4 +1,4 @@
-# Pull Request-Based Workflows
+#  Pull Request-Based Workflows
 
 This repository is based on the [quickstart-openshift](https://github.com/bcgov/quickstart-openshift) repository that provides a template to rapidly deploy a modern web application stack to the BC Government's OpenShift platform. It uses [GitHub Actions](https://github.com/bcgov/tenant-management-system/actions) and incorporates best practices for CI/CD, security, and observability.
 
