@@ -1,5 +1,8 @@
 import { Request } from 'express'
 import { sharedServiceRepository } from '../repositories/shared-service.repository'
+import { connection } from '../common/db.connection'
+import logger from '../common/logger'
+import { getErrorMessage } from '../common/error.handler'
 import {
   AddSharedServiceRolesInputDto,
   AssociateSharedServiceToTenantInputDto,
@@ -22,8 +25,19 @@ export class SharedServiceService {
       roles: req.body.roles,
       updatedBy: req.decodedJwt?.idir_user_guid || 'system',
     }
-    const savedSharedService =
-      await sharedServiceRepository.saveSharedService(input)
+    const savedSharedService = await connection.manager.transaction(
+      async (tx) => {
+        try {
+          return await sharedServiceRepository.saveSharedService(input, tx)
+        } catch (error: unknown) {
+          logger.error(
+            'Create shared service transaction failure - rolling back inserts ',
+            { error: getErrorMessage(error) },
+          )
+          throw error
+        }
+      },
+    )
     return {
       data: {
         sharedService: savedSharedService,
@@ -41,8 +55,9 @@ export class SharedServiceService {
       description: req.body.description,
       updatedBy: req.decodedJwt?.idir_user_guid || 'system',
     }
-    const updatedSharedService =
-      await sharedServiceRepository.updateSharedService(input)
+    const updatedSharedService = await connection.manager.transaction((tx) =>
+      sharedServiceRepository.updateSharedService(input, tx),
+    )
     return {
       data: {
         sharedService: updatedSharedService,
@@ -56,8 +71,9 @@ export class SharedServiceService {
       roles: req.body.roles,
       updatedBy: req.decodedJwt?.idir_user_guid || 'system',
     }
-    const updatedSharedService =
-      await sharedServiceRepository.addSharedServiceRoles(input)
+    const updatedSharedService = await connection.manager.transaction((tx) =>
+      sharedServiceRepository.addSharedServiceRoles(input, tx),
+    )
     return {
       data: {
         sharedService: updatedSharedService,
@@ -74,8 +90,9 @@ export class SharedServiceService {
       allowedIdentityProviders: req.body.allowedIdentityProviders,
       updatedBy: req.decodedJwt?.idir_user_guid || 'system',
     }
-    const updatedSharedService =
-      await sharedServiceRepository.updateSharedServiceRole(input)
+    const updatedSharedService = await connection.manager.transaction((tx) =>
+      sharedServiceRepository.updateSharedServiceRole(input, tx),
+    )
     return {
       data: {
         sharedService: updatedSharedService,
@@ -89,8 +106,9 @@ export class SharedServiceService {
       isActive: req.body.isActive,
       updatedBy: req.decodedJwt?.idir_user_guid || 'system',
     }
-    const updatedSharedService =
-      await sharedServiceRepository.updateSharedServiceStatus(input)
+    const updatedSharedService = await connection.manager.transaction((tx) =>
+      sharedServiceRepository.updateSharedServiceStatus(input, tx),
+    )
     return {
       data: {
         sharedService: updatedSharedService,
@@ -104,7 +122,17 @@ export class SharedServiceService {
       sharedServiceId: req.body.sharedServiceId,
       updatedBy: req.decodedJwt?.idir_user_guid || 'system',
     }
-    await sharedServiceRepository.associateSharedServiceToTenant(input)
+    await connection.manager.transaction(async (tx) => {
+      try {
+        await sharedServiceRepository.associateSharedServiceToTenant(input, tx)
+      } catch (error: unknown) {
+        logger.error(
+          'Associate shared service to tenant transaction failure - rolling back inserts',
+          { error: getErrorMessage(error) },
+        )
+        throw error
+      }
+    })
   }
 
   public async getAllActiveSharedServices() {
