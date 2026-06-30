@@ -72,23 +72,9 @@ export class SharedServiceRepository {
 
     const savedSharedService = await manager.save(sharedService)
 
-    const sharedServiceRoles: SharedServiceRole[] = []
-    for (const role of roles) {
-      const sharedServiceRole = new SharedServiceRole()
-      sharedServiceRole.name = role.name
-      if (role.description !== undefined) {
-        sharedServiceRole.description = role.description
-      }
-      sharedServiceRole.allowedIdentityProviders =
-        role.allowedIdentityProviders &&
-        role.allowedIdentityProviders.length > 0
-          ? role.allowedIdentityProviders
-          : null
-      sharedServiceRole.sharedService = savedSharedService
-      sharedServiceRole.createdBy = updatedBy
-      sharedServiceRole.updatedBy = updatedBy
-      sharedServiceRoles.push(sharedServiceRole)
-    }
+    const sharedServiceRoles = roles.map((role) =>
+      this.buildSharedServiceRole(role, savedSharedService, updatedBy),
+    )
     await manager.save(sharedServiceRoles)
 
     const savedSharedServiceWithRoles = await this.getSharedServiceWithRoles(
@@ -238,24 +224,9 @@ export class SharedServiceRepository {
       }
     }
 
-    const sharedServiceRoles: SharedServiceRole[] = []
-    for (const role of roles) {
-      const sharedServiceRole = new SharedServiceRole()
-      sharedServiceRole.name = role.name
-      if (role.description !== undefined) {
-        sharedServiceRole.description = role.description
-      }
-      sharedServiceRole.allowedIdentityProviders =
-        role.allowedIdentityProviders &&
-        role.allowedIdentityProviders.length > 0
-          ? role.allowedIdentityProviders
-          : null
-      sharedServiceRole.sharedService = sharedService
-      sharedServiceRole.isDeleted = false
-      sharedServiceRole.createdBy = updatedBy
-      sharedServiceRole.updatedBy = updatedBy
-      sharedServiceRoles.push(sharedServiceRole)
-    }
+    const sharedServiceRoles = roles.map((role) =>
+      this.buildSharedServiceRole(role, sharedService, updatedBy),
+    )
 
     await manager.save(sharedServiceRoles)
 
@@ -524,6 +495,27 @@ export class SharedServiceRepository {
       .andWhere('ss.isActive = :isActive', { isActive: true })
       .andWhere('tss.isDeleted = :isDeleted', { isDeleted: false })
       .getExists()
+  }
+
+  private buildSharedServiceRole(
+    role: CreateSharedServiceInputDto['roles'][number],
+    sharedService: SharedService,
+    updatedBy: string,
+  ): SharedServiceRole {
+    const sharedServiceRole = new SharedServiceRole()
+    sharedServiceRole.name = role.name
+    if (role.description !== undefined) {
+      sharedServiceRole.description = role.description
+    }
+    sharedServiceRole.allowedIdentityProviders =
+      role.allowedIdentityProviders && role.allowedIdentityProviders.length > 0
+        ? role.allowedIdentityProviders
+        : null
+    sharedServiceRole.sharedService = sharedService
+    sharedServiceRole.isDeleted = false
+    sharedServiceRole.createdBy = updatedBy
+    sharedServiceRole.updatedBy = updatedBy
+    return sharedServiceRole
   }
 }
 
