@@ -1,4 +1,3 @@
-# Values from bcgov/quickstart-openshift
 global:
   config:
     dbName: app #test
@@ -6,8 +5,13 @@ crunchy: # enable it for TEST and PROD, for PR based pipelines simply use single
   enabled: true
   postgresVersion: 17
   postGISVersion: ~
-  openshift: true
   imagePullPolicy: IfNotPresent
+  # Enable Standby below to create a standby cluster from the same backup location as the primary cluster.
+  standby:
+    enabled: true
+    repoName: repo2 # Always use the S3 repo for standby bootstrapping
+  shutdown: false
+
   # enable below to start a new crunchy cluster after disaster from a backed-up location, crunchy will choose the best place to recover from.
   # follow https://access.crunchydata.com/documentation/postgres-operator/5.2.0/tutorial/disaster-recovery/
   # Clone From Backups Stored in S3 / GCS / Azure Blob Storage
@@ -17,9 +21,12 @@ crunchy: # enable it for TEST and PROD, for PR based pipelines simply use single
       enabled: false
     pvc:
       enabled: false
-    path: ~ # provide the proper path to source the cluster. ex: /backups/cluster/version/1, if current new cluster being created, this should be current cluster version -1, ideally
+    bucket:  # DO NOT UPLOAD TO GITHUB. This is the s3 bucket where you are cloning from
+    endpoint:  # DO NOT UPLOAD TO GITHUB. This is the endpoint where you are cloning from
+    s3SecretName:  # This is the name of the secret that contains the s3 credentials of the s3 bucket where you are cloning from
+    path:  # provide the proper path to source the cluster. ex: /backups/cluster/version/1, if current new cluster being created, this should be current cluster version -1, ideally
   # enable this to go back to a specific timestamp in history in the current cluster.
-  # follow https://access.crunchydata.com/documentation/postgres-operator/5.2.0/tutorial/disaster-recovery/
+  # follow https://access.crunchydata.com/documentation/postgres-operator/5.7/tutorials/backups-disaster-recovery/disaster-recovery
   # Perform an In-Place Point-in-time-Recovery (PITR)
   restore:
     repoName: ~ # provide repo name
@@ -44,32 +51,45 @@ crunchy: # enable it for TEST and PROD, for PR based pipelines simply use single
       requests:
         cpu: 1m
         memory: 32Mi
-
+   # Fluent Bit sidecar container configuration. This is for sending postgres logs to stdout/stderr so that they can be collected by the cluster logging solution.
+   # You can configure the fluent-bit-config.yaml file to determine what logs to send to stdout/stderr and how to parse them.
+    containers:
+      fluentBit:
+        enabled: true
+        image: fluent/fluent-bit:5.0
+        resources:
+          requests:
+            cpu: 10m
+            memory: 64Mi
+          limits:
+            memory: 128Mi
   pgBackRest:
     enabled: true
-    backupPath: /backups/test/cluster/version # change it for PROD, create values-prod.yaml # this is only used in s3 backups context.
+    backupPath: /db/cluster/version # change it for PROD, create values-prod.yaml
     clusterCounter: 1 # this is the number to identify what is the current counter for the cluster, each time it is cloned it should be incremented.
     # If retention-full-type set to 'count' then the oldest backups will expire when the number of backups reach the number defined in retention
     # If retention-full-type set to 'time' then the number defined in retention will take that many days worth of full backups before expiration
-    retentionFullType: count
-    s3:
-      enabled: false # if enabled, below must be provided
-      retention: 7 # one weeks backup in object store.
-      bucket: ~
-      endpoint: ~
-      accessKey: ~
-      secretKey: ~
-      fullBackupSchedule: ~ # make sure to provide values here, if s3 is enabled.
-      incrementalBackupSchedule: ~ # make sure to provide values here, if s3 is enabled.
+    retentionFullType: time
     pvc:
       retention: 1 # one day hot active backup in pvc
-      retentionFullType: count
+      retentionFullType: time
       fullBackupSchedule: 0 8 * * *
-      incrementalBackupSchedule: 0 0-7,9-23 * * * # every hour incremental
+      incrementalBackupSchedule:  0 0,4,12,16,20 * * * 
       volume:
-        accessModes: 'ReadWriteOnce'
+        accessModes: "ReadWriteOnce"
         storage: 1.5Gi
         storageClassName: netapp-file-backup
+    s3:
+      enabled: true # if enabled, below must be provided
+      retention: 7 # one weeks backup in object store.
+      bucket:  # DO NOT UPLOAD TO GITHUB
+      endpoint: # DO NOT UPLOAD TO GITHUB
+      accessKey:  # DO NOT UPLOAD TO GITHUB
+      secretKey:  # DO NOT UPLOAD TO GITHUB
+      fullBackupSchedule: 0 9 * * * # make sure to provide values here, if s3 is enabled.
+      incrementalBackupSchedule: 30 0,4,12,16,20 * * * # make sure to provide values here, if s3 is enabled.
+    manual:
+      repo: repo2 # If you are doing a manual full backup, which repo do you want to backup to. repo1 is PVC and repo2 is S3
 
     config:
       requests:
@@ -82,7 +102,9 @@ crunchy: # enable it for TEST and PROD, for PR based pipelines simply use single
     sidecars:
       requests:
         cpu: 5m
-        memory: 16Mi
+        memory: 64Mi
+      limits:
+        memory: 128Mi
     jobs:
       requests:
         cpu: 20m
@@ -91,18 +113,20 @@ crunchy: # enable it for TEST and PROD, for PR based pipelines simply use single
   patroni:
     postgresql:
       pg_hba:
-        - 'host all all 0.0.0.0/0 scram-sha-256'
-        - 'host all all ::1/128 scram-sha-256'
+        - "host all all 0.0.0.0/0 scram-sha-256"
+        - "host all all ::1/128 scram-sha-256"
       parameters:
-        shared_buffers: 16MB # default is 128MB; a good tuned default for shared_buffers is 25% of the memory allocated to the pod
-        wal_buffers: '64kB' # this can be set to -1 to automatically set as 1/32 of shared_buffers or 64kB, whichever is larger
-        min_wal_size: 32MB
-        max_wal_size: 64MB # default is 1GB
-        max_slot_wal_keep_size: 128MB # default is -1, allowing unlimited wal growth when replicas fall behind
-        work_mem: 2MB # a work_mem value of 2 MB
+        wal_retrieve_retry_interval: 30000 # set to prevent excessive queries to object storage from the standby cluster
+        shared_buffers: 128MB # default is 128MB; a good tuned default for shared_buffers is 25% of the memory allocated to the pod
+        wal_buffers: "-1" # this can be set to -1 to automatically set as 1/32 of shared_buffers or 64kB, whichever is larger
+        min_wal_size: 64MB
+        max_wal_size: 512MB # default is 1GB
+        max_slot_wal_keep_size: 512MB # default is -1, allowing unlimited wal growth when replicas fall behind
+        work_mem: 4MB # a work_mem value of 4 MB (default)
         log_min_duration_statement: 1000ms # log queries taking more than 1 second to respond.
         effective_io_concurrency: 20 #If the underlying disk can handle multiple simultaneous requests, then you should increase the effective_io_concurrency value and test what value provides the best application performance. All BCGov clusters have SSD.
 
+  # pgBouncer values:
   proxy:
     enabled: true
     pgBouncer:
@@ -111,10 +135,9 @@ crunchy: # enable it for TEST and PROD, for PR based pipelines simply use single
       requests:
         cpu: 5m
         memory: 32Mi
-      maxConnections: 100 # make sure less than postgres max connections
-      poolMode: 'transaction'
+      maxConnections: 95 # make sure less than postgres max connections. Postgres max connections is 100
 
-  # Postgres Cluster resource values:
+  # pgMonitor values:
   pgmonitor:
     enabled: true
     exporter:
