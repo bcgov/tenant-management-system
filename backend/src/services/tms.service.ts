@@ -527,7 +527,9 @@ export class TMSService {
 
       return this.dedupIdirSearchResults(response.data)
     } catch (error: unknown) {
-      logger.error(getErrorMessage(error))
+      logger.error('BC Gov SSO IDIR search failed', {
+        error: getErrorMessage(error),
+      })
       if (
         error &&
         typeof error === 'object' &&
@@ -569,7 +571,9 @@ export class TMSService {
         this.filterBceidBusinessSearchResults(response.data),
       )
     } catch (error: unknown) {
-      logger.error(getErrorMessage(error))
+      logger.error('BC Gov SSO BCeID search failed', {
+        error: getErrorMessage(error),
+      })
       if (
         error &&
         typeof error === 'object' &&

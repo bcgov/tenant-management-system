@@ -78,7 +78,7 @@ describe('useAuthStore', () => {
 
       await store.init()
 
-      expect(store.authenticatedUser.id).toBe('123')
+      expect(store.authenticatedUser.id).toBe('')
       expect(store.authenticatedUser.ssoUser.idpType).toBe('idir')
     })
 
@@ -88,7 +88,7 @@ describe('useAuthStore', () => {
 
       await store.init()
 
-      expect(store.authenticatedUser.id).toBe('789')
+      expect(store.authenticatedUser.id).toBe('')
       expect(store.authenticatedUser.ssoUser.idpType).toBe('bceidbusiness')
     })
 

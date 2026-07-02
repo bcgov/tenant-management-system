@@ -160,7 +160,7 @@ describe('Tenant Store', () => {
         secondTenant,
       ])
 
-      await store.fetchTenants(toUserId('u-1'))
+      await store.fetchTenants(toSsoUserId('u-1'))
 
       expect(store.tenants).toHaveLength(2)
       expect(store.tenants[0].name).toBe(mockTenantApiData.name)
@@ -174,7 +174,9 @@ describe('Tenant Store', () => {
         new Error('Fail'),
       )
 
-      await expect(store.fetchTenants(toUserId('u-1'))).rejects.toThrow('Fail')
+      await expect(store.fetchTenants(toSsoUserId('u-1'))).rejects.toThrow(
+        'Fail',
+      )
       expect(store.loading).toBe(false)
     })
   })

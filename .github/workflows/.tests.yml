@@ -3,6 +3,14 @@ name: .Tests
 on:
   workflow_call:
     inputs:
+      prefix:
+        description: Prefix of Endpoint
+        default: dev.connect
+        type: string
+      domain:
+        description: Domain of endpoint
+        default: digital.gov.bc.ca
+        type: string
       ### Required
       image_tag:
         description: Image tag for containerized integration tests
@@ -10,7 +18,7 @@ on:
         type: string
       target:
         description: PR number, dev, test or prod
-        default: ${{ github.event.number }}
+        default: ${{ github.event.number }}-frontend
         type: string
     secrets:
       Username:
@@ -21,8 +29,8 @@ on:
         required: true
 
 env:
-  DOMAIN: apps.gold.devops.gov.bc.ca
-  PREFIX: cstar-${{ inputs.target }}
+  DOMAIN: ${{ inputs.domain }}
+  PREFIX: ${{ inputs.prefix }}
 
 permissions: {}
 

@@ -896,7 +896,6 @@ export class TMRepository {
     const group: Group | null = await groupQuery.getOne()
 
     if (!group) {
-      logger.warn(`Group not found: ${groupId}`)
       throw new NotFoundError(`Group not found: ${groupId}`)
     }
 
