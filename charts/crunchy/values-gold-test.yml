@@ -137,7 +137,6 @@ crunchy: # enable it for TEST and PROD, for PR based pipelines simply use single
         memory: 32Mi
       maxConnections: 95 # make sure less than postgres max connections. Postgres max connections is 100
 
-  # pgMonitor values:
   pgmonitor:
     enabled: true
     exporter:
