@@ -6,7 +6,7 @@ export function formsettings() {
   if (
     !process.env.E2E_IDIR_USERNAME ||
     !process.env.E2E_IDIR_PASSWORD ||
-    !process.env.MFA_CODE
+    !process.env.E2E_MFA_CODE
   ) {
     throw new Error('Missing env variables')
   }
@@ -14,7 +14,7 @@ export function formsettings() {
   return {
     username: process.env.E2E_IDIR_USERNAME,
     password: process.env.E2E_IDIR_PASSWORD,
-    mfaCode: process.env.MFA_CODE,
+    mfaCode: process.env.E2E_MFA_CODE,
   }
 }
 

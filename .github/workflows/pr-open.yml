@@ -54,7 +54,7 @@ jobs:
     secrets:
       Username: ${{ secrets.E2E_IDIR_USERNAME }}
       Password: ${{ secrets.E2E_IDIR_PASSWORD }}
-      MFA_CODE: ${{ secrets.MFA_CODE }}
+      MFA_CODE: ${{ secrets.E2E_MFA_CODE }}
 
   zap:
     name: ZAP Security Scan

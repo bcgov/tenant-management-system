@@ -14,10 +14,7 @@
     "type-check-tests": "vue-tsc --noEmit -p tsconfig.vitest.json",
     "lint": "eslint . --ext .ts,.tsx,.vue",
     "lint:fix": "eslint . --ext .ts,.tsx,.vue --fix",
-    "format": "prettier --write src/",
-    "test": "playwright test",
-    "test:e2e": "node --env-file=.env ./node_modules/@playwright/test/cli.js test",
-    "test:e2e:headed": "node --env-file=.env ./node_modules/@playwright/test/cli.js test --headed"
+    "format": "prettier --write src/"
   },
   "dependencies": {
     "@bcgov/design-tokens": "^4.0.0",
@@ -31,8 +28,6 @@
     "vuetify": "^4.0.5"
   },
   "devDependencies": {
-    "@otplib/preset-default": "^12.0.1",
-    "@playwright/test": "^1.60.0",
     "@tsconfig/node22": "^22.0.5",
     "@types/jsdom": "^21.1.7",
     "@types/node": "^22.14.0",

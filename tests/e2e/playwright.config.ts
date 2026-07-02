@@ -1,12 +1,12 @@
 import { defineConfig } from '@playwright/test'
 
 export default defineConfig({
-  testDir: './tests/e2e',
+  testDir: './playwright_tests',
   fullyParallel: false,
   workers: 1,
 
   use: {
-    baseURL: 'http://localhost:5173',
+    baseURL: 'http://localhost:3000',
     headless: true,
     video: 'retain-on-failure',
     screenshot: 'only-on-failure',
@@ -15,7 +15,7 @@ export default defineConfig({
   },
 
   reporter: [['html', { open: 'never' }]],
-  outputDir: 'tests/e2e/test-results',
+  outputDir: 'tests',
 
   projects: [
     {
