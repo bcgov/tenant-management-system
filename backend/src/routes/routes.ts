@@ -2,6 +2,7 @@ import { Application, NextFunction, Request, Response } from 'express'
 import { RoutesConstants } from '../common/routes.constants'
 import { TMSController } from '../controllers/tms.controller'
 import { TMController } from '../controllers/tm.controller'
+import { sharedServiceController } from '../controllers/shared-service.controller'
 import { validate, ValidationError } from 'express-validation'
 import validator from '../common/tms.validator'
 import { checkJwt } from '../common/auth.mw'
@@ -245,7 +246,7 @@ export class Routes {
         checkOperationsAdmin,
         validate(validator.createSharedService, {}, {}),
         (req: Request, res: Response) =>
-          this.tmsController.createSharedService(req, res),
+          sharedServiceController.createSharedService(req, res),
       )
     app
       .route(RoutesConstants.UPDATE_SHARED_SERVICE)
@@ -254,7 +255,7 @@ export class Routes {
         checkOperationsAdmin,
         validate(validator.updateSharedService, {}, {}),
         (req: Request, res: Response) =>
-          this.tmsController.updateSharedService(req, res),
+          sharedServiceController.updateSharedService(req, res),
       )
     app
       .route(RoutesConstants.UPDATE_SHARED_SERVICE_STATUS)
@@ -263,7 +264,7 @@ export class Routes {
         checkOperationsAdmin,
         validate(validator.updateSharedServiceStatus, {}, {}),
         (req: Request, res: Response) =>
-          this.tmsController.updateSharedServiceStatus(req, res),
+          sharedServiceController.updateSharedServiceStatus(req, res),
       )
     app
       .route(RoutesConstants.ADD_SHARED_SERVICE_ROLES)
@@ -272,7 +273,7 @@ export class Routes {
         validate(validator.addSharedServiceRoles, {}, {}),
         checkOperationsAdmin,
         (req: Request, res: Response) =>
-          this.tmsController.addSharedServiceRoles(req, res),
+          sharedServiceController.addSharedServiceRoles(req, res),
       )
     app
       .route(RoutesConstants.UPDATE_SHARED_SERVICE_ROLE)
@@ -281,12 +282,12 @@ export class Routes {
         validate(validator.updateSharedServiceRole, {}, {}),
         checkOperationsAdmin,
         (req: Request, res: Response) =>
-          this.tmsController.updateSharedServiceRole(req, res),
+          sharedServiceController.updateSharedServiceRole(req, res),
       )
     app
       .route(RoutesConstants.GET_ALL_ACTIVE_SHARED_SERVICES)
       .get(checkJwt(), (req: Request, res: Response) =>
-        this.tmsController.getAllActiveSharedServices(req, res),
+        sharedServiceController.getAllActiveSharedServices(req, res),
       )
     app
       .route(RoutesConstants.GET_SHARED_SERVICE_ROLES_FOR_GROUP)
@@ -313,7 +314,7 @@ export class Routes {
         validate(validator.associateSharedServiceToTenant, {}, {}),
         checkTenantAccess([TMSConstants.TENANT_OWNER]),
         (req: Request, res: Response) =>
-          this.tmsController.associateSharedServiceToTenant(req, res),
+          sharedServiceController.associateSharedServiceToTenant(req, res),
       )
     app
       .route(RoutesConstants.GET_SHARED_SERVICES_FOR_TENANT)
@@ -322,7 +323,7 @@ export class Routes {
         validate(validator.getSharedServicesForTenant, {}, {}),
         checkTenantAccess([]),
         (req: Request, res: Response) =>
-          this.tmsController.getSharedServicesForTenant(req, res),
+          sharedServiceController.getSharedServicesForTenant(req, res),
       )
     app
       .route(RoutesConstants.GET_EFFECTIVE_SHARED_SERVICE_ROLES)
