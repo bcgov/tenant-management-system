@@ -12,29 +12,19 @@ import { UnexpectedStateError } from '../errors/UnexpectedStateError'
 import logger from '../common/logger'
 import { getErrorMessage } from '../common/error.handler'
 import { TenantRequest } from '../entities/TenantRequest'
-import { SharedService } from '../entities/SharedService'
-import { SharedServiceRole } from '../entities/SharedServiceRole'
 import { TenantSharedService } from '../entities/TenantSharedService'
 import {
-  AssociateSharedServiceToTenantInputDto,
   AssignUserRolesInputDto,
-  AddSharedServiceRolesInputDto,
   AddTenantUserInputDto,
   CreateTenantRolesInputDto,
   CreateTenantInputDto,
   CreateTenantRequestInputDto,
-  CreateSharedServiceInputDto,
-  UpdateSharedServiceInputDto,
-  UpdateSharedServiceRoleInputDto,
-  UpdateSharedServiceStatusInputDto,
   GetTenantRequestsInputDto,
   UpdateTenantRequestStatusResultDto,
   UpdateTenantRequestStatusInputDto,
   UpdateTenantRequestTenantResultDto,
   GetRolesForSsoUserInputDto,
-  GetSharedServicesForTenantInputDto,
   GetTenantInputDto,
-  SaveSharedServiceResultDto,
   SaveTenantRequestResultDto,
   GetTenantUserInputDto,
   GetTenantUserResultDto,
