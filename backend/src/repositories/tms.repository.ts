@@ -11,6 +11,7 @@ import { ConflictError } from '../errors/ConflictError'
 import { UnexpectedStateError } from '../errors/UnexpectedStateError'
 import logger from '../common/logger'
 import { getErrorMessage } from '../common/error.handler'
+import { connection } from '../common/db.connection'
 import { TenantRequest } from '../entities/TenantRequest'
 import { TenantSharedService } from '../entities/TenantSharedService'
 import {
@@ -1609,3 +1610,5 @@ export class TMSRepository {
       .execute()
   }
 }
+
+export const tmsRepository = new TMSRepository(connection.manager)

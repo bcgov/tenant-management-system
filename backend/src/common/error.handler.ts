@@ -54,7 +54,14 @@ export function handleControllerError(
   } else if (error instanceof NotFoundError) {
     handler.generalError(res, context, msg, error.statusCode, 'Not Found')
   } else if (error instanceof ConflictError) {
-    handler.generalError(res, context, msg, error.statusCode, 'Conflict')
+    handler.generalError(
+      res,
+      context,
+      msg,
+      error.statusCode,
+      'Conflict',
+      error.code,
+    )
   } else {
     handler.generalError(res, context, msg, 500, 'Internal Server Error')
   }
