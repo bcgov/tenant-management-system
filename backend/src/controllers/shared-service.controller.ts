@@ -8,7 +8,11 @@ export class SharedServiceController {
       const sharedService = await sharedServiceService.createSharedService(req)
       res.status(201).send(sharedService)
     } catch (error: unknown) {
-      handleControllerError(res, error, 'Error occurred creating shared service')
+      handleControllerError(
+        res,
+        error,
+        'Error occurred creating shared service',
+      )
     }
   }
 
@@ -17,7 +21,11 @@ export class SharedServiceController {
       const sharedService = await sharedServiceService.updateSharedService(req)
       res.status(200).send(sharedService)
     } catch (error: unknown) {
-      handleControllerError(res, error, 'Error occurred updating shared service')
+      handleControllerError(
+        res,
+        error,
+        'Error occurred updating shared service',
+      )
     }
   }
 

@@ -12,23 +12,16 @@ import { BadRequestError } from '../errors/BadRequestError'
 import { getErrorMessage } from '../common/error.handler'
 import { AddTenantUserResponseDto, TMSMapper } from '../mappers/tms.mapper'
 import {
-  AssociateSharedServiceToTenantInputDto,
   AssignUserRolesInputDto,
   AddTenantUserInputDto,
   AddTenantUserResultDto,
-  AddSharedServiceRolesInputDto,
   CreateTenantRolesInputDto,
   CreateTenantInputDto,
   CreateTenantRequestInputDto,
-  CreateSharedServiceInputDto,
-  UpdateSharedServiceInputDto,
-  UpdateSharedServiceRoleInputDto,
-  UpdateSharedServiceStatusInputDto,
   UpdateTenantRequestStatusResponseDto,
   UpdateTenantRequestStatusResultDto,
   UpdateTenantRequestStatusInputDto,
   GetRolesForSsoUserInputDto,
-  GetSharedServicesForTenantInputDto,
   GetTenantInputDto,
   GetTenantUserInputDto,
   GetTenantUserResultDto,
