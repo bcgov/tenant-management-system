@@ -3,6 +3,7 @@ import { RoutesConstants } from '../common/routes.constants'
 import { TMSController } from '../controllers/tms.controller'
 import { TMController } from '../controllers/tm.controller'
 import { sharedServiceController } from '../controllers/shared-service.controller'
+import { tenantRequestController } from '../controllers/tenant-request.controller'
 import { validate, ValidationError } from 'express-validation'
 import validator from '../common/tms.validator'
 import { checkJwt } from '../common/auth.mw'
@@ -73,7 +74,7 @@ export class Routes {
         checkJwt(),
         validate(validator.getUserTenantRequests, {}, {}),
         (req: Request, res: Response) =>
-          this.tmsController.getUserTenantRequests(req, res),
+          tenantRequestController.getUserTenantRequests(req, res),
       )
     app
       .route(RoutesConstants.GET_TENANT_USERS)
@@ -164,7 +165,7 @@ export class Routes {
         checkJwt(),
         validate(validator.createTenantRequest, {}, {}),
         (req: Request, res: Response) =>
-          this.tmsController.createTenantRequest(req, res),
+          tenantRequestController.createTenantRequest(req, res),
       )
     app
       .route(RoutesConstants.UPDATE_TENANT_REQUEST_STATUS)
@@ -173,7 +174,7 @@ export class Routes {
         checkOperationsAdmin,
         validate(validator.updateTenantRequestStatus, {}, {}),
         (req: Request, res: Response) =>
-          this.tmsController.updateTenantRequestStatus(req, res),
+          tenantRequestController.updateTenantRequestStatus(req, res),
       )
     app
       .route(RoutesConstants.GET_TENANT_REQUESTS)
@@ -182,7 +183,7 @@ export class Routes {
         checkOperationsAdmin,
         validate(validator.getTenantRequests, {}, {}),
         (req: Request, res: Response) =>
-          this.tmsController.getTenantRequests(req, res),
+          tenantRequestController.getTenantRequests(req, res),
       )
 
     app

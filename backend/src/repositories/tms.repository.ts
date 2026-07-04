@@ -11,21 +11,15 @@ import { ConflictError } from '../errors/ConflictError'
 import { UnexpectedStateError } from '../errors/UnexpectedStateError'
 import logger from '../common/logger'
 import { getErrorMessage } from '../common/error.handler'
-import { TenantRequest } from '../entities/TenantRequest'
+import { connection } from '../common/db.connection'
 import { TenantSharedService } from '../entities/TenantSharedService'
 import {
   AssignUserRolesInputDto,
   AddTenantUserInputDto,
   CreateTenantRolesInputDto,
   CreateTenantInputDto,
-  CreateTenantRequestInputDto,
-  GetTenantRequestsInputDto,
-  UpdateTenantRequestStatusResultDto,
-  UpdateTenantRequestStatusInputDto,
-  UpdateTenantRequestTenantResultDto,
   GetRolesForSsoUserInputDto,
   GetTenantInputDto,
-  SaveTenantRequestResultDto,
   GetTenantUserInputDto,
   GetTenantUserResultDto,
   GetTenantUsersInputDto,
@@ -1167,219 +1161,6 @@ export class TMSRepository {
     return roles
   }
 
-  public async getTenantRequestById(
-    transactionEntityManager: EntityManager,
-    tenantRequestId: string,
-  ) {
-    return await transactionEntityManager
-      .createQueryBuilder(TenantRequest, 'tenantRequest')
-      .leftJoinAndSelect('tenantRequest.requestedBy', 'sso')
-      .where('tenantRequest.id = :id', { id: tenantRequestId })
-      .getOne()
-  }
-
-  public async saveTenantRequest(input: CreateTenantRequestInputDto) {
-    let tenantRequestResponse!: SaveTenantRequestResultDto
-    await this.manager.transaction(async (transactionEntityManager) => {
-      try {
-        if (
-          await this.checkIfTenantNameAndMinistryNameExists(
-            input.name,
-            input.ministryName,
-          )
-        ) {
-          throw new ConflictError(
-            `A tenant with name '${input.name}' and ministry name '${input.ministryName}' already exists`,
-          )
-        }
-        const tenantRequest: TenantRequest = new TenantRequest()
-        tenantRequest.name = input.name
-        tenantRequest.ministryName = input.ministryName
-        if (input.description !== undefined) {
-          tenantRequest.description = input.description
-        }
-        tenantRequest.status = 'NEW'
-        tenantRequest.requestedBy = await this.setSSOUser(
-          input.user.ssoUserId,
-          input.user.firstName,
-          input.user.lastName,
-          input.user.displayName,
-          input.user.userName || '',
-          input.user.email || '',
-          input.user.idpType,
-        )
-        tenantRequest.createdBy = input.user.ssoUserId
-        tenantRequest.updatedBy = input.user.ssoUserId
-
-        const savedTenantRequest: TenantRequest =
-          await transactionEntityManager.save(tenantRequest)
-        const savedTenantRequestWithRelations = await this.getTenantRequestById(
-          transactionEntityManager,
-          savedTenantRequest.id,
-        )
-        if (!savedTenantRequestWithRelations) {
-          throw new UnexpectedStateError('Tenant request creation failed')
-        }
-        tenantRequestResponse = savedTenantRequestWithRelations
-        if (tenantRequestResponse.requestedBy?.displayName) {
-          tenantRequestResponse.createdBy =
-            tenantRequestResponse.requestedBy.displayName
-        }
-      } catch (error: unknown) {
-        logger.error(
-          'Create tenant request transaction failure - rolling back inserts ',
-          { error: getErrorMessage(error) },
-        )
-        throw error
-      }
-    })
-
-    return tenantRequestResponse
-  }
-
-  public async updateTenantRequestStatus(
-    input: UpdateTenantRequestStatusInputDto,
-  ) {
-    const requestId: string = input.requestId
-    const { status, rejectionReason, tenantName } = input
-    let response: Partial<UpdateTenantRequestStatusResultDto> = {}
-
-    await this.manager.transaction(async (transactionEntityManager) => {
-      try {
-        const tenantRequest = await this.getTenantRequestById(
-          transactionEntityManager,
-          requestId,
-        )
-        if (!tenantRequest) {
-          throw new NotFoundError(`Tenant request not found: ${requestId}`)
-        }
-
-        if (tenantRequest.status !== 'NEW') {
-          throw new ConflictError(
-            `Cannot update tenant request with status: ${tenantRequest.status}`,
-            TMSConstants.TENANT_REQUEST_INVALID_STATUS,
-          )
-        }
-
-        if (status === 'REJECTED' && !rejectionReason) {
-          throw new ConflictError(
-            'Rejection reason is required when rejecting a tenant request',
-          )
-        }
-
-        if (status === 'APPROVED') {
-          if (tenantName) {
-            tenantRequest.name = tenantName
-          }
-          if (
-            await this.checkIfTenantNameAndMinistryNameExists(
-              tenantRequest.name,
-              tenantRequest.ministryName,
-            )
-          ) {
-            throw new ConflictError(
-              `A tenant with name '${tenantRequest.name}' and ministry name '${tenantRequest.ministryName}' already exists`,
-              TMSConstants.TENANT_NAME_ALREADY_EXISTS,
-            )
-          }
-
-          const tenantRequestBody: CreateTenantInputDto = {
-            name: tenantRequest.name,
-            ministryName: tenantRequest.ministryName,
-            description: tenantRequest.description,
-            user: {
-              ssoUserId: tenantRequest.requestedBy.ssoUserId,
-              firstName: tenantRequest.requestedBy.firstName,
-              lastName: tenantRequest.requestedBy.lastName,
-              displayName: tenantRequest.requestedBy.displayName,
-              userName: tenantRequest.requestedBy.userName,
-              email: tenantRequest.requestedBy.email,
-              idpType: tenantRequest.requestedBy.idpType as IdpType,
-            },
-          }
-          const savedTenant: Tenant = (await this.saveTenant(
-            tenantRequestBody,
-            transactionEntityManager,
-          )) as Tenant
-
-          const basicTenantInfo: UpdateTenantRequestTenantResultDto = {
-            id: savedTenant.id,
-            name: savedTenant.name,
-            ministryName: savedTenant.ministryName,
-            description: savedTenant.description,
-            createdBy: savedTenant.createdBy,
-            updatedBy: savedTenant.updatedBy,
-          }
-          response = { tenant: basicTenantInfo }
-        }
-
-        let opsAdminSSOUser: SSOUser = await this.setSSOUser(
-          input.decisionedByUser.ssoUserId,
-          input.decisionedByUser.firstName,
-          input.decisionedByUser.lastName,
-          input.decisionedByUser.displayName,
-          input.decisionedByUser.userName,
-          input.decisionedByUser.email,
-          input.decisionedByUser.idpType,
-        )
-
-        opsAdminSSOUser = await transactionEntityManager.save(opsAdminSSOUser)
-
-        tenantRequest.status = status
-        tenantRequest.decisionedBy = opsAdminSSOUser
-        tenantRequest.decisionedAt = new Date()
-        const nextRejectionReason: string | null =
-          status === 'REJECTED' ? rejectionReason || null : null
-        tenantRequest.rejectionReason = nextRejectionReason as unknown as string
-        tenantRequest.updatedBy = input.updatedBy
-
-        const updatedRequest =
-          await transactionEntityManager.save(tenantRequest)
-
-        const tenantRequestResponse = {
-          ...updatedRequest,
-        }
-        response = { ...response, tenantRequest: tenantRequestResponse }
-      } catch (error: unknown) {
-        logger.error(
-          'Update tenant request status transaction failure - rolling back changes',
-          { error: getErrorMessage(error) },
-        )
-        throw error
-      }
-    })
-
-    if (!response.tenantRequest) {
-      throw new UnexpectedStateError('Tenant request status update failed')
-    }
-
-    return response as UpdateTenantRequestStatusResultDto
-  }
-
-  public async getTenantRequests(input: GetTenantRequestsInputDto) {
-    const status = input.status
-    const ssoUserId = input.ssoUserId
-    const queryBuilder = this.manager
-      .createQueryBuilder(TenantRequest, 'tenantRequest')
-      .leftJoinAndSelect('tenantRequest.requestedBy', 'requestedBy')
-      .leftJoinAndSelect('tenantRequest.decisionedBy', 'decisionedBy')
-      .orderBy('tenantRequest.requestedAt', 'DESC')
-
-    if (status) {
-      queryBuilder.where('tenantRequest.status = :status', { status })
-    }
-
-    if (ssoUserId) {
-      queryBuilder.andWhere('requestedBy.ssoUserId = :ssoUserId', {
-        ssoUserId,
-      })
-    }
-
-    const tenantRequests: TenantRequest[] = await queryBuilder.getMany()
-
-    return tenantRequests
-  }
-
   public async getTenantUserBySsoId(
     ssoUserId: string,
     tenantId: string,
@@ -1609,3 +1390,5 @@ export class TMSRepository {
       .execute()
   }
 }
+
+export const tmsRepository = new TMSRepository(connection.manager)
