@@ -1313,6 +1313,20 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BadRequestResponse'
+        '409':
+          description: Conflict - A tenant with the same name and ministry name already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConflictErrorResponse'
+              examples:
+                tenantAlreadyExists:
+                  summary: Tenant with same name and ministry name already exists
+                  value:
+                    name: Error occurred creating tenant request
+                    message: "A tenant with name 'Roads Initiative' and ministry name 'Ministry of Natural Resources' already exists"
+                    httpResponseCode: 409
+                    errorMessage: Conflict
         '500':
           description: Internal server error
           content:
@@ -1465,93 +1479,96 @@ paths:
               schema:
                 type: object
                 properties:
-                  tenantRequest:
+                  data:
                     type: object
                     properties:
-                      id:
-                        type: string
-                        format: uuid
-                        description: Unique identifier of the tenant request
-                        example: '123e4567-e89b-12d3-a456-426614174000'
-                      name:
-                        type: string
-                        description: Name of the tenant
-                        example: 'Ministry of Health'
-                      ministryName:
-                        type: string
-                        description: Name of the ministry
-                        example: 'Health'
-                      description:
-                        type: string
-                        description: Description of the tenant
-                        example: 'Tenant for Ministry of Health applications'
-                      status:
-                        type: string
-                        enum: [NEW, APPROVED, REJECTED]
-                        description: Current status of the tenant request
-                        example: 'APPROVED'
-                      requestedBy:
-                        type: string
-                        description: Display name of the user who requested the tenant
-                        example: 'John Smith'
-                      decisionedBy:
-                        type: string
-                        description: Display name of the operations admin who made the decision
-                        example: 'Jane Doe'
-                      decisionedAt:
-                        type: string
-                        format: date-time
-                        description: Timestamp when the decision was made
-                        example: '2024-03-20T10:30:00Z'
-                      rejectionReason:
-                        type: string
-                        description: Reason for rejection, if the request was rejected
-                        example: 'Insufficient information provided'
-                      createdBy:
-                        type: string
-                        description: SSO user ID of the user who created the request
-                        minLength: 32
-                        maxLength: 32
-                        example: '123e4567e89b12d3a456426614174000'
-                      updatedBy:
-                        type: string
-                        description: SSO user ID of the user who last updated the request
-                        minLength: 32
-                        maxLength: 32
-                        example: '123e4567e89b12d3a456426614174000'
-                  tenant:
-                    type: object
-                    description: Basic tenant information (only included when status is APPROVED)
-                    properties:
-                      id:
-                        type: string
-                        format: uuid
-                        description: Unique identifier of the tenant
-                        example: '123e4567-e89b-12d3-a456-426614174000'
-                      name:
-                        type: string
-                        description: Name of the tenant
-                        example: 'Ministry of Health'
-                      ministryName:
-                        type: string
-                        description: Name of the ministry
-                        example: 'Health'
-                      description:
-                        type: string
-                        description: Description of the tenant
-                        example: 'Tenant for Ministry of Health applications'
-                      createdBy:
-                        type: string
-                        description: SSO user ID of the user who created the tenant
-                        minLength: 32
-                        maxLength: 32
-                        example: '123e4567e89b12d3a456426614174000'
-                      updatedBy:
-                        type: string
-                        description: SSO user ID of the user who last updated the tenant
-                        minLength: 32
-                        maxLength: 32
-                        example: '123e4567e89b12d3a456426614174000'
+                      tenantRequest:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                            format: uuid
+                            description: Unique identifier of the tenant request
+                            example: '123e4567-e89b-12d3-a456-426614174000'
+                          name:
+                            type: string
+                            description: Name of the tenant
+                            example: 'Ministry of Health'
+                          ministryName:
+                            type: string
+                            description: Name of the ministry
+                            example: 'Health'
+                          description:
+                            type: string
+                            description: Description of the tenant
+                            example: 'Tenant for Ministry of Health applications'
+                          status:
+                            type: string
+                            enum: [NEW, APPROVED, REJECTED]
+                            description: Current status of the tenant request
+                            example: 'APPROVED'
+                          requestedBy:
+                            type: string
+                            description: Display name of the user who requested the tenant
+                            example: 'John Smith'
+                          decisionedBy:
+                            type: string
+                            description: Display name of the operations admin who made the decision
+                            example: 'Jane Doe'
+                          decisionedAt:
+                            type: string
+                            format: date-time
+                            description: Timestamp when the decision was made
+                            example: '2024-03-20T10:30:00Z'
+                          rejectionReason:
+                            type: string
+                            description: Reason for rejection, if the request was rejected
+                            example: 'Insufficient information provided'
+                          createdBy:
+                            type: string
+                            description: SSO user ID of the user who created the request
+                            minLength: 32
+                            maxLength: 32
+                            example: '123e4567e89b12d3a456426614174000'
+                          updatedBy:
+                            type: string
+                            description: SSO user ID of the user who last updated the request
+                            minLength: 32
+                            maxLength: 32
+                            example: '123e4567e89b12d3a456426614174000'
+                      tenant:
+                        type: object
+                        description: Basic tenant information (only included when status is APPROVED)
+                        properties:
+                          id:
+                            type: string
+                            format: uuid
+                            description: Unique identifier of the tenant
+                            example: '123e4567-e89b-12d3-a456-426614174000'
+                          name:
+                            type: string
+                            description: Name of the tenant
+                            example: 'Ministry of Health'
+                          ministryName:
+                            type: string
+                            description: Name of the ministry
+                            example: 'Health'
+                          description:
+                            type: string
+                            description: Description of the tenant
+                            example: 'Tenant for Ministry of Health applications'
+                          createdBy:
+                            type: string
+                            description: SSO user ID of the user who created the tenant
+                            minLength: 32
+                            maxLength: 32
+                            example: '123e4567e89b12d3a456426614174000'
+                          updatedBy:
+                            type: string
+                            description: SSO user ID of the user who last updated the tenant
+                            minLength: 32
+                            maxLength: 32
+                            example: '123e4567e89b12d3a456426614174000'
         '400':
           description: Invalid input
           content:

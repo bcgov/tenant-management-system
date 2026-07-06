@@ -5,34 +5,21 @@ import { connection } from '../common/db.connection'
 import { URLSearchParams } from 'url'
 import axios from 'axios'
 import logger from '../common/logger'
-import { TenantRequest } from '../entities/TenantRequest'
 import { Tenant } from '../entities/Tenant'
 import { Group } from '../entities/Group'
 import { BadRequestError } from '../errors/BadRequestError'
 import { getErrorMessage } from '../common/error.handler'
 import { AddTenantUserResponseDto, TMSMapper } from '../mappers/tms.mapper'
 import {
-  AssociateSharedServiceToTenantInputDto,
   AssignUserRolesInputDto,
   AddTenantUserInputDto,
   AddTenantUserResultDto,
-  AddSharedServiceRolesInputDto,
   CreateTenantRolesInputDto,
   CreateTenantInputDto,
-  CreateTenantRequestInputDto,
-  CreateSharedServiceInputDto,
-  UpdateSharedServiceInputDto,
-  UpdateSharedServiceRoleInputDto,
-  UpdateSharedServiceStatusInputDto,
-  UpdateTenantRequestStatusResponseDto,
-  UpdateTenantRequestStatusResultDto,
-  UpdateTenantRequestStatusInputDto,
   GetRolesForSsoUserInputDto,
-  GetSharedServicesForTenantInputDto,
   GetTenantInputDto,
   GetTenantUserInputDto,
   GetTenantUserResultDto,
-  GetTenantRequestsInputDto,
   GetTenantUsersInputDto,
   GetTenantRolesInputDto,
   GetUserRolesInputDto,
@@ -654,173 +641,6 @@ export class TMSService {
     }
   }
 
-  private getTenantRequestUserFromToken(
-    req: Request,
-  ): CreateTenantRequestInputDto['user'] {
-    const bodyUser =
-      req.body.user && typeof req.body.user === 'object' ? req.body.user : {}
-    const decodedJwt = req.decodedJwt
-    const ssoUserId =
-      decodedJwt?.idir_user_guid ||
-      decodedJwt?.bceid_user_guid ||
-      bodyUser.ssoUserId
-    const firstName = decodedJwt?.given_name || bodyUser.firstName || ''
-    const lastName = decodedJwt?.family_name || bodyUser.lastName || ''
-    const displayName =
-      decodedJwt?.display_name ||
-      decodedJwt?.name ||
-      bodyUser.displayName ||
-      [firstName, lastName].filter(Boolean).join(' ') ||
-      ssoUserId
-
-    return {
-      ssoUserId,
-      firstName,
-      lastName,
-      displayName,
-      userName: decodedJwt?.idir_username || bodyUser.userName || '',
-      email: decodedJwt?.email || bodyUser.email || '',
-      idpType: req.idpType || bodyUser.idpType || 'idir',
-    }
-  }
-
-  public async createTenantRequest(req: Request) {
-    const input: CreateTenantRequestInputDto = {
-      name: req.body.name,
-      ministryName: req.body.ministryName,
-      description: req.body.description,
-      user: this.getTenantRequestUserFromToken(req),
-    }
-    const tenantRequest = (await this.tmsRepository.saveTenantRequest(
-      input,
-    )) as TenantRequest
-    return {
-      data: {
-        tenantRequest: {
-          ...tenantRequest,
-          requestedBy: tenantRequest.requestedBy?.displayName,
-        },
-      },
-    }
-  }
-
-  public async createSharedService(req: Request) {
-    const input: CreateSharedServiceInputDto = {
-      name: req.body.name,
-      displayName: req.body.displayName,
-      clientIdentifier: req.body.clientIdentifier,
-      landingPageUrl: req.body.landingPageUrl,
-      description: req.body.description,
-      isActive: req.body.isActive,
-      roles: req.body.roles,
-      updatedBy: req.decodedJwt?.idir_user_guid || 'system',
-    }
-    const savedSharedService = await this.tmsRepository.saveSharedService(input)
-    return {
-      data: {
-        sharedService: savedSharedService,
-      },
-    }
-  }
-
-  public async updateSharedService(req: Request) {
-    const input: UpdateSharedServiceInputDto = {
-      sharedServiceId: req.params.sharedServiceId,
-      name: req.body.name,
-      displayName: req.body.displayName,
-      clientIdentifier: req.body.clientIdentifier,
-      landingPageUrl: req.body.landingPageUrl,
-      description: req.body.description,
-      updatedBy: req.decodedJwt?.idir_user_guid || 'system',
-    }
-    const updatedSharedService =
-      await this.tmsRepository.updateSharedService(input)
-    return {
-      data: {
-        sharedService: updatedSharedService,
-      },
-    }
-  }
-
-  public async addSharedServiceRoles(req: Request) {
-    const input: AddSharedServiceRolesInputDto = {
-      sharedServiceId: req.params.sharedServiceId,
-      roles: req.body.roles,
-      updatedBy: req.decodedJwt?.idir_user_guid || 'system',
-    }
-    const updatedSharedService =
-      await this.tmsRepository.addSharedServiceRoles(input)
-    return {
-      data: {
-        sharedService: updatedSharedService,
-      },
-    }
-  }
-
-  public async updateSharedServiceRole(req: Request) {
-    const input: UpdateSharedServiceRoleInputDto = {
-      sharedServiceId: req.params.sharedServiceId,
-      sharedServiceRoleId: req.params.sharedServiceRoleId,
-      name: req.body.name,
-      description: req.body.description,
-      allowedIdentityProviders: req.body.allowedIdentityProviders,
-      updatedBy: req.decodedJwt?.idir_user_guid || 'system',
-    }
-    const updatedSharedService =
-      await this.tmsRepository.updateSharedServiceRole(input)
-    return {
-      data: {
-        sharedService: updatedSharedService,
-      },
-    }
-  }
-
-  public async updateSharedServiceStatus(req: Request) {
-    const input: UpdateSharedServiceStatusInputDto = {
-      sharedServiceId: req.params.sharedServiceId,
-      isActive: req.body.isActive,
-      updatedBy: req.decodedJwt?.idir_user_guid || 'system',
-    }
-    const updatedSharedService =
-      await this.tmsRepository.updateSharedServiceStatus(input)
-    return {
-      data: {
-        sharedService: updatedSharedService,
-      },
-    }
-  }
-
-  public async associateSharedServiceToTenant(req: Request) {
-    const input: AssociateSharedServiceToTenantInputDto = {
-      tenantId: req.params.tenantId,
-      sharedServiceId: req.body.sharedServiceId,
-      updatedBy: req.decodedJwt?.idir_user_guid || 'system',
-    }
-    await this.tmsRepository.associateSharedServiceToTenant(input)
-  }
-
-  public async getAllActiveSharedServices() {
-    const sharedServices = await this.tmsRepository.getAllActiveSharedServices()
-    return {
-      data: {
-        sharedServices,
-      },
-    }
-  }
-
-  public async getSharedServicesForTenant(req: Request) {
-    const input: GetSharedServicesForTenantInputDto = {
-      tenantId: req.params.tenantId,
-    }
-    const sharedServices =
-      await this.tmsRepository.getSharedServicesForTenant(input)
-    return {
-      data: {
-        sharedServices,
-      },
-    }
-  }
-
   public async removeTenantUser(req: Request) {
     const input: RemoveTenantUserInputDto = {
       tenantId: req.params.tenantId,
@@ -865,95 +685,6 @@ export class TMSService {
       throw new Error(
         'Failed to obtain access token: ' + getErrorMessage(error),
       )
-    }
-  }
-
-  public async updateTenantRequestStatus(req: Request) {
-    const input: UpdateTenantRequestStatusInputDto = {
-      requestId: req.params.requestId,
-      status: req.body.status,
-      rejectionReason: req.body.rejectionReason,
-      tenantName: req.body.tenantName,
-      updatedBy: req.decodedJwt?.idir_user_guid || 'system',
-      decisionedByUser: {
-        ssoUserId: req.decodedJwt?.idir_user_guid || 'system',
-        firstName: req.decodedJwt?.given_name || 'System',
-        lastName: req.decodedJwt?.family_name || 'User',
-        displayName:
-          req.decodedJwt?.display_name || req.decodedJwt?.name || 'System User',
-        userName: req.decodedJwt?.idir_username || 'system',
-        email: req.decodedJwt?.email || 'system@gov.bc.ca',
-        idpType: req.idpType || 'idir',
-      },
-    }
-    const response: UpdateTenantRequestStatusResultDto =
-      await this.tmsRepository.updateTenantRequestStatus(input)
-    const formattedResponse: UpdateTenantRequestStatusResponseDto = {
-      data: {
-        tenantRequest: {
-          id: response.tenantRequest.id,
-          name: response.tenantRequest.name,
-          ministryName: response.tenantRequest.ministryName,
-          description: response.tenantRequest.description,
-          status: response.tenantRequest.status,
-          requestedBy: response.tenantRequest.requestedBy?.displayName,
-          decisionedBy: response.tenantRequest.decisionedBy?.displayName,
-          decisionedAt: response.tenantRequest.decisionedAt,
-          rejectionReason: response.tenantRequest.rejectionReason,
-          createdBy: response.tenantRequest.createdBy,
-          updatedBy: response.tenantRequest.updatedBy,
-        },
-      },
-    }
-
-    if (response.tenant) {
-      formattedResponse.data.tenant = response.tenant
-    }
-
-    return formattedResponse
-  }
-
-  public async getTenantRequests(req: Request) {
-    const status = req.query.status as
-      | 'NEW'
-      | 'APPROVED'
-      | 'REJECTED'
-      | undefined
-    const input: GetTenantRequestsInputDto = { status }
-    const tenantRequests = await this.tmsRepository.getTenantRequests(input)
-
-    const formattedRequests = tenantRequests.map((request) => ({
-      ...request,
-      createdBy: request.requestedBy?.displayName || 'system',
-      requestedBy: request.requestedBy?.displayName,
-      decisionedBy: request.decisionedBy?.displayName,
-    }))
-
-    return {
-      data: {
-        tenantRequests: formattedRequests,
-      },
-    }
-  }
-
-  public async getUserTenantRequests(req: Request) {
-    const input: GetTenantRequestsInputDto = {
-      status: 'NEW',
-      ssoUserId: req.params.ssoUserId,
-    }
-    const tenantRequests = await this.tmsRepository.getTenantRequests(input)
-
-    const formattedRequests = tenantRequests.map((request) => ({
-      ...request,
-      createdBy: request.requestedBy?.displayName || 'system',
-      requestedBy: request.requestedBy?.displayName,
-      decisionedBy: request.decisionedBy?.displayName,
-    }))
-
-    return {
-      data: {
-        tenantRequests: formattedRequests,
-      },
     }
   }
 
