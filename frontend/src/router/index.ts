@@ -3,7 +3,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import GroupHeaderContainer from '@/components/route/GroupHeaderContainer.vue'
 import GroupListContainer from '@/components/route/GroupListContainer.vue'
 import GroupRoleContainer from '@/components/route/GroupRoleContainer.vue'
-import GroupUserContainer from '@/components/route/GroupUserContainer.vue'
+import GroupMemberContainer from '@/components/route/GroupMemberContainer.vue'
 import LandingPageContainer from '@/components/route/LandingPageContainer.vue'
 import LandingPageBceidContainer from '@/components/route/LandingPageBceidContainer.vue'
 import SettingsServiceContainer from '@/components/route/SettingsServiceContainer.vue'
@@ -60,7 +60,7 @@ const routes = [
         children: [
           {
             path: 'members',
-            component: GroupUserContainer,
+            component: GroupMemberContainer,
 
             props: true,
           },

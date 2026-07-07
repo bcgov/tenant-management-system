@@ -2,12 +2,11 @@
 import { mdiPlusBox } from '@mdi/js'
 import { computed, ref } from 'vue'
 
+import GroupMemberTable from '@/components/group/GroupMemberTable.vue'
 import UserSearch from '@/components/group/UserSearch.vue'
 import FloatingActionButton from '@/components/ui/FloatingActionButton.vue'
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
-import SimpleDialog from '@/components/ui/SimpleDialog.vue'
-import UserTable from '@/components/user/UserTable.vue'
 import { type Group } from '@/models/group.model'
 import { GroupUser, type GroupUserId } from '@/models/groupuser.model'
 import { type Tenant } from '@/models/tenant.model'
@@ -17,7 +16,7 @@ import { currentUserHasRole } from '@/utils/permissions'
 
 // --- Component Interface -----------------------------------------------------
 
-const props = defineProps<{
+const { group, loadingSearch, searchResults, tenant } = defineProps<{
   group: Group
   loadingSearch: boolean
   searchResults: User[] | null
@@ -25,51 +24,40 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (event: 'add', user: User): void
-  (event: 'cancel' | 'clear-search'): void
-  (event: 'delete', userId: GroupUserId): void
-  (event: 'search', searchType: IdirSearchType, searchText: string): void
+  add: [User]
+  cancel: []
+  'clear-search': []
+  delete: [GroupUserId]
+  search: [IdirSearchType, string]
 }>()
 
 // --- Component State ---------------------------------------------------------
 
-const groupUserToDelete = ref<GroupUser | null>(null)
-const selectedUser = ref<User | null>(null)
-const showDeleteDialog = ref(false)
+const selectedMember = ref<User | null>(null)
+
 const showSearch = ref(false)
 
 // --- Computed Values ---------------------------------------------------------
-
-const deleteDialogButtons = computed(() => [
-  {
-    action: 'cancel',
-    text: 'Cancel',
-    type: 'secondary' as const,
-  },
-  {
-    action: 'remove',
-    text: 'Remove',
-    type: 'primary' as const,
-  },
-])
 
 const isUserAdmin = computed(() => {
   // A tenant owner, by default, is also a user admin - even if they don't have
   // the USER_ADMIN role.
   return (
-    currentUserHasRole(props.tenant, ROLES.TENANT_OWNER.value) ||
-    currentUserHasRole(props.tenant, ROLES.USER_ADMIN.value)
+    currentUserHasRole(tenant, ROLES.TENANT_OWNER.value) ||
+    currentUserHasRole(tenant, ROLES.USER_ADMIN.value)
   )
 })
 
 // --- Component Methods -------------------------------------------------------
 
-const handleAddUser = () => {
-  if (!selectedUser.value) {
+const handleAddMember = () => {
+  // Guard clause - this should never happen because the add button is disabled
+  // until a member is selected.
+  if (!selectedMember.value) {
     return
   }
 
-  emit('add', selectedUser.value)
+  emit('add', selectedMember.value)
   toggleSearch()
 }
 
@@ -82,32 +70,16 @@ const handleClearSearch = () => {
   emit('clear-search')
 }
 
-const handleDeleteClick = (user: User) => {
-  const groupUser = new GroupUser({
-    // TODO
-    id: user.id as unknown as GroupUserId,
-    user,
-  })
-
-  showDeleteDialog.value = true
-  groupUserToDelete.value = groupUser
+const handleMemberSelected = (user: User | null) => {
+  selectedMember.value = user
 }
 
-const handleDeleteDialogAction = (action: string) => {
-  if (action === 'remove' && groupUserToDelete.value) {
-    emit('delete', groupUserToDelete.value.id)
-  }
-
-  showDeleteDialog.value = false
-  groupUserToDelete.value = null
+const handleRemoveMember = (groupUser: GroupUser) => {
+  emit('delete', groupUser.id)
 }
 
 const handleSearch = (searchType: IdirSearchType, searchText: string) => {
   emit('search', searchType, searchText)
-}
-
-const handleUserSelected = (user: User | null) => {
-  selectedUser.value = user
 }
 
 const toggleSearch = () => {
@@ -120,13 +92,11 @@ const toggleSearch = () => {
     <v-row>
       <v-col :cols="12">
         <h4>Group Members</h4>
-        <UserTable
-          :show-actions="isUserAdmin"
-          :show-offboard-dialog="handleDeleteClick"
+        <GroupMemberTable
+          :group-members="group.groupUsers"
           :tenant="tenant"
-          :users="group.groupUsers"
-          where="group"
-          @add-first-clicked="toggleSearch"
+          @add-member="toggleSearch"
+          @remove-member="handleRemoveMember"
         />
       </v-col>
     </v-row>
@@ -138,7 +108,7 @@ const toggleSearch = () => {
       <v-col class="d-flex justify-start" cols="12">
         <FloatingActionButton
           :icon="mdiPlusBox"
-          text="Add User to Group"
+          text="Add Member to Group"
           @click="toggleSearch"
         />
       </v-col>
@@ -148,10 +118,10 @@ const toggleSearch = () => {
       <div v-if="showSearch">
         <v-divider class="my-12" />
 
-        <h4 class="mb-4">Add a user to this Group</h4>
+        <h4 class="mb-4">Add a member to this Group</h4>
 
         <p class="mb-2 mt-8">
-          1. Search for a user based on the selection criteria below:
+          1. Search for a member based on the selection criteria below:
         </p>
 
         <UserSearch
@@ -160,7 +130,7 @@ const toggleSearch = () => {
           :tenant="tenant"
           @clear-search="handleClearSearch"
           @search="handleSearch"
-          @select="handleUserSelected"
+          @select="handleMemberSelected"
         />
 
         <v-row class="mt-8">
@@ -168,24 +138,13 @@ const toggleSearch = () => {
             <ButtonSecondary class="me-4" text="Cancel" @click="handleCancel" />
 
             <ButtonPrimary
-              :disabled="!selectedUser"
-              text="Add User"
-              @click="handleAddUser"
+              :disabled="!selectedMember"
+              text="Add Member"
+              @click="handleAddMember"
             />
           </v-col>
         </v-row>
       </div>
     </v-expand-transition>
-
-    <SimpleDialog
-      v-model="showDeleteDialog"
-      :buttons="deleteDialogButtons"
-      :max-width="650"
-      dialog-type="warning"
-      message="This will remove the user from this group only. This action can't
-        be undone."
-      title="Remove user from group?"
-      @button-click="handleDeleteDialogAction"
-    />
   </v-container>
 </template>
