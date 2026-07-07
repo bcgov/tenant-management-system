@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 
-import GroupUserManagement from '@/components/group/GroupUserManagement.vue'
+import GroupMemberManagement from '@/components/group/GroupMemberManagement.vue'
 import { useNotification } from '@/composables/useNotification'
 import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
 import { type GroupId } from '@/models/group.model'
@@ -39,23 +39,23 @@ const tenant = computed(() => tenantStore.getTenant(props.tenantId))
 
 // --- Component Methods -------------------------------------------------------
 
-const handleAddUser = async (user: User) => {
+const handleAddMember = async (user: User) => {
   try {
     await groupStore.addGroupUser(props.tenantId, props.groupId, user)
     searchResults.value = null
     notification.success(
-      'New user successfully added to this group',
-      'User Added',
+      'New member successfully added to this group',
+      'Member Added',
     )
   } catch (error) {
     if (error instanceof DuplicateEntityError) {
       notification.error(
-        `Cannot add user "${user.ssoUser.displayName}": already a user in ` +
-          `this group`,
+        `Cannot add member "${user.ssoUser.displayName}": already a member ` +
+          `in this group`,
       )
       searchResults.value = null
     } else {
-      notification.error('Failed to add user to group')
+      notification.error('Failed to add member to group')
     }
   }
 }
@@ -64,15 +64,15 @@ const handleClearSearch = async () => {
   searchResults.value = null
 }
 
-const handleDeleteUser = async (groupUserId: GroupUserId) => {
+const handleDeleteMember = async (groupUserId: GroupUserId) => {
   try {
     await groupStore.removeGroupUser(props.tenantId, props.groupId, groupUserId)
     notification.success(
-      'User successfully removed from this group',
-      'User Removed',
+      'Member successfully removed from this group',
+      'Member Removed',
     )
   } catch {
-    notification.error('Failed to remove user from group')
+    notification.error('Failed to remove member from group')
   }
 }
 
@@ -111,15 +111,15 @@ const handleUserSearch = async (
 </script>
 
 <template>
-  <GroupUserManagement
+  <GroupMemberManagement
     :group="group!"
     :loading-search="isLoadingSearch"
     :search-results="searchResults"
     :tenant="tenant!"
-    @add="handleAddUser"
+    @add="handleAddMember"
     @cancel="searchResults = null"
     @clear-search="handleClearSearch"
-    @delete="handleDeleteUser"
+    @delete="handleDeleteMember"
     @search="handleUserSearch"
   />
 </template>
