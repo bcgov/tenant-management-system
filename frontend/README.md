@@ -22,6 +22,7 @@ To keep the application simple and testable, it is important that:
 - The Container components call the stores to fetch or create data - they never
   call the services
 - The stores call the services, which make the API calls
+- 
 
 ## Style
 
