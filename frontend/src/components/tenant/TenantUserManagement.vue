@@ -1,15 +1,12 @@
 <script setup lang="ts">
-import { mdiMagnify, mdiPlusBox } from '@mdi/js'
+import { mdiPlusBox } from '@mdi/js'
 import { computed, ref, watch } from 'vue'
-import { useI18n } from 'vue-i18n'
 
-import RoleDialog from '@/components/tenant/RoleDialog.vue'
+import TenantUserTable from '@/components/tenant/TenantUserTable.vue'
 import UserSearch from '@/components/tenant/UserSearch.vue'
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
 import FloatingActionButton from '@/components/ui/FloatingActionButton.vue'
-import SimpleDialog from '@/components/ui/SimpleDialog.vue'
-import UserTable from '@/components/user/UserTable.vue'
 import { type Group } from '@/models/group.model'
 import { type Role, type RoleId } from '@/models/role.model'
 import { type Tenant } from '@/models/tenant.model'
@@ -31,8 +28,8 @@ const emit = defineEmits<{
   (event: 'add', user: User, groups: Group[]): void
   (event: 'cancel' | 'clear-search'): void
   (event: 'remove-role', userId: UserId, roleId: RoleId): void
-  (event: 'search', searchType: IdirSearchType, searchText: string): void
   (event: 'remove-user', userId: UserId): void
+  (event: 'search', searchType: IdirSearchType, searchText: string): void
 }>()
 
 // --- Store and Composable Setup ----------------------------------------------
@@ -44,51 +41,13 @@ const groupStore = useGroupStore()
 
 // --- Component State ---------------------------------------------------------
 
-const { t } = useI18n()
-
 const addGroups = ref<boolean[]>([])
 
-const confirmDialog = ref({
-  buttons: [
-    { action: 'cancel', text: 'Cancel', type: 'secondary' as const },
-    { action: 'remove', text: 'Remove', type: 'primary' as const },
-  ],
-  message: 'Are you sure you want to remove this role from the user?',
-  title: 'Confirm Role Removal',
-  visible: false,
-})
-
-const confirmOffboardDialog = ref({
-  buttons: [
-    { action: 'cancel', text: t('general.cancel'), type: 'secondary' as const },
-    {
-      action: 'remove',
-      text: t('users.offboardUserAction'),
-      type: 'primary' as const,
-    },
-  ],
-  message: t('users.offboardUserMessage'),
-  title: t('users.offboardUserTitle'),
-  visible: false,
-})
-
-const infoDialog = ref({
-  buttons: [{ action: 'ok', text: 'OK', type: 'primary' as const }],
-  message: '',
-  title: 'Action Blocked',
-  visible: false,
-})
-
-const modifyingUserIndex = ref<number | null>(null)
-const pendingRole = ref<Role | null>(null)
-const pendingUser = ref<User | null>(null)
-const roleDialogVisible = ref(false)
 const selectAllGroups = ref(false)
 const selectAllRoles = ref(false)
 const selectedRoles = ref<Role[]>([])
 const selectedUser = ref<User | null>(null)
 const showSearch = ref(false)
-const userSearch = ref('')
 
 // --- Watchers and Effects ----------------------------------------------------
 
@@ -130,15 +89,6 @@ const roles = computed(() => props.possibleRoles ?? [])
 
 // --- Component Methods -------------------------------------------------------
 
-const confirmRemoveRole = () => {
-  if (pendingRole.value && pendingUser.value) {
-    emit('remove-role', pendingUser.value.id, pendingRole.value.id)
-  }
-
-  pendingRole.value = null
-  pendingUser.value = null
-}
-
 const handleAddUser = () => {
   if (!selectedUser.value || selectedRoles.value.length === 0) {
     return
@@ -173,62 +123,12 @@ const handleClearSearch = () => {
   emit('clear-search')
 }
 
-const handleCloseRoleDialog = (open: boolean) => {
-  roleDialogVisible.value = open
-  modifyingUserIndex.value = null
-}
-
-const handleConfirmButtonClick = (action: string) => {
-  if (action === 'cancel') {
-    pendingUser.value = null
-    pendingRole.value = null
-  } else if (action === 'remove') {
-    confirmRemoveRole()
-  }
-}
-
-const handleOffboardButtonClick = (action: string) => {
-  if (action === 'cancel') {
-    pendingUser.value = null
-  } else if (action === 'remove' && pendingUser.value) {
-    // When the action is remove the pendingUser.value should never be null, but
-    // the guard simplifies the emit signature.
-    emit('remove-user', pendingUser.value.id)
-    pendingUser.value = null
-  }
-}
-
 const handleRemoveRole = (user: User, role: Role) => {
-  if (!props.tenant) {
-    return
-  }
+  emit('remove-role', user.id, role.id)
+}
 
-  const isOwnerRole = role.name === ROLES.TENANT_OWNER.value
-  const ownerCount = props.tenant.getOwners().length
-
-  if (isOwnerRole && ownerCount <= 1) {
-    showInfo(
-      `There must be at least one user with the ${t('roles.owner')} role. To ` +
-        'remove this role from the current user, assign the role to another ' +
-        'user first.',
-    )
-
-    return
-  }
-
-  if (user.roles.length <= 1) {
-    showInfo(
-      'The user cannot be removed from their only role. Each user must have ' +
-        'at least one role to remain in a tenant. To proceed, assign a new ' +
-        'role to this user before removing the current one.',
-    )
-
-    return
-  }
-
-  pendingRole.value = role
-  pendingUser.value = user
-  confirmDialog.value.visible = true
+const handleRemoveUser = (user: User) => {
+  emit('remove-user', user.id)
 }
 
 const handleSearch = (searchType: IdirSearchType, searchText: string) => {
@@ -237,28 +137,6 @@ const handleSearch = (searchType: IdirSearchType, searchText: string) => {
 
 const handleUserSelected = (user: User | null) => {
   selectedUser.value = user
-}
-
-const showChangeRoles = (user: User) => {
-  const uIndex = props.tenant.users.findIndex((u: User) => {
-    return u.id === user.id
-  })
-
-  if (uIndex !== -1) {
-    modifyingUserIndex.value = uIndex
-    roleDialogVisible.value = true
-  }
-}
-
-const showInfo = (message: string) => {
-  infoDialog.value.message = message
-  infoDialog.value.visible = true
-}
-
-const showOffboardDialog = (user: User) => {
-  pendingUser.value = user
-  confirmOffboardDialog.value.message = t('users.offboardUserMessage')
-  confirmOffboardDialog.value.visible = true
 }
 
 const toggleSearch = () => {
@@ -274,53 +152,26 @@ const toggleSearch = () => {
   <v-container class="ms-6">
     <v-row>
       <v-col cols="12">
-        <h4>
-          {{ $t('tenants.tenant', { count: 1 }) }}
-          {{ $t('users.user', { count: 2 }) }}
-        </h4>
-      </v-col>
-    </v-row>
-
-    <v-row>
-      <v-col cols="4">
-        <v-text-field
-          v-model="userSearch"
-          :append-inner-icon="mdiMagnify"
-          label="Search"
-          variant="outlined"
-          clearable
-          hide-details
-          single-line
-        ></v-text-field>
+        <h4>Tenant Users</h4>
       </v-col>
     </v-row>
 
     <v-row>
       <v-col cols="12">
-        <UserTable
-          :edit-user-roles="showChangeRoles"
-          :filter="userSearch"
-          :handle-remove-role="handleRemoveRole"
-          :show-actions="isUserAdmin"
-          :show-edit-roles="true"
-          :show-offboard-dialog="showOffboardDialog"
-          :show-roles="true"
+        <TenantUserTable
           :tenant="tenant"
           :users="tenant.users"
-          where="tenant"
-          @add-first-clicked="showSearch = true"
+          @remove-role="handleRemoveRole"
+          @remove-user="handleRemoveUser"
         />
       </v-col>
     </v-row>
 
-    <v-row
-      v-if="isUserAdmin && !showSearch && tenant.users.length !== 0"
-      class="mt-4"
-    >
+    <v-row v-if="isUserAdmin && !showSearch" class="mt-4">
       <v-col class="d-flex justify-start" cols="12">
         <FloatingActionButton
           :icon="mdiPlusBox"
-          :text="$t('tenants.addAnotherUser', tenant.users.length)"
+          text="Add another user to this tenant"
           @click="toggleSearch"
         />
       </v-col>
@@ -417,47 +268,6 @@ const toggleSearch = () => {
       </div>
     </v-expand-transition>
 
-    <!-- Info dialog for single-button notifications -->
-    <SimpleDialog
-      v-model="infoDialog.visible"
-      :buttons="infoDialog.buttons"
-      :message="infoDialog.message"
-      :title="infoDialog.title"
-    />
-
-    <!-- Confirmation dialog for yes/no decisions -->
-    <SimpleDialog
-      v-model="confirmDialog.visible"
-      :buttons="confirmDialog.buttons"
-      :message="confirmDialog.message"
-      :title="confirmDialog.title"
-      @button-click="handleConfirmButtonClick"
-    />
-
-    <!-- Confirm offboard user dialog -->
-    <SimpleDialog
-      v-model="confirmOffboardDialog.visible"
-      :buttons="confirmOffboardDialog.buttons"
-      :message="confirmOffboardDialog.message"
-      :title="confirmOffboardDialog.title"
-      dialog-type="warning"
-      @button-click="handleOffboardButtonClick"
-    />
-
-    <RoleDialog
-      v-if="isUserAdmin"
-      v-model="roleDialogVisible"
-      :tenant="tenant"
-      :user-index="modifyingUserIndex"
-      @update:open-dialog="handleCloseRoleDialog"
-    />
-
     <v-divider class="my-12" />
   </v-container>
 </template>
-
-<style scoped>
-.v-btn--icon.default-radius {
-  border-radius: 4px;
-}
-</style>

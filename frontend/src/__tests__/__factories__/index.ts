@@ -133,19 +133,31 @@ export const makeRole = (
 }
 
 export const makeRoleOperationsAdmin = (): Role => {
-  return makeRole({ name: ROLES.OPERATIONS_ADMIN.value })
+  return makeRole({
+    description: ROLES.OPERATIONS_ADMIN.title,
+    name: ROLES.OPERATIONS_ADMIN.value,
+  })
 }
 
 export const makeRoleServiceUser = (): Role => {
-  return makeRole({ name: ROLES.SERVICE_USER.value })
+  return makeRole({
+    description: ROLES.SERVICE_USER.title,
+    name: ROLES.SERVICE_USER.value,
+  })
 }
 
 export const makeRoleTenantOwner = (): Role => {
-  return makeRole({ name: ROLES.TENANT_OWNER.value })
+  return makeRole({
+    description: ROLES.TENANT_OWNER.title,
+    name: ROLES.TENANT_OWNER.value,
+  })
 }
 
 export const makeRoleUserAdmin = (): Role => {
-  return makeRole({ name: ROLES.USER_ADMIN.value })
+  return makeRole({
+    description: ROLES.USER_ADMIN.title,
+    name: ROLES.USER_ADMIN.value,
+  })
 }
 
 export const makeRoleApiData = (): RoleApiData => {
