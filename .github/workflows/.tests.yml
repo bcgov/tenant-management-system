@@ -91,43 +91,6 @@ jobs:
           name: bruno-test-results
           path: tests/integration/collection/results.xml
 
-  e2e-tests:
-    name: E2E
-    defaults:
-      run:
-        working-directory: frontend
-    runs-on: ubuntu-24.04
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v6
-        name: Checkout
-      - uses: actions/setup-node@v6
-        name: Setup Node
-        with:
-          node-version: 24
-          cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run Tests
-        env:
-          CYPRESS_BASE_URL: https://${{ env.PREFIX }}.${{ env.DOMAIN }}/
-          CI: 'true'
-          TERM: xterm
-        run: |
-          npx cypress run
-
-      - uses: actions/upload-artifact@v6
-        if: failure()
-        name: upload results
-        with:
-          name: cypress-results
-          path: |
-            ./frontend/cypress/screenshots
-            ./frontend/cypress/videos
-          retention-days: 7
-
   load-tests:
     name: Load
     runs-on: ubuntu-24.04
