@@ -1,9 +1,0 @@
-{
-  "compilerOptions": {
-    "isolatedModules": false,
-    "types": ["cypress"]
-  },
-  "exclude": ["./support/component.*"],
-  "extends": "@vue/tsconfig/tsconfig.dom.json",
-  "include": ["./e2e/**/*", "./support/**/*"]
-}
