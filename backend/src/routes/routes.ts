@@ -1,7 +1,6 @@
 import { Application, NextFunction, Request, Response } from 'express'
 import { RoutesConstants } from '../common/routes.constants'
 import { TMSController } from '../controllers/tms.controller'
-import { TMController } from '../controllers/tm.controller'
 import { sharedServiceController } from '../controllers/shared-service.controller'
 import { tenantRequestController } from '../controllers/tenant-request.controller'
 import { groupController } from '../controllers/group.controller'
@@ -16,7 +15,6 @@ import logger from '../common/logger'
 
 export class Routes {
   public tmsController: TMSController = new TMSController()
-  public tmController: TMController = new TMController()
 
   public routes(app: Application) {
     // Proxy swagger docs endpoints to /v1/docs for access through frontend
