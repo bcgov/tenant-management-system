@@ -6,7 +6,7 @@ export default defineConfig({
   workers: 1,
 
   use: {
-    baseURL: 'http://localhost:3000',
+    baseURL: process.env.BASE_URL || 'http://localhost:3000',
     headless: true,
     video: 'retain-on-failure',
     screenshot: 'only-on-failure',
