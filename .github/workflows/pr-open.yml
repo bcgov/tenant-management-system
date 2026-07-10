@@ -42,6 +42,8 @@ jobs:
       release_name: cstar-${{ github.event.number }}
       tag: ${{ github.event.number }}
       db_user: app-${{ github.event.number }}
+      params: --set global.secrets.persist=false
+        --set frontend.ingress.tls=""
 
   tests:
     name: Tests
