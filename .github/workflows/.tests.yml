@@ -118,10 +118,10 @@ jobs:
         run: npm ci --ignore-scripts
 
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps
+        run: ./node_modules/.bin/playwright install --with-deps
 
       - name: Run Playwright tests
-        run: npx playwright test
+        run: ./node_modules/.bin/playwright test
 
         env:
           BASE_URL: https://${{ env.PREFIX }}.${{ env.DOMAIN }}/
