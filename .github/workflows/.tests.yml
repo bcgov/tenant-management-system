@@ -20,6 +20,13 @@ on:
         description: PR number, dev, test or prod
         default: ${{ github.event.number }}-frontend
         type: string
+    secrets:
+      Username:
+        required: true
+      Password:
+        required: true
+      MFA_CODE:
+        required: true
 
 env:
   DOMAIN: ${{ inputs.domain }}
@@ -90,6 +97,53 @@ jobs:
         with:
           name: bruno-test-results
           path: tests/integration/collection/results.xml
+
+  e2e-tests:
+    name: E2E
+    defaults:
+      run:
+        working-directory: tests/e2e
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        name: Checkout
+      - uses: actions/setup-node@v6
+        name: Setup Node
+        with:
+          node-version: 24
+          cache: 'npm'
+          cache-dependency-path: tests/e2e/package-lock.json
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      - name: Run Playwright tests
+        run: npx playwright test
+
+        env:
+          BASE_URL: https://${{ env.PREFIX }}.${{ env.DOMAIN }}/
+          E2E_IDIR_USERNAME: ${{ secrets.Username }}
+          E2E_IDIR_PASSWORD: ${{ secrets.Password }}
+          E2E_MFA_CODE: ${{ secrets.MFA_CODE }}
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: playwright-report
+          path: tests/e2e/playwright-report
+          if-no-files-found: ignore
+
+      - name: Upload Playwright screenshots on failure
+        uses: actions/upload-artifact@v6
+        if: failure()
+        with:
+          name: playwright-screenshots
+          path: tests/e2e/test-results
+          retention-days: 7
 
   load-tests:
     name: Load
