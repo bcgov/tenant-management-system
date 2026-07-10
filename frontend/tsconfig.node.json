@@ -9,7 +9,6 @@
   "extends": "@tsconfig/node22/tsconfig.json",
   "include": [
     "types/**/*.d.ts",
-    "cypress.config.*",
     "eslint.config.*",
     "vite.config.*",
     "vitest.config.*"
