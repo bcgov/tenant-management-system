@@ -2,7 +2,7 @@ import request from 'supertest'
 import express, { type ErrorRequestHandler } from 'express'
 import axios from 'axios'
 import { TMSRepository } from '../repositories/tms.repository'
-import { TMRepository } from '../repositories/tm.repository'
+import { groupRepository } from '../repositories/group.repository'
 import { TMSConstants } from '../common/tms.constants'
 import { TMSController } from '../controllers/tms.controller'
 import { validate } from 'express-validation'
@@ -13,7 +13,7 @@ import { NotFoundError } from '../errors/NotFoundError'
 import { BadRequestError } from '../errors/BadRequestError'
 
 jest.mock('../repositories/tms.repository')
-jest.mock('../repositories/tm.repository')
+jest.mock('../repositories/group.repository')
 jest.mock('../common/db.connection', () => ({
   connection: {
     manager: {
@@ -32,10 +32,10 @@ type GetTenantsForUserResult = Awaited<
 type GetTenantResult = Awaited<ReturnType<TMSRepository['getTenant']>>
 type GetUserRolesResult = Awaited<ReturnType<TMSRepository['getUserRoles']>>
 type GetTenantUserGroupsResult = Awaited<
-  ReturnType<TMRepository['getTenantUserGroups']>
+  ReturnType<typeof groupRepository.getTenantUserGroups>
 >
 type GetTenantUserSharedServiceRolesResult = Awaited<
-  ReturnType<TMRepository['getTenantUserSharedServiceRoles']>
+  ReturnType<typeof groupRepository.getTenantUserSharedServiceRoles>
 >
 type AssignUserRolesForUserResult = Awaited<
   ReturnType<TMSRepository['assignUserRolesForUser']>
@@ -44,7 +44,7 @@ type AssignUserRolesForUserResult = Awaited<
 describe('Tenant API', () => {
   let app: express.Application
   let mockTMSRepository: jest.Mocked<TMSRepository>
-  let mockTMRepository: jest.Mocked<TMRepository>
+  let mockGroupRepository: jest.Mocked<typeof groupRepository>
   let tmsController: TMSController
 
   beforeEach(() => {
@@ -54,7 +54,7 @@ describe('Tenant API', () => {
 
     tmsController = new TMSController()
     mockTMSRepository = TMSRepository.prototype as jest.Mocked<TMSRepository>
-    mockTMRepository = TMRepository.prototype as jest.Mocked<TMRepository>
+    mockGroupRepository = groupRepository as jest.Mocked<typeof groupRepository>
 
     app.post(
       '/v1/tenants',
@@ -536,7 +536,7 @@ describe('Tenant API', () => {
       mockTMSRepository.addTenantUsers.mockResolvedValue(
         mockResponse as unknown as AddTenantUsersResult,
       )
-      mockTMRepository.addUserToGroups.mockRejectedValue(
+      mockGroupRepository.addUserToGroups.mockRejectedValue(
         new NotFoundError('Group not found'),
       )
 
@@ -552,7 +552,7 @@ describe('Tenant API', () => {
         name: 'Error occurred adding user to the tenant',
       })
       expect(mockTMSRepository.addTenantUsers).toHaveBeenCalled()
-      expect(mockTMRepository.addUserToGroups).toHaveBeenCalled()
+      expect(mockGroupRepository.addUserToGroups).toHaveBeenCalled()
     })
 
     it('should restore soft-deleted user when adding to tenant', async () => {
@@ -578,7 +578,7 @@ describe('Tenant API', () => {
       mockTMSRepository.addTenantUsers.mockResolvedValue(
         mockResponse as unknown as AddTenantUsersResult,
       )
-      mockTMRepository.addUserToGroups.mockResolvedValue([])
+      mockGroupRepository.addUserToGroups.mockResolvedValue([])
 
       const response = await request(app)
         .post(`/v1/tenants/${tenantId}/users`)
@@ -615,7 +615,7 @@ describe('Tenant API', () => {
       mockTMSRepository.addTenantUsers.mockResolvedValue(
         mockResponse as unknown as AddTenantUsersResult,
       )
-      mockTMRepository.addUserToGroups.mockResolvedValue([])
+      mockGroupRepository.addUserToGroups.mockResolvedValue([])
 
       const response = await request(app)
         .post(`/v1/tenants/${tenantId}/users`)
@@ -728,7 +728,7 @@ describe('Tenant API', () => {
       mockTMSRepository.addTenantUsers.mockResolvedValue(
         mockResponse as unknown as AddTenantUsersResult,
       )
-      mockTMRepository.addUserToGroups.mockResolvedValue([])
+      mockGroupRepository.addUserToGroups.mockResolvedValue([])
 
       const response = await request(app)
         .post(`/v1/tenants/${tenantId}/users`)
@@ -765,7 +765,7 @@ describe('Tenant API', () => {
       mockTMSRepository.addTenantUsers.mockResolvedValue(
         mockResponse as unknown as AddTenantUsersResult,
       )
-      mockTMRepository.addUserToGroups.mockResolvedValue([])
+      mockGroupRepository.addUserToGroups.mockResolvedValue([])
 
       const response = await request(app)
         .post(`/v1/tenants/${tenantId}/users`)
@@ -2368,7 +2368,7 @@ describe('Tenant API', () => {
       ]
 
       mockTMSRepository.getTenantUser.mockResolvedValue(mockTenantUser)
-      mockTMRepository.getTenantUserGroups.mockResolvedValue(mockGroups)
+      mockGroupRepository.getTenantUserGroups.mockResolvedValue(mockGroups)
 
       const response = await request(app).get(
         `/v1/tenants/${tenantId}/users/${tenantUserId}?expand=groups`,
@@ -2389,7 +2389,7 @@ describe('Tenant API', () => {
           expand: ['groups'],
         }),
       )
-      expect(mockTMRepository.getTenantUserGroups).toHaveBeenCalledWith(
+      expect(mockGroupRepository.getTenantUserGroups).toHaveBeenCalledWith(
         tenantUserId,
       )
     })
@@ -2472,7 +2472,7 @@ describe('Tenant API', () => {
       ]
 
       mockTMSRepository.getTenantUser.mockResolvedValue(mockTenantUser)
-      mockTMRepository.getTenantUserSharedServiceRoles.mockResolvedValue(
+      mockGroupRepository.getTenantUserSharedServiceRoles.mockResolvedValue(
         mockSharedServices,
       )
 
@@ -2492,7 +2492,7 @@ describe('Tenant API', () => {
         }),
       )
       expect(
-        mockTMRepository.getTenantUserSharedServiceRoles,
+        mockGroupRepository.getTenantUserSharedServiceRoles,
       ).toHaveBeenCalledWith(tenantUserId)
     })
 
@@ -2534,7 +2534,7 @@ describe('Tenant API', () => {
       ]
 
       mockTMSRepository.getTenantUser.mockResolvedValue(mockTenantUser)
-      mockTMRepository.getTenantUserGroups.mockResolvedValue(mockGroups)
+      mockGroupRepository.getTenantUserGroups.mockResolvedValue(mockGroups)
 
       const response = await request(app).get(
         `/v1/tenants/${tenantId}/users/${tenantUserId}?expand=groups,roles`,
@@ -2556,7 +2556,7 @@ describe('Tenant API', () => {
           expand: ['groups', 'roles'],
         }),
       )
-      expect(mockTMRepository.getTenantUserGroups).toHaveBeenCalledWith(
+      expect(mockGroupRepository.getTenantUserGroups).toHaveBeenCalledWith(
         tenantUserId,
       )
     })
@@ -2673,7 +2673,7 @@ describe('Tenant API', () => {
 
     it('should remove tenant user successfully', async () => {
       mockTMSRepository.removeTenantUser.mockResolvedValue(undefined)
-      mockTMRepository.removeUserFromAllGroups.mockResolvedValue(undefined)
+      mockGroupRepository.removeUserFromAllGroups.mockResolvedValue(undefined)
 
       const response = await request(app).delete(
         `/v1/tenants/${tenantId}/users/${tenantUserId}`,
@@ -2681,7 +2681,7 @@ describe('Tenant API', () => {
 
       expect(response.status).toBe(204)
       expect(mockTMSRepository.removeTenantUser).toHaveBeenCalled()
-      expect(mockTMRepository.removeUserFromAllGroups).toHaveBeenCalled()
+      expect(mockGroupRepository.removeUserFromAllGroups).toHaveBeenCalled()
     })
 
     it('should return 404 when tenant user not found', async () => {
@@ -2783,7 +2783,7 @@ describe('Tenant API', () => {
 
     it('should handle transaction rollback when removeTenantUser succeeds but removeUserFromAllGroups fails', async () => {
       mockTMSRepository.removeTenantUser.mockResolvedValue(undefined)
-      mockTMRepository.removeUserFromAllGroups.mockRejectedValue(
+      mockGroupRepository.removeUserFromAllGroups.mockRejectedValue(
         new Error('Database error during group removal'),
       )
 
@@ -2799,7 +2799,7 @@ describe('Tenant API', () => {
         name: 'Error occurred removing tenant user',
       })
       expect(mockTMSRepository.removeTenantUser).toHaveBeenCalled()
-      expect(mockTMRepository.removeUserFromAllGroups).toHaveBeenCalled()
+      expect(mockGroupRepository.removeUserFromAllGroups).toHaveBeenCalled()
     })
 
     it('should return 400 when service throws bad request error', async () => {

@@ -1,6 +1,6 @@
 import { Request } from 'express'
 import { TMSRepository } from '../repositories/tms.repository'
-import { TMRepository } from '../repositories/tm.repository'
+import { groupRepository } from '../repositories/group.repository'
 import { connection } from '../common/db.connection'
 import { URLSearchParams } from 'url'
 import axios from 'axios'
@@ -32,17 +32,10 @@ import { config } from '../services/config.service'
 
 export class TMSService {
   tmsRepository: TMSRepository
-  tmRepository: TMRepository
   mapper: TMSMapper
 
-  constructor(
-    tmsRepository?: TMSRepository,
-    tmRepository?: TMRepository,
-    mapper?: TMSMapper,
-  ) {
+  constructor(tmsRepository?: TMSRepository, mapper?: TMSMapper) {
     this.tmsRepository = tmsRepository || new TMSRepository(connection.manager)
-    this.tmRepository =
-      tmRepository || new TMRepository(connection.manager, this.tmsRepository)
     this.mapper = mapper || new TMSMapper()
   }
 
@@ -356,7 +349,7 @@ export class TMSService {
             transactionEntityManager,
           )
         const groupIds: string[] = input.groups || []
-        const groups: Group[] = await this.tmRepository.addUserToGroups(
+        const groups: Group[] = await groupRepository.addUserToGroups(
           tmsResponse.tenantUserId,
           groupIds,
           input.tenantId,
@@ -654,7 +647,7 @@ export class TMSService {
           input,
           transactionEntityManager,
         )
-        await this.tmRepository.removeUserFromAllGroups(
+        await groupRepository.removeUserFromAllGroups(
           input.tenantUserId,
           input.deletedBy,
           transactionEntityManager,
@@ -702,14 +695,14 @@ export class TMSService {
       await this.tmsRepository.getTenantUser(input)
 
     if (expand.includes('groups')) {
-      tenantUser.groups = await this.tmRepository.getTenantUserGroups(
+      tenantUser.groups = await groupRepository.getTenantUserGroups(
         tenantUser.id,
       )
     }
 
     if (expand.includes('sharedServices')) {
       tenantUser.sharedServices =
-        await this.tmRepository.getTenantUserSharedServiceRoles(tenantUser.id)
+        await groupRepository.getTenantUserSharedServiceRoles(tenantUser.id)
     }
 
     return {

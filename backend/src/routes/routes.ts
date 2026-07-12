@@ -1,9 +1,9 @@
 import { Application, NextFunction, Request, Response } from 'express'
 import { RoutesConstants } from '../common/routes.constants'
 import { TMSController } from '../controllers/tms.controller'
-import { TMController } from '../controllers/tm.controller'
 import { sharedServiceController } from '../controllers/shared-service.controller'
 import { tenantRequestController } from '../controllers/tenant-request.controller'
+import { groupController } from '../controllers/group.controller'
 import { validate, ValidationError } from 'express-validation'
 import validator from '../common/tms.validator'
 import { checkJwt } from '../common/auth.mw'
@@ -15,7 +15,6 @@ import logger from '../common/logger'
 
 export class Routes {
   public tmsController: TMSController = new TMSController()
-  public tmController: TMController = new TMController()
 
   public routes(app: Application) {
     // Proxy swagger docs endpoints to /v1/docs for access through frontend
@@ -192,8 +191,7 @@ export class Routes {
         checkJwt(),
         validate(validator.createGroup, {}, {}),
         checkTenantAccess([TMSConstants.TENANT_OWNER, TMSConstants.USER_ADMIN]),
-        (req: Request, res: Response) =>
-          this.tmController.createGroup(req, res),
+        (req: Request, res: Response) => groupController.createGroup(req, res),
       )
     app
       .route(RoutesConstants.UPDATE_GROUP)
@@ -201,8 +199,7 @@ export class Routes {
         checkJwt(),
         validate(validator.updateGroup, {}, {}),
         checkTenantAccess([TMSConstants.TENANT_OWNER, TMSConstants.USER_ADMIN]),
-        (req: Request, res: Response) =>
-          this.tmController.updateGroup(req, res),
+        (req: Request, res: Response) => groupController.updateGroup(req, res),
       )
     app
       .route(RoutesConstants.ADD_GROUP_USER)
@@ -210,8 +207,7 @@ export class Routes {
         checkJwt(),
         validate(validator.addGroupUser, {}, {}),
         checkTenantAccess([TMSConstants.TENANT_OWNER, TMSConstants.USER_ADMIN]),
-        (req: Request, res: Response) =>
-          this.tmController.addGroupUser(req, res),
+        (req: Request, res: Response) => groupController.addGroupUser(req, res),
       )
     app
       .route(RoutesConstants.REMOVE_GROUP_USER)
@@ -220,7 +216,7 @@ export class Routes {
         validate(validator.removeGroupUser, {}, {}),
         checkTenantAccess([TMSConstants.TENANT_OWNER, TMSConstants.USER_ADMIN]),
         (req: Request, res: Response) =>
-          this.tmController.removeGroupUser(req, res),
+          groupController.removeGroupUser(req, res),
       )
     app
       .route(RoutesConstants.GET_GROUP)
@@ -228,7 +224,7 @@ export class Routes {
         checkJwt(),
         validate(validator.getGroup, {}, {}),
         checkTenantAccess([]),
-        (req: Request, res: Response) => this.tmController.getGroup(req, res),
+        (req: Request, res: Response) => groupController.getGroup(req, res),
       )
     app
       .route(RoutesConstants.GET_TENANT_GROUPS)
@@ -237,7 +233,7 @@ export class Routes {
         validate(validator.getTenantGroups, {}, {}),
         checkTenantAccess([]),
         (req: Request, res: Response) =>
-          this.tmController.getTenantGroups(req, res),
+          groupController.getTenantGroups(req, res),
       )
 
     app
@@ -297,7 +293,7 @@ export class Routes {
         validate(validator.getSharedServiceRolesForGroup, {}, {}),
         checkTenantAccess([]),
         (req: Request, res: Response) =>
-          this.tmController.getSharedServiceRolesForGroup(req, res),
+          groupController.getSharedServiceRolesForGroup(req, res),
       )
     app
       .route(RoutesConstants.UPDATE_SHARED_SERVICE_ROLES_FOR_GROUP)
@@ -306,7 +302,7 @@ export class Routes {
         validate(validator.updateSharedServiceRolesForGroup, {}, {}),
         checkTenantAccess([TMSConstants.TENANT_OWNER, TMSConstants.USER_ADMIN]),
         (req: Request, res: Response) =>
-          this.tmController.updateSharedServiceRolesForGroup(req, res),
+          groupController.updateSharedServiceRolesForGroup(req, res),
       )
     app
       .route(RoutesConstants.ASSOCIATE_SHARED_SERVICE_TO_TENANT)
@@ -333,7 +329,7 @@ export class Routes {
         validate(validator.getEffectiveSharedServiceRoles, {}, {}),
         checkTenantAccess([]),
         (req: Request, res: Response) =>
-          this.tmController.getEffectiveSharedServiceRoles(req, res),
+          groupController.getEffectiveSharedServiceRoles(req, res),
       )
     app
       .route(RoutesConstants.GET_USER_GROUPS_WITH_SHARED_SERVICE_ROLES)
@@ -342,7 +338,7 @@ export class Routes {
         validate(validator.getUserGroupsWithSharedServiceRoles, {}, {}),
         checkTenantAccess([]),
         (req: Request, res: Response) =>
-          this.tmController.getUserGroupsWithSharedServiceRoles(req, res),
+          groupController.getUserGroupsWithSharedServiceRoles(req, res),
       )
     app
       .route(RoutesConstants.GET_TENANT_USER)

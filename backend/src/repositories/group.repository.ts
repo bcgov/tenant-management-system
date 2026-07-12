@@ -1,20 +1,17 @@
+import { EntityManager, In } from 'typeorm'
 import { Group } from '../entities/Group'
 import { GroupUser } from '../entities/GroupUser'
 import { TenantUser } from '../entities/TenantUser'
 import { Tenant } from '../entities/Tenant'
-import { EntityManager } from 'typeorm'
-import { In } from 'typeorm'
-import { Request } from 'express'
-import { NotFoundError } from '../errors/NotFoundError'
-import { ConflictError } from '../errors/ConflictError'
-import { UnexpectedStateError } from '../errors/UnexpectedStateError'
-import logger from '../common/logger'
-import { getErrorMessage } from '../common/error.handler'
-import { TMSRepository } from './tms.repository'
+import { SSOUser } from '../entities/SSOUser'
 import { GroupSharedServiceRole } from '../entities/GroupSharedServiceRole'
 import { SharedServiceRole } from '../entities/SharedServiceRole'
 import { TenantSharedService } from '../entities/TenantSharedService'
-import { SSOUser } from '../entities/SSOUser'
+import { tmsRepository } from './tms.repository'
+import { NotFoundError } from '../errors/NotFoundError'
+import { ConflictError } from '../errors/ConflictError'
+import { UnexpectedStateError } from '../errors/UnexpectedStateError'
+import { getManager } from '../common/db.connection'
 import {
   AddGroupUserInputDto,
   AddGroupUserResultDto,
@@ -33,7 +30,6 @@ import {
   UpdateSharedServiceRolesForGroupInputDto,
   UpdateGroupInputDto,
 } from '../dtos/tm.dto'
-import { GetTenantUserResultDto } from '../dtos/tms.dto'
 
 type TenantUserGroupResult = {
   id: string
@@ -65,96 +61,54 @@ type SharedServiceResult = {
   sharedServiceRoles: SharedServiceRoleResult[]
 }
 
-export class TMRepository {
-  constructor(
-    private manager: EntityManager,
-    private tmsRepository: TMSRepository,
-  ) {
-    this.manager = manager
-    this.tmsRepository = tmsRepository
-  }
+export class GroupRepository {
+  public async saveGroup(input: CreateGroupInputDto, manager: EntityManager) {
+    const { name, description, tenantUserId, tenantId, createdBy } = input
 
-  public async saveGroup(
-    input: CreateGroupInputDto,
-    transactionEntityManager?: EntityManager,
-  ) {
-    const managerForTransaction = transactionEntityManager || this.manager
-    let groupResponse: Group | null = null
+    if (await this.checkIfGroupNameExistsInTenant(name, tenantId, manager)) {
+      throw new ConflictError(
+        `A group with name '${name}' already exists in this tenant`,
+      )
+    }
 
-    await managerForTransaction.transaction(
-      async (transactionEntityManager) => {
-        try {
-          const { name, description, tenantUserId, tenantId, createdBy } = input
+    if (tenantUserId) {
+      if (!(await this.checkIfTenantUserExists(tenantUserId, manager))) {
+        throw new NotFoundError(`Tenant user not found: ${tenantUserId}`)
+      }
+    }
 
-          // REDUNDANT: checkTenantAccess middleware already validates tenant exists and user has access
-          // if (!await this.tmsRepository.checkIfTenantExists(tenantId, transactionEntityManager)) {
-          //     throw new NotFoundError(`Tenant not found: ${tenantId}`)
-          // }
+    const group = new Group()
+    group.name = name
+    if (description !== undefined) {
+      group.description = description
+    }
+    group.tenant = { id: tenantId } as Tenant
+    group.createdBy = createdBy
+    group.updatedBy = createdBy
 
-          if (
-            await this.checkIfGroupNameExistsInTenant(
-              name,
-              tenantId,
-              transactionEntityManager,
-            )
-          ) {
-            throw new ConflictError(
-              `A group with name '${name}' already exists in this tenant`,
-            )
-          }
+    const savedGroup = await manager.save(group)
 
-          if (tenantUserId) {
-            if (
-              !(await this.checkIfTenantUserExists(
-                tenantUserId,
-                transactionEntityManager,
-              ))
-            ) {
-              throw new NotFoundError(`Tenant user not found: ${tenantUserId}`)
-            }
-          }
+    if (tenantUserId) {
+      const groupUser = new GroupUser()
+      groupUser.group = savedGroup
+      groupUser.tenantUser = { id: tenantUserId } as TenantUser
+      groupUser.isDeleted = false
+      groupUser.createdBy = createdBy
+      groupUser.updatedBy = createdBy
 
-          const group: Group = new Group()
-          group.name = name
-          if (description !== undefined) {
-            group.description = description
-          }
-          group.tenant = { id: tenantId } as Tenant
-          group.createdBy = createdBy
-          group.updatedBy = createdBy
+      await manager.save(groupUser)
+    }
 
-          const savedGroup: Group = await transactionEntityManager.save(group)
-
-          if (tenantUserId) {
-            const groupUser: GroupUser = new GroupUser()
-            groupUser.group = savedGroup
-            groupUser.tenantUser = { id: tenantUserId } as TenantUser
-            groupUser.isDeleted = false
-            groupUser.createdBy = createdBy
-            groupUser.updatedBy = createdBy
-
-            await transactionEntityManager.save(groupUser)
-          }
-
-          groupResponse = (await transactionEntityManager
-            .createQueryBuilder(Group, 'group')
-            .leftJoinAndSelect(
-              'group.users',
-              'groupUsers',
-              'groupUsers.isDeleted = :isDeleted',
-              { isDeleted: false },
-            )
-            .where('group.id = :id', { id: savedGroup.id })
-            .getOne()) as Group
-        } catch (error: unknown) {
-          logger.error(
-            'Create group transaction failure - rolling back inserts ',
-            { error: getErrorMessage(error) },
-          )
-          throw error
-        }
-      },
-    )
+    const groupResponse = await manager
+      .createQueryBuilder(Group, 'group')
+      .leftJoinAndSelect(
+        'group.users',
+        'groupUsers',
+        'groupUsers.isDeleted = :isDeleted',
+        { isDeleted: false },
+      )
+      .where('group.id = :id', { id: savedGroup.id })
+      .getOne()
 
     if (!groupResponse) {
       throw new UnexpectedStateError('Group creation failed')
@@ -163,30 +117,28 @@ export class TMRepository {
     return groupResponse
   }
 
-  public async getSsoUserDisplayName(ssoUserId: string) {
-    const creator = await this.manager.findOne(SSOUser, {
-      where: { ssoUserId },
-    })
+  public async getSsoUserDisplayName(
+    ssoUserId: string,
+    manager?: EntityManager,
+  ) {
+    const em = manager ?? getManager()
+    const creator = await em.findOne(SSOUser, { where: { ssoUserId } })
     return creator?.displayName
   }
 
-  private async getSsoUser(ssoUserId: string) {
-    return await this.manager.findOne(SSOUser, {
-      where: { ssoUserId },
-    })
+  private async getSsoUser(ssoUserId: string, manager?: EntityManager) {
+    const em = manager ?? getManager()
+    return await em.findOne(SSOUser, { where: { ssoUserId } })
   }
 
   public async checkIfGroupNameExistsInTenant(
     name: string,
     tenantId: string,
-    transactionEntityManager?: EntityManager,
+    manager?: EntityManager,
     excludeGroupId?: string,
   ) {
-    transactionEntityManager = transactionEntityManager
-      ? transactionEntityManager
-      : this.manager
-
-    const queryBuilder = transactionEntityManager
+    const em = manager ?? getManager()
+    const queryBuilder = em
       .createQueryBuilder(Group, 'group')
       .where('group.name = :name', { name })
       .andWhere('group.tenant.id = :tenantId', { tenantId })
@@ -203,13 +155,10 @@ export class TMRepository {
   public async checkIfGroupExistsInTenant(
     groupId: string,
     tenantId: string,
-    transactionEntityManager?: EntityManager,
+    manager?: EntityManager,
   ) {
-    transactionEntityManager = transactionEntityManager
-      ? transactionEntityManager
-      : this.manager
-
-    const existingGroup = await transactionEntityManager
+    const em = manager ?? getManager()
+    const existingGroup = await em
       .createQueryBuilder(Group, 'group')
       .where('group.id = :groupId', { groupId })
       .andWhere('group.tenant.id = :tenantId', { tenantId })
@@ -218,53 +167,27 @@ export class TMRepository {
     return existingGroup
   }
 
-  public async checkIfTenantUserAlreadyInGroup(
-    tenantUserId: string,
-    tenantId: string,
-    transactionEntityManager?: EntityManager,
-  ) {
-    transactionEntityManager = transactionEntityManager
-      ? transactionEntityManager
-      : this.manager
-
-    const existingGroupUser: GroupUser | null = await transactionEntityManager
-      .createQueryBuilder(GroupUser, 'groupUser')
-      .leftJoin('groupUser.group', 'group')
-      .leftJoin('groupUser.tenantUser', 'tenantUser')
-      .where('groupUser.tenantUser.id = :tenantUserId', { tenantUserId })
-      .andWhere('group.tenant.id = :tenantId', { tenantId })
-      .andWhere('groupUser.isDeleted = :isDeleted', { isDeleted: false })
-      .andWhere('tenantUser.isDeleted = :isDeleted', { isDeleted: false })
-      .getOne()
-
-    return !!existingGroupUser
-  }
-
   public async checkIfTenantUserExists(
     tenantUserId: string,
-    transactionEntityManager?: EntityManager,
+    manager?: EntityManager,
   ) {
-    transactionEntityManager = transactionEntityManager
-      ? transactionEntityManager
-      : this.manager
-
-    const tenantUser = await transactionEntityManager.findOne(TenantUser, {
+    const em = manager ?? getManager()
+    const tenantUser = await em.findOne(TenantUser, {
       where: { id: tenantUserId, isDeleted: false },
     })
     return !!tenantUser
   }
 
-  public async getTenantGroups(input: GetTenantGroupsInputDto) {
-    const tenantId: string = input.tenantId
-    const TMS_AUDIENCE: string = input.tmsAudience
-    const jwtAudience: string = input.jwtAudience
+  public async getTenantGroups(
+    input: GetTenantGroupsInputDto,
+    manager?: EntityManager,
+  ) {
+    const em = manager ?? getManager()
+    const tenantId = input.tenantId
+    const TMS_AUDIENCE = input.tmsAudience
+    const jwtAudience = input.jwtAudience
 
-    // REDUNDANT: checkTenantAccess middleware already validates tenant exists and user has access
-    // if (!await this.tmsRepository.checkIfTenantExists(tenantId)) {
-    //     throw new NotFoundError(`Tenant not found: ${tenantId}`)
-    // }
-
-    const groupsQuery = this.manager
+    const groupsQuery = em
       .createQueryBuilder(Group, 'grp')
       .innerJoin('grp.tenant', 'ten')
       .where('ten.id = :tenantId', { tenantId })
@@ -305,7 +228,7 @@ export class TMRepository {
     ]
 
     if (uniqueCreatedByIds.length > 0) {
-      const creators = await this.manager.find(SSOUser, {
+      const creators = await em.find(SSOUser, {
         where: { ssoUserId: In(uniqueCreatedByIds) },
       })
 
@@ -323,8 +246,9 @@ export class TMRepository {
     return groups
   }
 
-  public async getGroupById(groupId: string) {
-    const group = await this.manager
+  public async getGroupById(groupId: string, manager?: EntityManager) {
+    const em = manager ?? getManager()
+    const group = await em
       .createQueryBuilder(Group, 'group')
       .leftJoinAndSelect('group.tenant', 'tenant')
       .where('group.id = :groupId', { groupId })
@@ -337,8 +261,12 @@ export class TMRepository {
     return group
   }
 
-  public async getTenantUserGroups(tenantUserId: string) {
-    const groupUsers = await this.manager
+  public async getTenantUserGroups(
+    tenantUserId: string,
+    manager?: EntityManager,
+  ) {
+    const em = manager ?? getManager()
+    const groupUsers = await em
       .createQueryBuilder(GroupUser, 'groupUser')
       .leftJoinAndSelect('groupUser.group', 'group')
       .where('groupUser.tenantUser.id = :tenantUserId', { tenantUserId })
@@ -358,8 +286,12 @@ export class TMRepository {
     )
   }
 
-  public async getTenantUserSharedServiceRoles(tenantUserId: string) {
-    const sharedServiceRoles = await this.manager
+  public async getTenantUserSharedServiceRoles(
+    tenantUserId: string,
+    manager?: EntityManager,
+  ) {
+    const em = manager ?? getManager()
+    const sharedServiceRoles = await em
       .createQueryBuilder(GroupUser, 'groupUser')
       .leftJoinAndSelect('groupUser.group', 'group')
       .leftJoinAndSelect(
@@ -424,30 +356,13 @@ export class TMRepository {
     return Array.from(sharedServiceMap.values())
   }
 
-  public async getGroupUsers(groupId: string) {
-    const groupUsers: GroupUser[] = await this.manager
-      .createQueryBuilder(GroupUser, 'groupUser')
-      .leftJoinAndSelect('groupUser.group', 'group')
-      .leftJoinAndSelect('groupUser.tenantUser', 'tenantUser')
-      .leftJoinAndSelect('tenantUser.ssoUser', 'ssoUser')
-      .where('groupUser.group.id = :groupId', { groupId })
-      .andWhere('groupUser.isDeleted = :isDeleted', { isDeleted: false })
-      .andWhere('tenantUser.isDeleted = :isDeleted', { isDeleted: false })
-      .getMany()
-
-    return groupUsers
-  }
-
   public async checkIfUserExistsInGroup(
     tenantUserId: string,
     groupId: string,
-    transactionEntityManager?: EntityManager,
+    manager?: EntityManager,
   ) {
-    transactionEntityManager = transactionEntityManager
-      ? transactionEntityManager
-      : this.manager
-
-    const existingGroupUser: GroupUser | null = await transactionEntityManager
+    const em = manager ?? getManager()
+    const existingGroupUser = await em
       .createQueryBuilder(GroupUser, 'groupUser')
       .where('groupUser.tenantUser.id = :tenantUserId', { tenantUserId })
       .andWhere('groupUser.group.id = :groupId', { groupId })
@@ -460,19 +375,15 @@ export class TMRepository {
   public async findSoftDeletedGroupUser(
     tenantUserId: string,
     groupId: string,
-    transactionEntityManager?: EntityManager,
+    manager?: EntityManager,
   ) {
-    transactionEntityManager = transactionEntityManager
-      ? transactionEntityManager
-      : this.manager
-
-    const softDeletedGroupUser: GroupUser | null =
-      await transactionEntityManager
-        .createQueryBuilder(GroupUser, 'groupUser')
-        .where('groupUser.tenantUser.id = :tenantUserId', { tenantUserId })
-        .andWhere('groupUser.group.id = :groupId', { groupId })
-        .andWhere('groupUser.isDeleted = :isDeleted', { isDeleted: true })
-        .getOne()
+    const em = manager ?? getManager()
+    const softDeletedGroupUser = await em
+      .createQueryBuilder(GroupUser, 'groupUser')
+      .where('groupUser.tenantUser.id = :tenantUserId', { tenantUserId })
+      .andWhere('groupUser.group.id = :groupId', { groupId })
+      .andWhere('groupUser.isDeleted = :isDeleted', { isDeleted: true })
+      .getOne()
 
     return softDeletedGroupUser
   }
@@ -480,13 +391,10 @@ export class TMRepository {
   public async validateGroupsForTenant(
     groupIds: string[],
     tenantId: string,
-    transactionEntityManager?: EntityManager,
+    manager?: EntityManager,
   ) {
-    transactionEntityManager = transactionEntityManager
-      ? transactionEntityManager
-      : this.manager
-
-    const validGroups = await transactionEntityManager
+    const em = manager ?? getManager()
+    const validGroups = await em
       .createQueryBuilder(Group, 'group')
       .where('group.id IN (:...groupIds)', { groupIds })
       .andWhere('group.tenant.id = :tenantId', { tenantId })
@@ -508,13 +416,10 @@ export class TMRepository {
   public async getExistingGroupMemberships(
     tenantUserId: string,
     groupIds: string[],
-    transactionEntityManager?: EntityManager,
+    manager?: EntityManager,
   ) {
-    transactionEntityManager = transactionEntityManager
-      ? transactionEntityManager
-      : this.manager
-
-    return await transactionEntityManager
+    const em = manager ?? getManager()
+    return await em
       .createQueryBuilder(GroupUser, 'groupUser')
       .leftJoinAndSelect('groupUser.group', 'group')
       .where('groupUser.tenantUser.id = :tenantUserId', { tenantUserId })
@@ -526,13 +431,10 @@ export class TMRepository {
   public async getSoftDeletedGroupMemberships(
     tenantUserId: string,
     groupIds: string[],
-    transactionEntityManager?: EntityManager,
+    manager?: EntityManager,
   ) {
-    transactionEntityManager = transactionEntityManager
-      ? transactionEntityManager
-      : this.manager
-
-    return await transactionEntityManager
+    const em = manager ?? getManager()
+    return await em
       .createQueryBuilder(GroupUser, 'groupUser')
       .leftJoinAndSelect('groupUser.group', 'group')
       .where('groupUser.tenantUser.id = :tenantUserId', { tenantUserId })
@@ -544,13 +446,9 @@ export class TMRepository {
   public async removeUserFromAllGroups(
     tenantUserId: string,
     updatedBy: string,
-    transactionEntityManager?: EntityManager,
+    manager: EntityManager,
   ) {
-    transactionEntityManager = transactionEntityManager
-      ? transactionEntityManager
-      : this.manager
-
-    await transactionEntityManager
+    await manager
       .createQueryBuilder()
       .update(GroupUser)
       .set({
@@ -567,12 +465,8 @@ export class TMRepository {
     groupIds: string[],
     tenantId: string,
     updatedBy: string,
-    transactionEntityManager?: EntityManager,
+    manager: EntityManager,
   ) {
-    transactionEntityManager = transactionEntityManager
-      ? transactionEntityManager
-      : this.manager
-
     if (groupIds.length === 0) {
       return []
     }
@@ -580,13 +474,13 @@ export class TMRepository {
     const validGroups = await this.validateGroupsForTenant(
       groupIds,
       tenantId,
-      transactionEntityManager,
+      manager,
     )
 
     const existingGroupUsers = await this.getExistingGroupMemberships(
       tenantUserId,
       groupIds,
-      transactionEntityManager,
+      manager,
     )
     const existingGroupIds = existingGroupUsers.map((gu) => gu.group.id)
     const groupsToAdd = validGroups.filter(
@@ -600,7 +494,7 @@ export class TMRepository {
     const softDeletedGroupUsers = await this.getSoftDeletedGroupMemberships(
       tenantUserId,
       groupsToAdd.map((g) => g.id),
-      transactionEntityManager,
+      manager,
     )
 
     const softDeletedGroupIds = softDeletedGroupUsers.map((gu) => gu.group.id)
@@ -617,7 +511,7 @@ export class TMRepository {
         gu.updatedBy = updatedBy
         gu.updatedDateTime = new Date()
       })
-      await transactionEntityManager.save(groupsToRestore)
+      await manager.save(groupsToRestore)
       addedGroups.push(...groupsToRestore.map((gu) => gu.group))
     }
 
@@ -631,7 +525,7 @@ export class TMRepository {
         groupUser.updatedBy = updatedBy
         return groupUser
       })
-      await transactionEntityManager.save(newGroupUsers)
+      await manager.save(newGroupUsers)
       addedGroups.push(...groupsToCreate)
     }
 
@@ -640,40 +534,30 @@ export class TMRepository {
 
   public async addGroupUser(
     input: AddGroupUserInputDto,
-    transactionEntityManager?: EntityManager,
+    manager: EntityManager,
   ) {
-    transactionEntityManager = transactionEntityManager
-      ? transactionEntityManager
-      : this.manager
-
-    const tenantId: string = input.tenantId
-    const groupId: string = input.groupId
-    const tenantUserId: string = input.tenantUserId
-    const updatedBy: string = input.updatedBy
+    const tenantId = input.tenantId
+    const groupId = input.groupId
+    const tenantUserId = input.tenantUserId
+    const updatedBy = input.updatedBy
 
     const group = await this.checkIfGroupExistsInTenant(
       groupId,
       tenantId,
-      transactionEntityManager,
+      manager,
     )
     if (!group) {
       throw new NotFoundError(`Group not found: ${groupId}`)
     }
 
-    if (
-      await this.checkIfUserExistsInGroup(
-        tenantUserId,
-        groupId,
-        transactionEntityManager,
-      )
-    ) {
+    if (await this.checkIfUserExistsInGroup(tenantUserId, groupId, manager)) {
       throw new ConflictError('User is already a member of this group')
     }
 
     const softDeletedGroupUser = await this.findSoftDeletedGroupUser(
       tenantUserId,
       groupId,
-      transactionEntityManager,
+      manager,
     )
     let savedGroupUser: GroupUser
 
@@ -682,19 +566,19 @@ export class TMRepository {
       softDeletedGroupUser.updatedBy = updatedBy
       softDeletedGroupUser.updatedDateTime = new Date()
 
-      savedGroupUser = await transactionEntityManager.save(softDeletedGroupUser)
+      savedGroupUser = await manager.save(softDeletedGroupUser)
     } else {
-      const groupUser: GroupUser = new GroupUser()
+      const groupUser = new GroupUser()
       groupUser.group = { id: groupId } as Group
       groupUser.tenantUser = { id: tenantUserId } as TenantUser
       groupUser.isDeleted = false
       groupUser.createdBy = updatedBy
       groupUser.updatedBy = updatedBy
 
-      savedGroupUser = await transactionEntityManager.save(groupUser)
+      savedGroupUser = await manager.save(groupUser)
     }
 
-    const groupUserEntity: GroupUser | null = await transactionEntityManager
+    const groupUserEntity = await manager
       .createQueryBuilder(GroupUser, 'groupUser')
       .leftJoinAndSelect('groupUser.tenantUser', 'tenantUser')
       .leftJoinAndSelect('tenantUser.ssoUser', 'ssoUser')
@@ -732,67 +616,51 @@ export class TMRepository {
     return groupUserResponse
   }
 
-  public async updateGroup(input: UpdateGroupInputDto) {
-    const groupId: string = input.groupId
-    const tenantId: string = input.tenantId
+  public async updateGroup(input: UpdateGroupInputDto, manager: EntityManager) {
+    const groupId = input.groupId
+    const tenantId = input.tenantId
     const { name, description, updatedBy } = input
 
-    let groupResponse: Group | null = null
-    await this.manager.transaction(async (transactionEntityManager) => {
-      try {
-        // REDUNDANT: checkTenantAccess middleware already validates tenant exists and user has access
-        // if (!await this.tmsRepository.checkIfTenantExists(tenantId, transactionEntityManager)) {
-        //     throw new NotFoundError(`Tenant not found: ${tenantId}`)
-        // }
+    const existingGroup = await this.checkIfGroupExistsInTenant(
+      groupId,
+      tenantId,
+      manager,
+    )
+    if (!existingGroup) {
+      throw new NotFoundError(`Group not found: ${groupId}`)
+    }
 
-        const existingGroup = await this.checkIfGroupExistsInTenant(
-          groupId,
+    if (name) {
+      if (
+        await this.checkIfGroupNameExistsInTenant(
+          name,
           tenantId,
-          transactionEntityManager,
+          manager,
+          groupId,
         )
-        if (!existingGroup) {
-          throw new NotFoundError(`Group not found: ${groupId}`)
-        }
-
-        if (name) {
-          if (
-            await this.checkIfGroupNameExistsInTenant(
-              name,
-              tenantId,
-              transactionEntityManager,
-              groupId,
-            )
-          ) {
-            throw new ConflictError(
-              `A group with name '${name}' already exists in this tenant`,
-            )
-          }
-        }
-
-        await transactionEntityManager
-          .createQueryBuilder()
-          .update(Group)
-          .set({
-            ...(name !== undefined && { name }),
-            ...(description !== undefined && { description }),
-            updatedBy,
-          })
-          .where('id = :groupId', { groupId })
-          .execute()
-
-        groupResponse = await transactionEntityManager
-          .createQueryBuilder(Group, 'group')
-          .leftJoinAndSelect('group.tenant', 'tenant')
-          .where('group.id = :id', { id: groupId })
-          .getOne()
-      } catch (error: unknown) {
-        logger.error(
-          'Update group transaction failure - rolling back changes',
-          { error: getErrorMessage(error) },
+      ) {
+        throw new ConflictError(
+          `A group with name '${name}' already exists in this tenant`,
         )
-        throw error
       }
-    })
+    }
+
+    await manager
+      .createQueryBuilder()
+      .update(Group)
+      .set({
+        ...(name !== undefined && { name }),
+        ...(description !== undefined && { description }),
+        updatedBy,
+      })
+      .where('id = :groupId', { groupId })
+      .execute()
+
+    const groupResponse = await manager
+      .createQueryBuilder(Group, 'group')
+      .leftJoinAndSelect('group.tenant', 'tenant')
+      .where('group.id = :id', { id: groupId })
+      .getOne()
 
     if (!groupResponse) {
       throw new UnexpectedStateError('Group update failed')
@@ -801,78 +669,63 @@ export class TMRepository {
     return groupResponse
   }
 
-  public async removeGroupUser(input: RemoveGroupUserInputDto) {
-    const groupUserId: string = input.groupUserId
-    const groupId: string = input.groupId
-    const tenantId: string = input.tenantId
+  public async removeGroupUser(
+    input: RemoveGroupUserInputDto,
+    manager: EntityManager,
+  ) {
+    const groupUserId = input.groupUserId
+    const groupId = input.groupId
+    const tenantId = input.tenantId
 
-    await this.manager.transaction(async (transactionEntityManager) => {
-      try {
-        // REDUNDANT: checkTenantAccess middleware already validates tenant exists and user has access
-        // if (!await this.tmsRepository.checkIfTenantExists(tenantId, transactionEntityManager)) {
-        //     throw new NotFoundError(`Tenant not found: ${tenantId}`)
-        // }
+    const group = await this.checkIfGroupExistsInTenant(
+      groupId,
+      tenantId,
+      manager,
+    )
+    if (!group) {
+      throw new NotFoundError(`Group not found: ${groupId}`)
+    }
 
-        const group = await this.checkIfGroupExistsInTenant(
-          groupId,
-          tenantId,
-          transactionEntityManager,
-        )
-        if (!group) {
-          throw new NotFoundError(`Group not found: ${groupId}`)
-        }
+    const groupUser = await manager
+      .createQueryBuilder(GroupUser, 'groupUser')
+      .leftJoin('groupUser.group', 'group')
+      .where('groupUser.id = :groupUserId', { groupUserId })
+      .andWhere('groupUser.group.id = :groupId', { groupId })
+      .andWhere('group.tenant.id = :tenantId', { tenantId })
+      .andWhere('groupUser.isDeleted = :isDeleted', { isDeleted: false })
+      .getOne()
 
-        const groupUser: GroupUser | null = await transactionEntityManager
-          .createQueryBuilder(GroupUser, 'groupUser')
-          .leftJoin('groupUser.group', 'group')
-          .where('groupUser.id = :groupUserId', { groupUserId })
-          .andWhere('groupUser.group.id = :groupId', { groupId })
-          .andWhere('group.tenant.id = :tenantId', { tenantId })
-          .andWhere('groupUser.isDeleted = :isDeleted', { isDeleted: false })
-          .getOne()
+    if (!groupUser) {
+      throw new NotFoundError(`Group user not found: ${groupUserId}`)
+    }
 
-        if (!groupUser) {
-          throw new NotFoundError(`Group user not found: ${groupUserId}`)
-        }
-
-        await transactionEntityManager
-          .createQueryBuilder()
-          .update(GroupUser)
-          .set({
-            isDeleted: true,
-            updatedBy: input.updatedBy,
-          })
-          .where('id = :groupUserId', { groupUserId })
-          .execute()
-      } catch (error: unknown) {
-        logger.error(
-          'Remove user from group transaction failure - rolling back changes',
-          { error: getErrorMessage(error) },
-        )
-        throw error
-      }
-    })
+    await manager
+      .createQueryBuilder()
+      .update(GroupUser)
+      .set({
+        isDeleted: true,
+        updatedBy: input.updatedBy,
+      })
+      .where('id = :groupUserId', { groupUserId })
+      .execute()
   }
 
-  public async getGroup(input: GetGroupInputDto) {
-    const groupId: string = input.groupId
-    const tenantId: string = input.tenantId
-    const expand: string[] = input.expand
-
-    // REDUNDANT: checkTenantAccess middleware already validates tenant exists and user has access
-    // if (!await this.tmsRepository.checkIfTenantExists(tenantId)) {
-    //     throw new NotFoundError(`Tenant not found: ${tenantId}`)
-    // }
+  public async getGroup(input: GetGroupInputDto, manager?: EntityManager) {
+    const em = manager ?? getManager()
+    const groupId = input.groupId
+    const tenantId = input.tenantId
+    const expand = input.expand
 
     const existingGroup = await this.checkIfGroupExistsInTenant(
       groupId,
       tenantId,
+      em,
     )
     if (!existingGroup) {
       throw new NotFoundError(`Group not found: ${groupId}`)
     }
 
-    const groupQuery = this.manager
+    const groupQuery = em
       .createQueryBuilder(Group, 'group')
       .where('group.id = :groupId', { groupId })
 
@@ -893,7 +746,7 @@ export class TMRepository {
         .leftJoinAndSelect('tenantUser.ssoUser', 'ssoUser')
     }
 
-    const group: Group | null = await groupQuery.getOne()
+    const group = await groupQuery.getOne()
 
     if (!group) {
       throw new NotFoundError(`Group not found: ${groupId}`)
@@ -907,7 +760,7 @@ export class TMRepository {
       createdByUserName = 'system'
       createdByDisplayName = 'system'
     } else if (normalizedCreatedBy) {
-      const creator = await this.getSsoUser(normalizedCreatedBy)
+      const creator = await this.getSsoUser(normalizedCreatedBy, em)
       createdByUserName = creator?.userName
       createdByDisplayName = creator?.displayName
     }
@@ -949,10 +802,12 @@ export class TMRepository {
 
   public async getSharedServiceRolesForGroup(
     input: GetSharedServiceRolesForGroupInputDto,
+    manager?: EntityManager,
   ) {
+    const em = manager ?? getManager()
     const { tenantId, groupId } = input
 
-    const groupExists = await this.manager
+    const groupExists = await em
       .createQueryBuilder(Group, 'group')
       .where('group.id = :groupId', { groupId })
       .andWhere('group.tenant.id = :tenantId', { tenantId })
@@ -964,14 +819,16 @@ export class TMRepository {
       )
     }
 
-    return this.fetchSharedServiceRolesForGroup(tenantId, groupId)
+    return this.fetchSharedServiceRolesForGroup(tenantId, groupId, em)
   }
 
   private async fetchSharedServiceRolesForGroup(
     tenantId: string,
     groupId: string,
+    manager?: EntityManager,
   ) {
-    const result = await this.manager
+    const em = manager ?? getManager()
+    const result = await em
       .createQueryBuilder(SharedServiceRole, 'ssr')
       .leftJoinAndSelect('ssr.sharedService', 'ss')
       .leftJoin('TenantSharedService', 'tss', 'ss.id = tss.sharedService.id')
@@ -1042,172 +899,173 @@ export class TMRepository {
 
   public async updateSharedServiceRolesForGroup(
     input: UpdateSharedServiceRolesForGroupInputDto,
+    manager: EntityManager,
   ) {
     const { tenantId, groupId, sharedServices, updatedBy } = input
 
-    await this.manager.transaction(async (transactionEntityManager) => {
-      const group: Group | null = await transactionEntityManager
-        .createQueryBuilder(Group, 'group')
-        .where('group.id = :groupId', { groupId })
-        .andWhere('group.tenant.id = :tenantId', { tenantId })
-        .getOne()
+    const group = await manager
+      .createQueryBuilder(Group, 'group')
+      .where('group.id = :groupId', { groupId })
+      .andWhere('group.tenant.id = :tenantId', { tenantId })
+      .getOne()
 
-      if (!group) {
-        throw new NotFoundError(
-          `Group not found or does not belong to tenant: ${groupId}`,
-        )
-      }
+    if (!group) {
+      throw new NotFoundError(
+        `Group not found or does not belong to tenant: ${groupId}`,
+      )
+    }
 
-      const sharedServiceIds: string[] = sharedServices.map((ss) => ss.id)
-      const sharedServiceRoleIds: string[] = []
-      const roleToServiceMap = new Map<string, string>() // roleId -> serviceId
+    const sharedServiceIds: string[] = sharedServices.map((ss) => ss.id)
+    const sharedServiceRoleIds: string[] = []
+    const roleToServiceMap = new Map<string, string>()
 
-      sharedServices.forEach((ss) => {
-        ss.sharedServiceRoles.forEach((role) => {
-          sharedServiceRoleIds.push(role.id)
-          roleToServiceMap.set(role.id, ss.id)
-        })
+    sharedServices.forEach((ss) => {
+      ss.sharedServiceRoles.forEach((role) => {
+        sharedServiceRoleIds.push(role.id)
+        roleToServiceMap.set(role.id, ss.id)
       })
+    })
 
-      const tenantSharedServices = await transactionEntityManager
-        .createQueryBuilder(TenantSharedService, 'tss')
-        .leftJoinAndSelect('tss.sharedService', 'ss')
-        .where('tss.tenant.id = :tenantId', { tenantId })
-        .andWhere('tss.sharedService.id IN (:...sharedServiceIds)', {
-          sharedServiceIds,
-        })
-        .andWhere('tss.isDeleted = :isDeleted', { isDeleted: false })
-        .getMany()
-
-      const tenantSharedServiceMap = new Map<string, TenantSharedService>()
-      tenantSharedServices.forEach((tss) => {
-        if (tss.sharedService) {
-          tenantSharedServiceMap.set(tss.sharedService.id, tss)
-        }
+    const tenantSharedServices = await manager
+      .createQueryBuilder(TenantSharedService, 'tss')
+      .leftJoinAndSelect('tss.sharedService', 'ss')
+      .where('tss.tenant.id = :tenantId', { tenantId })
+      .andWhere('tss.sharedService.id IN (:...sharedServiceIds)', {
+        sharedServiceIds,
       })
+      .andWhere('tss.isDeleted = :isDeleted', { isDeleted: false })
+      .getMany()
 
-      for (const serviceId of sharedServiceIds) {
-        if (!tenantSharedServiceMap.has(serviceId)) {
-          throw new NotFoundError(
-            `Shared service not found or not associated with tenant: ${serviceId}`,
-          )
-        }
-      }
-
-      const sharedServiceRoles = await transactionEntityManager
-        .createQueryBuilder(SharedServiceRole, 'ssr')
-        .leftJoinAndSelect('ssr.sharedService', 'ss')
-        .where('ssr.id IN (:...sharedServiceRoleIds)', { sharedServiceRoleIds })
-        .andWhere('ssr.isDeleted = :isDeleted', { isDeleted: false })
-        .getMany()
-
-      const sharedServiceRoleMap = new Map<string, SharedServiceRole>()
-      sharedServiceRoles.forEach((ssr) => {
-        sharedServiceRoleMap.set(ssr.id, ssr)
-      })
-
-      for (const [roleId, serviceId] of roleToServiceMap.entries()) {
-        const role = sharedServiceRoleMap.get(roleId)
-        if (!role) {
-          throw new NotFoundError(`Shared service role not found: ${roleId}`)
-        }
-        if (role.sharedService?.id !== serviceId) {
-          throw new NotFoundError(
-            `Shared service role ${roleId} does not belong to service ${serviceId}`,
-          )
-        }
-      }
-
-      const existingAssignments = await transactionEntityManager
-        .createQueryBuilder(GroupSharedServiceRole, 'gssr')
-        .leftJoinAndSelect('gssr.sharedServiceRole', 'ssr')
-        .where('gssr.group.id = :groupId', { groupId })
-        .andWhere('gssr.sharedServiceRole.id IN (:...sharedServiceRoleIds)', {
-          sharedServiceRoleIds,
-        })
-        .getMany()
-
-      const existingAssignmentMap = new Map<string, GroupSharedServiceRole>()
-      existingAssignments.forEach((gssr) => {
-        if (gssr.sharedServiceRole) {
-          existingAssignmentMap.set(gssr.sharedServiceRole.id, gssr)
-        }
-      })
-
-      const toCreate: GroupSharedServiceRole[] = []
-      const toRestore: string[] = [] // IDs to restore (isDeleted = false)
-      const toDelete: string[] = [] // IDs to soft-delete (isDeleted = true)
-
-      for (const sharedService of sharedServices) {
-        const { sharedServiceRoles: roles } = sharedService
-
-        for (const role of roles) {
-          const { id: sharedServiceRoleId, enabled } = role
-          const existingAssignment =
-            existingAssignmentMap.get(sharedServiceRoleId)
-
-          if (enabled) {
-            if (!existingAssignment) {
-              const newAssignment = new GroupSharedServiceRole()
-              const groupRef = new Group()
-              groupRef.id = groupId
-              newAssignment.group = groupRef
-              const sharedServiceRoleRef = new SharedServiceRole()
-              sharedServiceRoleRef.id = sharedServiceRoleId
-              newAssignment.sharedServiceRole = sharedServiceRoleRef
-              newAssignment.isDeleted = false
-              newAssignment.createdBy = updatedBy
-              newAssignment.updatedBy = updatedBy
-              toCreate.push(newAssignment)
-            } else if (existingAssignment.isDeleted) {
-              toRestore.push(existingAssignment.id)
-            }
-          } else {
-            if (existingAssignment && !existingAssignment.isDeleted) {
-              toDelete.push(existingAssignment.id)
-            }
-          }
-        }
-      }
-
-      if (toCreate.length > 0) {
-        await transactionEntityManager.save(GroupSharedServiceRole, toCreate)
-      }
-
-      if (toRestore.length > 0) {
-        await transactionEntityManager
-          .createQueryBuilder()
-          .update('GroupSharedServiceRole')
-          .set({
-            isDeleted: false,
-            updatedBy: updatedBy,
-          })
-          .where('id IN (:...ids)', { ids: toRestore })
-          .execute()
-      }
-
-      if (toDelete.length > 0) {
-        await transactionEntityManager
-          .createQueryBuilder()
-          .update('GroupSharedServiceRole')
-          .set({
-            isDeleted: true,
-            updatedBy: updatedBy,
-          })
-          .where('id IN (:...ids)', { ids: toDelete })
-          .execute()
+    const tenantSharedServiceMap = new Map<string, TenantSharedService>()
+    tenantSharedServices.forEach((tss) => {
+      if (tss.sharedService) {
+        tenantSharedServiceMap.set(tss.sharedService.id, tss)
       }
     })
 
-    return this.fetchSharedServiceRolesForGroup(tenantId, groupId)
+    for (const serviceId of sharedServiceIds) {
+      if (!tenantSharedServiceMap.has(serviceId)) {
+        throw new NotFoundError(
+          `Shared service not found or not associated with tenant: ${serviceId}`,
+        )
+      }
+    }
+
+    const sharedServiceRoles = await manager
+      .createQueryBuilder(SharedServiceRole, 'ssr')
+      .leftJoinAndSelect('ssr.sharedService', 'ss')
+      .where('ssr.id IN (:...sharedServiceRoleIds)', { sharedServiceRoleIds })
+      .andWhere('ssr.isDeleted = :isDeleted', { isDeleted: false })
+      .getMany()
+
+    const sharedServiceRoleMap = new Map<string, SharedServiceRole>()
+    sharedServiceRoles.forEach((ssr) => {
+      sharedServiceRoleMap.set(ssr.id, ssr)
+    })
+
+    for (const [roleId, serviceId] of roleToServiceMap.entries()) {
+      const role = sharedServiceRoleMap.get(roleId)
+      if (!role) {
+        throw new NotFoundError(`Shared service role not found: ${roleId}`)
+      }
+      if (role.sharedService?.id !== serviceId) {
+        throw new NotFoundError(
+          `Shared service role ${roleId} does not belong to service ${serviceId}`,
+        )
+      }
+    }
+
+    const existingAssignments = await manager
+      .createQueryBuilder(GroupSharedServiceRole, 'gssr')
+      .leftJoinAndSelect('gssr.sharedServiceRole', 'ssr')
+      .where('gssr.group.id = :groupId', { groupId })
+      .andWhere('gssr.sharedServiceRole.id IN (:...sharedServiceRoleIds)', {
+        sharedServiceRoleIds,
+      })
+      .getMany()
+
+    const existingAssignmentMap = new Map<string, GroupSharedServiceRole>()
+    existingAssignments.forEach((gssr) => {
+      if (gssr.sharedServiceRole) {
+        existingAssignmentMap.set(gssr.sharedServiceRole.id, gssr)
+      }
+    })
+
+    const toCreate: GroupSharedServiceRole[] = []
+    const toRestore: string[] = []
+    const toDelete: string[] = []
+
+    for (const sharedService of sharedServices) {
+      const { sharedServiceRoles: roles } = sharedService
+
+      for (const role of roles) {
+        const { id: sharedServiceRoleId, enabled } = role
+        const existingAssignment =
+          existingAssignmentMap.get(sharedServiceRoleId)
+
+        if (enabled) {
+          if (!existingAssignment) {
+            const newAssignment = new GroupSharedServiceRole()
+            const groupRef = new Group()
+            groupRef.id = groupId
+            newAssignment.group = groupRef
+            const sharedServiceRoleRef = new SharedServiceRole()
+            sharedServiceRoleRef.id = sharedServiceRoleId
+            newAssignment.sharedServiceRole = sharedServiceRoleRef
+            newAssignment.isDeleted = false
+            newAssignment.createdBy = updatedBy
+            newAssignment.updatedBy = updatedBy
+            toCreate.push(newAssignment)
+          } else if (existingAssignment.isDeleted) {
+            toRestore.push(existingAssignment.id)
+          }
+        } else {
+          if (existingAssignment && !existingAssignment.isDeleted) {
+            toDelete.push(existingAssignment.id)
+          }
+        }
+      }
+    }
+
+    if (toCreate.length > 0) {
+      await manager.save(GroupSharedServiceRole, toCreate)
+    }
+
+    if (toRestore.length > 0) {
+      await manager
+        .createQueryBuilder()
+        .update('GroupSharedServiceRole')
+        .set({
+          isDeleted: false,
+          updatedBy: updatedBy,
+        })
+        .where('id IN (:...ids)', { ids: toRestore })
+        .execute()
+    }
+
+    if (toDelete.length > 0) {
+      await manager
+        .createQueryBuilder()
+        .update('GroupSharedServiceRole')
+        .set({
+          isDeleted: true,
+          updatedBy: updatedBy,
+        })
+        .where('id IN (:...ids)', { ids: toDelete })
+        .execute()
+    }
+
+    return this.fetchSharedServiceRolesForGroup(tenantId, groupId, manager)
   }
 
   public async getUserGroupsWithSharedServiceRoles(
     input: GetUserGroupsWithSharedServiceRolesInputDto,
+    manager?: EntityManager,
   ) {
+    const em = manager ?? getManager()
     const { tenantId, ssoUserId, audience, idpType } = input
 
-    const tenantUser = await this.tmsRepository.getTenantUserBySsoId(
+    const tenantUser = await tmsRepository.getTenantUserBySsoId(
       ssoUserId,
       tenantId,
     )
@@ -1215,7 +1073,7 @@ export class TMRepository {
       throw new NotFoundError(`Tenant user not found: ${ssoUserId}`)
     }
 
-    const result = await this.manager
+    const result = await em
       .createQueryBuilder(GroupUser, 'gu')
       .leftJoinAndSelect('gu.group', 'group')
       .leftJoinAndSelect('group.sharedServiceRoles', 'gssr')
@@ -1306,10 +1164,12 @@ export class TMRepository {
 
   public async getEffectiveSharedServiceRoles(
     input: GetEffectiveSharedServiceRolesInputDto,
+    manager?: EntityManager,
   ) {
+    const em = manager ?? getManager()
     const { tenantId, ssoUserId, audience, idpType } = input
 
-    const tenantUser = await this.tmsRepository.getTenantUserBySsoId(
+    const tenantUser = await tmsRepository.getTenantUserBySsoId(
       ssoUserId,
       tenantId,
     )
@@ -1317,7 +1177,7 @@ export class TMRepository {
       throw new NotFoundError(`Tenant user not found: ${ssoUserId}`)
     }
 
-    const result = await this.manager
+    const result = await em
       .createQueryBuilder(GroupUser, 'gu')
       .leftJoinAndSelect('gu.group', 'group')
       .leftJoinAndSelect('group.sharedServiceRoles', 'gssr')
@@ -1382,65 +1242,6 @@ export class TMRepository {
 
     return Array.from(rolesMap.values())
   }
-
-  public async getTenantUser(req: Request) {
-    const tenantId: string = req.params.tenantId
-    const tenantUserId: string = req.params.tenantUserId
-    const expand: string[] =
-      typeof req.query.expand === 'string'
-        ? req.query.expand.split(',').map((v) => v.trim())
-        : []
-
-    const expandGroups = expand.includes('groups')
-    const expandRoles = expand.includes('roles')
-    const expandSharedServices = expand.includes('sharedServices')
-
-    const tenantUserQuery = this.manager
-      .createQueryBuilder(TenantUser, 'tenantUser')
-      .leftJoinAndSelect('tenantUser.ssoUser', 'ssoUser')
-      .leftJoin('tenantUser.tenant', 'tenant')
-      .where('tenantUser.id = :tenantUserId', { tenantUserId })
-      .andWhere('tenant.id = :tenantId', { tenantId })
-      .andWhere('tenantUser.isDeleted = :isDeleted', { isDeleted: false })
-
-    if (expandRoles) {
-      tenantUserQuery
-        .leftJoinAndSelect('tenantUser.roles', 'tenantUserRole')
-        .leftJoinAndSelect('tenantUserRole.role', 'role')
-        .andWhere('tenantUserRole.isDeleted = :isDeleted', { isDeleted: false })
-        .andWhere('role.isDeleted = :isDeleted', { isDeleted: false })
-    }
-
-    const tenantUser = await tenantUserQuery.getOne()
-
-    if (!tenantUser) {
-      throw new NotFoundError(`Tenant user not found: ${tenantUserId}`)
-    }
-
-    const result: GetTenantUserResultDto = {
-      id: tenantUser.id,
-      ssoUser: tenantUser.ssoUser,
-      createdDateTime: tenantUser.createdDateTime,
-      updatedDateTime: tenantUser.updatedDateTime,
-      createdBy: tenantUser.createdBy,
-      updatedBy: tenantUser.updatedBy,
-    }
-
-    if (expandGroups) {
-      result.groups = await this.getTenantUserGroups(tenantUserId)
-    }
-
-    if (expandRoles && tenantUser.roles) {
-      result.roles = tenantUser.roles.map(
-        (tenantUserRole) => tenantUserRole.role,
-      )
-    }
-
-    if (expandSharedServices) {
-      result.sharedServices =
-        await this.getTenantUserSharedServiceRoles(tenantUserId)
-    }
-
-    return result
-  }
 }
+
+export const groupRepository = new GroupRepository()
