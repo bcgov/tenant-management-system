@@ -897,12 +897,11 @@ export class GroupRepository {
     return sharedServices
   }
 
-  public async updateSharedServiceRolesForGroup(
-    input: UpdateSharedServiceRolesForGroupInputDto,
+  private async ensureGroupBelongsToTenant(
+    tenantId: string,
+    groupId: string,
     manager: EntityManager,
   ) {
-    const { tenantId, groupId, sharedServices, updatedBy } = input
-
     const group = await manager
       .createQueryBuilder(Group, 'group')
       .where('group.id = :groupId', { groupId })
@@ -914,7 +913,11 @@ export class GroupRepository {
         `Group not found or does not belong to tenant: ${groupId}`,
       )
     }
+  }
 
+  private indexSharedServiceRoleInputs(
+    sharedServices: UpdateSharedServiceRolesForGroupInputDto['sharedServices'],
+  ) {
     const sharedServiceIds: string[] = sharedServices.map((ss) => ss.id)
     const sharedServiceRoleIds: string[] = []
     const roleToServiceMap = new Map<string, string>()
@@ -926,6 +929,14 @@ export class GroupRepository {
       })
     })
 
+    return { sharedServiceIds, sharedServiceRoleIds, roleToServiceMap }
+  }
+
+  private async validateSharedServicesForTenant(
+    tenantId: string,
+    sharedServiceIds: string[],
+    manager: EntityManager,
+  ) {
     const tenantSharedServices = await manager
       .createQueryBuilder(TenantSharedService, 'tss')
       .leftJoinAndSelect('tss.sharedService', 'ss')
@@ -950,7 +961,13 @@ export class GroupRepository {
         )
       }
     }
+  }
 
+  private async validateSharedServiceRoles(
+    sharedServiceRoleIds: string[],
+    roleToServiceMap: Map<string, string>,
+    manager: EntityManager,
+  ) {
     const sharedServiceRoles = await manager
       .createQueryBuilder(SharedServiceRole, 'ssr')
       .leftJoinAndSelect('ssr.sharedService', 'ss')
@@ -974,7 +991,13 @@ export class GroupRepository {
         )
       }
     }
+  }
 
+  private async getExistingGroupSharedServiceRoleAssignments(
+    groupId: string,
+    sharedServiceRoleIds: string[],
+    manager: EntityManager,
+  ) {
     const existingAssignments = await manager
       .createQueryBuilder(GroupSharedServiceRole, 'gssr')
       .leftJoinAndSelect('gssr.sharedServiceRole', 'ssr')
@@ -991,42 +1014,78 @@ export class GroupRepository {
       }
     })
 
+    return existingAssignmentMap
+  }
+
+  private planSharedServiceRoleAssignment(
+    groupId: string,
+    sharedServiceRoleId: string,
+    enabled: boolean,
+    existingAssignment: GroupSharedServiceRole | undefined,
+    updatedBy: string,
+    toCreate: GroupSharedServiceRole[],
+    toRestore: string[],
+    toDelete: string[],
+  ) {
+    if (!enabled) {
+      if (existingAssignment && !existingAssignment.isDeleted) {
+        toDelete.push(existingAssignment.id)
+      }
+      return
+    }
+
+    if (!existingAssignment) {
+      const newAssignment = new GroupSharedServiceRole()
+      const groupRef = new Group()
+      groupRef.id = groupId
+      newAssignment.group = groupRef
+      const sharedServiceRoleRef = new SharedServiceRole()
+      sharedServiceRoleRef.id = sharedServiceRoleId
+      newAssignment.sharedServiceRole = sharedServiceRoleRef
+      newAssignment.isDeleted = false
+      newAssignment.createdBy = updatedBy
+      newAssignment.updatedBy = updatedBy
+      toCreate.push(newAssignment)
+    } else if (existingAssignment.isDeleted) {
+      toRestore.push(existingAssignment.id)
+    }
+  }
+
+  private computeSharedServiceRoleAssignmentDiff(
+    groupId: string,
+    sharedServices: UpdateSharedServiceRolesForGroupInputDto['sharedServices'],
+    existingAssignmentMap: Map<string, GroupSharedServiceRole>,
+    updatedBy: string,
+  ) {
     const toCreate: GroupSharedServiceRole[] = []
     const toRestore: string[] = []
     const toDelete: string[] = []
 
     for (const sharedService of sharedServices) {
-      const { sharedServiceRoles: roles } = sharedService
-
-      for (const role of roles) {
-        const { id: sharedServiceRoleId, enabled } = role
-        const existingAssignment =
-          existingAssignmentMap.get(sharedServiceRoleId)
-
-        if (enabled) {
-          if (!existingAssignment) {
-            const newAssignment = new GroupSharedServiceRole()
-            const groupRef = new Group()
-            groupRef.id = groupId
-            newAssignment.group = groupRef
-            const sharedServiceRoleRef = new SharedServiceRole()
-            sharedServiceRoleRef.id = sharedServiceRoleId
-            newAssignment.sharedServiceRole = sharedServiceRoleRef
-            newAssignment.isDeleted = false
-            newAssignment.createdBy = updatedBy
-            newAssignment.updatedBy = updatedBy
-            toCreate.push(newAssignment)
-          } else if (existingAssignment.isDeleted) {
-            toRestore.push(existingAssignment.id)
-          }
-        } else {
-          if (existingAssignment && !existingAssignment.isDeleted) {
-            toDelete.push(existingAssignment.id)
-          }
-        }
+      for (const role of sharedService.sharedServiceRoles) {
+        this.planSharedServiceRoleAssignment(
+          groupId,
+          role.id,
+          role.enabled,
+          existingAssignmentMap.get(role.id),
+          updatedBy,
+          toCreate,
+          toRestore,
+          toDelete,
+        )
       }
     }
 
+    return { toCreate, toRestore, toDelete }
+  }
+
+  private async applySharedServiceRoleAssignmentDiff(
+    manager: EntityManager,
+    toCreate: GroupSharedServiceRole[],
+    toRestore: string[],
+    toDelete: string[],
+    updatedBy: string,
+  ) {
     if (toCreate.length > 0) {
       await manager.save(GroupSharedServiceRole, toCreate)
     }
@@ -1054,6 +1113,52 @@ export class GroupRepository {
         .where('id IN (:...ids)', { ids: toDelete })
         .execute()
     }
+  }
+
+  public async updateSharedServiceRolesForGroup(
+    input: UpdateSharedServiceRolesForGroupInputDto,
+    manager: EntityManager,
+  ) {
+    const { tenantId, groupId, sharedServices, updatedBy } = input
+
+    await this.ensureGroupBelongsToTenant(tenantId, groupId, manager)
+
+    const { sharedServiceIds, sharedServiceRoleIds, roleToServiceMap } =
+      this.indexSharedServiceRoleInputs(sharedServices)
+
+    await this.validateSharedServicesForTenant(
+      tenantId,
+      sharedServiceIds,
+      manager,
+    )
+    await this.validateSharedServiceRoles(
+      sharedServiceRoleIds,
+      roleToServiceMap,
+      manager,
+    )
+
+    const existingAssignmentMap =
+      await this.getExistingGroupSharedServiceRoleAssignments(
+        groupId,
+        sharedServiceRoleIds,
+        manager,
+      )
+
+    const { toCreate, toRestore, toDelete } =
+      this.computeSharedServiceRoleAssignmentDiff(
+        groupId,
+        sharedServices,
+        existingAssignmentMap,
+        updatedBy,
+      )
+
+    await this.applySharedServiceRoleAssignmentDiff(
+      manager,
+      toCreate,
+      toRestore,
+      toDelete,
+      updatedBy,
+    )
 
     return this.fetchSharedServiceRolesForGroup(tenantId, groupId, manager)
   }
