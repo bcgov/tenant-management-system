@@ -77,11 +77,7 @@ export class SSOSearchService {
     return score
   }
 
-  private dedupSearchResultsByGuid(
-    payload: unknown,
-    getGuid: (user: unknown) => string | undefined,
-    getCompletenessScore: (user: unknown) => number,
-  ) {
+  private dedupIdirSearchResults(payload: unknown) {
     if (!payload || typeof payload !== 'object') {
       return payload
     }
@@ -98,14 +94,14 @@ export class SSOSearchService {
     const usersWithoutGuid: Array<{ user: unknown; index: number }> = []
 
     data.forEach((user, index) => {
-      const guid = getGuid(user)
+      const guid = this.getIdirGuid(user)
 
       if (!guid) {
         usersWithoutGuid.push({ user, index })
         return
       }
 
-      const score = getCompletenessScore(user)
+      const score = this.getIdirUserCompletenessScore(user)
       const existing = dedupedUsers.get(guid)
 
       if (!existing || score > existing.score) {
@@ -131,14 +127,6 @@ export class SSOSearchService {
       ...(payload as Record<string, unknown>),
       data: dedupedData,
     }
-  }
-
-  private dedupIdirSearchResults(payload: unknown) {
-    return this.dedupSearchResultsByGuid(
-      payload,
-      (user) => this.getIdirGuid(user),
-      (user) => this.getIdirUserCompletenessScore(user),
-    )
   }
 
   private getBceidGuid(user: unknown): string | undefined {
@@ -243,11 +231,55 @@ export class SSOSearchService {
   }
 
   private dedupBceidSearchResults(payload: unknown) {
-    return this.dedupSearchResultsByGuid(
-      payload,
-      (user) => this.getBceidGuid(user),
-      (user) => this.getBceidUserCompletenessScore(user),
-    )
+    if (!payload || typeof payload !== 'object') {
+      return payload
+    }
+
+    const data = (payload as { data?: unknown }).data
+    if (!Array.isArray(data)) {
+      return payload
+    }
+
+    const dedupedUsers = new Map<
+      string,
+      { user: unknown; score: number; firstSeenIndex: number }
+    >()
+    const usersWithoutGuid: Array<{ user: unknown; index: number }> = []
+
+    data.forEach((user, index) => {
+      const guid = this.getBceidGuid(user)
+
+      if (!guid) {
+        usersWithoutGuid.push({ user, index })
+        return
+      }
+
+      const score = this.getBceidUserCompletenessScore(user)
+      const existing = dedupedUsers.get(guid)
+
+      if (!existing || score > existing.score) {
+        dedupedUsers.set(guid, {
+          user,
+          score,
+          firstSeenIndex: existing?.firstSeenIndex ?? index,
+        })
+      }
+    })
+
+    const dedupedData = [
+      ...Array.from(dedupedUsers.values()).map((entry) => ({
+        user: entry.user,
+        index: entry.firstSeenIndex,
+      })),
+      ...usersWithoutGuid,
+    ]
+      .sort((a, b) => a.index - b.index)
+      .map((entry) => entry.user)
+
+    return {
+      ...(payload as Record<string, unknown>),
+      data: dedupedData,
+    }
   }
 
   private async getToken() {
