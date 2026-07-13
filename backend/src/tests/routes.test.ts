@@ -2,7 +2,7 @@ import request from 'supertest'
 import express from 'express'
 import { Routes } from '../routes/routes'
 import { TMSController } from '../controllers/tms.controller'
-import { TMController } from '../controllers/tm.controller'
+import { GroupController } from '../controllers/group.controller'
 import { checkJwt } from '../common/auth.mw'
 import { checkTenantAccess } from '../common/tenant-access.mw'
 
@@ -98,7 +98,7 @@ describe('Routes middleware wiring', () => {
         res.status(200).send({ ok: true })
       })
     jest
-      .spyOn(TMController.prototype, 'getTenantGroups')
+      .spyOn(GroupController.prototype, 'getTenantGroups')
       .mockImplementation(async (_req, res) => {
         res.status(200).send({ ok: true })
       })
