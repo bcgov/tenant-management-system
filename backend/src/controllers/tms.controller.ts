@@ -255,56 +255,6 @@ export class TMSController {
     }
   }
 
-  public async searchBCGOVSSOUsers(req: Request, res: Response) {
-    try {
-      const users = await this.tmsService.searchBCGOVSSOUsers(req)
-      return res.status(200).send(users)
-    } catch (error: unknown) {
-      if (error instanceof BadRequestError) {
-        this.errorHandler.generalError(
-          res,
-          'Error occurred searching SSO users',
-          getErrorMessage(error),
-          error.statusCode,
-          'Bad Request',
-        )
-      } else {
-        this.errorHandler.generalError(
-          res,
-          'Error occurred searching SSO users',
-          getErrorMessage(error),
-          500,
-          'Internal Server Error',
-        )
-      }
-    }
-  }
-
-  public async searchBCGOVSSOBceidUsers(req: Request, res: Response) {
-    try {
-      const users = await this.tmsService.searchBCGOVSSOBceidUsers(req)
-      return res.status(200).send(users)
-    } catch (error: unknown) {
-      if (error instanceof BadRequestError) {
-        this.errorHandler.generalError(
-          res,
-          'Error occurred searching BCEID users',
-          getErrorMessage(error),
-          error.statusCode,
-          'Bad Request',
-        )
-      } else {
-        this.errorHandler.generalError(
-          res,
-          'Error occurred searching BCEID users',
-          getErrorMessage(error),
-          500,
-          'Internal Server Error',
-        )
-      }
-    }
-  }
-
   public async getTenant(req: Request, res: Response) {
     try {
       const tenant = await this.tmsService.getTenant(req)
