@@ -4,6 +4,7 @@ import { TMSController } from '../controllers/tms.controller'
 import { sharedServiceController } from '../controllers/shared-service.controller'
 import { tenantRequestController } from '../controllers/tenant-request.controller'
 import { groupController } from '../controllers/group.controller'
+import { ssoSearchController } from '../controllers/sso-search.controller'
 import { validate, ValidationError } from 'express-validation'
 import validator from '../common/tms.validator'
 import { checkJwt } from '../common/auth.mw'
@@ -122,7 +123,7 @@ export class Routes {
         checkJwt(),
         validate(validator.searchBCGOVSSOUsers, {}, {}),
         (req: Request, res: Response) =>
-          this.tmsController.searchBCGOVSSOUsers(req, res),
+          ssoSearchController.searchBCGOVSSOUsers(req, res),
       )
     app
       .route(RoutesConstants.SEARCH_BC_GOV_BCEID_USERS)
@@ -130,7 +131,7 @@ export class Routes {
         checkJwt(),
         validate(validator.searchBCGOVSSOBceidUsers, {}, {}),
         (req: Request, res: Response) =>
-          this.tmsController.searchBCGOVSSOBceidUsers(req, res),
+          ssoSearchController.searchBCGOVSSOBceidUsers(req, res),
       )
     app
       .route(RoutesConstants.GET_TENANT)
