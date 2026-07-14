@@ -49,9 +49,8 @@ jobs:
       release_name: cstar-dev
       tag: ${{ needs.vars.outputs.pr }}
       db_user: appproxy
-      params:
-        --set frontend.ingress.hosts[0].host=dev.connect.digital.gov.bc.ca
-  
+      params: --set frontend.ingress.hosts[0].host=dev.connect.digital.gov.bc.ca
+
   promote-dev:
     name: Promote Images
     needs: [vars, deploys-gold-dev]
@@ -69,7 +68,7 @@ jobs:
           repository: ${{ github.repository }}/${{ matrix.package }}
           target: ${{ needs.vars.outputs.pr }}
           tags: dev
-  
+
   dev-tests:
     name: Tests
     needs: [promote-dev]
@@ -80,6 +79,10 @@ jobs:
       prefix: dev.connect
       image_tag: dev
       target: dev
+    secrets:
+      Username: ${{ secrets.E2E_IDIR_USERNAME }}
+      Password: ${{ secrets.E2E_IDIR_PASSWORD }}
+      MFA_CODE: ${{ secrets.E2E_MFA_CODE }}
 
   deploys-gold-test:
     name: Deploys Gold Test - (${{ needs.vars.outputs.pr }})
@@ -90,12 +93,11 @@ jobs:
       release_name: cstar-test
       tag: ${{ needs.vars.outputs.pr }}
       db_user: appproxy
-      params:
-        --set frontend.ingress.hosts[0].host=test.connect.digital.gov.bc.ca
-  
+      params: --set frontend.ingress.hosts[0].host=test.connect.digital.gov.bc.ca
+
   promote-test:
     name: Promote Images
-    needs: [vars,deploys-gold-test]
+    needs: [vars, deploys-gold-test]
     runs-on: ubuntu-24.04
     permissions:
       packages: write
@@ -110,7 +112,7 @@ jobs:
           repository: ${{ github.repository }}/${{ matrix.package }}
           target: ${{ needs.vars.outputs.pr }}
           tags: test
-  
+
   test-tests:
     name: Tests
     needs: [promote-test]
@@ -121,6 +123,10 @@ jobs:
       prefix: test.connect
       image_tag: test
       target: test
+    secrets:
+      Username: ${{ secrets.E2E_IDIR_USERNAME }}
+      Password: ${{ secrets.E2E_IDIR_PASSWORD }}
+      MFA_CODE: ${{ secrets.E2E_MFA_CODE }}
 
   deploys-gold-prod:
     name: Deploys Gold Prod - (${{ needs.vars.outputs.pr }})
@@ -131,8 +137,7 @@ jobs:
       release_name: cstar-prod
       tag: ${{ needs.vars.outputs.pr }}
       db_user: appproxy
-      params:
-        --set frontend.ingress.hosts[0].host=connect.digital.gov.bc.ca
+      params: --set frontend.ingress.hosts[0].host=connect.digital.gov.bc.ca
 
   promote-prod:
     name: Promote Images Prod
