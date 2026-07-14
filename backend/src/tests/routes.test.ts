@@ -1,7 +1,7 @@
 import request from 'supertest'
 import express from 'express'
 import { Routes } from '../routes/routes'
-import { TMSController } from '../controllers/tms.controller'
+import { TenantController } from '../controllers/tenant.controller'
 import { GroupController } from '../controllers/group.controller'
 import { checkJwt } from '../common/auth.mw'
 import { checkTenantAccess } from '../common/tenant-access.mw'
@@ -78,22 +78,22 @@ describe('Routes middleware wiring', () => {
     app.use(express.json())
 
     jest
-      .spyOn(TMSController.prototype, 'createTenant')
+      .spyOn(TenantController.prototype, 'createTenant')
       .mockImplementation(async (_req, res) => {
         res.status(201).send({ ok: true })
       })
     jest
-      .spyOn(TMSController.prototype, 'addTenantUser')
+      .spyOn(TenantController.prototype, 'addTenantUser')
       .mockImplementation(async (_req, res) => {
         res.status(201).send({ ok: true })
       })
     jest
-      .spyOn(TMSController.prototype, 'removeTenantUser')
+      .spyOn(TenantController.prototype, 'removeTenantUser')
       .mockImplementation(async (_req, res) => {
         res.status(204).send()
       })
     jest
-      .spyOn(TMSController.prototype, 'getUsersForTenant')
+      .spyOn(TenantController.prototype, 'getUsersForTenant')
       .mockImplementation(async (_req, res) => {
         res.status(200).send({ ok: true })
       })
@@ -126,7 +126,7 @@ describe('Routes middleware wiring', () => {
       })
 
     expect(response.status).toBe(401)
-    expect(TMSController.prototype.addTenantUser).not.toHaveBeenCalled()
+    expect(TenantController.prototype.addTenantUser).not.toHaveBeenCalled()
   })
 
   it('should require tenant access for removing a tenant user after JWT passes', async () => {
@@ -137,7 +137,7 @@ describe('Routes middleware wiring', () => {
       .set('Authorization', 'Bearer ok')
 
     expect(response.status).toBe(403)
-    expect(TMSController.prototype.removeTenantUser).not.toHaveBeenCalled()
+    expect(TenantController.prototype.removeTenantUser).not.toHaveBeenCalled()
   })
 
   it('should configure shared service JWT mode for get tenant users', () => {

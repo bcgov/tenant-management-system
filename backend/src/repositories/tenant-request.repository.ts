@@ -1,7 +1,7 @@
 import { EntityManager } from 'typeorm'
 import { TenantRequest } from '../entities/TenantRequest'
 import { Tenant } from '../entities/Tenant'
-import { tmsRepository } from './tms.repository'
+import { tenantRepository } from './tenant.repository'
 import { ConflictError } from '../errors/ConflictError'
 import { NotFoundError } from '../errors/NotFoundError'
 import { UnexpectedStateError } from '../errors/UnexpectedStateError'
@@ -21,9 +21,10 @@ export class TenantRequestRepository {
     manager: EntityManager,
   ) {
     if (
-      await tmsRepository.checkIfTenantNameAndMinistryNameExists(
+      await tenantRepository.checkIfTenantNameAndMinistryNameExists(
         input.name,
         input.ministryName,
+        manager,
       )
     ) {
       throw new ConflictError(
@@ -38,7 +39,7 @@ export class TenantRequestRepository {
       tenantRequest.description = input.description
     }
     tenantRequest.status = 'NEW'
-    tenantRequest.requestedBy = await tmsRepository.setSSOUser(
+    tenantRequest.requestedBy = await tenantRepository.setSSOUser(
       input.user.ssoUserId,
       input.user.firstName,
       input.user.lastName,
@@ -46,6 +47,7 @@ export class TenantRequestRepository {
       input.user.userName || '',
       input.user.email || '',
       input.user.idpType,
+      manager,
     )
     tenantRequest.createdBy = input.user.ssoUserId
     tenantRequest.updatedBy = input.user.ssoUserId
@@ -97,9 +99,10 @@ export class TenantRequestRepository {
         tenantRequest.name = tenantName
       }
       if (
-        await tmsRepository.checkIfTenantNameAndMinistryNameExists(
+        await tenantRepository.checkIfTenantNameAndMinistryNameExists(
           tenantRequest.name,
           tenantRequest.ministryName,
+          manager,
         )
       ) {
         throw new ConflictError(
@@ -122,7 +125,7 @@ export class TenantRequestRepository {
           idpType: tenantRequest.requestedBy.idpType as IdpType,
         },
       }
-      const savedTenant = (await tmsRepository.saveTenant(
+      const savedTenant = (await tenantRepository.saveTenant(
         tenantRequestBody,
         manager,
       )) as Tenant
@@ -137,7 +140,7 @@ export class TenantRequestRepository {
       }
     }
 
-    let opsAdminSSOUser = await tmsRepository.setSSOUser(
+    let opsAdminSSOUser = await tenantRepository.setSSOUser(
       input.decisionedByUser.ssoUserId,
       input.decisionedByUser.firstName,
       input.decisionedByUser.lastName,
@@ -145,6 +148,7 @@ export class TenantRequestRepository {
       input.decisionedByUser.userName,
       input.decisionedByUser.email,
       input.decisionedByUser.idpType,
+      manager,
     )
 
     opsAdminSSOUser = await manager.save(opsAdminSSOUser)
