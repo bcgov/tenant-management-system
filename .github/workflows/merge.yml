@@ -49,7 +49,7 @@ jobs:
       release_name: cstar-dev
       tag: ${{ needs.vars.outputs.pr }}
       db_user: appproxy
-      params: 
+      params:
         --set frontend.ingress.hosts[0].host=dev.connect.digital.gov.bc.ca
 
   promote-dev:
@@ -94,7 +94,7 @@ jobs:
       release_name: cstar-test
       tag: ${{ needs.vars.outputs.pr }}
       db_user: appproxy
-      params: 
+      params:
         --set frontend.ingress.hosts[0].host=test.connect.digital.gov.bc.ca
 
   promote-test:
@@ -139,7 +139,7 @@ jobs:
       release_name: cstar-prod
       tag: ${{ needs.vars.outputs.pr }}
       db_user: appproxy
-      params: 
+      params:
         --set frontend.ingress.hosts[0].host=connect.digital.gov.bc.ca
 
   promote-prod:
