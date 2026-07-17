@@ -1,10 +1,10 @@
 import { Application, NextFunction, Request, Response } from 'express'
 import { RoutesConstants } from '../common/routes.constants'
-import { TMSController } from '../controllers/tms.controller'
 import { sharedServiceController } from '../controllers/shared-service.controller'
 import { tenantRequestController } from '../controllers/tenant-request.controller'
 import { groupController } from '../controllers/group.controller'
 import { ssoSearchController } from '../controllers/sso-search.controller'
+import { tenantController } from '../controllers/tenant.controller'
 import { validate, ValidationError } from 'express-validation'
 import validator from '../common/tms.validator'
 import { checkJwt } from '../common/auth.mw'
@@ -15,24 +15,22 @@ import { checkOperationsAdmin } from '../common/operations-admin.mw'
 import logger from '../common/logger'
 
 export class Routes {
-  public tmsController: TMSController = new TMSController()
-
   public routes(app: Application) {
-    // Proxy swagger docs endpoints to /v1/docs for access through frontend
-    // Frontend proxies /api/v1/docs -> /v1/docs on backend
     app.get('/v1/docs', (req: Request, res: Response) => {
       res.redirect('/docs')
     })
 
-    // Proxy swagger assets to /v1/swagger-resources for proper loading
     app.get('/v1/swagger-resources/*', (req: Request, res: Response) => {
       const path = req.path.replace('/v1/swagger-resources', '')
       res.redirect(`/swagger-resources${path}`)
     })
 
-    app
-      .route(RoutesConstants.HEALTH)
-      .get((req: Request, res: Response) => this.tmsController.health(req, res))
+    app.route(RoutesConstants.HEALTH).get((req: Request, res: Response) => {
+      res.status(200).send({
+        apiStatus: 'Healthy',
+        time: new Date().toISOString(),
+      })
+    })
     app
       .route(RoutesConstants.CREATE_TENANTS)
       .post(
@@ -40,7 +38,7 @@ export class Routes {
         checkOperationsAdmin,
         validate(validator.createTenant, {}, {}),
         (req: Request, res: Response) =>
-          this.tmsController.createTenant(req, res),
+          tenantController.createTenant(req, res),
       )
     app
       .route(RoutesConstants.ADD_TENANT_USERS)
@@ -49,7 +47,7 @@ export class Routes {
         validate(validator.addTenantUser, {}, {}),
         checkTenantAccess([TMSConstants.TENANT_OWNER, TMSConstants.USER_ADMIN]),
         (req: Request, res: Response) =>
-          this.tmsController.addTenantUser(req, res),
+          tenantController.addTenantUser(req, res),
       )
     app
       .route(RoutesConstants.REMOVE_TENANT_USER)
@@ -58,7 +56,7 @@ export class Routes {
         validate(validator.removeTenantUser, {}, {}),
         checkTenantAccess([TMSConstants.TENANT_OWNER, TMSConstants.USER_ADMIN]),
         (req: Request, res: Response) =>
-          this.tmsController.removeTenantUser(req, res),
+          tenantController.removeTenantUser(req, res),
       )
     app
       .route(RoutesConstants.GET_USER_TENANTS)
@@ -66,7 +64,7 @@ export class Routes {
         checkJwt({ sharedServiceAccess: true }),
         validate(validator.getUserTenants, {}, {}),
         (req: Request, res: Response) =>
-          this.tmsController.getTenantsForUser(req, res),
+          tenantController.getTenantsForUser(req, res),
       )
     app
       .route(RoutesConstants.GET_USER_TENANT_REQUESTS)
@@ -83,9 +81,9 @@ export class Routes {
         validate(validator.getTenantUsers, {}, {}),
         checkTenantAccess([]),
         (req: Request, res: Response) =>
-          this.tmsController.getUsersForTenant(req, res),
+          tenantController.getUsersForTenant(req, res),
       )
-    //app.route(RoutesConstants.CREATE_TENANT_ROLES).post(checkJwt(),  validate(validator.createTenantRoles,{},{}), checkTenantAccess([TMSConstants.TENANT_OWNER, TMSConstants.USER_ADMIN]),(req:Request,res:Response) => this.tmsController.createRoles(req,res))
+    //app.route(RoutesConstants.CREATE_TENANT_ROLES).post(checkJwt(),  validate(validator.createTenantRoles,{},{}), checkTenantAccess([TMSConstants.TENANT_OWNER, TMSConstants.USER_ADMIN]),(req:Request,res:Response) => tenantController.createRoles(req,res))
     app
       .route(RoutesConstants.ASSIGN_USER_ROLES)
       .post(
@@ -93,12 +91,12 @@ export class Routes {
         validate(validator.assignUserRoles, {}, {}),
         checkTenantAccess([TMSConstants.TENANT_OWNER, TMSConstants.USER_ADMIN]),
         (req: Request, res: Response) =>
-          this.tmsController.assignUserRoles(req, res),
+          tenantController.assignUserRoles(req, res),
       )
     app
       .route(RoutesConstants.GET_TMS_ROLES)
       .get(checkJwt(), (req: Request, res: Response) =>
-        this.tmsController.getTenantRoles(req, res),
+        tenantController.getTenantRoles(req, res),
       )
     app
       .route(RoutesConstants.GET_USER_ROLES)
@@ -106,7 +104,7 @@ export class Routes {
         checkJwt(),
         validate(validator.getUserRoles, {}, {}),
         (req: Request, res: Response) =>
-          this.tmsController.getUserRoles(req, res),
+          tenantController.getUserRoles(req, res),
       )
     app
       .route(RoutesConstants.UNASSIGN_USER_ROLES)
@@ -115,7 +113,7 @@ export class Routes {
         validate(validator.unassignUserRoles, {}, {}),
         checkTenantAccess([TMSConstants.TENANT_OWNER, TMSConstants.USER_ADMIN]),
         (req: Request, res: Response) =>
-          this.tmsController.unassignUserRoles(req, res),
+          tenantController.unassignUserRoles(req, res),
       )
     app
       .route(RoutesConstants.SEARCH_BC_GOV_IDIR_USERS)
@@ -139,7 +137,7 @@ export class Routes {
         checkJwt(),
         validate(validator.getTenant, {}, {}),
         checkTenantAccess([]),
-        (req: Request, res: Response) => this.tmsController.getTenant(req, res),
+        (req: Request, res: Response) => tenantController.getTenant(req, res),
       )
     app
       .route(RoutesConstants.GET_ROLES_FOR_SSO_USER)
@@ -148,7 +146,7 @@ export class Routes {
         validate(validator.getRolesForSSOUser, {}, {}),
         checkTenantAccess([]),
         (req: Request, res: Response) =>
-          this.tmsController.getRolesForSSOUser(req, res),
+          tenantController.getRolesForSSOUser(req, res),
       )
     app
       .route(RoutesConstants.UPDATE_TENANT)
@@ -157,7 +155,7 @@ export class Routes {
         validate(validator.updateTenant, {}, {}),
         checkTenantAccess([TMSConstants.TENANT_OWNER]),
         (req: Request, res: Response) =>
-          this.tmsController.updateTenant(req, res),
+          tenantController.updateTenant(req, res),
       )
     app
       .route(RoutesConstants.CREATE_TENANT_REQUEST)
@@ -348,7 +346,7 @@ export class Routes {
         validate(validator.getTenantUser, {}, {}),
         checkTenantAccess([TMSConstants.TENANT_OWNER, TMSConstants.USER_ADMIN]),
         (req: Request, res: Response) =>
-          this.tmsController.getTenantUser(req, res),
+          tenantController.getTenantUser(req, res),
       )
 
     app.use(function (

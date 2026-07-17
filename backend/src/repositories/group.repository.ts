@@ -7,7 +7,7 @@ import { SSOUser } from '../entities/SSOUser'
 import { GroupSharedServiceRole } from '../entities/GroupSharedServiceRole'
 import { SharedServiceRole } from '../entities/SharedServiceRole'
 import { TenantSharedService } from '../entities/TenantSharedService'
-import { tmsRepository } from './tms.repository'
+import { tenantRepository } from './tenant.repository'
 import { NotFoundError } from '../errors/NotFoundError'
 import { ConflictError } from '../errors/ConflictError'
 import { UnexpectedStateError } from '../errors/UnexpectedStateError'
@@ -1170,9 +1170,10 @@ export class GroupRepository {
     const em = manager ?? getManager()
     const { tenantId, ssoUserId, audience, idpType } = input
 
-    const tenantUser = await tmsRepository.getTenantUserBySsoId(
+    const tenantUser = await tenantRepository.getTenantUserBySsoId(
       ssoUserId,
       tenantId,
+      em,
     )
     if (!tenantUser) {
       throw new NotFoundError(`Tenant user not found: ${ssoUserId}`)
@@ -1274,9 +1275,10 @@ export class GroupRepository {
     const em = manager ?? getManager()
     const { tenantId, ssoUserId, audience, idpType } = input
 
-    const tenantUser = await tmsRepository.getTenantUserBySsoId(
+    const tenantUser = await tenantRepository.getTenantUserBySsoId(
       ssoUserId,
       tenantId,
+      em,
     )
     if (!tenantUser) {
       throw new NotFoundError(`Tenant user not found: ${ssoUserId}`)

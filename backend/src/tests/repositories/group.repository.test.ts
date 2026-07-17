@@ -1,6 +1,6 @@
 import { EntityManager } from 'typeorm'
 import { GroupRepository } from '../../repositories/group.repository'
-import { tmsRepository } from '../../repositories/tms.repository'
+import { tenantRepository } from '../../repositories/tenant.repository'
 import { ConflictError } from '../../errors/ConflictError'
 import { NotFoundError } from '../../errors/NotFoundError'
 import { getManager } from '../../common/db.connection'
@@ -8,13 +8,15 @@ import { getManager } from '../../common/db.connection'
 jest.mock('../../common/db.connection', () => ({
   getManager: jest.fn(),
 }))
-jest.mock('../../repositories/tms.repository', () => ({
-  tmsRepository: {
+jest.mock('../../repositories/tenant.repository', () => ({
+  tenantRepository: {
     getTenantUserBySsoId: jest.fn(),
   },
 }))
 
-const mockTmsRepository = tmsRepository as jest.Mocked<typeof tmsRepository>
+const mockTenantRepository = tenantRepository as jest.Mocked<
+  typeof tenantRepository
+>
 
 type MockQueryBuilder = {
   where: jest.Mock
@@ -502,7 +504,7 @@ describe('GroupRepository', () => {
     }
 
     it('returns the groups for the user', async () => {
-      mockTmsRepository.getTenantUserBySsoId.mockResolvedValue({
+      mockTenantRepository.getTenantUserBySsoId.mockResolvedValue({
         id: 'tu-1',
       } as never)
       manager.createQueryBuilder.mockReturnValueOnce(
@@ -518,7 +520,7 @@ describe('GroupRepository', () => {
     })
 
     it('throws NotFoundError when the tenant user does not exist', async () => {
-      mockTmsRepository.getTenantUserBySsoId.mockResolvedValue(null)
+      mockTenantRepository.getTenantUserBySsoId.mockResolvedValue(null)
 
       await expect(
         repo.getUserGroupsWithSharedServiceRoles(input, asManager(manager)),
@@ -535,7 +537,7 @@ describe('GroupRepository', () => {
     }
 
     it('returns the effective roles for the user', async () => {
-      mockTmsRepository.getTenantUserBySsoId.mockResolvedValue({
+      mockTenantRepository.getTenantUserBySsoId.mockResolvedValue({
         id: 'tu-1',
       } as never)
       manager.createQueryBuilder.mockReturnValueOnce(
@@ -551,7 +553,7 @@ describe('GroupRepository', () => {
     })
 
     it('throws NotFoundError when the tenant user does not exist', async () => {
-      mockTmsRepository.getTenantUserBySsoId.mockResolvedValue(null)
+      mockTenantRepository.getTenantUserBySsoId.mockResolvedValue(null)
 
       await expect(
         repo.getEffectiveSharedServiceRoles(input, asManager(manager)),

@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from 'express'
-import { TMSRepository } from '../repositories/tms.repository'
-import { connection } from './db.connection'
+import { tenantRepository } from '../repositories/tenant.repository'
 import { ForbiddenError } from '../errors/ForbiddenError'
 import logger from './logger'
 import { getErrorMessage } from './error.handler'
@@ -13,7 +12,6 @@ export const checkTenantAccess = (requiredRoles?: string[]) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
       const tenantId: string = req.params.tenantId
-      const tmsRepository: TMSRepository = new TMSRepository(connection.manager)
 
       if (req.isSharedServiceAccess) {
         const clientIdentifier = req.decodedJwt?.aud
@@ -23,7 +21,7 @@ export const checkTenantAccess = (requiredRoles?: string[]) => {
 
         if (clientIdentifier !== config.oidc.tmsAudience) {
           const hasServiceAccess: boolean =
-            await tmsRepository.checkIfTenantHasSharedServiceAccess(
+            await tenantRepository.checkIfTenantHasSharedServiceAccess(
               tenantId,
               clientIdentifier,
             )
@@ -41,7 +39,7 @@ export const checkTenantAccess = (requiredRoles?: string[]) => {
         throw new ForbiddenError('Missing tenant ID or user ID')
       }
 
-      const hasAccess: boolean = await tmsRepository.checkUserTenantAccess(
+      const hasAccess: boolean = await tenantRepository.checkUserTenantAccess(
         tenantId,
         ssoUserId,
         requiredRoles,

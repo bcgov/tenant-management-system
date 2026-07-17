@@ -1,5 +1,5 @@
 import { Request } from 'express'
-import { TMSRepository } from '../repositories/tms.repository'
+import { tenantRepository } from '../repositories/tenant.repository'
 import { groupRepository } from '../repositories/group.repository'
 import { connection } from '../common/db.connection'
 import logger from '../common/logger'
@@ -27,12 +27,10 @@ import {
 } from '../dtos/tms.dto'
 import { config } from '../services/config.service'
 
-export class TMSService {
-  tmsRepository: TMSRepository
+export class TenantService {
   mapper: TMSMapper
 
-  constructor(tmsRepository?: TMSRepository, mapper?: TMSMapper) {
-    this.tmsRepository = tmsRepository || new TMSRepository(connection.manager)
+  constructor(mapper?: TMSMapper) {
     this.mapper = mapper || new TMSMapper()
   }
 
@@ -43,8 +41,24 @@ export class TMSService {
       description: req.body.description,
       user: req.body.user,
     }
-    const savedTenant: Tenant = await this.tmsRepository.saveTenant(input)
-    const tenantDto = this.mapper.toTenantDto(savedTenant)
+
+    let savedTenant: Tenant | undefined
+    await connection.manager.transaction(async (transactionEntityManager) => {
+      try {
+        savedTenant = await tenantRepository.saveTenant(
+          input,
+          transactionEntityManager,
+        )
+      } catch (error: unknown) {
+        logger.error(
+          'Create tenant transaction failure - rolling back inserts ',
+          { error: getErrorMessage(error) },
+        )
+        throw error
+      }
+    })
+
+    const tenantDto = this.mapper.toTenantDto(savedTenant as Tenant)
 
     return {
       data: {
@@ -65,22 +79,19 @@ export class TMSService {
 
     await connection.manager.transaction(async (transactionEntityManager) => {
       try {
-        const tmsResponse: AddTenantUserResultDto =
-          await this.tmsRepository.addTenantUsers(
-            input,
-            transactionEntityManager,
-          )
+        const tenantResponse: AddTenantUserResultDto =
+          await tenantRepository.addTenantUsers(input, transactionEntityManager)
         const groupIds: string[] = input.groups || []
         const groups: Group[] = await groupRepository.addUserToGroups(
-          tmsResponse.tenantUserId,
+          tenantResponse.tenantUserId,
           groupIds,
           input.tenantId,
           input.updatedBy,
           transactionEntityManager,
         )
         response = this.mapper.toAddTenantUserResponseDto(
-          tmsResponse.savedTenantUser,
-          tmsResponse.roleAssignments,
+          tenantResponse.savedTenantUser,
+          tenantResponse.roleAssignments,
           groups,
         )
       } catch (error: unknown) {
@@ -108,7 +119,7 @@ export class TMSService {
         req.decodedJwt?.audience ||
         config.oidc.tmsAudience,
     }
-    const tenants = await this.tmsRepository.getTenantsForUser(input)
+    const tenants = await tenantRepository.getTenantsForUser(input)
 
     if (expand.includes('tenantUserRoles') && tenants) {
       return {
@@ -146,7 +157,7 @@ export class TMSService {
       groupIds,
       sharedServiceRoleIds,
     }
-    const users = await this.tmsRepository.getUsersForTenant(input)
+    const users = await tenantRepository.getUsersForTenant(input)
     return {
       data: {
         users,
@@ -159,7 +170,23 @@ export class TMSService {
       tenantId: req.params.tenantId,
       role: req.body.role,
     }
-    const roles = await this.tmsRepository.createRoles(input)
+
+    let roles: unknown
+    await connection.manager.transaction(async (transactionEntityManager) => {
+      try {
+        roles = await tenantRepository.createRoles(
+          input,
+          transactionEntityManager,
+        )
+      } catch (error: unknown) {
+        logger.error(
+          'Create Role for tenant transaction failure - rolling back inserts ',
+          { error: getErrorMessage(error) },
+        )
+        throw error
+      }
+    })
+
     return {
       data: {
         role: roles,
@@ -176,7 +203,21 @@ export class TMSService {
       tenantUserId,
       roleIds: roles,
     }
-    const data = await this.tmsRepository.assignUserRolesForUser(input)
+
+    let data:
+      | Awaited<ReturnType<typeof tenantRepository.assignUserRolesForUser>>
+      | undefined
+    await connection.manager.transaction(async (transactionEntityManager) => {
+      data = await tenantRepository.assignUserRolesForUser(
+        input,
+        transactionEntityManager,
+      )
+    })
+
+    if (!data) {
+      throw new Error('Failed to assign user roles')
+    }
+
     return {
       data: {
         roles: data.map((assignment) => assignment.role),
@@ -188,7 +229,7 @@ export class TMSService {
     const input: GetTenantRolesInputDto = {
       tenantId: req.params.tenantId,
     }
-    const roles = await this.tmsRepository.getTenantRoles(input)
+    const roles = await tenantRepository.getTenantRoles(input)
     return {
       data: {
         roles,
@@ -201,7 +242,7 @@ export class TMSService {
       tenantId: req.params.tenantId,
       tenantUserId: req.params.tenantUserId,
     }
-    const roles = await this.tmsRepository.getUserRoles(input)
+    const roles = await tenantRepository.getUserRoles(input)
     return {
       data: {
         roles,
@@ -216,7 +257,10 @@ export class TMSService {
       roleId: req.params.roleId,
       updatedBy: req.decodedJwt?.idir_user_guid || 'system',
     }
-    await this.tmsRepository.unassignUserRoles(input)
+
+    await connection.manager.transaction(async (transactionEntityManager) => {
+      await tenantRepository.unassignUserRoles(input, transactionEntityManager)
+    })
   }
 
   public async getTenant(req: Request) {
@@ -226,7 +270,7 @@ export class TMSService {
       tenantId: req.params.tenantId,
       expand,
     }
-    const tenant = await this.tmsRepository.getTenant(input)
+    const tenant = await tenantRepository.getTenant(input)
 
     if (expand.includes('tenantUserRoles') && tenant?.users) {
       const tenantDto = this.mapper.toTenantDto(tenant as Tenant)
@@ -252,7 +296,28 @@ export class TMSService {
       description: req.body.description,
       updatedBy: req.decodedJwt?.idir_user_guid || 'system',
     }
-    const updatedTenant = await this.tmsRepository.updateTenant(input)
+
+    let updatedTenant:
+      | Awaited<ReturnType<typeof tenantRepository.updateTenant>>
+      | undefined
+    await connection.manager.transaction(async (transactionEntityManager) => {
+      try {
+        updatedTenant = await tenantRepository.updateTenant(
+          input,
+          transactionEntityManager,
+        )
+      } catch (error: unknown) {
+        logger.error(
+          'Update tenant transaction failure - rolling back changes',
+          { error: getErrorMessage(error) },
+        )
+        throw error
+      }
+    })
+
+    if (!updatedTenant) {
+      throw new Error('Failed to update tenant')
+    }
 
     return {
       data: {
@@ -266,7 +331,7 @@ export class TMSService {
       tenantId: req.params.tenantId,
       ssoUserId: req.params.ssoUserId,
     }
-    const roles = await this.tmsRepository.getRolesForSSOUser(input)
+    const roles = await tenantRepository.getRolesForSSOUser(input)
     return {
       data: {
         roles,
@@ -283,10 +348,7 @@ export class TMSService {
 
     await connection.manager.transaction(async (transactionEntityManager) => {
       try {
-        await this.tmsRepository.removeTenantUser(
-          input,
-          transactionEntityManager,
-        )
+        await tenantRepository.removeTenantUser(input, transactionEntityManager)
         await groupRepository.removeUserFromAllGroups(
           input.tenantUserId,
           input.deletedBy,
@@ -313,7 +375,7 @@ export class TMSService {
       expand,
     }
     const tenantUser: GetTenantUserResultDto =
-      await this.tmsRepository.getTenantUser(input)
+      await tenantRepository.getTenantUser(input)
 
     if (expand.includes('groups')) {
       tenantUser.groups = await groupRepository.getTenantUserGroups(
@@ -333,3 +395,5 @@ export class TMSService {
     }
   }
 }
+
+export const tenantService = new TenantService()

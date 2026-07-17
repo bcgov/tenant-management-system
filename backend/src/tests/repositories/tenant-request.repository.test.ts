@@ -1,6 +1,6 @@
 import { EntityManager } from 'typeorm'
 import { TenantRequestRepository } from '../../repositories/tenant-request.repository'
-import { tmsRepository } from '../../repositories/tms.repository'
+import { tenantRepository } from '../../repositories/tenant.repository'
 import { ConflictError } from '../../errors/ConflictError'
 import { NotFoundError } from '../../errors/NotFoundError'
 import { TMSConstants } from '../../common/tms.constants'
@@ -9,15 +9,17 @@ import { getManager } from '../../common/db.connection'
 jest.mock('../../common/db.connection', () => ({
   getManager: jest.fn(),
 }))
-jest.mock('../../repositories/tms.repository', () => ({
-  tmsRepository: {
+jest.mock('../../repositories/tenant.repository', () => ({
+  tenantRepository: {
     checkIfTenantNameAndMinistryNameExists: jest.fn(),
     setSSOUser: jest.fn(),
     saveTenant: jest.fn(),
   },
 }))
 
-const mockTmsRepository = tmsRepository as jest.Mocked<typeof tmsRepository>
+const mockTenantRepository = tenantRepository as jest.Mocked<
+  typeof tenantRepository
+>
 
 type MockQueryBuilder = {
   where: jest.Mock
@@ -96,10 +98,10 @@ describe('TenantRequestRepository', () => {
     }
 
     it('creates the tenant request', async () => {
-      mockTmsRepository.checkIfTenantNameAndMinistryNameExists.mockResolvedValue(
+      mockTenantRepository.checkIfTenantNameAndMinistryNameExists.mockResolvedValue(
         false,
       )
-      mockTmsRepository.setSSOUser.mockResolvedValue({
+      mockTenantRepository.setSSOUser.mockResolvedValue({
         ssoUserId: 'sso-1',
         displayName: 'John Smith',
       } as never)
@@ -129,7 +131,7 @@ describe('TenantRequestRepository', () => {
     })
 
     it('throws ConflictError when a tenant with the same name and ministry already exists', async () => {
-      mockTmsRepository.checkIfTenantNameAndMinistryNameExists.mockResolvedValue(
+      mockTenantRepository.checkIfTenantNameAndMinistryNameExists.mockResolvedValue(
         true,
       )
 
@@ -168,7 +170,7 @@ describe('TenantRequestRepository', () => {
       manager.createQueryBuilder.mockReturnValueOnce(
         createQueryBuilder({ getOne: { ...existingRequest } }),
       )
-      mockTmsRepository.setSSOUser.mockResolvedValue({
+      mockTenantRepository.setSSOUser.mockResolvedValue({
         ...decisionedByUser,
       } as never)
 
@@ -196,17 +198,17 @@ describe('TenantRequestRepository', () => {
       manager.createQueryBuilder.mockReturnValueOnce(
         createQueryBuilder({ getOne: { ...existingRequest } }),
       )
-      mockTmsRepository.checkIfTenantNameAndMinistryNameExists.mockResolvedValue(
+      mockTenantRepository.checkIfTenantNameAndMinistryNameExists.mockResolvedValue(
         false,
       )
-      mockTmsRepository.saveTenant.mockResolvedValue({
+      mockTenantRepository.saveTenant.mockResolvedValue({
         id: 'tenant-1',
         name: 'Roads Initiative',
         ministryName: 'Ministry of Natural Resources',
         createdBy: 'sso-1',
         updatedBy: 'sso-1',
       } as never)
-      mockTmsRepository.setSSOUser.mockResolvedValue({
+      mockTenantRepository.setSSOUser.mockResolvedValue({
         ...decisionedByUser,
       } as never)
 
@@ -215,7 +217,7 @@ describe('TenantRequestRepository', () => {
         asManager(manager),
       )
 
-      expect(mockTmsRepository.saveTenant).toHaveBeenCalledWith(
+      expect(mockTenantRepository.saveTenant).toHaveBeenCalledWith(
         expect.objectContaining({ name: 'Roads Initiative' }),
         manager,
       )
@@ -270,7 +272,7 @@ describe('TenantRequestRepository', () => {
       manager.createQueryBuilder.mockReturnValueOnce(
         createQueryBuilder({ getOne: { ...existingRequest } }),
       )
-      mockTmsRepository.checkIfTenantNameAndMinistryNameExists.mockResolvedValue(
+      mockTenantRepository.checkIfTenantNameAndMinistryNameExists.mockResolvedValue(
         true,
       )
 

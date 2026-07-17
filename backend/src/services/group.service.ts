@@ -1,6 +1,6 @@
 import { Request } from 'express'
 import { groupRepository } from '../repositories/group.repository'
-import { tmsRepository } from '../repositories/tms.repository'
+import { tenantRepository } from '../repositories/tenant.repository'
 import { connection } from '../common/db.connection'
 import logger from '../common/logger'
 import { getErrorMessage } from '../common/error.handler'
@@ -72,7 +72,7 @@ export class GroupService {
         const { user } = req.body
         const updatedBy: string = req.decodedJwt?.idir_user_guid || 'system'
 
-        const tenantUser = await tmsRepository.ensureTenantUserExists(
+        const tenantUser = await tenantRepository.ensureTenantUserExists(
           user,
           tenantId,
           updatedBy,

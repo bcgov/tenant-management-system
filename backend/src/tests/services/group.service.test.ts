@@ -2,13 +2,13 @@ import { Request } from 'express'
 import { EntityManager } from 'typeorm'
 import { GroupService } from '../../services/group.service'
 import { groupRepository } from '../../repositories/group.repository'
-import { tmsRepository } from '../../repositories/tms.repository'
+import { tenantRepository } from '../../repositories/tenant.repository'
 import { connection } from '../../common/db.connection'
 import logger from '../../common/logger'
 
 jest.mock('../../repositories/group.repository')
-jest.mock('../../repositories/tms.repository', () => ({
-  tmsRepository: {
+jest.mock('../../repositories/tenant.repository', () => ({
+  tenantRepository: {
     ensureTenantUserExists: jest.fn(),
   },
 }))
@@ -24,7 +24,9 @@ jest.mock('../../common/db.connection', () => ({
 const FAKE_TX = { marker: 'fake-tx' } as unknown as EntityManager
 
 const mockRepository = groupRepository as jest.Mocked<typeof groupRepository>
-const mockTmsRepository = tmsRepository as jest.Mocked<typeof tmsRepository>
+const mockTenantRepository = tenantRepository as jest.Mocked<
+  typeof tenantRepository
+>
 const mockTransaction = connection.manager.transaction as jest.Mock
 const mockLoggerError = logger.error as jest.Mock
 
@@ -92,14 +94,14 @@ describe('GroupService', () => {
     })
 
     it('ensures the tenant user exists then adds them to the group', async () => {
-      mockTmsRepository.ensureTenantUserExists.mockResolvedValue({
+      mockTenantRepository.ensureTenantUserExists.mockResolvedValue({
         id: 'tu-1',
       } as never)
       mockRepository.addGroupUser.mockResolvedValue({ id: 'gu-1' } as never)
 
       const result = await service.addGroupUser(req)
 
-      expect(mockTmsRepository.ensureTenantUserExists).toHaveBeenCalledWith(
+      expect(mockTenantRepository.ensureTenantUserExists).toHaveBeenCalledWith(
         { ssoUserId: 'sso-1' },
         'tenant-1',
         'admin-1',
@@ -119,7 +121,7 @@ describe('GroupService', () => {
 
     it('logs and rethrows on transaction failure', async () => {
       const error = new Error('db down')
-      mockTmsRepository.ensureTenantUserExists.mockRejectedValue(error)
+      mockTenantRepository.ensureTenantUserExists.mockRejectedValue(error)
 
       await expect(service.addGroupUser(req)).rejects.toThrow(error)
       expect(mockLoggerError).toHaveBeenCalledWith(
