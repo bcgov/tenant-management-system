@@ -18,4 +18,4 @@ npm run migrate
 
 echo "==> Installing frontend dependencies"
 cd "$REPOSITORY_ROOT/frontend"
-npm ci
+npm ci --ignore-scripts
