@@ -44,9 +44,9 @@ backend:
   bcgovSsoApiUrlBceid: ~
   #-- the token URL, used for looking up BCeID users
   bcgovTokenUrl: ~
-  #-- enable or disable backend
+  #-- the JWT audience for the application, used for JWT validation
   tmsAudience: ~
-    #-- TODO: fill me 
+  #-- enable or disable backend
   enabled: true
   #-- log level for the backend
   logLevel: 'info'
@@ -143,10 +143,10 @@ frontend:
       haproxy.router.openshift.io/disable_cookies: 'true'
     tls:
       - hosts:
-        - "{{ tpl (index .Values.frontend.ingress.hosts 0).host . }}"
-        secretName: "{{ regexFind \"(dev|test|demo|prod)\" .Release.Name | default \"dev\" }}-tls"
-    hosts: 
-      - host: "{{.Release.Name}}-frontend.{{.Values.global.domain}}"
+          - '{{ tpl (index .Values.frontend.ingress.hosts 0).host . }}'
+        secretName: '{{ regexFind "(dev|test|demo|prod)" .Release.Name | default "dev" }}-tls'
+    hosts:
+      - host: '{{.Release.Name}}-frontend.{{.Values.global.domain}}'
         paths:
           - path: /
             pathType: ImplementationSpecific
