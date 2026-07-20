@@ -39,11 +39,11 @@ spec:
             allowPrivilegeEscalation: false
             capabilities:
               drop: [ "ALL" ]
-          image: "{{.Values.global.registry}}/{{.Values.global.repository}}/migrations:{{ .Values.global.tag | default .Chart.AppVersion }}"
+          image: "{{ .Values.global.registry }}/{{ .Values.global.repository }}/migrations:{{ .Values.global.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ default "Always" .Values.backend.imagePullPolicy }}
           envFrom:
             - secretRef:
-                name: {{.Release.Name}}-flyway
+                name: {{ .Release.Name }}-flyway
           env:
             - name: FLYWAY_BASELINE_ON_MIGRATE
               value: "true"
@@ -69,20 +69,20 @@ spec:
             allowPrivilegeEscalation: false
             capabilities:
               drop: [ "ALL" ]
-          image: "{{.Values.global.registry}}/{{.Values.global.repository}}/backend:{{ .Values.global.tag | default .Chart.AppVersion }}"
+          image: "{{ .Values.global.registry }}/{{ .Values.global.repository }}/backend:{{ .Values.global.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ default "Always" .Values.backend.imagePullPolicy }}
           envFrom:
             - secretRef:
-                name: {{.Release.Name}}-backend
+                name: {{ .Release.Name }}-backend
           env:
             - name: ALLOWED_ORIGINS
-              value: "{{.Values.backend.allowedOrigins}}"
+              value: "{{ .Values.backend.allowedOrigins }}"
             - name: BCGOV_SSO_API_URL
-              value: "{{.Values.backend.bcgovSsoApiUrl}}"
+              value: "{{ .Values.backend.bcgovSsoApiUrl }}"
             - name: BCGOV_SSO_API_URL_BCEID
-              value: "{{.Values.backend.bcgovSsoApiUrlBceid}}"
+              value: "{{ .Values.backend.bcgovSsoApiUrlBceid }}"
             - name: BCGOV_TOKEN_URL
-              value: "{{.Values.backend.bcgovTokenUrl}}"
+              value: "{{ .Values.backend.bcgovTokenUrl }}"
             - name: ISSUER
               value: "https://{{ .Values.global.loginProxy.hostName }}/auth/realms/standard"
             - name: JWKS_URI
