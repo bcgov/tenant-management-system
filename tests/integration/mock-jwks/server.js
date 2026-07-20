@@ -55,7 +55,8 @@ app.post('/mint', async (req, res) => {
     .setProtectedHeader({ alg: ALG, kid: 'test-key-1' })
     .sign(privateKey)
 
-  console.log('Minted token with claims:', JSON.stringify(claims, null, 2))
+  const sanitizedClaims = JSON.stringify(claims).replace(/[\n\r]/g, '_')
+  console.log('Minted token with claims: ' + sanitizedClaims)
   console.log('Token:', token)
 
   res.json({ token, claims })
