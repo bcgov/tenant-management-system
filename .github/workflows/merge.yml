@@ -34,7 +34,7 @@ jobs:
       - name: Get PR Number From Event
         if: github.event_name == 'push'
         id: pr_no
-        uses: bcgov/action-get-pr@v0.1.0
+        uses: bcgov/action-get-pr@35514fa1d4765547da319e967b509363598e8b46 # v0.1.0
       - name: PR Number
         id: pr
         run: echo pr=${{ steps.pr_no.outputs.pr || inputs.pr}} >> $GITHUB_OUTPUT
@@ -49,8 +49,7 @@ jobs:
       release_name: cstar-dev
       tag: ${{ needs.vars.outputs.pr }}
       db_user: appproxy
-      params:
-        --set frontend.ingress.hosts[0].host=dev.connect.digital.gov.bc.ca
+      params: --set frontend.ingress.hosts[0].host=dev.connect.digital.gov.bc.ca
 
   promote-dev:
     name: Promote Images
@@ -94,8 +93,7 @@ jobs:
       release_name: cstar-test
       tag: ${{ needs.vars.outputs.pr }}
       db_user: appproxy
-      params:
-        --set frontend.ingress.hosts[0].host=test.connect.digital.gov.bc.ca
+      params: --set frontend.ingress.hosts[0].host=test.connect.digital.gov.bc.ca
 
   promote-test:
     name: Promote Images
@@ -139,8 +137,7 @@ jobs:
       release_name: cstar-prod
       tag: ${{ needs.vars.outputs.pr }}
       db_user: appproxy
-      params:
-        --set frontend.ingress.hosts[0].host=connect.digital.gov.bc.ca
+      params: --set frontend.ingress.hosts[0].host=connect.digital.gov.bc.ca
 
   promote-prod:
     name: Promote Images Prod
