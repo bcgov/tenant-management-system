@@ -39,7 +39,7 @@ spec:
               type: RuntimeDefault
             capabilities:
               drop: [ "ALL" ]
-          image: "{{.Values.global.registry}}/{{.Values.global.repository}}/frontend:{{ .Values.global.tag | default .Chart.AppVersion }}"
+          image: "{{ .Values.global.registry }}/{{ .Values.global.repository }}/frontend:{{ .Values.global.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ default "Always" .Values.frontend.imagePullPolicy }}
           env:
             - name: BACKEND_URL
@@ -47,9 +47,9 @@ spec:
             - name: LOG_LEVEL
               value: "info"
             - name: LOGIN_PROXY_CLIENT_ID
-              value: "{{.Values.global.loginProxy.clientId}}"
+              value: "{{ .Values.global.loginProxy.clientId }}"
             - name: LOGIN_PROXY_HOST_NAME
-              value: "{{.Values.global.loginProxy.hostName}}"
+              value: "{{ .Values.global.loginProxy.hostName }}"
           ports:
             - name: http
               containerPort: 3000

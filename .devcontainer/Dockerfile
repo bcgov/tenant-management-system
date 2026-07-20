@@ -3,6 +3,9 @@ FROM node:22.22.3-trixie
 # Install some extras such as vim for interactive rebases. Also some
 # Cypress prerequisites for running in Debian containers:
 # https://docs.cypress.io/app/get-started/install-cypress#UbuntuDebian
+#
+# Also set up sudoers for Docker in Docker so that the integration tests can run
+# in the containers that they need.
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     libasound2 \
@@ -18,11 +21,8 @@ RUN apt-get update && \
     vim \
     xauth \
     xvfb \
-    && apt-get clean
-
-# Set up Docker in Docker so that the integration tests can run in the
-# containers that they need.
-RUN echo "node ALL=(root) NOPASSWD: /usr/bin/dockerd" > \
+    && apt-get clean \
+    && echo "node ALL=(root) NOPASSWD: /usr/bin/dockerd" > \
     /etc/sudoers.d/node-dockerd && \
     chmod 0440 /etc/sudoers.d/node-dockerd
 

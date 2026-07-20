@@ -25,7 +25,7 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      postgres-operator.crunchydata.com/cluster: {{ .Values.global.databaseAlias}}
+      postgres-operator.crunchydata.com/cluster: {{ .Values.global.databaseAlias }}
   ingress:
     - ports:
         - protocol: TCP
@@ -33,7 +33,7 @@ spec:
       from:
         - podSelector:
             matchLabels:
-              app.kubernetes.io/name: {{ template  "backend.name"}}
+              app.kubernetes.io/name: {{ template  "backend.name" }}
               app.kubernetes.io/instance: {{ .Release.Name }}
   policyTypes:
     - Ingress
@@ -46,7 +46,7 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app.kubernetes.io/name: {{ template  "backend.name"}}
+      app.kubernetes.io/name: {{ template  "backend.name" }}
       app.kubernetes.io/instance: {{ .Release.Name }}
   ingress:
     - ports:
@@ -55,7 +55,7 @@ spec:
       from:
         - podSelector:
             matchLabels:
-              app.kubernetes.io/name: {{ template  "frontend.name"}}
+              app.kubernetes.io/name: {{ template  "frontend.name" }}
               app.kubernetes.io/instance: {{ .Release.Name }}
   policyTypes:
     - Ingress
