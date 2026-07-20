@@ -68,10 +68,7 @@ jobs:
       - name: Run tests
         run: |
           npm ci --ignore-scripts
-          cd collection && npx bru run \
-              --env default \
-              --noproxy \
-              --reporter-junit results.xml
+          npm run test:ci
         working-directory: tests/integration
 
       - name: Dump logs on failure

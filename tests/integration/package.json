@@ -2,7 +2,8 @@
   "name": "integration-tests",
   "version": "1.0.0",
   "scripts": {
-    "test": "cd collection && npx bru run --env default --noproxy"
+    "test": "cd collection && bru run --env default --noproxy",
+    "test:ci": "cd collection && bru run --env default --noproxy --reporter-junit results.xml"
   },
   "devDependencies": {
     "@usebruno/cli": "^3.5.1"
