@@ -84,6 +84,37 @@ describe('GroupService', () => {
         { error: 'db down' },
       )
     })
+
+    it('does not look up a display name when the group was created by the system', async () => {
+      mockRepository.saveGroup.mockResolvedValue({
+        id: 'group-1',
+        createdBy: 'system',
+      } as never)
+
+      const result = await service.createGroup(req)
+
+      expect(mockRepository.getSsoUserDisplayName).not.toHaveBeenCalled()
+      expect(result.data.group.createdByDisplayName).toBe('system')
+    })
+
+    it('defaults the creator to system when no user is on the request', async () => {
+      mockRepository.saveGroup.mockResolvedValue({
+        id: 'group-1',
+        createdBy: 'system',
+      } as never)
+
+      await service.createGroup(
+        asRequest({
+          params: { tenantId: 'tenant-1' },
+          body: { name: 'Engineering', description: 'Eng group' },
+        }),
+      )
+
+      expect(mockRepository.saveGroup).toHaveBeenCalledWith(
+        expect.objectContaining({ createdBy: 'system' }),
+        FAKE_TX,
+      )
+    })
   })
 
   describe('addGroupUser', () => {
@@ -129,6 +160,27 @@ describe('GroupService', () => {
         { error: 'db down' },
       )
     })
+
+    it("fails when the tenant user can't be created or found", async () => {
+      mockTenantRepository.ensureTenantUserExists.mockResolvedValue(
+        null as never,
+      )
+
+      await expect(service.addGroupUser(req)).rejects.toThrow(
+        'Tenant user not found for tenant: tenant-1',
+      )
+    })
+
+    it('errors if adding the user silently produces nothing', async () => {
+      mockTenantRepository.ensureTenantUserExists.mockResolvedValue({
+        id: 'tu-1',
+      } as never)
+      mockRepository.addGroupUser.mockResolvedValue(null as never)
+
+      await expect(service.addGroupUser(req)).rejects.toThrow(
+        'Group user creation failed',
+      )
+    })
   })
 
   describe('updateGroup', () => {
@@ -166,6 +218,19 @@ describe('GroupService', () => {
         'Update group transaction failure - rolling back changes',
         { error: 'db down' },
       )
+    })
+
+    it('looks up a display name when the group has a real creator', async () => {
+      mockRepository.updateGroup.mockResolvedValue({
+        id: 'group-1',
+        createdBy: 'sso-1',
+      } as never)
+      mockRepository.getSsoUserDisplayName.mockResolvedValue('Jane Doe')
+
+      const result = await service.updateGroup(req)
+
+      expect(mockRepository.getSsoUserDisplayName).toHaveBeenCalledWith('sso-1')
+      expect(result.data.group.createdByDisplayName).toBe('Jane Doe')
     })
   })
 
@@ -205,6 +270,25 @@ describe('GroupService', () => {
         { error: 'db down' },
       )
     })
+
+    it('defaults updatedBy to system when the request has no JWT', async () => {
+      mockRepository.removeGroupUser.mockResolvedValue(undefined)
+
+      await service.removeGroupUser(
+        asRequest({
+          params: {
+            tenantId: 'tenant-1',
+            groupId: 'group-1',
+            groupUserId: 'gu-1',
+          },
+        }),
+      )
+
+      expect(mockRepository.removeGroupUser).toHaveBeenCalledWith(
+        expect.objectContaining({ updatedBy: 'system' }),
+        FAKE_TX,
+      )
+    })
   })
 
   describe('getGroup', () => {
@@ -220,6 +304,21 @@ describe('GroupService', () => {
 
       expect(mockTransaction).not.toHaveBeenCalled()
       expect(result).toEqual({ data: { group: { id: 'group-1' } } })
+    })
+
+    it('splits the expand query param into a list', async () => {
+      mockRepository.getGroup.mockResolvedValue({ id: 'group-1' } as never)
+
+      await service.getGroup(
+        asRequest({
+          params: { tenantId: 'tenant-1', groupId: 'group-1' },
+          query: { expand: 'groupUsers' },
+        }),
+      )
+
+      expect(mockRepository.getGroup).toHaveBeenCalledWith(
+        expect.objectContaining({ expand: ['groupUsers'] }),
+      )
     })
   })
 
@@ -238,6 +337,25 @@ describe('GroupService', () => {
         expect.objectContaining({ tenantId: 'tenant-1' }),
       )
       expect(mockTransaction).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('getSharedServiceRolesForGroup', () => {
+    it("returns a group's shared service roles", async () => {
+      mockRepository.getSharedServiceRolesForGroup.mockResolvedValue([
+        { id: 'ss-1' },
+      ] as never)
+
+      const result = await service.getSharedServiceRolesForGroup(
+        asRequest({
+          params: { tenantId: 'tenant-1', groupId: 'group-1' },
+        }),
+      )
+
+      expect(mockRepository.getSharedServiceRolesForGroup).toHaveBeenCalledWith(
+        expect.objectContaining({ tenantId: 'tenant-1', groupId: 'group-1' }),
+      )
+      expect(result).toEqual({ data: { sharedServices: [{ id: 'ss-1' }] } })
     })
   })
 
@@ -290,6 +408,17 @@ describe('GroupService', () => {
       ).rejects.toThrow('Missing audience in JWT token')
     })
 
+    it('rejects requests missing an identity provider type', async () => {
+      await expect(
+        service.getUserGroupsWithSharedServiceRoles(
+          asRequest({
+            params: { tenantId: 'tenant-1', ssoUserId: 'sso-1' },
+            decodedJwt: { aud: 'client-a' },
+          }),
+        ),
+      ).rejects.toThrow('Missing identity provider type in request')
+    })
+
     it('returns the result when audience and idpType are present', async () => {
       mockRepository.getUserGroupsWithSharedServiceRoles.mockResolvedValue({
         groups: [],
@@ -314,6 +443,17 @@ describe('GroupService', () => {
           asRequest({ params: { tenantId: 'tenant-1', ssoUserId: 'sso-1' } }),
         ),
       ).rejects.toThrow('Missing audience in JWT token')
+    })
+
+    it('rejects requests missing an identity provider type', async () => {
+      await expect(
+        service.getEffectiveSharedServiceRoles(
+          asRequest({
+            params: { tenantId: 'tenant-1', ssoUserId: 'sso-1' },
+            decodedJwt: { aud: 'client-a' },
+          }),
+        ),
+      ).rejects.toThrow('Missing identity provider type in request')
     })
 
     it('returns the wrapped result', async () => {
