@@ -89,6 +89,7 @@ crunchy: # enable it for TEST and PROD, for PR based pipelines simply use single
       fullBackupSchedule: 0 9 * * * # make sure to provide values here, if s3 is enabled.
       incrementalBackupSchedule: 30 0,4,12,16,20 * * * # make sure to provide values here, if s3 is enabled.
     manual:
+      enabled: true
       repo: repo2 # If you are doing a manual full backup, which repo do you want to backup to. repo1 is PVC and repo2 is S3
 
     config:
