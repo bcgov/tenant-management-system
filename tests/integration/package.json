@@ -6,6 +6,6 @@
     "test:ci": "cd collection && bru run --env default --noproxy --reporter-junit results.xml"
   },
   "devDependencies": {
-    "@usebruno/cli": "^3.5.1"
+    "@usebruno/cli": "^3.5.2"
   }
 }
