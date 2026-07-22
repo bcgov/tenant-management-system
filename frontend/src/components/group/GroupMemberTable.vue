@@ -181,7 +181,6 @@ const handleRemoveMemberButton = (groupUser: GroupUser) => {
     v-model="showRemoveDialog"
     :buttons="removeDialogButtons"
     :max-width="650"
-    dialog-type="warning"
     message="This will remove the member from this group only. This action can't
       be undone."
     title="Remove member from group?"

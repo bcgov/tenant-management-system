@@ -340,7 +340,6 @@ const showRemoveUserDialog = (user: User) => {
     :buttons="removeUserDialog.buttons"
     :message="removeUserDialog.message"
     :title="removeUserDialog.title"
-    dialog-type="warning"
     @button-click="handleRemoveUserButtonClick"
   />
 </template>
