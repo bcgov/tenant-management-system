@@ -6,6 +6,7 @@ import {
 } from '@/__tests__/__factories__'
 
 import { GroupService, toGroupServiceId } from '@/models/groupservice.model'
+import { toGroupServiceRoleId } from '@/models/groupservicerole.model'
 
 describe('GroupService model', () => {
   describe('constructor', () => {
@@ -52,8 +53,14 @@ describe('GroupService model', () => {
     it('counts to 0', () => {
       const groupService = makeGroupService({
         roles: [
-          makeGroupServiceRole({ id: 'id1', isEnabled: false }),
-          makeGroupServiceRole({ id: 'id2', isEnabled: false }),
+          makeGroupServiceRole({
+            id: toGroupServiceRoleId('id1'),
+            isEnabled: false,
+          }),
+          makeGroupServiceRole({
+            id: toGroupServiceRoleId('id2'),
+            isEnabled: false,
+          }),
         ],
       })
 
@@ -63,8 +70,14 @@ describe('GroupService model', () => {
     it('counts to 1', () => {
       const groupService = makeGroupService({
         roles: [
-          makeGroupServiceRole({ id: 'id1', isEnabled: false }),
-          makeGroupServiceRole({ id: 'id2', isEnabled: true }),
+          makeGroupServiceRole({
+            id: toGroupServiceRoleId('id1'),
+            isEnabled: false,
+          }),
+          makeGroupServiceRole({
+            id: toGroupServiceRoleId('id2'),
+            isEnabled: true,
+          }),
         ],
       })
 
@@ -74,8 +87,14 @@ describe('GroupService model', () => {
     it('counts to 2', () => {
       const groupService = makeGroupService({
         roles: [
-          makeGroupServiceRole({ id: 'id1', isEnabled: true }),
-          makeGroupServiceRole({ id: 'id2', isEnabled: true }),
+          makeGroupServiceRole({
+            id: toGroupServiceRoleId('id1'),
+            isEnabled: true,
+          }),
+          makeGroupServiceRole({
+            id: toGroupServiceRoleId('id2'),
+            isEnabled: true,
+          }),
         ],
       })
 
@@ -95,8 +114,14 @@ describe('GroupService model', () => {
     it('is false for all disabled', () => {
       const groupService = makeGroupService({
         roles: [
-          makeGroupServiceRole({ id: 'id1', isEnabled: false }),
-          makeGroupServiceRole({ id: 'id2', isEnabled: false }),
+          makeGroupServiceRole({
+            id: toGroupServiceRoleId('id1'),
+            isEnabled: false,
+          }),
+          makeGroupServiceRole({
+            id: toGroupServiceRoleId('id2'),
+            isEnabled: false,
+          }),
         ],
       })
 
@@ -106,8 +131,14 @@ describe('GroupService model', () => {
     it('is true for one enabled role', () => {
       const groupService = makeGroupService({
         roles: [
-          makeGroupServiceRole({ id: 'id1', isEnabled: false }),
-          makeGroupServiceRole({ id: 'id2', isEnabled: true }),
+          makeGroupServiceRole({
+            id: toGroupServiceRoleId('id1'),
+            isEnabled: false,
+          }),
+          makeGroupServiceRole({
+            id: toGroupServiceRoleId('id2'),
+            isEnabled: true,
+          }),
         ],
       })
 
@@ -117,8 +148,14 @@ describe('GroupService model', () => {
     it('is true for multiple enabled roles', () => {
       const groupService = makeGroupService({
         roles: [
-          makeGroupServiceRole({ id: 'id1', isEnabled: true }),
-          makeGroupServiceRole({ id: 'id2', isEnabled: true }),
+          makeGroupServiceRole({
+            id: toGroupServiceRoleId('id1'),
+            isEnabled: true,
+          }),
+          makeGroupServiceRole({
+            id: toGroupServiceRoleId('id2'),
+            isEnabled: true,
+          }),
         ],
       })
 

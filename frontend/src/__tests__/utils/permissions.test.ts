@@ -18,6 +18,7 @@ import {
   currentUserIsIdir,
   currentUserIsOperationsAdmin,
 } from '@/utils/permissions'
+import { toSsoUserId } from '@/models/ssouser.model'
 
 let currentAuthStore = createMockAuthStore()
 
@@ -53,7 +54,7 @@ describe('permissions', () => {
     it('returns false when the current user is not in the tenant', () => {
       const user = makeUser()
       const otherUser = makeUser({
-        ssoUser: makeSsoUser({ ssoUserId: 'other-user' }),
+        ssoUser: makeSsoUser({ ssoUserId: toSsoUserId('other-user') }),
       })
       currentAuthStore = createMockAuthStore({ user })
       const tenant = makeTenant({ users: [otherUser] })

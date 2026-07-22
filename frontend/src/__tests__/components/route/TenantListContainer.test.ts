@@ -19,6 +19,7 @@ import {
 import TenantListContainer from '@/components/route/TenantListContainer.vue'
 import { useNotification } from '@/composables/useNotification'
 import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
+import { toTenantId } from '@/models/tenant.model'
 import vuetify from '@/plugins/vuetify'
 
 let currentAuthStore = createMockAuthStore()
@@ -95,7 +96,7 @@ describe('TenantListContainer.vue', () => {
 
   describe('navigation', () => {
     it('navigates to the tenant users page when a card is selected', async () => {
-      mockTenantStore([makeTenant({ id: 'tenant-1' })])
+      mockTenantStore([makeTenant({ id: toTenantId('tenant-1') })])
       await router.isReady()
       const wrapper = mountComponent()
       await flushPromises()

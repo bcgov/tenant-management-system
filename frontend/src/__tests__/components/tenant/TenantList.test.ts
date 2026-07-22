@@ -6,14 +6,14 @@ import { makeTenant } from '@/__tests__/__factories__'
 
 import TenantList from '@/components/tenant/TenantList.vue'
 import TenantListCard from '@/components/tenant/TenantListCard.vue'
-import { type Tenant } from '@/models/tenant.model'
+import { type Tenant, toTenantId } from '@/models/tenant.model'
 
 const vuetify = createVuetify()
 
 const tenants = [
-  makeTenant({ id: '1', name: 'Z Is Last' }),
-  makeTenant({ id: '2', name: 'A Is First' }),
-  makeTenant({ id: '3', name: 'M Is Middle' }),
+  makeTenant({ id: toTenantId('1'), name: 'Z Is Last' }),
+  makeTenant({ id: toTenantId('2'), name: 'A Is First' }),
+  makeTenant({ id: toTenantId('3'), name: 'M Is Middle' }),
 ]
 
 const mountComponent = (props: { tenants: Tenant[] }) =>
@@ -29,13 +29,13 @@ describe('TenantList.vue', () => {
   it('renders no cards when tenants is empty', () => {
     const wrapper = mountComponent({ tenants: [] })
 
-    expect(wrapper.findAllComponents(TenantListCard).length).toBe(0)
+    expect(wrapper.findAllComponents(TenantListCard)).toHaveLength(0)
   })
 
   it('renders a card for each tenant', () => {
     const wrapper = mountComponent({ tenants })
 
-    expect(wrapper.findAllComponents(TenantListCard).length).toBe(3)
+    expect(wrapper.findAllComponents(TenantListCard)).toHaveLength(3)
   })
 
   it('renders tenants sorted alphabetically by name', () => {

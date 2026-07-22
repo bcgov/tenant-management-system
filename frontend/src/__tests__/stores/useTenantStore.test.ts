@@ -80,7 +80,10 @@ describe('Tenant Store', () => {
     it('appends a second user to the tenant without removing the first', async () => {
       const store = useTenantStore()
       const initialUser = makeUser({ id: toUserId('user-existing') })
-      const tenant = makeTenant({ id: 'tenant-1', users: [initialUser] })
+      const tenant = makeTenant({
+        id: toTenantId('tenant-1'),
+        users: [initialUser],
+      })
       store.tenants.push(tenant)
       const secondUserData: UserApiData = {
         id: toUserId('user-second'),
@@ -208,7 +211,7 @@ describe('Tenant Store', () => {
       const roleId = toRoleId('role-1')
       const user = makeUser({ id: toUserId('u-1') })
       user.roles = [makeRole({ id: roleId })]
-      const tenant = makeTenant({ id: 'tenant-1' })
+      const tenant = makeTenant({ id: toTenantId('tenant-1') })
       tenant.users = [user]
       store.tenants.push(tenant)
 
@@ -238,8 +241,8 @@ describe('Tenant Store', () => {
       const store = useTenantStore()
       const roleStore = useRoleStore()
 
-      const role1 = makeRole({ id: 'role-1' })
-      const role2 = makeRole({ id: 'role-2' })
+      const role1 = makeRole({ id: toRoleId('role-1') })
+      const role2 = makeRole({ id: toRoleId('role-2') })
       roleStore.roles = [role1, role2]
 
       const user = makeUser({ id: toUserId('u-1') })
@@ -256,7 +259,7 @@ describe('Tenant Store', () => {
     it('uses fullRoleIds for filtering when provided', async () => {
       const store = useTenantStore()
       const roleStore = useRoleStore()
-      const role1 = makeRole({ id: 'role-1' })
+      const role1 = makeRole({ id: toRoleId('role-1') })
       roleStore.roles = [role1]
 
       const user = makeUser({ id: toUserId('u-1') })

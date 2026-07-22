@@ -17,7 +17,7 @@ import { isVuetifyDisabled } from '@/__tests__/__helpers__/vuetify'
 
 import TenantUserTable from '@/components/tenant/TenantUserTable.vue'
 import { type Tenant } from '@/models/tenant.model'
-import { type User } from '@/models/user.model'
+import { toUserId, type User } from '@/models/user.model'
 import { currentUserHasRole } from '@/utils/permissions'
 
 vi.mock('@/utils/identityProvider', () => ({
@@ -407,7 +407,7 @@ describe('TenantUserTable', () => {
   describe('Edit Tenant Roles action', () => {
     it('opens the RoleDialog for the selected user', async () => {
       const userA = makeUser({
-        id: 'a',
+        id: toUserId('a'),
         roles: [makeRoleTenantOwner()],
         ssoUser: makeSsoUser({
           firstName: 'firstNameA',
@@ -415,7 +415,7 @@ describe('TenantUserTable', () => {
         }),
       })
       const userB = makeUser({
-        id: 'b',
+        id: toUserId('b'),
         roles: [makeRoleUserAdmin()],
         ssoUser: makeSsoUser({
           firstName: 'firstNameB',
@@ -440,7 +440,7 @@ describe('TenantUserTable', () => {
 
     it('closes the dialog and clears the modifying user index', async () => {
       const userA = makeUser({
-        id: 'user-a',
+        id: toUserId('user-a'),
         roles: [makeRoleTenantOwner()],
         ssoUser: makeSsoUser({
           firstName: 'firstNameA',
@@ -448,7 +448,7 @@ describe('TenantUserTable', () => {
         }),
       })
       const userB = makeUser({
-        id: 'user-b',
+        id: toUserId('user-b'),
         roles: [makeRoleUserAdmin()],
         ssoUser: makeSsoUser({
           firstName: 'firstNameB',

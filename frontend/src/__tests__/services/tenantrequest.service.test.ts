@@ -1,7 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { makeUser } from '@/__tests__/__factories__'
+import {
+  makeRole,
+  makeSsoUser,
+  makeTenantRequestApiData,
+  makeTenantRequestDetails,
+  makeUser,
+} from '@/__tests__/__factories__'
 
+import { toRoleId } from '@/models/role.model'
+import { toTenantRequestId } from '@/models/tenantrequest.model'
+import { toUserId } from '@/models/user.model'
+import { toSsoUserId } from '@/models/ssouser.model'
 import * as utils from '@/services/utils'
 
 vi.mock('@/services/utils', () => ({
@@ -16,94 +26,70 @@ mockedUtils.isDuplicateEntityError.mockReturnValue(false)
 mockedUtils.isValidationError.mockReturnValue(false)
 mockedUtils.logApiError.mockImplementation(() => {})
 
-// Create mock functions in vi.hoisted to ensure they're available during module loading
-const { mockDelete, mockGet, mockPatch, mockPost, mockPut } = vi.hoisted(
-  () => ({
-    mockDelete: vi.fn(),
-    mockGet: vi.fn(),
-    mockPatch: vi.fn(),
-    mockPost: vi.fn(),
-    mockPut: vi.fn(),
-  }),
-)
+const { mockGet, mockPatch, mockPost } = vi.hoisted(() => ({
+  mockGet: vi.fn(),
+  mockPatch: vi.fn(),
+  mockPost: vi.fn(),
+}))
 
-// Mock the authenticated axios to return an object with HTTP methods
 vi.mock('@/services/authenticated.axios', () => ({
   authenticatedAxios: () => ({
-    delete: mockDelete,
     get: mockGet,
     patch: mockPatch,
     post: mockPost,
-    put: mockPut,
   }),
 }))
 
 import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
 import { ValidationError } from '@/errors/domain/ValidationError'
-import {
-  type TenantRequestDetailFields,
-  toTenantRequestId,
-} from '@/models/tenantrequest.model'
 import { tenantRequestService } from '@/services/tenantrequest.service'
 
 describe('tenantRequestService', () => {
-  const requestId = toTenantRequestId('123')
-
-  const fakeUser = makeUser()
-
-  const fakeTenantRequestDetails: TenantRequestDetailFields = {
-    name: 'Test Tenant Request',
-    ministryName: 'Test Ministry',
-    description: 'This is a test tenant request',
-  }
-
-  const fakeTenantRequest = {
-    id: requestId,
-    name: fakeTenantRequestDetails.name,
-    ministryName: fakeTenantRequestDetails.ministryName,
-    description: fakeTenantRequestDetails.description,
-    status: 'PENDING',
-    user: fakeUser.ssoUser,
-    createdAt: '2024-01-01T00:00:00Z',
-  }
-
-  const fakeTenantRequests = [
-    fakeTenantRequest,
-    {
-      id: '124',
-      name: 'Another Request',
-      ministryName: 'Another Ministry',
-      description: 'Another test request',
-      status: 'APPROVED',
-      user: fakeUser.ssoUser,
-      createdAt: '2024-01-02T00:00:00Z',
-    },
-  ]
-
   beforeEach(() => {
     vi.clearAllMocks()
   })
 
   describe('createTenantRequest', () => {
-    it('should successfully create tenant request', async () => {
+    it('should correctly call the api', async () => {
+      const tenantRequestDetails = makeTenantRequestDetails({
+        description: 'tenantRequestDescription',
+        ministryName: 'tenantRequestMinistryName',
+        name: 'tenantRequestName',
+      })
+      const user = makeUser({
+        id: toUserId('userId'),
+        roles: [
+          makeRole({
+            description: 'roleDescription',
+            id: toRoleId('roleId'),
+            name: 'roleName',
+          }),
+        ],
+        ssoUser: makeSsoUser({
+          displayName: 'ssoUserDisplayName',
+          email: 'ssoUserEmail',
+          firstName: 'ssoUserFirstName',
+          idpType: 'ssoUserIdpType',
+          lastName: 'ssoUserLastName',
+          ssoUserId: toSsoUserId('ssoUserSsoUserId'),
+          userName: 'ssoUserUserName',
+        }),
+      })
       mockPost.mockResolvedValueOnce({})
 
-      await tenantRequestService.createTenantRequest(
-        fakeTenantRequestDetails,
-        fakeUser,
-      )
+      await tenantRequestService.createTenantRequest(tenantRequestDetails, user)
 
       expect(mockPost).toHaveBeenCalledWith('/tenant-requests', {
-        description: fakeTenantRequestDetails.description,
-        ministryName: fakeTenantRequestDetails.ministryName,
-        name: fakeTenantRequestDetails.name,
+        description: 'tenantRequestDescription',
+        ministryName: 'tenantRequestMinistryName',
+        name: 'tenantRequestName',
         user: {
-          displayName: fakeUser.ssoUser.displayName,
-          email: fakeUser.ssoUser.email,
-          firstName: fakeUser.ssoUser.firstName,
-          lastName: fakeUser.ssoUser.lastName,
-          ssoUserId: fakeUser.ssoUser.ssoUserId,
-          userName: fakeUser.ssoUser.userName,
+          displayName: 'ssoUserDisplayName',
+          email: 'ssoUserEmail',
+          firstName: 'ssoUserFirstName',
+          lastName: 'ssoUserLastName',
+          ssoUserId: 'ssoUserSsoUserId',
+          userName: 'ssoUserUserName',
         },
       })
     })
@@ -112,7 +98,6 @@ describe('tenantRequestService', () => {
       const error = {
         isAxiosError: true,
         response: {
-          status: 400,
           data: {
             details: {
               body: [
@@ -121,6 +106,7 @@ describe('tenantRequestService', () => {
               ],
             },
           },
+          status: 400,
         },
       }
       mockPost.mockRejectedValueOnce(error)
@@ -128,8 +114,8 @@ describe('tenantRequestService', () => {
 
       await expect(
         tenantRequestService.createTenantRequest(
-          fakeTenantRequestDetails,
-          fakeUser,
+          makeTenantRequestDetails(),
+          makeUser(),
         ),
       ).rejects.toBeInstanceOf(ValidationError)
 
@@ -143,8 +129,8 @@ describe('tenantRequestService', () => {
       const error = {
         isAxiosError: true,
         response: {
-          status: 409,
           data: { message: 'Tenant request with this name already exists' },
+          status: 409,
         },
       }
       mockPost.mockRejectedValueOnce(error)
@@ -152,8 +138,8 @@ describe('tenantRequestService', () => {
 
       await expect(
         tenantRequestService.createTenantRequest(
-          fakeTenantRequestDetails,
-          fakeUser,
+          makeTenantRequestDetails(),
+          makeUser(),
         ),
       ).rejects.toBeInstanceOf(DuplicateEntityError)
 
@@ -169,8 +155,8 @@ describe('tenantRequestService', () => {
 
       await expect(
         tenantRequestService.createTenantRequest(
-          fakeTenantRequestDetails,
-          fakeUser,
+          makeTenantRequestDetails(),
+          makeUser(),
         ),
       ).rejects.toThrow(genericError)
 
@@ -182,15 +168,40 @@ describe('tenantRequestService', () => {
   })
 
   describe('getTenantRequests', () => {
-    it('should return all tenant requests on success', async () => {
+    it('should correctly call the api', async () => {
+      mockGet.mockResolvedValueOnce({ data: { data: {} } })
+
+      await tenantRequestService.getTenantRequests()
+
+      expect(mockGet).toHaveBeenCalledWith('/tenant-requests')
+    })
+
+    it('should correctly return data', async () => {
+      const tenantRequestApiData = makeTenantRequestApiData({
+        createdBy: 'tenantRequestCreatedBy',
+        createdDateTime: 'tenantRequestCreatedDateTime',
+        description: 'tenantRequestDescription',
+        id: toTenantRequestId('tenantRequestId'),
+        ministryName: 'tenantRequestMinistryName',
+        name: 'tenantRequestName',
+        rejectionReason: 'tenantRequestRejectionReason',
+        status: 'tenantRequestStatus',
+      })
       mockGet.mockResolvedValueOnce({
-        data: { data: { tenantRequests: fakeTenantRequests } },
+        data: { data: { tenantRequests: [tenantRequestApiData] } },
       })
 
       const result = await tenantRequestService.getTenantRequests()
 
-      expect(result).toEqual(fakeTenantRequests)
-      expect(mockGet).toHaveBeenCalledWith('/tenant-requests')
+      expect(result).toHaveLength(1)
+      expect(result[0].createdBy).toBe('tenantRequestCreatedBy')
+      expect(result[0].createdDateTime).toBe('tenantRequestCreatedDateTime')
+      expect(result[0].description).toBe('tenantRequestDescription')
+      expect(result[0].id).toBe('tenantRequestId')
+      expect(result[0].ministryName).toBe('tenantRequestMinistryName')
+      expect(result[0].name).toBe('tenantRequestName')
+      expect(result[0].rejectionReason).toBe('tenantRequestRejectionReason')
+      expect(result[0].status).toBe('tenantRequestStatus')
     })
 
     it('should return empty array when no requests exist', async () => {
@@ -201,7 +212,6 @@ describe('tenantRequestService', () => {
       const result = await tenantRequestService.getTenantRequests()
 
       expect(result).toEqual([])
-      expect(mockGet).toHaveBeenCalledWith('/tenant-requests')
     })
 
     it('should log and rethrow errors', async () => {
@@ -220,94 +230,77 @@ describe('tenantRequestService', () => {
   })
 
   describe('updateTenantRequestStatus', () => {
-    const rejectionReason = 'Does not meet requirements'
-    const status = 'APPROVED'
-    const tenantName = 'Updated Tenant Request Name'
-
-    it('should successfully update status without rejection reason', async () => {
-      mockPatch.mockResolvedValueOnce({})
-
-      await tenantRequestService.updateTenantRequestStatus(requestId, status)
-
-      expect(mockPatch).toHaveBeenCalledWith(
-        `/tenant-requests/${requestId}/status`,
-        {
-          status,
-        },
-      )
-      expect(mockPatch).not.toHaveBeenCalledWith(
-        `/tenant-requests/${requestId}/status`,
-        {
-          name: expect.anything(),
-        },
-      )
-    })
-
-    it('should successfully update status with rejection reason', async () => {
-      const rejectedStatus = 'REJECTED'
+    it('should correctly call the api', async () => {
       mockPatch.mockResolvedValueOnce({})
 
       await tenantRequestService.updateTenantRequestStatus(
-        requestId,
-        rejectedStatus,
-        rejectionReason,
+        toTenantRequestId('tr-1'),
+        'APPROVED',
       )
 
-      expect(mockPatch).toHaveBeenCalledWith(
-        `/tenant-requests/${requestId}/status`,
-        {
-          status: rejectedStatus,
-          rejectionReason,
-        },
+      expect(mockPatch).toHaveBeenCalledWith('/tenant-requests/tr-1/status', {
+        status: 'APPROVED',
+      })
+    })
+
+    it('should correctly call the api with rejection reason', async () => {
+      mockPatch.mockResolvedValueOnce({})
+
+      await tenantRequestService.updateTenantRequestStatus(
+        toTenantRequestId('tr-1'),
+        'REJECTED',
+        'rejectionReason',
       )
-      expect(mockPatch).not.toHaveBeenCalledWith(
-        `/tenant-requests/${requestId}/status`,
-        {
-          name: expect.anything(),
-        },
+
+      expect(mockPatch).toHaveBeenCalledWith('/tenant-requests/tr-1/status', {
+        rejectionReason: 'rejectionReason',
+        status: 'REJECTED',
+      })
+    })
+
+    it('should correctly call the api with new name', async () => {
+      mockPatch.mockResolvedValueOnce({})
+
+      await tenantRequestService.updateTenantRequestStatus(
+        toTenantRequestId('tr-1'),
+        'APPROVED',
+        undefined,
+        'newTenantRequestName',
       )
+
+      expect(mockPatch).toHaveBeenCalledWith('/tenant-requests/tr-1/status', {
+        tenantName: 'newTenantRequestName',
+        status: 'APPROVED',
+      })
     })
 
     it('should handle empty rejection reason by not including it', async () => {
       mockPatch.mockResolvedValueOnce({})
 
       await tenantRequestService.updateTenantRequestStatus(
-        requestId,
-        status,
+        toTenantRequestId('tr-1'),
+        'APPROVED',
         '',
       )
 
-      expect(mockPatch).toHaveBeenCalledWith(
-        `/tenant-requests/${requestId}/status`,
-        {
-          status,
-        },
-      )
-      expect(mockPatch).not.toHaveBeenCalledWith(
-        `/tenant-requests/${requestId}/status`,
-        {
-          name: expect.anything(),
-        },
-      )
+      expect(mockPatch).toHaveBeenCalledWith('/tenant-requests/tr-1/status', {
+        status: 'APPROVED',
+      })
     })
 
-    it('should handle name updates', async () => {
+    it('should handle empty name by not including it', async () => {
       mockPatch.mockResolvedValueOnce({})
 
       await tenantRequestService.updateTenantRequestStatus(
-        requestId,
-        status,
+        toTenantRequestId('tr-1'),
+        'APPROVED',
+        undefined,
         '',
-        tenantName,
       )
 
-      expect(mockPatch).toHaveBeenCalledWith(
-        `/tenant-requests/${requestId}/status`,
-        {
-          status,
-          tenantName,
-        },
-      )
+      expect(mockPatch).toHaveBeenCalledWith('/tenant-requests/tr-1/status', {
+        status: 'APPROVED',
+      })
     })
 
     it('should throw ValidationError on HTTP 400', async () => {
@@ -330,7 +323,7 @@ describe('tenantRequestService', () => {
 
       await expect(
         tenantRequestService.updateTenantRequestStatus(
-          requestId,
+          toTenantRequestId('tr-1'),
           'INVALID_STATUS',
         ),
       ).rejects.toBeInstanceOf(ValidationError)
@@ -345,15 +338,18 @@ describe('tenantRequestService', () => {
       const error = {
         isAxiosError: true,
         response: {
-          status: 409,
           data: { message: 'Status update conflict' },
+          status: 409,
         },
       }
       mockPatch.mockRejectedValueOnce(error)
       mockedUtils.isDuplicateEntityError.mockReturnValueOnce(true)
 
       await expect(
-        tenantRequestService.updateTenantRequestStatus(requestId, status),
+        tenantRequestService.updateTenantRequestStatus(
+          toTenantRequestId('tr-1'),
+          'APPROVED',
+        ),
       ).rejects.toBeInstanceOf(DuplicateEntityError)
 
       expect(mockedUtils.logApiError).toHaveBeenCalledWith(
@@ -367,7 +363,10 @@ describe('tenantRequestService', () => {
       mockPatch.mockRejectedValueOnce(genericError)
 
       await expect(
-        tenantRequestService.updateTenantRequestStatus(requestId, status),
+        tenantRequestService.updateTenantRequestStatus(
+          toTenantRequestId('tr-1'),
+          'APPROVED',
+        ),
       ).rejects.toThrow(genericError)
 
       expect(mockedUtils.logApiError).toHaveBeenCalledWith(
@@ -380,31 +379,34 @@ describe('tenantRequestService', () => {
       const concurrencyError = {
         isAxiosError: true,
         response: {
-          status: 409,
           data: {
             message: 'Request has already been processed by another user',
           },
+          status: 409,
         },
       }
       mockPatch.mockRejectedValueOnce(concurrencyError)
       mockedUtils.isDuplicateEntityError.mockReturnValueOnce(true)
 
       await expect(
-        tenantRequestService.updateTenantRequestStatus(requestId, status),
+        tenantRequestService.updateTenantRequestStatus(
+          toTenantRequestId('tr-1'),
+          'APPROVED',
+        ),
       ).rejects.toBeInstanceOf(DuplicateEntityError)
     })
 
     it('should handle undefined rejection reason correctly', async () => {
       mockPatch.mockResolvedValueOnce({})
 
-      await tenantRequestService.updateTenantRequestStatus(requestId, status)
-
-      expect(mockPatch).toHaveBeenCalledWith(
-        `/tenant-requests/${requestId}/status`,
-        {
-          status,
-        },
+      await tenantRequestService.updateTenantRequestStatus(
+        toTenantRequestId('tr-1'),
+        'REJECTED',
       )
+
+      expect(mockPatch).toHaveBeenCalledWith('/tenant-requests/tr-1/status', {
+        status: 'REJECTED',
+      })
     })
   })
 })

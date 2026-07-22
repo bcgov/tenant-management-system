@@ -12,9 +12,10 @@ import {
 } from '@/__tests__/__factories__'
 
 import TenantUserManagement from '@/components/tenant/TenantUserManagement.vue'
-import { type Role } from '@/models/role.model'
+import { toGroupId } from '@/models/group.model'
+import { type Role, toRoleId } from '@/models/role.model'
 import { type Tenant } from '@/models/tenant.model'
-import { type User } from '@/models/user.model'
+import { toUserId, type User } from '@/models/user.model'
 import { useGroupStore } from '@/stores/useGroupStore'
 import { currentUserHasRole } from '@/utils/permissions'
 
@@ -90,7 +91,7 @@ describe('TenantUserManagement', () => {
   describe('User table', () => {
     it('remove-user event is forwarded', async () => {
       vi.mocked(currentUserHasRole).mockReturnValue(true)
-      const user = makeUser({ id: 'user-1' })
+      const user = makeUser({ id: toUserId('user-1') })
       const { emitted } = renderComponent({
         tenant: makeTenant({ users: [user] }),
       })
@@ -105,7 +106,7 @@ describe('TenantUserManagement', () => {
 
     it('remove-role event is forwarded', async () => {
       vi.mocked(currentUserHasRole).mockReturnValue(true)
-      const user = makeUser({ id: 'user-1' })
+      const user = makeUser({ id: toUserId('user-1') })
       const { emitted } = renderComponent({
         tenant: makeTenant({ users: [user] }),
       })
@@ -194,7 +195,7 @@ describe('TenantUserManagement', () => {
 
     it('disables Add User until a role is selected', async () => {
       vi.mocked(currentUserHasRole).mockReturnValue(true)
-      const role = makeRole({ id: 'role-1', description: 'Role One' })
+      const role = makeRole({ id: toRoleId('role-1'), description: 'Role One' })
 
       renderComponent({ possibleRoles: [role], tenant: makeTenant() })
 
@@ -246,7 +247,7 @@ describe('TenantUserManagement', () => {
 
     it('shows the group assignment step when groups exist', async () => {
       vi.mocked(currentUserHasRole).mockReturnValue(true)
-      const group = makeGroup({ id: 'group-1', name: 'Group One' })
+      const group = makeGroup({ id: toGroupId('group-1'), name: 'Group One' })
       vi.mocked(useGroupStore).mockReturnValue({ groups: [group] } as never)
 
       renderComponent({ tenant: makeTenant() })
@@ -266,8 +267,8 @@ describe('TenantUserManagement', () => {
 
     it('emits add with the selected user, roles, and groups; closes the search flow', async () => {
       vi.mocked(currentUserHasRole).mockReturnValue(true)
-      const role = makeRole({ id: 'role-1', description: 'Role One' })
-      const group = makeGroup({ id: 'group-1', name: 'Group One' })
+      const role = makeRole({ id: toRoleId('role-1'), description: 'Role One' })
+      const group = makeGroup({ id: toGroupId('group-1'), name: 'Group One' })
       vi.mocked(useGroupStore).mockReturnValue({ groups: [group] } as never)
 
       const { emitted } = renderComponent({
