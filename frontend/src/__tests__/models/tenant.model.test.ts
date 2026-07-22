@@ -7,8 +7,10 @@ import {
   makeUser,
 } from '@/__tests__/__factories__'
 
+import { toRoleId } from '@/models/role.model'
 import { toSsoUserId } from '@/models/ssouser.model'
 import { Tenant, toTenantId } from '@/models/tenant.model'
+import { toUserId } from '@/models/user.model'
 import { ROLES } from '@/utils/constants'
 
 describe('Tenant model', () => {
@@ -31,7 +33,7 @@ describe('Tenant model', () => {
       expect(tenant.id).toBe('id')
       expect(tenant.ministryName).toBe('ministryName')
       expect(tenant.name).toBe('name')
-      expect(tenant.users.length).toBe(1)
+      expect(tenant.users).toHaveLength(1)
       expect(tenant.users[0]).toBe(user)
     })
   })
@@ -58,12 +60,12 @@ describe('Tenant model', () => {
     it('returns users with TENANT_OWNER role', () => {
       const ownerRole = makeRole({
         description: 'Owner role',
-        id: 'r1',
+        id: toRoleId('r1'),
         name: ROLES.TENANT_OWNER.value,
       })
       const otherRole = makeRole({
         description: 'Other role',
-        id: 'r2',
+        id: toRoleId('r2'),
         name: 'SomeOtherRole',
       })
       const ownerUser = makeUser({
@@ -85,7 +87,11 @@ describe('Tenant model', () => {
       const roleName = ROLES.TENANT_OWNER.value
       const user = makeUser({
         roles: [
-          makeRole({ description: 'Owner role', id: 'r1', name: roleName }),
+          makeRole({
+            description: 'Owner role',
+            id: toRoleId('r1'),
+            name: roleName,
+          }),
         ],
       })
       const tenant = makeTenant({ users: [user] })
@@ -99,7 +105,7 @@ describe('Tenant model', () => {
         roles: [
           makeRole({
             description: 'Owner role',
-            id: 'r1',
+            id: toRoleId('r1'),
             name: roleName,
           }),
         ],
@@ -113,13 +119,13 @@ describe('Tenant model', () => {
       const roleName = ROLES.TENANT_OWNER.value
       const role = makeRole({
         description: 'Other role',
-        id: 'r1',
+        id: toRoleId('r1'),
         name: 'OtherRole',
       })
       const user = makeUser({ roles: [role] })
       const tenant = makeTenant({ users: [user] })
       const unknownUser = makeUser({
-        id: 'otherUser',
+        id: toUserId('otherUser'),
         roles: [role],
       })
 

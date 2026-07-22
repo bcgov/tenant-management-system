@@ -284,7 +284,7 @@ describe('Group Store', () => {
       const targetUserId = toGroupUserId('target-id')
       const group = makeGroup({ id: groupId })
       group.groupUsers = [
-        makeGroupUser({ id: 'other-id' }),
+        makeGroupUser({ id: toGroupUserId('other-id') }),
         makeGroupUser({ id: targetUserId }),
       ]
       store.groups = [group]
@@ -312,7 +312,7 @@ describe('Group Store', () => {
     it('handles removing a user id not present in groupUsers gracefully', async () => {
       const store = useGroupStore()
       const group = makeGroup({ id: groupId })
-      group.groupUsers = [makeGroupUser({ id: 'other-id' })]
+      group.groupUsers = [makeGroupUser({ id: toGroupUserId('other-id') })]
       store.groups = [group]
 
       await store.removeGroupUser(
@@ -330,8 +330,13 @@ describe('Group Store', () => {
       const store = useGroupStore()
       const services = [
         makeGroupService({
-          id: 'service-1',
-          roles: [makeGroupServiceRole({ id: 'role-1', isEnabled: true })],
+          id: toGroupServiceId('service-1'),
+          roles: [
+            makeGroupServiceRole({
+              id: toGroupServiceRoleId('role-1'),
+              isEnabled: true,
+            }),
+          ],
         }),
       ]
       vi.mocked(serviceService.updateTenantGroupServiceRoles).mockResolvedValue(
@@ -349,7 +354,7 @@ describe('Group Store', () => {
 
     it('updates groupServices in the store on success', async () => {
       const store = useGroupStore()
-      const services = [makeGroupService({ id: 'service-1' })]
+      const services = [makeGroupService({ id: toGroupServiceId('service-1') })]
       vi.mocked(serviceService.updateTenantGroupServiceRoles).mockResolvedValue(
         [],
       )
@@ -361,7 +366,7 @@ describe('Group Store', () => {
 
     it('throws and does not update the store on error', async () => {
       const store = useGroupStore()
-      const original = [makeGroupService({ id: 'original' })]
+      const original = [makeGroupService({ id: toGroupServiceId('original') })]
       store.groupServices = original
       vi.mocked(serviceService.updateTenantGroupServiceRoles).mockRejectedValue(
         new Error('API error'),
@@ -369,7 +374,7 @@ describe('Group Store', () => {
 
       await expect(
         store.updateGroupRoles(tenantId, groupId, [
-          makeGroupService({ id: 'new' }),
+          makeGroupService({ id: toGroupServiceId('new') }),
         ]),
       ).rejects.toThrow()
 

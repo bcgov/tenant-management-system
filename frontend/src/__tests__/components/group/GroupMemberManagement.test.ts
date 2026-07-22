@@ -8,6 +8,7 @@ import { makeGroup, makeGroupUser, makeTenant } from '@/__tests__/__factories__'
 
 import GroupMemberManagement from '@/components/group/GroupMemberManagement.vue'
 import { type Group } from '@/models/group.model'
+import { toGroupUserId } from '@/models/groupuser.model'
 import { type Tenant } from '@/models/tenant.model'
 import { type User } from '@/models/user.model'
 import { currentUserHasRole } from '@/utils/permissions'
@@ -75,7 +76,7 @@ describe('GroupMemberManagement', () => {
   describe('Member table', () => {
     it('remove-member event is forwarded', async () => {
       vi.mocked(currentUserHasRole).mockReturnValue(true)
-      const groupUser = makeGroupUser({ id: 'groupUserId' })
+      const groupUser = makeGroupUser({ id: toGroupUserId('groupUserId') })
       const { emitted } = renderComponent({
         group: makeGroup({ groupUsers: [groupUser] }),
         tenant: makeTenant(),

@@ -8,7 +8,7 @@ import { makeGroup, makeTenant, makeUser } from '@/__tests__/__factories__'
 import GroupListContainer from '@/components/route/GroupListContainer.vue'
 import { DomainError } from '@/errors/domain/DomainError'
 import { ServerError } from '@/errors/domain/ServerError'
-import { Group } from '@/models/group.model'
+import { Group, toGroupId } from '@/models/group.model'
 import { toTenantId } from '@/models/tenant.model'
 import { User } from '@/models/user.model'
 import { useAuthStore } from '@/stores/useAuthStore'
@@ -89,7 +89,7 @@ describe('GroupListContainer.vue', () => {
       groups: [] as Group[],
     }
     const mockTenant: TenantStoreMock = {
-      getTenant: vi.fn().mockReturnValue(makeTenant({ id: 't1' })),
+      getTenant: vi.fn().mockReturnValue(makeTenant({ id: toTenantId('t1') })),
     }
     vi.mocked(useAuthStore).mockReturnValue(
       mockAuth as ReturnType<typeof useAuthStore>,
@@ -197,7 +197,7 @@ describe('GroupListContainer.vue', () => {
   })
 
   it('navigates to group members on selection', async () => {
-    mockGroup.groups = [makeGroup({ id: 'g1' })]
+    mockGroup.groups = [makeGroup({ id: toGroupId('g1') })]
     const wrapper = mountComponent()
     const list = wrapper.getComponent({ name: 'GroupList' })
     await list.vm.$emit('select', 'g1')

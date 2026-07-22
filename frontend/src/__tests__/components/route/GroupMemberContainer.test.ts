@@ -15,7 +15,7 @@ import { useNotification } from '@/composables/useNotification'
 import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
 import { toGroupId } from '@/models/group.model'
 import { toTenantId } from '@/models/tenant.model'
-import { User } from '@/models/user.model'
+import { toUserId, User } from '@/models/user.model'
 import { useGroupStore } from '@/stores/useGroupStore'
 import { useUserStore } from '@/stores/useUserStore'
 import { IDIR_SEARCH_TYPE } from '@/utils/constants'
@@ -25,7 +25,7 @@ vi.mock('@/composables/useNotification', () => ({
 }))
 
 function makeGroupMemberManagementStub({
-  addUser = makeUser({ id: 'u1' }),
+  addUser = makeUser({ id: toUserId('u1') }),
   duplicateUser = makeUser({
     ssoUser: makeSsoUser({ displayName: 'displayName' }),
   }),
@@ -112,9 +112,9 @@ describe('GroupMemberContainer', () => {
 
   describe('handleAddMember', () => {
     it('calls addGroupUser, clears searchResults, and shows success notification', async () => {
-      const addUser = makeUser({ id: 'u1' })
-      const group = makeGroup({ id: 'g1' })
-      const tenant = makeTenant({ id: 't1' })
+      const addUser = makeUser({ id: toUserId('u1') })
+      const group = makeGroup({ id: toGroupId('g1') })
+      const tenant = makeTenant({ id: toTenantId('t1') })
       groupStore.addGroupUser = vi.fn().mockResolvedValue(undefined)
 
       renderComponent(group.id, tenant.id)
@@ -184,8 +184,8 @@ describe('GroupMemberContainer', () => {
 
   describe('handleDeleteMember', () => {
     it('calls removeGroupUser and shows success notification', async () => {
-      const group = makeGroup({ id: 'g1' })
-      const tenant = makeTenant({ id: 't1' })
+      const group = makeGroup({ id: toGroupId('g1') })
+      const tenant = makeTenant({ id: toTenantId('t1') })
       groupStore.removeGroupUser = vi.fn().mockResolvedValue(undefined)
 
       renderComponent(group.id, tenant.id)
@@ -216,19 +216,19 @@ describe('GroupMemberContainer', () => {
     beforeEach(() => {
       userStore.searchIdirFirstName = vi
         .fn()
-        .mockResolvedValue([makeUser({ id: 'idirFirstName' })])
+        .mockResolvedValue([makeUser({ id: toUserId('idirFirstName') })])
       userStore.searchIdirLastName = vi
         .fn()
-        .mockResolvedValue([makeUser({ id: 'idirLastName' })])
+        .mockResolvedValue([makeUser({ id: toUserId('idirLastName') })])
       userStore.searchIdirEmail = vi
         .fn()
-        .mockResolvedValue([makeUser({ id: 'idirEmail' })])
+        .mockResolvedValue([makeUser({ id: toUserId('idirEmail') })])
       userStore.searchBCeIDDisplayName = vi
         .fn()
-        .mockResolvedValue([makeUser({ id: 'BCeIDDisplayName' })])
+        .mockResolvedValue([makeUser({ id: toUserId('BCeIDDisplayName') })])
       userStore.searchBCeIDEmail = vi
         .fn()
-        .mockResolvedValue([makeUser({ id: 'BCeIDEmail' })])
+        .mockResolvedValue([makeUser({ id: toUserId('BCeIDEmail') })])
     })
 
     it('searches by first name and concatenates BCeID display name results', async () => {
@@ -328,10 +328,10 @@ describe('GroupMemberContainer', () => {
   it('sets searchResults to null on cancel', async () => {
     userStore.searchIdirEmail = vi
       .fn()
-      .mockResolvedValue([makeUser({ id: 'a' })])
+      .mockResolvedValue([makeUser({ id: toUserId('a') })])
     userStore.searchBCeIDEmail = vi
       .fn()
-      .mockResolvedValue([makeUser({ id: 'b' })])
+      .mockResolvedValue([makeUser({ id: toUserId('b') })])
 
     renderComponent()
     await fireEvent.click(

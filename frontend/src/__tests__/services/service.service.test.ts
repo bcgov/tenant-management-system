@@ -2,90 +2,288 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
   makeGroupService,
+  makeGroupServiceApiData,
   makeGroupServiceRole,
+  makeServiceApiData,
+  makeServiceDetailFields,
+  makeServiceRole,
+  makeServiceRoleApiData,
 } from '@/__tests__/__factories__'
 
 import { toGroupId } from '@/models/group.model'
+import { toGroupServiceId } from '@/models/groupservice.model'
 import { toServiceId } from '@/models/service.model'
 import { toTenantId } from '@/models/tenant.model'
 import * as utils from '@/services/utils'
 
 vi.mock('@/services/utils', () => ({
+  isDuplicateEntityError: vi.fn(),
+  isValidationError: vi.fn(),
   logApiError: vi.fn(),
 }))
 
 const mockedUtils = vi.mocked(utils)
 
+mockedUtils.isDuplicateEntityError.mockReturnValue(false)
+mockedUtils.isValidationError.mockReturnValue(false)
 mockedUtils.logApiError.mockImplementation(() => {})
 
-// Create mock functions in vi.hoisted to ensure they're available during module
-// loading.
-const { mockDelete, mockGet, mockPatch, mockPost, mockPut } = vi.hoisted(
-  () => ({
-    mockDelete: vi.fn(),
-    mockGet: vi.fn(),
-    mockPatch: vi.fn(),
-    mockPost: vi.fn(),
-    mockPut: vi.fn(),
-  }),
-)
+const { mockGet, mockPost, mockPut } = vi.hoisted(() => ({
+  mockGet: vi.fn(),
+  mockPost: vi.fn(),
+  mockPut: vi.fn(),
+}))
 
-// Mock the authenticated axios to return an object with HTTP methods
 vi.mock('@/services/authenticated.axios', () => ({
   authenticatedAxios: () => ({
-    delete: mockDelete,
     get: mockGet,
-    patch: mockPatch,
     post: mockPost,
     put: mockPut,
   }),
 }))
 
+import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
+import { ValidationError } from '@/errors/domain/ValidationError'
 import { serviceService } from '@/services/service.service'
+import { toServiceRoleId } from '@/models/servicerole.model'
+import { toGroupServiceRoleId } from '@/models/groupservicerole.model'
 
 describe('serviceService', () => {
-  const tenantId = toTenantId('1')
-  const serviceId = toServiceId('123')
-
-  const fakeSharedService = {
-    id: serviceId,
-    name: 'Test Service',
-    description: 'Test service description',
-    url: 'https://test-service.example.com',
-    isActive: true,
-  }
-
-  const fakeSharedServices = [
-    fakeSharedService,
-    {
-      id: '124',
-      name: 'Another Service',
-      description: 'Another test service',
-      url: 'https://another-service.example.com',
-      isActive: true,
-    },
-  ]
-
-  const fakeTenantServiceResponse = {
-    tenantId,
-    sharedServiceId: serviceId,
-    sharedService: fakeSharedService,
-  }
-
   beforeEach(() => {
     vi.clearAllMocks()
   })
 
+  describe('addServiceToTenant', () => {
+    it('should correctly call the api', async () => {
+      mockPost.mockResolvedValueOnce({ data: { data: {} } })
+
+      await serviceService.addServiceToTenant(
+        toTenantId('t-1'),
+        toServiceId('s-1'),
+      )
+
+      expect(mockPost).toHaveBeenCalledWith('/tenants/t-1/shared-services', {
+        sharedServiceId: 's-1',
+      })
+    })
+
+    it('should correctly return no data', async () => {
+      mockPost.mockResolvedValueOnce({ data: { data: {} } })
+
+      const result = await serviceService.addServiceToTenant(
+        toTenantId('t-1'),
+        toServiceId('s-1'),
+      )
+
+      expect(result).toEqual({})
+    })
+
+    it('should log and rethrow errors', async () => {
+      const error = new Error('Failed to add service to tenant')
+      mockPost.mockRejectedValueOnce(error)
+
+      await expect(
+        serviceService.addServiceToTenant(
+          toTenantId('t-1'),
+          toServiceId('s-1'),
+        ),
+      ).rejects.toThrow(error)
+    })
+  })
+
+  describe('createService', () => {
+    it('should correctly call the api', async () => {
+      const serviceDetailFields = makeServiceDetailFields({
+        clientIdentifier: 'serviceClientIdentifier',
+        description: 'serviceDescription',
+        displayName: 'serviceDisplayName',
+        landingPageUrl: 'serviceLandingPageUrl',
+        name: 'serviceName',
+        roles: [
+          makeServiceRole({
+            description: 'serviceRoleDescription',
+            identityProviders: ['serviceRoleIdentityProvider'],
+            name: 'serviceRoleName',
+          }),
+        ],
+      })
+      mockPost.mockResolvedValueOnce({ data: { data: {} } })
+
+      await serviceService.createService(serviceDetailFields)
+
+      expect(mockPost).toHaveBeenCalledWith('/shared-services', {
+        clientIdentifier: 'serviceClientIdentifier',
+        description: 'serviceDescription',
+        displayName: 'serviceDisplayName',
+        landingPageUrl: 'serviceLandingPageUrl',
+        name: 'serviceName',
+        roles: [
+          {
+            allowedIdentityProviders: ['serviceRoleIdentityProvider'],
+            description: 'serviceRoleDescription',
+            name: 'serviceRoleName',
+          },
+        ],
+      })
+    })
+
+    it('should correctly return data', async () => {
+      const serviceApiData = makeServiceApiData({
+        clientIdentifier: 'serviceClientIdentifier',
+        createdDateTime: 'serviceCreatedDateTime',
+        description: 'serviceDescription',
+        displayName: 'serviceDisplayName',
+        id: toServiceId('serviceId'),
+        landingPageUrl: 'serviceLandingPageUrl',
+        name: 'serviceName',
+        roles: [
+          makeServiceRoleApiData({
+            allowedIdentityProviders: ['serviceRoleAllowedIdentityProvider'],
+            createdBy: 'serviceRoleCreatedBy',
+            createdDateTime: 'serviceRoleCreatedDateTime',
+            description: 'serviceRoleDescription',
+            id: toServiceRoleId('serviceRoleId'),
+            isDeleted: false,
+            name: 'serviceRoleName',
+          }),
+        ],
+        updatedDateTime: 'serviceUpdatedDateTime',
+      })
+      mockPost.mockResolvedValueOnce({
+        data: { data: { sharedService: serviceApiData } },
+      })
+
+      const result = await serviceService.createService(
+        makeServiceDetailFields(),
+      )
+
+      expect(result.clientIdentifier).toBe('serviceClientIdentifier')
+      expect(result.createdDateTime).toBe('serviceCreatedDateTime')
+      expect(result.description).toBe('serviceDescription')
+      expect(result.displayName).toBe('serviceDisplayName')
+      expect(result.id).toBe('serviceId')
+      expect(result.landingPageUrl).toBe('serviceLandingPageUrl')
+      expect(result.name).toBe('serviceName')
+      expect(result.roles).toHaveLength(1)
+      expect(result.roles[0].allowedIdentityProviders).toHaveLength(1)
+      expect(result.roles[0].allowedIdentityProviders[0]).toBe(
+        'serviceRoleAllowedIdentityProvider',
+      )
+      expect(result.roles[0].createdBy).toBe('serviceRoleCreatedBy')
+      expect(result.roles[0].createdDateTime).toBe('serviceRoleCreatedDateTime')
+      expect(result.roles[0].description).toBe('serviceRoleDescription')
+      expect(result.roles[0].id).toBe('serviceRoleId')
+      expect(result.roles[0].isDeleted).toBe(false)
+      expect(result.roles[0].name).toBe('serviceRoleName')
+      expect(result.updatedDateTime).toBe('serviceUpdatedDateTime')
+    })
+
+    it('should throw DuplicateEntityError on HTTP 409', async () => {
+      const error = {
+        isAxiosError: true,
+        response: {
+          data: { message: 'Group already exists' },
+          status: 409,
+        },
+      }
+      mockPost.mockRejectedValueOnce(error)
+      mockedUtils.isDuplicateEntityError.mockReturnValueOnce(true)
+
+      await expect(
+        serviceService.createService(makeServiceDetailFields()),
+      ).rejects.toBeInstanceOf(DuplicateEntityError)
+    })
+
+    it('should throw ValidationError on HTTP 400 with validation errors', async () => {
+      const error = {
+        isAxiosError: true,
+        response: {
+          data: { details: { body: [{ message: 'Name is required' }] } },
+          status: 400,
+        },
+      }
+      mockPost.mockRejectedValueOnce(error)
+      mockedUtils.isValidationError.mockReturnValueOnce(true)
+
+      await expect(
+        serviceService.createService(makeServiceDetailFields()),
+      ).rejects.toBeInstanceOf(ValidationError)
+    })
+
+    it('should log and rethrow unknown errors', async () => {
+      const genericError = new Error('Something went wrong')
+      mockPost.mockRejectedValueOnce(genericError)
+
+      await expect(
+        serviceService.createService(makeServiceDetailFields()),
+      ).rejects.toThrow(genericError)
+
+      expect(mockedUtils.logApiError).toHaveBeenCalledWith(
+        'Error creating service',
+        genericError,
+      )
+    })
+  })
+
   describe('getServices', () => {
-    it('should return all connected services on success', async () => {
+    it('should correctly call the api', async () => {
+      mockGet.mockResolvedValueOnce({ data: { data: {} } })
+
+      await serviceService.getServices()
+
+      expect(mockGet).toHaveBeenCalledWith('/shared-services')
+    })
+
+    it('should correctly return data', async () => {
+      const serviceApiData = makeServiceApiData({
+        clientIdentifier: 'serviceClientIdentifier',
+        createdDateTime: 'serviceCreatedDateTime',
+        description: 'serviceDescription',
+        displayName: 'serviceDisplayName',
+        id: toServiceId('serviceId'),
+        landingPageUrl: 'serviceLandingPageUrl',
+        name: 'serviceName',
+        roles: [
+          makeServiceRoleApiData({
+            allowedIdentityProviders: ['serviceRoleAllowedIdentityProvider'],
+            createdBy: 'serviceRoleCreatedBy',
+            createdDateTime: 'serviceRoleCreatedDateTime',
+            description: 'serviceRoleDescription',
+            id: toServiceRoleId('serviceRoleId'),
+            isDeleted: false,
+            name: 'serviceRoleName',
+          }),
+        ],
+        updatedDateTime: 'serviceUpdatedDateTime',
+      })
       mockGet.mockResolvedValueOnce({
-        data: { data: { sharedServices: fakeSharedServices } },
+        data: { data: { sharedServices: [serviceApiData] } },
       })
 
       const result = await serviceService.getServices()
 
-      expect(result).toEqual(fakeSharedServices)
-      expect(mockGet).toHaveBeenCalledWith('/shared-services')
+      expect(result).toHaveLength(1)
+      expect(result[0].clientIdentifier).toBe('serviceClientIdentifier')
+      expect(result[0].createdDateTime).toBe('serviceCreatedDateTime')
+      expect(result[0].description).toBe('serviceDescription')
+      expect(result[0].displayName).toBe('serviceDisplayName')
+      expect(result[0].id).toBe('serviceId')
+      expect(result[0].landingPageUrl).toBe('serviceLandingPageUrl')
+      expect(result[0].name).toBe('serviceName')
+      expect(result[0].roles).toHaveLength(1)
+      expect(result[0].roles[0].allowedIdentityProviders).toHaveLength(1)
+      expect(result[0].roles[0].allowedIdentityProviders).toEqual([
+        'serviceRoleAllowedIdentityProvider',
+      ])
+      expect(result[0].roles[0].createdBy).toBe('serviceRoleCreatedBy')
+      expect(result[0].roles[0].createdDateTime).toBe(
+        'serviceRoleCreatedDateTime',
+      )
+      expect(result[0].roles[0].description).toBe('serviceRoleDescription')
+      expect(result[0].roles[0].id).toBe('serviceRoleId')
+      expect(result[0].roles[0].isDeleted).toBe(false)
+      expect(result[0].roles[0].name).toBe('serviceRoleName')
+      expect(result[0].updatedDateTime).toBe('serviceUpdatedDateTime')
     })
 
     it('should log and rethrow errors', async () => {
@@ -96,132 +294,54 @@ describe('serviceService', () => {
     })
   })
 
-  describe('addServiceToTenant', () => {
-    it('should return the result on successful service addition', async () => {
-      mockPost.mockResolvedValueOnce({
-        data: { data: fakeTenantServiceResponse },
-      })
-
-      const result = await serviceService.addServiceToTenant(
-        tenantId,
-        serviceId,
-      )
-
-      expect(result).toEqual(fakeTenantServiceResponse)
-      expect(mockPost).toHaveBeenCalledWith(
-        `/tenants/${tenantId}/shared-services`,
-        {
-          sharedServiceId: serviceId,
-        },
-      )
-    })
-
-    it('should log and rethrow errors', async () => {
-      const error = new Error('Failed to add service to tenant')
-      mockPost.mockRejectedValueOnce(error)
-
-      await expect(
-        serviceService.addServiceToTenant(tenantId, serviceId),
-      ).rejects.toThrow(error)
-    })
-  })
-
-  describe('getTenantServices', () => {
-    it('should return tenant services on success', async () => {
-      mockGet.mockResolvedValueOnce({
-        data: { data: { sharedServices: fakeSharedServices } },
-      })
-
-      const result = await serviceService.getTenantServices(tenantId)
-
-      expect(result).toEqual(fakeSharedServices)
-      expect(mockGet).toHaveBeenCalledWith(
-        `/tenants/${tenantId}/shared-services`,
-      )
-    })
-
-    it('should return empty array when tenant has no services', async () => {
-      mockGet.mockResolvedValueOnce({
-        data: { data: { sharedServices: [] } },
-      })
-
-      const result = await serviceService.getTenantServices(tenantId)
-
-      expect(result).toEqual([])
-      expect(mockGet).toHaveBeenCalledWith(
-        `/tenants/${tenantId}/shared-services`,
-      )
-    })
-
-    it('should log and rethrow errors', async () => {
-      const error = new Error('Failed to fetch tenant services')
-      mockGet.mockRejectedValueOnce(error)
-
-      await expect(serviceService.getTenantServices(tenantId)).rejects.toThrow(
-        error,
-      )
-
-      expect(mockedUtils.logApiError).toHaveBeenCalledWith(
-        'Error getting tenant services',
-        error,
-      )
-    })
-  })
-
   describe('getTenantGroupServices', () => {
-    const fakeSharedGroupServices = {
-      id: 'f454ab17-c0dd-46b3-8bce-b56874df57f4',
-      name: 'CHEFS',
-      clientIdentifier: 'client-identifier',
-      description: 'chefs service local',
-      createdDateTime: '2025-10-29',
-      updatedDateTime: '2025-10-29',
-      createdBy: 'B1SHARRA                        ',
-      updatedBy: 'B1SHARRA                        ',
-      sharedServiceRoles: [
-        {
-          id: 'c7c82cb9-6344-4864-be39-19ffb03d105f',
-          name: 'Admin',
-          description: 'does admin things',
-          enabled: false,
-          createdDateTime: '2025-10-29',
-          createdBy: 'B1SHARRA                        ',
-        },
-      ],
-    }
+    it('should correctly call the api', async () => {
+      mockGet.mockResolvedValueOnce({ data: { data: {} } })
 
-    const groupId = toGroupId('1')
-
-    it('should return tenant group services on success', async () => {
-      mockGet.mockResolvedValueOnce({
-        data: { data: { sharedServices: fakeSharedGroupServices } },
-      })
-
-      const result = await serviceService.getTenantGroupServices(
-        tenantId,
-        groupId,
+      await serviceService.getTenantGroupServices(
+        toTenantId('t-1'),
+        toGroupId('g-1'),
       )
 
-      expect(result).toEqual(fakeSharedGroupServices)
       expect(mockGet).toHaveBeenCalledWith(
-        `/tenants/${tenantId}/groups/${groupId}/shared-services/shared-service-roles`,
+        '/tenants/t-1/groups/g-1/shared-services/shared-service-roles',
       )
     })
 
-    it('should return empty array when tenant has no services', async () => {
+    it('should correctly return data', async () => {
+      const groupServiceApiData = makeGroupServiceApiData({
+        clientIdentifier: 'groupServiceClientIdentifier',
+        description: 'groupServiceDescription',
+        displayName: 'groupServiceDisplayName',
+        id: toGroupServiceId('groupServiceId'),
+        sharedServiceRoles: [],
+      })
       mockGet.mockResolvedValueOnce({
-        data: { data: { sharedServices: [] } },
+        data: { data: { sharedServices: [groupServiceApiData] } },
       })
 
       const result = await serviceService.getTenantGroupServices(
-        tenantId,
-        groupId,
+        toTenantId('t-1'),
+        toGroupId('g-1'),
+      )
+
+      expect(result).toHaveLength(1)
+      expect(result[0].clientIdentifier).toBe('groupServiceClientIdentifier')
+      expect(result[0].description).toBe('groupServiceDescription')
+      expect(result[0].displayName).toBe('groupServiceDisplayName')
+      expect(result[0].id).toBe('groupServiceId')
+      expect(result[0].sharedServiceRoles).toHaveLength(0)
+    })
+
+    it('should return empty array when tenant has no services', async () => {
+      mockGet.mockResolvedValueOnce({ data: { data: { sharedServices: [] } } })
+
+      const result = await serviceService.getTenantGroupServices(
+        toTenantId('t-1'),
+        toGroupId('g-1'),
       )
 
       expect(result).toEqual([])
-      expect(mockGet).toHaveBeenCalledWith(
-        `/tenants/${tenantId}/groups/${groupId}/shared-services/shared-service-roles`,
-      )
     })
 
     it('should log and rethrow errors', async () => {
@@ -229,7 +349,10 @@ describe('serviceService', () => {
       mockGet.mockRejectedValueOnce(error)
 
       await expect(
-        serviceService.getTenantGroupServices(tenantId, groupId),
+        serviceService.getTenantGroupServices(
+          toTenantId('t-1'),
+          toGroupId('g-1'),
+        ),
       ).rejects.toThrow(error)
 
       expect(mockedUtils.logApiError).toHaveBeenCalledWith(
@@ -239,27 +362,166 @@ describe('serviceService', () => {
     })
   })
 
-  describe('updateTenantGroupServices', () => {
-    const fakeServices = [
-      makeGroupService({
-        roles: [
-          makeGroupServiceRole({ id: 'id1' }),
-          makeGroupServiceRole({ id: 'id2', isEnabled: false }),
-        ],
-      }),
-    ]
-    const groupId = toGroupId('1')
+  describe('getTenantServices', () => {
+    it('should correctly call the api', async () => {
+      mockGet.mockResolvedValueOnce({ data: { data: {} } })
 
-    it('should return tenant group services on success', async () => {
+      await serviceService.getTenantServices(toTenantId('t-1'))
+
+      expect(mockGet).toHaveBeenCalledWith('/tenants/t-1/shared-services')
+    })
+
+    it('should correctly return data', async () => {
+      const serviceApiData = makeServiceApiData({
+        clientIdentifier: 'serviceClientIdentifier',
+        createdDateTime: 'serviceCreatedDateTime',
+        description: 'serviceDescription',
+        displayName: 'serviceDisplayName',
+        id: toServiceId('serviceId'),
+        landingPageUrl: 'serviceLandingPageUrl',
+        name: 'serviceName',
+        roles: [makeServiceRoleApiData()],
+        updatedDateTime: 'serviceUpdatedDateTime',
+      })
+      mockGet.mockResolvedValueOnce({
+        data: { data: { sharedServices: [serviceApiData] } },
+      })
+
+      const result = await serviceService.getTenantServices(toTenantId('t-1'))
+
+      expect(result).toHaveLength(1)
+      expect(result[0].clientIdentifier).toBe('serviceClientIdentifier')
+      expect(result[0].createdDateTime).toBe('serviceCreatedDateTime')
+      expect(result[0].description).toBe('serviceDescription')
+      expect(result[0].displayName).toBe('serviceDisplayName')
+      expect(result[0].id).toBe('serviceId')
+      expect(result[0].landingPageUrl).toBe('serviceLandingPageUrl')
+      expect(result[0].name).toBe('serviceName')
+      expect(result[0].roles).toHaveLength(1)
+      expect(result[0].updatedDateTime).toBe('serviceUpdatedDateTime')
+    })
+
+    it('should return empty array when tenant has no services', async () => {
+      mockGet.mockResolvedValueOnce({
+        data: { data: { sharedServices: [] } },
+      })
+
+      const result = await serviceService.getTenantServices(toTenantId('t-1'))
+
+      expect(result).toEqual([])
+    })
+
+    it('should log and rethrow errors', async () => {
+      const error = new Error('Failed to fetch tenant services')
+      mockGet.mockRejectedValueOnce(error)
+
+      await expect(
+        serviceService.getTenantServices(toTenantId('t-1')),
+      ).rejects.toThrow(error)
+
+      expect(mockedUtils.logApiError).toHaveBeenCalledWith(
+        'Error getting tenant services',
+        error,
+      )
+    })
+  })
+
+  describe('updateTenantGroupServices', () => {
+    it('should correctly call the api', async () => {
+      const groupService = makeGroupService({
+        clientIdentifier: 'groupServiceClientIdentifier',
+        description: 'groupServiceDescription',
+        displayName: 'groupServiceDisplayName',
+        id: toGroupServiceId('groupServiceId'),
+        roles: [
+          makeGroupServiceRole({
+            description: 'groupServiceRoleDescription',
+            id: toGroupServiceRoleId('groupServiceRoleId'),
+            identityProviders: ['groupServiceRoleIdentityProvider'],
+            isEnabled: true,
+            name: 'groupServiceRoleName',
+          }),
+        ],
+      })
       mockPut.mockResolvedValueOnce({ data: { data: {} } })
 
-      const result = await serviceService.updateTenantGroupServiceRoles(
-        tenantId,
-        groupId,
-        fakeServices,
+      await serviceService.updateTenantGroupServiceRoles(
+        toTenantId('t-1'),
+        toGroupId('g-1'),
+        [groupService],
       )
 
-      expect(result).toEqual({})
+      expect(mockPut).toHaveBeenCalledWith(
+        '/tenants/t-1/groups/g-1/shared-services/shared-service-roles',
+        {
+          sharedServices: [
+            {
+              id: 'groupServiceId',
+              sharedServiceRoles: [
+                {
+                  enabled: true,
+                  id: 'groupServiceRoleId',
+                },
+              ],
+            },
+          ],
+        },
+      )
+    })
+
+    it('should correctly return data', async () => {
+      const serviceApiData = makeServiceApiData({
+        clientIdentifier: 'serviceClientIdentifier',
+        createdDateTime: 'serviceCreatedDateTime',
+        description: 'serviceDescription',
+        displayName: 'serviceDisplayName',
+        id: toServiceId('serviceId'),
+        landingPageUrl: 'serviceLandingPageUrl',
+        name: 'serviceName',
+        roles: [
+          makeServiceRoleApiData({
+            allowedIdentityProviders: ['serviceRoleAllowedIdentityProvider'],
+            createdBy: 'serviceRoleCreatedBy',
+            createdDateTime: 'serviceRoleCreatedDateTime',
+            description: 'serviceRoleDescription',
+            id: toServiceRoleId('serviceRoleId'),
+            isDeleted: false,
+            name: 'serviceRoleName',
+          }),
+        ],
+        updatedDateTime: 'serviceUpdatedDateTime',
+      })
+      mockPut.mockResolvedValueOnce({
+        data: { data: [serviceApiData] },
+      })
+
+      const result = await serviceService.updateTenantGroupServiceRoles(
+        toTenantId('t-1'),
+        toGroupId('g-1'),
+        [makeGroupService()],
+      )
+
+      expect(result).toHaveLength(1)
+      expect(result[0].clientIdentifier).toBe('serviceClientIdentifier')
+      expect(result[0].createdDateTime).toBe('serviceCreatedDateTime')
+      expect(result[0].description).toBe('serviceDescription')
+      expect(result[0].displayName).toBe('serviceDisplayName')
+      expect(result[0].id).toBe('serviceId')
+      expect(result[0].landingPageUrl).toBe('serviceLandingPageUrl')
+      expect(result[0].name).toBe('serviceName')
+      expect(result[0].roles).toHaveLength(1)
+      expect(result[0].roles[0].allowedIdentityProviders).toEqual([
+        'serviceRoleAllowedIdentityProvider',
+      ])
+      expect(result[0].roles[0].createdBy).toBe('serviceRoleCreatedBy')
+      expect(result[0].roles[0].createdDateTime).toBe(
+        'serviceRoleCreatedDateTime',
+      )
+      expect(result[0].roles[0].description).toBe('serviceRoleDescription')
+      expect(result[0].roles[0].id).toBe('serviceRoleId')
+      expect(result[0].roles[0].isDeleted).toBe(false)
+      expect(result[0].roles[0].name).toBe('serviceRoleName')
+      expect(result[0].updatedDateTime).toBe('serviceUpdatedDateTime')
     })
 
     it('should log and rethrow errors', async () => {
@@ -268,9 +530,9 @@ describe('serviceService', () => {
 
       await expect(
         serviceService.updateTenantGroupServiceRoles(
-          tenantId,
-          groupId,
-          fakeServices,
+          toTenantId('t-1'),
+          toGroupId('g-1'),
+          [makeGroupService()],
         ),
       ).rejects.toThrow(error)
 

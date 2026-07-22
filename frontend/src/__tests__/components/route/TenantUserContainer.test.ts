@@ -14,6 +14,7 @@ import {
 import TenantUserContainer from '@/components/route/TenantUserContainer.vue'
 import { useNotification } from '@/composables/useNotification'
 import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
+import { toGroupId } from '@/models/group.model'
 import { toTenantId } from '@/models/tenant.model'
 import vuetify from '@/plugins/vuetify'
 import { useGroupStore } from '@/stores/useGroupStore'
@@ -21,6 +22,7 @@ import { useRoleStore } from '@/stores/useRoleStore'
 import { useTenantStore } from '@/stores/useTenantStore'
 import { useUserStore } from '@/stores/useUserStore'
 import { IDIR_SEARCH_TYPE } from '@/utils/constants'
+import { toUserId } from '@/models/user.model'
 
 vi.mock('@/composables/useNotification', () => ({
   useNotification: vi.fn(),
@@ -52,7 +54,7 @@ describe('TenantUserContainer', () => {
     userStore = useUserStore()
 
     tenantStore = useTenantStore()
-    tenantStore.tenants = [makeTenant({ id: 't-1' })]
+    tenantStore.tenants = [makeTenant({ id: toTenantId('t-1') })]
 
     notificationMock = {
       success: vi.fn(),
@@ -112,7 +114,7 @@ describe('TenantUserContainer', () => {
       const user = makeUser()
       tenantStore.addTenantUser = vi.fn().mockResolvedValue(undefined)
       const tenantId = 'tenant-1'
-      const tenant = makeTenant({ id: tenantId })
+      const tenant = makeTenant({ id: toTenantId(tenantId) })
       tenantStore.tenants.push(tenant)
       groupStore.addGroupUser = vi.fn().mockResolvedValue(undefined)
 
@@ -131,10 +133,13 @@ describe('TenantUserContainer', () => {
 
     it('adds user to each provided group and shows group success notification', async () => {
       const user = makeUser()
-      const groups = [makeGroup({ id: 'g1' }), makeGroup({ id: 'g2' })]
+      const groups = [
+        makeGroup({ id: toGroupId('g1') }),
+        makeGroup({ id: toGroupId('g2') }),
+      ]
       tenantStore.addTenantUser = vi.fn().mockResolvedValue(undefined)
       const tenantId = 'tenant-1'
-      const tenant = makeTenant({ id: tenantId })
+      const tenant = makeTenant({ id: toTenantId(tenantId) })
       tenantStore.tenants.push(tenant)
       groupStore.addGroupUser = vi.fn().mockResolvedValue(undefined)
 
@@ -156,7 +161,7 @@ describe('TenantUserContainer', () => {
       const user = makeUser()
       tenantStore.addTenantUser = vi.fn().mockResolvedValue(undefined)
       const tenantId = 'tenant-1'
-      const tenant = makeTenant({ id: tenantId })
+      const tenant = makeTenant({ id: toTenantId(tenantId) })
       tenantStore.tenants.push(tenant)
       groupStore.addGroupUser = vi.fn().mockResolvedValue(undefined)
 
@@ -238,10 +243,10 @@ describe('TenantUserContainer', () => {
     it('sets searchResults to null', async () => {
       userStore.searchIdirEmail = vi
         .fn()
-        .mockResolvedValue([makeUser({ id: 'a' })])
+        .mockResolvedValue([makeUser({ id: toUserId('a') })])
       userStore.searchBCeIDEmail = vi
         .fn()
-        .mockResolvedValue([makeUser({ id: 'b' })])
+        .mockResolvedValue([makeUser({ id: toUserId('b') })])
 
       const wrapper = mountComponent()
       await child(wrapper).vm.$emit(
@@ -265,10 +270,10 @@ describe('TenantUserContainer', () => {
     it('sets searchResults to null on cancel', async () => {
       userStore.searchIdirEmail = vi
         .fn()
-        .mockResolvedValue([makeUser({ id: 'a' })])
+        .mockResolvedValue([makeUser({ id: toUserId('a') })])
       userStore.searchBCeIDEmail = vi
         .fn()
-        .mockResolvedValue([makeUser({ id: 'b' })])
+        .mockResolvedValue([makeUser({ id: toUserId('b') })])
 
       const wrapper = mountComponent()
       await child(wrapper).vm.$emit(
@@ -292,7 +297,7 @@ describe('TenantUserContainer', () => {
     it('calls removeTenantUserRole and shows success notification', async () => {
       tenantStore.removeTenantUserRole = vi.fn().mockResolvedValue(undefined)
       const tenantId = 'tenant-1'
-      const tenant = makeTenant({ id: tenantId })
+      const tenant = makeTenant({ id: toTenantId(tenantId) })
       tenantStore.tenants.push(tenant)
 
       const wrapper = mountComponent(tenantId)
@@ -333,7 +338,7 @@ describe('TenantUserContainer', () => {
     it('calls removeTenantUser and shows success notification', async () => {
       tenantStore.removeTenantUser = vi.fn().mockResolvedValue(undefined)
       const tenantId = 'tenant-1'
-      const tenant = makeTenant({ id: tenantId })
+      const tenant = makeTenant({ id: toTenantId(tenantId) })
       tenantStore.tenants.push(tenant)
 
       const wrapper = mountComponent(tenantId)
@@ -384,19 +389,19 @@ describe('TenantUserContainer', () => {
     beforeEach(() => {
       userStore.searchIdirFirstName = vi
         .fn()
-        .mockResolvedValue([makeUser({ id: 'a' })])
+        .mockResolvedValue([makeUser({ id: toUserId('a') })])
       userStore.searchIdirLastName = vi
         .fn()
-        .mockResolvedValue([makeUser({ id: 'b' })])
+        .mockResolvedValue([makeUser({ id: toUserId('b') })])
       userStore.searchIdirEmail = vi
         .fn()
-        .mockResolvedValue([makeUser({ id: 'c' })])
+        .mockResolvedValue([makeUser({ id: toUserId('c') })])
       userStore.searchBCeIDDisplayName = vi
         .fn()
-        .mockResolvedValue([makeUser({ id: 'd' })])
+        .mockResolvedValue([makeUser({ id: toUserId('d') })])
       userStore.searchBCeIDEmail = vi
         .fn()
-        .mockResolvedValue([makeUser({ id: 'e' })])
+        .mockResolvedValue([makeUser({ id: toUserId('e') })])
     })
 
     it('searches by first name and concatenates BCeID display name results', async () => {
