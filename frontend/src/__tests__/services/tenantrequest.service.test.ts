@@ -4,7 +4,7 @@ import {
   makeRole,
   makeSsoUser,
   makeTenantRequestApiData,
-  makeTenantRequestDetails,
+  makeTenantRequestDetailFields,
   makeUser,
 } from '@/__tests__/__factories__'
 
@@ -51,7 +51,7 @@ describe('tenantRequestService', () => {
 
   describe('createTenantRequest', () => {
     it('should correctly call the api', async () => {
-      const tenantRequestDetails = makeTenantRequestDetails({
+      const tenantRequestDetails = makeTenantRequestDetailFields({
         description: 'tenantRequestDescription',
         ministryName: 'tenantRequestMinistryName',
         name: 'tenantRequestName',
@@ -114,7 +114,7 @@ describe('tenantRequestService', () => {
 
       await expect(
         tenantRequestService.createTenantRequest(
-          makeTenantRequestDetails(),
+          makeTenantRequestDetailFields(),
           makeUser(),
         ),
       ).rejects.toBeInstanceOf(ValidationError)
@@ -138,7 +138,7 @@ describe('tenantRequestService', () => {
 
       await expect(
         tenantRequestService.createTenantRequest(
-          makeTenantRequestDetails(),
+          makeTenantRequestDetailFields(),
           makeUser(),
         ),
       ).rejects.toBeInstanceOf(DuplicateEntityError)
@@ -155,7 +155,7 @@ describe('tenantRequestService', () => {
 
       await expect(
         tenantRequestService.createTenantRequest(
-          makeTenantRequestDetails(),
+          makeTenantRequestDetailFields(),
           makeUser(),
         ),
       ).rejects.toThrow(genericError)
@@ -234,73 +234,88 @@ describe('tenantRequestService', () => {
       mockPatch.mockResolvedValueOnce({})
 
       await tenantRequestService.updateTenantRequestStatus(
-        toTenantRequestId('tr-1'),
+        toTenantRequestId('tenantRequestId'),
         'APPROVED',
       )
 
-      expect(mockPatch).toHaveBeenCalledWith('/tenant-requests/tr-1/status', {
-        status: 'APPROVED',
-      })
+      expect(mockPatch).toHaveBeenCalledWith(
+        '/tenant-requests/tenantRequestId/status',
+        {
+          status: 'APPROVED',
+        },
+      )
     })
 
     it('should correctly call the api with rejection reason', async () => {
       mockPatch.mockResolvedValueOnce({})
 
       await tenantRequestService.updateTenantRequestStatus(
-        toTenantRequestId('tr-1'),
+        toTenantRequestId('tenantRequestId'),
         'REJECTED',
         'rejectionReason',
       )
 
-      expect(mockPatch).toHaveBeenCalledWith('/tenant-requests/tr-1/status', {
-        rejectionReason: 'rejectionReason',
-        status: 'REJECTED',
-      })
+      expect(mockPatch).toHaveBeenCalledWith(
+        '/tenant-requests/tenantRequestId/status',
+        {
+          rejectionReason: 'rejectionReason',
+          status: 'REJECTED',
+        },
+      )
     })
 
     it('should correctly call the api with new name', async () => {
       mockPatch.mockResolvedValueOnce({})
 
       await tenantRequestService.updateTenantRequestStatus(
-        toTenantRequestId('tr-1'),
+        toTenantRequestId('tenantRequestId'),
         'APPROVED',
         undefined,
         'newTenantRequestName',
       )
 
-      expect(mockPatch).toHaveBeenCalledWith('/tenant-requests/tr-1/status', {
-        tenantName: 'newTenantRequestName',
-        status: 'APPROVED',
-      })
+      expect(mockPatch).toHaveBeenCalledWith(
+        '/tenant-requests/tenantRequestId/status',
+        {
+          tenantName: 'newTenantRequestName',
+          status: 'APPROVED',
+        },
+      )
     })
 
     it('should handle empty rejection reason by not including it', async () => {
       mockPatch.mockResolvedValueOnce({})
 
       await tenantRequestService.updateTenantRequestStatus(
-        toTenantRequestId('tr-1'),
+        toTenantRequestId('tenantRequestId'),
         'APPROVED',
         '',
       )
 
-      expect(mockPatch).toHaveBeenCalledWith('/tenant-requests/tr-1/status', {
-        status: 'APPROVED',
-      })
+      expect(mockPatch).toHaveBeenCalledWith(
+        '/tenant-requests/tenantRequestId/status',
+        {
+          status: 'APPROVED',
+        },
+      )
     })
 
     it('should handle empty name by not including it', async () => {
       mockPatch.mockResolvedValueOnce({})
 
       await tenantRequestService.updateTenantRequestStatus(
-        toTenantRequestId('tr-1'),
+        toTenantRequestId('tenantRequestId'),
         'APPROVED',
         undefined,
         '',
       )
 
-      expect(mockPatch).toHaveBeenCalledWith('/tenant-requests/tr-1/status', {
-        status: 'APPROVED',
-      })
+      expect(mockPatch).toHaveBeenCalledWith(
+        '/tenant-requests/tenantRequestId/status',
+        {
+          status: 'APPROVED',
+        },
+      )
     })
 
     it('should throw ValidationError on HTTP 400', async () => {
@@ -323,7 +338,7 @@ describe('tenantRequestService', () => {
 
       await expect(
         tenantRequestService.updateTenantRequestStatus(
-          toTenantRequestId('tr-1'),
+          toTenantRequestId('tenantRequestId'),
           'INVALID_STATUS',
         ),
       ).rejects.toBeInstanceOf(ValidationError)
@@ -347,7 +362,7 @@ describe('tenantRequestService', () => {
 
       await expect(
         tenantRequestService.updateTenantRequestStatus(
-          toTenantRequestId('tr-1'),
+          toTenantRequestId('tenantRequestId'),
           'APPROVED',
         ),
       ).rejects.toBeInstanceOf(DuplicateEntityError)
@@ -364,7 +379,7 @@ describe('tenantRequestService', () => {
 
       await expect(
         tenantRequestService.updateTenantRequestStatus(
-          toTenantRequestId('tr-1'),
+          toTenantRequestId('tenantRequestId'),
           'APPROVED',
         ),
       ).rejects.toThrow(genericError)
@@ -390,7 +405,7 @@ describe('tenantRequestService', () => {
 
       await expect(
         tenantRequestService.updateTenantRequestStatus(
-          toTenantRequestId('tr-1'),
+          toTenantRequestId('tenantRequestId'),
           'APPROVED',
         ),
       ).rejects.toBeInstanceOf(DuplicateEntityError)
@@ -400,13 +415,16 @@ describe('tenantRequestService', () => {
       mockPatch.mockResolvedValueOnce({})
 
       await tenantRequestService.updateTenantRequestStatus(
-        toTenantRequestId('tr-1'),
+        toTenantRequestId('tenantRequestId'),
         'REJECTED',
       )
 
-      expect(mockPatch).toHaveBeenCalledWith('/tenant-requests/tr-1/status', {
-        status: 'REJECTED',
-      })
+      expect(mockPatch).toHaveBeenCalledWith(
+        '/tenant-requests/tenantRequestId/status',
+        {
+          status: 'REJECTED',
+        },
+      )
     })
   })
 })
