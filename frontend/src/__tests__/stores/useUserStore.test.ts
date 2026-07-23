@@ -93,7 +93,7 @@ describe('useUserStore', () => {
   describe('Error Handling & Cleanup', () => {
     it('sets loading to false even if IDIR search fails', async () => {
       const store = useUserStore()
-      vi.mocked(userService.searchIdirEmail).mockRejectedValue(
+      vi.mocked(userService.searchIdirEmail).mockRejectedValueOnce(
         new Error('Fail'),
       )
 
@@ -104,7 +104,7 @@ describe('useUserStore', () => {
 
     it('sets loading to false even if BCeID search fails', async () => {
       const store = useUserStore()
-      vi.mocked(userService.searchBCeIDEmail).mockRejectedValue(
+      vi.mocked(userService.searchBCeIDEmail).mockRejectedValueOnce(
         new Error('Fail'),
       )
 

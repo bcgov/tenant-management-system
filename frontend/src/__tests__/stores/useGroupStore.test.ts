@@ -3,22 +3,21 @@ import { createPinia, setActivePinia } from 'pinia'
 
 import {
   makeGroup,
+  makeGroupApiData,
   makeGroupService,
+  makeGroupServiceApiData,
   makeGroupServiceRole,
   makeGroupUser,
+  makeGroupUserApiData,
+  makeServiceApiData,
   makeUser,
 } from '@/__tests__/__factories__'
 
-import { type GroupApiData } from '@/mappers/group.mapper'
-import { type GroupServiceApiData } from '@/mappers/groupservice.mapper'
-import { type GroupUserApiData } from '@/mappers/groupuser.mapper'
-import { type UserApiData } from '@/mappers/user.mapper'
 import { Group, toGroupId } from '@/models/group.model'
-import { GroupService, toGroupServiceId } from '@/models/groupservice.model'
+import { toGroupServiceId } from '@/models/groupservice.model'
 import { GroupUser, toGroupUserId } from '@/models/groupuser.model'
-import { toSsoUserId } from '@/models/ssouser.model'
+import { toServiceId } from '@/models/service.model'
 import { toTenantId } from '@/models/tenant.model'
-import { toUserId } from '@/models/user.model'
 import { groupService } from '@/services/group.service'
 import { serviceService } from '@/services/service.service'
 import { useGroupStore } from '@/stores/useGroupStore'
@@ -42,54 +41,7 @@ vi.mock('@/services/service.service', () => ({
   },
 }))
 
-describe('Group Store', () => {
-  const tenantId = toTenantId('t-1')
-  const groupId = toGroupId('g-1')
-
-  const mockUserApiData: UserApiData = {
-    id: toUserId('u-123'),
-    roles: [],
-    ssoUser: {
-      displayName: 'John Doe',
-      email: 'john@example.com',
-      firstName: 'John',
-      idpType: 'azureidir',
-      lastName: 'Doe',
-      ssoUserId: toSsoUserId('sso-123'),
-      userName: 'jdoe',
-    },
-  }
-
-  const mockGroupUserApi: GroupUserApiData = {
-    id: toGroupUserId('gu-1'),
-    user: mockUserApiData,
-  }
-
-  const mockGroupApiData: GroupApiData = {
-    id: groupId,
-    name: 'Test Group',
-    description: 'Test Desc',
-    createdBy: 'creator-guid',
-    createdDateTime: '2023-01-01',
-    users: [mockGroupUserApi],
-  }
-
-  const mockGroupServiceApiData: GroupServiceApiData = {
-    id: toGroupServiceId('service-1'),
-    displayName: 'Test Service',
-    clientIdentifier: 'test-client',
-    description: 'Test Service Desc',
-    sharedServiceRoles: [
-      {
-        id: toGroupServiceRoleId('role-1'),
-        name: 'Test Role',
-        description: 'Test Role Desc',
-        allowedIdentityProviders: ['idir'],
-        enabled: true,
-      },
-    ],
-  }
-
+describe('useGroupStore', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
@@ -103,143 +55,130 @@ describe('Group Store', () => {
     expect(store.loading).toBe(false)
   })
 
-  describe('upsertGroup logic', () => {
-    it('inserts a new group if it does not exist', async () => {
+  describe('addGroup', () => {
+    it('creates a new group in the store', async () => {
       const store = useGroupStore()
-      vi.mocked(groupService.createGroup).mockResolvedValue(mockGroupApiData)
+      const groupApiData = makeGroupApiData({
+        description: 'groupDescription',
+        id: toGroupId('groupId'),
+        name: 'groupName',
+      })
+      vi.mocked(groupService.createGroup).mockResolvedValue(groupApiData)
 
-      await store.addGroup(tenantId, 'New', 'Desc')
+      expect(store.groups).toHaveLength(0)
+
+      await store.addGroup(
+        toTenantId('tenantId'),
+        'groupName',
+        'groupDescription',
+      )
 
       expect(store.groups).toHaveLength(1)
-      expect(store.groups[0].id).toBe(groupId)
+      expect(store.groups[0].description).toBe('groupDescription')
+      expect(store.groups[0].id).toBe('groupId')
+      expect(store.groups[0].name).toBe('groupName')
     })
 
-    it('updates the existing group instance if the ID matches', async () => {
+    it('does not alter the state on api error', async () => {
       const store = useGroupStore()
-      store.groups = [makeGroup({ id: groupId, name: 'Old Name' })]
-      const updatedData: GroupApiData = {
-        ...mockGroupApiData,
-        name: 'Updated Name',
-      }
-      vi.mocked(groupService.createGroup).mockResolvedValue(updatedData)
-
-      await store.addGroup(tenantId, 'Updated', 'Desc')
+      const group = makeGroup({
+        description: 'groupDescription',
+        id: toGroupId('groupId'),
+        name: 'groupName',
+      })
+      store.groups = [group]
+      vi.mocked(groupService.createGroup).mockRejectedValueOnce(
+        new Error('API error'),
+      )
 
       expect(store.groups).toHaveLength(1)
-      expect(store.groups[0].name).toBe('Updated Name')
+      expect(store.groups[0].description).toBe('groupDescription')
+      expect(store.groups[0].id).toBe('groupId')
+      expect(store.groups[0].name).toBe('groupName')
+
+      await expect(
+        store.addGroup(
+          toTenantId('tenantId'),
+          'groupName2',
+          'groupDescription2',
+        ),
+      ).rejects.toThrow()
+
+      expect(store.groups).toHaveLength(1)
+      expect(store.groups[0].description).toBe('groupDescription')
+      expect(store.groups[0].id).toBe('groupId')
+      expect(store.groups[0].name).toBe('groupName')
     })
   })
 
   describe('addGroupUser', () => {
-    it('appends a mapped GroupUser to the local group state', async () => {
+    it('appends a user to the group', async () => {
       const store = useGroupStore()
-      const group = makeGroup({ id: groupId, groupUsers: [] })
+      const group = makeGroup({ groupUsers: [], id: toGroupId('groupId') })
       store.groups = [group]
-      vi.mocked(groupService.addUserToGroup).mockResolvedValue(mockGroupUserApi)
+      const groupUserApiData = makeGroupUserApiData({
+        id: toGroupUserId('groupUserId'),
+      })
+      vi.mocked(groupService.addUserToGroup).mockResolvedValue(groupUserApiData)
 
-      await store.addGroupUser(tenantId, groupId, makeUser())
+      expect(store.groups[0].groupUsers).toHaveLength(0)
 
-      expect(group.groupUsers).toHaveLength(1)
-      expect(group.groupUsers[0]).toBeInstanceOf(GroupUser)
-      expect(group.groupUsers[0].id).toBe(mockGroupUserApi.id)
+      await store.addGroupUser(
+        toTenantId('tenantId'),
+        toGroupId('groupId'),
+        makeUser(),
+      )
+
+      expect(store.groups[0].groupUsers).toHaveLength(1)
+      expect(store.groups[0].groupUsers[0]).toBeInstanceOf(GroupUser)
+      expect(store.groups[0].groupUsers[0].id).toBe('groupUserId')
+    })
+
+    it('does not alter the state on api error', async () => {
+      const store = useGroupStore()
+      const group = makeGroup({ groupUsers: [], id: toGroupId('groupId') })
+      store.groups = [group]
+      vi.mocked(groupService.addUserToGroup).mockRejectedValueOnce(
+        new Error('API error'),
+      )
+
+      expect(store.groups[0].groupUsers).toHaveLength(0)
+
+      await expect(
+        store.addGroupUser(
+          toTenantId('tenantId'),
+          toGroupId('groupId'),
+          makeUser(),
+        ),
+      ).rejects.toThrow()
+
+      expect(store.groups[0].groupUsers).toHaveLength(0)
     })
 
     it('throws when group is not in the store', async () => {
       const store = useGroupStore()
 
       await expect(
-        store.addGroupUser(tenantId, toGroupId('fake-id'), makeUser()),
-      ).rejects.toThrow('Group with ID fake-id not found')
+        store.addGroupUser(
+          toTenantId('tenantId'),
+          toGroupId('groupId'),
+          makeUser(),
+        ),
+      ).rejects.toThrow('Group with ID groupId not found')
     })
   })
 
   describe('fetchGroup', () => {
-    it('manages loading state and upserts the fetched group', async () => {
-      const store = useGroupStore()
-      vi.mocked(groupService.getGroup).mockResolvedValue(mockGroupApiData)
-
-      const promise = store.fetchGroup(tenantId, groupId)
-
-      expect(store.loading).toBe(true)
-
-      await promise
-
-      expect(store.loading).toBe(false)
-      expect(store.groups).toHaveLength(1)
-      expect(store.groups[0]).toBeInstanceOf(Group)
-      expect(store.groups[0].id).toBe(groupId)
-    })
-
-    it('resets loading state on error', async () => {
-      const store = useGroupStore()
-      vi.mocked(groupService.getGroup).mockRejectedValue(new Error('API error'))
-
-      await expect(store.fetchGroup(tenantId, groupId)).rejects.toThrow()
-
-      expect(store.loading).toBe(false)
-    })
-  })
-
-  describe('fetchGroups', () => {
-    it('manages loading state and overwrites store with results', async () => {
-      const store = useGroupStore()
-      vi.mocked(groupService.getTenantGroups).mockResolvedValue([
-        mockGroupApiData,
-      ])
-
-      const promise = store.fetchGroups(tenantId)
-
-      expect(store.loading).toBe(true)
-
-      await promise
-
-      expect(store.loading).toBe(false)
-      expect(store.groups).toHaveLength(1)
-      expect(store.groups[0]).toBeInstanceOf(Group)
-    })
-
-    it('resets loading state on error', async () => {
-      const store = useGroupStore()
-      vi.mocked(groupService.getTenantGroups).mockRejectedValue(
-        new Error('API error'),
-      )
-
-      await expect(store.fetchGroups(tenantId)).rejects.toThrow()
-
-      expect(store.loading).toBe(false)
-    })
-  })
-
-  describe('fetchGroupServices', () => {
-    it('maps api data and populates groupServices in the store', async () => {
-      const store = useGroupStore()
-      vi.mocked(serviceService.getTenantGroupServices).mockResolvedValue([
-        mockGroupServiceApiData,
-      ])
-
-      await store.fetchGroupServices(tenantId, groupId)
-
-      expect(store.groupServices).toHaveLength(1)
-      expect(store.groupServices[0]).toBeInstanceOf(GroupService)
-      expect(store.groupServices[0].id).toBe('service-1')
-    })
-
-    it('maps role isEnabled correctly from api data', async () => {
-      const store = useGroupStore()
-      vi.mocked(serviceService.getTenantGroupServices).mockResolvedValue([
-        mockGroupServiceApiData,
-      ])
-
-      await store.fetchGroupServices(tenantId, groupId)
-
-      expect(store.groupServices[0].roles[0].isEnabled).toBe(true)
-    })
-
     it('manages loading state', async () => {
       const store = useGroupStore()
-      vi.mocked(serviceService.getTenantGroupServices).mockResolvedValue([])
+      vi.mocked(groupService.getGroup).mockResolvedValue(makeGroupApiData())
 
-      const promise = store.fetchGroupServices(tenantId, groupId)
+      expect(store.loading).toBe(false)
+
+      const promise = store.fetchGroup(
+        toTenantId('tenantId'),
+        toGroupId('groupId'),
+      )
 
       expect(store.loading).toBe(true)
 
@@ -248,53 +187,333 @@ describe('Group Store', () => {
       expect(store.loading).toBe(false)
     })
 
-    it('resets loading state on error', async () => {
+    it('clears loading state on error', async () => {
       const store = useGroupStore()
-      vi.mocked(serviceService.getTenantGroupServices).mockRejectedValue(
+      vi.mocked(groupService.getGroup).mockRejectedValueOnce(
         new Error('API error'),
       )
 
+      expect(store.loading).toBe(false)
+
       await expect(
-        store.fetchGroupServices(tenantId, groupId),
+        store.fetchGroup(toTenantId('tenantId'), toGroupId('groupId')),
       ).rejects.toThrow()
 
       expect(store.loading).toBe(false)
     })
+
+    it('inserts the fetched group', async () => {
+      const store = useGroupStore()
+      const groupApiData = makeGroupApiData({
+        id: toGroupId('groupId'),
+      })
+      vi.mocked(groupService.getGroup).mockResolvedValue(groupApiData)
+
+      await store.fetchGroup(toTenantId('tenantId'), toGroupId('groupId'))
+
+      expect(store.groups).toHaveLength(1)
+      expect(store.groups[0]).toBeInstanceOf(Group)
+      expect(store.groups[0].id).toBe('groupId')
+    })
+
+    it('updates the fetched group', async () => {
+      const store = useGroupStore()
+      const group = makeGroup({
+        description: 'groupDescription',
+        id: toGroupId('groupId'),
+        name: 'groupName',
+      })
+      store.groups = [group]
+      const groupApiData = makeGroupApiData({
+        description: 'groupDescriptionNew',
+        id: toGroupId('groupId'),
+        name: 'groupNameNew',
+      })
+      vi.mocked(groupService.getGroup).mockResolvedValue(groupApiData)
+
+      await store.fetchGroup(toTenantId('tenantId'), toGroupId('groupId'))
+
+      expect(store.groups).toHaveLength(1)
+      expect(store.groups[0]).toBeInstanceOf(Group)
+      expect(store.groups[0].description).toBe('groupDescriptionNew')
+      expect(store.groups[0].id).toBe('groupId')
+      expect(store.groups[0].name).toBe('groupNameNew')
+    })
+
+    it('does not alter the state on api error', async () => {
+      const store = useGroupStore()
+      const group = makeGroup({ groupUsers: [], id: toGroupId('groupId') })
+      store.groups = [group]
+      vi.mocked(groupService.getGroup).mockRejectedValueOnce(
+        new Error('API error'),
+      )
+
+      expect(store.groups).toHaveLength(1)
+
+      await expect(
+        store.fetchGroup(toTenantId('tenantId'), toGroupId('groupId2')),
+      ).rejects.toThrow()
+
+      expect(store.groups).toHaveLength(1)
+    })
+  })
+
+  describe('fetchGroups', () => {
+    it('manages loading state', async () => {
+      const store = useGroupStore()
+      vi.mocked(groupService.getTenantGroups).mockResolvedValue([
+        makeGroupApiData(),
+      ])
+
+      expect(store.loading).toBe(false)
+
+      const promise = store.fetchGroups(toTenantId('tenantId'))
+
+      expect(store.loading).toBe(true)
+
+      await promise
+
+      expect(store.loading).toBe(false)
+    })
+
+    it('clears loading state on error', async () => {
+      const store = useGroupStore()
+      vi.mocked(groupService.getTenantGroups).mockRejectedValueOnce(
+        new Error('API error'),
+      )
+
+      expect(store.loading).toBe(false)
+
+      await expect(store.fetchGroups(toTenantId('tenantId'))).rejects.toThrow()
+
+      expect(store.loading).toBe(false)
+    })
+
+    it('overwrites store with results', async () => {
+      const store = useGroupStore()
+      const group = makeGroup({
+        description: 'groupDescription',
+        id: toGroupId('groupId'),
+        name: 'groupName',
+      })
+      store.groups = [group]
+      const groupApiData = makeGroupApiData({
+        description: 'groupDescription2',
+        id: toGroupId('groupId2'),
+        name: 'groupName2',
+      })
+      vi.mocked(groupService.getTenantGroups).mockResolvedValue([groupApiData])
+
+      expect(store.groups).toHaveLength(1)
+      expect(store.groups[0].description).toBe('groupDescription')
+      expect(store.groups[0].id).toBe('groupId')
+      expect(store.groups[0].name).toBe('groupName')
+
+      await store.fetchGroups(toTenantId('tenantId'))
+
+      expect(store.groups).toHaveLength(1)
+      expect(store.groups[0].description).toBe('groupDescription2')
+      expect(store.groups[0].id).toBe('groupId2')
+      expect(store.groups[0].name).toBe('groupName2')
+    })
+
+    it('does not alter the state on api error', async () => {
+      const store = useGroupStore()
+      const group = makeGroup({
+        description: 'groupDescription',
+        id: toGroupId('groupId'),
+        name: 'groupName',
+      })
+      store.groups = [group]
+      vi.mocked(groupService.getTenantGroups).mockRejectedValueOnce(
+        new Error('API error'),
+      )
+
+      expect(store.groups).toHaveLength(1)
+      expect(store.groups[0].description).toBe('groupDescription')
+      expect(store.groups[0].id).toBe('groupId')
+      expect(store.groups[0].name).toBe('groupName')
+
+      await expect(store.fetchGroups(toTenantId('tenantId'))).rejects.toThrow()
+
+      expect(store.groups).toHaveLength(1)
+      expect(store.groups[0].description).toBe('groupDescription')
+      expect(store.groups[0].id).toBe('groupId')
+      expect(store.groups[0].name).toBe('groupName')
+    })
+  })
+
+  describe('fetchGroupServices', () => {
+    it('manages loading state', async () => {
+      const store = useGroupStore()
+      vi.mocked(serviceService.getTenantGroupServices).mockResolvedValue([])
+
+      expect(store.loading).toBe(false)
+
+      const promise = store.fetchGroupServices(
+        toTenantId('tenantId'),
+        toGroupId('groupId'),
+      )
+
+      expect(store.loading).toBe(true)
+
+      await promise
+
+      expect(store.loading).toBe(false)
+    })
+
+    it('clears loading state on error', async () => {
+      const store = useGroupStore()
+      vi.mocked(serviceService.getTenantGroupServices).mockRejectedValueOnce(
+        new Error('API error'),
+      )
+
+      expect(store.loading).toBe(false)
+
+      await expect(
+        store.fetchGroupServices(toTenantId('tenantId'), toGroupId('groupId')),
+      ).rejects.toThrow()
+
+      expect(store.loading).toBe(false)
+    })
+
+    it('inserts the fetched group service', async () => {
+      const store = useGroupStore()
+      const groupServiceApiData = makeGroupServiceApiData({
+        clientIdentifier: 'groupServiceClientIdentifier',
+        description: 'groupServiceDescription',
+        displayName: 'groupServiceDisplayName',
+        id: toGroupServiceId('groupServiceId'),
+      })
+      vi.mocked(serviceService.getTenantGroupServices).mockResolvedValue([
+        groupServiceApiData,
+      ])
+
+      expect(store.groupServices).toHaveLength(0)
+
+      await store.fetchGroupServices(
+        toTenantId('tenantId'),
+        toGroupId('groupId'),
+      )
+
+      expect(store.groupServices).toHaveLength(1)
+      expect(store.groupServices[0].clientIdentifier).toBe(
+        'groupServiceClientIdentifier',
+      )
+      expect(store.groupServices[0].description).toBe('groupServiceDescription')
+      expect(store.groupServices[0].displayName).toBe('groupServiceDisplayName')
+      expect(store.groupServices[0].id).toBe('groupServiceId')
+    })
+
+    it('does not alter the state on api error', async () => {
+      const store = useGroupStore()
+      const groupService = makeGroupService({
+        clientIdentifier: 'groupServiceClientIdentifier',
+        description: 'groupServiceDescription',
+        displayName: 'groupServiceDisplayName',
+        id: toGroupServiceId('groupServiceId'),
+      })
+      store.groupServices = [groupService]
+      vi.mocked(serviceService.getTenantGroupServices).mockRejectedValueOnce(
+        new Error('API error'),
+      )
+
+      expect(store.groupServices).toHaveLength(1)
+      expect(store.groupServices[0].clientIdentifier).toBe(
+        'groupServiceClientIdentifier',
+      )
+      expect(store.groupServices[0].description).toBe('groupServiceDescription')
+      expect(store.groupServices[0].displayName).toBe('groupServiceDisplayName')
+      expect(store.groupServices[0].id).toBe('groupServiceId')
+
+      await expect(
+        store.fetchGroupServices(toTenantId('tenantId'), toGroupId('groupId')),
+      ).rejects.toThrow()
+
+      expect(store.groupServices).toHaveLength(1)
+      expect(store.groupServices[0].clientIdentifier).toBe(
+        'groupServiceClientIdentifier',
+      )
+      expect(store.groupServices[0].description).toBe('groupServiceDescription')
+      expect(store.groupServices[0].displayName).toBe('groupServiceDisplayName')
+      expect(store.groupServices[0].id).toBe('groupServiceId')
+    })
   })
 
   describe('getGroup', () => {
-    it('returns the group if found', () => {
+    it('returns the group', () => {
       const store = useGroupStore()
-      const group = makeGroup({ id: groupId })
+      const group = makeGroup({
+        description: 'groupDescription',
+        id: toGroupId('groupId'),
+        name: 'groupName',
+      })
       store.groups = [group]
 
-      expect(store.getGroup(groupId)).toStrictEqual(group)
+      const returnedGroup = store.getGroup(toGroupId('groupId'))
+
+      expect(returnedGroup).toBeDefined()
+      expect(returnedGroup?.description).toBe('groupDescription')
+      expect(returnedGroup?.id).toBe('groupId')
+      expect(returnedGroup?.name).toBe('groupName')
     })
 
     it('returns undefined if not found', () => {
       const store = useGroupStore()
 
-      expect(store.getGroup(toGroupId('missing'))).toBeUndefined()
+      const returnedGroup = store.getGroup(toGroupId('groupId'))
+
+      expect(returnedGroup).toBeUndefined()
     })
   })
 
   describe('removeGroupUser', () => {
-    it('removes the correct user from the group', async () => {
+    it('removes the user from the group', async () => {
       const store = useGroupStore()
-      const targetUserId = toGroupUserId('target-id')
-      const group = makeGroup({ id: groupId })
-      group.groupUsers = [
-        makeGroupUser({ id: toGroupUserId('other-id') }),
-        makeGroupUser({ id: targetUserId }),
-      ]
+      const targetUserId = toGroupUserId('groupUserId2')
+      const group = makeGroup({
+        groupUsers: [
+          makeGroupUser({ id: toGroupUserId('groupUserId') }),
+          makeGroupUser({ id: targetUserId }),
+        ],
+        id: toGroupId('groupId'),
+      })
       store.groups = [group]
 
-      await store.removeGroupUser(tenantId, groupId, targetUserId)
+      await store.removeGroupUser(
+        toTenantId('tenantId'),
+        toGroupId('groupId'),
+        targetUserId,
+      )
 
-      expect(group.groupUsers).toHaveLength(1)
-      expect(
-        group.groupUsers.find((gu: GroupUser) => gu.id === targetUserId),
-      ).toBeUndefined()
+      expect(store.groups[0].groupUsers).toHaveLength(1)
+      expect(store.groups[0].groupUsers[0].id).toBe('groupUserId')
+    })
+
+    it('does not alter the state on api error', async () => {
+      const store = useGroupStore()
+      const group = makeGroup({
+        groupUsers: [makeGroupUser({ id: toGroupUserId('groupUserId') })],
+        id: toGroupId('groupId'),
+      })
+      store.groups = [group]
+      vi.mocked(groupService.removeUserFromGroup).mockRejectedValueOnce(
+        new Error('API error'),
+      )
+
+      expect(store.groups[0].groupUsers).toHaveLength(1)
+      expect(store.groups[0].groupUsers[0].id).toBe('groupUserId')
+
+      await expect(
+        store.removeGroupUser(
+          toTenantId('tenantId'),
+          toGroupId('groupId'),
+          toGroupUserId('groupUserId'),
+        ),
+      ).rejects.toThrow()
+
+      expect(store.groups[0].groupUsers).toHaveLength(1)
+      expect(store.groups[0].groupUsers[0].id).toBe('groupUserId')
     })
 
     it('throws when group is not in the store', async () => {
@@ -302,26 +521,29 @@ describe('Group Store', () => {
 
       await expect(
         store.removeGroupUser(
-          tenantId,
-          toGroupId('fake-id'),
-          toGroupUserId('gu-1'),
+          toTenantId('tenantId'),
+          toGroupId('groupId'),
+          toGroupUserId('groupUserId'),
         ),
-      ).rejects.toThrow('Group with ID fake-id not found')
+      ).rejects.toThrow('Group with ID groupId not found')
     })
 
-    it('handles removing a user id not present in groupUsers gracefully', async () => {
+    it('handles removing a user id not present in groupUsers', async () => {
       const store = useGroupStore()
-      const group = makeGroup({ id: groupId })
-      group.groupUsers = [makeGroupUser({ id: toGroupUserId('other-id') })]
+      const group = makeGroup({
+        groupUsers: [makeGroupUser({ id: toGroupUserId('groupUserId') })],
+        id: toGroupId('groupId'),
+      })
       store.groups = [group]
 
       await store.removeGroupUser(
-        tenantId,
-        groupId,
-        toGroupUserId('missing-id'),
+        toTenantId('tenantId'),
+        toGroupId('groupId'),
+        toGroupUserId('groupUserId2'),
       )
 
-      expect(group.groupUsers).toHaveLength(1)
+      expect(store.groups[0].groupUsers).toHaveLength(1)
+      expect(store.groups[0].groupUsers[0].id).toBe('groupUserId')
     })
   })
 
@@ -330,10 +552,10 @@ describe('Group Store', () => {
       const store = useGroupStore()
       const services = [
         makeGroupService({
-          id: toGroupServiceId('service-1'),
+          id: toGroupServiceId('groupServiceId'),
           roles: [
             makeGroupServiceRole({
-              id: toGroupServiceRoleId('role-1'),
+              id: toGroupServiceRoleId('groupServiceRoleId'),
               isEnabled: true,
             }),
           ],
@@ -343,42 +565,59 @@ describe('Group Store', () => {
         [],
       )
 
-      await store.updateGroupRoles(tenantId, groupId, services)
+      await store.updateGroupRoles(
+        toTenantId('tenantId'),
+        toGroupId('groupId'),
+        services,
+      )
 
       expect(serviceService.updateTenantGroupServiceRoles).toHaveBeenCalledWith(
-        tenantId,
-        groupId,
+        toTenantId('tenantId'),
+        toGroupId('groupId'),
         services,
       )
     })
 
-    it('updates groupServices in the store on success', async () => {
+    it('updates the store on success', async () => {
       const store = useGroupStore()
-      const services = [makeGroupService({ id: toGroupServiceId('service-1') })]
+      const groupService = makeGroupService({
+        id: toGroupServiceId('groupServiceId'),
+      })
+      const groupServiceApiData = makeServiceApiData({
+        id: toServiceId('serviceId'),
+      })
       vi.mocked(serviceService.updateTenantGroupServiceRoles).mockResolvedValue(
-        [],
+        [groupServiceApiData],
       )
 
-      await store.updateGroupRoles(tenantId, groupId, services)
+      await store.updateGroupRoles(
+        toTenantId('tenantId'),
+        toGroupId('groupId'),
+        [groupService],
+      )
 
-      expect(store.groupServices).toEqual(services)
+      expect(store.groupServices).toHaveLength(1)
+      expect(store.groupServices[0].id).toBe('groupServiceId')
     })
 
-    it('throws and does not update the store on error', async () => {
+    it('does not alter the state on api error', async () => {
       const store = useGroupStore()
-      const original = [makeGroupService({ id: toGroupServiceId('original') })]
-      store.groupServices = original
-      vi.mocked(serviceService.updateTenantGroupServiceRoles).mockRejectedValue(
-        new Error('API error'),
-      )
+      const groupService = makeGroupService({
+        id: toGroupServiceId('groupServiceId'),
+      })
+      store.groupServices = [groupService]
+      vi.mocked(
+        serviceService.updateTenantGroupServiceRoles,
+      ).mockRejectedValueOnce(new Error('API error'))
 
       await expect(
-        store.updateGroupRoles(tenantId, groupId, [
-          makeGroupService({ id: toGroupServiceId('new') }),
+        store.updateGroupRoles(toTenantId('tenantId'), toGroupId('groupId'), [
+          makeGroupService({ id: toGroupServiceId('groupServiceId2') }),
         ]),
       ).rejects.toThrow()
 
-      expect(store.groupServices).toEqual(original)
+      expect(store.groupServices).toHaveLength(1)
+      expect(store.groupServices[0].id).toBe('groupServiceId')
     })
   })
 })

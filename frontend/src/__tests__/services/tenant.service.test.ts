@@ -76,9 +76,9 @@ describe('tenantService', () => {
       })
       mockPost.mockResolvedValueOnce({ data: { data: {} } })
 
-      await tenantService.addUser(toTenantId('t-1'), user)
+      await tenantService.addUser(toTenantId('tenantId'), user)
 
-      expect(mockPost).toHaveBeenCalledWith('/tenants/t-1/users', {
+      expect(mockPost).toHaveBeenCalledWith('/tenants/tenantId/users', {
         roles: ['roleId'],
         user: {
           displayName: user.ssoUser.displayName,
@@ -114,7 +114,10 @@ describe('tenantService', () => {
       })
       mockPost.mockResolvedValueOnce({ data: { data: { user: userApiData } } })
 
-      const result = await tenantService.addUser(toTenantId('t-1'), makeUser())
+      const result = await tenantService.addUser(
+        toTenantId('tenantId'),
+        makeUser(),
+      )
 
       expect(result.id).toBe('userId')
       expect(result.roles).toHaveLength(1)
@@ -142,7 +145,7 @@ describe('tenantService', () => {
       mockedUtils.isDuplicateEntityError.mockReturnValueOnce(true)
 
       await expect(
-        tenantService.addUser(toTenantId('t-1'), makeUser()),
+        tenantService.addUser(toTenantId('tenantId'), makeUser()),
       ).rejects.toBeInstanceOf(DuplicateEntityError)
     })
 
@@ -151,7 +154,7 @@ describe('tenantService', () => {
       mockPost.mockRejectedValueOnce(genericError)
 
       await expect(
-        tenantService.addUser(toTenantId('t-1'), makeUser()),
+        tenantService.addUser(toTenantId('tenantId'), makeUser()),
       ).rejects.toThrow(genericError)
 
       expect(mockedUtils.logApiError).toHaveBeenCalledWith(
@@ -165,13 +168,18 @@ describe('tenantService', () => {
     it('should correctly call the api', async () => {
       mockPost.mockResolvedValueOnce({})
 
-      await tenantService.assignUserRoles(toTenantId('t-1'), toUserId('u-1'), [
-        toRoleId('r-1'),
-      ])
+      await tenantService.assignUserRoles(
+        toTenantId('tenantId'),
+        toUserId('userId'),
+        [toRoleId('roleId')],
+      )
 
-      expect(mockPost).toHaveBeenCalledWith('/tenants/t-1/users/u-1/roles', {
-        roles: ['r-1'],
-      })
+      expect(mockPost).toHaveBeenCalledWith(
+        '/tenants/tenantId/users/userId/roles',
+        {
+          roles: ['roleId'],
+        },
+      )
     })
 
     it('should log and rethrow errors', async () => {
@@ -179,9 +187,11 @@ describe('tenantService', () => {
       mockPost.mockRejectedValueOnce(error)
 
       await expect(
-        tenantService.assignUserRoles(toTenantId('t-1'), toUserId('u-1'), [
-          toRoleId('r-1'),
-        ]),
+        tenantService.assignUserRoles(
+          toTenantId('tenantId'),
+          toUserId('userId'),
+          [toRoleId('roleId')],
+        ),
       ).rejects.toThrow(error)
 
       expect(mockedUtils.logApiError).toHaveBeenCalledWith(
@@ -195,10 +205,10 @@ describe('tenantService', () => {
     it('should correctly call the api', async () => {
       mockGet.mockResolvedValueOnce({ data: { data: {} } })
 
-      await tenantService.getTenant(toTenantId('t-1'))
+      await tenantService.getTenant(toTenantId('tenantId'))
 
       expect(mockGet).toHaveBeenCalledWith(
-        '/tenants/t-1?expand=tenantUserRoles',
+        '/tenants/tenantId?expand=tenantUserRoles',
       )
     })
 
@@ -216,7 +226,7 @@ describe('tenantService', () => {
         data: { data: { tenant: tenantApiData } },
       })
 
-      const result = await tenantService.getTenant(toTenantId('t-1'))
+      const result = await tenantService.getTenant(toTenantId('tenantId'))
 
       expect(result.createdBy).toBe('tenantCreatedBy')
       expect(result.createdDateTime).toBe('tenantCreatedDateTime')
@@ -231,9 +241,9 @@ describe('tenantService', () => {
       const error = new Error('Tenant not found')
       mockGet.mockRejectedValueOnce(error)
 
-      await expect(tenantService.getTenant(toTenantId('t-1'))).rejects.toThrow(
-        error,
-      )
+      await expect(
+        tenantService.getTenant(toTenantId('tenantId')),
+      ).rejects.toThrow(error)
 
       expect(mockedUtils.logApiError).toHaveBeenCalledWith(
         'Error getting tenant',
@@ -246,9 +256,9 @@ describe('tenantService', () => {
     it('should correctly call the api', async () => {
       mockGet.mockResolvedValueOnce({ data: { data: {} } })
 
-      await tenantService.getTenantRoles(toTenantId('t-1'))
+      await tenantService.getTenantRoles(toTenantId('tenantId'))
 
-      expect(mockGet).toHaveBeenCalledWith('/tenants/t-1/roles')
+      expect(mockGet).toHaveBeenCalledWith('/tenants/tenantId/roles')
     })
 
     it('should correctly return data', async () => {
@@ -261,7 +271,7 @@ describe('tenantService', () => {
         data: { data: { roles: [roleApiData] } },
       })
 
-      const result = await tenantService.getTenantRoles(toTenantId('t-1'))
+      const result = await tenantService.getTenantRoles(toTenantId('tenantId'))
 
       expect(result).toHaveLength(1)
       expect(result[0].description).toBe('roleDescription')
@@ -274,7 +284,7 @@ describe('tenantService', () => {
       mockGet.mockRejectedValueOnce(error)
 
       await expect(
-        tenantService.getTenantRoles(toTenantId('t-1')),
+        tenantService.getTenantRoles(toTenantId('tenantId')),
       ).rejects.toThrow(error)
 
       expect(mockedUtils.logApiError).toHaveBeenCalledWith(
@@ -288,9 +298,14 @@ describe('tenantService', () => {
     it('should correctly call the api', async () => {
       mockGet.mockResolvedValueOnce({ data: { data: {} } })
 
-      await tenantService.getUserRoles(toTenantId('t-1'), toUserId('u-1'))
+      await tenantService.getUserRoles(
+        toTenantId('tenantId'),
+        toUserId('userId'),
+      )
 
-      expect(mockGet).toHaveBeenCalledWith('/tenants/t-1/users/u-1/roles')
+      expect(mockGet).toHaveBeenCalledWith(
+        '/tenants/tenantId/users/userId/roles',
+      )
     })
 
     it('should correctly return data', async () => {
@@ -304,8 +319,8 @@ describe('tenantService', () => {
       })
 
       const result = await tenantService.getUserRoles(
-        toTenantId('t-1'),
-        toUserId('u-1'),
+        toTenantId('tenantId'),
+        toUserId('userId'),
       )
 
       expect(result).toHaveLength(1)
@@ -319,7 +334,7 @@ describe('tenantService', () => {
       mockGet.mockRejectedValueOnce(error)
 
       await expect(
-        tenantService.getUserRoles(toTenantId('t-1'), toUserId('u-1')),
+        tenantService.getUserRoles(toTenantId('tenantId'), toUserId('userId')),
       ).rejects.toThrow(error)
 
       expect(mockedUtils.logApiError).toHaveBeenCalledWith(
@@ -333,10 +348,10 @@ describe('tenantService', () => {
     it('should correctly call the api', async () => {
       mockGet.mockResolvedValueOnce({ data: { data: {} } })
 
-      await tenantService.getUserTenants(toSsoUserId('su-1'))
+      await tenantService.getUserTenants(toSsoUserId('ssoUserId'))
 
       expect(mockGet).toHaveBeenCalledWith(
-        '/users/su-1/tenants?expand=tenantUserRoles',
+        '/users/ssoUserId/tenants?expand=tenantUserRoles',
       )
     })
 
@@ -354,7 +369,9 @@ describe('tenantService', () => {
         data: { data: { tenants: [tenantApiData] } },
       })
 
-      const result = await tenantService.getUserTenants(toSsoUserId('su-1'))
+      const result = await tenantService.getUserTenants(
+        toSsoUserId('ssoUserId'),
+      )
 
       expect(result).toHaveLength(1)
       expect(result[0].createdBy).toBe('tenantCreatedBy')
@@ -371,7 +388,7 @@ describe('tenantService', () => {
       mockGet.mockRejectedValueOnce(error)
 
       await expect(
-        tenantService.getUserTenants(toSsoUserId('su-1')),
+        tenantService.getUserTenants(toSsoUserId('ssoUserId')),
       ).rejects.toThrow(error)
 
       expect(mockedUtils.logApiError).toHaveBeenCalledWith(
@@ -385,9 +402,9 @@ describe('tenantService', () => {
     it('should correctly call the api', async () => {
       mockGet.mockResolvedValueOnce({ data: { data: {} } })
 
-      await tenantService.getUsers(toTenantId('t-1'))
+      await tenantService.getUsers(toTenantId('tenantId'))
 
-      expect(mockGet).toHaveBeenCalledWith('/tenants/t-1/users')
+      expect(mockGet).toHaveBeenCalledWith('/tenants/tenantId/users')
     })
 
     it('should correctly return data', async () => {
@@ -405,7 +422,7 @@ describe('tenantService', () => {
       })
       mockGet.mockResolvedValueOnce({ data: { data: { users: [user] } } })
 
-      const result = await tenantService.getUsers(toTenantId('t-1'))
+      const result = await tenantService.getUsers(toTenantId('tenantId'))
 
       expect(result).toHaveLength(1)
       expect(result[0].id).toBe('userId')
@@ -422,9 +439,9 @@ describe('tenantService', () => {
       const error = new Error('Tenant not found')
       mockGet.mockRejectedValueOnce(error)
 
-      await expect(tenantService.getUsers(toTenantId('t-1'))).rejects.toThrow(
-        error,
-      )
+      await expect(
+        tenantService.getUsers(toTenantId('tenantId')),
+      ).rejects.toThrow(error)
 
       expect(mockedUtils.logApiError).toHaveBeenCalledWith(
         'Error getting tenant users',
@@ -437,9 +454,9 @@ describe('tenantService', () => {
     it('should correctly call the api', async () => {
       mockDelete.mockResolvedValueOnce({})
 
-      await tenantService.removeUser(toTenantId('t-1'), toUserId('u-1'))
+      await tenantService.removeUser(toTenantId('tenantId'), toUserId('userId'))
 
-      expect(mockDelete).toHaveBeenCalledWith('/tenants/t-1/users/u-1')
+      expect(mockDelete).toHaveBeenCalledWith('/tenants/tenantId/users/userId')
     })
 
     it('should throw DuplicateEntityError on HTTP 409', async () => {
@@ -454,7 +471,7 @@ describe('tenantService', () => {
       mockedUtils.isDuplicateEntityError.mockReturnValueOnce(true)
 
       await expect(
-        tenantService.removeUser(toTenantId('t-1'), toUserId('u-1')),
+        tenantService.removeUser(toTenantId('tenantId'), toUserId('userId')),
       ).rejects.toBeInstanceOf(DuplicateEntityError)
     })
 
@@ -463,7 +480,7 @@ describe('tenantService', () => {
       mockDelete.mockRejectedValueOnce(error)
 
       await expect(
-        tenantService.removeUser(toTenantId('t-1'), toUserId('u-1')),
+        tenantService.removeUser(toTenantId('tenantId'), toUserId('userId')),
       ).rejects.toThrow(error)
 
       expect(mockedUtils.logApiError).toHaveBeenCalledWith(
@@ -478,13 +495,13 @@ describe('tenantService', () => {
       mockDelete.mockResolvedValueOnce({})
 
       await tenantService.removeUserRole(
-        toTenantId('t-1'),
-        toUserId('u-1'),
-        toRoleId('r-1'),
+        toTenantId('tenantId'),
+        toUserId('userId'),
+        toRoleId('roleId'),
       )
 
       expect(mockDelete).toHaveBeenCalledWith(
-        '/tenants/t-1/users/u-1/roles/r-1',
+        '/tenants/tenantId/users/userId/roles/roleId',
       )
     })
 
@@ -494,9 +511,9 @@ describe('tenantService', () => {
 
       await expect(
         tenantService.removeUserRole(
-          toTenantId('t-1'),
-          toUserId('u-1'),
-          toRoleId('r-1'),
+          toTenantId('tenantId'),
+          toUserId('userId'),
+          toRoleId('roleId'),
         ),
       ).rejects.toThrow(error)
 
@@ -512,13 +529,13 @@ describe('tenantService', () => {
       mockPut.mockResolvedValueOnce({ data: { data: {} } })
 
       await tenantService.updateTenant(
-        toTenantId('t-1'),
+        toTenantId('tenantId'),
         'tenantName',
         'tenantMinistry',
         'tenantDescription',
       )
 
-      expect(mockPut).toHaveBeenCalledWith('/tenants/t-1', {
+      expect(mockPut).toHaveBeenCalledWith('/tenants/tenantId', {
         description: 'tenantDescription',
         ministryName: 'tenantMinistry',
         name: 'tenantName',
@@ -540,7 +557,7 @@ describe('tenantService', () => {
       })
 
       const result = await tenantService.updateTenant(
-        toTenantId('t-1'),
+        toTenantId('tenantId'),
         'tenantName',
         'tenantMinistryName',
         'tenantDescription',
@@ -568,7 +585,7 @@ describe('tenantService', () => {
 
       await expect(
         tenantService.updateTenant(
-          toTenantId('t-1'),
+          toTenantId('tenantId'),
           'tenantName',
           'tenantMinistryName',
           'tenantDescription',
@@ -589,7 +606,7 @@ describe('tenantService', () => {
 
       await expect(
         tenantService.updateTenant(
-          toTenantId('t-1'),
+          toTenantId('tenantId'),
           'tenantName',
           'tenantMinistryName',
           'tenantDescription',
@@ -605,7 +622,7 @@ describe('tenantService', () => {
 
       await expect(
         tenantService.updateTenant(
-          toTenantId('t-1'),
+          toTenantId('tenantId'),
           'tenantName',
           'tenantMinistryName',
           'tenantDescription',

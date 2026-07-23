@@ -10,23 +10,13 @@ const mockedUtils = vi.mocked(utils)
 
 mockedUtils.logApiError.mockImplementation(() => {})
 
-const { mockDelete, mockGet, mockPatch, mockPost, mockPut } = vi.hoisted(
-  () => ({
-    mockDelete: vi.fn(),
-    mockGet: vi.fn(),
-    mockPatch: vi.fn(),
-    mockPost: vi.fn(),
-    mockPut: vi.fn(),
-  }),
-)
+const { mockGet } = vi.hoisted(() => ({
+  mockGet: vi.fn(),
+}))
 
 vi.mock('@/services/authenticated.axios', () => ({
   authenticatedAxios: () => ({
-    delete: mockDelete,
     get: mockGet,
-    patch: mockPatch,
-    post: mockPost,
-    put: mockPut,
   }),
 }))
 
