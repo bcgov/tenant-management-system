@@ -144,3 +144,13 @@ crunchy: # enable it for TEST and PROD, for PR based pipelines simply use single
       requests:
         cpu: 10m
         memory: 32Mi
+
+# Temporary till operator fix. See DBC22-3706
+pgbackrestLogCleanup:
+  enabled: true
+  schedule: 0 10 * * *  # 2am Pacific
+  serviceAccountName: pipeline
+  image:
+    repository: registry.redhat.io/openshift4/ose-cli-rhel9:v4.16
+  env:
+    CRUNCHY_CLUSTER: cstar-db-crunchy 
