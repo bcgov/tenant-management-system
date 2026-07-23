@@ -392,11 +392,11 @@ describe('groupService', () => {
       await groupService.removeUserFromGroup(
         toTenantId('tenantId'),
         toGroupId('groupId'),
-        toGroupUserId('gu-1'),
+        toGroupUserId('groupUserId'),
       )
 
       expect(mockDelete).toHaveBeenCalledWith(
-        '/tenants/tenantId/groups/groupId/users/gu-1',
+        '/tenants/tenantId/groups/groupId/users/groupUserId',
       )
     })
 
@@ -408,7 +408,7 @@ describe('groupService', () => {
         groupService.removeUserFromGroup(
           toTenantId('tenantId'),
           toGroupId('groupId'),
-          toGroupUserId('gu-1'),
+          toGroupUserId('groupUserId'),
         ),
       ).rejects.toThrow(error)
 

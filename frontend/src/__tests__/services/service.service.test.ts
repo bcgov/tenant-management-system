@@ -58,21 +58,24 @@ describe('serviceService', () => {
       mockPost.mockResolvedValueOnce({ data: { data: {} } })
 
       await serviceService.addServiceToTenant(
-        toTenantId('t-1'),
-        toServiceId('s-1'),
+        toTenantId('tenantId'),
+        toServiceId('serviceId'),
       )
 
-      expect(mockPost).toHaveBeenCalledWith('/tenants/t-1/shared-services', {
-        sharedServiceId: 's-1',
-      })
+      expect(mockPost).toHaveBeenCalledWith(
+        '/tenants/tenantId/shared-services',
+        {
+          sharedServiceId: 'serviceId',
+        },
+      )
     })
 
     it('should correctly return no data', async () => {
       mockPost.mockResolvedValueOnce({ data: { data: {} } })
 
       const result = await serviceService.addServiceToTenant(
-        toTenantId('t-1'),
-        toServiceId('s-1'),
+        toTenantId('tenantId'),
+        toServiceId('serviceId'),
       )
 
       expect(result).toEqual({})
@@ -84,8 +87,8 @@ describe('serviceService', () => {
 
       await expect(
         serviceService.addServiceToTenant(
-          toTenantId('t-1'),
-          toServiceId('s-1'),
+          toTenantId('tenantId'),
+          toServiceId('serviceId'),
         ),
       ).rejects.toThrow(error)
     })
@@ -299,12 +302,12 @@ describe('serviceService', () => {
       mockGet.mockResolvedValueOnce({ data: { data: {} } })
 
       await serviceService.getTenantGroupServices(
-        toTenantId('t-1'),
-        toGroupId('g-1'),
+        toTenantId('tenantId'),
+        toGroupId('groupId'),
       )
 
       expect(mockGet).toHaveBeenCalledWith(
-        '/tenants/t-1/groups/g-1/shared-services/shared-service-roles',
+        '/tenants/tenantId/groups/groupId/shared-services/shared-service-roles',
       )
     })
 
@@ -321,8 +324,8 @@ describe('serviceService', () => {
       })
 
       const result = await serviceService.getTenantGroupServices(
-        toTenantId('t-1'),
-        toGroupId('g-1'),
+        toTenantId('tenantId'),
+        toGroupId('groupId'),
       )
 
       expect(result).toHaveLength(1)
@@ -337,8 +340,8 @@ describe('serviceService', () => {
       mockGet.mockResolvedValueOnce({ data: { data: { sharedServices: [] } } })
 
       const result = await serviceService.getTenantGroupServices(
-        toTenantId('t-1'),
-        toGroupId('g-1'),
+        toTenantId('tenantId'),
+        toGroupId('groupId'),
       )
 
       expect(result).toEqual([])
@@ -350,8 +353,8 @@ describe('serviceService', () => {
 
       await expect(
         serviceService.getTenantGroupServices(
-          toTenantId('t-1'),
-          toGroupId('g-1'),
+          toTenantId('tenantId'),
+          toGroupId('groupId'),
         ),
       ).rejects.toThrow(error)
 
@@ -366,9 +369,9 @@ describe('serviceService', () => {
     it('should correctly call the api', async () => {
       mockGet.mockResolvedValueOnce({ data: { data: {} } })
 
-      await serviceService.getTenantServices(toTenantId('t-1'))
+      await serviceService.getTenantServices(toTenantId('tenantId'))
 
-      expect(mockGet).toHaveBeenCalledWith('/tenants/t-1/shared-services')
+      expect(mockGet).toHaveBeenCalledWith('/tenants/tenantId/shared-services')
     })
 
     it('should correctly return data', async () => {
@@ -387,7 +390,9 @@ describe('serviceService', () => {
         data: { data: { sharedServices: [serviceApiData] } },
       })
 
-      const result = await serviceService.getTenantServices(toTenantId('t-1'))
+      const result = await serviceService.getTenantServices(
+        toTenantId('tenantId'),
+      )
 
       expect(result).toHaveLength(1)
       expect(result[0].clientIdentifier).toBe('serviceClientIdentifier')
@@ -406,7 +411,9 @@ describe('serviceService', () => {
         data: { data: { sharedServices: [] } },
       })
 
-      const result = await serviceService.getTenantServices(toTenantId('t-1'))
+      const result = await serviceService.getTenantServices(
+        toTenantId('tenantId'),
+      )
 
       expect(result).toEqual([])
     })
@@ -416,7 +423,7 @@ describe('serviceService', () => {
       mockGet.mockRejectedValueOnce(error)
 
       await expect(
-        serviceService.getTenantServices(toTenantId('t-1')),
+        serviceService.getTenantServices(toTenantId('tenantId')),
       ).rejects.toThrow(error)
 
       expect(mockedUtils.logApiError).toHaveBeenCalledWith(
@@ -446,13 +453,13 @@ describe('serviceService', () => {
       mockPut.mockResolvedValueOnce({ data: { data: {} } })
 
       await serviceService.updateTenantGroupServiceRoles(
-        toTenantId('t-1'),
-        toGroupId('g-1'),
+        toTenantId('tenantId'),
+        toGroupId('groupId'),
         [groupService],
       )
 
       expect(mockPut).toHaveBeenCalledWith(
-        '/tenants/t-1/groups/g-1/shared-services/shared-service-roles',
+        '/tenants/tenantId/groups/groupId/shared-services/shared-service-roles',
         {
           sharedServices: [
             {
@@ -496,8 +503,8 @@ describe('serviceService', () => {
       })
 
       const result = await serviceService.updateTenantGroupServiceRoles(
-        toTenantId('t-1'),
-        toGroupId('g-1'),
+        toTenantId('tenantId'),
+        toGroupId('groupId'),
         [makeGroupService()],
       )
 
@@ -530,8 +537,8 @@ describe('serviceService', () => {
 
       await expect(
         serviceService.updateTenantGroupServiceRoles(
-          toTenantId('t-1'),
-          toGroupId('g-1'),
+          toTenantId('tenantId'),
+          toGroupId('groupId'),
           [makeGroupService()],
         ),
       ).rejects.toThrow(error)
