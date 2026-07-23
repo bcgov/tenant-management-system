@@ -55,34 +55,37 @@ describe('groupService', () => {
     it('should correctly call the api', async () => {
       const user = makeUser({
         ssoUser: makeSsoUser({
-          displayName: 'displayName',
-          email: 'email',
-          firstName: 'firstName',
-          idpType: 'idpType',
-          lastName: 'lastName',
-          ssoUserId: toSsoUserId('ssoUserId'),
-          userName: 'userName',
+          displayName: 'ssoUserDisplayName',
+          email: 'ssoUserEmail',
+          firstName: 'ssoUserFirstName',
+          idpType: 'ssoUserIdpType',
+          lastName: 'ssoUserLastName',
+          ssoUserId: toSsoUserId('ssoUserSsoUserId'),
+          userName: 'ssoUserUserName',
         }),
       })
       mockPost.mockResolvedValueOnce({ data: { data: {} } })
 
       await groupService.addUserToGroup(
-        toTenantId('t-1'),
-        toGroupId('g-1'),
+        toTenantId('tenantId'),
+        toGroupId('groupId'),
         user,
       )
 
-      expect(mockPost).toHaveBeenCalledWith('/tenants/t-1/groups/g-1/users', {
-        user: {
-          displayName: 'displayName',
-          email: 'email',
-          firstName: 'firstName',
-          idpType: 'idpType',
-          lastName: 'lastName',
-          ssoUserId: 'ssoUserId',
-          userName: 'userName',
+      expect(mockPost).toHaveBeenCalledWith(
+        '/tenants/tenantId/groups/groupId/users',
+        {
+          user: {
+            displayName: 'ssoUserDisplayName',
+            email: 'ssoUserEmail',
+            firstName: 'ssoUserFirstName',
+            idpType: 'ssoUserIdpType',
+            lastName: 'ssoUserLastName',
+            ssoUserId: 'ssoUserSsoUserId',
+            userName: 'ssoUserUserName',
+          },
         },
-      })
+      )
     })
 
     it('should correctly call the api handling azureidir', async () => {
@@ -94,13 +97,13 @@ describe('groupService', () => {
       mockPost.mockResolvedValueOnce({ data: { data: {} } })
 
       await groupService.addUserToGroup(
-        toTenantId('t-1'),
-        toGroupId('g-1'),
+        toTenantId('tenantId'),
+        toGroupId('groupId'),
         user,
       )
 
       expect(mockPost).toHaveBeenCalledWith(
-        '/tenants/t-1/groups/g-1/users',
+        '/tenants/tenantId/groups/groupId/users',
         expect.objectContaining({
           user: expect.objectContaining({
             idpType: 'idir',
@@ -119,8 +122,8 @@ describe('groupService', () => {
             firstName: 'ssoUserFirstName',
             idpType: 'ssoUserIdpType',
             lastName: 'ssoUserLastName',
-            ssoUserId: toSsoUserId('ssoUserId'),
-            userName: 'ssoUserName',
+            ssoUserId: toSsoUserId('ssoUserSsoUserId'),
+            userName: 'ssoUserUserName',
           }),
         }),
       })
@@ -129,8 +132,8 @@ describe('groupService', () => {
       })
 
       const result = await groupService.addUserToGroup(
-        toTenantId('t-1'),
-        toGroupId('g-1'),
+        toTenantId('tenantId'),
+        toGroupId('groupId'),
         makeUser(),
       )
 
@@ -139,8 +142,8 @@ describe('groupService', () => {
       expect(result.user.ssoUser.firstName).toBe('ssoUserFirstName')
       expect(result.user.ssoUser.idpType).toBe('ssoUserIdpType')
       expect(result.user.ssoUser.lastName).toBe('ssoUserLastName')
-      expect(result.user.ssoUser.ssoUserId).toBe('ssoUserId')
-      expect(result.user.ssoUser.userName).toBe('ssoUserName')
+      expect(result.user.ssoUser.ssoUserId).toBe('ssoUserSsoUserId')
+      expect(result.user.ssoUser.userName).toBe('ssoUserUserName')
     })
 
     it('should throw DuplicateEntityError on HTTP 409', async () => {
@@ -156,7 +159,11 @@ describe('groupService', () => {
       mockedUtils.isDuplicateEntityError.mockReturnValueOnce(true)
 
       await expect(
-        groupService.addUserToGroup(toTenantId('t-1'), toGroupId('g-1'), user),
+        groupService.addUserToGroup(
+          toTenantId('tenantId'),
+          toGroupId('groupId'),
+          user,
+        ),
       ).rejects.toBeInstanceOf(DuplicateEntityError)
     })
 
@@ -173,7 +180,11 @@ describe('groupService', () => {
       mockedUtils.isValidationError.mockReturnValueOnce(true)
 
       await expect(
-        groupService.addUserToGroup(toTenantId('t-1'), toGroupId('g-1'), user),
+        groupService.addUserToGroup(
+          toTenantId('tenantId'),
+          toGroupId('groupId'),
+          user,
+        ),
       ).rejects.toBeInstanceOf(ValidationError)
     })
 
@@ -183,7 +194,11 @@ describe('groupService', () => {
       mockPost.mockRejectedValueOnce(genericError)
 
       await expect(
-        groupService.addUserToGroup(toTenantId('t-1'), toGroupId('g-1'), user),
+        groupService.addUserToGroup(
+          toTenantId('tenantId'),
+          toGroupId('groupId'),
+          user,
+        ),
       ).rejects.toThrow(genericError)
 
       expect(mockedUtils.logApiError).toHaveBeenCalledWith(
@@ -198,12 +213,12 @@ describe('groupService', () => {
       mockPost.mockResolvedValueOnce({ data: { data: {} } })
 
       await groupService.createGroup(
-        toTenantId('t-1'),
+        toTenantId('tenantId'),
         'groupName',
         'groupDescription',
       )
 
-      expect(mockPost).toHaveBeenCalledWith('/tenants/t-1/groups', {
+      expect(mockPost).toHaveBeenCalledWith('/tenants/tenantId/groups', {
         description: 'groupDescription',
         name: 'groupName',
       })
@@ -219,7 +234,7 @@ describe('groupService', () => {
       })
 
       const result = await groupService.createGroup(
-        toTenantId('t-1'),
+        toTenantId('tenantId'),
         'groupName',
         'groupDescription',
       )
@@ -241,7 +256,7 @@ describe('groupService', () => {
 
       await expect(
         groupService.createGroup(
-          toTenantId('t-1'),
+          toTenantId('tenantId'),
           'groupName',
           'groupDescription',
         ),
@@ -261,7 +276,7 @@ describe('groupService', () => {
 
       await expect(
         groupService.createGroup(
-          toTenantId('t-1'),
+          toTenantId('tenantId'),
           'groupName',
           'groupDescription',
         ),
@@ -274,7 +289,7 @@ describe('groupService', () => {
 
       await expect(
         groupService.createGroup(
-          toTenantId('t-1'),
+          toTenantId('tenantId'),
           'groupName',
           'groupDescription',
         ),
@@ -291,10 +306,10 @@ describe('groupService', () => {
     it('should correctly call the api', async () => {
       mockGet.mockResolvedValueOnce({ data: { data: {} } })
 
-      await groupService.getGroup(toTenantId('t-1'), toGroupId('g-1'))
+      await groupService.getGroup(toTenantId('tenantId'), toGroupId('groupId'))
 
       expect(mockGet).toHaveBeenCalledWith(
-        '/tenants/t-1/groups/g-1?expand=groupUsers',
+        '/tenants/tenantId/groups/groupId?expand=groupUsers',
       )
     })
 
@@ -308,8 +323,8 @@ describe('groupService', () => {
       })
 
       const result = await groupService.getGroup(
-        toTenantId('t-1'),
-        toGroupId('g-1'),
+        toTenantId('tenantId'),
+        toGroupId('groupId'),
       )
 
       expect(result.description).toBe('groupDescription')
@@ -321,7 +336,7 @@ describe('groupService', () => {
       mockGet.mockRejectedValueOnce(error)
 
       await expect(
-        groupService.getGroup(toTenantId('t-1'), toGroupId('g-1')),
+        groupService.getGroup(toTenantId('tenantId'), toGroupId('groupId')),
       ).rejects.toThrow(error)
 
       expect(mockedUtils.logApiError).toHaveBeenCalledWith(
@@ -335,9 +350,9 @@ describe('groupService', () => {
     it('should correctly call the api', async () => {
       mockGet.mockResolvedValueOnce({ data: { data: {} } })
 
-      await groupService.getTenantGroups(toTenantId('t-1'))
+      await groupService.getTenantGroups(toTenantId('tenantId'))
 
-      expect(mockGet).toHaveBeenCalledWith(`/tenants/t-1/groups`)
+      expect(mockGet).toHaveBeenCalledWith(`/tenants/tenantId/groups`)
     })
 
     it('should correctly return data', async () => {
@@ -349,7 +364,7 @@ describe('groupService', () => {
         data: { data: { groups: [groupApiData] } },
       })
 
-      const result = await groupService.getTenantGroups(toTenantId('t-1'))
+      const result = await groupService.getTenantGroups(toTenantId('tenantId'))
 
       expect(result[0].description).toBe('groupDescription')
       expect(result[0].name).toBe('groupName')
@@ -360,7 +375,7 @@ describe('groupService', () => {
       mockGet.mockRejectedValueOnce(error)
 
       await expect(
-        groupService.getTenantGroups(toTenantId('t-1')),
+        groupService.getTenantGroups(toTenantId('tenantId')),
       ).rejects.toThrow(error)
 
       expect(mockedUtils.logApiError).toHaveBeenCalledWith(
@@ -375,13 +390,13 @@ describe('groupService', () => {
       mockDelete.mockResolvedValueOnce({})
 
       await groupService.removeUserFromGroup(
-        toTenantId('t-1'),
-        toGroupId('g-1'),
+        toTenantId('tenantId'),
+        toGroupId('groupId'),
         toGroupUserId('gu-1'),
       )
 
       expect(mockDelete).toHaveBeenCalledWith(
-        '/tenants/t-1/groups/g-1/users/gu-1',
+        '/tenants/tenantId/groups/groupId/users/gu-1',
       )
     })
 
@@ -391,8 +406,8 @@ describe('groupService', () => {
 
       await expect(
         groupService.removeUserFromGroup(
-          toTenantId('t-1'),
-          toGroupId('g-1'),
+          toTenantId('tenantId'),
+          toGroupId('groupId'),
           toGroupUserId('gu-1'),
         ),
       ).rejects.toThrow(error)

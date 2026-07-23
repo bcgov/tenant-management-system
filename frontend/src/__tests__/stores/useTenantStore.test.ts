@@ -31,7 +31,7 @@ vi.mock('@/services/tenant.service', () => ({
   },
 }))
 
-describe('Tenant Store', () => {
+describe('useTenantStore', () => {
   const mockSsoData: SsoUserApiData = {
     displayName: 'John Doe',
     email: 'john@example.com',
@@ -173,7 +173,7 @@ describe('Tenant Store', () => {
 
     it('sets loading to false even if the fetch fails', async () => {
       const store = useTenantStore()
-      vi.mocked(tenantService.getUserTenants).mockRejectedValue(
+      vi.mocked(tenantService.getUserTenants).mockRejectedValueOnce(
         new Error('Fail'),
       )
 

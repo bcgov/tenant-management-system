@@ -23,7 +23,7 @@ vi.mock('@/services/tenantrequest.service', () => ({
   },
 }))
 
-describe('Tenant Request Store', () => {
+describe('useTenantRequestStore', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
@@ -94,7 +94,7 @@ describe('Tenant Request Store', () => {
 
     it('sets loading to false even if the fetch fails', async () => {
       const store = useTenantRequestStore()
-      vi.mocked(tenantRequestService.getTenantRequests).mockRejectedValue(
+      vi.mocked(tenantRequestService.getTenantRequests).mockRejectedValueOnce(
         new Error('Fail'),
       )
 

@@ -48,7 +48,7 @@ describe('roleService', () => {
 
     it('should log error and rethrow when API call fails', async () => {
       const mockError = new Error('Network error')
-      mockGet.mockRejectedValue(mockError)
+      mockGet.mockRejectedValueOnce(mockError)
 
       await expect(roleService.getRoles()).rejects.toThrow('Network error')
 
@@ -62,7 +62,7 @@ describe('roleService', () => {
           status: 500,
         },
       }
-      mockGet.mockRejectedValue(mockApiError)
+      mockGet.mockRejectedValueOnce(mockApiError)
 
       await expect(roleService.getRoles()).rejects.toEqual(mockApiError)
 
