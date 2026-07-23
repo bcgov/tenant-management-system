@@ -38,7 +38,7 @@ describe('useServiceStore', () => {
   })
 
   describe('addServiceToTenant', () => {
-    it.skip('adds a service to the tenant', async () => {
+    it.todo('adds a service to the tenant', async () => {
       const store = useServiceStore()
 
       expect(store.tenantServices).toHaveLength(0)
@@ -229,7 +229,7 @@ describe('useServiceStore', () => {
       expect(store.loading).toBe(false)
     })
 
-    it.skip('overwrites store with results', async () => {
+    it.todo('overwrites store with results', async () => {
       const store = useServiceStore()
       store.services = [makeService({ id: toServiceId('serviceId') })]
       vi.mocked(serviceService.getServices).mockResolvedValue([

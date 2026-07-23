@@ -49,7 +49,7 @@ describe('useTenantRequestStore', () => {
       expect(store.tenantRequests).toHaveLength(0)
     })
 
-    it.skip('creates a new tenant request in the store', async () => {
+    it.todo('creates a new tenant request in the store', async () => {
       const store = useTenantRequestStore()
       const tenantRequestDetailFields = makeTenantRequestDetailFields({
         description: 'tenantRequestDescription',
@@ -209,7 +209,7 @@ describe('useTenantRequestStore', () => {
       )
     })
 
-    it.skip('updates name in the store if given', async () => {
+    it.todo('updates name in the store if given', async () => {
       const store = useTenantRequestStore()
       const tenantRequest = makeTenantRequest({
         id: toTenantRequestId('tenantRequestId'),

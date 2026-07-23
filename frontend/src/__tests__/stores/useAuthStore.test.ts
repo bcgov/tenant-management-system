@@ -155,16 +155,19 @@ describe('useAuthStore', () => {
       )
     })
 
-    it.skip('does not map bceid business client roles from the token', async () => {
-      const store = useAuthStore()
-      mockTokenParsed = makeBceidBusinessToken({
-        client_roles: [ROLES.OPERATIONS_ADMIN.value],
-      })
+    it.todo(
+      'does not map bceid business client roles from the token',
+      async () => {
+        const store = useAuthStore()
+        mockTokenParsed = makeBceidBusinessToken({
+          client_roles: [ROLES.OPERATIONS_ADMIN.value],
+        })
 
-      await store.init()
+        await store.init()
 
-      expect(store.authenticatedUser.roles).toHaveLength(0)
-    })
+        expect(store.authenticatedUser.roles).toHaveLength(0)
+      },
+    )
 
     it('does not set a user when tokenParsed is null', async () => {
       const store = useAuthStore()
