@@ -4,7 +4,7 @@ import {
   makeRole,
   makeSsoUser,
   makeTenantRequestApiData,
-  makeTenantRequestDetails,
+  makeTenantRequestDetailFields,
   makeUser,
 } from '@/__tests__/__factories__'
 
@@ -51,7 +51,7 @@ describe('tenantRequestService', () => {
 
   describe('createTenantRequest', () => {
     it('should correctly call the api', async () => {
-      const tenantRequestDetails = makeTenantRequestDetails({
+      const tenantRequestDetails = makeTenantRequestDetailFields({
         description: 'tenantRequestDescription',
         ministryName: 'tenantRequestMinistryName',
         name: 'tenantRequestName',
@@ -114,7 +114,7 @@ describe('tenantRequestService', () => {
 
       await expect(
         tenantRequestService.createTenantRequest(
-          makeTenantRequestDetails(),
+          makeTenantRequestDetailFields(),
           makeUser(),
         ),
       ).rejects.toBeInstanceOf(ValidationError)
@@ -138,7 +138,7 @@ describe('tenantRequestService', () => {
 
       await expect(
         tenantRequestService.createTenantRequest(
-          makeTenantRequestDetails(),
+          makeTenantRequestDetailFields(),
           makeUser(),
         ),
       ).rejects.toBeInstanceOf(DuplicateEntityError)
@@ -155,7 +155,7 @@ describe('tenantRequestService', () => {
 
       await expect(
         tenantRequestService.createTenantRequest(
-          makeTenantRequestDetails(),
+          makeTenantRequestDetailFields(),
           makeUser(),
         ),
       ).rejects.toThrow(genericError)

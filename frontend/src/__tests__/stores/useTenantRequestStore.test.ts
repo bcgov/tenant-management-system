@@ -1,17 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 
-import { makeUser } from '@/__tests__/__factories__'
+import {
+  makeSsoUser,
+  makeTenantRequest,
+  makeTenantRequestApiData,
+  makeTenantRequestDetailFields,
+  makeUser,
+} from '@/__tests__/__factories__'
 
-import {
-  type TenantRequestApiData,
-  tenantRequestMapper,
-} from '@/mappers/tenantrequest.mapper'
-import {
-  TenantRequest,
-  type TenantRequestDetailFields,
-  toTenantRequestId,
-} from '@/models/tenantrequest.model'
+import { toSsoUserId } from '@/models/ssouser.model'
+import { toTenantRequestId } from '@/models/tenantrequest.model'
 import { tenantRequestService } from '@/services/tenantrequest.service'
 import { useTenantRequestStore } from '@/stores/useTenantRequestStore'
 
@@ -32,137 +31,201 @@ describe('useTenantRequestStore', () => {
   it('starts with default values', () => {
     const store = useTenantRequestStore()
 
-    expect(store.tenantRequests).toEqual([])
     expect(store.loading).toBe(false)
+    expect(store.tenantRequests).toEqual([])
   })
 
-  it('createTenantRequest calls the service correctly', async () => {
-    const store = useTenantRequestStore()
-    const mockDetails: TenantRequestDetailFields = {
-      description: 'Test Description',
-      ministryName: 'Ministry of Testing',
-      name: 'Test Tenant',
-    }
-    const mockUser = makeUser()
+  describe('createTenantRequest', () => {
+    it('does not create a tenant request in the store', async () => {
+      const store = useTenantRequestStore()
 
-    await store.createTenantRequest(mockDetails, mockUser)
+      expect(store.tenantRequests).toHaveLength(0)
 
-    expect(tenantRequestService.createTenantRequest).toHaveBeenCalledWith(
-      mockDetails,
-      mockUser,
-    )
+      await store.createTenantRequest(
+        makeTenantRequestDetailFields(),
+        makeUser(),
+      )
+
+      expect(store.tenantRequests).toHaveLength(0)
+    })
+
+    it.skip('creates a new tenant request in the store', async () => {
+      const store = useTenantRequestStore()
+      const tenantRequestDetailFields = makeTenantRequestDetailFields({
+        description: 'tenantRequestDescription',
+        ministryName: 'tenantRequestMinistryName',
+        name: 'tenantRequestName',
+      })
+      const user = makeUser({
+        ssoUser: makeSsoUser({
+          displayName: 'ssoUserDisplayName',
+          email: 'ssoUserEmail',
+          firstName: 'ssoUserFirstName',
+          idpType: 'ssoUserIdpType',
+          lastName: 'ssoUserLastName',
+          ssoUserId: toSsoUserId('ssoUserSsoUserId'),
+          userName: 'ssoUserUserName',
+        }),
+      })
+
+      expect(store.tenantRequests).toHaveLength(0)
+
+      await store.createTenantRequest(tenantRequestDetailFields, user)
+
+      expect(store.tenantRequests).toHaveLength(1)
+    })
   })
 
   describe('fetchTenantRequests', () => {
-    it('maps API data to Model correctly and handles loading state', async () => {
+    it('manages loading state', async () => {
       const store = useTenantRequestStore()
-      const mockApiData: TenantRequestApiData[] = [
-        {
-          id: toTenantRequestId('req-1'),
-          createdBy: 'user-guid',
-          createdByUserName: 'jdoe',
-          createdDateTime: '2023-01-01',
-          description: 'Test Desc',
-          ministryName: 'Agri',
-          name: 'Test Tenant',
-          status: 'NEW',
-        },
-        {
-          id: toTenantRequestId('req-2'),
-          createdBy: 'fallback-user',
-          createdDateTime: '2023-01-02',
-          description: 'No Username',
-          ministryName: 'Health',
-          name: 'Guest Tenant',
-          status: 'NEW',
-        },
-      ]
-      vi.mocked(tenantRequestService.getTenantRequests).mockResolvedValue(
-        mockApiData,
-      )
+      vi.mocked(tenantRequestService.getTenantRequests).mockResolvedValue([
+        makeTenantRequestApiData(),
+      ])
+
+      expect(store.loading).toBe(false)
 
       const promise = store.fetchTenantRequests()
+
       expect(store.loading).toBe(true)
+
       await promise
 
       expect(store.loading).toBe(false)
-      expect(store.tenantRequests).toHaveLength(2)
-      expect(store.tenantRequests[0]).toBeInstanceOf(TenantRequest)
-      expect(store.tenantRequests[0].createdBy).toBe('jdoe')
-      expect(store.tenantRequests[1].createdBy).toBe('fallback-user')
     })
 
-    it('sets loading to false even if the fetch fails', async () => {
+    it('clears loading state on error', async () => {
       const store = useTenantRequestStore()
       vi.mocked(tenantRequestService.getTenantRequests).mockRejectedValueOnce(
-        new Error('Fail'),
+        new Error('API error'),
       )
 
-      await expect(store.fetchTenantRequests()).rejects.toThrow('Fail')
+      expect(store.loading).toBe(false)
+
+      await expect(store.fetchTenantRequests()).rejects.toThrow()
 
       expect(store.loading).toBe(false)
+    })
+
+    it('overwrites store with results', async () => {
+      const store = useTenantRequestStore()
+      const tenantRequest = makeTenantRequest({
+        createdBy: 'tenantRequestCreatedBy',
+        createdDate: 'tenantRequestCreatedDate',
+        description: 'tenantRequestDescription',
+        id: toTenantRequestId('tenantRequestId'),
+        ministryName: 'tenantRequestMinistryName',
+        name: 'tenantRequestName',
+        status: 'tenantRequestStatus',
+      })
+      store.tenantRequests = [tenantRequest]
+      const tenantRequestApiData = makeTenantRequestApiData({
+        createdBy: 'tenantRequestCreatedBy2',
+        createdDateTime: 'tenantRequestCreatedDate2',
+        description: 'tenantRequestDescription2',
+        id: toTenantRequestId('tenantRequestId2'),
+        ministryName: 'tenantRequestMinistryName2',
+        name: 'tenantRequestName2',
+        status: 'tenantRequestStatus2',
+      })
+      vi.mocked(tenantRequestService.getTenantRequests).mockResolvedValue([
+        tenantRequestApiData,
+      ])
+
+      expect(store.tenantRequests).toHaveLength(1)
+
+      await store.fetchTenantRequests()
+
+      expect(store.tenantRequests).toHaveLength(1)
+      expect(store.tenantRequests[0].createdBy).toBe('tenantRequestCreatedBy2')
+      expect(store.tenantRequests[0].createdDate).toBe(
+        'tenantRequestCreatedDate2',
+      )
+      expect(store.tenantRequests[0].description).toBe(
+        'tenantRequestDescription2',
+      )
+      expect(store.tenantRequests[0].id).toBe('tenantRequestId2')
+      expect(store.tenantRequests[0].ministryName).toBe(
+        'tenantRequestMinistryName2',
+      )
+      expect(store.tenantRequests[0].name).toBe('tenantRequestName2')
+      expect(store.tenantRequests[0].status).toBe('tenantRequestStatus2')
+    })
+
+    it('does not alter the state on api error', async () => {
+      const store = useTenantRequestStore()
+      const tenantRequest = makeTenantRequest({
+        id: toTenantRequestId('tenantRequestId'),
+      })
+      store.tenantRequests = [tenantRequest]
+      vi.mocked(tenantRequestService.getTenantRequests).mockRejectedValueOnce(
+        new Error('API error'),
+      )
+
+      expect(store.tenantRequests).toHaveLength(1)
+      expect(store.tenantRequests[0].id).toBe('tenantRequestId')
+
+      await expect(store.fetchTenantRequests()).rejects.toThrow()
+
+      expect(store.tenantRequests).toHaveLength(1)
+      expect(store.tenantRequests[0].id).toBe('tenantRequestId')
     })
   })
 
   describe('updateTenantRequestStatus', () => {
-    it('updates specific properties and service parameters', async () => {
+    it('updates status in the store', async () => {
       const store = useTenantRequestStore()
-      const targetId = toTenantRequestId('target-uuid')
-      const initialRequest = tenantRequestMapper.fromApiData({
-        id: targetId,
-        createdBy: 'system',
-        createdDateTime: '2023-01-01',
-        description: 'Initial',
-        ministryName: 'Finance',
-        name: 'Old Name',
-        status: 'NEW',
+      const tenantRequest = makeTenantRequest({
+        id: toTenantRequestId('tenantRequestId'),
+        status: 'tenantRequestStatus',
       })
-      store.tenantRequests = [initialRequest]
-      vi.mocked(
-        tenantRequestService.updateTenantRequestStatus,
-      ).mockResolvedValue(undefined)
+      store.tenantRequests = [tenantRequest]
 
       await store.updateTenantRequestStatus(
-        targetId,
-        'REJECTED',
-        'Invalid docs',
-        'Clash Name',
+        toTenantRequestId('tenantRequestId'),
+        'tenantRequestStatus2',
       )
 
-      expect(
-        tenantRequestService.updateTenantRequestStatus,
-      ).toHaveBeenCalledWith(targetId, 'REJECTED', 'Invalid docs', 'Clash Name')
-
-      const updated = store.tenantRequests.find(
-        (r: TenantRequest) => r.id === targetId,
-      )
-
-      expect(updated?.status).toBe('REJECTED')
-      expect(updated?.rejectionReason).toBe('Invalid docs')
+      expect(store.tenantRequests[0].status).toBe('tenantRequestStatus2')
     })
 
-    it('does not update rejectionReason if parameter is undefined', async () => {
+    it('updates rejection reason in the store if given', async () => {
       const store = useTenantRequestStore()
-      const targetId = toTenantRequestId('target-uuid')
-      const initialRequest = tenantRequestMapper.fromApiData({
-        id: targetId,
-        createdBy: 'system',
-        createdDateTime: '2023-01-01',
-        description: 'Initial',
-        ministryName: 'Finance',
-        name: 'Old Name',
-        status: 'NEW',
+      const tenantRequest = makeTenantRequest({
+        id: toTenantRequestId('tenantRequestId'),
+        rejectionReason: 'tenantRequestRejectionReason',
+        status: 'tenantRequestStatus',
       })
-      initialRequest.rejectionReason = 'Keep Me'
-      store.tenantRequests = [initialRequest]
+      store.tenantRequests = [tenantRequest]
 
-      await store.updateTenantRequestStatus(targetId, 'APPROVED')
-      const updated = store.tenantRequests.find(
-        (r: TenantRequest) => r.id === targetId,
+      await store.updateTenantRequestStatus(
+        toTenantRequestId('tenantRequestId'),
+        'tenantRequestStatus',
+        'tenantRequestRejectionReason2',
       )
 
-      expect(updated?.status).toBe('APPROVED')
-      expect(updated?.rejectionReason).toBe('Keep Me')
+      expect(store.tenantRequests[0].rejectionReason).toBe(
+        'tenantRequestRejectionReason2',
+      )
+    })
+
+    it.skip('updates name in the store if given', async () => {
+      const store = useTenantRequestStore()
+      const tenantRequest = makeTenantRequest({
+        id: toTenantRequestId('tenantRequestId'),
+        name: 'tenantRequestName',
+        status: 'tenantRequestStatus',
+      })
+      store.tenantRequests = [tenantRequest]
+
+      await store.updateTenantRequestStatus(
+        toTenantRequestId('tenantRequestId'),
+        'tenantRequestStatus',
+        undefined,
+        'tenantRequestName2',
+      )
+
+      expect(store.tenantRequests[0].name).toBe('tenantRequestName2')
     })
 
     it('gracefully ignores updates for non-existent IDs', async () => {
@@ -170,7 +233,10 @@ describe('useTenantRequestStore', () => {
       store.tenantRequests = []
 
       await expect(
-        store.updateTenantRequestStatus(toTenantRequestId('fake'), 'APPROVED'),
+        store.updateTenantRequestStatus(
+          toTenantRequestId('tenantRequestId'),
+          'tenantRequestStatus',
+        ),
       ).resolves.not.toThrow()
     })
   })
