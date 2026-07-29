@@ -2,11 +2,8 @@ import { Request, Response, NextFunction } from 'express'
 import { tenantRepository } from '../repositories/tenant.repository'
 import { ForbiddenError } from '../errors/ForbiddenError'
 import logger from './logger'
-import { getErrorMessage } from './error.handler'
-import { ErrorHandler } from './error.handler'
+import { getErrorMessage, sendErrorResponse } from './error.handler'
 import { config } from '../services/config.service'
-
-const errorHandler: ErrorHandler = new ErrorHandler()
 
 export const checkTenantAccess = (requiredRoles?: string[]) => {
   return async (req: Request, res: Response, next: NextFunction) => {
@@ -56,7 +53,7 @@ export const checkTenantAccess = (requiredRoles?: string[]) => {
         error: getErrorMessage(error),
       })
       if (error instanceof ForbiddenError) {
-        errorHandler.generalError(
+        sendErrorResponse(
           res,
           'Authorization Failure',
           error.message,
