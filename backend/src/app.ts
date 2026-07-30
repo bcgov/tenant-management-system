@@ -5,7 +5,6 @@ import { config, loadConfig } from './services/config.service'
 import rTracer from 'cls-rtracer'
 import { requestLoggingMiddleware } from './common/logger.mw'
 import { addRequestIdHeader } from './common/request-id-header.mw'
-import { jwtErrorHandler } from './common/auth.mw'
 import logger from './common/logger'
 import swaggerUi from 'swagger-ui-express'
 import YAML from 'yamljs'
@@ -51,7 +50,6 @@ export default class App {
     )
     this.app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument))
 
-    this.app.use(jwtErrorHandler)
     this.routes.routes(this.app)
   }
 

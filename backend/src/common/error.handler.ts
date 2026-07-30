@@ -10,6 +10,29 @@ export function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error)
 }
 
+export function sendErrorResponse(
+  res: Response,
+  name: string,
+  message: string,
+  httpResponseCode: number,
+  errorMessage: string,
+  code?: string,
+): void {
+  const responseBody: {
+    name: string
+    message: string
+    httpResponseCode: number
+    errorMessage: string
+    code?: string
+  } = { name, message, httpResponseCode, errorMessage }
+
+  if (code) {
+    responseBody.code = code
+  }
+
+  res.status(httpResponseCode).json(responseBody)
+}
+
 export class ErrorHandler {
   public generalError(
     res: Response,
@@ -21,23 +44,11 @@ export class ErrorHandler {
   ) {
     logger.error(name, { message, httpResponseCode, errorMessage })
 
-    const responseBody: {
-      name: string
-      message: string
-      httpResponseCode: number
-      errorMessage: string
-      code?: string
-    } = { name, message, httpResponseCode, errorMessage }
-
-    if (code) {
-      responseBody.code = code
-    }
-
-    res.status(httpResponseCode).json(responseBody)
+    sendErrorResponse(res, name, message, httpResponseCode, errorMessage, code)
   }
 }
 
-const handler = new ErrorHandler()
+export const errorHandler = new ErrorHandler()
 
 export function handleControllerError(
   res: Response,
@@ -46,15 +57,27 @@ export function handleControllerError(
 ): void {
   const msg = getErrorMessage(error)
   if (error instanceof BadRequestError) {
-    handler.generalError(res, context, msg, error.statusCode, 'Bad Request')
+    errorHandler.generalError(
+      res,
+      context,
+      msg,
+      error.statusCode,
+      'Bad Request',
+    )
   } else if (error instanceof UnauthorizedError) {
-    handler.generalError(res, context, msg, error.statusCode, 'Unauthorized')
+    errorHandler.generalError(
+      res,
+      context,
+      msg,
+      error.statusCode,
+      'Unauthorized',
+    )
   } else if (error instanceof ForbiddenError) {
-    handler.generalError(res, context, msg, error.statusCode, 'Forbidden')
+    errorHandler.generalError(res, context, msg, error.statusCode, 'Forbidden')
   } else if (error instanceof NotFoundError) {
-    handler.generalError(res, context, msg, error.statusCode, 'Not Found')
+    errorHandler.generalError(res, context, msg, error.statusCode, 'Not Found')
   } else if (error instanceof ConflictError) {
-    handler.generalError(
+    errorHandler.generalError(
       res,
       context,
       msg,
@@ -63,6 +86,6 @@ export function handleControllerError(
       error.code,
     )
   } else {
-    handler.generalError(res, context, msg, 500, 'Internal Server Error')
+    errorHandler.generalError(res, context, msg, 500, 'Internal Server Error')
   }
 }

@@ -6,6 +6,11 @@ import { UnauthorizedError } from '../errors/UnauthorizedError'
 import { RoutesConstants } from './routes.constants'
 import { TMSConstants } from './tms.constants'
 import { config } from '../services/config.service'
+import { sendErrorResponse } from './error.handler'
+
+const sendUnauthorized = (res: Response, message: string) => {
+  return sendErrorResponse(res, 'Unauthorized', message, 401, 'Unauthorized')
+}
 
 interface CheckJwtOptions {
   sharedServiceAccess?: boolean
@@ -91,11 +96,7 @@ export const checkJwt = (options: CheckJwtOptions = {}) => {
           err as JwtValidationError,
         )
 
-        return res.status(401).json({
-          error: 'Unauthorized',
-          message: 'Error occurred during authentication',
-          statusCode: 401,
-        })
+        return sendUnauthorized(res, 'Error occurred during authentication')
       }
 
       if (req.params.ssoUserId && !options.skipSsoUserParamMatch) {
@@ -136,11 +137,7 @@ export const checkJwt = (options: CheckJwtOptions = {}) => {
                 reason: 'unsupported_identity_provider',
                 provider,
               })
-              return res.status(401).json({
-                error: 'Unauthorized',
-                message: 'Unsupported identity provider',
-                statusCode: 401,
-              })
+              return sendUnauthorized(res, 'Unsupported identity provider')
             }
           } else if (provider === TMSConstants.BUSINESS_BCEID_PROVIDER) {
             req.idpType = 'bceidbusiness'
@@ -154,11 +151,7 @@ export const checkJwt = (options: CheckJwtOptions = {}) => {
               reason: 'unsupported_identity_provider',
               provider,
             })
-            return res.status(401).json({
-              error: 'Unauthorized',
-              message: 'Unsupported identity provider',
-              statusCode: 401,
-            })
+            return sendUnauthorized(res, 'Unsupported identity provider')
           }
         }
       } else if (req.decodedJwt) {
@@ -176,11 +169,10 @@ export const checkJwt = (options: CheckJwtOptions = {}) => {
               TMSConstants.AZURE_IDIR_PROVIDER,
             ],
           })
-          return res.status(401).json({
-            error: 'Unauthorized',
-            message: 'TMS endpoints require IDIR or Azure IDIR access',
-            statusCode: 401,
-          })
+          return sendUnauthorized(
+            res,
+            'TMS endpoints require IDIR or Azure IDIR access',
+          )
         }
         req.idpType = 'idir'
       }
@@ -202,7 +194,7 @@ export const extractOidcSub = (
     next()
   } else {
     logger.error('No decodedJwt found in request')
-    res.status(401).json({ error: 'Error ocurred during authentication' })
+    sendUnauthorized(res, 'Error occurred during authentication')
   }
 }
 
@@ -215,11 +207,7 @@ export const jwtErrorHandler = (
   if (err instanceof Error && err.name === 'UnauthorizedError') {
     logJwtValidationError('JWT validation failed', err as JwtValidationError)
 
-    return res.status(401).json({
-      error: 'Unauthorized',
-      message: 'Error occurred during authentication',
-      statusCode: 401,
-    })
+    return sendUnauthorized(res, 'Error occurred during authentication')
   }
   next(err)
 }

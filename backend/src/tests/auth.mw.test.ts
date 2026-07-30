@@ -1,6 +1,6 @@
 import request from 'supertest'
 import express from 'express'
-import { checkJwt } from '../common/auth.mw'
+import { checkJwt, extractOidcSub } from '../common/auth.mw'
 
 jest.mock('express-jwt', () => ({
   expressjwt: jest.fn(() => {
@@ -11,7 +11,7 @@ jest.mock('express-jwt', () => ({
     ) => {
       req.decodedJwt = {
         idir_user_guid: req.headers['x-token-user-id'] as string,
-        idp: 'idir',
+        idp: (req.headers['x-token-idp'] as string) || 'idir',
       }
       next()
     }
@@ -74,5 +74,44 @@ describe('checkJwt ssoUserId path matching', () => {
       .set('x-token-user-id', 'DIFFERENTUSERID')
 
     expect(response.status).toBe(200)
+  })
+})
+
+describe('authentication failure responses', () => {
+  it('rejects non-IDIR logins with the documented error body', async () => {
+    const app = express()
+    app.get('/tenants', checkJwt(), (_req, res) => {
+      res.status(200).send({ ok: true })
+    })
+
+    const response = await request(app)
+      .get('/tenants')
+      .set('Authorization', 'Bearer ok')
+      .set('x-token-idp', 'bceidbusiness')
+
+    expect(response.status).toBe(401)
+    expect(response.body).toEqual({
+      name: 'Unauthorized',
+      message: 'TMS endpoints require IDIR or Azure IDIR access',
+      httpResponseCode: 401,
+      errorMessage: 'Unauthorized',
+    })
+  })
+
+  it('rejects requests with no decoded token using the documented error body', async () => {
+    const app = express()
+    app.get('/tenants', extractOidcSub, (_req, res) => {
+      res.status(200).send({ ok: true })
+    })
+
+    const response = await request(app).get('/tenants')
+
+    expect(response.status).toBe(401)
+    expect(response.body).toEqual({
+      name: 'Unauthorized',
+      message: 'Error occurred during authentication',
+      httpResponseCode: 401,
+      errorMessage: 'Unauthorized',
+    })
   })
 })
