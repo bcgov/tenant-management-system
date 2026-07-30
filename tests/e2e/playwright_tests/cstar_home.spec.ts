@@ -29,7 +29,7 @@ test.describe.serial('Landing page tests', () => {
     await expect(sharedPage.getByText('Request a Tenant')).toBeVisible()
   })
 
-  test('Checks the tenant request functionality', async () => {
+  test('Submit tenant request under a Ministry', async () => {
     await sharedPage.getByText('Request a Tenant').click()
     const tenantName = sharedPage.getByLabel('Name of Tenant')
     await tenantName.fill('Test Tenant')
