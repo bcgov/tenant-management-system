@@ -38,4 +38,19 @@ describe('checkOperationsAdmin', () => {
     expect(res.status).toHaveBeenCalledWith(403)
     expect(next).not.toHaveBeenCalled()
   })
+
+  it('denies the request using the documented error body', () => {
+    const req = {
+      decodedJwt: { client_roles: [] },
+    } as unknown as Request
+
+    checkOperationsAdmin(req, res, next)
+
+    expect(res.json).toHaveBeenCalledWith({
+      name: 'Authorization Failure',
+      message: 'Access denied: User does not have required role',
+      httpResponseCode: 403,
+      errorMessage: 'Forbidden',
+    })
+  })
 })
