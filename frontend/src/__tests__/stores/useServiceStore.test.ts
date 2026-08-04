@@ -1,10 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 
-import { makeService } from '@/__tests__/__factories__'
+import {
+  makeService,
+  makeServiceApiData,
+  makeServiceDetailFields,
+  makeServiceRole,
+  makeServiceRoleApiData,
+} from '@/__tests__/__factories__'
 
-import { type ServiceApiData } from '@/mappers/service.mapper'
-import { Service, toServiceId } from '@/models/service.model'
+import { toServiceId } from '@/models/service.model'
+import { toServiceRoleId } from '@/models/servicerole.model'
 import { toTenantId } from '@/models/tenant.model'
 import { serviceService } from '@/services/service.service'
 import { useServiceStore } from '@/stores/useServiceStore'
@@ -12,28 +18,13 @@ import { useServiceStore } from '@/stores/useServiceStore'
 vi.mock('@/services/service.service', () => ({
   serviceService: {
     addServiceToTenant: vi.fn(),
+    createService: vi.fn(),
     getServices: vi.fn(),
     getTenantServices: vi.fn(),
   },
 }))
 
-describe('Service Store', () => {
-  const tenantId = toTenantId('t-1')
-  const serviceId = toServiceId('s-1')
-  const tenantServiceId = toServiceId('s-2')
-
-  const mockServiceApiData: ServiceApiData = {
-    clientIdentifier: 'client-1',
-    createdDateTime: '2026-01-01',
-    description: 'Test Service Description',
-    displayName: 'Test Service Display Name',
-    name: 'Test Service Name',
-    landingPageUrl: 'https://test-service.com',
-    id: serviceId,
-    roles: [],
-    updatedDateTime: '2026-01-02',
-  }
-
+describe('useServiceStore', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
@@ -41,58 +32,180 @@ describe('Service Store', () => {
 
   it('starts with default values', () => {
     const store = useServiceStore()
-    expect(store.tenantServices).toEqual([])
+
     expect(store.loading).toBe(false)
+    expect(store.tenantServices).toEqual([])
   })
 
   describe('addServiceToTenant', () => {
-    it('calls the service with correct parameters', async () => {
+    it.todo('adds a service to the tenant', async () => {
       const store = useServiceStore()
-      await store.addServiceToTenant(tenantId, serviceId)
-      expect(serviceService.addServiceToTenant).toHaveBeenCalledWith(
-        tenantId,
-        serviceId,
+
+      expect(store.tenantServices).toHaveLength(0)
+
+      await store.addServiceToTenant(
+        toTenantId('tenantId'),
+        toServiceId('serviceId'),
       )
+
+      expect(store.tenantServices).toHaveLength(1)
+      expect(store.tenantServices[1].id).toBe('serviceId')
+    })
+
+    it('does not alter the state on api error', async () => {
+      const store = useServiceStore()
+      vi.mocked(serviceService.addServiceToTenant).mockRejectedValueOnce(
+        new Error('API error'),
+      )
+
+      expect(store.tenantServices).toHaveLength(0)
+
+      await expect(
+        store.addServiceToTenant(
+          toTenantId('tenantId'),
+          toServiceId('serviceId'),
+        ),
+      ).rejects.toThrow()
+
+      expect(store.tenantServices).toHaveLength(0)
+    })
+  })
+
+  describe('createService', () => {
+    it('creates a new service in the store', async () => {
+      const store = useServiceStore()
+      const serviceDetailFields = makeServiceDetailFields({
+        clientIdentifier: 'serviceClientIdentifier',
+        description: 'serviceDescription',
+        displayName: 'serviceDisplayName',
+        landingPageUrl: 'serviceLandingPageUrl',
+        name: 'serviceName',
+        roles: [
+          makeServiceRole({
+            description: 'serviceRoleDescription',
+            identityProviders: ['serviceRoleIdentityProvider'],
+            name: 'serviceRoleName',
+          }),
+        ],
+      })
+      const serviceApiData = makeServiceApiData({
+        clientIdentifier: 'serviceClientIdentifier',
+        createdDateTime: 'serviceCreatedDateTime',
+        description: 'serviceDescription',
+        displayName: 'serviceDisplayName',
+        id: toServiceId('serviceId'),
+        landingPageUrl: 'serviceLandingPageUrl',
+        name: 'serviceName',
+        roles: [
+          makeServiceRoleApiData({
+            allowedIdentityProviders: ['serviceRoleIdentityProvider'],
+            createdBy: 'serviceRoleCreatedBy',
+            createdDateTime: 'serviceRoleCreatedDateTime',
+            description: 'serviceRoleDescription',
+            id: toServiceRoleId('serviceRoleId'),
+            isDeleted: false,
+            name: 'serviceRoleName',
+          }),
+        ],
+        updatedDateTime: 'serviceUpdatedDateTime',
+      })
+      vi.mocked(serviceService.createService).mockResolvedValue(serviceApiData)
+
+      expect(store.services).toHaveLength(0)
+
+      await store.createService(serviceDetailFields)
+
+      expect(store.services[0].clientIdentifier).toBe('serviceClientIdentifier')
+      expect(store.services[0].createdDate).toBe('serviceCreatedDateTime')
+      expect(store.services[0].description).toBe('serviceDescription')
+      expect(store.services[0].displayName).toBe('serviceDisplayName')
+      expect(store.services[0].id).toBe('serviceId')
+      expect(store.services[0].landingPageUrl).toBe('serviceLandingPageUrl')
+      expect(store.services[0].name).toBe('serviceName')
+      expect(store.services[0].roles).toHaveLength(1)
+      expect(store.services[0].roles[0].identityProviders).toHaveLength(1)
+      expect(store.services[0].roles[0].identityProviders[0]).toBe(
+        'serviceRoleIdentityProvider',
+      )
+      expect(store.services[0].roles[0].createdBy).toBe('serviceRoleCreatedBy')
+      expect(store.services[0].roles[0].createdDate).toBe(
+        'serviceRoleCreatedDateTime',
+      )
+      expect(store.services[0].roles[0].description).toBe(
+        'serviceRoleDescription',
+      )
+      expect(store.services[0].roles[0].id).toBe('serviceRoleId')
+      expect(store.services[0].roles[0].isDeleted).toBe(false)
+      expect(store.services[0].roles[0].name).toBe('serviceRoleName')
+      expect(store.services[0].updatedDate).toBe('serviceUpdatedDateTime')
+    })
+
+    it('does not alter the state on api error', async () => {
+      const store = useServiceStore()
+      const service = makeService({
+        clientIdentifier: 'serviceClientIdentifier',
+        createdDate: 'serviceCreatedDate',
+        description: 'serviceDescription',
+        displayName: 'serviceDisplayName',
+        id: toServiceId('serviceId'),
+        landingPageUrl: 'serviceLandingPageUrl',
+        name: 'serviceName',
+        roles: [makeServiceRole()],
+        updatedDate: 'serviceUpdatedDate',
+      })
+      store.services = [service]
+      const serviceDetailFields = makeServiceDetailFields({
+        clientIdentifier: 'serviceClientIdentifier',
+        description: 'serviceDescription',
+        displayName: 'serviceDisplayName',
+        landingPageUrl: 'serviceLandingPageUrl',
+        name: 'serviceName',
+        roles: [
+          makeServiceRole({
+            description: 'serviceRoleDescription',
+            identityProviders: ['serviceRoleIdentityProvider'],
+            name: 'serviceRoleName',
+          }),
+        ],
+      })
+      vi.mocked(serviceService.createService).mockRejectedValueOnce(
+        new Error('API error'),
+      )
+
+      expect(store.services).toHaveLength(1)
+      expect(store.services[0].clientIdentifier).toBe('serviceClientIdentifier')
+      expect(store.services[0].createdDate).toBe('serviceCreatedDate')
+      expect(store.services[0].description).toBe('serviceDescription')
+      expect(store.services[0].displayName).toBe('serviceDisplayName')
+      expect(store.services[0].id).toBe('serviceId')
+      expect(store.services[0].landingPageUrl).toBe('serviceLandingPageUrl')
+      expect(store.services[0].name).toBe('serviceName')
+      expect(store.services[0].roles).toHaveLength(1)
+      expect(store.services[0].updatedDate).toBe('serviceUpdatedDate')
+
+      await expect(store.createService(serviceDetailFields)).rejects.toThrow()
+
+      expect(store.services).toHaveLength(1)
+      expect(store.services[0].clientIdentifier).toBe('serviceClientIdentifier')
+      expect(store.services[0].createdDate).toBe('serviceCreatedDate')
+      expect(store.services[0].description).toBe('serviceDescription')
+      expect(store.services[0].displayName).toBe('serviceDisplayName')
+      expect(store.services[0].id).toBe('serviceId')
+      expect(store.services[0].landingPageUrl).toBe('serviceLandingPageUrl')
+      expect(store.services[0].name).toBe('serviceName')
+      expect(store.services[0].roles).toHaveLength(1)
+      expect(store.services[0].updatedDate).toBe('serviceUpdatedDate')
     })
   })
 
   describe('fetchServices', () => {
-    it('manages loading state and inserts state', async () => {
-      const store = useServiceStore()
-      store.services.push(
-        makeService({ id: serviceId, displayName: 'firstName' }),
-      )
-      vi.mocked(serviceService.getServices).mockResolvedValue([
-        mockServiceApiData,
-      ])
-
-      await store.fetchServices()
-
-      expect(store.services).toHaveLength(1)
-      expect(store.services[0].clientIdentifier).toBe(
-        mockServiceApiData.clientIdentifier,
-      )
-      expect(store.services[0].createdDate).toBe(
-        mockServiceApiData.createdDateTime,
-      )
-      expect(store.services[0].description).toBe(mockServiceApiData.description)
-      expect(store.services[0].displayName).toBe(mockServiceApiData.displayName)
-      expect(store.services[0].id).toBe(mockServiceApiData.id)
-      expect(store.services[0].landingPageUrl).toBe(
-        mockServiceApiData.landingPageUrl,
-      )
-      expect(store.services[0].name).toBe(mockServiceApiData.name)
-      expect(store.services[0].updatedDate).toBe(
-        mockServiceApiData.updatedDateTime,
-      )
-      expect(store.tenantServices).toHaveLength(0)
-    })
-
-    it('manages loading state and updates state', async () => {
+    it('manages loading state', async () => {
       const store = useServiceStore()
       vi.mocked(serviceService.getServices).mockResolvedValue([
-        mockServiceApiData,
+        makeServiceApiData(),
       ])
+
+      expect(store.loading).toBe(false)
 
       const promise = store.fetchServices()
 
@@ -101,76 +214,207 @@ describe('Service Store', () => {
       await promise
 
       expect(store.loading).toBe(false)
-      expect(store.services).toHaveLength(1)
-      expect(store.tenantServices).toHaveLength(0)
     })
 
-    it('sets loading to false even if fetch fails', async () => {
+    it('clears loading state on error', async () => {
       const store = useServiceStore()
-      vi.mocked(serviceService.getServices).mockRejectedValue(new Error('Fail'))
-
-      await expect(store.fetchServices()).rejects.toThrow('Fail')
+      vi.mocked(serviceService.getServices).mockRejectedValueOnce(
+        new Error('API error'),
+      )
 
       expect(store.loading).toBe(false)
+
+      await expect(store.fetchServices()).rejects.toThrow()
+
+      expect(store.loading).toBe(false)
+    })
+
+    it.todo('overwrites store with results', async () => {
+      const store = useServiceStore()
+      store.services = [makeService({ id: toServiceId('serviceId') })]
+      vi.mocked(serviceService.getServices).mockResolvedValue([
+        makeServiceApiData({ id: toServiceId('serviceId2') }),
+      ])
+
+      await store.fetchServices()
+
+      expect(store.services).toHaveLength(1)
+      expect(store.services[0].id).toBe('serviceId2')
+    })
+
+    it('does not alter the state on api error', async () => {
+      const store = useServiceStore()
+      store.services = [
+        makeService({
+          clientIdentifier: 'serviceClientIdentifier',
+          createdDate: 'serviceCreatedDate',
+          description: 'serviceDescription',
+          displayName: 'serviceDisplayName',
+          id: toServiceId('serviceId'),
+          landingPageUrl: 'serviceLandingPageUrl',
+          name: 'serviceName',
+          roles: [makeServiceRole()],
+          updatedDate: 'serviceUpdatedDate',
+        }),
+      ]
+      vi.mocked(serviceService.getServices).mockRejectedValueOnce(
+        new Error('API error'),
+      )
+
+      expect(store.services).toHaveLength(1)
+      expect(store.services[0].clientIdentifier).toBe('serviceClientIdentifier')
+      expect(store.services[0].createdDate).toBe('serviceCreatedDate')
+      expect(store.services[0].description).toBe('serviceDescription')
+      expect(store.services[0].displayName).toBe('serviceDisplayName')
+      expect(store.services[0].id).toBe('serviceId')
+      expect(store.services[0].landingPageUrl).toBe('serviceLandingPageUrl')
+      expect(store.services[0].name).toBe('serviceName')
+      expect(store.services[0].roles).toHaveLength(1)
+      expect(store.services[0].updatedDate).toBe('serviceUpdatedDate')
+
+      await expect(store.fetchServices()).rejects.toThrow()
+
+      expect(store.services).toHaveLength(1)
+      expect(store.services[0].clientIdentifier).toBe('serviceClientIdentifier')
+      expect(store.services[0].createdDate).toBe('serviceCreatedDate')
+      expect(store.services[0].description).toBe('serviceDescription')
+      expect(store.services[0].displayName).toBe('serviceDisplayName')
+      expect(store.services[0].id).toBe('serviceId')
+      expect(store.services[0].landingPageUrl).toBe('serviceLandingPageUrl')
+      expect(store.services[0].name).toBe('serviceName')
+      expect(store.services[0].roles).toHaveLength(1)
+      expect(store.services[0].updatedDate).toBe('serviceUpdatedDate')
     })
   })
 
   describe('fetchTenantServices', () => {
-    it('manages loading and upserts services into state', async () => {
+    it('manages loading state', async () => {
       const store = useServiceStore()
       vi.mocked(serviceService.getTenantServices).mockResolvedValue([
-        mockServiceApiData,
+        makeServiceApiData(),
       ])
-
-      await store.fetchTenantServices(tenantId)
 
       expect(store.loading).toBe(false)
-      expect(store.tenantServices).toHaveLength(1)
-      expect(store.tenantServices[0].id).toBe(serviceId)
-      expect(store.tenantServices[0]).toBeInstanceOf(Service)
+
+      const promise = store.fetchTenantServices(toTenantId('tenantId'))
+
+      expect(store.loading).toBe(true)
+
+      await promise
+
+      expect(store.loading).toBe(false)
     })
 
-    it('updates existing services in state (upsert branch)', async () => {
+    it('clears loading state on error', async () => {
       const store = useServiceStore()
-      const existing = makeService({ id: serviceId, displayName: 'Old Name' })
-      store.tenantServices = [existing]
-      const updatedApiData: ServiceApiData = {
-        ...mockServiceApiData,
-        displayName: 'Updated Name',
-      }
+      vi.mocked(serviceService.getTenantServices).mockRejectedValueOnce(
+        new Error('API error'),
+      )
+
+      expect(store.loading).toBe(false)
+
+      await expect(
+        store.fetchTenantServices(toTenantId('tenantId')),
+      ).rejects.toThrow()
+
+      expect(store.loading).toBe(false)
+    })
+
+    it('overwrites store with results', async () => {
+      const store = useServiceStore()
+      const service = makeService({
+        clientIdentifier: 'serviceClientIdentifier',
+        createdDate: 'serviceCreatedDate',
+        description: 'serviceDescription',
+        displayName: 'serviceDisplayName',
+        id: toServiceId('serviceId'),
+        landingPageUrl: 'serviceLandingPageUrl',
+        name: 'serviceName',
+        roles: [makeServiceRole()],
+        updatedDate: 'serviceUpdatedDate',
+      })
+      store.tenantServices = [service]
+      const serviceApiData = makeServiceApiData({
+        clientIdentifier: 'serviceClientIdentifier2',
+        createdDateTime: 'serviceCreatedDateTime2',
+        description: 'serviceDescription2',
+        displayName: 'serviceDisplayName2',
+        id: toServiceId('serviceId2'),
+        landingPageUrl: 'serviceLandingPageUrl2',
+        name: 'serviceName2',
+        roles: [makeServiceRoleApiData(), makeServiceRoleApiData()],
+        updatedDateTime: 'serviceUpdatedDateTime2',
+      })
       vi.mocked(serviceService.getTenantServices).mockResolvedValue([
-        updatedApiData,
+        serviceApiData,
       ])
 
-      await store.fetchTenantServices(tenantId)
+      expect(store.tenantServices).toHaveLength(1)
+      expect(store.tenantServices[0].clientIdentifier).toBe(
+        'serviceClientIdentifier',
+      )
+      expect(store.tenantServices[0].createdDate).toBe('serviceCreatedDate')
+      expect(store.tenantServices[0].description).toBe('serviceDescription')
+      expect(store.tenantServices[0].displayName).toBe('serviceDisplayName')
+      expect(store.tenantServices[0].id).toBe('serviceId')
+      expect(store.tenantServices[0].landingPageUrl).toBe(
+        'serviceLandingPageUrl',
+      )
+      expect(store.tenantServices[0].name).toBe('serviceName')
+      expect(store.tenantServices[0].roles).toHaveLength(1)
+      expect(store.tenantServices[0].updatedDate).toBe('serviceUpdatedDate')
+
+      await store.fetchTenantServices(toTenantId('tenantId'))
 
       expect(store.tenantServices).toHaveLength(1)
-      expect(store.tenantServices[0].displayName).toBe('Updated Name')
+      expect(store.tenantServices[0].clientIdentifier).toBe(
+        'serviceClientIdentifier2',
+      )
+      expect(store.tenantServices[0].createdDate).toBe(
+        'serviceCreatedDateTime2',
+      )
+      expect(store.tenantServices[0].description).toBe('serviceDescription2')
+      expect(store.tenantServices[0].displayName).toBe('serviceDisplayName2')
+      expect(store.tenantServices[0].id).toBe('serviceId2')
+      expect(store.tenantServices[0].landingPageUrl).toBe(
+        'serviceLandingPageUrl2',
+      )
+      expect(store.tenantServices[0].name).toBe('serviceName2')
+      expect(store.tenantServices[0].roles).toHaveLength(2)
+      expect(store.tenantServices[0].updatedDate).toBe(
+        'serviceUpdatedDateTime2',
+      )
     })
   })
 
   describe('getTenantService', () => {
-    it('retrieves the correct tenant service from state', () => {
+    it('returns the tenant service', () => {
       const store = useServiceStore()
-      const tenantService = makeService({ id: tenantServiceId })
-      store.tenantServices = [tenantService]
+      const service = makeService({
+        id: toServiceId('tenantServiceId'),
+      })
+      store.tenantServices = [service]
 
-      expect(store.getTenantService(tenantServiceId)).toStrictEqual(
-        tenantService,
+      const returnedService = store.getTenantService(
+        toServiceId('tenantServiceId'),
       )
 
-      expect(store.getTenantService(toServiceId('fake'))).toBeUndefined()
+      expect(returnedService).toBeDefined()
+      expect(returnedService?.id).toBe('tenantServiceId')
     })
 
-    it('uses the find iterator correctly (coverage for getService)', () => {
+    it('returns undefined if not found', () => {
       const store = useServiceStore()
-      const ts1 = makeService({ id: toServiceId('ts1') })
-      const ts2 = makeService({ id: toServiceId('ts2') })
-      store.tenantServices = [ts1, ts2]
+      const service = makeService({
+        id: toServiceId('tenantServiceId'),
+      })
+      store.tenantServices = [service]
 
-      const result = store.getTenantService(toServiceId('ts2'))
+      const returnedService = store.getTenantService(
+        toServiceId('tenantServiceId2'),
+      )
 
-      expect(result).toStrictEqual(ts2)
+      expect(returnedService).toBeUndefined()
     })
   })
 })

@@ -364,7 +364,7 @@ export const makeTenantRequestApiData = (
   }
 }
 
-export const makeTenantRequestDetails = (
+export const makeTenantRequestDetailFields = (
   overrides: Partial<TenantRequestDetailFields> = {},
 ): TenantRequestDetailFields => {
   return {
