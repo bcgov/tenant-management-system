@@ -5,6 +5,7 @@ import { NotFoundError } from '../../errors/NotFoundError'
 import { UnexpectedStateError } from '../../errors/UnexpectedStateError'
 import { getManager } from '../../common/db.connection'
 import { TMSConstants } from '../../common/tms.constants'
+import { SSOUser } from '../../entities/SSOUser'
 
 jest.mock('../../common/db.connection', () => ({
   getManager: jest.fn(),
@@ -1056,8 +1057,47 @@ describe('TenantRepository', () => {
         asManager(manager),
       )
 
-      expect(result.ssoUserId).toBe('sso-1')
-      expect(result.createdBy).toBe('sso-1')
+      expect(result.ssoUserId).toBe('SSO-1')
+      expect(result.createdBy).toBe('SSO-1')
+    })
+
+    it('stores the SSO user id in upper case regardless of the casing supplied', async () => {
+      manager.findOne.mockResolvedValueOnce(null)
+
+      const result = await repo.setSSOUser(
+        '1f43e5334f3f4298964f6ef40cd800db',
+        'Barrett',
+        'Falk',
+        'Falk, Barrett',
+        'b2falk',
+        'barrett.2.falk@gov.bc.ca',
+        'idir',
+        asManager(manager),
+      )
+
+      expect(result.ssoUserId).toBe('1F43E5334F3F4298964F6EF40CD800DB')
+      expect(result.updatedBy).toBe('1F43E5334F3F4298964F6EF40CD800DB')
+    })
+
+    it('looks up an existing SSO user using the upper case id', async () => {
+      manager.findOne.mockResolvedValueOnce({
+        ssoUserId: '1F43E5334F3F4298964F6EF40CD800DB',
+      })
+
+      await repo.setSSOUser(
+        '1f43e5334f3f4298964f6ef40cd800db',
+        'Barrett',
+        'Falk',
+        'Falk, Barrett',
+        'b2falk',
+        'barrett.2.falk@gov.bc.ca',
+        'idir',
+        asManager(manager),
+      )
+
+      expect(manager.findOne).toHaveBeenCalledWith(SSOUser, {
+        where: { ssoUserId: '1F43E5334F3F4298964F6EF40CD800DB' },
+      })
     })
   })
 
