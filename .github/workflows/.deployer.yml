@@ -196,6 +196,7 @@ jobs:
               --set-string global.databaseAlias="${{ steps.deploy_crunchy.outputs.release }}-crunchy" \
               --set-string global.loginProxy.clientId="${{ vars.LOGIN_PROXY_CLIENT_ID }}" \
               --set-string global.loginProxy.hostName="${{ vars.LOGIN_PROXY_HOST_NAME }}" \
+              --set-string global.env.logLevel="${{ vars.LOG_LEVEL }}" \
               ${{ inputs.params }} \
               --install --wait ${{ inputs.atomic && '--atomic' || '' }} ${{ steps.vars.outputs.release }} \
               --timeout ${{ inputs.timeout-minutes }}m \
