@@ -87,6 +87,8 @@ export const useAuthStore = defineStore('auth', () => {
     }
 
     let ssoUser
+    const roles: Role[] = []
+
     if (isIdpIdir(tokenParsed.identity_provider)) {
       ssoUser = new SsoUser({
         displayName: tokenParsed.display_name,
@@ -97,6 +99,16 @@ export const useAuthStore = defineStore('auth', () => {
         ssoUserId: tokenParsed.idir_user_guid,
         userName: tokenParsed.idir_username,
       })
+
+      if (tokenParsed.client_roles?.includes(ROLES.OPERATIONS_ADMIN.value)) {
+        roles.push(
+          new Role({
+            description: ROLES.OPERATIONS_ADMIN.title,
+            id: toRoleId(''),
+            name: ROLES.OPERATIONS_ADMIN.value,
+          }),
+        )
+      }
     } else if (isIdpBceidBusiness(tokenParsed.identity_provider)) {
       ssoUser = new SsoUser({
         displayName: tokenParsed.display_name,
@@ -110,18 +122,6 @@ export const useAuthStore = defineStore('auth', () => {
     } else {
       throw new Error(
         `Unknown identity provider: "${tokenParsed.identity_provider}"`,
-      )
-    }
-
-    const roles: Role[] = []
-    const tokenRoles = tokenParsed.client_roles || []
-    if (tokenRoles.includes(ROLES.OPERATIONS_ADMIN.value)) {
-      roles.push(
-        new Role({
-          description: ROLES.OPERATIONS_ADMIN.title,
-          id: toRoleId(''),
-          name: ROLES.OPERATIONS_ADMIN.value,
-        }),
       )
     }
 
