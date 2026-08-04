@@ -1052,8 +1052,9 @@ export class TenantRepository {
     manager?: EntityManager,
   ) {
     const em = manager ?? getManager()
+    const normalizedSsoUserId = ssoUserId.toUpperCase()
     let ssoUser = await em.findOne(SSOUser, {
-      where: { ssoUserId: ssoUserId },
+      where: { ssoUserId: normalizedSsoUserId },
     })
     if (!ssoUser) {
       ssoUser = new SSOUser()
@@ -1061,11 +1062,11 @@ export class TenantRepository {
       ssoUser.lastName = lastName
       ssoUser.displayName = displayName
       ssoUser.userName = userName
-      ssoUser.ssoUserId = ssoUserId
+      ssoUser.ssoUserId = normalizedSsoUserId
       ssoUser.email = email ?? ''
       ssoUser.idpType = idpType
-      ssoUser.createdBy = ssoUserId
-      ssoUser.updatedBy = ssoUserId
+      ssoUser.createdBy = normalizedSsoUserId
+      ssoUser.updatedBy = normalizedSsoUserId
     }
     return ssoUser
   }

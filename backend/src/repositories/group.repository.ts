@@ -233,12 +233,16 @@ export class GroupRepository {
       })
 
       const creatorMap = new Map(
-        creators.map((creator) => [creator.ssoUserId, creator.displayName]),
+        creators.map((creator) => [
+          creator.ssoUserId.toUpperCase(),
+          creator.displayName,
+        ]),
       )
 
       groups.forEach((group) => {
         if (group.createdBy && group.createdBy !== 'system') {
-          group.createdBy = creatorMap.get(group.createdBy) || 'system'
+          group.createdBy =
+            creatorMap.get(group.createdBy.toUpperCase()) || 'system'
         }
       })
     }
