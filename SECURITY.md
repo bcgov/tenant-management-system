@@ -1,10 +1,11 @@
 # Security Policy
 
-## Supported Versions
-
-This product currently has no support and is experimental.  That could change in future.
-
+The CSTAR team takes security vulnerabilities very seriously.
 
 ## Reporting a Vulnerability
 
-Please report any issues or vulerabilities with an [issue](https://github.com/bcgov/tenant-management-system/issues).
+> _Note: Please do not open public GitHub issues for security vulnerabilities._
+
+If you believe you have found a security vulnerability in this product, the repository maintainers would like to know. Report it by clicking the
+"**Report a vulnerability**" button at the top of this repository's [Security
+and quality](https://github.com/bcgov/tenant-management-system/security) tab.

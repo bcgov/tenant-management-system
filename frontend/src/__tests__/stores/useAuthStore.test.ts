@@ -101,6 +101,17 @@ describe('useAuthStore', () => {
       expect(store.authenticatedUser.ssoUser.userName).toBe('idirIdirUsername')
     })
 
+    it('handles missing idir client roles in the token', async () => {
+      const store = useAuthStore()
+      mockTokenParsed = makeIdirToken({
+        client_roles: undefined,
+      })
+
+      await store.init()
+
+      expect(store.authenticatedUser.roles).toHaveLength(0)
+    })
+
     it('handles empty idir client roles in the token', async () => {
       const store = useAuthStore()
       mockTokenParsed = makeIdirToken({
@@ -155,19 +166,16 @@ describe('useAuthStore', () => {
       )
     })
 
-    it.todo(
-      'does not map bceid business client roles from the token',
-      async () => {
-        const store = useAuthStore()
-        mockTokenParsed = makeBceidBusinessToken({
-          client_roles: [ROLES.OPERATIONS_ADMIN.value],
-        })
+    it('does not map bceid business client roles from the token', async () => {
+      const store = useAuthStore()
+      mockTokenParsed = makeBceidBusinessToken({
+        client_roles: [ROLES.OPERATIONS_ADMIN.value],
+      })
 
-        await store.init()
+      await store.init()
 
-        expect(store.authenticatedUser.roles).toHaveLength(0)
-      },
-    )
+      expect(store.authenticatedUser.roles).toHaveLength(0)
+    })
 
     it('does not set a user when tokenParsed is null', async () => {
       const store = useAuthStore()
