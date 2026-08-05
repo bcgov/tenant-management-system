@@ -324,11 +324,9 @@ const undoChanges = () => {
 
     <SimpleDialog
       :buttons="dialogButtons"
-      :has-close="true"
       :message="dialogText"
       :model-value="promptToContinue"
       :title="dialogTitle"
-      dialog-type="warning"
       @button-click="handleDialogButtonClick"
       @update:model-value="
         (val: boolean) => {
