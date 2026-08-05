@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router'
 
 import LoginContainer from '@/components/auth/LoginContainer.vue'
 import TenantHeader from '@/components/tenant/TenantHeader.vue'
+import LoadingWrapper from '@/components/ui/LoadingWrapper.vue'
 import { useNotification } from '@/composables/useNotification'
 import { type TenantId } from '@/models/tenant.model'
 import { useGroupStore } from '@/stores/useGroupStore'
@@ -11,30 +12,34 @@ import { useTenantStore } from '@/stores/useTenantStore'
 
 // --- Component Interface -----------------------------------------------------
 
-const props = defineProps<{ tenantId: TenantId }>()
+const { tenantId } = defineProps<{ tenantId: TenantId }>()
 
 // --- Store and Composable Setup ----------------------------------------------
 
 const groupStore = useGroupStore()
 const notification = useNotification()
-const tenantStore = useTenantStore()
 const route = useRoute()
+const tenantStore = useTenantStore()
 
 // --- Computed Values ---------------------------------------------------------
 
 const groups = computed(() => groupStore.groups)
 
-const tenant = computed(() => tenantStore.getTenant(props.tenantId))
+const tenant = computed(() => tenantStore.getTenant(tenantId))
 
 // --- Component Lifecycle ---------------------------------------------------------
 
-// Use init() in setup instead of a top-level await, so that loading state is
-// set before first render. Look to Suspense when no longer experimental.
 const initialized = ref(false)
+
+// Use an async function, and do not await since that would block rendering
+// until the fetch resolves. This way setup() can complete synchronously while
+// the fetch is happening, the component mounts immediately, and LoadingWrapper
+// shows a spinner if needed. In the future use <Suspense> once it is no longer
+// experimental.
 const init = async () => {
   const [groupsResult, tenantResult] = await Promise.allSettled([
-    groupStore.fetchGroups(props.tenantId),
-    tenantStore.fetchTenant(props.tenantId),
+    groupStore.fetchGroups(tenantId),
+    tenantStore.fetchTenant(tenantId),
   ])
 
   if (groupsResult.status === 'rejected') {
@@ -48,18 +53,20 @@ const init = async () => {
   initialized.value = true
 }
 
-init()
+// Sonar will complain (S7785) about top-level await because it doesn't
+// understand that this is a Vue component. Ignore it until <Suspense> is used.
+init() // NOSONAR
 </script>
 
 <template>
-  <template v-if="initialized">
-    <LoginContainer>
+  <LoginContainer>
+    <LoadingWrapper :loading="!initialized" loading-message="Loading tenant...">
       <TenantHeader
         v-if="!route.params.groupId"
         :groups="groups!"
         :tenant="tenant!"
       />
       <router-view />
-    </LoginContainer>
-  </template>
+    </LoadingWrapper>
+  </LoginContainer>
 </template>
