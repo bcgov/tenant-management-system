@@ -74,8 +74,11 @@ watchEffect(() => {
         <h4 class="mb-4 mt-12">Need Help?</h4>
 
         <span class="p-xlarge">
-          Contact your ministry administrator or email
-          <a href="mailto:minshen.wang@gov.bc.ca">minshen.wang@gov.bc.ca</a>
+          <a
+            href="https://submit.digital.gov.bc.ca/app/form/submit?f=24a08e40-315e-4cfa-a1d4-e5d7a220dacb"
+          >
+            Contact Us
+          </a>
         </span>
       </v-col>
 
