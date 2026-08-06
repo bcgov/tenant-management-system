@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 
+import LoginContainer from '@/components/auth/LoginContainer.vue'
 import ServiceManagement from '@/components/service/ServiceManagement.vue'
+import LoadingWrapper from '@/components/ui/LoadingWrapper.vue'
 import { useNotification } from '@/composables/useNotification'
 import { type ServiceId } from '@/models/service.model'
 import { type TenantId } from '@/models/tenant.model'
@@ -10,7 +12,7 @@ import { useTenantStore } from '@/stores/useTenantStore'
 
 // --- Component Interface -----------------------------------------------------
 
-const props = defineProps<{
+const { tenantId } = defineProps<{
   tenantId: TenantId
 }>()
 
@@ -24,7 +26,7 @@ const tenantStore = useTenantStore()
 
 const handleAddService = async (serviceId: ServiceId) => {
   try {
-    await serviceStore.addServiceToTenant(props.tenantId, serviceId)
+    await serviceStore.addServiceToTenant(tenantId, serviceId)
 
     // Find the added service and add it to tenantServices.
     const addedService = services.value.find(
@@ -46,35 +48,39 @@ const handleAddService = async (serviceId: ServiceId) => {
 // --- Computed Values ---------------------------------------------------------
 
 const services = computed(() =>
-  [...serviceStore.services].sort((a, b) =>
-    a.displayName.localeCompare(b.displayName),
+  [...serviceStore.services].sort((service1, service2) =>
+    service1.displayName.localeCompare(service2.displayName),
   ),
 )
 
 const tenant = computed(() => {
-  const tenant = tenantStore.getTenant(props.tenantId)
+  const tenant = tenantStore.getTenant(tenantId)
   if (!tenant) {
-    throw new Error(`Tenant ${props.tenantId} not found`)
+    throw new Error(`Tenant ${tenantId} not found`)
   }
 
   return tenant
 })
 
 const tenantServices = computed(() =>
-  [...serviceStore.tenantServices].sort((a, b) =>
-    a.displayName.localeCompare(b.displayName),
+  [...serviceStore.tenantServices].sort((tenantService1, tenantService2) =>
+    tenantService1.displayName.localeCompare(tenantService2.displayName),
   ),
 )
 
 // --- Component Lifecycle -----------------------------------------------------
 
-// Use init() in setup instead of a top-level await, so that loading state is
-// set before first render. Look to Suspense when no longer experimental.
 const initialized = ref(false)
+
+// Use an async function, and do not await since that would block rendering
+// until the fetch resolves. This way setup() can complete synchronously while
+// the fetch is happening, the component mounts immediately, and LoadingWrapper
+// shows a spinner if needed. In the future use <Suspense> once it is no longer
+// experimental.
 const init = async () => {
   const [servicesResult, tenantServicesResult] = await Promise.allSettled([
     serviceStore.fetchServices(),
-    serviceStore.fetchTenantServices(props.tenantId),
+    serviceStore.fetchTenantServices(tenantId),
   ])
 
   if (servicesResult.status === 'rejected') {
@@ -88,16 +94,23 @@ const init = async () => {
   initialized.value = true
 }
 
-init()
+// Sonar will complain (S7785) about top-level await because it doesn't
+// understand that this is a Vue component. Ignore it until <Suspense> is used.
+init() // NOSONAR
 </script>
 
 <template>
-  <template v-if="initialized">
-    <ServiceManagement
-      :services="services"
-      :tenant="tenant!"
-      :tenant-services="tenantServices"
-      @add-service="handleAddService"
-    />
-  </template>
+  <LoginContainer>
+    <LoadingWrapper
+      :loading="!initialized"
+      loading-message="Loading connected services..."
+    >
+      <ServiceManagement
+        :services="services"
+        :tenant="tenant!"
+        :tenant-services="tenantServices"
+        @add-service="handleAddService"
+      />
+    </LoadingWrapper>
+  </LoginContainer>
 </template>
