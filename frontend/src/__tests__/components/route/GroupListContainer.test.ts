@@ -1,206 +1,392 @@
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { nextTick } from 'vue'
 
 import { makeGroup, makeTenant, makeUser } from '@/__tests__/__factories__'
+import { createMockAuthStore } from '@/__tests__/__helpers__/useAuthStore.mock'
 
 import GroupListContainer from '@/components/route/GroupListContainer.vue'
 import { DomainError } from '@/errors/domain/DomainError'
+import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
 import { ServerError } from '@/errors/domain/ServerError'
-import { Group, toGroupId } from '@/models/group.model'
+import { toGroupId } from '@/models/group.model'
 import { toTenantId } from '@/models/tenant.model'
-import { User } from '@/models/user.model'
-import { useAuthStore } from '@/stores/useAuthStore'
+import { toUserId } from '@/models/user.model'
 import { useGroupStore } from '@/stores/useGroupStore'
 import { useTenantStore } from '@/stores/useTenantStore'
 import { currentUserHasRole } from '@/utils/permissions'
 
-vi.mock('@/services/config.service', () => ({
-  config: { api: { baseUrl: 'http://localhost/api' }, oidc: {} },
-}))
-
-const mockNotify = { success: vi.fn(), error: vi.fn() }
-vi.mock('@/composables/useNotification', () => ({
-  useNotification: () => mockNotify,
-}))
-
+const mockError = vi.fn()
 const mockPush = vi.fn()
+const mockSuccess = vi.fn()
+
 vi.mock('vue-router', () => ({
-  useRouter: () => ({ push: mockPush }),
+  useRouter: () => ({
+    push: mockPush,
+  }),
+}))
+
+vi.mock('@/composables/useNotification', () => ({
+  useNotification: () => ({
+    error: mockError,
+    success: mockSuccess,
+  }),
+}))
+
+let currentAuthStore = createMockAuthStore()
+
+vi.mock('@/stores/useAuthStore', () => ({
+  useAuthStore: () => currentAuthStore,
 }))
 
 vi.mock('@/utils/permissions', () => ({
   currentUserHasRole: vi.fn(),
 }))
 
-vi.mock('@/stores/useAuthStore', () => ({ useAuthStore: vi.fn() }))
-vi.mock('@/stores/useGroupStore', () => ({ useGroupStore: vi.fn() }))
-vi.mock('@/stores/useTenantStore', () => ({ useTenantStore: vi.fn() }))
-
-type AuthStoreMock = Partial<ReturnType<typeof useAuthStore>>
-type GroupStoreMock = Partial<ReturnType<typeof useGroupStore>>
-type TenantStoreMock = Partial<ReturnType<typeof useTenantStore>>
-
-const mountComponent = (tenantId = 't1') => {
-  return mount(GroupListContainer, {
-    props: { tenantId: toTenantId(tenantId) },
+const mountComponent = () =>
+  mount(GroupListContainer, {
+    props: {
+      tenantId: toTenantId('tenantId1'),
+    },
     global: {
       stubs: {
+        ButtonPrimary: {
+          emits: ['click'],
+          name: 'ButtonPrimary',
+          template: `
+            <button @click="$emit('click')">
+              create
+            </button>
+          `,
+        },
         GroupCreateDialog: {
+          emits: ['clear-duplicate-error', 'submit', 'update:modelValue'],
           name: 'GroupCreateDialog',
-          template: '<div id="dialog-stub" />',
           props: ['isDuplicateName', 'modelValue'],
+          template: '<div />',
         },
         GroupList: {
+          emits: ['select'],
           name: 'GroupList',
-          template: '<div id="list-stub" />',
-          props: ['groups', 'isAdmin'],
+          props: ['groups'],
+          template: '<div />',
         },
         LoginContainer: {
           template: '<div><slot /></div>',
         },
-        ButtonPrimary: {
-          template:
-            '<button id="create-btn" @click="$emit(\'click\')"><slot /></button>',
+        'v-col': {
+          template: '<div><slot /></div>',
         },
         'v-container': {
-          template: '<div class="v-container-stub"><slot /></div>',
+          template: '<div><slot /></div>',
         },
-        'v-row': { template: '<div><slot /></div>' },
-        'v-col': { template: '<div><slot /></div>' },
+        'v-row': {
+          template: '<div><slot /></div>',
+        },
       },
     },
   })
-}
 
-describe('GroupListContainer.vue', () => {
-  let mockAuth: AuthStoreMock
-  let mockGroup: GroupStoreMock
+describe('GroupListContainer', () => {
+  let groupStore: ReturnType<typeof useGroupStore>
+  let tenantStore: ReturnType<typeof useTenantStore>
 
   beforeEach(() => {
-    vi.clearAllMocks()
     setActivePinia(createPinia())
-    mockAuth = { authenticatedUser: null as unknown as User }
-    mockGroup = {
-      addGroup: vi.fn(),
-      addGroupUser: vi.fn(),
-      loading: false,
-      groups: [] as Group[],
-    }
-    const mockTenant: TenantStoreMock = {
-      getTenant: vi.fn().mockReturnValue(makeTenant({ id: toTenantId('t1') })),
-    }
-    vi.mocked(useAuthStore).mockReturnValue(
-      mockAuth as ReturnType<typeof useAuthStore>,
-    )
-    vi.mocked(useGroupStore).mockReturnValue(
-      mockGroup as ReturnType<typeof useGroupStore>,
-    )
-    vi.mocked(useTenantStore).mockReturnValue(
-      mockTenant as ReturnType<typeof useTenantStore>,
-    )
+    vi.clearAllMocks()
+
+    currentAuthStore = createMockAuthStore({
+      user: makeUser(),
+    })
+
+    groupStore = useGroupStore()
+    groupStore.groups = []
+
+    tenantStore = useTenantStore()
+    tenantStore.tenants = [makeTenant({ id: toTenantId('tenantId1') })]
+
+    vi.mocked(currentUserHasRole).mockReturnValue(false)
   })
 
-  describe('Template and Lifecycle', () => {
+  it('throws an error when tenant is not found', () => {
+    tenantStore.getTenant = vi.fn().mockReturnValue(undefined)
+
+    expect(() => mountComponent()).toThrow('Tenant tenantId1 not found')
+  })
+
+  describe('create button', () => {
+    it('shows when user is admin and no groups', () => {
+      groupStore.groups = []
+      vi.mocked(currentUserHasRole).mockReturnValue(true)
+
+      const wrapper = mountComponent()
+
+      expect(wrapper.findComponent({ name: 'ButtonPrimary' }).exists()).toBe(
+        true,
+      )
+    })
+
+    it('shows when user is admin and has groups', () => {
+      groupStore.groups = [makeGroup()]
+      vi.mocked(currentUserHasRole).mockReturnValue(true)
+
+      const wrapper = mountComponent()
+
+      expect(wrapper.findComponent({ name: 'ButtonPrimary' }).exists()).toBe(
+        true,
+      )
+    })
+
+    it('hides when user is not admin and no groups', () => {
+      groupStore.groups = []
+      vi.mocked(currentUserHasRole).mockReturnValue(false)
+
+      const wrapper = mountComponent()
+
+      expect(wrapper.findComponent({ name: 'ButtonPrimary' }).exists()).toBe(
+        false,
+      )
+    })
+
+    it('hides when user is not admin and has groups', () => {
+      groupStore.groups = [makeGroup()]
+      vi.mocked(currentUserHasRole).mockReturnValue(false)
+
+      const wrapper = mountComponent()
+
+      expect(wrapper.findComponent({ name: 'ButtonPrimary' }).exists()).toBe(
+        false,
+      )
+    })
+  })
+
+  describe('template', () => {
     it('renders empty state when no groups exist', () => {
-      mockGroup.groups = []
       const wrapper = mountComponent()
-      expect(wrapper.find('.v-container-stub').exists()).toBe(true)
+
+      expect(wrapper.text()).toContain('No groups yet')
     })
 
-    it('handles clear-duplicate-error event', async () => {
-      const wrapper = mountComponent()
-      const dialog = wrapper.getComponent({ name: 'GroupCreateDialog' })
-
-      await dialog.vm.$emit('clear-duplicate-error')
-      expect(dialog.props('isDuplicateName')).toBe(false)
-    })
-  })
-
-  describe('handleGroupCreate Logic', () => {
-    it('skips user addition if addUser is false', async () => {
-      const addMock = vi.mocked(mockGroup.addGroup)
-      if (addMock) {
-        addMock.mockResolvedValue(makeGroup())
-      }
-      const addUserSpy = vi.spyOn(mockGroup, 'addGroupUser')
+    it('renders GroupList when groups exist', () => {
+      groupStore.groups = [makeGroup()]
 
       const wrapper = mountComponent()
-      const dialog = wrapper.getComponent({ name: 'GroupCreateDialog' })
 
-      await dialog.vm.$emit('submit', { name: 'G' }, false)
-      await nextTick()
-
-      expect(addMock).toHaveBeenCalled()
-      expect(addUserSpy).not.toHaveBeenCalled()
-    })
-
-    it('handles successful creation and user addition', async () => {
-      const user = makeUser()
-      Object.assign(mockAuth, { authenticatedUser: user })
-      vi.mocked(currentUserHasRole).mockReturnValue(true)
-
-      const addMock = vi.mocked(mockGroup.addGroup)
-      if (addMock) {
-        addMock.mockResolvedValue(makeGroup())
-      }
-      const addUserMock = vi.mocked(mockGroup.addGroupUser)
-      if (addUserMock) {
-        addUserMock.mockResolvedValue(undefined)
-      }
-
-      const wrapper = mountComponent()
-      const dialog = wrapper.getComponent({ name: 'GroupCreateDialog' })
-
-      await dialog.vm.$emit('submit', { name: 'New G' }, true)
-      await nextTick()
-      await nextTick()
-
-      expect(mockNotify.success).toHaveBeenCalledWith(
-        'User added to Group Successfully',
-      )
-    })
-
-    it('covers error branches during creation and addition', async () => {
-      vi.mocked(currentUserHasRole).mockReturnValue(true)
-      const wrapper = mountComponent()
-      const dialog = wrapper.getComponent({ name: 'GroupCreateDialog' })
-      const addMock = vi.mocked(mockGroup.addGroup)
-
-      const srvError = new ServerError('Tech')
-      Object.defineProperty(srvError, 'userMessage', { value: null })
-      if (addMock) {
-        addMock.mockRejectedValueOnce(srvError)
-      }
-      await dialog.vm.$emit('submit', { name: 'G' }, false)
-      await nextTick()
-      expect(mockNotify.error).toHaveBeenLastCalledWith(
-        'Failed to create the new group',
-      )
-
-      const user = makeUser()
-      Object.assign(mockAuth, { authenticatedUser: user })
-      if (addMock) {
-        addMock.mockResolvedValue(makeGroup())
-      }
-      const addUserMock = vi.mocked(mockGroup.addGroupUser)
-      if (addUserMock) {
-        addUserMock.mockRejectedValueOnce(new DomainError('E', 'Add Fail'))
-      }
-
-      await dialog.vm.$emit('submit', { name: 'G' }, true)
-      await nextTick()
-      await nextTick()
-      expect(mockNotify.error).toHaveBeenLastCalledWith('Add Fail')
+      expect(wrapper.findComponent({ name: 'GroupList' }).exists()).toBe(true)
     })
   })
 
-  it('navigates to group members on selection', async () => {
-    mockGroup.groups = [makeGroup({ id: toGroupId('g1') })]
-    const wrapper = mountComponent()
-    const list = wrapper.getComponent({ name: 'GroupList' })
-    await list.vm.$emit('select', 'g1')
-    expect(mockPush).toHaveBeenCalledWith('/tenants/t1/groups/g1/members')
+  describe('navigation', () => {
+    it('navigates to group members when group selected', async () => {
+      groupStore.groups = [makeGroup({ id: toGroupId('groupId1') })]
+
+      const wrapper = mountComponent()
+      await wrapper
+        .findComponent({ name: 'GroupList' })
+        .vm.$emit('select', 'groupId1')
+
+      expect(mockPush).toHaveBeenCalledWith(
+        '/tenants/tenantId1/groups/groupId1/members',
+      )
+    })
+  })
+
+  describe('dialog', () => {
+    it('opens create dialog when create button clicked', async () => {
+      vi.mocked(currentUserHasRole).mockReturnValue(true)
+
+      const wrapper = mountComponent()
+      await wrapper.findComponent({ name: 'ButtonPrimary' }).trigger('click')
+
+      expect(
+        wrapper
+          .findComponent({ name: 'GroupCreateDialog' })
+          .props('modelValue'),
+      ).toBe(true)
+    })
+
+    it('updates dialog visibility when dialog emits update:modelValue', async () => {
+      const wrapper = mountComponent()
+      const dialog = wrapper.findComponent({ name: 'GroupCreateDialog' })
+
+      expect(dialog.props('modelValue')).toBe(false)
+
+      await dialog.vm.$emit('update:modelValue', true)
+
+      expect(dialog.props('modelValue')).toBe(true)
+
+      await dialog.vm.$emit('update:modelValue', false)
+
+      expect(dialog.props('modelValue')).toBe(false)
+    })
+
+    it('clears duplicate error when requested', async () => {
+      const wrapper = mountComponent()
+      await wrapper
+        .findComponent({ name: 'GroupCreateDialog' })
+        .vm.$emit('clear-duplicate-error')
+
+      expect(
+        wrapper
+          .findComponent({ name: 'GroupCreateDialog' })
+          .props('isDuplicateName'),
+      ).toBe(false)
+    })
+  })
+
+  describe('handleGroupCreate', () => {
+    it('creates group without adding user', async () => {
+      groupStore.addGroup = vi.fn().mockResolvedValue(makeGroup())
+      groupStore.addGroupUser = vi.fn()
+
+      const wrapper = mountComponent()
+
+      await wrapper
+        .findComponent({ name: 'GroupCreateDialog' })
+        .vm.$emit('submit', { description: 'description', name: 'name' }, false)
+      await flushPromises()
+
+      expect(groupStore.addGroup).toHaveBeenCalled()
+      expect(groupStore.addGroupUser).not.toHaveBeenCalled()
+      expect(mockSuccess).toHaveBeenCalledWith('Group Created Successfully')
+    })
+
+    it('shows group duplicate error', async () => {
+      groupStore.addGroup = vi
+        .fn()
+        .mockRejectedValue(new DuplicateEntityError())
+      const wrapper = mountComponent()
+
+      await wrapper
+        .findComponent({ name: 'GroupCreateDialog' })
+        .vm.$emit('submit', { description: 'description', name: 'name' }, false)
+      await flushPromises()
+
+      expect(
+        wrapper
+          .findComponent({ name: 'GroupCreateDialog' })
+          .props('isDuplicateName'),
+      ).toBe(true)
+    })
+
+    it('shows group domain error message', async () => {
+      groupStore.addGroup = vi
+        .fn()
+        .mockRejectedValue(new DomainError('message', 'userMessage'))
+      const wrapper = mountComponent()
+
+      await wrapper
+        .findComponent({ name: 'GroupCreateDialog' })
+        .vm.$emit('submit', { description: 'description', name: 'name' }, false)
+      await flushPromises()
+
+      expect(mockError).toHaveBeenCalledWith('userMessage')
+    })
+
+    it('shows group generic when domain error without user message', async () => {
+      groupStore.addGroup = vi
+        .fn()
+        .mockRejectedValue(new DomainError('message'))
+      const wrapper = mountComponent()
+
+      await wrapper
+        .findComponent({ name: 'GroupCreateDialog' })
+        .vm.$emit('submit', { description: 'description', name: 'name' }, false)
+      await flushPromises()
+
+      expect(mockError).toHaveBeenCalledWith('Failed to create the new group')
+    })
+
+    it('shows group server error message', async () => {
+      groupStore.addGroup = vi
+        .fn()
+        .mockRejectedValue(new ServerError('userMessage'))
+      const wrapper = mountComponent()
+
+      await wrapper
+        .findComponent({ name: 'GroupCreateDialog' })
+        .vm.$emit('submit', { description: 'description', name: 'name' }, false)
+      await flushPromises()
+
+      expect(mockError).toHaveBeenCalledWith('userMessage')
+    })
+
+    it('shows group generic error when server error has no user message', async () => {
+      const error = new ServerError()
+      groupStore.addGroup = vi.fn().mockRejectedValue(error)
+      const wrapper = mountComponent()
+
+      await wrapper
+        .findComponent({ name: 'GroupCreateDialog' })
+        .vm.$emit('submit', { description: 'description', name: 'name' }, false)
+      await flushPromises()
+
+      expect(mockError).toHaveBeenCalledWith('Failed to create the new group')
+    })
+
+    it('shows group generic error when group creation fails unexpectedly', async () => {
+      groupStore.addGroup = vi.fn().mockRejectedValue(new Error('error'))
+      const wrapper = mountComponent()
+
+      await wrapper
+        .findComponent({ name: 'GroupCreateDialog' })
+        .vm.$emit('submit', { description: 'description', name: 'name' }, false)
+      await flushPromises()
+
+      expect(mockError).toHaveBeenCalledWith('Failed to create the new group')
+    })
+
+    it('adds user when requested', async () => {
+      const user = makeUser({ id: toUserId('userId1') })
+      currentAuthStore = createMockAuthStore({
+        user: user,
+      })
+      groupStore.addGroup = vi.fn().mockResolvedValue(makeGroup())
+      groupStore.addGroupUser = vi.fn().mockResolvedValue(undefined)
+      const wrapper = mountComponent()
+
+      await wrapper
+        .findComponent({ name: 'GroupCreateDialog' })
+        .vm.$emit('submit', { description: 'description', name: 'name' }, true)
+      await flushPromises()
+
+      expect(groupStore.addGroupUser).toHaveBeenCalledWith(
+        'tenantId1',
+        expect.anything(),
+        user,
+      )
+    })
+
+    it('shows user error when DomainError has user message', async () => {
+      groupStore.addGroup = vi.fn().mockResolvedValue(makeGroup())
+      groupStore.addGroupUser = vi
+        .fn()
+        .mockRejectedValue(new DomainError('message', 'userMessage'))
+      const wrapper = mountComponent()
+
+      await wrapper
+        .findComponent({ name: 'GroupCreateDialog' })
+        .vm.$emit('submit', { description: 'description', name: 'name' }, true)
+      await flushPromises()
+
+      expect(mockError).toHaveBeenCalledWith('userMessage')
+    })
+
+    it('shows user generic error when DomainError has no user message', async () => {
+      groupStore.addGroup = vi.fn().mockResolvedValue(makeGroup())
+      groupStore.addGroupUser = vi
+        .fn()
+        .mockRejectedValue(new DomainError('message'))
+      const wrapper = mountComponent()
+
+      await wrapper
+        .findComponent({ name: 'GroupCreateDialog' })
+        .vm.$emit('submit', { description: 'description', name: 'name' }, true)
+      await flushPromises()
+
+      expect(mockError).toHaveBeenCalledWith(
+        'Failed to add the user to the new group',
+      )
+    })
   })
 })
