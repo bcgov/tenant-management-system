@@ -1,7 +1,6 @@
-import { fireEvent, render, screen } from '@testing-library/vue'
+import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { nextTick } from 'vue'
 
 import {
   makeGroup,
@@ -15,8 +14,10 @@ import { useNotification } from '@/composables/useNotification'
 import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
 import { toGroupId } from '@/models/group.model'
 import { toTenantId } from '@/models/tenant.model'
-import { toUserId, User } from '@/models/user.model'
+import { toUserId } from '@/models/user.model'
+import vuetify from '@/plugins/vuetify'
 import { useGroupStore } from '@/stores/useGroupStore'
+import { useTenantStore } from '@/stores/useTenantStore'
 import { useUserStore } from '@/stores/useUserStore'
 import { IDIR_SEARCH_TYPE } from '@/utils/constants'
 
@@ -24,144 +25,110 @@ vi.mock('@/composables/useNotification', () => ({
   useNotification: vi.fn(),
 }))
 
-function makeGroupMemberManagementStub({
-  addUser = makeUser({ id: toUserId('u1') }),
-  duplicateUser = makeUser({
-    ssoUser: makeSsoUser({ displayName: 'displayName' }),
-  }),
-} = {}) {
-  return {
-    emits: ['add', 'delete', 'search', 'clear-search', 'cancel'],
-    name: 'GroupMemberManagement',
-    props: ['group', 'tenant', 'loadingSearch', 'searchResults'],
-    setup() {
-      return { addUser, duplicateUser, IDIR_SEARCH_TYPE }
-    },
-    template: `
-      <div>
-        <div data-testid="loading-search">{{ String(loadingSearch) }}</div>
-        <div data-testid="search-results-count">
-          {{ searchResults === null ? 'null' : searchResults.length }}
-        </div>
-        <button @click="$emit('add', addUser)">stub-add</button>
-        <button @click="$emit('add', duplicateUser)">stub-add-duplicate</button>
-        <button @click="$emit('delete', 'gu1')">stub-delete</button>
-        <button
-          @click="$emit('search', IDIR_SEARCH_TYPE.FIRST_NAME.value, 'firstName')"
-        >
-          stub-search-first-name
-        </button>
-        <button
-          @click="$emit('search', IDIR_SEARCH_TYPE.LAST_NAME.value, 'lastName')"
-        >
-          stub-search-last-name
-        </button>
-        <button
-          @click="$emit('search', IDIR_SEARCH_TYPE.EMAIL.value,
-          'firstName.lastName@gov.bc.ca')"
-        >
-          stub-search-email
-        </button>
-        <button @click="$emit('search', 'invalidSearch', 'invalidSearch')">
-          stub-invalid-search
-        </button>
-        <button @click="$emit('clear-search')">stub-clear-search</button>
-        <button @click="$emit('cancel')">stub-cancel</button>
-      </div>
-    `,
-  }
+const child = (wrapper: ReturnType<typeof mountComponent>) => {
+  return wrapper.getComponent({ name: 'GroupMemberManagement' })
 }
 
-function renderComponent(
-  groupId = toGroupId('g1'),
-  tenantId = toTenantId('t1'),
-  stubOptions: {
-    addUser?: User
-    duplicateUser?: User
-  } = {},
-) {
-  return render(GroupMemberContainer, {
+const mountComponent = (groupId = 'groupId1', tenantId = 'tenantId1') => {
+  return mount(GroupMemberContainer, {
     global: {
+      plugins: [vuetify],
       stubs: {
-        GroupMemberManagement: makeGroupMemberManagementStub(stubOptions),
+        GroupMemberManagement: true,
+        LoginContainer: { template: '<div><slot /></div>' },
       },
     },
-    props: { groupId, tenantId },
+    props: { groupId: toGroupId(groupId), tenantId: toTenantId(tenantId) },
   })
 }
 
 describe('GroupMemberContainer', () => {
   let groupStore: ReturnType<typeof useGroupStore>
-  let notificationMock: ReturnType<typeof useNotification>
+  let tenantStore: ReturnType<typeof useTenantStore>
   let userStore: ReturnType<typeof useUserStore>
+  let notificationMock: ReturnType<typeof useNotification>
 
   beforeEach(() => {
     setActivePinia(createPinia())
+
     groupStore = useGroupStore()
+    groupStore.groups = [makeGroup({ id: toGroupId('groupId1') })]
+
+    tenantStore = useTenantStore()
+    tenantStore.tenants = [makeTenant({ id: toTenantId('tenantId1') })]
+
+    userStore = useUserStore()
+
     notificationMock = {
+      items: [],
+
       error: vi.fn(),
       info: vi.fn(),
-      items: [],
       remove: vi.fn(),
       success: vi.fn(),
       warning: vi.fn(),
     }
     vi.mocked(useNotification).mockReturnValue(notificationMock)
-    userStore = useUserStore()
+  })
+
+  describe('group and tenant computed', () => {
+    it('passes the resolved group and tenant down as props', async () => {
+      const group = makeGroup({ id: toGroupId('groupId1') })
+      groupStore.groups = [group]
+      const tenant = makeTenant({ id: toTenantId('tenantId1') })
+      tenantStore.tenants = [tenant]
+
+      const wrapper = mountComponent()
+
+      expect(child(wrapper).props('group')).toEqual(group)
+      expect(child(wrapper).props('tenant')).toEqual(tenant)
+    })
   })
 
   describe('handleAddMember', () => {
     it('calls addGroupUser, clears searchResults, and shows success notification', async () => {
-      const addUser = makeUser({ id: toUserId('u1') })
-      const group = makeGroup({ id: toGroupId('g1') })
-      const tenant = makeTenant({ id: toTenantId('t1') })
+      const user = makeUser({ id: toUserId('userId1') })
       groupStore.addGroupUser = vi.fn().mockResolvedValue(undefined)
 
-      renderComponent(group.id, tenant.id)
-      await fireEvent.click(screen.getByRole('button', { name: 'stub-add' }))
+      const wrapper = mountComponent('groupId1', 'tenantId1')
+      await child(wrapper).vm.$emit('add', user)
+      await flushPromises()
 
       expect(groupStore.addGroupUser).toHaveBeenCalledWith(
-        tenant.id,
-        group.id,
-        addUser,
+        'tenantId1',
+        'groupId1',
+        user,
       )
       expect(notificationMock.success).toHaveBeenCalledWith(
         'New member successfully added to this group',
         'Member Added',
       )
-      expect(screen.getByTestId('search-results-count')).toHaveTextContent(
-        'null',
-      )
+      expect(child(wrapper).props('searchResults')).toBeNull()
     })
 
-    it('shows duplicate error notification and clears results on DuplicateEntityError', async () => {
-      const duplicateUser = makeUser({
-        ssoUser: makeSsoUser({ displayName: 'displayName2' }),
+    it('shows duplicate error and clears searchResults on DuplicateEntityError', async () => {
+      const user = makeUser({
+        ssoUser: makeSsoUser({ displayName: 'displayName' }),
       })
-      groupStore.addGroupUser = vi
-        .fn()
-        .mockRejectedValue(new DuplicateEntityError())
+      const error = new DuplicateEntityError()
+      groupStore.addGroupUser = vi.fn().mockRejectedValue(error)
 
-      renderComponent(undefined, undefined, { duplicateUser })
-      await fireEvent.click(
-        screen.getByRole('button', { name: 'stub-add-duplicate' }),
-      )
+      const wrapper = mountComponent()
+      await child(wrapper).vm.$emit('add', user)
+      await flushPromises()
 
       expect(notificationMock.error).toHaveBeenCalledWith(
-        expect.stringContaining('displayName2'),
+        expect.stringContaining('displayName'),
       )
-      expect(screen.getByTestId('search-results-count')).toHaveTextContent(
-        'null',
-      )
+      expect(child(wrapper).props('searchResults')).toBeNull()
     })
 
-    it('shows generic error notification on unexpected error', async () => {
-      groupStore.addGroupUser = vi
-        .fn()
-        .mockRejectedValue(new Error('unexpected'))
+    it('shows generic error notification on unexpected addGroupUser error', async () => {
+      groupStore.addGroupUser = vi.fn().mockRejectedValue(new Error('message'))
 
-      renderComponent()
-      await fireEvent.click(screen.getByRole('button', { name: 'stub-add' }))
+      const wrapper = mountComponent()
+      await child(wrapper).vm.$emit('add', makeUser())
+      await flushPromises()
 
       expect(notificationMock.error).toHaveBeenCalledWith(
         'Failed to add member to group',
@@ -171,40 +138,52 @@ describe('GroupMemberContainer', () => {
 
   describe('handleClearSearch', () => {
     it('sets searchResults to null', async () => {
-      renderComponent()
-      await fireEvent.click(
-        screen.getByRole('button', { name: 'stub-clear-search' }),
-      )
+      userStore.searchIdirEmail = vi
+        .fn()
+        .mockResolvedValue([makeUser({ id: toUserId('userId1') })])
+      userStore.searchBCeIDEmail = vi
+        .fn()
+        .mockResolvedValue([makeUser({ id: toUserId('userId2') })])
 
-      expect(screen.getByTestId('search-results-count')).toHaveTextContent(
-        'null',
+      const wrapper = mountComponent()
+      await child(wrapper).vm.$emit(
+        'search',
+        IDIR_SEARCH_TYPE.EMAIL.value,
+        'email@example.com',
       )
+      await flushPromises()
+
+      await child(wrapper).vm.$emit('clear-search')
+
+      expect(child(wrapper).props('searchResults')).toBeNull()
     })
   })
 
   describe('handleDeleteMember', () => {
     it('calls removeGroupUser and shows success notification', async () => {
-      const group = makeGroup({ id: toGroupId('g1') })
-      const tenant = makeTenant({ id: toTenantId('t1') })
       groupStore.removeGroupUser = vi.fn().mockResolvedValue(undefined)
 
-      renderComponent(group.id, tenant.id)
+      const wrapper = mountComponent('groupId1', 'tenantId1')
+      await child(wrapper).vm.$emit('delete', 'groupUserId1')
+      await flushPromises()
 
-      await fireEvent.click(screen.getByRole('button', { name: 'stub-delete' }))
-
-      expect(groupStore.removeGroupUser).toHaveBeenCalledWith('t1', 'g1', 'gu1')
+      expect(groupStore.removeGroupUser).toHaveBeenCalledWith(
+        toTenantId('tenantId1'),
+        toGroupId('groupId1'),
+        'groupUserId1',
+      )
       expect(notificationMock.success).toHaveBeenCalledWith(
         'Member successfully removed from this group',
         'Member Removed',
       )
     })
 
-    it('shows error notification when removeGroupMember fails', async () => {
+    it('shows error notification when removeGroupUser fails', async () => {
       groupStore.removeGroupUser = vi.fn().mockRejectedValue(new Error('fail'))
 
-      renderComponent()
-
-      await fireEvent.click(screen.getByRole('button', { name: 'stub-delete' }))
+      const wrapper = mountComponent('groupId1', 'tenantId1')
+      await child(wrapper).vm.$emit('delete', 'groupUserId1')
+      await flushPromises()
 
       expect(notificationMock.error).toHaveBeenCalledWith(
         'Failed to remove member from group',
@@ -225,124 +204,143 @@ describe('GroupMemberContainer', () => {
         .mockResolvedValue([makeUser({ id: toUserId('idirEmail') })])
       userStore.searchBCeIDDisplayName = vi
         .fn()
-        .mockResolvedValue([makeUser({ id: toUserId('BCeIDDisplayName') })])
+        .mockResolvedValue([makeUser({ id: toUserId('bceidDisplayName') })])
       userStore.searchBCeIDEmail = vi
         .fn()
-        .mockResolvedValue([makeUser({ id: toUserId('BCeIDEmail') })])
+        .mockResolvedValue([makeUser({ id: toUserId('bceidEmail') })])
     })
 
     it('searches by first name and concatenates BCeID display name results', async () => {
-      renderComponent()
-      await fireEvent.click(
-        screen.getByRole('button', { name: 'stub-search-first-name' }),
+      const wrapper = mountComponent()
+      await child(wrapper).vm.$emit(
+        'search',
+        IDIR_SEARCH_TYPE.FIRST_NAME.value,
+        'firstName',
       )
-      await nextTick()
+      await flushPromises()
 
       expect(userStore.searchIdirFirstName).toHaveBeenCalledWith('firstName')
       expect(userStore.searchBCeIDDisplayName).toHaveBeenCalledWith('firstName')
-      expect(screen.getByTestId('search-results-count')).toHaveTextContent('2')
+      expect(child(wrapper).props('searchResults')).toEqual([
+        expect.objectContaining({ id: toUserId('idirFirstName') }),
+        expect.objectContaining({ id: toUserId('bceidDisplayName') }),
+      ])
     })
 
     it('searches by last name and concatenates BCeID display name results', async () => {
-      renderComponent()
-
-      await fireEvent.click(
-        screen.getByRole('button', { name: 'stub-search-last-name' }),
+      const wrapper = mountComponent()
+      await child(wrapper).vm.$emit(
+        'search',
+        IDIR_SEARCH_TYPE.LAST_NAME.value,
+        'lastName',
       )
-      await nextTick()
+      await flushPromises()
 
       expect(userStore.searchIdirLastName).toHaveBeenCalledWith('lastName')
       expect(userStore.searchBCeIDDisplayName).toHaveBeenCalledWith('lastName')
-      expect(screen.getByTestId('search-results-count')).toHaveTextContent('2')
+      expect(child(wrapper).props('searchResults')).toEqual([
+        expect.objectContaining({ id: toUserId('idirLastName') }),
+        expect.objectContaining({ id: toUserId('bceidDisplayName') }),
+      ])
     })
 
     it('searches by email and concatenates BCeID email results', async () => {
-      renderComponent()
-      await fireEvent.click(
-        screen.getByRole('button', { name: 'stub-search-email' }),
+      const wrapper = mountComponent()
+      await child(wrapper).vm.$emit(
+        'search',
+        IDIR_SEARCH_TYPE.EMAIL.value,
+        'email@example.com',
       )
-      await nextTick()
+      await flushPromises()
 
       expect(userStore.searchIdirEmail).toHaveBeenCalledWith(
-        'firstName.lastName@gov.bc.ca',
+        'email@example.com',
       )
       expect(userStore.searchBCeIDEmail).toHaveBeenCalledWith(
-        'firstName.lastName@gov.bc.ca',
+        'email@example.com',
       )
-      expect(screen.getByTestId('search-results-count')).toHaveTextContent('2')
+      expect(child(wrapper).props('searchResults')).toEqual([
+        expect.objectContaining({ id: toUserId('idirEmail') }),
+        expect.objectContaining({ id: toUserId('bceidEmail') }),
+      ])
     })
 
-    it('throws when search type is invalid', async () => {
-      renderComponent()
-      await fireEvent.click(
-        screen.getByRole('button', { name: 'stub-invalid-search' }),
-      )
-      await nextTick()
+    it('shows an error when an invalid search type is provided', async () => {
+      const wrapper = mountComponent()
+      await child(wrapper).vm.$emit('search', 'invalidSearch', 'invalidSearch')
+      await flushPromises()
 
       expect(notificationMock.error).toHaveBeenCalledWith('User search failed')
-      expect(screen.getByTestId('search-results-count')).toHaveTextContent(
-        'null',
-      )
+      expect(child(wrapper).props('searchResults')).toBeNull()
     })
 
     it('shows error and nulls results when search throws', async () => {
       userStore.searchIdirFirstName = vi
         .fn()
-        .mockRejectedValue(new Error('network'))
+        .mockRejectedValue(new Error('message'))
 
-      renderComponent()
-      await fireEvent.click(
-        screen.getByRole('button', { name: 'stub-search-first-name' }),
+      const wrapper = mountComponent()
+      await child(wrapper).vm.$emit(
+        'search',
+        IDIR_SEARCH_TYPE.FIRST_NAME.value,
+        'firstName',
       )
-      await nextTick()
+      await flushPromises()
 
       expect(notificationMock.error).toHaveBeenCalledWith('User search failed')
-      expect(screen.getByTestId('search-results-count')).toHaveTextContent(
-        'null',
-      )
+      expect(child(wrapper).props('searchResults')).toBeNull()
     })
 
-    it('resets isLoadingSearch to false after search completes', async () => {
-      renderComponent()
-      await fireEvent.click(
-        screen.getByRole('button', { name: 'stub-search-email' }),
+    it('resets loadingSearch to false after search completes', async () => {
+      const wrapper = mountComponent()
+      await child(wrapper).vm.$emit(
+        'search',
+        IDIR_SEARCH_TYPE.EMAIL.value,
+        'email@example.com',
       )
-      await nextTick()
+      await flushPromises()
 
-      expect(screen.getByTestId('loading-search')).toHaveTextContent('false')
+      expect(child(wrapper).props('loadingSearch')).toBe(false)
     })
 
-    it('resets isLoadingSearch to false even when search throws', async () => {
+    it('resets loadingSearch to false even when search throws', async () => {
       userStore.searchIdirEmail = vi.fn().mockRejectedValue(new Error('fail'))
 
-      renderComponent()
-      await fireEvent.click(
-        screen.getByRole('button', { name: 'stub-search-email' }),
+      const wrapper = mountComponent()
+      await child(wrapper).vm.$emit(
+        'search',
+        IDIR_SEARCH_TYPE.EMAIL.value,
+        'email@example.com',
       )
-      await nextTick()
+      await flushPromises()
 
-      expect(screen.getByTestId('loading-search')).toHaveTextContent('false')
+      expect(child(wrapper).props('loadingSearch')).toBe(false)
     })
   })
 
-  it('sets searchResults to null on cancel', async () => {
-    userStore.searchIdirEmail = vi
-      .fn()
-      .mockResolvedValue([makeUser({ id: toUserId('a') })])
-    userStore.searchBCeIDEmail = vi
-      .fn()
-      .mockResolvedValue([makeUser({ id: toUserId('b') })])
+  describe('@cancel inline handler', () => {
+    it('sets searchResults to null on cancel', async () => {
+      userStore.searchIdirEmail = vi
+        .fn()
+        .mockResolvedValue([makeUser({ id: toUserId('userId1') })])
+      userStore.searchBCeIDEmail = vi
+        .fn()
+        .mockResolvedValue([makeUser({ id: toUserId('userId2') })])
 
-    renderComponent()
-    await fireEvent.click(
-      screen.getByRole('button', { name: 'stub-search-email' }),
-    )
-    await nextTick()
+      const wrapper = mountComponent()
+      await child(wrapper).vm.$emit(
+        'search',
+        IDIR_SEARCH_TYPE.EMAIL.value,
+        'email@example.com',
+      )
+      await flushPromises()
 
-    expect(screen.getByTestId('search-results-count')).toHaveTextContent('2')
+      expect(child(wrapper).props('searchResults')).toHaveLength(2)
 
-    await fireEvent.click(screen.getByRole('button', { name: 'stub-cancel' }))
+      await child(wrapper).vm.$emit('cancel')
+      await flushPromises()
 
-    expect(screen.getByTestId('search-results-count')).toHaveTextContent('null')
+      expect(child(wrapper).props('searchResults')).toBeNull()
+    })
   })
 })

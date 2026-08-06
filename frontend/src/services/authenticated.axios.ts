@@ -16,6 +16,8 @@ export const authenticatedAxios = (timeout = 60000): AxiosInstance => {
   const instance = axios.create({ timeout })
 
   instance.interceptors.request.use(async (cfg) => {
+    await new Promise((resolve) => setTimeout(resolve, 3000))
+
     cfg.baseURL = config.api.baseUrl
 
     const authStore = useAuthStore()
