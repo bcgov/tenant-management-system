@@ -60,7 +60,7 @@ paths:
                 name:
                   type: string
                   minLength: 1
-                  maxLength: 30
+                  maxLength: 255
                   pattern: '^\S.*\S$'
                   description: |
                     Name must be 1-30 characters, cannot start or end with whitespace.
@@ -1126,7 +1126,7 @@ paths:
                 name:
                   type: string
                   minLength: 1
-                  maxLength: 30
+                  maxLength: 255
                   example: 'Updated Roads Initiative'
                 ministryName:
                   type: string
@@ -1254,7 +1254,7 @@ paths:
                 name:
                   type: string
                   minLength: 1
-                  maxLength: 30
+                  maxLength: 255
                   example: 'Roads Initiative'
                 ministryName:
                   type: string
@@ -1464,6 +1464,8 @@ paths:
                   example: 'APPROVED'
                 tenantName:
                   type: string
+                  minLength: 1
+                  maxLength: 255
                   description: If status is approved, tenantName can be provided to change the tenant name on approval, this allows for approval when a collision of names would otherwise occur
                   example: 'Tenant name NEW'
                 rejectionReason:
@@ -3831,7 +3833,7 @@ components:
         name:
           type: string
           minLength: 1
-          maxLength: 30
+          maxLength: 255
           example: 'Roads Initiative'
         ministryName:
           type: string

@@ -10,7 +10,7 @@ export default {
     body: Joi.object({
       name: Joi.string()
         .min(1)
-        .max(30)
+        .max(255)
         .pattern(/^\S.*\S$/)
         .required(),
       ministryName: Joi.string().min(1).max(100).required(),
@@ -183,7 +183,7 @@ export default {
     body: Joi.object({
       name: Joi.string()
         .min(1)
-        .max(30)
+        .max(255)
         .pattern(/^\S.*\S$/)
         .optional(),
       ministryName: Joi.string().min(1).max(100).optional(),
@@ -195,7 +195,7 @@ export default {
     body: Joi.object({
       name: Joi.string()
         .min(1)
-        .max(30)
+        .max(255)
         .pattern(/^\S.*\S$/)
         .required(),
       ministryName: Joi.string().min(1).max(100).required(),
@@ -224,9 +224,8 @@ export default {
         then: Joi.string().required(),
         otherwise: Joi.string().optional(),
       }),
-      tenantName: Joi.string().when('status', {
+      tenantName: Joi.string().min(1).max(255).when('status', {
         is: 'APPROVED',
-        //code quality complains about this but it matches above (it doesn't like then in an object)
         then: Joi.string().optional(),
         otherwise: Joi.forbidden(),
       }),
