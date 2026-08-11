@@ -16,7 +16,7 @@ export class TenantRequest {
   @PrimaryGeneratedColumn('uuid', { name: 'id' })
   id!: string
 
-  @Column({ length: 30, name: 'name' })
+  @Column({ length: 255, name: 'name' })
   name!: string
 
   @Column({ length: 100, name: 'ministry_name' })
