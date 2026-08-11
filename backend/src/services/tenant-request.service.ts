@@ -4,6 +4,7 @@ import { tenantRequestRepository } from '../repositories/tenant-request.reposito
 import { connection } from '../common/db.connection'
 import logger from '../common/logger'
 import { getErrorMessage } from '../common/error.handler'
+import { notificationService } from './notification.service'
 import {
   CreateTenantRequestInputDto,
   GetTenantRequestsInputDto,
@@ -85,6 +86,9 @@ export class TenantRequestService {
         throw error
       }
     })
+
+    await notificationService.notifyTenantRequestCreated(tenantRequest)
+
     return {
       data: {
         tenantRequest: {
