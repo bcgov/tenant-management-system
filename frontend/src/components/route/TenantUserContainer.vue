@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 
+import LoginContainer from '@/components/auth/LoginContainer.vue'
 import TenantUserManagement from '@/components/tenant/TenantUserManagement.vue'
+import LoadingWrapper from '@/components/ui/LoadingWrapper.vue'
 import { useNotification } from '@/composables/useNotification'
 import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
 import { Group } from '@/models/group.model'
@@ -16,7 +18,7 @@ import { type IdirSearchType, IDIR_SEARCH_TYPE } from '@/utils/constants'
 
 // --- Component Interface -----------------------------------------------------
 
-const props = defineProps<{
+const { tenantId } = defineProps<{
   tenantId: TenantId
 }>()
 
@@ -38,9 +40,9 @@ const searchResults = ref<User[] | null>(null)
 const roles = computed(() => roleStore.roles)
 
 const tenant = computed(() => {
-  const tenant = tenantStore.getTenant(props.tenantId)
+  const tenant = tenantStore.getTenant(tenantId)
   if (!tenant) {
-    throw new Error(`Tenant ${props.tenantId} not found`)
+    throw new Error(`Tenant ${tenantId} not found`)
   }
 
   return tenant
@@ -51,7 +53,7 @@ const tenant = computed(() => {
 const handleAddUser = async (user: User, groups: Group[]) => {
   let addToGroups = true
   try {
-    await tenantStore.addTenantUser(props.tenantId, user)
+    await tenantStore.addTenantUser(tenantId, user)
     searchResults.value = null
     notification.success(
       'New user successfully added to this tenant',
@@ -76,13 +78,13 @@ const handleAddUser = async (user: User, groups: Group[]) => {
 
   try {
     for (const group of groups) {
-      await groupStore.addGroupUser(props.tenantId, group.id, user)
+      await groupStore.addGroupUser(tenantId, group.id, user)
     }
 
     // Only show alert if user was added to at least one group.
     if (groups.length > 0) {
       notification.success(
-        'New user succesfully added to groups',
+        'New user successfully added to groups',
         'User Added to Groups',
       )
     }
@@ -97,7 +99,7 @@ const handleClearSearch = async () => {
 
 const handleRemoveRole = async (userId: UserId, roleId: RoleId) => {
   try {
-    await tenantStore.removeTenantUserRole(props.tenantId, userId, roleId)
+    await tenantStore.removeTenantUserRole(tenantId, userId, roleId)
     notification.success(
       'The role was successfully removed from the user',
       'Role Removed',
@@ -113,7 +115,7 @@ const handleRemoveUser = async (userId: UserId) => {
       throw new Error('No user selected')
     }
 
-    await tenantStore.removeTenantUser(props.tenantId, userId)
+    await tenantStore.removeTenantUser(tenantId, userId)
     notification.success('The user was successfully removed', 'User Removed')
   } catch {
     notification.error('Failed to remove user')
@@ -155,30 +157,46 @@ const handleUserSearch = async (
 
 // --- Component Lifecycle -----------------------------------------------------
 
-// Use init() in setup instead of a top-level await, so that loading state is
-// set before first render. Look to Suspense when no longer experimental.
+const initialized = ref(false)
+
+// Use an async function, and do not await since that would block rendering
+// until the fetch resolves. This way setup() can complete synchronously while
+// the fetch is happening, the component mounts immediately, and LoadingWrapper
+// shows a spinner if needed. In the future use <Suspense> once it is no longer
+// experimental.
 const init = async () => {
   try {
     await roleStore.fetchRoles()
   } catch {
     notification.error('Failed to load roles')
   }
+
+  initialized.value = true
 }
 
-init()
+// Sonar will complain (S7785) about top-level await because it doesn't
+// understand that this is a Vue component. Ignore it until <Suspense> is used.
+init() // NOSONAR
 </script>
 
 <template>
-  <TenantUserManagement
-    :loading-search="isLoadingSearch"
-    :possible-roles="roles"
-    :search-results="searchResults"
-    :tenant="tenant"
-    @add="handleAddUser"
-    @cancel="searchResults = null"
-    @clear-search="handleClearSearch"
-    @remove-role="handleRemoveRole"
-    @remove-user="handleRemoveUser"
-    @search="handleUserSearch"
-  />
+  <LoginContainer>
+    <LoadingWrapper
+      :loading="!initialized"
+      loading-message="Loading tenant users..."
+    >
+      <TenantUserManagement
+        :loading-search="isLoadingSearch"
+        :possible-roles="roles"
+        :search-results="searchResults"
+        :tenant="tenant"
+        @add="handleAddUser"
+        @cancel="searchResults = null"
+        @clear-search="handleClearSearch"
+        @remove-role="handleRemoveRole"
+        @remove-user="handleRemoveUser"
+        @search="handleUserSearch"
+      />
+    </LoadingWrapper>
+  </LoginContainer>
 </template>
