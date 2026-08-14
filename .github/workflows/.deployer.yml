@@ -195,8 +195,8 @@ jobs:
               --set-string backend.chesTokenUrl=${{ vars.CHES_TOKEN_URL }} \
               --set-string backend.chesApiUrl=${{ vars.CHES_API_URL }} \
               --set-string backend.adminNotificationEmail=${{ vars.ADMIN_NOTIFICATION_EMAIL }} \
-              --set-string backend.appBaseUrl=${{ vars.APP_BASE_URL }} \              
-              --set-string global.repository=${{ github.repository }} \
+              --set-string backend.appBaseUrl="${{ vars.APP_BASE_URL }}" \ 
+              --set-string global.repository="${{ github.repository }}" \
               --set-string global.tag="${{ steps.vars.outputs.tag }}" \
               --set-string global.config.databaseUser="${{ inputs.db_user }}" \
               --set-string global.databaseAlias="${{ steps.deploy_crunchy.outputs.release }}-crunchy" \
