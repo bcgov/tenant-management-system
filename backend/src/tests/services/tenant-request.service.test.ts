@@ -4,6 +4,7 @@ import { TenantRequestService } from '../../services/tenant-request.service'
 import { tenantRequestRepository } from '../../repositories/tenant-request.repository'
 import { connection } from '../../common/db.connection'
 import logger from '../../common/logger'
+import { notificationService } from '../../services/notification.service'
 
 jest.mock('../../repositories/tenant-request.repository')
 jest.mock('../../common/logger')
@@ -14,6 +15,11 @@ jest.mock('../../common/db.connection', () => ({
     },
   },
 }))
+jest.mock('../../services/notification.service', () => ({
+  notificationService: {
+    notifyTenantRequestCreated: jest.fn(),
+  },
+}))
 
 const FAKE_TX = { marker: 'fake-tx' } as unknown as EntityManager
 
@@ -22,6 +28,7 @@ const mockRepository = tenantRequestRepository as jest.Mocked<
 >
 const mockTransaction = connection.manager.transaction as jest.Mock
 const mockLoggerError = logger.error as jest.Mock
+const mockNotify = notificationService.notifyTenantRequestCreated as jest.Mock
 
 function asRequest(overrides: Partial<Request>): Request {
   return overrides as Request
@@ -118,6 +125,23 @@ describe('TenantRequestService', () => {
         'Create tenant request transaction failure - rolling back inserts ',
         { error: 'db down' },
       )
+    })
+
+    it('notifies the operations admin mailbox once the request is saved', async () => {
+      const saved = { id: 'tr-1', requestedBy: { displayName: 'John Smith' } }
+      mockRepository.saveTenantRequest.mockResolvedValue(saved as never)
+
+      await service.createTenantRequest(req)
+
+      expect(mockNotify).toHaveBeenCalledWith(saved)
+    })
+
+    it('does not notify when the request was not saved', async () => {
+      mockRepository.saveTenantRequest.mockRejectedValue(new Error('db down'))
+
+      await expect(service.createTenantRequest(req)).rejects.toThrow('db down')
+
+      expect(mockNotify).not.toHaveBeenCalled()
     })
   })
 
