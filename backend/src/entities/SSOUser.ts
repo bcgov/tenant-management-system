@@ -15,7 +15,7 @@ export class SSOUser {
   id!: string
 
   @Index()
-  @Column({ type: 'varchar', length: 32, name: 'sso_user_id', unique: true })
+  @Column({ type: 'citext', name: 'sso_user_id', unique: true })
   ssoUserId!: string
 
   @Column({ type: 'varchar', length: 50, name: 'first_name' })

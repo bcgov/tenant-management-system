@@ -2,6 +2,9 @@
 # Declare variables to be passed into your templates.
 #-- global variables, can be accessed by sub-charts.
 global:
+  #-- extra env vars for both frontend and backend
+  env:
+    logLevel: "error"
   #-- the logon proxy settings for single sign on
   loginProxy:
     # -- the client ID registered with the login proxy for this application

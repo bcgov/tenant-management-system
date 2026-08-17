@@ -28,12 +28,12 @@ data or for the models themselves.
 
 ### Services
 
-The `authenticated.axios` services is a special wrapper around Axios. The
+The `authenticated.axios` service is a special wrapper around Axios. The
 `config` service deals with configuration. The `utils` file contains utilities
 for the services. These all have file-specific tests.
 
 The other services all make API calls and return results. They all use a similar
-testing template, where for each service function that calls an API endpoint:
+testing template, where for each service function there is a test for:
 
 - API Call: mock an empty response and call with full data to ensure that the
   API call sends the correct data shape
@@ -42,3 +42,16 @@ testing template, where for each service function that calls an API endpoint:
 - Network Error: fake a network error to check handling
 - API Errors: fake all HTTP response codes to check handling
 - Other Error: fake unexpected HTTP response to check handling
+
+### Stores
+
+The `useAuthStore` service is the keycloak management store. This has
+file-specific tests.
+
+The other stores all call services and store results. They all use a similar
+testing template, where for each store function there is a test for:
+
+- If loading flag used, test that it's set while service is called
+- If loading flag used, test that it's cleared on service error
+- Test that state is updated in the expected way(s)
+- Test that state is not changed on service error

@@ -94,6 +94,24 @@ describe('checkTenantAccess', () => {
     expect(mockRepository.checkUserTenantAccess).not.toHaveBeenCalled()
   })
 
+  it('denies the request using the documented error body', async () => {
+    mockRepository.checkUserTenantAccess.mockResolvedValue(false)
+    const req = {
+      params: { tenantId: 'tenant-1' },
+      decodedJwt: { idir_user_guid: 'user-1' },
+    } as unknown as Request
+
+    await checkTenantAccess()(req, res, next)
+
+    expect(res.json).toHaveBeenCalledWith({
+      name: 'Authorization Failure',
+      message:
+        'Access denied: User does not have required roles for tenant: tenant-1',
+      httpResponseCode: 403,
+      errorMessage: 'Forbidden',
+    })
+  })
+
   it('passes unexpected errors to the next error handler instead of responding directly', async () => {
     mockRepository.checkUserTenantAccess.mockRejectedValue(new Error('db down'))
     const req = {
