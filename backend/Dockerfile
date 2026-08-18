@@ -1,4 +1,4 @@
-FROM node:22.22.3-trixie AS build
+FROM node:22.23.2-trixie AS build
 
 WORKDIR /app/tms-api
 
@@ -16,7 +16,7 @@ RUN npm run build && \
 
 # -----------------------------------------------------------------------------
 
-FROM node:22.22.3-alpine3.23
+FROM node:22.23.2-alpine3.24
 WORKDIR /app/tms-api
 
 COPY package*.json ./

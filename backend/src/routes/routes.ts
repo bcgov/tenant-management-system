@@ -7,11 +7,11 @@ import { ssoSearchController } from '../controllers/sso-search.controller'
 import { tenantController } from '../controllers/tenant.controller'
 import { validate, ValidationError } from 'express-validation'
 import validator from '../common/tms.validator'
-import { checkJwt } from '../common/auth.mw'
+import { checkJwt, jwtErrorHandler } from '../common/auth.mw'
 import { checkTenantAccess } from '../common/tenant-access.mw'
-import { UnauthorizedError } from 'express-jwt'
 import { TMSConstants } from '../common/tms.constants'
 import { checkOperationsAdmin } from '../common/operations-admin.mw'
+import { sendErrorResponse } from '../common/error.handler'
 import logger from '../common/logger'
 
 export class Routes {
@@ -349,6 +349,8 @@ export class Routes {
           tenantController.getTenantUser(req, res),
       )
 
+    app.use(jwtErrorHandler)
+
     app.use(function (
       error: Error,
       _req: Request,
@@ -358,11 +360,14 @@ export class Routes {
       if (error instanceof ValidationError) {
         return res.status(error.statusCode).json(error)
       }
-      if (error instanceof UnauthorizedError) {
-        return res.status(401).json({ error: 'Unauthorized' })
-      }
       logger.error('Unhandled route error', { error: error.message })
-      res.status(500).json({ error: 'Internal Server Error' })
+      sendErrorResponse(
+        res,
+        'Server Error',
+        'Error occurred while processing the request',
+        500,
+        'Internal Server Error',
+      )
     })
   }
 }

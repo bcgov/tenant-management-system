@@ -9,12 +9,20 @@ export type LogLevel = 'error' | 'info' | 'debug'
 
 export interface AppConfig {
   allowedOrigins: string[]
+  appBaseUrl?: string
   bcgovSsoApi: {
     clientId: string
     clientSecret: string
     tokenUrl: string
     url: string
     urlBceid: string
+  }
+  ches: {
+    adminNotificationEmail?: string
+    apiUrl?: string
+    clientId?: string
+    clientSecret?: string
+    tokenUrl?: string
   }
   logLevel: LogLevel
   oidc: {
@@ -98,6 +106,14 @@ export function loadConfig() {
     allowedOrigins: process.env.ALLOWED_ORIGINS
       ? process.env.ALLOWED_ORIGINS.split(',')
       : ['*'],
+    appBaseUrl: process.env.APP_BASE_URL,
+    ches: {
+      adminNotificationEmail: process.env.ADMIN_NOTIFICATION_EMAIL,
+      apiUrl: process.env.CHES_API_URL,
+      clientId: process.env.CHES_CLIENT_ID,
+      clientSecret: process.env.CHES_CLIENT_SECRET,
+      tokenUrl: process.env.CHES_TOKEN_URL,
+    },
     bcgovSsoApi: {
       clientId: process.env.BCGOV_SSO_API_CLIENT_ID,
       clientSecret: process.env.BCGOV_SSO_API_CLIENT_SECRET,

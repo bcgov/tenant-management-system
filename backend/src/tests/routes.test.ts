@@ -34,6 +34,14 @@ jest.mock('../common/auth.mw', () => ({
       return res.status(401).json({ error: 'Unauthorized' })
     }
   }),
+  jwtErrorHandler: jest.fn(
+    (
+      err: unknown,
+      _req: express.Request,
+      _res: express.Response,
+      next: express.NextFunction,
+    ) => next(err),
+  ),
 }))
 
 jest.mock('../common/tenant-access.mw', () => ({

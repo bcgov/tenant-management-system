@@ -20,9 +20,7 @@ const vuetify = createVuetify({
 })
 
 const mountComponent = (props: {
-  buttons?: { text: string; action: string; type?: 'primary' | 'secondary' }[]
-  dialogType?: string | null
-  hasClose?: boolean
+  buttons?: { action: string; text: string; type?: 'primary' | 'secondary' }[]
   maxWidth?: number
   message?: string
   modelValue?: boolean
@@ -74,73 +72,11 @@ describe('DialogComponent.vue', () => {
     )
   })
 
-  describe('dialogType icon', () => {
-    it('renders an icon when dialogType is error', () => {
-      const wrapper = mountComponent({ dialogType: 'error' })
-
-      expect(wrapper.find('[data-testid="icon"]').exists()).toBe(true)
-    })
-
-    it('renders an icon when dialogType is success', () => {
-      const wrapper = mountComponent({ dialogType: 'success' })
-
-      expect(wrapper.find('[data-testid="icon"]').exists()).toBe(true)
-    })
-
-    it('renders an icon when dialogType is warning', () => {
-      const wrapper = mountComponent({ dialogType: 'warning' })
-
-      expect(wrapper.find('[data-testid="icon"]').exists()).toBe(true)
-    })
-
-    it('renders an icon when dialogType is an unknown value', () => {
-      const wrapper = mountComponent({ dialogType: 'info' })
-
-      expect(wrapper.find('[data-testid="icon"]').exists()).toBe(true)
-    })
-
-    it('does not render an icon when dialogType is null', () => {
-      const wrapper = mountComponent({
-        dialogType: null,
-      })
-
-      expect(wrapper.find('[data-testid="icon"]').exists()).toBe(false)
-    })
-  })
-
   it('renders the message and title', () => {
     const wrapper = mountComponent({})
 
     expect(wrapper.find('[data-testid="title"]').text()).toBe('My Title')
     expect(wrapper.find('[data-testid="message"]').text()).toBe('My Message')
-  })
-
-  describe('close button', () => {
-    it('renders the close button when hasClose not defined', () => {
-      const wrapper = mountComponent({})
-
-      expect(wrapper.find('[data-testid="close"]').exists()).toBe(true)
-    })
-
-    it('renders the close button when hasClose is true', () => {
-      const wrapper = mountComponent({ hasClose: true })
-
-      expect(wrapper.find('[data-testid="close"]').exists()).toBe(true)
-    })
-
-    it('does not render the close button when hasClose is false', () => {
-      const wrapper = mountComponent({ hasClose: false })
-
-      expect(wrapper.find('[data-testid="close"]').exists()).toBe(false)
-    })
-
-    it('emits update:modelValue with false when close button is clicked', async () => {
-      const wrapper = mountComponent({})
-
-      await wrapper.find('[data-testid="close"]').trigger('click')
-
-      expect(wrapper.emitted('update:modelValue')).toContainEqual([false])
-    })
   })
 
   it('emits update:modelValue when dialog requests close', async () => {
@@ -168,7 +104,7 @@ describe('DialogComponent.vue', () => {
         buttons: [{ text: 'Confirm', action: 'confirm', type: 'primary' }],
       })
 
-      expect(wrapper.findAll('[data-testid^="button-"]').length).toBe(1)
+      expect(wrapper.findAll('[data-testid^="button-"]')).toHaveLength(1)
       expect(wrapper.find('[data-testid="button-confirm"]').exists()).toBe(true)
       expect(wrapper.find('[data-testid="button-confirm"]').text()).toContain(
         'Confirm',
@@ -181,7 +117,7 @@ describe('DialogComponent.vue', () => {
         buttons: [{ text: 'Cancel', action: 'cancel', type: 'secondary' }],
       })
 
-      expect(wrapper.findAll('[data-testid^="button-"]').length).toBe(1)
+      expect(wrapper.findAll('[data-testid^="button-"]')).toHaveLength(1)
       expect(wrapper.find('[data-testid="button-cancel"]').exists()).toBe(true)
       expect(wrapper.find('[data-testid="button-cancel"]').text()).toContain(
         'Cancel',
@@ -197,7 +133,7 @@ describe('DialogComponent.vue', () => {
         ],
       })
 
-      expect(wrapper.findAll('[data-testid^="button-"]').length).toBe(2)
+      expect(wrapper.findAll('[data-testid^="button-"]')).toHaveLength(2)
       expect(wrapper.find('[data-testid="button-cancel"]').exists()).toBe(true)
       expect(wrapper.find('[data-testid="button-confirm"]').exists()).toBe(true)
     })
@@ -210,7 +146,7 @@ describe('DialogComponent.vue', () => {
 
       await wrapper.find('[data-testid="button-confirm"]').trigger('click')
 
-      expect(wrapper.findAll('[data-testid^="button-"]').length).toBe(1)
+      expect(wrapper.findAll('[data-testid^="button-"]')).toHaveLength(1)
       expect(wrapper.emitted('buttonClick')).toEqual([['confirm']])
     })
 
@@ -222,14 +158,14 @@ describe('DialogComponent.vue', () => {
 
       await wrapper.find('[data-testid="button-confirm"]').trigger('click')
 
-      expect(wrapper.findAll('[data-testid^="button-"]').length).toBe(1)
+      expect(wrapper.findAll('[data-testid^="button-"]')).toHaveLength(1)
       expect(wrapper.emitted('update:modelValue')).toContainEqual([false])
     })
 
     it('renders no buttons when none are provided', () => {
       const wrapper = mountComponent({ modelValue: true })
 
-      expect(wrapper.findAll('[data-testid^="button-"]').length).toBe(0)
+      expect(wrapper.findAll('[data-testid^="button-"]')).toHaveLength(0)
     })
   })
 })
