@@ -124,6 +124,10 @@ export class TenantRequestService {
         }
       })
 
+    await notificationService.notifyTenantRequestDecisioned(
+      response.tenantRequest,
+    )
+
     const formattedResponse: UpdateTenantRequestStatusResponseDto = {
       data: {
         tenantRequest: {

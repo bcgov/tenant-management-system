@@ -171,3 +171,144 @@ describe('notifyTenantRequestCreated', () => {
     )
   })
 })
+
+function buildDecisionedRequest(
+  status: 'APPROVED' | 'REJECTED',
+  rejectionReason?: string,
+) {
+  return {
+    id: 'request-1',
+    name: 'My Tenant',
+    ministryName: 'BC Elections',
+    description: 'A new tenant for elections work',
+    status,
+    decisionedAt: '2026-08-02',
+    rejectionReason: rejectionReason ?? null,
+    requestedBy: {
+      displayName: 'Falk, Barrett CITZ:EX',
+      email: 'barrett.falk@gov.bc.ca',
+    },
+    decisionedBy: { displayName: 'Sethuraman, Shankar JEG:EX' },
+  }
+}
+
+describe('notifyTenantRequestDecisioned', () => {
+  let service: NotificationService
+
+  beforeEach(() => {
+    jest.clearAllMocks()
+    service = new NotificationService()
+    config.ches = {
+      adminNotificationEmail: 'cstar.admin@gov.bc.ca',
+      apiUrl: 'https://ches.example/api/v1/email',
+      clientId: 'client',
+      clientSecret: 'secret',
+      tokenUrl: 'https://token.example/token',
+    }
+    config.appBaseUrl = 'https://cstar.example'
+    mockChes.isConfigured.mockReturnValue(true)
+    mockChes.sendEmail.mockResolvedValue({ msgId: 'msg-2', txId: 'tx-2' })
+  })
+
+  it('emails the original requester, not the admin mailbox', async () => {
+    await service.notifyTenantRequestDecisioned(
+      buildDecisionedRequest('APPROVED'),
+    )
+
+    expect(mockChes.sendEmail.mock.calls[0][0].to).toEqual([
+      'barrett.falk@gov.bc.ca',
+    ])
+  })
+
+  it('includes every detail the requester needs on approval', async () => {
+    await service.notifyTenantRequestDecisioned(
+      buildDecisionedRequest('APPROVED'),
+    )
+
+    const email = mockChes.sendEmail.mock.calls[0][0]
+
+    expect(email.subject).toBe(
+      'Your CSTAR tenant request was approved: My Tenant',
+    )
+    expect(email.body).toContain('Tenant name: My Tenant')
+    expect(email.body).toContain('Ministry name: BC Elections')
+    expect(email.body).toContain('Description: A new tenant for elections work')
+    expect(email.body).toContain('Status: APPROVED')
+    expect(email.body).toContain('Decisioned by: Sethuraman, Shankar JEG:EX')
+    expect(email.body).toContain('Decisioned at: 2026-08-02')
+    expect(email.body).toContain('https://cstar.example')
+  })
+
+  it('includes the rejection reason when the request was rejected', async () => {
+    await service.notifyTenantRequestDecisioned(
+      buildDecisionedRequest('REJECTED', 'Duplicate of an existing tenant'),
+    )
+
+    const email = mockChes.sendEmail.mock.calls[0][0]
+
+    expect(email.subject).toBe(
+      'Your CSTAR tenant request was rejected: My Tenant',
+    )
+    expect(email.body).toContain('Status: REJECTED')
+    expect(email.body).toContain('Reason: Duplicate of an existing tenant')
+  })
+
+  it('omits the reason line when there is no rejection reason', async () => {
+    await service.notifyTenantRequestDecisioned(
+      buildDecisionedRequest('APPROVED'),
+    )
+
+    expect(mockChes.sendEmail.mock.calls[0][0].body).not.toContain('Reason:')
+  })
+
+  it('skips sending when the requester has no email address', async () => {
+    const decisioned = buildDecisionedRequest('APPROVED')
+    decisioned.requestedBy.email = ''
+
+    await service.notifyTenantRequestDecisioned(decisioned)
+
+    expect(mockChes.sendEmail).not.toHaveBeenCalled()
+    expect(mockLogger.info).toHaveBeenCalledWith(
+      'Notification skipped - no recipient',
+      { event: 'tenant_request_decisioned', tenantRequestId: 'request-1' },
+    )
+  })
+
+  it('never logs the requester email address', async () => {
+    await service.notifyTenantRequestDecisioned(
+      buildDecisionedRequest('APPROVED'),
+    )
+
+    expect(JSON.stringify(mockLogger.info.mock.calls)).not.toContain(
+      'barrett.falk@gov.bc.ca',
+    )
+  })
+
+  it('logs the CHES message id so delivery can be traced', async () => {
+    await service.notifyTenantRequestDecisioned(
+      buildDecisionedRequest('REJECTED', 'Not enough information'),
+    )
+
+    expect(mockLogger.info).toHaveBeenCalledWith('Notification sent', {
+      event: 'tenant_request_decisioned',
+      tenantRequestId: 'request-1',
+      msgId: 'msg-2',
+      txId: 'tx-2',
+    })
+  })
+
+  it('does not throw when CHES fails, so the status update still succeeds', async () => {
+    mockChes.sendEmail.mockRejectedValue(new Error('CHES unavailable'))
+
+    await expect(
+      service.notifyTenantRequestDecisioned(buildDecisionedRequest('APPROVED')),
+    ).resolves.toBeUndefined()
+
+    expect(mockLogger.error).toHaveBeenCalledWith('Notification failed', {
+      event: 'tenant_request_decisioned',
+      tenantRequestId: 'request-1',
+      tenantName: 'My Tenant',
+      reason: 'CHES unavailable',
+    })
+  })
+})
