@@ -78,6 +78,10 @@ test.describe.serial('Landing page tests', () => {
     await sharedPage.getByText('Approved').click()
     //Approve Tenant request
     await sharedPage.getByRole('button', { name: 'Submit' }).click()
+    await expect(sharedPage.getByText('Success')).toBeVisible()
+    await expect(
+      sharedPage.getByText('Tenant request has been successfully updated'),
+    ).toBeVisible()
     //Check visibility of approved tenant in the All Tenants list
     await sharedPage.getByText('All Tenants').click()
     await expect(sharedPage.getByText('Request a Tenant')).toBeVisible()
@@ -202,6 +206,9 @@ test.describe.serial('Landing page tests', () => {
       .getByRole('button', { name: 'Add User', exact: true })
       .click()
     await expect(sharedPage.getByText('User Added')).toBeVisible()
+    await expect(
+      sharedPage.getByText('New user successfully added to this tenant'),
+    ).toBeVisible()
     const tables = sharedPage.locator('table')
     await expect(tables).toHaveCount(1)
     // Validate that the newly added user is present in the tenant users table
@@ -232,6 +239,9 @@ test.describe.serial('Landing page tests', () => {
     await expect(removeButton).toBeEnabled()
     await sharedPage.getByRole('button', { name: 'Offboard User' }).click()
     await expect(sharedPage.getByText('User Removed')).toBeVisible()
+    await expect(
+      sharedPage.getByText('The user was successfully removed'),
+    ).toBeVisible()
     await expect(tenantRows).toHaveCount(1)
     // Validate the updated tenant table after removing the user
     const updatedtenantRow = tenantRows.nth(0)
