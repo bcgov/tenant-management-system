@@ -26,6 +26,7 @@ import {
   UnassignUserRolesInputDto,
 } from '../dtos/tms.dto'
 import { config } from '../services/config.service'
+import { notificationService } from './notification.service'
 
 export class TenantService {
   mapper: TMSMapper
@@ -69,6 +70,7 @@ export class TenantService {
 
   public async addTenantUser(req: Request) {
     let response: AddTenantUserResponseDto | undefined
+    let addedUser: AddTenantUserResultDto | undefined
     const input: AddTenantUserInputDto = {
       tenantId: req.params.tenantId,
       updatedBy: req.decodedJwt?.idir_user_guid || 'system',
@@ -89,6 +91,7 @@ export class TenantService {
           input.updatedBy,
           transactionEntityManager,
         )
+        addedUser = tenantResponse
         response = this.mapper.toAddTenantUserResponseDto(
           tenantResponse.savedTenantUser,
           tenantResponse.roleAssignments,
@@ -102,9 +105,15 @@ export class TenantService {
         throw error
       }
     })
-    if (!response) {
+    if (!response || !addedUser) {
       throw new Error('Failed to create add tenant user response')
     }
+
+    await notificationService.notifyUserAddedToTenant(
+      addedUser.savedTenantUser,
+      addedUser.roleAssignments,
+    )
+
     return response
   }
 

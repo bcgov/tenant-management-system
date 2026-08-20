@@ -21,6 +21,7 @@ import {
   UpdateGroupInputDto,
 } from '../dtos/tm.dto'
 import { config } from '../services/config.service'
+import { notificationService } from './notification.service'
 
 export class GroupService {
   public async createGroup(req: Request) {
@@ -62,8 +63,29 @@ export class GroupService {
     }
   }
 
+  private async notifyUserAddedToTenant(tenantUserId: string) {
+    try {
+      const tenantUser =
+        await tenantRepository.getTenantUserWithRelations(tenantUserId)
+
+      if (tenantUser) {
+        await notificationService.notifyUserAddedToTenant(
+          tenantUser,
+          tenantUser.roles || [],
+        )
+      }
+    } catch (error: unknown) {
+      logger.error('Notification lookup failed', {
+        tenantUserId,
+        reason: getErrorMessage(error),
+      })
+    }
+  }
+
   public async addGroupUser(req: Request) {
     let savedGroupUser: AddGroupUserResultDto | null = null
+    let addedTenantUserId: string | undefined
+    let isNewTenantUser = false
 
     await connection.manager.transaction(async (tx) => {
       try {
@@ -71,6 +93,12 @@ export class GroupService {
         const groupId: string = req.params.groupId
         const { user } = req.body
         const updatedBy: string = req.decodedJwt?.idir_user_guid || 'system'
+
+        const existingTenantUser = await tenantRepository.getTenantUserBySsoId(
+          user.ssoUserId,
+          tenantId,
+          tx,
+        )
 
         const tenantUser = await tenantRepository.ensureTenantUserExists(
           user,
@@ -92,6 +120,8 @@ export class GroupService {
           updatedBy,
         }
         savedGroupUser = await groupRepository.addGroupUser(input, tx)
+        addedTenantUserId = tenantUser.id
+        isNewTenantUser = !existingTenantUser
       } catch (error: unknown) {
         logger.error(
           'Add user to group transaction failure - rolling back inserts ',
@@ -103,6 +133,10 @@ export class GroupService {
 
     if (!savedGroupUser) {
       throw new UnexpectedStateError('Group user creation failed')
+    }
+
+    if (isNewTenantUser && addedTenantUserId) {
+      await this.notifyUserAddedToTenant(addedTenantUserId)
     }
 
     return {

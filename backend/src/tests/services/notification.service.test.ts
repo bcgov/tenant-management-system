@@ -312,3 +312,145 @@ describe('notifyTenantRequestDecisioned', () => {
     })
   })
 })
+
+function buildAddedUser() {
+  return {
+    createdDateTime: '2026-08-05',
+    ssoUser: { email: 'barrett.falk@gov.bc.ca' },
+    tenant: {
+      id: 'tenant-1',
+      name: 'My Tenant',
+      ministryName: 'BC Elections',
+    },
+  }
+}
+
+function buildRoleAssignments() {
+  return [
+    { role: { name: 'TMS.SERVICE_USER', description: 'Service User' } },
+    { role: { name: 'TMS.USER_ADMIN', description: 'User Admin' } },
+  ]
+}
+
+describe('notifyUserAddedToTenant', () => {
+  let service: NotificationService
+
+  beforeEach(() => {
+    jest.clearAllMocks()
+    service = new NotificationService()
+    config.ches = {
+      adminNotificationEmail: 'cstar.admin@gov.bc.ca',
+      apiUrl: 'https://ches.example/api/v1/email',
+      clientId: 'client',
+      clientSecret: 'secret',
+      tokenUrl: 'https://token.example/token',
+    }
+    config.appBaseUrl = 'https://cstar.example'
+    mockChes.isConfigured.mockReturnValue(true)
+    mockChes.sendEmail.mockResolvedValue({ msgId: 'msg-3', txId: 'tx-3' })
+  })
+
+  it('emails the user who was added, not the admin mailbox', async () => {
+    await service.notifyUserAddedToTenant(
+      buildAddedUser(),
+      buildRoleAssignments(),
+    )
+
+    expect(mockChes.sendEmail.mock.calls[0][0].to).toEqual([
+      'barrett.falk@gov.bc.ca',
+    ])
+  })
+
+  it('includes every detail the user needs about their new access', async () => {
+    await service.notifyUserAddedToTenant(
+      buildAddedUser(),
+      buildRoleAssignments(),
+    )
+
+    const email = mockChes.sendEmail.mock.calls[0][0]
+
+    expect(email.subject).toBe(
+      'You have been added to a CSTAR tenant: My Tenant',
+    )
+    expect(email.body).toContain('Tenant name: My Tenant')
+    expect(email.body).toContain('Ministry name: BC Elections')
+    expect(email.body).toContain('Added at: 2026-08-05')
+    expect(email.body).toContain('Roles granted: Service User, User Admin')
+    expect(email.body).toContain('https://cstar.example/tenants/tenant-1/users')
+  })
+
+  it('falls back to the role name when a role has no description', async () => {
+    await service.notifyUserAddedToTenant(buildAddedUser(), [
+      { role: { name: 'TMS.SERVICE_USER' } },
+    ])
+
+    expect(mockChes.sendEmail.mock.calls[0][0].body).toContain(
+      'Roles granted: TMS.SERVICE_USER',
+    )
+  })
+
+  it('reports no roles rather than an empty line when none were granted', async () => {
+    await service.notifyUserAddedToTenant(buildAddedUser(), [])
+
+    expect(mockChes.sendEmail.mock.calls[0][0].body).toContain(
+      'Roles granted: None',
+    )
+  })
+
+  it('skips sending when the user has no email address', async () => {
+    const addedUser = buildAddedUser()
+    addedUser.ssoUser.email = ''
+
+    await service.notifyUserAddedToTenant(addedUser, buildRoleAssignments())
+
+    expect(mockChes.sendEmail).not.toHaveBeenCalled()
+    expect(mockLogger.info).toHaveBeenCalledWith(
+      'Notification skipped - no recipient',
+      {
+        event: 'user_added_to_tenant',
+        tenantRequestId: undefined,
+        tenantId: 'tenant-1',
+      },
+    )
+  })
+
+  it('never logs the user email address', async () => {
+    await service.notifyUserAddedToTenant(
+      buildAddedUser(),
+      buildRoleAssignments(),
+    )
+
+    expect(JSON.stringify(mockLogger.info.mock.calls)).not.toContain(
+      'barrett.falk@gov.bc.ca',
+    )
+  })
+
+  it('logs the CHES message id so delivery can be traced', async () => {
+    await service.notifyUserAddedToTenant(
+      buildAddedUser(),
+      buildRoleAssignments(),
+    )
+
+    expect(mockLogger.info).toHaveBeenCalledWith('Notification sent', {
+      event: 'user_added_to_tenant',
+      tenantId: 'tenant-1',
+      msgId: 'msg-3',
+      txId: 'tx-3',
+    })
+  })
+
+  it('does not throw when CHES fails, so adding the user still succeeds', async () => {
+    mockChes.sendEmail.mockRejectedValue(new Error('CHES unavailable'))
+
+    await expect(
+      service.notifyUserAddedToTenant(buildAddedUser(), buildRoleAssignments()),
+    ).resolves.toBeUndefined()
+
+    expect(mockLogger.error).toHaveBeenCalledWith('Notification failed', {
+      event: 'user_added_to_tenant',
+      tenantId: 'tenant-1',
+      tenantName: 'My Tenant',
+      reason: 'CHES unavailable',
+    })
+  })
+})

@@ -5,10 +5,16 @@ import { tenantRepository } from '../../repositories/tenant.repository'
 import { groupRepository } from '../../repositories/group.repository'
 import { connection } from '../../common/db.connection'
 import logger from '../../common/logger'
+import { notificationService } from '../../services/notification.service'
 
 jest.mock('../../repositories/tenant.repository')
 jest.mock('../../repositories/group.repository')
 jest.mock('../../common/logger')
+jest.mock('../../services/notification.service', () => ({
+  notificationService: {
+    notifyUserAddedToTenant: jest.fn(),
+  },
+}))
 jest.mock('../../common/db.connection', () => ({
   connection: {
     manager: {
@@ -25,6 +31,7 @@ const mockGroupRepository = groupRepository as jest.Mocked<
 >
 const mockTransaction = connection.manager.transaction as jest.Mock
 const mockLoggerError = logger.error as jest.Mock
+const mockNotifyAdded = notificationService.notifyUserAddedToTenant as jest.Mock
 
 function asRequest(overrides: Partial<Request>): Request {
   return overrides as Request
@@ -132,6 +139,31 @@ describe('TenantService', () => {
         'Add user to a tenant transaction failure - rolling back inserts ',
         { error: 'db down' },
       )
+    })
+    it('notifies the added user once they are saved', async () => {
+      const savedTenantUser = { id: 'tu-1' }
+      const roleAssignments = [{ role: { name: 'TMS.SERVICE_USER' } }]
+      mockRepository.addTenantUsers.mockResolvedValue({
+        savedTenantUser,
+        roleAssignments,
+        tenantUserId: 'tu-1',
+      } as never)
+      mockGroupRepository.addUserToGroups.mockResolvedValue([] as never)
+
+      await service.addTenantUser(req)
+
+      expect(mockNotifyAdded).toHaveBeenCalledWith(
+        savedTenantUser,
+        roleAssignments,
+      )
+    })
+
+    it('does not notify when the user was not added', async () => {
+      mockRepository.addTenantUsers.mockRejectedValue(new Error('db down'))
+
+      await expect(service.addTenantUser(req)).rejects.toThrow('db down')
+
+      expect(mockNotifyAdded).not.toHaveBeenCalled()
     })
   })
 

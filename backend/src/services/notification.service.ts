@@ -5,6 +5,7 @@ import { config } from './config.service'
 
 const TENANT_REQUEST_CREATED = 'tenant_request_created'
 const TENANT_REQUEST_DECISIONED = 'tenant_request_decisioned'
+const USER_ADDED_TO_TENANT = 'user_added_to_tenant'
 
 export interface NotifiableTenantRequest {
   id?: string
@@ -17,6 +18,16 @@ export interface NotifiableTenantRequest {
   decisionedAt?: Date | string
   requestedBy?: { displayName?: string; email?: string }
   decisionedBy?: { displayName?: string }
+}
+
+export interface NotifiableTenantUser {
+  createdDateTime?: Date | string
+  ssoUser?: { email?: string }
+  tenant?: { id?: string; name?: string; ministryName?: string }
+}
+
+export interface NotifiableRoleAssignment {
+  role?: { name?: string; description?: string }
 }
 
 interface EmailDetail {
@@ -32,6 +43,7 @@ interface EmailContent {
 interface NotificationRequest {
   event: string
   tenantRequestId?: string
+  tenantId?: string
   recipient?: string
   email: EmailContent
 }
@@ -52,6 +64,18 @@ function formatDetails(details: EmailDetail[]): string {
 
 function formatBody(paragraphs: string[]): string {
   return paragraphs.join('\n\n')
+}
+
+function formatRoles(roleAssignments: NotifiableRoleAssignment[]): string {
+  const roleNames = roleAssignments
+    .map(({ role }) => role?.description || role?.name)
+    .filter(Boolean)
+
+  if (roleNames.length === 0) {
+    return 'None'
+  }
+
+  return roleNames.join(', ')
 }
 
 function getCstarUrl(path = ''): string {
@@ -142,6 +166,30 @@ export class NotificationService {
     }
   }
 
+  private buildUserAddedToTenantEmail(
+    tenantUser: NotifiableTenantUser,
+    roleAssignments: NotifiableRoleAssignment[],
+  ): EmailContent {
+    const tenantName = tenantUser.tenant?.name || ''
+
+    return {
+      subject: `You have been added to a CSTAR tenant: ${tenantName}`,
+      body: formatBody([
+        'You have been added to a tenant in CSTAR.',
+        formatDetails([
+          { label: 'Tenant name', value: tenantName },
+          {
+            label: 'Ministry name',
+            value: tenantUser.tenant?.ministryName || '',
+          },
+          { label: 'Added at', value: formatDate(tenantUser.createdDateTime) },
+          { label: 'Roles granted', value: formatRoles(roleAssignments) },
+        ]),
+        `Sign in to CSTAR to access this tenant:\n${getCstarUrl(`/tenants/${tenantUser.tenant?.id}/users`)}`,
+      ]),
+    }
+  }
+
   private skipNotification(
     notification: NotificationRequest,
     reason: string,
@@ -149,6 +197,7 @@ export class NotificationService {
     logger.info(reason, {
       event: notification.event,
       tenantRequestId: notification.tenantRequestId,
+      tenantId: notification.tenantId,
     })
     logger.debug('Notification content', {
       event: notification.event,
@@ -159,13 +208,16 @@ export class NotificationService {
 
   private logNotificationFailure(
     event: string,
-    tenantRequest: NotifiableTenantRequest,
+    identifiers: {
+      tenantRequestId?: string
+      tenantId?: string
+      tenantName?: string
+    },
     error: unknown,
   ): void {
     logger.error('Notification failed', {
       event,
-      tenantRequestId: tenantRequest?.id,
-      tenantName: tenantRequest?.name,
+      ...identifiers,
       reason: getErrorMessage(error),
     })
   }
@@ -194,6 +246,7 @@ export class NotificationService {
     logger.info('Notification sent', {
       event: notification.event,
       tenantRequestId: notification.tenantRequestId,
+      tenantId: notification.tenantId,
       msgId: result.msgId,
       txId: result.txId,
     })
@@ -210,7 +263,11 @@ export class NotificationService {
         email: this.buildTenantRequestCreatedEmail(tenantRequest),
       })
     } catch (error: unknown) {
-      this.logNotificationFailure(TENANT_REQUEST_CREATED, tenantRequest, error)
+      this.logNotificationFailure(
+        TENANT_REQUEST_CREATED,
+        { tenantRequestId: tenantRequest?.id, tenantName: tenantRequest?.name },
+        error,
+      )
     }
   }
 
@@ -227,7 +284,29 @@ export class NotificationService {
     } catch (error: unknown) {
       this.logNotificationFailure(
         TENANT_REQUEST_DECISIONED,
-        tenantRequest,
+        { tenantRequestId: tenantRequest?.id, tenantName: tenantRequest?.name },
+        error,
+      )
+    }
+  }
+  public async notifyUserAddedToTenant(
+    tenantUser: NotifiableTenantUser,
+    roleAssignments: NotifiableRoleAssignment[],
+  ) {
+    try {
+      await this.sendNotification({
+        event: USER_ADDED_TO_TENANT,
+        tenantId: tenantUser.tenant?.id,
+        recipient: tenantUser.ssoUser?.email,
+        email: this.buildUserAddedToTenantEmail(tenantUser, roleAssignments),
+      })
+    } catch (error: unknown) {
+      this.logNotificationFailure(
+        USER_ADDED_TO_TENANT,
+        {
+          tenantId: tenantUser?.tenant?.id,
+          tenantName: tenantUser?.tenant?.name,
+        },
         error,
       )
     }
