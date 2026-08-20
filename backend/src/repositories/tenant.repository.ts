@@ -222,6 +222,7 @@ export class TenantRepository {
         const restoredTenantUserWithRelations = await manager
           .createQueryBuilder(TenantUser, 'tu')
           .leftJoinAndSelect('tu.ssoUser', 'ssoUser')
+          .leftJoinAndSelect('tu.tenant', 'tenant')
           .where('tu.id = :tenantUserId', {
             tenantUserId: restoredTenantUser.id,
           })
@@ -1074,6 +1075,25 @@ export class TenantRepository {
   public async findTenantRoles(manager?: EntityManager) {
     const em = manager ?? getManager()
     return em.createQueryBuilder(Role, 'role').getMany()
+  }
+
+  public async getTenantUserWithRelations(
+    tenantUserId: string,
+    manager?: EntityManager,
+  ) {
+    const em = manager ?? getManager()
+    return em
+      .createQueryBuilder(TenantUser, 'tenantUser')
+      .leftJoinAndSelect('tenantUser.ssoUser', 'ssoUser')
+      .leftJoinAndSelect('tenantUser.tenant', 'tenant')
+      .leftJoinAndSelect(
+        'tenantUser.roles',
+        'tenantUserRole',
+        'tenantUserRole.is_deleted = false',
+      )
+      .leftJoinAndSelect('tenantUserRole.role', 'role')
+      .where('tenantUser.id = :tenantUserId', { tenantUserId })
+      .getOne()
   }
 
   public async getTenantUserBySsoId(
