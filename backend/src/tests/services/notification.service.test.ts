@@ -454,3 +454,108 @@ describe('notifyUserAddedToTenant', () => {
     })
   })
 })
+
+function buildRemovedUser() {
+  return {
+    updatedDateTime: '2026-08-21',
+    ssoUser: { email: 'test.user@example.com' },
+    tenant: {
+      id: 'tenant-1',
+      name: 'My Tenant',
+      ministryName: 'BC Elections',
+    },
+  }
+}
+
+describe('notifyUserRemovedFromTenant', () => {
+  let service: NotificationService
+
+  beforeEach(() => {
+    jest.clearAllMocks()
+    service = new NotificationService()
+    config.ches = {
+      adminNotificationEmail: 'cstar.admin@gov.bc.ca',
+      apiUrl: 'https://ches.example/api/v1/email',
+      clientId: 'client',
+      clientSecret: 'secret',
+      tokenUrl: 'https://token.example/token',
+    }
+    config.appBaseUrl = 'https://cstar.example'
+    mockChes.isConfigured.mockReturnValue(true)
+    mockChes.sendEmail.mockResolvedValue({ msgId: 'msg-4', txId: 'tx-4' })
+  })
+
+  it('emails the user whose access was removed', async () => {
+    await service.notifyUserRemovedFromTenant(buildRemovedUser(), 'Someone')
+
+    expect(mockChes.sendEmail.mock.calls[0][0].to).toEqual([
+      'test.user@example.com',
+    ])
+  })
+
+  it('includes every detail the user needs about the removal', async () => {
+    await service.notifyUserRemovedFromTenant(buildRemovedUser(), 'Test Admin')
+
+    const email = mockChes.sendEmail.mock.calls[0][0]
+
+    expect(email.subject).toBe(
+      'You have been removed from a CSTAR tenant: My Tenant',
+    )
+    expect(email.body).toContain('Tenant name: My Tenant')
+    expect(email.body).toContain('Ministry name: BC Elections')
+    expect(email.body).toContain('Removed at: 2026-08-21')
+    expect(email.body).toContain('Removed by: Test Admin')
+    expect(email.body).toContain('https://cstar.example')
+  })
+
+  it('links to CSTAR rather than the tenant the user can no longer reach', async () => {
+    await service.notifyUserRemovedFromTenant(buildRemovedUser(), 'Someone')
+
+    expect(mockChes.sendEmail.mock.calls[0][0].body).not.toContain(
+      '/tenants/tenant-1',
+    )
+  })
+
+  it('logs the CHES message id so delivery can be traced', async () => {
+    await service.notifyUserRemovedFromTenant(buildRemovedUser(), 'Someone')
+
+    expect(mockLogger.info).toHaveBeenCalledWith('Notification sent', {
+      event: 'user_removed_from_tenant',
+      tenantId: 'tenant-1',
+      msgId: 'msg-4',
+      txId: 'tx-4',
+    })
+  })
+
+  it('never logs the user email address', async () => {
+    await service.notifyUserRemovedFromTenant(buildRemovedUser(), 'Someone')
+
+    expect(JSON.stringify(mockLogger.info.mock.calls)).not.toContain(
+      'test.user@example.com',
+    )
+  })
+
+  it('skips sending when the user has no email address', async () => {
+    const removedUser = buildRemovedUser()
+    removedUser.ssoUser.email = ''
+
+    await service.notifyUserRemovedFromTenant(removedUser, 'Someone')
+
+    expect(mockChes.sendEmail).not.toHaveBeenCalled()
+  })
+
+  it('does not throw when CHES fails, so the removal still succeeds', async () => {
+    mockChes.sendEmail.mockRejectedValue(new Error('CHES unavailable'))
+
+    await expect(
+      service.notifyUserRemovedFromTenant(buildRemovedUser(), 'Someone'),
+    ).resolves.toBeUndefined()
+
+    expect(mockLogger.error).toHaveBeenCalledWith('Notification failed', {
+      event: 'user_removed_from_tenant',
+      tenantId: 'tenant-1',
+      tenantName: 'My Tenant',
+      reason: 'CHES unavailable',
+    })
+  })
+})

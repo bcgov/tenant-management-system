@@ -348,6 +348,38 @@ export class TenantService {
     }
   }
 
+  private async notifyUserRemovedFromTenant(
+    tenantUserId: string,
+    removedBy: { ssoUserId: string; displayName: string },
+  ) {
+    try {
+      const tenantUser =
+        await tenantRepository.getTenantUserWithRelations(tenantUserId)
+
+      if (!tenantUser) {
+        return
+      }
+
+      const removedTheirOwnAccess =
+        tenantUser.ssoUser?.ssoUserId?.toUpperCase() ===
+        removedBy.ssoUserId.toUpperCase()
+
+      if (removedTheirOwnAccess) {
+        return
+      }
+
+      await notificationService.notifyUserRemovedFromTenant(
+        tenantUser,
+        removedBy.displayName,
+      )
+    } catch (error: unknown) {
+      logger.error('Notification lookup failed', {
+        tenantUserId,
+        reason: getErrorMessage(error),
+      })
+    }
+  }
+
   public async removeTenantUser(req: Request) {
     const input: RemoveTenantUserInputDto = {
       tenantId: req.params.tenantId,
@@ -370,6 +402,12 @@ export class TenantService {
         )
         throw error
       }
+    })
+
+    await this.notifyUserRemovedFromTenant(input.tenantUserId, {
+      ssoUserId: input.deletedBy,
+      displayName:
+        req.decodedJwt?.display_name || req.decodedJwt?.name || 'System User',
     })
   }
 

@@ -6,6 +6,7 @@ import { config } from './config.service'
 const TENANT_REQUEST_CREATED = 'tenant_request_created'
 const TENANT_REQUEST_DECISIONED = 'tenant_request_decisioned'
 const USER_ADDED_TO_TENANT = 'user_added_to_tenant'
+const USER_REMOVED_FROM_TENANT = 'user_removed_from_tenant'
 
 export interface NotifiableTenantRequest {
   id?: string
@@ -22,6 +23,7 @@ export interface NotifiableTenantRequest {
 
 export interface NotifiableTenantUser {
   createdDateTime?: Date | string
+  updatedDateTime?: Date | string
   ssoUser?: { email?: string }
   tenant?: { id?: string; name?: string; ministryName?: string }
 }
@@ -190,6 +192,33 @@ export class NotificationService {
     }
   }
 
+  private buildUserRemovedFromTenantEmail(
+    tenantUser: NotifiableTenantUser,
+    removedByDisplayName: string,
+  ): EmailContent {
+    const tenantName = tenantUser.tenant?.name || ''
+
+    return {
+      subject: `You have been removed from a CSTAR tenant: ${tenantName}`,
+      body: formatBody([
+        'You have been removed from a tenant in CSTAR. You no longer have access to this tenant or its connected services.',
+        formatDetails([
+          { label: 'Tenant name', value: tenantName },
+          {
+            label: 'Ministry name',
+            value: tenantUser.tenant?.ministryName || '',
+          },
+          {
+            label: 'Removed at',
+            value: formatDate(tenantUser.updatedDateTime),
+          },
+          { label: 'Removed by', value: removedByDisplayName || 'Unknown' },
+        ]),
+        `Sign in to CSTAR:\n${getCstarUrl()}`,
+      ]),
+    }
+  }
+
   private skipNotification(
     notification: NotificationRequest,
     reason: string,
@@ -303,6 +332,31 @@ export class NotificationService {
     } catch (error: unknown) {
       this.logNotificationFailure(
         USER_ADDED_TO_TENANT,
+        {
+          tenantId: tenantUser?.tenant?.id,
+          tenantName: tenantUser?.tenant?.name,
+        },
+        error,
+      )
+    }
+  }
+  public async notifyUserRemovedFromTenant(
+    tenantUser: NotifiableTenantUser,
+    removedByDisplayName: string,
+  ) {
+    try {
+      await this.sendNotification({
+        event: USER_REMOVED_FROM_TENANT,
+        tenantId: tenantUser.tenant?.id,
+        recipient: tenantUser.ssoUser?.email,
+        email: this.buildUserRemovedFromTenantEmail(
+          tenantUser,
+          removedByDisplayName,
+        ),
+      })
+    } catch (error: unknown) {
+      this.logNotificationFailure(
+        USER_REMOVED_FROM_TENANT,
         {
           tenantId: tenantUser?.tenant?.id,
           tenantName: tenantUser?.tenant?.name,
