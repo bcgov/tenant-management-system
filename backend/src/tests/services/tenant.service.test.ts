@@ -13,6 +13,7 @@ jest.mock('../../common/logger')
 jest.mock('../../services/notification.service', () => ({
   notificationService: {
     notifyUserAddedToTenant: jest.fn(),
+    notifyUserRemovedFromTenant: jest.fn(),
   },
 }))
 jest.mock('../../common/db.connection', () => ({
@@ -32,6 +33,8 @@ const mockGroupRepository = groupRepository as jest.Mocked<
 const mockTransaction = connection.manager.transaction as jest.Mock
 const mockLoggerError = logger.error as jest.Mock
 const mockNotifyAdded = notificationService.notifyUserAddedToTenant as jest.Mock
+const mockNotifyRemoved =
+  notificationService.notifyUserRemovedFromTenant as jest.Mock
 
 function asRequest(overrides: Partial<Request>): Request {
   return overrides as Request
@@ -402,6 +405,74 @@ describe('TenantService', () => {
     const req = asRequest({
       params: { tenantId: 'tenant-1', tenantUserId: 'tu-1' },
       decodedJwt: { idir_user_guid: 'admin-1' },
+    })
+
+    it('notifies the removed user once the removal succeeds', async () => {
+      const tenantUser = {
+        id: 'tu-1',
+        updatedDateTime: '2026-08-21',
+        ssoUser: { ssoUserId: 'SSO-1', email: 'test.user@example.com' },
+        tenant: { id: 'tenant-1', name: 'My Tenant' },
+      }
+      mockRepository.removeTenantUser.mockResolvedValue(undefined as never)
+      mockRepository.getTenantUserWithRelations.mockResolvedValue(
+        tenantUser as never,
+      )
+
+      await service.removeTenantUser(
+        asRequest({
+          params: { tenantId: 'tenant-1', tenantUserId: 'tu-1' },
+          decodedJwt: {
+            idir_user_guid: 'ADMIN-1',
+            display_name: 'Test Admin',
+          },
+        }),
+      )
+
+      expect(mockNotifyRemoved).toHaveBeenCalledWith(tenantUser, 'Test Admin')
+    })
+
+    it('does not notify a user who removed their own access', async () => {
+      mockRepository.removeTenantUser.mockResolvedValue(undefined as never)
+      mockRepository.getTenantUserWithRelations.mockResolvedValue({
+        id: 'tu-1',
+        ssoUser: { ssoUserId: 'sso-1', email: 'test.user@example.com' },
+        tenant: { id: 'tenant-1' },
+      } as never)
+
+      await service.removeTenantUser(
+        asRequest({
+          params: { tenantId: 'tenant-1', tenantUserId: 'tu-1' },
+          decodedJwt: { idir_user_guid: 'SSO-1', display_name: 'Admin' },
+        }),
+      )
+
+      expect(mockNotifyRemoved).not.toHaveBeenCalled()
+    })
+
+    it('does not notify when the removal fails', async () => {
+      mockRepository.removeTenantUser.mockRejectedValue(new Error('db down'))
+
+      await expect(service.removeTenantUser(req)).rejects.toThrow('db down')
+
+      expect(mockNotifyRemoved).not.toHaveBeenCalled()
+    })
+
+    it('still removes the user when the notification lookup fails', async () => {
+      mockRepository.removeTenantUser.mockResolvedValue(undefined as never)
+      mockRepository.getTenantUserWithRelations.mockRejectedValue(
+        new Error('db blip'),
+      )
+
+      await expect(service.removeTenantUser(req)).resolves.toBeUndefined()
+
+      expect(mockLoggerError).toHaveBeenCalledWith(
+        'Notification lookup failed',
+        {
+          tenantUserId: 'tu-1',
+          reason: 'db blip',
+        },
+      )
     })
 
     it('removes the tenant user and removes them from all groups', async () => {
