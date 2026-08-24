@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { mdiOpenInNew } from '@mdi/js'
 import { computed, watchEffect } from 'vue'
 import { useRouter } from 'vue-router'
 
@@ -71,15 +72,16 @@ watchEffect(() => {
           </v-col>
         </v-row>
 
-        <h4 class="mb-4 mt-12">Need Help?</h4>
-
-        <span class="p-xlarge">
+        <h4 class="mt-12">
           <a
+            class="d-inline-flex align-center"
             href="https://submit.digital.gov.bc.ca/app/form/submit?f=24a08e40-315e-4cfa-a1d4-e5d7a220dacb"
+            target="_blank"
           >
             Contact Us
+            <v-icon :icon="mdiOpenInNew" class="ms-2" size="x-small" />
           </a>
-        </span>
+        </h4>
       </v-col>
 
       <v-col class="mt-12 mt-lg-0" cols="12" lg="3" offset-lg="1">
