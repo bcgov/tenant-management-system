@@ -7,6 +7,7 @@ const TENANT_REQUEST_CREATED = 'tenant_request_created'
 const TENANT_REQUEST_DECISIONED = 'tenant_request_decisioned'
 const USER_ADDED_TO_TENANT = 'user_added_to_tenant'
 const USER_REMOVED_FROM_TENANT = 'user_removed_from_tenant'
+const USER_REMOVED_FROM_GROUP = 'user_removed_from_group'
 
 export interface NotifiableTenantRequest {
   id?: string
@@ -26,6 +27,12 @@ export interface NotifiableTenantUser {
   updatedDateTime?: Date | string
   ssoUser?: { email?: string }
   tenant?: { id?: string; name?: string; ministryName?: string }
+}
+
+export interface NotifiableGroupUser {
+  updatedDateTime?: Date | string
+  group?: { name?: string; tenant?: { id?: string; name?: string } }
+  tenantUser?: { ssoUser?: { email?: string; ssoUserId?: string } }
 }
 
 export interface NotifiableRoleAssignment {
@@ -201,7 +208,7 @@ export class NotificationService {
     return {
       subject: `You have been removed from a CSTAR tenant: ${tenantName}`,
       body: formatBody([
-        'You have been removed from a tenant in CSTAR. You no longer have access to this tenant or its connected services.',
+        'You have been removed from a tenant in CSTAR, including all of its groups. You no longer have access to this tenant or its connected services.',
         formatDetails([
           { label: 'Tenant name', value: tenantName },
           {
@@ -212,6 +219,27 @@ export class NotificationService {
             label: 'Removed at',
             value: formatDate(tenantUser.updatedDateTime),
           },
+          { label: 'Removed by', value: removedByDisplayName || 'Unknown' },
+        ]),
+        `Sign in to CSTAR:\n${getCstarUrl()}`,
+      ]),
+    }
+  }
+
+  private buildUserRemovedFromGroupEmail(
+    groupUser: NotifiableGroupUser,
+    removedByDisplayName: string,
+  ): EmailContent {
+    const groupName = groupUser.group?.name || ''
+
+    return {
+      subject: `You have been removed from a CSTAR group: ${groupName}`,
+      body: formatBody([
+        'You are no longer a member of this group in CSTAR. You will still have access to other groups you belong to. You still have access to the tenant.',
+        formatDetails([
+          { label: 'Group name', value: groupName },
+          { label: 'Tenant name', value: groupUser.group?.tenant?.name || '' },
+          { label: 'Removed at', value: formatDate(groupUser.updatedDateTime) },
           { label: 'Removed by', value: removedByDisplayName || 'Unknown' },
         ]),
         `Sign in to CSTAR:\n${getCstarUrl()}`,
@@ -360,6 +388,31 @@ export class NotificationService {
         {
           tenantId: tenantUser?.tenant?.id,
           tenantName: tenantUser?.tenant?.name,
+        },
+        error,
+      )
+    }
+  }
+  public async notifyUserRemovedFromGroup(
+    groupUser: NotifiableGroupUser,
+    removedByDisplayName: string,
+  ) {
+    try {
+      await this.sendNotification({
+        event: USER_REMOVED_FROM_GROUP,
+        tenantId: groupUser.group?.tenant?.id,
+        recipient: groupUser.tenantUser?.ssoUser?.email,
+        email: this.buildUserRemovedFromGroupEmail(
+          groupUser,
+          removedByDisplayName,
+        ),
+      })
+    } catch (error: unknown) {
+      this.logNotificationFailure(
+        USER_REMOVED_FROM_GROUP,
+        {
+          tenantId: groupUser?.group?.tenant?.id,
+          tenantName: groupUser?.group?.tenant?.name,
         },
         error,
       )

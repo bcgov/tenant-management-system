@@ -306,6 +306,47 @@ describe('GroupRepository', () => {
     })
   })
 
+  describe('getGroupUserWithRelations', () => {
+    it('loads the group, tenant and sso user for a group membership', async () => {
+      const qb = createQueryBuilder({
+        getOne: { id: 'gu-1', group: { name: 'Elections' } },
+      })
+      manager.createQueryBuilder.mockReturnValueOnce(qb)
+
+      const result = await repo.getGroupUserWithRelations(
+        'gu-1',
+        asManager(manager),
+      )
+
+      expect(result).toEqual({ id: 'gu-1', group: { name: 'Elections' } })
+      expect(qb.leftJoinAndSelect).toHaveBeenCalledWith(
+        'groupUser.group',
+        'group',
+      )
+      expect(qb.leftJoinAndSelect).toHaveBeenCalledWith(
+        'group.tenant',
+        'tenant',
+      )
+      expect(qb.leftJoinAndSelect).toHaveBeenCalledWith(
+        'tenantUser.ssoUser',
+        'ssoUser',
+      )
+    })
+
+    it('returns null when the group membership does not exist', async () => {
+      manager.createQueryBuilder.mockReturnValueOnce(
+        createQueryBuilder({ getOne: null }),
+      )
+
+      const result = await repo.getGroupUserWithRelations(
+        'missing',
+        asManager(manager),
+      )
+
+      expect(result).toBeNull()
+    })
+  })
+
   describe('removeGroupUser', () => {
     const input = {
       tenantId: 'tenant-1',

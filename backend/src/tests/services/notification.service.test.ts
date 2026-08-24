@@ -508,6 +508,14 @@ describe('notifyUserRemovedFromTenant', () => {
     expect(email.body).toContain('https://cstar.example')
   })
 
+  it('states that group memberships were removed along with the tenant', async () => {
+    await service.notifyUserRemovedFromTenant(buildRemovedUser(), 'Someone')
+
+    expect(mockChes.sendEmail.mock.calls[0][0].body).toContain(
+      'including all of its groups',
+    )
+  })
+
   it('links to CSTAR rather than the tenant the user can no longer reach', async () => {
     await service.notifyUserRemovedFromTenant(buildRemovedUser(), 'Someone')
 
@@ -553,6 +561,116 @@ describe('notifyUserRemovedFromTenant', () => {
 
     expect(mockLogger.error).toHaveBeenCalledWith('Notification failed', {
       event: 'user_removed_from_tenant',
+      tenantId: 'tenant-1',
+      tenantName: 'My Tenant',
+      reason: 'CHES unavailable',
+    })
+  })
+})
+
+function buildRemovedGroupUser() {
+  return {
+    updatedDateTime: '2026-08-21',
+    group: {
+      name: 'Elections Support Team',
+      tenant: { id: 'tenant-1', name: 'My Tenant' },
+    },
+    tenantUser: {
+      ssoUser: { email: 'test.user@example.com', ssoUserId: 'SSO-1' },
+    },
+  }
+}
+
+describe('notifyUserRemovedFromGroup', () => {
+  let service: NotificationService
+
+  beforeEach(() => {
+    jest.clearAllMocks()
+    service = new NotificationService()
+    config.ches = {
+      adminNotificationEmail: 'cstar.admin@gov.bc.ca',
+      apiUrl: 'https://ches.example/api/v1/email',
+      clientId: 'client',
+      clientSecret: 'secret',
+      tokenUrl: 'https://token.example/token',
+    }
+    config.appBaseUrl = 'https://cstar.example'
+    mockChes.isConfigured.mockReturnValue(true)
+    mockChes.sendEmail.mockResolvedValue({ msgId: 'msg-5', txId: 'tx-5' })
+  })
+
+  it('emails the user who was removed from the group', async () => {
+    await service.notifyUserRemovedFromGroup(buildRemovedGroupUser(), 'Someone')
+
+    expect(mockChes.sendEmail.mock.calls[0][0].to).toEqual([
+      'test.user@example.com',
+    ])
+  })
+
+  it('includes the group, tenant and removal details', async () => {
+    await service.notifyUserRemovedFromGroup(
+      buildRemovedGroupUser(),
+      'Test Admin',
+    )
+
+    const email = mockChes.sendEmail.mock.calls[0][0]
+
+    expect(email.subject).toBe(
+      'You have been removed from a CSTAR group: Elections Support Team',
+    )
+    expect(email.body).toContain('Group name: Elections Support Team')
+    expect(email.body).toContain('Tenant name: My Tenant')
+    expect(email.body).toContain('Removed at: 2026-08-21')
+    expect(email.body).toContain('Removed by: Test Admin')
+    expect(email.body).toContain('https://cstar.example')
+  })
+
+  it('says the user keeps their tenant access', async () => {
+    await service.notifyUserRemovedFromGroup(buildRemovedGroupUser(), 'Someone')
+
+    expect(mockChes.sendEmail.mock.calls[0][0].body).toContain(
+      'You still have access to the tenant',
+    )
+  })
+
+  it('does not claim which access was lost, as groups can overlap', async () => {
+    await service.notifyUserRemovedFromGroup(buildRemovedGroupUser(), 'Someone')
+
+    const body = mockChes.sendEmail.mock.calls[0][0].body
+
+    expect(body).not.toContain('Roles')
+    expect(body).toContain('You will still have access to other groups')
+  })
+
+  it('reports the date as not recorded when it is missing', async () => {
+    const groupUser = buildRemovedGroupUser()
+    groupUser.updatedDateTime = undefined as unknown as string
+
+    await service.notifyUserRemovedFromGroup(groupUser, 'Someone')
+
+    expect(mockChes.sendEmail.mock.calls[0][0].body).toContain(
+      'Removed at: Not recorded',
+    )
+  })
+
+  it('skips sending when the user has no email address', async () => {
+    const groupUser = buildRemovedGroupUser()
+    groupUser.tenantUser.ssoUser.email = ''
+
+    await service.notifyUserRemovedFromGroup(groupUser, 'Someone')
+
+    expect(mockChes.sendEmail).not.toHaveBeenCalled()
+  })
+
+  it('does not throw when CHES fails, so the removal still succeeds', async () => {
+    mockChes.sendEmail.mockRejectedValue(new Error('CHES unavailable'))
+
+    await expect(
+      service.notifyUserRemovedFromGroup(buildRemovedGroupUser(), 'Someone'),
+    ).resolves.toBeUndefined()
+
+    expect(mockLogger.error).toHaveBeenCalledWith('Notification failed', {
+      event: 'user_removed_from_group',
       tenantId: 'tenant-1',
       tenantName: 'My Tenant',
       reason: 'CHES unavailable',
