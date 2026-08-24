@@ -18,6 +18,7 @@ jest.mock('../../repositories/tenant.repository', () => ({
 jest.mock('../../services/notification.service', () => ({
   notificationService: {
     notifyUserAddedToTenant: jest.fn(),
+    notifyUserRemovedFromGroup: jest.fn(),
   },
 }))
 jest.mock('../../common/logger')
@@ -37,6 +38,8 @@ const mockTenantRepository = tenantRepository as jest.Mocked<
 >
 const mockTransaction = connection.manager.transaction as jest.Mock
 const mockNotifyAdded = notificationService.notifyUserAddedToTenant as jest.Mock
+const mockNotifyGroupRemoved =
+  notificationService.notifyUserRemovedFromGroup as jest.Mock
 const mockLoggerError = logger.error as jest.Mock
 
 function asRequest(overrides: Partial<Request>): Request {
@@ -261,6 +264,94 @@ describe('GroupService', () => {
 
       await expect(service.addGroupUser(req)).rejects.toThrow(
         'Group user creation failed',
+      )
+    })
+  })
+
+  describe('removeGroupUser', () => {
+    const req = asRequest({
+      params: {
+        tenantId: 'tenant-1',
+        groupId: 'group-1',
+        groupUserId: 'gu-1',
+      },
+      decodedJwt: {
+        idir_user_guid: 'ADMIN-1',
+        display_name: 'Test Admin',
+      },
+    })
+
+    const groupUser = {
+      id: 'gu-1',
+      updatedDateTime: '2026-08-21',
+      group: {
+        name: 'Elections Support Team',
+        tenant: { id: 'tenant-1', name: 'My Tenant' },
+      },
+      tenantUser: {
+        ssoUser: { ssoUserId: 'SSO-1', email: 'test.user@example.com' },
+      },
+    }
+
+    it('notifies the removed user once the removal succeeds', async () => {
+      mockRepository.removeGroupUser.mockResolvedValue(undefined as never)
+      mockRepository.getGroupUserWithRelations.mockResolvedValue(
+        groupUser as never,
+      )
+
+      await service.removeGroupUser(req)
+
+      expect(mockNotifyGroupRemoved).toHaveBeenCalledWith(
+        groupUser,
+        'Test Admin',
+      )
+    })
+
+    it('does not notify a user who removed their own group membership', async () => {
+      mockRepository.removeGroupUser.mockResolvedValue(undefined as never)
+      mockRepository.getGroupUserWithRelations.mockResolvedValue(
+        groupUser as never,
+      )
+
+      await service.removeGroupUser(
+        asRequest({
+          params: {
+            tenantId: 'tenant-1',
+            groupId: 'group-1',
+            groupUserId: 'gu-1',
+          },
+          decodedJwt: { idir_user_guid: 'sso-1', display_name: 'Test User' },
+        }),
+      )
+
+      expect(mockNotifyGroupRemoved).not.toHaveBeenCalled()
+    })
+
+    it('does not notify when the removal fails', async () => {
+      mockRepository.removeGroupUser.mockRejectedValue(new Error('db down'))
+
+      await expect(service.removeGroupUser(req)).rejects.toThrow('db down')
+
+      expect(mockNotifyGroupRemoved).not.toHaveBeenCalled()
+    })
+
+    it('still removes the user when the notification lookup fails', async () => {
+      mockRepository.removeGroupUser.mockResolvedValue(undefined as never)
+      mockRepository.getGroupUserWithRelations.mockRejectedValue(
+        new Error('db blip'),
+      )
+
+      const result = await service.removeGroupUser(req)
+
+      expect(result).toEqual({
+        data: { message: 'User successfully removed from group' },
+      })
+      expect(mockLoggerError).toHaveBeenCalledWith(
+        'Notification lookup failed',
+        {
+          groupUserId: 'gu-1',
+          reason: 'db blip',
+        },
       )
     })
   })

@@ -184,6 +184,38 @@ export class GroupService {
     }
   }
 
+  private async notifyUserRemovedFromGroup(
+    groupUserId: string,
+    removedBy: { ssoUserId: string; displayName: string },
+  ) {
+    try {
+      const groupUser =
+        await groupRepository.getGroupUserWithRelations(groupUserId)
+
+      if (!groupUser) {
+        return
+      }
+
+      const removedTheirOwnAccess =
+        groupUser.tenantUser?.ssoUser?.ssoUserId?.toUpperCase() ===
+        removedBy.ssoUserId.toUpperCase()
+
+      if (removedTheirOwnAccess) {
+        return
+      }
+
+      await notificationService.notifyUserRemovedFromGroup(
+        groupUser,
+        removedBy.displayName,
+      )
+    } catch (error: unknown) {
+      logger.error('Notification lookup failed', {
+        groupUserId,
+        reason: getErrorMessage(error),
+      })
+    }
+  }
+
   public async removeGroupUser(req: Request) {
     const input: RemoveGroupUserInputDto = {
       tenantId: req.params.tenantId,
@@ -201,6 +233,12 @@ export class GroupService {
         )
         throw error
       }
+    })
+
+    await this.notifyUserRemovedFromGroup(input.groupUserId, {
+      ssoUserId: input.updatedBy,
+      displayName:
+        req.decodedJwt?.display_name || req.decodedJwt?.name || 'System User',
     })
 
     return {

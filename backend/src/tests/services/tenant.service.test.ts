@@ -14,6 +14,7 @@ jest.mock('../../services/notification.service', () => ({
   notificationService: {
     notifyUserAddedToTenant: jest.fn(),
     notifyUserRemovedFromTenant: jest.fn(),
+    notifyUserRemovedFromGroup: jest.fn(),
   },
 }))
 jest.mock('../../common/db.connection', () => ({
@@ -35,6 +36,8 @@ const mockLoggerError = logger.error as jest.Mock
 const mockNotifyAdded = notificationService.notifyUserAddedToTenant as jest.Mock
 const mockNotifyRemoved =
   notificationService.notifyUserRemovedFromTenant as jest.Mock
+const mockNotifyGroupRemoved =
+  notificationService.notifyUserRemovedFromGroup as jest.Mock
 
 function asRequest(overrides: Partial<Request>): Request {
   return overrides as Request
@@ -448,6 +451,25 @@ describe('TenantService', () => {
       )
 
       expect(mockNotifyRemoved).not.toHaveBeenCalled()
+    })
+
+    it('sends only the tenant email, not one per group, on offboarding', async () => {
+      mockRepository.removeTenantUser.mockResolvedValue(undefined as never)
+      mockRepository.getTenantUserWithRelations.mockResolvedValue({
+        id: 'tu-1',
+        ssoUser: { ssoUserId: 'SSO-1', email: 'test.user@example.com' },
+        tenant: { id: 'tenant-1', name: 'My Tenant' },
+      } as never)
+
+      await service.removeTenantUser(
+        asRequest({
+          params: { tenantId: 'tenant-1', tenantUserId: 'tu-1' },
+          decodedJwt: { idir_user_guid: 'ADMIN-1', display_name: 'Test Admin' },
+        }),
+      )
+
+      expect(mockNotifyRemoved).toHaveBeenCalledTimes(1)
+      expect(mockNotifyGroupRemoved).not.toHaveBeenCalled()
     })
 
     it('does not notify when the removal fails', async () => {
