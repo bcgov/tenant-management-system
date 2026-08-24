@@ -642,6 +642,17 @@ describe('notifyUserRemovedFromGroup', () => {
     expect(body).toContain('You will still have access to other groups')
   })
 
+  it('reports the date as not recorded when it is missing', async () => {
+    const groupUser = buildRemovedGroupUser()
+    groupUser.updatedDateTime = undefined as unknown as string
+
+    await service.notifyUserRemovedFromGroup(groupUser, 'Someone')
+
+    expect(mockChes.sendEmail.mock.calls[0][0].body).toContain(
+      'Removed at: Not recorded',
+    )
+  })
+
   it('skips sending when the user has no email address', async () => {
     const groupUser = buildRemovedGroupUser()
     groupUser.tenantUser.ssoUser.email = ''

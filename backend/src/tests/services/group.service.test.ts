@@ -327,6 +327,15 @@ describe('GroupService', () => {
       expect(mockNotifyGroupRemoved).not.toHaveBeenCalled()
     })
 
+    it('does not notify when the group membership cannot be loaded', async () => {
+      mockRepository.removeGroupUser.mockResolvedValue(undefined as never)
+      mockRepository.getGroupUserWithRelations.mockResolvedValue(null as never)
+
+      await service.removeGroupUser(req)
+
+      expect(mockNotifyGroupRemoved).not.toHaveBeenCalled()
+    })
+
     it('does not notify when the removal fails', async () => {
       mockRepository.removeGroupUser.mockRejectedValue(new Error('db down'))
 
