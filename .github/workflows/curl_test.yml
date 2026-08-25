@@ -36,4 +36,4 @@ jobs:
         run: |
           curl -skv \
           -H "Authorization: Bearer ${{ secrets.OC_TOKEN }}" \
-          "${{ secrets.OC_SERVER }}"
+          "${{ vars.OC_SERVER }}"
