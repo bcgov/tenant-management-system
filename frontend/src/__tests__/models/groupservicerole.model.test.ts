@@ -18,7 +18,7 @@ describe('GroupServiceRole model', () => {
 
       expect(groupServiceRole.description).toBe('description')
       expect(groupServiceRole.id).toBe('id')
-      expect(groupServiceRole.identityProviders.length).toBe(1)
+      expect(groupServiceRole.identityProviders).toHaveLength(1)
       expect(groupServiceRole.identityProviders[0]).toBe('identityProvider')
       expect(groupServiceRole.isEnabled).toBe(true)
       expect(groupServiceRole.name).toBe('name')
@@ -33,7 +33,7 @@ describe('GroupServiceRole model', () => {
         name: 'name',
       })
 
-      expect(groupServiceRole.identityProviders.length).toBe(0)
+      expect(groupServiceRole.identityProviders).toHaveLength(0)
     })
   })
 })
