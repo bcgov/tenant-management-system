@@ -16,7 +16,7 @@ import { type Tenant } from '@/models/tenant.model'
 
 // --- Component Interface -----------------------------------------------------
 
-const props = defineProps<{
+const { groups, tenant } = defineProps<{
   groups: Group[]
   tenant: Tenant
 }>()
@@ -34,17 +34,15 @@ const showDetail = ref(false)
 // Hide the detail view when the user clicks a different navigation item.
 watch(
   () => route.path,
-  (newPath, oldPath) => {
-    if (newPath !== oldPath) {
-      showDetail.value = false
-    }
+  () => {
+    showDetail.value = false
   },
 )
 
 // --- Computed Values ---------------------------------------------------------
 
-const tenantGroupsCount = computed(() => props.groups.length)
-const tenantUsersCount = computed(() => props.tenant.users.length)
+const tenantGroupsCount = computed(() => groups.length)
+const tenantUsersCount = computed(() => tenant.users.length)
 </script>
 
 <template>
@@ -62,6 +60,10 @@ const tenantUsersCount = computed(() => props.tenant.users.length)
       </v-col>
       <v-col cols="auto">
         <v-btn
+          :aria-expanded="showDetail"
+          :aria-label="
+            showDetail ? 'Collapse tenant details' : 'Expand tenant details'
+          "
           :icon="showDetail ? mdiChevronUp : mdiChevronDown"
           rounded="lg"
           size="small"
@@ -115,8 +117,8 @@ const tenantUsersCount = computed(() => props.tenant.users.length)
 <style scoped>
 .description {
   margin: 0;
+  overflow-wrap: break-word;
   white-space: pre-wrap;
-  word-break: break-word;
 }
 
 .text-stack p {
