@@ -71,6 +71,7 @@ export class TenantService {
   public async addTenantUser(req: Request) {
     let response: AddTenantUserResponseDto | undefined
     let addedUser: AddTenantUserResultDto | undefined
+    let addedGroups: Group[] = []
     const input: AddTenantUserInputDto = {
       tenantId: req.params.tenantId,
       updatedBy: req.decodedJwt?.idir_user_guid || 'system',
@@ -92,6 +93,7 @@ export class TenantService {
           transactionEntityManager,
         )
         addedUser = tenantResponse
+        addedGroups = groups
         response = this.mapper.toAddTenantUserResponseDto(
           tenantResponse.savedTenantUser,
           tenantResponse.roleAssignments,
@@ -112,6 +114,7 @@ export class TenantService {
     await notificationService.notifyUserAddedToTenant(
       addedUser.savedTenantUser,
       addedUser.roleAssignments,
+      addedGroups,
     )
 
     return response

@@ -7,6 +7,7 @@ const TENANT_REQUEST_CREATED = 'tenant_request_created'
 const TENANT_REQUEST_DECISIONED = 'tenant_request_decisioned'
 const USER_ADDED_TO_TENANT = 'user_added_to_tenant'
 const USER_REMOVED_FROM_TENANT = 'user_removed_from_tenant'
+const USER_ADDED_TO_GROUP = 'user_added_to_group'
 const USER_REMOVED_FROM_GROUP = 'user_removed_from_group'
 
 export interface NotifiableTenantRequest {
@@ -30,9 +31,18 @@ export interface NotifiableTenantUser {
 }
 
 export interface NotifiableGroupUser {
+  createdDateTime?: Date | string
   updatedDateTime?: Date | string
-  group?: { name?: string; tenant?: { id?: string; name?: string } }
+  group?: {
+    id?: string
+    name?: string
+    tenant?: { id?: string; name?: string }
+  }
   tenantUser?: { ssoUser?: { email?: string; ssoUserId?: string } }
+}
+
+export interface NotifiableGroup {
+  name?: string
 }
 
 export interface NotifiableRoleAssignment {
@@ -85,6 +95,13 @@ function formatRoles(roleAssignments: NotifiableRoleAssignment[]): string {
   }
 
   return roleNames.join(', ')
+}
+
+function formatGroups(groups: NotifiableGroup[]): string {
+  return groups
+    .map((group) => group.name)
+    .filter(Boolean)
+    .join(', ')
 }
 
 function getCstarUrl(path = ''): string {
@@ -178,22 +195,31 @@ export class NotificationService {
   private buildUserAddedToTenantEmail(
     tenantUser: NotifiableTenantUser,
     roleAssignments: NotifiableRoleAssignment[],
+    groups: NotifiableGroup[],
   ): EmailContent {
     const tenantName = tenantUser.tenant?.name || ''
+
+    const details: EmailDetail[] = [
+      { label: 'Tenant name', value: tenantName },
+      {
+        label: 'Ministry name',
+        value: tenantUser.tenant?.ministryName || '',
+      },
+      { label: 'Added at', value: formatDate(tenantUser.createdDateTime) },
+      { label: 'Roles granted', value: formatRoles(roleAssignments) },
+    ]
+
+    const groupNames = formatGroups(groups)
+
+    if (groupNames) {
+      details.push({ label: 'Groups', value: groupNames })
+    }
 
     return {
       subject: `You have been added to a CSTAR tenant: ${tenantName}`,
       body: formatBody([
         'You have been added to a tenant in CSTAR.',
-        formatDetails([
-          { label: 'Tenant name', value: tenantName },
-          {
-            label: 'Ministry name',
-            value: tenantUser.tenant?.ministryName || '',
-          },
-          { label: 'Added at', value: formatDate(tenantUser.createdDateTime) },
-          { label: 'Roles granted', value: formatRoles(roleAssignments) },
-        ]),
+        formatDetails(details),
         `Sign in to CSTAR to access this tenant:\n${getCstarUrl(`/tenants/${tenantUser.tenant?.id}/users`)}`,
       ]),
     }
@@ -222,6 +248,29 @@ export class NotificationService {
           { label: 'Removed by', value: removedByDisplayName || 'Unknown' },
         ]),
         `Sign in to CSTAR:\n${getCstarUrl()}`,
+      ]),
+    }
+  }
+
+  private buildUserAddedToGroupEmail(
+    groupUser: NotifiableGroupUser,
+    addedByDisplayName: string,
+  ): EmailContent {
+    const groupName = groupUser.group?.name || ''
+    const tenantId = groupUser.group?.tenant?.id
+    const groupId = groupUser.group?.id
+
+    return {
+      subject: `You have been added to a CSTAR group: ${groupName}`,
+      body: formatBody([
+        'You have been added to a group in CSTAR.',
+        formatDetails([
+          { label: 'Group name', value: groupName },
+          { label: 'Tenant name', value: groupUser.group?.tenant?.name || '' },
+          { label: 'Added at', value: formatDate(groupUser.createdDateTime) },
+          { label: 'Added by', value: addedByDisplayName || 'Unknown' },
+        ]),
+        `Sign in to CSTAR to see this group:\n${getCstarUrl(`/tenants/${tenantId}/groups/${groupId}/members`)}`,
       ]),
     }
   }
@@ -349,13 +398,18 @@ export class NotificationService {
   public async notifyUserAddedToTenant(
     tenantUser: NotifiableTenantUser,
     roleAssignments: NotifiableRoleAssignment[],
+    groups: NotifiableGroup[] = [],
   ) {
     try {
       await this.sendNotification({
         event: USER_ADDED_TO_TENANT,
         tenantId: tenantUser.tenant?.id,
         recipient: tenantUser.ssoUser?.email,
-        email: this.buildUserAddedToTenantEmail(tenantUser, roleAssignments),
+        email: this.buildUserAddedToTenantEmail(
+          tenantUser,
+          roleAssignments,
+          groups,
+        ),
       })
     } catch (error: unknown) {
       this.logNotificationFailure(
@@ -410,6 +464,28 @@ export class NotificationService {
     } catch (error: unknown) {
       this.logNotificationFailure(
         USER_REMOVED_FROM_GROUP,
+        {
+          tenantId: groupUser?.group?.tenant?.id,
+          tenantName: groupUser?.group?.tenant?.name,
+        },
+        error,
+      )
+    }
+  }
+  public async notifyUserAddedToGroup(
+    groupUser: NotifiableGroupUser,
+    addedByDisplayName: string,
+  ) {
+    try {
+      await this.sendNotification({
+        event: USER_ADDED_TO_GROUP,
+        tenantId: groupUser.group?.tenant?.id,
+        recipient: groupUser.tenantUser?.ssoUser?.email,
+        email: this.buildUserAddedToGroupEmail(groupUser, addedByDisplayName),
+      })
+    } catch (error: unknown) {
+      this.logNotificationFailure(
+        USER_ADDED_TO_GROUP,
         {
           tenantId: groupUser?.group?.tenant?.id,
           tenantName: groupUser?.group?.tenant?.name,
