@@ -1,0 +1,26 @@
+name: Github Timeout Trace
+
+on:
+  pull_request:
+    types: [labeled, opened, reopened, synchronize]
+
+concurrency:
+  # Cancel in progress for PR open and close
+  group: ${{ github.event.number }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  curl_loop_test:
+    name: Curl Loop Test
+    environment:
+      name: dev
+    runs-on: ubuntu-24.04
+    steps:
+      - id: curl
+        run: |
+          while curl --trace-ascii /tmp/keycloak.trace https://loginproxy.gov.bc.ca; do
+            echo "curl succeeded, retrying..."
+          done
+          cat /tmp/keycloak.trace
