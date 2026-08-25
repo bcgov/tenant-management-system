@@ -379,6 +379,28 @@ describe('notifyUserAddedToTenant', () => {
     expect(email.body).toContain('https://cstar.example/tenants/tenant-1/users')
   })
 
+  it('lists the groups the user was added to', async () => {
+    await service.notifyUserAddedToTenant(
+      buildAddedUser(),
+      buildRoleAssignments(),
+      [{ name: 'Elections Support Team' }, { name: 'Finance Reviewers' }],
+    )
+
+    expect(mockChes.sendEmail.mock.calls[0][0].body).toContain(
+      'Groups: Elections Support Team, Finance Reviewers',
+    )
+  })
+
+  it('omits the groups line when no groups were assigned', async () => {
+    await service.notifyUserAddedToTenant(
+      buildAddedUser(),
+      buildRoleAssignments(),
+      [],
+    )
+
+    expect(mockChes.sendEmail.mock.calls[0][0].body).not.toContain('Groups:')
+  })
+
   it('falls back to the role name when a role has no description', async () => {
     await service.notifyUserAddedToTenant(buildAddedUser(), [
       { role: { name: 'TMS.SERVICE_USER' } },
@@ -671,6 +693,99 @@ describe('notifyUserRemovedFromGroup', () => {
 
     expect(mockLogger.error).toHaveBeenCalledWith('Notification failed', {
       event: 'user_removed_from_group',
+      tenantId: 'tenant-1',
+      tenantName: 'My Tenant',
+      reason: 'CHES unavailable',
+    })
+  })
+})
+
+function buildAddedGroupUser() {
+  return {
+    createdDateTime: '2026-08-21',
+    group: {
+      id: 'group-1',
+      name: 'Elections Support Team',
+      tenant: { id: 'tenant-1', name: 'My Tenant' },
+    },
+    tenantUser: {
+      ssoUser: { email: 'test.user@example.com', ssoUserId: 'SSO-1' },
+    },
+  }
+}
+
+describe('notifyUserAddedToGroup', () => {
+  let service: NotificationService
+
+  beforeEach(() => {
+    jest.clearAllMocks()
+    service = new NotificationService()
+    config.ches = {
+      adminNotificationEmail: 'cstar.admin@gov.bc.ca',
+      apiUrl: 'https://ches.example/api/v1/email',
+      clientId: 'client',
+      clientSecret: 'secret',
+      tokenUrl: 'https://token.example/token',
+    }
+    config.appBaseUrl = 'https://cstar.example'
+    mockChes.isConfigured.mockReturnValue(true)
+    mockChes.sendEmail.mockResolvedValue({ msgId: 'msg-6', txId: 'tx-6' })
+  })
+
+  it('emails the user who was added to the group', async () => {
+    await service.notifyUserAddedToGroup(buildAddedGroupUser(), 'Someone')
+
+    expect(mockChes.sendEmail.mock.calls[0][0].to).toEqual([
+      'test.user@example.com',
+    ])
+  })
+
+  it('includes the group, tenant and who added them', async () => {
+    await service.notifyUserAddedToGroup(buildAddedGroupUser(), 'Test Admin')
+
+    const email = mockChes.sendEmail.mock.calls[0][0]
+
+    expect(email.subject).toBe(
+      'You have been added to a CSTAR group: Elections Support Team',
+    )
+    expect(email.body).toContain('Group name: Elections Support Team')
+    expect(email.body).toContain('Tenant name: My Tenant')
+    expect(email.body).toContain('Added at: 2026-08-21')
+    expect(email.body).toContain('Added by: Test Admin')
+  })
+
+  it('links to the group the user can now reach', async () => {
+    await service.notifyUserAddedToGroup(buildAddedGroupUser(), 'Someone')
+
+    expect(mockChes.sendEmail.mock.calls[0][0].body).toContain(
+      'https://cstar.example/tenants/tenant-1/groups/group-1/members',
+    )
+  })
+
+  it('does not list the roles the group grants', async () => {
+    await service.notifyUserAddedToGroup(buildAddedGroupUser(), 'Someone')
+
+    expect(mockChes.sendEmail.mock.calls[0][0].body).not.toContain('Roles')
+  })
+
+  it('skips sending when the user has no email address', async () => {
+    const groupUser = buildAddedGroupUser()
+    groupUser.tenantUser.ssoUser.email = ''
+
+    await service.notifyUserAddedToGroup(groupUser, 'Someone')
+
+    expect(mockChes.sendEmail).not.toHaveBeenCalled()
+  })
+
+  it('does not throw when CHES fails, so the group add still succeeds', async () => {
+    mockChes.sendEmail.mockRejectedValue(new Error('CHES unavailable'))
+
+    await expect(
+      service.notifyUserAddedToGroup(buildAddedGroupUser(), 'Someone'),
+    ).resolves.toBeUndefined()
+
+    expect(mockLogger.error).toHaveBeenCalledWith('Notification failed', {
+      event: 'user_added_to_group',
       tenantId: 'tenant-1',
       tenantName: 'My Tenant',
       reason: 'CHES unavailable',

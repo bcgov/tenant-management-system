@@ -161,6 +161,7 @@ describe('TenantService', () => {
       expect(mockNotifyAdded).toHaveBeenCalledWith(
         savedTenantUser,
         roleAssignments,
+        [],
       )
     })
 

@@ -63,15 +63,18 @@ export class GroupService {
     }
   }
 
-  private async notifyUserAddedToTenant(tenantUserId: string) {
+  private async notifyUserAddedToTenant(tenantUserId: string, groupId: string) {
     try {
       const tenantUser =
         await tenantRepository.getTenantUserWithRelations(tenantUserId)
 
       if (tenantUser) {
+        const group = await groupRepository.getGroupById(groupId)
+
         await notificationService.notifyUserAddedToTenant(
           tenantUser,
           tenantUser.roles || [],
+          [group],
         )
       }
     } catch (error: unknown) {
@@ -86,6 +89,7 @@ export class GroupService {
     let savedGroupUser: AddGroupUserResultDto | null = null
     let addedTenantUserId: string | undefined
     let isNewTenantUser = false
+    let addedGroupUserId: string | undefined
 
     await connection.manager.transaction(async (tx) => {
       try {
@@ -121,6 +125,7 @@ export class GroupService {
         }
         savedGroupUser = await groupRepository.addGroupUser(input, tx)
         addedTenantUserId = tenantUser.id
+        addedGroupUserId = savedGroupUser?.id
         isNewTenantUser = !existingTenantUser
       } catch (error: unknown) {
         logger.error(
@@ -136,7 +141,13 @@ export class GroupService {
     }
 
     if (isNewTenantUser && addedTenantUserId) {
-      await this.notifyUserAddedToTenant(addedTenantUserId)
+      await this.notifyUserAddedToTenant(addedTenantUserId, req.params.groupId)
+    } else if (addedGroupUserId) {
+      await this.notifyUserAddedToGroup(addedGroupUserId, {
+        ssoUserId: req.decodedJwt?.idir_user_guid || 'system',
+        displayName:
+          req.decodedJwt?.display_name || req.decodedJwt?.name || 'System User',
+      })
     }
 
     return {
@@ -181,6 +192,38 @@ export class GroupService {
             createdByDisplayName || updatedGroup.createdBy || undefined,
         },
       },
+    }
+  }
+
+  private async notifyUserAddedToGroup(
+    groupUserId: string,
+    addedBy: { ssoUserId: string; displayName: string },
+  ) {
+    try {
+      const groupUser =
+        await groupRepository.getGroupUserWithRelations(groupUserId)
+
+      if (!groupUser) {
+        return
+      }
+
+      const addedThemselves =
+        groupUser.tenantUser?.ssoUser?.ssoUserId?.toUpperCase() ===
+        addedBy.ssoUserId.toUpperCase()
+
+      if (addedThemselves) {
+        return
+      }
+
+      await notificationService.notifyUserAddedToGroup(
+        groupUser,
+        addedBy.displayName,
+      )
+    } catch (error: unknown) {
+      logger.error('Notification lookup failed', {
+        groupUserId,
+        reason: getErrorMessage(error),
+      })
     }
   }
 

@@ -18,6 +18,7 @@ jest.mock('../../repositories/tenant.repository', () => ({
 jest.mock('../../services/notification.service', () => ({
   notificationService: {
     notifyUserAddedToTenant: jest.fn(),
+    notifyUserAddedToGroup: jest.fn(),
     notifyUserRemovedFromGroup: jest.fn(),
   },
 }))
@@ -38,6 +39,8 @@ const mockTenantRepository = tenantRepository as jest.Mocked<
 >
 const mockTransaction = connection.manager.transaction as jest.Mock
 const mockNotifyAdded = notificationService.notifyUserAddedToTenant as jest.Mock
+const mockNotifyGroupAdded =
+  notificationService.notifyUserAddedToGroup as jest.Mock
 const mockNotifyGroupRemoved =
   notificationService.notifyUserRemovedFromGroup as jest.Mock
 const mockLoggerError = logger.error as jest.Mock
@@ -199,12 +202,17 @@ describe('GroupService', () => {
       mockTenantRepository.getTenantUserWithRelations.mockResolvedValue(
         tenantUserWithRelations as never,
       )
+      mockRepository.getGroupById.mockResolvedValue({
+        id: 'group-1',
+        name: 'Elections Support Team',
+      } as never)
 
       await service.addGroupUser(req)
 
       expect(mockNotifyAdded).toHaveBeenCalledWith(
         tenantUserWithRelations,
         tenantUserWithRelations.roles,
+        [{ id: 'group-1', name: 'Elections Support Team' }],
       )
     })
 
@@ -220,6 +228,114 @@ describe('GroupService', () => {
       await service.addGroupUser(req)
 
       expect(mockNotifyAdded).not.toHaveBeenCalled()
+    })
+
+    it('notifies an existing tenant member that they joined a group', async () => {
+      const groupUser = {
+        id: 'gu-1',
+        createdDateTime: '2026-08-21',
+        group: {
+          id: 'group-1',
+          name: 'Elections Support Team',
+          tenant: { id: 'tenant-1', name: 'My Tenant' },
+        },
+        tenantUser: {
+          ssoUser: { ssoUserId: 'SSO-1', email: 'test.user@example.com' },
+        },
+      }
+      mockTenantRepository.getTenantUserBySsoId.mockResolvedValue({
+        id: 'tu-1',
+      } as never)
+      mockTenantRepository.ensureTenantUserExists.mockResolvedValue({
+        id: 'tu-1',
+      } as never)
+      mockRepository.addGroupUser.mockResolvedValue({ id: 'gu-1' } as never)
+      mockRepository.getGroupUserWithRelations.mockResolvedValue(
+        groupUser as never,
+      )
+
+      await service.addGroupUser(req)
+
+      expect(mockNotifyGroupAdded).toHaveBeenCalledWith(
+        groupUser,
+        'System User',
+      )
+      expect(mockNotifyAdded).not.toHaveBeenCalled()
+    })
+
+    it('sends the tenant email, not the group email, for a brand new member', async () => {
+      mockTenantRepository.getTenantUserBySsoId.mockResolvedValue(null as never)
+      mockTenantRepository.ensureTenantUserExists.mockResolvedValue({
+        id: 'tu-1',
+      } as never)
+      mockRepository.addGroupUser.mockResolvedValue({ id: 'gu-1' } as never)
+      mockTenantRepository.getTenantUserWithRelations.mockResolvedValue({
+        id: 'tu-1',
+        roles: [],
+      } as never)
+      mockRepository.getGroupById.mockResolvedValue({
+        id: 'group-1',
+        name: 'Elections Support Team',
+      } as never)
+
+      await service.addGroupUser(req)
+
+      expect(mockNotifyAdded).toHaveBeenCalled()
+      expect(mockNotifyGroupAdded).not.toHaveBeenCalled()
+    })
+
+    it('does not notify a user who added themselves to a group', async () => {
+      mockTenantRepository.getTenantUserBySsoId.mockResolvedValue({
+        id: 'tu-1',
+      } as never)
+      mockTenantRepository.ensureTenantUserExists.mockResolvedValue({
+        id: 'tu-1',
+      } as never)
+      mockRepository.addGroupUser.mockResolvedValue({ id: 'gu-1' } as never)
+      mockRepository.getGroupUserWithRelations.mockResolvedValue({
+        id: 'gu-1',
+        group: { id: 'group-1', tenant: { id: 'tenant-1' } },
+        tenantUser: {
+          ssoUser: { ssoUserId: 'admin-1', email: 'test.user@example.com' },
+        },
+      } as never)
+
+      await service.addGroupUser(
+        asRequest({
+          params: {
+            tenantId: 'tenant-1',
+            groupId: 'group-1',
+          },
+          body: { user: { ssoUserId: 'sso-1' } },
+          decodedJwt: { idir_user_guid: 'ADMIN-1', display_name: 'Admin' },
+        }),
+      )
+
+      expect(mockNotifyGroupAdded).not.toHaveBeenCalled()
+    })
+
+    it('still adds the user to the group when the group notification lookup fails', async () => {
+      mockTenantRepository.getTenantUserBySsoId.mockResolvedValue({
+        id: 'tu-1',
+      } as never)
+      mockTenantRepository.ensureTenantUserExists.mockResolvedValue({
+        id: 'tu-1',
+      } as never)
+      mockRepository.addGroupUser.mockResolvedValue({ id: 'gu-1' } as never)
+      mockRepository.getGroupUserWithRelations.mockRejectedValue(
+        new Error('db blip'),
+      )
+
+      const result = await service.addGroupUser(req)
+
+      expect(result).toEqual({ data: { groupUser: { id: 'gu-1' } } })
+      expect(mockLoggerError).toHaveBeenCalledWith(
+        'Notification lookup failed',
+        {
+          groupUserId: 'gu-1',
+          reason: 'db blip',
+        },
+      )
     })
 
     it('does not notify when adding the user to the group fails', async () => {
