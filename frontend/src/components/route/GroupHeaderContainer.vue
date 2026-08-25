@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 
+import LoginContainer from '@/components/auth/LoginContainer.vue'
 import GroupHeader from '@/components/group/GroupHeader.vue'
+import LoadingWrapper from '@/components/ui/LoadingWrapper.vue'
 import { useNotification } from '@/composables/useNotification'
 import { type GroupId } from '@/models/group.model'
 import { type TenantId } from '@/models/tenant.model'
@@ -10,7 +12,7 @@ import { useTenantStore } from '@/stores/useTenantStore'
 
 // --- Component Interface -----------------------------------------------------
 
-const props = defineProps<{
+const { groupId, tenantId } = defineProps<{
   groupId: GroupId
   tenantId: TenantId
 }>()
@@ -36,19 +38,23 @@ const enabledServiceCount = computed(
       .length,
 )
 
-const group = computed(() => groupStore.getGroup(props.groupId))
+const group = computed(() => groupStore.getGroup(groupId))
 
-const tenant = computed(() => tenantStore.getTenant(props.tenantId))
+const tenant = computed(() => tenantStore.getTenant(tenantId))
 
 // --- Component Lifecycle -----------------------------------------------------
 
-// Use init() in setup instead of a top-level await, so that loading state is
-// set before first render. Look to Suspense when no longer experimental.
 const initialized = ref(false)
+
+// Use an async function, and do not await since that would block rendering
+// until the fetch resolves. This way setup() can complete synchronously while
+// the fetch is happening, the component mounts immediately, and LoadingWrapper
+// shows a spinner if needed. In the future use <Suspense> once it is no longer
+// experimental.
 const init = async () => {
   const [groupResult, groupServicesResult] = await Promise.allSettled([
-    groupStore.fetchGroup(props.tenantId, props.groupId),
-    groupStore.fetchGroupServices(props.tenantId, props.groupId),
+    groupStore.fetchGroup(tenantId, groupId),
+    groupStore.fetchGroupServices(tenantId, groupId),
   ])
 
   if (groupResult.status === 'rejected') {
@@ -62,18 +68,21 @@ const init = async () => {
   initialized.value = true
 }
 
-init()
+// Sonar will complain (S7785) about top-level await because it doesn't
+// understand that this is a Vue component. Ignore it until <Suspense> is used.
+init() // NOSONAR
 </script>
 
 <template>
-  <template v-if="initialized">
-    <GroupHeader
-      :enabled-roles-count="enabledRolesCount"
-      :enabled-service-count="enabledServiceCount"
-      :group="group!"
-      :tenant="tenant!"
-    />
-
-    <router-view />
-  </template>
+  <LoginContainer>
+    <LoadingWrapper :loading="!initialized" loading-message="Loading group...">
+      <GroupHeader
+        :enabled-roles-count="enabledRolesCount"
+        :enabled-service-count="enabledServiceCount"
+        :group="group!"
+        :tenant="tenant!"
+      />
+      <router-view />
+    </LoadingWrapper>
+  </LoginContainer>
 </template>

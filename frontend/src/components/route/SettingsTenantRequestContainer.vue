@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { mdiMagnify } from '@mdi/js'
 import { computed, ref, type Ref } from 'vue'
-import { useI18n } from 'vue-i18n'
 
 import AdministratorContainer from '@/components/auth/AdministratorContainer.vue'
 import LoginContainer from '@/components/auth/LoginContainer.vue'
@@ -14,8 +13,6 @@ import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
 import { type TenantRequest } from '@/models/tenantrequest.model'
 import { useTenantRequestStore } from '@/stores/useTenantRequestStore'
 import { TENANT_REQUEST_STATUS } from '@/utils/constants'
-
-const { t } = useI18n()
 
 // --- Store and Composable Setup ----------------------------------------------
 
@@ -51,15 +48,12 @@ const getStatusColor = (status: string) => {
   }
 }
 
-const handleApproved = async (name: string) => {
+const handleApproved = async (tenantRequest: TenantRequest, name: string) => {
   isDuplicateName.value = false
-  if (!selectedTenantRequest.value) {
-    return
-  }
 
   try {
     await tenantRequestStore.updateTenantRequestStatus(
-      selectedTenantRequest.value.id,
+      tenantRequest.id,
       TENANT_REQUEST_STATUS.APPROVED.value,
       undefined,
       name,
@@ -79,7 +73,10 @@ const handleApproved = async (name: string) => {
       ) {
         // If the API says that this name exists already, then show the name
         // duplicated validation error.
-        notification.error(t('tenants.errors.nonNewStatusChange'))
+        notification.error(
+          'Requests can only have a status change from New. Start a new ' +
+            'request instead',
+        )
 
         return
       }
@@ -94,7 +91,7 @@ const handleApproved = async (name: string) => {
       notification.error(error.userMessage)
     } else {
       // Otherwise display a generic error message.
-      notification.error(t('tenants.errors.genericRequestError'))
+      notification.error('Failed to update Tenant Request')
     }
   }
 }
@@ -104,15 +101,12 @@ const handleCancel = () => {
   isDuplicateName.value = false
 }
 
-const handleRejected = async (notes: string) => {
+const handleRejected = async (tenantRequest: TenantRequest, notes: string) => {
   isDuplicateName.value = false
-  if (!selectedTenantRequest.value) {
-    return
-  }
 
   try {
     await tenantRequestStore.updateTenantRequestStatus(
-      selectedTenantRequest.value.id,
+      tenantRequest.id,
       TENANT_REQUEST_STATUS.REJECTED.value,
       notes,
     )
@@ -129,24 +123,33 @@ const handleRowClick = (_event: Event, { item }: { item: TenantRequest }) => {
 
 // --- Component Lifecycle -----------------------------------------------------
 
-// Use init() in setup instead of a top-level await, so that loading state is
-// set before first render. Look to Suspense when no longer experimental.
+const initialized = ref(false)
+
+// Use an async function, and do not await since that would block rendering
+// until the fetch resolves. This way setup() can complete synchronously while
+// the fetch is happening, the component mounts immediately, and LoadingWrapper
+// shows a spinner if needed. In the future use <Suspense> once it is no longer
+// experimental.
 const init = async () => {
   try {
     await tenantRequestStore.fetchTenantRequests()
   } catch {
     notification.error('Failed to load tenant request data')
   }
+
+  initialized.value = true
 }
 
-init()
+// Sonar will complain (S7785) about top-level await because it doesn't
+// understand that this is a Vue component. Ignore it until <Suspense> is used.
+init() // NOSONAR
 </script>
 
 <template>
   <LoginContainer>
     <AdministratorContainer>
       <LoadingWrapper
-        :loading="tenantRequestStore.loading"
+        :loading="!initialized"
         loading-message="Loading tenant requests..."
       >
         <v-container>
@@ -154,10 +157,12 @@ init()
             <TenantRequestDisplay
               :is-duplicate-name="isDuplicateName"
               :tenant-request="selectedTenantRequest"
-              @approved="handleApproved"
+              @approved="(name) => handleApproved(selectedTenantRequest!, name)"
               @cancel="handleCancel"
               @clear-duplicate-error="isDuplicateName = false"
-              @rejected="handleRejected"
+              @rejected="
+                (notes) => handleRejected(selectedTenantRequest!, notes)
+              "
             />
           </template>
 

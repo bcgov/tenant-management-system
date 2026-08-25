@@ -53,13 +53,12 @@ onBeforeUnmount(() => {
   <v-container class="ma-0 pa-0">
     <v-row v-if="loading && showSpinner" class="align-center justify-center">
       <v-col class="text-center" cols="auto">
-        <v-progress-circular data-testid="spinner" indeterminate />
+        <v-progress-circular class="mt-8" data-testid="spinner" indeterminate />
         <div v-if="loadingMessage" class="mt-2" data-testid="message">
           {{ loadingMessage }}
         </div>
       </v-col>
     </v-row>
-
     <template v-else-if="!loading">
       <div data-testid="content">
         <slot />

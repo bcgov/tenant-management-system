@@ -64,25 +64,34 @@ const handleSubmit = async (serviceDetails: ServiceDetailFields) => {
 
 // --- Component Lifecycle -----------------------------------------------------
 
-// Use init() in setup instead of a top-level await, so that loading state is
-// set before first render. Look to Suspense when no longer experimental.
+const initialized = ref(false)
+
+// Use an async function, and do not await since that would block rendering
+// until the fetch resolves. This way setup() can complete synchronously while
+// the fetch is happening, the component mounts immediately, and LoadingWrapper
+// shows a spinner if needed. In the future use <Suspense> once it is no longer
+// experimental.
 const init = async () => {
   try {
     await serviceStore.fetchServices()
   } catch {
     notification.error('Failed to load service data')
   }
+
+  initialized.value = true
 }
 
-init()
+// Sonar will complain (S7785) about top-level await because it doesn't
+// understand that this is a Vue component. Ignore it until <Suspense> is used.
+init() // NOSONAR
 </script>
 
 <template>
   <LoginContainer>
     <AdministratorContainer>
       <LoadingWrapper
-        :loading="serviceStore.loading"
-        loading-message="Loading services..."
+        :loading="!initialized"
+        loading-message="Loading connected services..."
       >
         <v-container>
           <template v-if="isAdding">
