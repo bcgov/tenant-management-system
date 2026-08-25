@@ -19,7 +19,7 @@ describe('ServiceRole model', () => {
       expect(serviceRole.createdDate).toBe('createdDate')
       expect(serviceRole.description).toBe('description')
       expect(serviceRole.id).toBe('id')
-      expect(serviceRole.identityProviders.length).toBe(1)
+      expect(serviceRole.identityProviders).toHaveLength(1)
       expect(serviceRole.identityProviders[0]).toBe('identityProvider')
       expect(serviceRole.isDeleted).toBe(true)
       expect(serviceRole.name).toBe('name')
@@ -36,7 +36,7 @@ describe('ServiceRole model', () => {
         name: 'name',
       })
 
-      expect(serviceRole.identityProviders.length).toBe(0)
+      expect(serviceRole.identityProviders).toHaveLength(0)
     })
   })
 })

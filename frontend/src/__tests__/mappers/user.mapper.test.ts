@@ -31,7 +31,7 @@ describe('User mapper', () => {
       const user = userMapper.fromApiData(apiData)
 
       expect(user.id).toBe('id')
-      expect(user.roles.length).toEqual(1)
+      expect(user.roles).toHaveLength(1)
       expect(user.roles[0]).toEqual(role)
       expect(user.ssoUser).toEqual(ssoUser)
     })
