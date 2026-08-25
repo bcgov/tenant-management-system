@@ -6,6 +6,7 @@ on:
 
 concurrency:
   # Cancel in progress for PR open and close
+  group: ${{ github.workflow }}
   cancel-in-progress: true
 
 permissions: {}
