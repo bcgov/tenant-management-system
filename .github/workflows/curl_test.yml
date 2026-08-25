@@ -23,4 +23,8 @@ jobs:
           while curl --trace-ascii /tmp/keycloak.trace https://loginproxy.gov.bc.ca; do
             echo "curl succeeded, retrying..."
           done
+      
+      - id:  output 
+        if: always()
+        run: |
           cat /tmp/keycloak.trace
