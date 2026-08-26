@@ -16,9 +16,9 @@ defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (event: 'clear-search'): void
-  (event: 'search', searchType: IdirSearchType, searchText: string): void
-  (event: 'select', user: User | null): void
+  'clear-search': []
+  search: [searchType: IdirSearchType, searchText: string]
+  select: [user: User | null]
 }>()
 
 // --- Component State ---------------------------------------------------------
@@ -111,7 +111,6 @@ const handleSearch = () => {
         :sort-by="defaultSort"
         :tenant="tenant"
         :users="searchResults || []"
-        where="group"
         @row-clicked="handleRowClicked"
       />
     </v-col>

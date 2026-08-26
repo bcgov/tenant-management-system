@@ -11,7 +11,7 @@ import { type IdirSearchType, IDIR_SEARCH_TYPE } from '@/utils/constants'
 
 // --- Component Interface -----------------------------------------------------
 
-const props = defineProps<{
+const { loading, searchResults, currentUsers, tenant } = defineProps<{
   loading?: boolean
   searchResults: User[] | null
   currentUsers: User[] | null
@@ -19,9 +19,9 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (event: 'clear-search'): void
-  (event: 'search', searchType: IdirSearchType, searchText: string): void
-  (event: 'select', user: User | null): void
+  'clear-search': []
+  search: [searchType: IdirSearchType, searchText: string]
+  select: [user: User | null]
 }>()
 
 // --- Component State ---------------------------------------------------------
@@ -70,7 +70,7 @@ const handleRowClicked = (user: User | null) => {
     return
   }
 
-  const alreadyAdded = props.currentUsers?.some(
+  const alreadyAdded = currentUsers?.some(
     (u) => u.ssoUser.ssoUserId === user.ssoUser.ssoUserId,
   )
 
@@ -95,7 +95,7 @@ const handleSearch = () => {
       <v-card>
         <v-card-title class="text-headline-small border-b-sm">
           <v-icon :icon="mdiAlert" color="warning" size="xsmall" />
-          {{ $t('general.duplicate') }}
+          Duplicate Entry
           <v-icon :icon="mdiClose" class="float-right" size="xsmall" />
         </v-card-title>
         <v-card-text>
@@ -140,7 +140,6 @@ const handleSearch = () => {
         :sort-by="defaultSort"
         :tenant="tenant"
         :users="searchResults || []"
-        where="tenant"
         @row-clicked="handleRowClicked"
       />
     </v-col>
