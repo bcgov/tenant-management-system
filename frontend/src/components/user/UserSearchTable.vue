@@ -15,12 +15,10 @@ defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (event: 'row-clicked', user: User | null): void
+  'row-clicked': [User | null]
 }>()
 
 // --- Component State ---------------------------------------------------------
-
-const headerClass = 'bg-surface-light-blue font-weight-bold text-body-small'
 
 const headers = [
   { key: 'ssoUser.firstName', title: 'First Name' },
@@ -56,7 +54,7 @@ const onRowClick = (_event: Event, { item }: { item: User }) => {
   <v-data-table
     v-model="selectedUser"
     :header-props="{
-      class: headerClass,
+      class: 'bg-surface-light-blue font-weight-bold text-body-small',
     }"
     :headers="headers"
     :hide-default-footer="users.length === 0"
