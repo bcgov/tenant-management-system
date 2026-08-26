@@ -153,6 +153,57 @@ describe('GroupMemberTable', () => {
         screen.queryByText('No group members added yet'),
       ).not.toBeInTheDocument()
     })
+
+    it('filters rows based on the search input', async () => {
+      const groupUsers = [
+        makeGroupUser({
+          user: makeUser({
+            ssoUser: makeSsoUser({
+              email: 'alice@example.com',
+              firstName: 'Alice',
+              lastName: 'Anderson',
+            }),
+          }),
+        }),
+        makeGroupUser({
+          user: makeUser({
+            ssoUser: makeSsoUser({
+              email: 'bob@example.com',
+              firstName: 'Bob',
+              lastName: 'Barker',
+            }),
+          }),
+        }),
+      ]
+      vi.mocked(currentUserHasRole).mockReturnValue(false)
+
+      renderComponent({ groupMembers: groupUsers, tenant: makeTenant() })
+      await fireEvent.update(screen.getByLabelText('Search'), 'Alice')
+
+      expect(screen.getByText('Alice')).toBeInTheDocument()
+      expect(screen.queryByText('Bob')).not.toBeInTheDocument()
+    })
+
+    it('shows a no-data message when the search filter matches no users', async () => {
+      const groupMember = makeGroupUser({
+        user: makeUser({
+          ssoUser: makeSsoUser({
+            email: 'firstName.lastName@gov.bc.ca',
+            firstName: 'firstName',
+            lastName: 'lastName',
+          }),
+        }),
+      })
+      vi.mocked(currentUserHasRole).mockReturnValue(false)
+
+      renderComponent({ groupMembers: [groupMember], tenant: makeTenant() })
+      await fireEvent.update(screen.getByLabelText('Search'), 'no-such-user')
+
+      expect(
+        screen.getByText('No members match your search criteria'),
+      ).toBeInTheDocument()
+      expect(screen.queryByText('firstName')).not.toBeInTheDocument()
+    })
   })
 
   describe('Add member event', () => {
