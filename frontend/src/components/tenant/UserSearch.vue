@@ -140,7 +140,6 @@ const handleSearch = () => {
         :sort-by="defaultSort"
         :tenant="tenant"
         :users="searchResults || []"
-        where="tenant"
         @row-clicked="handleRowClicked"
       />
     </v-col>

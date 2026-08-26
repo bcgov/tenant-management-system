@@ -12,7 +12,6 @@ defineProps<{
   sortBy: string
   tenant: Tenant
   users: Array<User>
-  where: 'group' | 'tenant'
 }>()
 
 const emit = defineEmits<{

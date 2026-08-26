@@ -111,7 +111,6 @@ const handleSearch = () => {
         :sort-by="defaultSort"
         :tenant="tenant"
         :users="searchResults || []"
-        where="group"
         @row-clicked="handleRowClicked"
       />
     </v-col>
