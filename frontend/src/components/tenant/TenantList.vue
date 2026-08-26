@@ -6,18 +6,18 @@ import { type Tenant } from '@/models/tenant.model'
 
 // --- Component Interface -----------------------------------------------------
 
-const props = defineProps<{
+const { tenants } = defineProps<{
   tenants: Tenant[]
 }>()
 
 const emit = defineEmits<{
-  (event: 'select', id: Tenant['id']): void
+  select: [id: Tenant['id']]
 }>()
 
 // --- Computed Values ---------------------------------------------------------
 
 const sortedTenants = computed(() => {
-  return [...props.tenants].sort((a, b) => a.name.localeCompare(b.name))
+  return [...tenants].sort((a, b) => a.name.localeCompare(b.name))
 })
 
 // --- Component Methods -------------------------------------------------------

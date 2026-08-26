@@ -2,13 +2,19 @@ import userEvent from '@testing-library/user-event'
 import { render, screen, waitFor } from '@testing-library/vue'
 import { describe, expect, it } from 'vitest'
 
-import { makeSsoUser, makeTenant, makeUser } from '@/__tests__/__factories__'
+import {
+  makeGroupUser,
+  makeSsoUser,
+  makeTenant,
+  makeUser,
+} from '@/__tests__/__factories__'
 
-import UserSearch from '@/components/tenant/UserSearch.vue'
+import UserSearch from '@/components/group/UserSearch.vue'
 import type { Tenant } from '@/models/tenant.model'
 import type { User } from '@/models/user.model'
 import vuetify from '@/plugins/vuetify'
 import { IDIR_SEARCH_TYPE } from '@/utils/constants'
+import type { GroupUser } from '@/models/groupuser.model'
 
 const mockTenant = makeTenant()
 
@@ -29,12 +35,12 @@ const user2 = makeUser({
 })
 
 const defaultProps: {
-  currentUsers: User[] | null
+  currentMembers: GroupUser[] | null
   loading?: boolean
   searchResults: User[] | null
   tenant: Tenant
 } = {
-  currentUsers: null,
+  currentMembers: null,
   searchResults: null,
   tenant: mockTenant,
 }
@@ -193,22 +199,24 @@ describe('UserSearch', () => {
 
     it('shows a duplicate entry dialog and emits null when the user is already added', async () => {
       const user = userEvent.setup()
-      const currentUser = makeUser({
-        ssoUser: makeSsoUser({
-          ssoUserId: user1.ssoUser.ssoUserId,
+      const currentGroupMember = makeGroupUser({
+        user: makeUser({
+          ssoUser: makeSsoUser({
+            ssoUserId: user1.ssoUser.ssoUserId,
+          }),
         }),
       })
 
       const { emitted } = renderComponent({
         ...defaultProps,
-        currentUsers: [currentUser],
+        currentMembers: [currentGroupMember],
         searchResults: [user1, user2],
       })
 
       await user.click(screen.getByRole('button', { name: 'Select user' }))
 
       expect(
-        screen.getByText('The selected user is already in this tenant.'),
+        screen.getByText('The selected member is already in this group.'),
       ).toBeInTheDocument()
 
       expect(emitted().select).toEqual([[null]])
@@ -216,27 +224,28 @@ describe('UserSearch', () => {
 
     it('closes the duplicate entry dialog when OK is clicked', async () => {
       const user = userEvent.setup()
-
-      const currentUser = makeUser({
-        ssoUser: makeSsoUser({
-          ssoUserId: user1.ssoUser.ssoUserId,
+      const currentGroupMember = makeGroupUser({
+        user: makeUser({
+          ssoUser: makeSsoUser({
+            ssoUserId: user1.ssoUser.ssoUserId,
+          }),
         }),
       })
 
       renderComponent({
         ...defaultProps,
-        currentUsers: [currentUser],
+        currentMembers: [currentGroupMember],
         searchResults: [user1],
       })
 
       await user.click(screen.getByRole('button', { name: 'Select user' }))
 
-      expect(screen.getByText('User Already Added')).toBeInTheDocument()
+      expect(screen.getByText('Member Already Added')).toBeInTheDocument()
 
       await user.click(screen.getByRole('button', { name: 'OK' }))
 
       await waitFor(() =>
-        expect(screen.getByText('User Already Added')).not.toBeVisible(),
+        expect(screen.getByText('Member Already Added')).not.toBeVisible(),
       )
     })
   })
