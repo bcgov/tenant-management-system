@@ -1,6 +1,5 @@
 <script lang="ts" setup>
 import { computed, ref } from 'vue'
-import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
@@ -20,7 +19,7 @@ import { currentUserHasRole } from '@/utils/permissions'
 
 // --- Component Interface -----------------------------------------------------
 
-const props = defineProps<{
+const { groupId, tenantId } = defineProps<{
   groupId: GroupId
   tenantId: TenantId
 }>()
@@ -34,8 +33,6 @@ const tenantStore = useTenantStore()
 
 // --- Component State ---------------------------------------------------------
 
-const { t } = useI18n()
-
 const draft = ref<Map<GroupServiceRoleId, boolean>>(new Map())
 const editing = ref(false)
 const promptAction = ref<'undo' | 'clear' | null>(null)
@@ -47,15 +44,12 @@ const dialogButtons = computed(() => {
   const buttons: DialogButton[] = [
     {
       action: 'cancel',
-      text: t('general.cancel'),
+      text: 'Cancel',
       type: 'secondary',
     },
     {
       action: 'confirm',
-      text:
-        promptAction.value === 'clear'
-          ? t('general.clearAll')
-          : t('general.revert'),
+      text: promptAction.value === 'clear' ? 'Clear All' : 'Revert',
       type: 'primary',
     },
   ]
@@ -65,9 +59,15 @@ const dialogButtons = computed(() => {
 
 const dialogText = computed(() => {
   if (promptAction.value === 'undo') {
-    return t('groups.undoRoleModalDesc')
+    return (
+      "You're about to undo your current selections and restore the " +
+      'previously assigned roles. Are you sure you want to continue?'
+    )
   } else if (promptAction.value === 'clear') {
-    return t('groups.clearAllRoleModalDesc')
+    return (
+      "You're about to delete all of your current role selections. Are " +
+      'you sure you want to continue?'
+    )
   }
 
   return ''
@@ -75,9 +75,9 @@ const dialogText = computed(() => {
 
 const dialogTitle = computed(() => {
   if (promptAction.value === 'undo') {
-    return t('groups.undoRoleModalTitle')
+    return 'Revert to Previous Roles?'
   } else if (promptAction.value === 'clear') {
-    return t('groups.clearAllRoleModalTitle')
+    return 'Delete all Selections?'
   }
 
   return ''
@@ -99,9 +99,9 @@ const isUserAdmin = computed(() => {
 })
 
 const tenant = computed(() => {
-  const tenant = tenantStore.getTenant(props.tenantId)
+  const tenant = tenantStore.getTenant(tenantId)
   if (!tenant) {
-    throw new Error(`Tenant ${props.tenantId} not found`)
+    throw new Error(`Tenant ${tenantId} not found`)
   }
 
   return tenant
@@ -133,7 +133,7 @@ const handleDialogButtonClick = (action: string) => {
 }
 
 const navigateToServices = () => {
-  router.push(`/tenants/${props.tenantId}/services`)
+  router.push(`/tenants/${tenantId}/services`)
 }
 
 const openDialog = (action: 'undo' | 'clear') => {
@@ -152,20 +152,20 @@ const saveChanges = async () => {
 
   try {
     await groupStore.updateGroupRoles(
-      props.tenantId,
-      props.groupId,
+      tenantId,
+      groupId,
       updated as GroupService[],
     )
     notification.success(
-      t('groups.sharedServicesSavedDesc'),
-      t('groups.sharedServicesSavedTitle'),
+      'The roles for this group have been successfully updated.',
+      'Roles Saved',
     )
     editing.value = false
     draft.value.clear()
   } catch {
     notification.error(
-      t('groups.sharedServicesSaveErrorDesc'),
-      t('groups.sharedServicesSaveErrorTitle'),
+      'There was an error updating the roles. Please try again.',
+      'Error Saving Roles',
     )
   }
 }
@@ -228,29 +228,20 @@ const undoChanges = () => {
   <v-container v-else class="ms-6">
     <v-row>
       <v-col cols="12">
-        <h4>
-          {{
-            $t('groups.sharedServices', {
-              servicesLabel: $t('general.servicesLabel', 2),
-            })
-          }}
-        </h4>
+        <h4>Adding Connected Services Roles</h4>
         <p>
-          {{
-            $t('groups.sharedServicesDesc', {
-              servicesLabel: $t('general.servicesLabel', 2),
-            })
-          }}
+          Click 'Edit' to start assigning roles. Choose the roles you want to
+          add to your Group from each available Connected Services, then click
+          'Save' to apply your changes.
         </p>
       </v-col>
     </v-row>
 
     <v-row class="darkened pa-4">
-      <!-- Edit button -->
       <v-col cols="12">
         <ButtonPrimary
           v-if="!editing && isUserAdmin"
-          :text="$t('general.edit')"
+          text="Edit"
           @click="startEditing"
         />
       </v-col>
@@ -292,7 +283,7 @@ const undoChanges = () => {
           variant="text"
           @click="cancelEditing"
         >
-          {{ $t('general.cancel') }}
+          Cancel
         </v-btn>
 
         <v-btn
@@ -303,22 +294,18 @@ const undoChanges = () => {
           border="sm opacity-100"
           @click="openDialog('clear')"
         >
-          {{ $t('general.clearAll') }}
+          Clear All
         </v-btn>
 
         <ButtonSecondary
           :disabled="!editing"
-          :text="$t('general.undoChanges')"
           class="mr-2"
+          text="Undo Changes"
           @click="openDialog('undo')"
         >
         </ButtonSecondary>
 
-        <ButtonPrimary
-          :disabled="!editing"
-          :text="$t('general.save')"
-          @click="saveChanges"
-        />
+        <ButtonPrimary :disabled="!editing" text="Save" @click="saveChanges" />
       </v-col>
     </v-row>
 
