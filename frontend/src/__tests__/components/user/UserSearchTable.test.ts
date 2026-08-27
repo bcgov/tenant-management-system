@@ -35,6 +35,7 @@ const user2 = makeUser({
 })
 
 const defaultProps = {
+  loading: false,
   sortBy: 'ssoUser.lastName',
   tenant: mockTenant,
   users: [user1, user2],
@@ -100,12 +101,24 @@ describe('UserSearchTable', () => {
       expect(within(rowB).getByText('ssoUserIdpType2')).toBeInTheDocument()
     })
 
+    it('shows a searching message when loading', () => {
+      renderComponent({ ...defaultProps, loading: true, users: [] })
+
+      expect(screen.getByText('Searching for users...')).toBeInTheDocument()
+      expect(
+        screen.queryByText('No users match your search criteria'),
+      ).not.toBeInTheDocument()
+    })
+
     it('shows a no-data message when there are no users', () => {
       renderComponent({ ...defaultProps, users: [] })
 
       expect(
         screen.getByText('No users match your search criteria'),
       ).toBeInTheDocument()
+      expect(
+        screen.queryByText('Searching for users...'),
+      ).not.toBeInTheDocument()
     })
   })
 

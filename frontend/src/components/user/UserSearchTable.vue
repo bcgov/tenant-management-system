@@ -9,6 +9,7 @@ import { identityProviderToDisplay } from '@/utils/identityProvider'
 // --- Component Interface -----------------------------------------------------
 
 defineProps<{
+  loading: boolean
   sortBy: string
   tenant: Tenant
   users: Array<User>
@@ -70,7 +71,10 @@ const onRowClick = (_event: Event, { item }: { item: User }) => {
     @click:row="onRowClick"
   >
     <template #no-data>
-      <div class="my-8">
+      <div v-if="loading" class="my-8">
+        <h5 class="mb-2">Searching for users...</h5>
+      </div>
+      <div v-else class="my-8">
         <h5 class="mb-2">No users match your search criteria</h5>
 
         <p class="mt-0">
