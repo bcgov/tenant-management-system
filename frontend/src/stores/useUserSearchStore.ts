@@ -20,24 +20,24 @@ export const useUserSearchStore = defineStore('userSearch', () => {
     searchType: BCeIDSearchType,
     searchValue: string,
   ) => {
-    const data = await userSearchService.searchBceidUsers(
+    const userSearchApiData = await userSearchService.searchBceidUsers(
       searchType,
       searchValue,
     )
 
-    return data.map(userMapper.fromSearchData)
+    return userSearchApiData.map(userMapper.fromSearchData)
   }
 
   const _searchIdirUsers = async (
     searchType: IdirSearchType,
     searchValue: string,
   ) => {
-    const data = await userSearchService.searchIdirUsers(
+    const userSearchApiData = await userSearchService.searchIdirUsers(
       searchType,
       searchValue,
     )
 
-    return data.map(userMapper.fromSearchData)
+    return userSearchApiData.map(userMapper.fromSearchData)
   }
 
   /**
