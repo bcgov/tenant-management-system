@@ -5,14 +5,12 @@ import { type UserSearchApiData } from '@/mappers/user.mapper'
 import { User } from '@/models/user.model'
 import { userSearchService } from '@/services/usersearch.service'
 import { useUserSearchStore } from '@/stores/useUserSearchStore'
+import { BCEID_SEARCH_TYPE, IDIR_SEARCH_TYPE } from '@/utils/constants'
 
 vi.mock('@/services/usersearch.service', () => ({
   userSearchService: {
-    searchBCeIDDisplayName: vi.fn(),
-    searchBCeIDEmail: vi.fn(),
-    searchIdirEmail: vi.fn(),
-    searchIdirFirstName: vi.fn(),
-    searchIdirLastName: vi.fn(),
+    searchBceidUsers: vi.fn(),
+    searchIdirUsers: vi.fn(),
   },
 }))
 
@@ -32,63 +30,88 @@ describe('useUserSearchStore', () => {
     vi.clearAllMocks()
   })
 
-  describe('IDIR Searches', () => {
-    it('searchIdirEmail manages loading state and maps results', async () => {
+  describe('searchUsers', () => {
+    it.each([
+      {
+        idirSearchType: IDIR_SEARCH_TYPE.FIRST_NAME.value,
+        bceidSearchType: BCEID_SEARCH_TYPE.DISPLAY_NAME.value,
+      },
+      {
+        idirSearchType: IDIR_SEARCH_TYPE.LAST_NAME.value,
+        bceidSearchType: BCEID_SEARCH_TYPE.DISPLAY_NAME.value,
+      },
+      {
+        idirSearchType: IDIR_SEARCH_TYPE.EMAIL.value,
+        bceidSearchType: BCEID_SEARCH_TYPE.EMAIL.value,
+      },
+    ])(
+      'maps IDIR $idirSearchType to BCeID $bceidSearchType',
+      async ({ idirSearchType, bceidSearchType }) => {
+        const store = useUserSearchStore()
+        vi.mocked(userSearchService.searchIdirUsers).mockResolvedValue([])
+        vi.mocked(userSearchService.searchBceidUsers).mockResolvedValue([])
+
+        await store.searchUsers(idirSearchType, 'search text')
+
+        expect(userSearchService.searchIdirUsers).toHaveBeenCalledWith(
+          idirSearchType,
+          'search text',
+        )
+        expect(userSearchService.searchBceidUsers).toHaveBeenCalledWith(
+          bceidSearchType,
+          'search text',
+        )
+      },
+    )
+
+    it('combines and maps IDIR and BCeID results into searchResults', async () => {
       const store = useUserSearchStore()
-      vi.mocked(userSearchService.searchIdirEmail).mockResolvedValue([
-        mockSearchData,
+      const idirData = { ...mockSearchData, email: 'idir@gov.bc.ca' }
+      const bceidData = { ...mockSearchData, email: 'bceid@example.com' }
+      vi.mocked(userSearchService.searchIdirUsers).mockResolvedValue([idirData])
+      vi.mocked(userSearchService.searchBceidUsers).mockResolvedValue([
+        bceidData,
       ])
 
-      const promise = store.searchIdirEmail('john')
+      const result = await store.searchUsers(
+        IDIR_SEARCH_TYPE.EMAIL.value,
+        'search text',
+      )
 
-      const result = await promise
-      expect(result[0]).toBeInstanceOf(User)
+      expect(result).toHaveLength(2)
+      expect(result.every((user) => user instanceof User)).toBe(true)
       expect(store.searchResults).toEqual(result)
-    })
-
-    it('searchIdirFirstName calls correct service', async () => {
-      const store = useUserSearchStore()
-      vi.mocked(userSearchService.searchIdirFirstName).mockResolvedValue([])
-
-      await store.searchIdirFirstName('John')
-
-      expect(userSearchService.searchIdirFirstName).toHaveBeenCalledWith('John')
-    })
-
-    it('searchIdirLastName calls correct service', async () => {
-      const store = useUserSearchStore()
-      vi.mocked(userSearchService.searchIdirLastName).mockResolvedValue([])
-
-      await store.searchIdirLastName('Doe')
-
-      expect(userSearchService.searchIdirLastName).toHaveBeenCalledWith('Doe')
-    })
-  })
-
-  describe('BCeID Searches', () => {
-    it('searchBCeIDEmail calls correct service and updates state', async () => {
-      const store = useUserSearchStore()
-      vi.mocked(userSearchService.searchBCeIDEmail).mockResolvedValue([
-        mockSearchData,
-      ])
-
-      await store.searchBCeIDEmail('bob@example.com')
-
-      expect(userSearchService.searchBCeIDEmail).toHaveBeenCalledWith(
-        'bob@example.com',
+      expect(store.searchResults.map((u) => u.ssoUser.email)).toEqual(
+        expect.arrayContaining(['bceid@example.com', 'idir@gov.bc.ca']),
       )
-      expect(store.searchResults).toHaveLength(1)
     })
 
-    it('searchBCeIDDisplayName calls correct service', async () => {
+    it('propagates an error if the IDIR search fails', async () => {
       const store = useUserSearchStore()
-      vi.mocked(userSearchService.searchBCeIDDisplayName).mockResolvedValue([])
+      const error = new Error('IDIR search failed')
+      vi.mocked(userSearchService.searchIdirUsers).mockRejectedValue(error)
+      vi.mocked(userSearchService.searchBceidUsers).mockResolvedValue([])
 
-      await store.searchBCeIDDisplayName('Bob')
-
-      expect(userSearchService.searchBCeIDDisplayName).toHaveBeenCalledWith(
-        'Bob',
+      const promise = store.searchUsers(
+        IDIR_SEARCH_TYPE.EMAIL.value,
+        'search text',
       )
+
+      await expect(promise).rejects.toThrow(error)
+    })
+
+    it('propagates an error if the BCeID search fails', async () => {
+      const store = useUserSearchStore()
+      const error = new Error('BCeID search failed')
+      vi.mocked(userSearchService.searchIdirUsers).mockResolvedValue([])
+      vi.mocked(userSearchService.searchBceidUsers).mockRejectedValue(error)
+
+      const promise = store.searchUsers(
+        IDIR_SEARCH_TYPE.EMAIL.value,
+        'search text',
+      )
+
+      await expect(promise).rejects.toThrow(error)
     })
   })
 })

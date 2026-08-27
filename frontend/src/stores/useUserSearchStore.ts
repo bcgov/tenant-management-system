@@ -1,142 +1,70 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
-import { userMapper, type UserSearchApiData } from '@/mappers/user.mapper'
+import { userMapper } from '@/mappers/user.mapper'
 import { User } from '@/models/user.model'
 import { userSearchService } from '@/services/usersearch.service'
 import {
   type BCeIDSearchType,
   type IdirSearchType,
-  BCEID_SEARCH_TYPE,
-  IDIR_SEARCH_TYPE,
+  IDIR_TO_BCEID_SEARCH_TYPE,
 } from '@/utils/constants'
 
 /**
- * Pinia store for searching and managing IDIR users.
+ * Pinia store for searching BCeID and IDIR users.
  */
 export const useUserSearchStore = defineStore('userSearch', () => {
   const searchResults = ref<User[]>([])
 
-  /**
-   * Private function to handle BCEID user search with loading state management.
-   *
-   * @param searchType - The type of search (email, firstName, lastName).
-   * @param searchValue - The search value to pass to the service.
-   * @returns A promise that resolves to an array of user data.
-   * @throws {Error} If the search type is invalid.
-   */
   const _searchBceidUsers = async (
     searchType: BCeIDSearchType,
     searchValue: string,
   ) => {
-    let userSearchData: UserSearchApiData[] = []
-    switch (searchType) {
-      case BCEID_SEARCH_TYPE.EMAIL.value:
-        userSearchData = await userSearchService.searchBCeIDEmail(searchValue)
-        break
-      case BCEID_SEARCH_TYPE.DISPLAY_NAME.value:
-        userSearchData =
-          await userSearchService.searchBCeIDDisplayName(searchValue)
-        break
-    }
-
-    searchResults.value = userSearchData.map((item) =>
-      userMapper.fromSearchData(item),
+    const data = await userSearchService.searchBceidUsers(
+      searchType,
+      searchValue,
     )
 
-    return searchResults.value
+    return data.map(userMapper.fromSearchData)
   }
 
-  /**
-   * Private function to handle IDIR user search with loading state management.
-   *
-   * @param searchType - The type of search (email, firstName, lastName).
-   * @param searchValue - The search value to pass to the service.
-   * @returns A promise that resolves to an array of User objects.
-   * @throws {Error} If the search type is invalid.
-   */
   const _searchIdirUsers = async (
     searchType: IdirSearchType,
     searchValue: string,
-  ): Promise<User[]> => {
-    let userSearchData: UserSearchApiData[] = []
-    switch (searchType) {
-      case IDIR_SEARCH_TYPE.EMAIL.value:
-        userSearchData = await userSearchService.searchIdirEmail(searchValue)
-        break
-      case IDIR_SEARCH_TYPE.FIRST_NAME.value:
-        userSearchData =
-          await userSearchService.searchIdirFirstName(searchValue)
-        break
-      case IDIR_SEARCH_TYPE.LAST_NAME.value:
-        userSearchData = await userSearchService.searchIdirLastName(searchValue)
-        break
-    }
-
-    searchResults.value = userSearchData.map((item) =>
-      userMapper.fromSearchData(item),
+  ) => {
+    const data = await userSearchService.searchIdirUsers(
+      searchType,
+      searchValue,
     )
 
+    return data.map(userMapper.fromSearchData)
+  }
+
+  /**
+   * Searches IDIR and the matching BCeID field in parallel and combines the
+   * results.
+   *
+   * @throws if either search fails.
+   */
+  const searchUsers = async (
+    searchType: IdirSearchType,
+    searchText: string,
+  ) => {
+    const bceidSearchType = IDIR_TO_BCEID_SEARCH_TYPE[searchType]
+
+    const [bceidResults, idirResults] = await Promise.all([
+      _searchBceidUsers(bceidSearchType, searchText),
+      _searchIdirUsers(searchType, searchText),
+    ])
+
+    searchResults.value = bceidResults.concat(idirResults)
+
     return searchResults.value
-  }
-
-  /**
-   * Searches for BCeID users based on the display name.
-   *
-   * @param displayName - The display name substring to search.
-   * @returns A promise that resolves to an array of user data.
-   */
-  const searchBCeIDDisplayName = async (displayName: string) => {
-    return _searchBceidUsers(BCEID_SEARCH_TYPE.DISPLAY_NAME.value, displayName)
-  }
-
-  /**
-   * Searches for BCeID users based on the email address.
-   *
-   * @param email - The email address substring to search.
-   * @returns A promise that resolves to an array of user data.
-   */
-  const searchBCeIDEmail = async (email: string) => {
-    return _searchBceidUsers(BCEID_SEARCH_TYPE.EMAIL.value, email)
-  }
-
-  /**
-   * Searches for IDIR users based on the email address.
-   *
-   * @param email - The email address substring to search.
-   * @returns A promise that resolves to an array of user data.
-   */
-  const searchIdirEmail = async (email: string) => {
-    return _searchIdirUsers(IDIR_SEARCH_TYPE.EMAIL.value, email)
-  }
-
-  /**
-   * Searches for IDIR users based on the first name.
-   *
-   * @param firstName - The first name substring to search.
-   * @returns A promise that resolves to an array of user data.
-   */
-  const searchIdirFirstName = async (firstName: string) => {
-    return _searchIdirUsers(IDIR_SEARCH_TYPE.FIRST_NAME.value, firstName)
-  }
-
-  /**
-   * Searches for IDIR users based on the last name.
-   *
-   * @param lastName - The last name substring to search.
-   * @returns A promise that resolves to an array of user data.
-   */
-  const searchIdirLastName = async (lastName: string) => {
-    return _searchIdirUsers(IDIR_SEARCH_TYPE.LAST_NAME.value, lastName)
   }
 
   return {
     searchResults,
 
-    searchBCeIDDisplayName,
-    searchBCeIDEmail,
-    searchIdirEmail,
-    searchIdirFirstName,
-    searchIdirLastName,
+    searchUsers,
   }
 })

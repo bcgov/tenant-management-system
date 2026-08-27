@@ -12,7 +12,7 @@ import { User } from '@/models/user.model'
 import { useGroupStore } from '@/stores/useGroupStore'
 import { useTenantStore } from '@/stores/useTenantStore'
 import { useUserSearchStore } from '@/stores/useUserSearchStore'
-import { type IdirSearchType, IDIR_SEARCH_TYPE } from '@/utils/constants'
+import { type IdirSearchType } from '@/utils/constants'
 
 // --- Component Interface -----------------------------------------------------
 
@@ -84,25 +84,10 @@ const handleUserSearch = async (
   isLoadingSearch.value = true
 
   try {
-    if (searchType === IDIR_SEARCH_TYPE.FIRST_NAME.value) {
-      searchResults.value =
-        await userSearchStore.searchIdirFirstName(searchText)
-      searchResults.value = searchResults.value.concat(
-        await userSearchStore.searchBCeIDDisplayName(searchText),
-      )
-    } else if (searchType === IDIR_SEARCH_TYPE.LAST_NAME.value) {
-      searchResults.value = await userSearchStore.searchIdirLastName(searchText)
-      searchResults.value = searchResults.value.concat(
-        await userSearchStore.searchBCeIDDisplayName(searchText),
-      )
-    } else if (searchType === IDIR_SEARCH_TYPE.EMAIL.value) {
-      searchResults.value = await userSearchStore.searchIdirEmail(searchText)
-      searchResults.value = searchResults.value.concat(
-        await userSearchStore.searchBCeIDEmail(searchText),
-      )
-    } else {
-      throw new Error('Invalid search type')
-    }
+    searchResults.value = await userSearchStore.searchUsers(
+      searchType,
+      searchText,
+    )
   } catch {
     notification.error('User search failed')
     searchResults.value = null
