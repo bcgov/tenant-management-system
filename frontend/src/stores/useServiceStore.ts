@@ -14,7 +14,6 @@ import { serviceMapper } from '@/mappers/service.mapper'
  * Pinia store for managing services.
  */
 export const useServiceStore = defineStore('service', () => {
-  const loading = ref(false)
   const services = ref<Service[]>([])
   const tenantServices = ref<Service[]>([])
 
@@ -73,16 +72,11 @@ export const useServiceStore = defineStore('service', () => {
    * @returns A promise that resolves when the API call completes.
    */
   const fetchServices = async (): Promise<void> => {
-    loading.value = true
-    try {
-      const serviceData = await serviceService.getServices()
-      const serviceObjects = serviceData.map(serviceMapper.fromApiData)
+    const serviceData = await serviceService.getServices()
+    const serviceObjects = serviceData.map(serviceMapper.fromApiData)
 
-      // Update the store with these services.
-      serviceObjects.forEach(upsertService)
-    } finally {
-      loading.value = false
-    }
+    // Update the store with these services.
+    serviceObjects.forEach(upsertService)
   }
 
   /**
@@ -92,13 +86,8 @@ export const useServiceStore = defineStore('service', () => {
    * @returns A promise that resolves when the API call completes.
    */
   const fetchTenantServices = async (tenantId: TenantId): Promise<void> => {
-    loading.value = true
-    try {
-      const tenantServiceData = await serviceService.getTenantServices(tenantId)
-      tenantServices.value = tenantServiceData.map(serviceMapper.fromApiData)
-    } finally {
-      loading.value = false
-    }
+    const tenantServiceData = await serviceService.getTenantServices(tenantId)
+    tenantServices.value = tenantServiceData.map(serviceMapper.fromApiData)
   }
 
   /**
@@ -112,7 +101,6 @@ export const useServiceStore = defineStore('service', () => {
   }
 
   return {
-    loading,
     services,
     tenantServices,
 

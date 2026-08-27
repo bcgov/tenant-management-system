@@ -15,7 +15,6 @@ import {
  * Pinia store for searching and managing IDIR users.
  */
 export const useUserStore = defineStore('user', () => {
-  const loading = ref(false)
   const searchResults = ref<User[]>([])
 
   /**
@@ -31,24 +30,19 @@ export const useUserStore = defineStore('user', () => {
     searchType: BCeIDSearchType,
     searchValue: string,
   ) => {
-    loading.value = true
-    try {
-      let userSearchData: UserSearchApiData[] = []
-      switch (searchType) {
-        case BCEID_SEARCH_TYPE.EMAIL.value:
-          userSearchData = await userService.searchBCeIDEmail(searchValue)
-          break
-        case BCEID_SEARCH_TYPE.DISPLAY_NAME.value:
-          userSearchData = await userService.searchBCeIDDisplayName(searchValue)
-          break
-      }
-
-      searchResults.value = userSearchData.map(userMapper.fromSearchData)
-
-      return searchResults.value
-    } finally {
-      loading.value = false
+    let userSearchData: UserSearchApiData[] = []
+    switch (searchType) {
+      case BCEID_SEARCH_TYPE.EMAIL.value:
+        userSearchData = await userService.searchBCeIDEmail(searchValue)
+        break
+      case BCEID_SEARCH_TYPE.DISPLAY_NAME.value:
+        userSearchData = await userService.searchBCeIDDisplayName(searchValue)
+        break
     }
+
+    searchResults.value = userSearchData.map(userMapper.fromSearchData)
+
+    return searchResults.value
   }
 
   /**
@@ -63,27 +57,22 @@ export const useUserStore = defineStore('user', () => {
     searchType: IdirSearchType,
     searchValue: string,
   ): Promise<User[]> => {
-    loading.value = true
-    try {
-      let userSearchData: UserSearchApiData[] = []
-      switch (searchType) {
-        case IDIR_SEARCH_TYPE.EMAIL.value:
-          userSearchData = await userService.searchIdirEmail(searchValue)
-          break
-        case IDIR_SEARCH_TYPE.FIRST_NAME.value:
-          userSearchData = await userService.searchIdirFirstName(searchValue)
-          break
-        case IDIR_SEARCH_TYPE.LAST_NAME.value:
-          userSearchData = await userService.searchIdirLastName(searchValue)
-          break
-      }
-
-      searchResults.value = userSearchData.map(userMapper.fromSearchData)
-
-      return searchResults.value
-    } finally {
-      loading.value = false
+    let userSearchData: UserSearchApiData[] = []
+    switch (searchType) {
+      case IDIR_SEARCH_TYPE.EMAIL.value:
+        userSearchData = await userService.searchIdirEmail(searchValue)
+        break
+      case IDIR_SEARCH_TYPE.FIRST_NAME.value:
+        userSearchData = await userService.searchIdirFirstName(searchValue)
+        break
+      case IDIR_SEARCH_TYPE.LAST_NAME.value:
+        userSearchData = await userService.searchIdirLastName(searchValue)
+        break
     }
+
+    searchResults.value = userSearchData.map(userMapper.fromSearchData)
+
+    return searchResults.value
   }
 
   /**
@@ -137,7 +126,6 @@ export const useUserStore = defineStore('user', () => {
   }
 
   return {
-    loading,
     searchResults,
 
     searchBCeIDDisplayName,

@@ -31,7 +31,6 @@ describe('useTenantRequestStore', () => {
   it('starts with default values', () => {
     const store = useTenantRequestStore()
 
-    expect(store.loading).toBe(false)
     expect(store.tenantRequests).toEqual([])
   })
 
@@ -77,36 +76,6 @@ describe('useTenantRequestStore', () => {
   })
 
   describe('fetchTenantRequests', () => {
-    it('manages loading state', async () => {
-      const store = useTenantRequestStore()
-      vi.mocked(tenantRequestService.getTenantRequests).mockResolvedValue([
-        makeTenantRequestApiData(),
-      ])
-
-      expect(store.loading).toBe(false)
-
-      const promise = store.fetchTenantRequests()
-
-      expect(store.loading).toBe(true)
-
-      await promise
-
-      expect(store.loading).toBe(false)
-    })
-
-    it('clears loading state on error', async () => {
-      const store = useTenantRequestStore()
-      vi.mocked(tenantRequestService.getTenantRequests).mockRejectedValueOnce(
-        new Error('API error'),
-      )
-
-      expect(store.loading).toBe(false)
-
-      await expect(store.fetchTenantRequests()).rejects.toThrow()
-
-      expect(store.loading).toBe(false)
-    })
-
     it('overwrites store with results', async () => {
       const store = useTenantRequestStore()
       const tenantRequest = makeTenantRequest({

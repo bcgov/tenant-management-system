@@ -83,7 +83,5 @@ file-specific tests.
 The other stores all call services and store results. They all use a similar
 testing template, where for each store function there is a test for:
 
-- If loading flag used, test that it's set while service is called
-- If loading flag used, test that it's cleared on service error
 - Test that state is updated in the expected way(s)
 - Test that state is not changed on service error

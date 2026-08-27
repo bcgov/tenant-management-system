@@ -18,7 +18,6 @@ import { useRoleStore } from '@/stores/useRoleStore'
  * Pinia store for managing tenants and tenant users.
  */
 export const useTenantStore = defineStore('tenant', () => {
-  const loading = ref(false)
   const tenants = ref<Tenant[]>([])
 
   // Private methods
@@ -101,15 +100,10 @@ export const useTenantStore = defineStore('tenant', () => {
    * @returns A promise that resolves to the fetched tenant.
    */
   const fetchTenant = async (tenantId: TenantId): Promise<Tenant> => {
-    loading.value = true
-    try {
-      const tenantData = await tenantService.getTenant(tenantId)
-      const tenant = tenantMapper.fromApiData(tenantData)
+    const tenantData = await tenantService.getTenant(tenantId)
+    const tenant = tenantMapper.fromApiData(tenantData)
 
-      return upsertTenant(tenant)
-    } finally {
-      loading.value = false
-    }
+    return upsertTenant(tenant)
   }
 
   /**
@@ -120,13 +114,8 @@ export const useTenantStore = defineStore('tenant', () => {
    *   is updated.
    */
   const fetchTenants = async (ssoUserId: SsoUserId): Promise<void> => {
-    loading.value = true
-    try {
-      const tenantData = await tenantService.getUserTenants(ssoUserId)
-      tenants.value = tenantData.map(tenantMapper.fromApiData)
-    } finally {
-      loading.value = false
-    }
+    const tenantData = await tenantService.getUserTenants(ssoUserId)
+    tenants.value = tenantData.map(tenantMapper.fromApiData)
   }
 
   /**
@@ -216,7 +205,6 @@ export const useTenantStore = defineStore('tenant', () => {
   }
 
   return {
-    loading,
     tenants,
 
     addTenantUser,

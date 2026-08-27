@@ -33,7 +33,6 @@ describe('useServiceStore', () => {
   it('starts with default values', () => {
     const store = useServiceStore()
 
-    expect(store.loading).toBe(false)
     expect(store.tenantServices).toEqual([])
   })
 
@@ -199,36 +198,6 @@ describe('useServiceStore', () => {
   })
 
   describe('fetchServices', () => {
-    it('manages loading state', async () => {
-      const store = useServiceStore()
-      vi.mocked(serviceService.getServices).mockResolvedValue([
-        makeServiceApiData(),
-      ])
-
-      expect(store.loading).toBe(false)
-
-      const promise = store.fetchServices()
-
-      expect(store.loading).toBe(true)
-
-      await promise
-
-      expect(store.loading).toBe(false)
-    })
-
-    it('clears loading state on error', async () => {
-      const store = useServiceStore()
-      vi.mocked(serviceService.getServices).mockRejectedValueOnce(
-        new Error('API error'),
-      )
-
-      expect(store.loading).toBe(false)
-
-      await expect(store.fetchServices()).rejects.toThrow()
-
-      expect(store.loading).toBe(false)
-    })
-
     it.todo('overwrites store with results', async () => {
       const store = useServiceStore()
       store.services = [makeService({ id: toServiceId('serviceId') })]
@@ -288,38 +257,6 @@ describe('useServiceStore', () => {
   })
 
   describe('fetchTenantServices', () => {
-    it('manages loading state', async () => {
-      const store = useServiceStore()
-      vi.mocked(serviceService.getTenantServices).mockResolvedValue([
-        makeServiceApiData(),
-      ])
-
-      expect(store.loading).toBe(false)
-
-      const promise = store.fetchTenantServices(toTenantId('tenantId'))
-
-      expect(store.loading).toBe(true)
-
-      await promise
-
-      expect(store.loading).toBe(false)
-    })
-
-    it('clears loading state on error', async () => {
-      const store = useServiceStore()
-      vi.mocked(serviceService.getTenantServices).mockRejectedValueOnce(
-        new Error('API error'),
-      )
-
-      expect(store.loading).toBe(false)
-
-      await expect(
-        store.fetchTenantServices(toTenantId('tenantId')),
-      ).rejects.toThrow()
-
-      expect(store.loading).toBe(false)
-    })
-
     it('overwrites store with results', async () => {
       const store = useServiceStore()
       const service = makeService({

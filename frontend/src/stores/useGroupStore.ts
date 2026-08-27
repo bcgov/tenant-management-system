@@ -18,7 +18,6 @@ import { serviceService } from '@/services/service.service'
 export const useGroupStore = defineStore('group', () => {
   const groups = ref<Group[]>([])
   const groupServices = ref<GroupService[]>([])
-  const loading = ref(false)
 
   // Private methods
 
@@ -103,15 +102,10 @@ export const useGroupStore = defineStore('group', () => {
     tenantId: TenantId,
     groupId: GroupId,
   ): Promise<Group> => {
-    loading.value = true
-    try {
-      const groupData = await groupService.getGroup(tenantId, groupId)
-      const group = groupMapper.fromApiData(groupData)
+    const groupData = await groupService.getGroup(tenantId, groupId)
+    const group = groupMapper.fromApiData(groupData)
 
-      return upsertGroup(group)
-    } finally {
-      loading.value = false
-    }
+    return upsertGroup(group)
   }
 
   /**
@@ -122,13 +116,8 @@ export const useGroupStore = defineStore('group', () => {
    *   is updated.
    */
   const fetchGroups = async (tenantId: TenantId): Promise<void> => {
-    loading.value = true
-    try {
-      const groupList = await groupService.getTenantGroups(tenantId)
-      groups.value = groupList.map(groupMapper.fromApiData)
-    } finally {
-      loading.value = false
-    }
+    const groupList = await groupService.getTenantGroups(tenantId)
+    groups.value = groupList.map(groupMapper.fromApiData)
   }
 
   /**
@@ -144,16 +133,11 @@ export const useGroupStore = defineStore('group', () => {
     tenantId: TenantId,
     groupId: GroupId,
   ): Promise<void> => {
-    loading.value = true
-    try {
-      const groupServiceList = await serviceService.getTenantGroupServices(
-        tenantId,
-        groupId,
-      )
-      groupServices.value = groupServiceList.map(groupServiceMapper.fromApiData)
-    } finally {
-      loading.value = false
-    }
+    const groupServiceList = await serviceService.getTenantGroupServices(
+      tenantId,
+      groupId,
+    )
+    groupServices.value = groupServiceList.map(groupServiceMapper.fromApiData)
   }
 
   /**
@@ -221,7 +205,6 @@ export const useGroupStore = defineStore('group', () => {
   return {
     groups,
     groupServices,
-    loading,
 
     addGroup,
     addGroupUser,

@@ -9,7 +9,6 @@ import { roleService } from '@/services/role.service'
  * Pinia store for managing application roles.
  */
 export const useRoleStore = defineStore('role', () => {
-  const loading = ref(false)
   const roles = ref<Role[]>([])
 
   // Exported Methods
@@ -21,17 +20,11 @@ export const useRoleStore = defineStore('role', () => {
    *   is updated.
    */
   const fetchRoles = async (): Promise<void> => {
-    loading.value = true
-    try {
-      const roleData = await roleService.getRoles()
-      roles.value = roleData.map(roleMapper.fromApiData)
-    } finally {
-      loading.value = false
-    }
+    const roleData = await roleService.getRoles()
+    roles.value = roleData.map(roleMapper.fromApiData)
   }
 
   return {
-    loading,
     roles,
 
     fetchRoles,
