@@ -14,7 +14,6 @@ import { tenantRequestService } from '@/services/tenantrequest.service'
  * Pinia store for managing tenant requests and their statuses.
  */
 export const useTenantRequestStore = defineStore('tenantRequest', () => {
-  const loading = ref(false)
   const tenantRequests = ref<TenantRequest[]>([])
 
   /**
@@ -38,13 +37,8 @@ export const useTenantRequestStore = defineStore('tenantRequest', () => {
    *   the store is updated.
    */
   const fetchTenantRequests = async (): Promise<void> => {
-    loading.value = true
-    try {
-      const tenantData = await tenantRequestService.getTenantRequests()
-      tenantRequests.value = tenantData.map(tenantRequestMapper.fromApiData)
-    } finally {
-      loading.value = false
-    }
+    const tenantData = await tenantRequestService.getTenantRequests()
+    tenantRequests.value = tenantData.map(tenantRequestMapper.fromApiData)
   }
 
   /**
@@ -85,7 +79,6 @@ export const useTenantRequestStore = defineStore('tenantRequest', () => {
   }
 
   return {
-    loading,
     tenantRequests,
 
     createTenantRequest,

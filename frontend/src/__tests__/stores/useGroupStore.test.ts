@@ -52,7 +52,6 @@ describe('useGroupStore', () => {
 
     expect(store.groups).toEqual([])
     expect(store.groupServices).toEqual([])
-    expect(store.loading).toBe(false)
   })
 
   describe('addGroup', () => {
@@ -169,39 +168,6 @@ describe('useGroupStore', () => {
   })
 
   describe('fetchGroup', () => {
-    it('manages loading state', async () => {
-      const store = useGroupStore()
-      vi.mocked(groupService.getGroup).mockResolvedValue(makeGroupApiData())
-
-      expect(store.loading).toBe(false)
-
-      const promise = store.fetchGroup(
-        toTenantId('tenantId'),
-        toGroupId('groupId'),
-      )
-
-      expect(store.loading).toBe(true)
-
-      await promise
-
-      expect(store.loading).toBe(false)
-    })
-
-    it('clears loading state on error', async () => {
-      const store = useGroupStore()
-      vi.mocked(groupService.getGroup).mockRejectedValueOnce(
-        new Error('API error'),
-      )
-
-      expect(store.loading).toBe(false)
-
-      await expect(
-        store.fetchGroup(toTenantId('tenantId'), toGroupId('groupId')),
-      ).rejects.toThrow()
-
-      expect(store.loading).toBe(false)
-    })
-
     it('inserts the fetched group', async () => {
       const store = useGroupStore()
       const groupApiData = makeGroupApiData({
@@ -259,36 +225,6 @@ describe('useGroupStore', () => {
   })
 
   describe('fetchGroups', () => {
-    it('manages loading state', async () => {
-      const store = useGroupStore()
-      vi.mocked(groupService.getTenantGroups).mockResolvedValue([
-        makeGroupApiData(),
-      ])
-
-      expect(store.loading).toBe(false)
-
-      const promise = store.fetchGroups(toTenantId('tenantId'))
-
-      expect(store.loading).toBe(true)
-
-      await promise
-
-      expect(store.loading).toBe(false)
-    })
-
-    it('clears loading state on error', async () => {
-      const store = useGroupStore()
-      vi.mocked(groupService.getTenantGroups).mockRejectedValueOnce(
-        new Error('API error'),
-      )
-
-      expect(store.loading).toBe(false)
-
-      await expect(store.fetchGroups(toTenantId('tenantId'))).rejects.toThrow()
-
-      expect(store.loading).toBe(false)
-    })
-
     it('overwrites store with results', async () => {
       const store = useGroupStore()
       const group = makeGroup({
@@ -344,39 +280,6 @@ describe('useGroupStore', () => {
   })
 
   describe('fetchGroupServices', () => {
-    it('manages loading state', async () => {
-      const store = useGroupStore()
-      vi.mocked(serviceService.getTenantGroupServices).mockResolvedValue([])
-
-      expect(store.loading).toBe(false)
-
-      const promise = store.fetchGroupServices(
-        toTenantId('tenantId'),
-        toGroupId('groupId'),
-      )
-
-      expect(store.loading).toBe(true)
-
-      await promise
-
-      expect(store.loading).toBe(false)
-    })
-
-    it('clears loading state on error', async () => {
-      const store = useGroupStore()
-      vi.mocked(serviceService.getTenantGroupServices).mockRejectedValueOnce(
-        new Error('API error'),
-      )
-
-      expect(store.loading).toBe(false)
-
-      await expect(
-        store.fetchGroupServices(toTenantId('tenantId'), toGroupId('groupId')),
-      ).rejects.toThrow()
-
-      expect(store.loading).toBe(false)
-    })
-
     it('inserts the fetched group service', async () => {
       const store = useGroupStore()
       const groupServiceApiData = makeGroupServiceApiData({

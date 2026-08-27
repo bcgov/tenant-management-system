@@ -38,10 +38,8 @@ describe('useUserStore', () => {
       vi.mocked(userService.searchIdirEmail).mockResolvedValue([mockSearchData])
 
       const promise = store.searchIdirEmail('john')
-      expect(store.loading).toBe(true)
 
       const result = await promise
-      expect(store.loading).toBe(false)
       expect(result[0]).toBeInstanceOf(User)
       expect(store.searchResults).toEqual(result)
     })
@@ -87,30 +85,6 @@ describe('useUserStore', () => {
       await store.searchBCeIDDisplayName('Bob')
 
       expect(userService.searchBCeIDDisplayName).toHaveBeenCalledWith('Bob')
-    })
-  })
-
-  describe('Error Handling & Cleanup', () => {
-    it('sets loading to false even if IDIR search fails', async () => {
-      const store = useUserStore()
-      vi.mocked(userService.searchIdirEmail).mockRejectedValueOnce(
-        new Error('Fail'),
-      )
-
-      await expect(store.searchIdirEmail('test')).rejects.toThrow('Fail')
-
-      expect(store.loading).toBe(false)
-    })
-
-    it('sets loading to false even if BCeID search fails', async () => {
-      const store = useUserStore()
-      vi.mocked(userService.searchBCeIDEmail).mockRejectedValueOnce(
-        new Error('Fail'),
-      )
-
-      await expect(store.searchBCeIDEmail('test')).rejects.toThrow('Fail')
-
-      expect(store.loading).toBe(false)
     })
   })
 })
