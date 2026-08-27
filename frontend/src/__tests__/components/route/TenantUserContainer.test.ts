@@ -289,12 +289,12 @@ describe('TenantUserContainer', () => {
 
   describe('handleClearSearch', () => {
     it('sets searchResults to null', async () => {
-      userSearchStore.searchIdirEmail = vi
+      userSearchStore.searchUsers = vi
         .fn()
-        .mockResolvedValue([makeUser({ id: toUserId('a') })])
-      userSearchStore.searchBCeIDEmail = vi
-        .fn()
-        .mockResolvedValue([makeUser({ id: toUserId('b') })])
+        .mockResolvedValue([
+          makeUser({ id: toUserId('a') }),
+          makeUser({ id: toUserId('b') }),
+        ])
 
       const wrapper = mountComponent()
       await child(wrapper).vm.$emit(
@@ -313,12 +313,12 @@ describe('TenantUserContainer', () => {
 
   describe('@cancel inline handler', () => {
     it('sets searchResults to null on cancel', async () => {
-      userSearchStore.searchIdirEmail = vi
+      userSearchStore.searchUsers = vi
         .fn()
-        .mockResolvedValue([makeUser({ id: toUserId('a') })])
-      userSearchStore.searchBCeIDEmail = vi
-        .fn()
-        .mockResolvedValue([makeUser({ id: toUserId('b') })])
+        .mockResolvedValue([
+          makeUser({ id: toUserId('a') }),
+          makeUser({ id: toUserId('b') }),
+        ])
 
       const wrapper = mountComponent()
       await child(wrapper).vm.$emit(
@@ -423,21 +423,9 @@ describe('TenantUserContainer', () => {
 
   describe('handleUserSearch', () => {
     beforeEach(() => {
-      userSearchStore.searchIdirFirstName = vi
+      userSearchStore.searchUsers = vi
         .fn()
-        .mockResolvedValue([makeUser({ id: toUserId('userId1') })])
-      userSearchStore.searchIdirLastName = vi
-        .fn()
-        .mockResolvedValue([makeUser({ id: toUserId('userId2') })])
-      userSearchStore.searchIdirEmail = vi
-        .fn()
-        .mockResolvedValue([makeUser({ id: toUserId('userId3') })])
-      userSearchStore.searchBCeIDDisplayName = vi
-        .fn()
-        .mockResolvedValue([makeUser({ id: toUserId('userId4') })])
-      userSearchStore.searchBCeIDEmail = vi
-        .fn()
-        .mockResolvedValue([makeUser({ id: toUserId('userId5') })])
+        .mockResolvedValue([makeUser({ id: toUserId('a') })])
     })
 
     it('searches by first name and concatenates BCeID display name results', async () => {
@@ -449,11 +437,11 @@ describe('TenantUserContainer', () => {
       )
       await flushPromises()
 
-      expect(userSearchStore.searchIdirFirstName).toHaveBeenCalledWith('Jane')
-      expect(userSearchStore.searchBCeIDDisplayName).toHaveBeenCalledWith(
+      expect(userSearchStore.searchUsers).toHaveBeenCalledWith(
+        IDIR_SEARCH_TYPE.FIRST_NAME.value,
         'Jane',
       )
-      expect(child(wrapper).props('searchResults')).toHaveLength(2)
+      expect(child(wrapper).props('searchResults')).toHaveLength(1)
     })
 
     it('searches by last name and concatenates BCeID display name results', async () => {
@@ -465,11 +453,11 @@ describe('TenantUserContainer', () => {
       )
       await flushPromises()
 
-      expect(userSearchStore.searchIdirLastName).toHaveBeenCalledWith('Smith')
-      expect(userSearchStore.searchBCeIDDisplayName).toHaveBeenCalledWith(
+      expect(userSearchStore.searchUsers).toHaveBeenCalledWith(
+        IDIR_SEARCH_TYPE.LAST_NAME.value,
         'Smith',
       )
-      expect(child(wrapper).props('searchResults')).toHaveLength(2)
+      expect(child(wrapper).props('searchResults')).toHaveLength(1)
     })
 
     it('searches by email and concatenates BCeID email results', async () => {
@@ -481,17 +469,15 @@ describe('TenantUserContainer', () => {
       )
       await flushPromises()
 
-      expect(userSearchStore.searchIdirEmail).toHaveBeenCalledWith(
+      expect(userSearchStore.searchUsers).toHaveBeenCalledWith(
+        IDIR_SEARCH_TYPE.EMAIL.value,
         'jane@example.com',
       )
-      expect(userSearchStore.searchBCeIDEmail).toHaveBeenCalledWith(
-        'jane@example.com',
-      )
-      expect(child(wrapper).props('searchResults')).toHaveLength(2)
+      expect(child(wrapper).props('searchResults')).toHaveLength(1)
     })
 
     it('shows error and nulls results when search throws', async () => {
-      userSearchStore.searchIdirFirstName = vi
+      userSearchStore.searchUsers = vi
         .fn()
         .mockRejectedValue(new Error('network'))
 
@@ -520,9 +506,7 @@ describe('TenantUserContainer', () => {
     })
 
     it('resets loadingSearch to false even when search throws', async () => {
-      userSearchStore.searchIdirEmail = vi
-        .fn()
-        .mockRejectedValue(new Error('fail'))
+      userSearchStore.searchUsers = vi.fn().mockRejectedValue(new Error('fail'))
 
       const wrapper = mountComponent()
       await child(wrapper).vm.$emit(
@@ -533,16 +517,6 @@ describe('TenantUserContainer', () => {
       await flushPromises()
 
       expect(child(wrapper).props('loadingSearch')).toBe(false)
-    })
-
-    it('shows an error when an invalid search type is provided', async () => {
-      const wrapper = mountComponent()
-
-      await child(wrapper).vm.$emit('search', 'invalid', 'test')
-      await flushPromises()
-
-      expect(notificationMock.error).toHaveBeenCalledWith('User search failed')
-      expect(child(wrapper).props('searchResults')).toBeNull()
     })
   })
 })

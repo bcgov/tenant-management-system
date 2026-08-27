@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { makeUserSearchApiData } from '@/__tests__/__factories__'
+
 import * as utils from '@/services/utils'
+import { BCEID_SEARCH_TYPE, IDIR_SEARCH_TYPE } from '@/utils/constants'
 
 vi.mock('@/services/utils', () => ({
   logApiError: vi.fn(),
@@ -21,258 +24,161 @@ vi.mock('@/services/authenticated.axios', () => ({
 }))
 
 import { userSearchService } from '@/services/usersearch.service'
-import { makeUserSearchApiData } from '../__factories__'
 
 describe('userSearchService', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
 
-  describe('searchBceidDisplayName', () => {
-    it('should correctly call the api', async () => {
-      mockGet.mockResolvedValueOnce({ data: {} })
+  describe('searchBceidUsers', () => {
+    it.each([
+      {
+        searchType: BCEID_SEARCH_TYPE.DISPLAY_NAME.value,
+        searchValue: 'searchDisplayName',
+      },
+      { searchType: BCEID_SEARCH_TYPE.EMAIL.value, searchValue: 'searchEmail' },
+    ])(
+      'calls the api with $searchType',
+      async ({ searchType, searchValue }) => {
+        mockGet.mockResolvedValueOnce({ data: {} })
 
-      await userSearchService.searchBCeIDDisplayName('displayName')
+        await userSearchService.searchBceidUsers(searchType, searchValue)
 
-      expect(mockGet).toHaveBeenCalledWith(
-        '/users/bcgovssousers/bceid/search',
-        {
-          params: { bceidType: 'business', displayName: 'displayName' },
-        },
-      )
-    })
+        expect(mockGet).toHaveBeenCalledWith(
+          '/users/bcgovssousers/bceid/search',
+          {
+            params: { [searchType]: searchValue, bceidType: 'business' },
+          },
+        )
+      },
+    )
 
-    it('should correctly return data', async () => {
+    it('returns mapped data on success', async () => {
       const userApiData = makeUserSearchApiData({
         attributes: { attributeKey: ['attributeValue'] },
-        email: 'userSearchEmail',
-        firstName: 'userSearchFirstName',
-        lastName: 'userSearchLastName',
+        email: 'userEmail',
+        firstName: 'userFirstName',
+        lastName: 'userLastName',
       })
       mockGet.mockResolvedValueOnce({ data: { data: [userApiData] } })
 
-      const result =
-        await userSearchService.searchBCeIDDisplayName('displayName')
+      const result = await userSearchService.searchBceidUsers(
+        BCEID_SEARCH_TYPE.EMAIL.value,
+        'searchEmail',
+      )
 
       expect(result).toHaveLength(1)
       expect(result[0].attributes.attributeKey).toHaveLength(1)
       expect(result[0].attributes?.attributeKey?.at(0)).toBe('attributeValue')
-      expect(result[0].email).toBe('userSearchEmail')
-      expect(result[0].firstName).toBe('userSearchFirstName')
-      expect(result[0].lastName).toBe('userSearchLastName')
+      expect(result[0].email).toBe('userEmail')
+      expect(result[0].firstName).toBe('userFirstName')
+      expect(result[0].lastName).toBe('userLastName')
     })
 
-    it('should return empty array for no matches', async () => {
+    it('returns empty array for no matches', async () => {
       mockGet.mockResolvedValueOnce({ data: { data: [] } })
 
-      const result =
-        await userSearchService.searchBCeIDDisplayName('displayName')
+      const result = await userSearchService.searchBceidUsers(
+        BCEID_SEARCH_TYPE.EMAIL.value,
+        'searchEmail',
+      )
 
       expect(result).toEqual([])
     })
 
-    it('should propagate errors from _searchBCeIDUsers', async () => {
-      const error = new Error('Search failed')
+    it('logs and propagates errors', async () => {
+      const error = new Error('message')
       mockGet.mockRejectedValueOnce(error)
 
       await expect(
-        userSearchService.searchBCeIDDisplayName('displayName'),
+        userSearchService.searchBceidUsers(
+          BCEID_SEARCH_TYPE.EMAIL.value,
+          'searchEmail',
+        ),
       ).rejects.toThrow(error)
-    })
-  })
 
-  describe('searchBceidEmail', () => {
-    it('should correctly call the api', async () => {
-      mockGet.mockResolvedValueOnce({ data: {} })
-
-      await userSearchService.searchBCeIDEmail('email')
-
-      expect(mockGet).toHaveBeenCalledWith(
-        '/users/bcgovssousers/bceid/search',
-        {
-          params: { bceidType: 'business', email: 'email' },
-        },
-      )
-    })
-
-    it('should correctly return data', async () => {
-      const userApiData = makeUserSearchApiData({
-        attributes: { attributeKey: ['attributeValue'] },
-        email: 'userSearchEmail',
-        firstName: 'userSearchFirstName',
-        lastName: 'userSearchLastName',
-      })
-      mockGet.mockResolvedValueOnce({ data: { data: [userApiData] } })
-
-      const result = await userSearchService.searchBCeIDEmail('email')
-
-      expect(result).toHaveLength(1)
-      expect(result[0].attributes.attributeKey).toHaveLength(1)
-      expect(result[0].attributes?.attributeKey?.at(0)).toBe('attributeValue')
-      expect(result[0].email).toBe('userSearchEmail')
-      expect(result[0].firstName).toBe('userSearchFirstName')
-      expect(result[0].lastName).toBe('userSearchLastName')
-    })
-
-    it('should return empty array for no matches', async () => {
-      mockGet.mockResolvedValueOnce({ data: { data: [] } })
-
-      const result = await userSearchService.searchBCeIDEmail('email')
-
-      expect(result).toEqual([])
-    })
-
-    it('should propagate errors from _searchBCeIDUsers', async () => {
-      const error = new Error('Search failed')
-      mockGet.mockRejectedValueOnce(error)
-
-      await expect(userSearchService.searchBCeIDEmail('email')).rejects.toThrow(
+      expect(mockedUtils.logApiError).toHaveBeenCalledWith(
+        'Error searching BCeID users',
         error,
       )
     })
   })
 
-  describe('searchIdirEmail', () => {
-    it('should correctly call the api', async () => {
-      mockGet.mockResolvedValueOnce({ data: {} })
+  describe('searchIdirUsers', () => {
+    it.each([
+      { searchType: IDIR_SEARCH_TYPE.EMAIL.value, searchValue: 'searchEmail' },
+      {
+        searchType: IDIR_SEARCH_TYPE.FIRST_NAME.value,
+        searchValue: 'searchFirstName',
+      },
+      {
+        searchType: IDIR_SEARCH_TYPE.LAST_NAME.value,
+        searchValue: 'searchLastName',
+      },
+    ])(
+      'calls the api with $searchType',
+      async ({ searchType, searchValue }) => {
+        mockGet.mockResolvedValueOnce({ data: {} })
 
-      await userSearchService.searchIdirEmail('email')
+        await userSearchService.searchIdirUsers(searchType, searchValue)
 
-      expect(mockGet).toHaveBeenCalledWith('/users/bcgovssousers/idir/search', {
-        params: { email: 'email' },
-      })
-    })
+        expect(mockGet).toHaveBeenCalledWith(
+          '/users/bcgovssousers/idir/search',
+          {
+            params: { [searchType]: searchValue },
+          },
+        )
+      },
+    )
 
-    it('should correctly return data', async () => {
+    it('returns mapped data on success', async () => {
       const userApiData = makeUserSearchApiData({
         attributes: { attributeKey: ['attributeValue'] },
-        email: 'userSearchEmail',
-        firstName: 'userSearchFirstName',
-        lastName: 'userSearchLastName',
+        email: 'userEmail',
+        firstName: 'userFirstName',
+        lastName: 'userLastName',
       })
       mockGet.mockResolvedValueOnce({ data: { data: [userApiData] } })
 
-      const result = await userSearchService.searchIdirEmail('email')
+      const result = await userSearchService.searchIdirUsers(
+        IDIR_SEARCH_TYPE.EMAIL.value,
+        'searchEmail',
+      )
 
       expect(result).toHaveLength(1)
       expect(result[0].attributes.attributeKey).toHaveLength(1)
       expect(result[0].attributes?.attributeKey?.at(0)).toBe('attributeValue')
-      expect(result[0].email).toBe('userSearchEmail')
-      expect(result[0].firstName).toBe('userSearchFirstName')
-      expect(result[0].lastName).toBe('userSearchLastName')
+      expect(result[0].email).toBe('userEmail')
+      expect(result[0].firstName).toBe('userFirstName')
+      expect(result[0].lastName).toBe('userLastName')
     })
 
-    it('should return empty array for no matches', async () => {
+    it('returns empty array for no matches', async () => {
       mockGet.mockResolvedValueOnce({ data: { data: [] } })
 
-      const result = await userSearchService.searchIdirEmail('email')
+      const result = await userSearchService.searchIdirUsers(
+        IDIR_SEARCH_TYPE.EMAIL.value,
+        'searchEmail',
+      )
 
       expect(result).toEqual([])
     })
 
-    it('should propagate errors from _searchBCeIDUsers', async () => {
-      const error = new Error('Search failed')
+    it('logs and propagates errors', async () => {
+      const error = new Error('message')
       mockGet.mockRejectedValueOnce(error)
 
-      await expect(userSearchService.searchIdirEmail('email')).rejects.toThrow(
+      await expect(
+        userSearchService.searchIdirUsers(
+          IDIR_SEARCH_TYPE.EMAIL.value,
+          'searchEmail',
+        ),
+      ).rejects.toThrow(error)
+
+      expect(mockedUtils.logApiError).toHaveBeenCalledWith(
+        'Error searching IDIR users',
         error,
       )
-    })
-  })
-
-  describe('searchIdirFirstName', () => {
-    it('should correctly call the api', async () => {
-      mockGet.mockResolvedValueOnce({ data: {} })
-
-      await userSearchService.searchIdirFirstName('firstName')
-
-      expect(mockGet).toHaveBeenCalledWith('/users/bcgovssousers/idir/search', {
-        params: { firstName: 'firstName' },
-      })
-    })
-
-    it('should correctly return data', async () => {
-      const userApiData = makeUserSearchApiData({
-        attributes: { attributeKey: ['attributeValue'] },
-        email: 'userSearchEmail',
-        firstName: 'userSearchFirstName',
-        lastName: 'userSearchLastName',
-      })
-      mockGet.mockResolvedValueOnce({ data: { data: [userApiData] } })
-
-      const result = await userSearchService.searchIdirFirstName('firstName')
-
-      expect(result).toHaveLength(1)
-      expect(result[0].attributes.attributeKey).toHaveLength(1)
-      expect(result[0].attributes?.attributeKey?.at(0)).toBe('attributeValue')
-      expect(result[0].email).toBe('userSearchEmail')
-      expect(result[0].firstName).toBe('userSearchFirstName')
-      expect(result[0].lastName).toBe('userSearchLastName')
-    })
-
-    it('should return empty array for no matches', async () => {
-      mockGet.mockResolvedValueOnce({ data: { data: [] } })
-
-      const result = await userSearchService.searchIdirFirstName('firstName')
-
-      expect(result).toEqual([])
-    })
-
-    it('should propagate errors from _searchBCeIDUsers', async () => {
-      const error = new Error('Search failed')
-      mockGet.mockRejectedValueOnce(error)
-
-      await expect(
-        userSearchService.searchIdirFirstName('firstName'),
-      ).rejects.toThrow(error)
-    })
-  })
-
-  describe('searchIdirLastName', () => {
-    it('should correctly call the api', async () => {
-      mockGet.mockResolvedValueOnce({ data: {} })
-
-      await userSearchService.searchIdirLastName('lastName')
-
-      expect(mockGet).toHaveBeenCalledWith('/users/bcgovssousers/idir/search', {
-        params: { lastName: 'lastName' },
-      })
-    })
-
-    it('should correctly return data', async () => {
-      const userApiData = makeUserSearchApiData({
-        attributes: { attributeKey: ['attributeValue'] },
-        email: 'userSearchEmail',
-        firstName: 'userSearchFirstName',
-        lastName: 'userSearchLastName',
-      })
-      mockGet.mockResolvedValueOnce({ data: { data: [userApiData] } })
-
-      const result = await userSearchService.searchIdirLastName('lastName')
-
-      expect(result).toHaveLength(1)
-      expect(result[0].attributes.attributeKey).toHaveLength(1)
-      expect(result[0].attributes?.attributeKey?.at(0)).toBe('attributeValue')
-      expect(result[0].email).toBe('userSearchEmail')
-      expect(result[0].firstName).toBe('userSearchFirstName')
-      expect(result[0].lastName).toBe('userSearchLastName')
-    })
-
-    it('should return empty array for no matches', async () => {
-      mockGet.mockResolvedValueOnce({ data: { data: [] } })
-
-      const result = await userSearchService.searchIdirLastName('lastName')
-
-      expect(result).toEqual([])
-    })
-
-    it('should propagate errors from _searchBCeIDUsers', async () => {
-      const error = new Error('Search failed')
-      mockGet.mockRejectedValueOnce(error)
-
-      await expect(
-        userSearchService.searchIdirLastName('lastName'),
-      ).rejects.toThrow(error)
     })
   })
 })

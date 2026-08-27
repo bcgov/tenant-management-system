@@ -31,6 +31,21 @@ export const BCEID_SEARCH_TYPE = Object.freeze({
 })
 
 /**
+ * Maps IDIR search types to their corresponding BCeID search types.
+ *
+ * Provides a mapping between IDIR search types and the equivalent BCeID search
+ * types, allowing for consistent search behavior across both user directories.
+ */
+export const IDIR_TO_BCEID_SEARCH_TYPE: Record<
+  IdirSearchType,
+  BCeIDSearchType
+> = {
+  [IDIR_SEARCH_TYPE.FIRST_NAME.value]: BCEID_SEARCH_TYPE.DISPLAY_NAME.value,
+  [IDIR_SEARCH_TYPE.LAST_NAME.value]: BCEID_SEARCH_TYPE.DISPLAY_NAME.value,
+  [IDIR_SEARCH_TYPE.EMAIL.value]: BCEID_SEARCH_TYPE.EMAIL.value,
+}
+
+/**
  * Type definition for BCeID search types.
  *
  * Represents the possible values for BCeID user search fields: 'email' and
