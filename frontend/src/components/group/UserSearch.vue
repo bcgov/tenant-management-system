@@ -2,17 +2,20 @@
 import { computed, ref, watch } from 'vue'
 
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
+import SimpleDialog from '@/components/ui/SimpleDialog.vue'
 import UserSearchTable from '@/components/user/UserSearchTable.vue'
+import { type GroupUser } from '@/models/groupuser.model'
 import { type Tenant } from '@/models/tenant.model'
 import { type User } from '@/models/user.model'
 import { type IdirSearchType, IDIR_SEARCH_TYPE } from '@/utils/constants'
 
 // --- Component Interface -----------------------------------------------------
 
-defineProps<{
+const { currentMembers, loading, searchResults, tenant } = defineProps<{
+  currentMembers: GroupUser[] | null
   loading?: boolean
-  tenant: Tenant
   searchResults: User[] | null
+  tenant: Tenant
 }>()
 
 const emit = defineEmits<{
@@ -37,6 +40,7 @@ const SEARCH_TYPES = [
   { title: IDIR_SEARCH_TYPE.EMAIL.title, value: IDIR_SEARCH_TYPE.EMAIL.value },
 ]
 
+const duplicateMember = ref(false)
 const searchText = ref('')
 const searchType = ref<IdirSearchType>(IDIR_SEARCH_TYPE.FIRST_NAME.value)
 
@@ -66,7 +70,16 @@ const handleRowClicked = (user: User | null) => {
     return
   }
 
-  // TODO: handle already added.
+  const alreadyAdded = currentMembers?.some(
+    (m) => m.user.ssoUser.ssoUserId === user.ssoUser.ssoUserId,
+  )
+
+  if (alreadyAdded) {
+    duplicateMember.value = true
+    emit('select', null)
+
+    return
+  }
 
   emit('select', user)
 }
@@ -78,7 +91,7 @@ const handleSearch = () => {
 
 <template>
   <v-row>
-    <v-col cols="2">
+    <v-col cols="4">
       <v-select
         v-model="searchType"
         :items="SEARCH_TYPES"
@@ -86,7 +99,7 @@ const handleSearch = () => {
         hide-details
       />
     </v-col>
-    <v-col cols="4">
+    <v-col cols="5">
       <v-text-field
         v-model="searchText"
         label="Search text"
@@ -115,4 +128,12 @@ const handleSearch = () => {
       />
     </v-col>
   </v-row>
+
+  <SimpleDialog
+    v-model="duplicateMember"
+    :buttons="[{ text: 'OK', action: 'ok', type: 'primary' as const }]"
+    message="The selected member is already in this group."
+    title="Member Already Added"
+    @button-click="duplicateMember = false"
+  />
 </template>

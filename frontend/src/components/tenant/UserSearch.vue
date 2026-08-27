@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { mdiAlert, mdiClose } from '@mdi/js'
 import { computed, ref, watch } from 'vue'
 
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
-import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
+import SimpleDialog from '@/components/ui/SimpleDialog.vue'
 import UserSearchTable from '@/components/user/UserSearchTable.vue'
 import { type Tenant } from '@/models/tenant.model'
 import { type User } from '@/models/user.model'
@@ -11,10 +10,10 @@ import { type IdirSearchType, IDIR_SEARCH_TYPE } from '@/utils/constants'
 
 // --- Component Interface -----------------------------------------------------
 
-const { loading, searchResults, currentUsers, tenant } = defineProps<{
+const { currentUsers, loading, searchResults, tenant } = defineProps<{
+  currentUsers: User[] | null
   loading?: boolean
   searchResults: User[] | null
-  currentUsers: User[] | null
   tenant: Tenant
 }>()
 
@@ -40,7 +39,7 @@ const SEARCH_TYPES = [
   { title: IDIR_SEARCH_TYPE.EMAIL.title, value: IDIR_SEARCH_TYPE.EMAIL.value },
 ]
 
-const conflict = ref(false)
+const duplicateUser = ref(false)
 const searchText = ref('')
 const searchType = ref<IdirSearchType>(IDIR_SEARCH_TYPE.FIRST_NAME.value)
 
@@ -75,7 +74,7 @@ const handleRowClicked = (user: User | null) => {
   )
 
   if (alreadyAdded) {
-    conflict.value = true
+    duplicateUser.value = true
     emit('select', null)
 
     return
@@ -91,22 +90,6 @@ const handleSearch = () => {
 
 <template>
   <v-row>
-    <v-dialog v-model="conflict" width="auto">
-      <v-card>
-        <v-card-title class="text-headline-small border-b-sm">
-          <v-icon :icon="mdiAlert" color="warning" size="xsmall" />
-          Duplicate Entry
-          <v-icon :icon="mdiClose" class="float-right" size="xsmall" />
-        </v-card-title>
-        <v-card-text>
-          The selected user is already added to this tenant.
-        </v-card-text>
-        <v-card-actions class="border-t-sm">
-          <v-spacer></v-spacer>
-          <ButtonSecondary text="OK" @click="conflict = false" />
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
     <v-col cols="4">
       <v-select
         v-model="searchType"
@@ -144,11 +127,12 @@ const handleSearch = () => {
       />
     </v-col>
   </v-row>
-</template>
 
-<style>
-.selected-user {
-  background-color: #f6fff8;
-  border-color: #42814a;
-}
-</style>
+  <SimpleDialog
+    v-model="duplicateUser"
+    :buttons="[{ text: 'OK', action: 'ok', type: 'primary' as const }]"
+    message="The selected user is already in this tenant."
+    title="User Already Added"
+    @button-click="duplicateUser = false"
+  />
+</template>
