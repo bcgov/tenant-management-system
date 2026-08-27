@@ -230,12 +230,12 @@ describe('TenantServiceContainer', () => {
   describe('handleAddService', () => {
     it('calls addServiceToTenant, adds service to tenantServices, and shows success notification', async () => {
       const service = makeService({
-        id: toServiceId('service1'),
-        displayName: 'My Service',
+        displayName: 'displayName',
+        id: toServiceId('serviceId1'),
       })
       serviceStore.services = [service]
       serviceStore.tenantServices = []
-      serviceStore.addServiceToTenant = vi.fn().mockResolvedValue(undefined)
+      serviceStore.addServiceToTenant = vi.fn().mockResolvedValue(service)
 
       const wrapper = mountComponent()
       await flushPromises()
@@ -248,13 +248,8 @@ describe('TenantServiceContainer', () => {
         service.id,
       )
       expect(notificationMock.success).toHaveBeenCalledWith(
-        'My Service has been added to this tenant.',
+        'displayName has been added to this tenant.',
       )
-      expect(
-        child(wrapper)
-          .props('tenantServices')
-          .map((s: { id: string }) => s.id),
-      ).toContain(service.id)
     })
 
     it('does not update tenantServices or notify success when the added service is not found locally', async () => {

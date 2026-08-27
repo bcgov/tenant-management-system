@@ -37,8 +37,9 @@ describe('useServiceStore', () => {
   })
 
   describe('addServiceToTenant', () => {
-    it.todo('adds a service to the tenant', async () => {
+    it('adds a service to the tenant', async () => {
       const store = useServiceStore()
+      store.services = [makeService({ id: toServiceId('serviceId') })]
 
       expect(store.tenantServices).toHaveLength(0)
 
@@ -48,13 +49,13 @@ describe('useServiceStore', () => {
       )
 
       expect(store.tenantServices).toHaveLength(1)
-      expect(store.tenantServices[1].id).toBe('serviceId')
+      expect(store.tenantServices[0].id).toBe('serviceId')
     })
 
     it('does not alter the state on api error', async () => {
       const store = useServiceStore()
       vi.mocked(serviceService.addServiceToTenant).mockRejectedValueOnce(
-        new Error('API error'),
+        new Error('message'),
       )
 
       expect(store.tenantServices).toHaveLength(0)
@@ -168,7 +169,7 @@ describe('useServiceStore', () => {
         ],
       })
       vi.mocked(serviceService.createService).mockRejectedValueOnce(
-        new Error('API error'),
+        new Error('message'),
       )
 
       expect(store.services).toHaveLength(1)
@@ -198,7 +199,7 @@ describe('useServiceStore', () => {
   })
 
   describe('fetchServices', () => {
-    it.todo('overwrites store with results', async () => {
+    it('overwrites store with results', async () => {
       const store = useServiceStore()
       store.services = [makeService({ id: toServiceId('serviceId') })]
       vi.mocked(serviceService.getServices).mockResolvedValue([
@@ -227,7 +228,7 @@ describe('useServiceStore', () => {
         }),
       ]
       vi.mocked(serviceService.getServices).mockRejectedValueOnce(
-        new Error('API error'),
+        new Error('message'),
       )
 
       expect(store.services).toHaveLength(1)
