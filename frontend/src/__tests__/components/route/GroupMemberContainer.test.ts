@@ -18,7 +18,7 @@ import { toUserId } from '@/models/user.model'
 import vuetify from '@/plugins/vuetify'
 import { useGroupStore } from '@/stores/useGroupStore'
 import { useTenantStore } from '@/stores/useTenantStore'
-import { useUserStore } from '@/stores/useUserStore'
+import { useUserSearchStore } from '@/stores/useUserSearchStore'
 import { IDIR_SEARCH_TYPE } from '@/utils/constants'
 
 vi.mock('@/composables/useNotification', () => ({
@@ -45,7 +45,7 @@ const mountComponent = (groupId = 'groupId1', tenantId = 'tenantId1') => {
 describe('GroupMemberContainer', () => {
   let groupStore: ReturnType<typeof useGroupStore>
   let tenantStore: ReturnType<typeof useTenantStore>
-  let userStore: ReturnType<typeof useUserStore>
+  let userSearchStore: ReturnType<typeof useUserSearchStore>
   let notificationMock: ReturnType<typeof useNotification>
 
   beforeEach(() => {
@@ -57,7 +57,7 @@ describe('GroupMemberContainer', () => {
     tenantStore = useTenantStore()
     tenantStore.tenants = [makeTenant({ id: toTenantId('tenantId1') })]
 
-    userStore = useUserStore()
+    userSearchStore = useUserSearchStore()
 
     notificationMock = {
       items: [],
@@ -138,10 +138,10 @@ describe('GroupMemberContainer', () => {
 
   describe('handleClearSearch', () => {
     it('sets searchResults to null', async () => {
-      userStore.searchIdirEmail = vi
+      userSearchStore.searchIdirEmail = vi
         .fn()
         .mockResolvedValue([makeUser({ id: toUserId('userId1') })])
-      userStore.searchBCeIDEmail = vi
+      userSearchStore.searchBCeIDEmail = vi
         .fn()
         .mockResolvedValue([makeUser({ id: toUserId('userId2') })])
 
@@ -193,19 +193,19 @@ describe('GroupMemberContainer', () => {
 
   describe('handleUserSearch', () => {
     beforeEach(() => {
-      userStore.searchIdirFirstName = vi
+      userSearchStore.searchIdirFirstName = vi
         .fn()
         .mockResolvedValue([makeUser({ id: toUserId('idirFirstName') })])
-      userStore.searchIdirLastName = vi
+      userSearchStore.searchIdirLastName = vi
         .fn()
         .mockResolvedValue([makeUser({ id: toUserId('idirLastName') })])
-      userStore.searchIdirEmail = vi
+      userSearchStore.searchIdirEmail = vi
         .fn()
         .mockResolvedValue([makeUser({ id: toUserId('idirEmail') })])
-      userStore.searchBCeIDDisplayName = vi
+      userSearchStore.searchBCeIDDisplayName = vi
         .fn()
         .mockResolvedValue([makeUser({ id: toUserId('bceidDisplayName') })])
-      userStore.searchBCeIDEmail = vi
+      userSearchStore.searchBCeIDEmail = vi
         .fn()
         .mockResolvedValue([makeUser({ id: toUserId('bceidEmail') })])
     })
@@ -219,8 +219,12 @@ describe('GroupMemberContainer', () => {
       )
       await flushPromises()
 
-      expect(userStore.searchIdirFirstName).toHaveBeenCalledWith('firstName')
-      expect(userStore.searchBCeIDDisplayName).toHaveBeenCalledWith('firstName')
+      expect(userSearchStore.searchIdirFirstName).toHaveBeenCalledWith(
+        'firstName',
+      )
+      expect(userSearchStore.searchBCeIDDisplayName).toHaveBeenCalledWith(
+        'firstName',
+      )
       expect(child(wrapper).props('searchResults')).toEqual([
         expect.objectContaining({ id: toUserId('idirFirstName') }),
         expect.objectContaining({ id: toUserId('bceidDisplayName') }),
@@ -236,8 +240,12 @@ describe('GroupMemberContainer', () => {
       )
       await flushPromises()
 
-      expect(userStore.searchIdirLastName).toHaveBeenCalledWith('lastName')
-      expect(userStore.searchBCeIDDisplayName).toHaveBeenCalledWith('lastName')
+      expect(userSearchStore.searchIdirLastName).toHaveBeenCalledWith(
+        'lastName',
+      )
+      expect(userSearchStore.searchBCeIDDisplayName).toHaveBeenCalledWith(
+        'lastName',
+      )
       expect(child(wrapper).props('searchResults')).toEqual([
         expect.objectContaining({ id: toUserId('idirLastName') }),
         expect.objectContaining({ id: toUserId('bceidDisplayName') }),
@@ -253,10 +261,10 @@ describe('GroupMemberContainer', () => {
       )
       await flushPromises()
 
-      expect(userStore.searchIdirEmail).toHaveBeenCalledWith(
+      expect(userSearchStore.searchIdirEmail).toHaveBeenCalledWith(
         'email@example.com',
       )
-      expect(userStore.searchBCeIDEmail).toHaveBeenCalledWith(
+      expect(userSearchStore.searchBCeIDEmail).toHaveBeenCalledWith(
         'email@example.com',
       )
       expect(child(wrapper).props('searchResults')).toEqual([
@@ -275,7 +283,7 @@ describe('GroupMemberContainer', () => {
     })
 
     it('shows error and nulls results when search throws', async () => {
-      userStore.searchIdirFirstName = vi
+      userSearchStore.searchIdirFirstName = vi
         .fn()
         .mockRejectedValue(new Error('message'))
 
@@ -304,7 +312,9 @@ describe('GroupMemberContainer', () => {
     })
 
     it('resets loadingSearch to false even when search throws', async () => {
-      userStore.searchIdirEmail = vi.fn().mockRejectedValue(new Error('fail'))
+      userSearchStore.searchIdirEmail = vi
+        .fn()
+        .mockRejectedValue(new Error('fail'))
 
       const wrapper = mountComponent()
       await child(wrapper).vm.$emit(
@@ -320,10 +330,10 @@ describe('GroupMemberContainer', () => {
 
   describe('@cancel inline handler', () => {
     it('sets searchResults to null on cancel', async () => {
-      userStore.searchIdirEmail = vi
+      userSearchStore.searchIdirEmail = vi
         .fn()
         .mockResolvedValue([makeUser({ id: toUserId('userId1') })])
-      userStore.searchBCeIDEmail = vi
+      userSearchStore.searchBCeIDEmail = vi
         .fn()
         .mockResolvedValue([makeUser({ id: toUserId('userId2') })])
 

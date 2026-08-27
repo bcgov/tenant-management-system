@@ -10,7 +10,7 @@ import {
 
 const api = authenticatedAxios()
 
-export const userService = {
+export const userSearchService = {
   /**
    * Private function to search for BCeID users with different search
    * parameters.
