@@ -54,10 +54,10 @@ export const useTenantStore = defineStore('tenant', () => {
       throw new Error(`Unknown tenantId: ${tenantId}`)
     }
 
-    const userData = await tenantService.addUser(tenantId, user)
+    const userApiData = await tenantService.addUser(tenantId, user)
 
     // Add user to tenant so that it doesn't need to be fetched again.
-    const addedUser = userMapper.fromApiData(userData)
+    const addedUser = userMapper.fromApiData(userApiData)
     tenant.users.push(addedUser)
   }
 
@@ -100,8 +100,8 @@ export const useTenantStore = defineStore('tenant', () => {
    * @returns A promise that resolves to the fetched tenant.
    */
   const fetchTenant = async (tenantId: TenantId): Promise<Tenant> => {
-    const tenantData = await tenantService.getTenant(tenantId)
-    const tenant = tenantMapper.fromApiData(tenantData)
+    const tenantApiData = await tenantService.getTenant(tenantId)
+    const tenant = tenantMapper.fromApiData(tenantApiData)
 
     return upsertTenant(tenant)
   }
@@ -114,8 +114,8 @@ export const useTenantStore = defineStore('tenant', () => {
    *   is updated.
    */
   const fetchTenants = async (ssoUserId: SsoUserId): Promise<void> => {
-    const tenantData = await tenantService.getUserTenants(ssoUserId)
-    tenants.value = tenantData.map(tenantMapper.fromApiData)
+    const tenantApiData = await tenantService.getUserTenants(ssoUserId)
+    tenants.value = tenantApiData.map(tenantMapper.fromApiData)
   }
 
   /**
@@ -190,14 +190,14 @@ export const useTenantStore = defineStore('tenant', () => {
       throw new Error(`Tenant with ID ${tenantId} not found`)
     }
 
-    const apiResponse = await tenantService.updateTenant(
+    const tenantApiData = await tenantService.updateTenant(
       tenantId,
       tenantDetails.name,
       tenantDetails.ministryName,
       tenantDetails.description,
     )
 
-    const tenantData = tenantMapper.fromApiData(apiResponse)
+    const tenantData = tenantMapper.fromApiData(tenantApiData)
 
     tenant.name = tenantData.name
     tenant.ministryName = tenantData.ministryName
