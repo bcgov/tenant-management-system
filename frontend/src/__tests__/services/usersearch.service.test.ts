@@ -20,10 +20,10 @@ vi.mock('@/services/authenticated.axios', () => ({
   }),
 }))
 
-import { userService } from '@/services/user.service'
+import { userSearchService } from '@/services/usersearch.service'
 import { makeUserSearchApiData } from '../__factories__'
 
-describe('userService', () => {
+describe('userSearchService', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
@@ -32,7 +32,7 @@ describe('userService', () => {
     it('should correctly call the api', async () => {
       mockGet.mockResolvedValueOnce({ data: {} })
 
-      await userService.searchBCeIDDisplayName('displayName')
+      await userSearchService.searchBCeIDDisplayName('displayName')
 
       expect(mockGet).toHaveBeenCalledWith(
         '/users/bcgovssousers/bceid/search',
@@ -51,7 +51,8 @@ describe('userService', () => {
       })
       mockGet.mockResolvedValueOnce({ data: { data: [userApiData] } })
 
-      const result = await userService.searchBCeIDDisplayName('displayName')
+      const result =
+        await userSearchService.searchBCeIDDisplayName('displayName')
 
       expect(result).toHaveLength(1)
       expect(result[0].attributes.attributeKey).toHaveLength(1)
@@ -64,7 +65,8 @@ describe('userService', () => {
     it('should return empty array for no matches', async () => {
       mockGet.mockResolvedValueOnce({ data: { data: [] } })
 
-      const result = await userService.searchBCeIDDisplayName('displayName')
+      const result =
+        await userSearchService.searchBCeIDDisplayName('displayName')
 
       expect(result).toEqual([])
     })
@@ -74,7 +76,7 @@ describe('userService', () => {
       mockGet.mockRejectedValueOnce(error)
 
       await expect(
-        userService.searchBCeIDDisplayName('displayName'),
+        userSearchService.searchBCeIDDisplayName('displayName'),
       ).rejects.toThrow(error)
     })
   })
@@ -83,7 +85,7 @@ describe('userService', () => {
     it('should correctly call the api', async () => {
       mockGet.mockResolvedValueOnce({ data: {} })
 
-      await userService.searchBCeIDEmail('email')
+      await userSearchService.searchBCeIDEmail('email')
 
       expect(mockGet).toHaveBeenCalledWith(
         '/users/bcgovssousers/bceid/search',
@@ -102,7 +104,7 @@ describe('userService', () => {
       })
       mockGet.mockResolvedValueOnce({ data: { data: [userApiData] } })
 
-      const result = await userService.searchBCeIDEmail('email')
+      const result = await userSearchService.searchBCeIDEmail('email')
 
       expect(result).toHaveLength(1)
       expect(result[0].attributes.attributeKey).toHaveLength(1)
@@ -115,7 +117,7 @@ describe('userService', () => {
     it('should return empty array for no matches', async () => {
       mockGet.mockResolvedValueOnce({ data: { data: [] } })
 
-      const result = await userService.searchBCeIDEmail('email')
+      const result = await userSearchService.searchBCeIDEmail('email')
 
       expect(result).toEqual([])
     })
@@ -124,7 +126,9 @@ describe('userService', () => {
       const error = new Error('Search failed')
       mockGet.mockRejectedValueOnce(error)
 
-      await expect(userService.searchBCeIDEmail('email')).rejects.toThrow(error)
+      await expect(userSearchService.searchBCeIDEmail('email')).rejects.toThrow(
+        error,
+      )
     })
   })
 
@@ -132,7 +136,7 @@ describe('userService', () => {
     it('should correctly call the api', async () => {
       mockGet.mockResolvedValueOnce({ data: {} })
 
-      await userService.searchIdirEmail('email')
+      await userSearchService.searchIdirEmail('email')
 
       expect(mockGet).toHaveBeenCalledWith('/users/bcgovssousers/idir/search', {
         params: { email: 'email' },
@@ -148,7 +152,7 @@ describe('userService', () => {
       })
       mockGet.mockResolvedValueOnce({ data: { data: [userApiData] } })
 
-      const result = await userService.searchIdirEmail('email')
+      const result = await userSearchService.searchIdirEmail('email')
 
       expect(result).toHaveLength(1)
       expect(result[0].attributes.attributeKey).toHaveLength(1)
@@ -161,7 +165,7 @@ describe('userService', () => {
     it('should return empty array for no matches', async () => {
       mockGet.mockResolvedValueOnce({ data: { data: [] } })
 
-      const result = await userService.searchIdirEmail('email')
+      const result = await userSearchService.searchIdirEmail('email')
 
       expect(result).toEqual([])
     })
@@ -170,7 +174,9 @@ describe('userService', () => {
       const error = new Error('Search failed')
       mockGet.mockRejectedValueOnce(error)
 
-      await expect(userService.searchIdirEmail('email')).rejects.toThrow(error)
+      await expect(userSearchService.searchIdirEmail('email')).rejects.toThrow(
+        error,
+      )
     })
   })
 
@@ -178,7 +184,7 @@ describe('userService', () => {
     it('should correctly call the api', async () => {
       mockGet.mockResolvedValueOnce({ data: {} })
 
-      await userService.searchIdirFirstName('firstName')
+      await userSearchService.searchIdirFirstName('firstName')
 
       expect(mockGet).toHaveBeenCalledWith('/users/bcgovssousers/idir/search', {
         params: { firstName: 'firstName' },
@@ -194,7 +200,7 @@ describe('userService', () => {
       })
       mockGet.mockResolvedValueOnce({ data: { data: [userApiData] } })
 
-      const result = await userService.searchIdirFirstName('firstName')
+      const result = await userSearchService.searchIdirFirstName('firstName')
 
       expect(result).toHaveLength(1)
       expect(result[0].attributes.attributeKey).toHaveLength(1)
@@ -207,7 +213,7 @@ describe('userService', () => {
     it('should return empty array for no matches', async () => {
       mockGet.mockResolvedValueOnce({ data: { data: [] } })
 
-      const result = await userService.searchIdirFirstName('firstName')
+      const result = await userSearchService.searchIdirFirstName('firstName')
 
       expect(result).toEqual([])
     })
@@ -217,7 +223,7 @@ describe('userService', () => {
       mockGet.mockRejectedValueOnce(error)
 
       await expect(
-        userService.searchIdirFirstName('firstName'),
+        userSearchService.searchIdirFirstName('firstName'),
       ).rejects.toThrow(error)
     })
   })
@@ -226,7 +232,7 @@ describe('userService', () => {
     it('should correctly call the api', async () => {
       mockGet.mockResolvedValueOnce({ data: {} })
 
-      await userService.searchIdirLastName('lastName')
+      await userSearchService.searchIdirLastName('lastName')
 
       expect(mockGet).toHaveBeenCalledWith('/users/bcgovssousers/idir/search', {
         params: { lastName: 'lastName' },
@@ -242,7 +248,7 @@ describe('userService', () => {
       })
       mockGet.mockResolvedValueOnce({ data: { data: [userApiData] } })
 
-      const result = await userService.searchIdirLastName('lastName')
+      const result = await userSearchService.searchIdirLastName('lastName')
 
       expect(result).toHaveLength(1)
       expect(result[0].attributes.attributeKey).toHaveLength(1)
@@ -255,7 +261,7 @@ describe('userService', () => {
     it('should return empty array for no matches', async () => {
       mockGet.mockResolvedValueOnce({ data: { data: [] } })
 
-      const result = await userService.searchIdirLastName('lastName')
+      const result = await userSearchService.searchIdirLastName('lastName')
 
       expect(result).toEqual([])
     })
@@ -264,9 +270,9 @@ describe('userService', () => {
       const error = new Error('Search failed')
       mockGet.mockRejectedValueOnce(error)
 
-      await expect(userService.searchIdirLastName('lastName')).rejects.toThrow(
-        error,
-      )
+      await expect(
+        userSearchService.searchIdirLastName('lastName'),
+      ).rejects.toThrow(error)
     })
   })
 })

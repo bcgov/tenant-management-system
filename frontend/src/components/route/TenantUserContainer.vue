@@ -13,7 +13,7 @@ import { User, type UserId } from '@/models/user.model'
 import { useGroupStore } from '@/stores/useGroupStore'
 import { useRoleStore } from '@/stores/useRoleStore'
 import { useTenantStore } from '@/stores/useTenantStore'
-import { useUserStore } from '@/stores/useUserStore'
+import { useUserSearchStore } from '@/stores/useUserSearchStore'
 import { type IdirSearchType, IDIR_SEARCH_TYPE } from '@/utils/constants'
 
 // --- Component Interface -----------------------------------------------------
@@ -28,7 +28,7 @@ const groupStore = useGroupStore()
 const notification = useNotification()
 const roleStore = useRoleStore()
 const tenantStore = useTenantStore()
-const userStore = useUserStore()
+const userSearchStore = useUserSearchStore()
 
 // --- Component State ---------------------------------------------------------
 
@@ -130,19 +130,20 @@ const handleUserSearch = async (
 
   try {
     if (searchType === IDIR_SEARCH_TYPE.FIRST_NAME.value) {
-      searchResults.value = await userStore.searchIdirFirstName(searchText)
+      searchResults.value =
+        await userSearchStore.searchIdirFirstName(searchText)
       searchResults.value = searchResults.value.concat(
-        await userStore.searchBCeIDDisplayName(searchText),
+        await userSearchStore.searchBCeIDDisplayName(searchText),
       )
     } else if (searchType === IDIR_SEARCH_TYPE.LAST_NAME.value) {
-      searchResults.value = await userStore.searchIdirLastName(searchText)
+      searchResults.value = await userSearchStore.searchIdirLastName(searchText)
       searchResults.value = searchResults.value.concat(
-        await userStore.searchBCeIDDisplayName(searchText),
+        await userSearchStore.searchBCeIDDisplayName(searchText),
       )
     } else if (searchType === IDIR_SEARCH_TYPE.EMAIL.value) {
-      searchResults.value = await userStore.searchIdirEmail(searchText)
+      searchResults.value = await userSearchStore.searchIdirEmail(searchText)
       searchResults.value = searchResults.value.concat(
-        await userStore.searchBCeIDEmail(searchText),
+        await userSearchStore.searchBCeIDEmail(searchText),
       )
     } else {
       throw new Error('Invalid search type')

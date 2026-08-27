@@ -3,7 +3,7 @@ import { ref } from 'vue'
 
 import { userMapper, type UserSearchApiData } from '@/mappers/user.mapper'
 import { User } from '@/models/user.model'
-import { userService } from '@/services/user.service'
+import { userSearchService } from '@/services/usersearch.service'
 import {
   type BCeIDSearchType,
   type IdirSearchType,
@@ -14,14 +14,13 @@ import {
 /**
  * Pinia store for searching and managing IDIR users.
  */
-export const useUserStore = defineStore('user', () => {
+export const useUserSearchStore = defineStore('userSearch', () => {
   const searchResults = ref<User[]>([])
 
   /**
    * Private function to handle BCEID user search with loading state management.
    *
-   * @param searchType - The type of search (email, firstName,
-   *   lastName).
+   * @param searchType - The type of search (email, firstName, lastName).
    * @param searchValue - The search value to pass to the service.
    * @returns A promise that resolves to an array of user data.
    * @throws {Error} If the search type is invalid.
@@ -33,14 +32,17 @@ export const useUserStore = defineStore('user', () => {
     let userSearchData: UserSearchApiData[] = []
     switch (searchType) {
       case BCEID_SEARCH_TYPE.EMAIL.value:
-        userSearchData = await userService.searchBCeIDEmail(searchValue)
+        userSearchData = await userSearchService.searchBCeIDEmail(searchValue)
         break
       case BCEID_SEARCH_TYPE.DISPLAY_NAME.value:
-        userSearchData = await userService.searchBCeIDDisplayName(searchValue)
+        userSearchData =
+          await userSearchService.searchBCeIDDisplayName(searchValue)
         break
     }
 
-    searchResults.value = userSearchData.map(userMapper.fromSearchData)
+    searchResults.value = userSearchData.map((item) =>
+      userMapper.fromSearchData(item),
+    )
 
     return searchResults.value
   }
@@ -60,17 +62,20 @@ export const useUserStore = defineStore('user', () => {
     let userSearchData: UserSearchApiData[] = []
     switch (searchType) {
       case IDIR_SEARCH_TYPE.EMAIL.value:
-        userSearchData = await userService.searchIdirEmail(searchValue)
+        userSearchData = await userSearchService.searchIdirEmail(searchValue)
         break
       case IDIR_SEARCH_TYPE.FIRST_NAME.value:
-        userSearchData = await userService.searchIdirFirstName(searchValue)
+        userSearchData =
+          await userSearchService.searchIdirFirstName(searchValue)
         break
       case IDIR_SEARCH_TYPE.LAST_NAME.value:
-        userSearchData = await userService.searchIdirLastName(searchValue)
+        userSearchData = await userSearchService.searchIdirLastName(searchValue)
         break
     }
 
-    searchResults.value = userSearchData.map(userMapper.fromSearchData)
+    searchResults.value = userSearchData.map((item) =>
+      userMapper.fromSearchData(item),
+    )
 
     return searchResults.value
   }
