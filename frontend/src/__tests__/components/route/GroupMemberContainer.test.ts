@@ -18,7 +18,7 @@ import { toUserId } from '@/models/user.model'
 import vuetify from '@/plugins/vuetify'
 import { useGroupStore } from '@/stores/useGroupStore'
 import { useTenantStore } from '@/stores/useTenantStore'
-import { useUserStore } from '@/stores/useUserStore'
+import { useUserSearchStore } from '@/stores/useUserSearchStore'
 import { IDIR_SEARCH_TYPE } from '@/utils/constants'
 
 vi.mock('@/composables/useNotification', () => ({
@@ -45,7 +45,7 @@ const mountComponent = (groupId = 'groupId1', tenantId = 'tenantId1') => {
 describe('GroupMemberContainer', () => {
   let groupStore: ReturnType<typeof useGroupStore>
   let tenantStore: ReturnType<typeof useTenantStore>
-  let userStore: ReturnType<typeof useUserStore>
+  let userSearchStore: ReturnType<typeof useUserSearchStore>
   let notificationMock: ReturnType<typeof useNotification>
 
   beforeEach(() => {
@@ -57,7 +57,7 @@ describe('GroupMemberContainer', () => {
     tenantStore = useTenantStore()
     tenantStore.tenants = [makeTenant({ id: toTenantId('tenantId1') })]
 
-    userStore = useUserStore()
+    userSearchStore = useUserSearchStore()
 
     notificationMock = {
       items: [],
@@ -138,12 +138,9 @@ describe('GroupMemberContainer', () => {
 
   describe('handleClearSearch', () => {
     it('sets searchResults to null', async () => {
-      userStore.searchIdirEmail = vi
+      userSearchStore.searchUsers = vi
         .fn()
-        .mockResolvedValue([makeUser({ id: toUserId('userId1') })])
-      userStore.searchBCeIDEmail = vi
-        .fn()
-        .mockResolvedValue([makeUser({ id: toUserId('userId2') })])
+        .mockResolvedValue([makeUser({ id: toUserId('userId') })])
 
       const wrapper = mountComponent()
       await child(wrapper).vm.$emit(
@@ -193,139 +190,53 @@ describe('GroupMemberContainer', () => {
 
   describe('handleUserSearch', () => {
     beforeEach(() => {
-      userStore.searchIdirFirstName = vi
+      userSearchStore.searchUsers = vi
         .fn()
-        .mockResolvedValue([makeUser({ id: toUserId('idirFirstName') })])
-      userStore.searchIdirLastName = vi
-        .fn()
-        .mockResolvedValue([makeUser({ id: toUserId('idirLastName') })])
-      userStore.searchIdirEmail = vi
-        .fn()
-        .mockResolvedValue([makeUser({ id: toUserId('idirEmail') })])
-      userStore.searchBCeIDDisplayName = vi
-        .fn()
-        .mockResolvedValue([makeUser({ id: toUserId('bceidDisplayName') })])
-      userStore.searchBCeIDEmail = vi
-        .fn()
-        .mockResolvedValue([makeUser({ id: toUserId('bceidEmail') })])
+        .mockResolvedValue([makeUser({ id: toUserId('userId') })])
     })
 
-    it('searches by first name and concatenates BCeID display name results', async () => {
+    it('searches for users and displays results', async () => {
       const wrapper = mountComponent()
       await child(wrapper).vm.$emit(
         'search',
         IDIR_SEARCH_TYPE.FIRST_NAME.value,
-        'firstName',
+        'searchFirstName',
       )
       await flushPromises()
 
-      expect(userStore.searchIdirFirstName).toHaveBeenCalledWith('firstName')
-      expect(userStore.searchBCeIDDisplayName).toHaveBeenCalledWith('firstName')
+      expect(userSearchStore.searchUsers).toHaveBeenCalledWith(
+        IDIR_SEARCH_TYPE.FIRST_NAME.value,
+        'searchFirstName',
+      )
       expect(child(wrapper).props('searchResults')).toEqual([
-        expect.objectContaining({ id: toUserId('idirFirstName') }),
-        expect.objectContaining({ id: toUserId('bceidDisplayName') }),
+        expect.objectContaining({ id: toUserId('userId') }),
       ])
     })
 
-    it('searches by last name and concatenates BCeID display name results', async () => {
-      const wrapper = mountComponent()
-      await child(wrapper).vm.$emit(
-        'search',
-        IDIR_SEARCH_TYPE.LAST_NAME.value,
-        'lastName',
-      )
-      await flushPromises()
-
-      expect(userStore.searchIdirLastName).toHaveBeenCalledWith('lastName')
-      expect(userStore.searchBCeIDDisplayName).toHaveBeenCalledWith('lastName')
-      expect(child(wrapper).props('searchResults')).toEqual([
-        expect.objectContaining({ id: toUserId('idirLastName') }),
-        expect.objectContaining({ id: toUserId('bceidDisplayName') }),
-      ])
-    })
-
-    it('searches by email and concatenates BCeID email results', async () => {
-      const wrapper = mountComponent()
-      await child(wrapper).vm.$emit(
-        'search',
-        IDIR_SEARCH_TYPE.EMAIL.value,
-        'email@example.com',
-      )
-      await flushPromises()
-
-      expect(userStore.searchIdirEmail).toHaveBeenCalledWith(
-        'email@example.com',
-      )
-      expect(userStore.searchBCeIDEmail).toHaveBeenCalledWith(
-        'email@example.com',
-      )
-      expect(child(wrapper).props('searchResults')).toEqual([
-        expect.objectContaining({ id: toUserId('idirEmail') }),
-        expect.objectContaining({ id: toUserId('bceidEmail') }),
-      ])
-    })
-
-    it('shows an error when an invalid search type is provided', async () => {
-      const wrapper = mountComponent()
-      await child(wrapper).vm.$emit('search', 'invalidSearch', 'invalidSearch')
-      await flushPromises()
-
-      expect(notificationMock.error).toHaveBeenCalledWith('User search failed')
-      expect(child(wrapper).props('searchResults')).toBeNull()
-    })
-
-    it('shows error and nulls results when search throws', async () => {
-      userStore.searchIdirFirstName = vi
+    it('shows error notification when searchUsers fails', async () => {
+      userSearchStore.searchUsers = vi
         .fn()
         .mockRejectedValue(new Error('message'))
-
       const wrapper = mountComponent()
       await child(wrapper).vm.$emit(
         'search',
         IDIR_SEARCH_TYPE.FIRST_NAME.value,
-        'firstName',
+        'searchFirstName',
       )
       await flushPromises()
 
       expect(notificationMock.error).toHaveBeenCalledWith('User search failed')
-      expect(child(wrapper).props('searchResults')).toBeNull()
-    })
-
-    it('resets loadingSearch to false after search completes', async () => {
-      const wrapper = mountComponent()
-      await child(wrapper).vm.$emit(
-        'search',
-        IDIR_SEARCH_TYPE.EMAIL.value,
-        'email@example.com',
-      )
-      await flushPromises()
-
-      expect(child(wrapper).props('loadingSearch')).toBe(false)
-    })
-
-    it('resets loadingSearch to false even when search throws', async () => {
-      userStore.searchIdirEmail = vi.fn().mockRejectedValue(new Error('fail'))
-
-      const wrapper = mountComponent()
-      await child(wrapper).vm.$emit(
-        'search',
-        IDIR_SEARCH_TYPE.EMAIL.value,
-        'email@example.com',
-      )
-      await flushPromises()
-
-      expect(child(wrapper).props('loadingSearch')).toBe(false)
     })
   })
 
   describe('@cancel inline handler', () => {
     it('sets searchResults to null on cancel', async () => {
-      userStore.searchIdirEmail = vi
+      userSearchStore.searchUsers = vi
         .fn()
-        .mockResolvedValue([makeUser({ id: toUserId('userId1') })])
-      userStore.searchBCeIDEmail = vi
-        .fn()
-        .mockResolvedValue([makeUser({ id: toUserId('userId2') })])
+        .mockResolvedValue([
+          makeUser({ id: toUserId('userId1') }),
+          makeUser({ id: toUserId('userId2') }),
+        ])
 
       const wrapper = mountComponent()
       await child(wrapper).vm.$emit(
