@@ -1,0 +1,122 @@
+name: Github Timeout Trace
+
+on:
+  pull_request:
+    types: [labeled, opened, reopened, synchronize]
+
+concurrency:
+  # Cancel in progress for PR open and close
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  curl_loop_test:
+    name: Curl Loop Test
+    environment:
+      name: gold-dev
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Start PCAP capture
+        id: pcap
+        run: |
+          sudo tcpdump \
+            -i any \
+            -nn \
+            -s 0 \
+            -w loginproxy.pcap \
+            "host loginproxy.gov.bc.ca and port 443" &
+
+          echo $! > /tmp/tcpdump.pid
+
+      - id: curl_loginproxy
+        if: always()
+        run: |
+          while curl \
+            --connect-timeout 10 \
+            --max-time 30 \
+            -sS \
+            https://loginproxy.gov.bc.ca
+          do
+            echo "curl succeeded, retrying..."
+          done
+
+      - name: Stop PCAP capture
+        if: always()
+        run: |
+          if [ -f /tmp/tcpdump.pid ]; then
+            sudo kill "$(cat /tmp/tcpdump.pid)" || true
+            sleep 1
+          fi
+
+      - name: Show PCAP summary
+        if: always()
+        run: |
+          sudo tcpdump -nn -r loginproxy.pcap || true
+
+      - name: Upload PCAP
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: loginproxy-pcap
+          path: loginproxy.pcap
+          if-no-files-found: warn
+
+  oc_api_loop_test:
+    name: Oc API Loop Test
+    environment:
+      name: gold-dev
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Start PCAP capture
+        id: pcap
+        run: |
+          API_HOST=$(echo "${{ vars.OC_SERVER }}" | sed -E 's#https?://([^/:]+).*#\1#')
+
+          echo "Capturing traffic to ${API_HOST}:6443"
+
+          sudo tcpdump \
+            -i any \
+            -nn \
+            -s 0 \
+            -w oc-api.pcap \
+            "host ${API_HOST} and port 6443" &
+
+          echo $! > /tmp/tcpdump.pid
+
+      - id: curl_oc_api
+        if: always()
+        run: |
+          while curl \
+            -skv \
+            --connect-timeout 10 \
+            --max-time 30 \
+            -H "Authorization: Bearer ${{ secrets.OC_TOKEN }}" \
+            "${{ vars.OC_SERVER }}"
+          do
+            echo "curl succeeded, retrying..."
+          done
+
+      - name: Stop PCAP capture
+        if: always()
+        run: |
+          if [ -f /tmp/tcpdump.pid ]; then
+            sudo kill "$(cat /tmp/tcpdump.pid)" || true
+            sleep 1
+          fi
+
+      - name: Show PCAP summary
+        if: always()
+        run: |
+          sudo tcpdump -nn -r oc-api.pcap || true
+
+      - name: Upload PCAP
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: oc-api-pcap
+          path: oc-api.pcap
+          if-no-files-found: warn
