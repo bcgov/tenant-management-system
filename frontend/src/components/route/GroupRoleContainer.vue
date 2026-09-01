@@ -151,7 +151,7 @@ const saveChanges = async () => {
   }))
 
   try {
-    await groupStore.updateGroupRoles(
+    await groupStore.updateGroupServiceRoles(
       tenantId,
       groupId,
       updated as GroupService[],

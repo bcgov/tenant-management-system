@@ -20,21 +20,31 @@ export const useServiceStore = defineStore('service', () => {
   // Private methods
 
   /**
-   * Inserts or updates a service in the store.
+   * Retrieves a service from the store by its ID.
    *
-   * @param service - The service to insert or update.
-   * @returns The inserted or updated service.
+   * @param serviceId - The ID of the service.
+   * @returns The service if found, otherwise undefined.
    */
-  const upsertService = (service: Service): Service => {
-    const index = services.value.findIndex((s) => s.id === service.id)
+  const getService = (serviceId: ServiceId): Service | undefined => {
+    return services.value.find((s) => s.id === serviceId)
+  }
 
-    if (index === -1) {
-      services.value.push(service)
-    } else {
-      services.value[index] = service
-    }
+  /**
+   * Inserts a service in the store.
+   *
+   * @param service - The service to insert.
+   */
+  const insertService = (service: Service) => {
+    services.value.push(service)
+  }
 
-    return service
+  /**
+   * Inserts a tenant service in the store.
+   *
+   * @param service - The service to insert.
+   */
+  const insertTenantService = (service: Service) => {
+    tenantServices.value.push(service)
   }
 
   // Exported Methods
@@ -45,12 +55,23 @@ export const useServiceStore = defineStore('service', () => {
    * @param tenantId - The ID of the tenant.
    * @param serviceId - The ID of the service.
    * @returns A promise that resolves when the service is added to the tenant.
+   * @throws An error if the service with the given ID is not in the store.
    */
   const addServiceToTenant = async (
     tenantId: TenantId,
     serviceId: ServiceId,
-  ): Promise<void> => {
+  ): Promise<Service> => {
+    // Grab the existing service from the store, to confirm the ID and for use
+    // later.
+    const service = getService(serviceId)
+    if (!service) {
+      throw new Error(`Service with ID ${serviceId} not found`)
+    }
+
     await serviceService.addServiceToTenant(tenantId, serviceId)
+    insertTenantService(service)
+
+    return service
   }
 
   /**
@@ -62,8 +83,8 @@ export const useServiceStore = defineStore('service', () => {
   const createService = async (
     serviceDetails: ServiceDetailFields,
   ): Promise<void> => {
-    const service = await serviceService.createService(serviceDetails)
-    upsertService(serviceMapper.fromApiData(service))
+    const serviceApiData = await serviceService.createService(serviceDetails)
+    insertService(serviceMapper.fromApiData(serviceApiData))
   }
 
   /**
@@ -72,11 +93,8 @@ export const useServiceStore = defineStore('service', () => {
    * @returns A promise that resolves when the API call completes.
    */
   const fetchServices = async (): Promise<void> => {
-    const serviceData = await serviceService.getServices()
-    const serviceObjects = serviceData.map(serviceMapper.fromApiData)
-
-    // Update the store with these services.
-    serviceObjects.forEach(upsertService)
+    const serviceApiData = await serviceService.getServices()
+    services.value = serviceApiData.map(serviceMapper.fromApiData)
   }
 
   /**
@@ -86,8 +104,8 @@ export const useServiceStore = defineStore('service', () => {
    * @returns A promise that resolves when the API call completes.
    */
   const fetchTenantServices = async (tenantId: TenantId): Promise<void> => {
-    const tenantServiceData = await serviceService.getTenantServices(tenantId)
-    tenantServices.value = tenantServiceData.map(serviceMapper.fromApiData)
+    const serviceApiData = await serviceService.getTenantServices(tenantId)
+    tenantServices.value = serviceApiData.map(serviceMapper.fromApiData)
   }
 
   /**

@@ -122,6 +122,18 @@ describe('useTenantStore', () => {
   })
 
   describe('fetchTenant', () => {
+    it('creates new tenant in state during upsert', async () => {
+      const store = useTenantStore()
+      vi.mocked(tenantService.getTenant).mockResolvedValue(mockTenantApiData)
+
+      expect(store.tenants).toHaveLength(0)
+
+      await store.fetchTenant(mockTenantApiData.id)
+
+      expect(store.tenants).toHaveLength(1)
+      expect(store.tenants[0].name).toBe('Test Tenant')
+    })
+
     it('updates existing tenant in state during upsert', async () => {
       const store = useTenantStore()
       const existing = makeTenant({ id: mockTenantApiData.id, name: 'Old' })
