@@ -450,7 +450,7 @@ describe('useGroupStore', () => {
     })
   })
 
-  describe('updateGroupRoles', () => {
+  describe('updateGroupServiceRoles', () => {
     it('calls the service with the updated group services', async () => {
       const store = useGroupStore()
       const services = [
@@ -468,7 +468,7 @@ describe('useGroupStore', () => {
         [],
       )
 
-      await store.updateGroupRoles(
+      await store.updateGroupServiceRoles(
         toTenantId('tenantId'),
         toGroupId('groupId'),
         services,
@@ -493,7 +493,7 @@ describe('useGroupStore', () => {
         [groupServiceApiData],
       )
 
-      await store.updateGroupRoles(
+      await store.updateGroupServiceRoles(
         toTenantId('tenantId'),
         toGroupId('groupId'),
         [groupService],
@@ -514,9 +514,11 @@ describe('useGroupStore', () => {
       ).mockRejectedValueOnce(new Error('API error'))
 
       await expect(
-        store.updateGroupRoles(toTenantId('tenantId'), toGroupId('groupId'), [
-          makeGroupService({ id: toGroupServiceId('groupServiceId2') }),
-        ]),
+        store.updateGroupServiceRoles(
+          toTenantId('tenantId'),
+          toGroupId('groupId'),
+          [makeGroupService({ id: toGroupServiceId('groupServiceId2') })],
+        ),
       ).rejects.toThrow()
 
       expect(store.groupServices).toHaveLength(1)

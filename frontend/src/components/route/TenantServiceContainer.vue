@@ -26,20 +26,11 @@ const tenantStore = useTenantStore()
 
 const handleAddService = async (serviceId: ServiceId) => {
   try {
-    await serviceStore.addServiceToTenant(tenantId, serviceId)
+    const service = await serviceStore.addServiceToTenant(tenantId, serviceId)
 
-    // Find the added service and add it to tenantServices.
-    const addedService = services.value.find(
-      (service) => service.id === serviceId,
+    notification.success(
+      `${service.displayName} has been added to this tenant.`,
     )
-
-    // TODO: what is the implication of this being false?
-    if (addedService) {
-      serviceStore.tenantServices.push(addedService)
-      notification.success(
-        `${addedService.displayName} has been added to this tenant.`,
-      )
-    }
   } catch {
     notification.error('Failed to add service to tenant')
   }
