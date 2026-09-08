@@ -121,6 +121,7 @@ const handleSearch = () => {
       <h4 class="my-6">Search Results</h4>
 
       <UserSearchTable
+        :loading="loading"
         :sort-by="defaultSort"
         :tenant="tenant"
         :users="searchResults || []"

@@ -13,8 +13,8 @@ import { User, type UserId } from '@/models/user.model'
 import { useGroupStore } from '@/stores/useGroupStore'
 import { useRoleStore } from '@/stores/useRoleStore'
 import { useTenantStore } from '@/stores/useTenantStore'
-import { useUserStore } from '@/stores/useUserStore'
-import { type IdirSearchType, IDIR_SEARCH_TYPE } from '@/utils/constants'
+import { useUserSearchStore } from '@/stores/useUserSearchStore'
+import { type IdirSearchType } from '@/utils/constants'
 
 // --- Component Interface -----------------------------------------------------
 
@@ -28,7 +28,7 @@ const groupStore = useGroupStore()
 const notification = useNotification()
 const roleStore = useRoleStore()
 const tenantStore = useTenantStore()
-const userStore = useUserStore()
+const userSearchStore = useUserSearchStore()
 
 // --- Component State ---------------------------------------------------------
 
@@ -129,24 +129,10 @@ const handleUserSearch = async (
   isLoadingSearch.value = true
 
   try {
-    if (searchType === IDIR_SEARCH_TYPE.FIRST_NAME.value) {
-      searchResults.value = await userStore.searchIdirFirstName(searchText)
-      searchResults.value = searchResults.value.concat(
-        await userStore.searchBCeIDDisplayName(searchText),
-      )
-    } else if (searchType === IDIR_SEARCH_TYPE.LAST_NAME.value) {
-      searchResults.value = await userStore.searchIdirLastName(searchText)
-      searchResults.value = searchResults.value.concat(
-        await userStore.searchBCeIDDisplayName(searchText),
-      )
-    } else if (searchType === IDIR_SEARCH_TYPE.EMAIL.value) {
-      searchResults.value = await userStore.searchIdirEmail(searchText)
-      searchResults.value = searchResults.value.concat(
-        await userStore.searchBCeIDEmail(searchText),
-      )
-    } else {
-      throw new Error('Invalid search type')
-    }
+    searchResults.value = await userSearchStore.searchUsers(
+      searchType,
+      searchText,
+    )
   } catch {
     notification.error('User search failed')
     searchResults.value = null
