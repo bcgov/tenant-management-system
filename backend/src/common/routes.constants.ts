@@ -55,4 +55,7 @@ export class RoutesConstants {
   public static GET_TENANT_USER = '/v1/tenants/:tenantId/users/:tenantUserId'
   public static GET_EFFECTIVE_SHARED_SERVICE_ROLES =
     '/v1/tenants/:tenantId/ssousers/:ssoUserId/shared-service-roles'
+  public static CREATE_ASSERTION = '/v1/tenants/:tenantId/assertions'
+  public static VERIFY_ASSERTION = '/v1/assertions/verify'
+  public static JWKS = '/v1/.well-known/jwks.json'
 }

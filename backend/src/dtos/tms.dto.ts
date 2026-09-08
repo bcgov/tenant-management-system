@@ -317,3 +317,27 @@ export interface SaveSharedServiceResultDto {
   createdBy?: string
   updatedBy?: string
 }
+
+export interface CreateAssertionInputDto {
+  tenantId: string
+  audience: string
+  callingService: string
+  ssoUserId?: string
+}
+
+export interface CreateAssertionResultDto {
+  assertion: string
+  expiresAt: Date
+}
+
+export interface VerifyAssertionInputDto {
+  assertion: string
+  callingService: string
+}
+
+export interface VerifyAssertionResultDto {
+  valid: boolean
+  tenantId: string
+  azp: string
+  sub?: string
+}
