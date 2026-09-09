@@ -28,7 +28,7 @@ describe('IDIR_SEARCH_TYPE', () => {
   it('has unique values', () => {
     const values = Object.values(IDIR_SEARCH_TYPE).map((item) => item.value)
 
-    expect(values.length).toBe(new Set(values).size)
+    expect(values).toHaveLength(new Set(values).size)
   })
 })
 
@@ -48,7 +48,7 @@ describe('BCEID_SEARCH_TYPE', () => {
   it('has unique values', () => {
     const values = Object.values(BCEID_SEARCH_TYPE).map((item) => item.value)
 
-    expect(values.length).toBe(new Set(values).size)
+    expect(values).toHaveLength(new Set(values).size)
   })
 })
 
@@ -62,7 +62,7 @@ describe('MINISTRIES', () => {
   })
 
   it('has unique entries', () => {
-    expect(MINISTRIES.length).toBe(new Set(MINISTRIES).size)
+    expect(MINISTRIES).toHaveLength(new Set(MINISTRIES).size)
   })
 
   it('is sorted alphabetically by first and last entry', () => {
@@ -98,7 +98,7 @@ describe('ROLES', () => {
   it('has unique values', () => {
     const values = Object.values(ROLES).map((role) => role.value)
 
-    expect(values.length).toBe(new Set(values).size)
+    expect(values).toHaveLength(new Set(values).size)
   })
 })
 
@@ -124,6 +124,6 @@ describe('TENANT_REQUEST_STATUS', () => {
       (status) => status.value,
     )
 
-    expect(values.length).toBe(new Set(values).size)
+    expect(values).toHaveLength(new Set(values).size)
   })
 })

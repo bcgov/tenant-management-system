@@ -14,8 +14,23 @@ import { tenantRequestService } from '@/services/tenantrequest.service'
  * Pinia store for managing tenant requests and their statuses.
  */
 export const useTenantRequestStore = defineStore('tenantRequest', () => {
-  const loading = ref(false)
   const tenantRequests = ref<TenantRequest[]>([])
+
+  // Private methods
+
+  /**
+   * Retrieves a tenant request from the store by its ID.
+   *
+   * @param tenantRequestId - The ID of the tenant request.
+   * @returns The tenant request if found, otherwise undefined.
+   */
+  const getTenantRequest = (
+    tenantRequestId: TenantRequestId,
+  ): TenantRequest | undefined => {
+    return tenantRequests.value.find(
+      (tenantRequest) => tenantRequest.id === tenantRequestId,
+    )
+  }
 
   /**
    * Creates a new tenant request.
@@ -38,13 +53,10 @@ export const useTenantRequestStore = defineStore('tenantRequest', () => {
    *   the store is updated.
    */
   const fetchTenantRequests = async (): Promise<void> => {
-    loading.value = true
-    try {
-      const tenantData = await tenantRequestService.getTenantRequests()
-      tenantRequests.value = tenantData.map(tenantRequestMapper.fromApiData)
-    } finally {
-      loading.value = false
-    }
+    const tenantRequestApiData = await tenantRequestService.getTenantRequests()
+    tenantRequests.value = tenantRequestApiData.map(
+      tenantRequestMapper.fromApiData,
+    )
   }
 
   /**
@@ -64,6 +76,13 @@ export const useTenantRequestStore = defineStore('tenantRequest', () => {
     rejectionReason?: string,
     tenantName?: string,
   ): Promise<void> => {
+    // Grab the existing tenant request from the store, to confirm the ID and
+    // for use later.
+    const tenantRequest = getTenantRequest(tenantRequestId)
+    if (!tenantRequest) {
+      throw new Error(`Tenant request with ID ${tenantRequestId} not found`)
+    }
+
     await tenantRequestService.updateTenantRequestStatus(
       tenantRequestId,
       status,
@@ -71,21 +90,12 @@ export const useTenantRequestStore = defineStore('tenantRequest', () => {
       tenantName,
     )
 
-    const tenantRequest = tenantRequests.value.find(
-      (request) => request.id === tenantRequestId,
-    )
-
-    if (tenantRequest) {
-      tenantRequest.status = status
-
-      if (rejectionReason) {
-        tenantRequest.rejectionReason = rejectionReason
-      }
-    }
+    tenantRequest.name = tenantName ?? tenantRequest.name
+    tenantRequest.rejectionReason = rejectionReason || ''
+    tenantRequest.status = status
   }
 
   return {
-    loading,
     tenantRequests,
 
     createTenantRequest,

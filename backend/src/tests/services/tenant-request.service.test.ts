@@ -18,6 +18,7 @@ jest.mock('../../common/db.connection', () => ({
 jest.mock('../../services/notification.service', () => ({
   notificationService: {
     notifyTenantRequestCreated: jest.fn(),
+    notifyTenantRequestDecisioned: jest.fn(),
   },
 }))
 
@@ -29,6 +30,8 @@ const mockRepository = tenantRequestRepository as jest.Mocked<
 const mockTransaction = connection.manager.transaction as jest.Mock
 const mockLoggerError = logger.error as jest.Mock
 const mockNotify = notificationService.notifyTenantRequestCreated as jest.Mock
+const mockNotifyDecisioned =
+  notificationService.notifyTenantRequestDecisioned as jest.Mock
 
 function asRequest(overrides: Partial<Request>): Request {
   return overrides as Request
@@ -218,6 +221,35 @@ describe('TenantRequestService', () => {
         'Update tenant request status transaction failure - rolling back changes',
         { error: 'db down' },
       )
+    })
+
+    it('notifies the requester once the status update succeeds', async () => {
+      const response = {
+        tenantRequest: {
+          id: 'tr-1',
+          status: 'REJECTED',
+          requestedBy: { displayName: 'Jane Doe', email: 'jane@gov.bc.ca' },
+        },
+      }
+      mockRepository.updateTenantRequestStatus.mockResolvedValue(
+        response as never,
+      )
+
+      await service.updateTenantRequestStatus(req)
+
+      expect(mockNotifyDecisioned).toHaveBeenCalledWith(response.tenantRequest)
+    })
+
+    it('does not notify the requester when the status update fails', async () => {
+      mockRepository.updateTenantRequestStatus.mockRejectedValue(
+        new Error('db down'),
+      )
+
+      await expect(service.updateTenantRequestStatus(req)).rejects.toThrow(
+        'db down',
+      )
+
+      expect(mockNotifyDecisioned).not.toHaveBeenCalled()
     })
   })
 

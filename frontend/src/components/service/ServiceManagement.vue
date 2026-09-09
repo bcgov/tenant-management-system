@@ -10,27 +10,27 @@ import { currentUserHasRole } from '@/utils/permissions'
 
 // --- Component Interface -----------------------------------------------------
 
-const props = defineProps<{
+const { services, tenant, tenantServices } = defineProps<{
   services: Service[]
   tenant: Tenant
   tenantServices: Service[]
 }>()
 
 const emit = defineEmits<{
-  (event: 'add-service', serviceId: ServiceId): void
+  'add-service': [serviceId: ServiceId]
 }>()
 
 // --- Computed Values ---------------------------------------------------------
 
 // Available Services = Services - Tenant Services
 const availableServices = computed(() => {
-  return props.services.filter(
-    (service) => !props.tenantServices.some((ts) => ts.id === service.id),
+  return services.filter(
+    (service) => !tenantServices.some((ts) => ts.id === service.id),
   )
 })
 
 const isTenantOwner = computed(() => {
-  return currentUserHasRole(props.tenant, ROLES.TENANT_OWNER.value)
+  return currentUserHasRole(tenant, ROLES.TENANT_OWNER.value)
 })
 
 // --- Component Methods -------------------------------------------------------
@@ -65,7 +65,7 @@ const handleAddService = async (serviceId: ServiceId) => {
     </template>
 
     <template v-if="tenantServices.length > 0">
-      <h3>{{ $t('general.servicesLabel', 2) }}</h3>
+      <h3>Connected Services</h3>
       <TenantServiceList :tenant-services="tenantServices" />
       <v-divider class="my-12" />
     </template>

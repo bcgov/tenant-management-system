@@ -18,9 +18,17 @@ import { serviceService } from '@/services/service.service'
 export const useGroupStore = defineStore('group', () => {
   const groups = ref<Group[]>([])
   const groupServices = ref<GroupService[]>([])
-  const loading = ref(false)
 
   // Private methods
+
+  /**
+   * Inserts a group in the store.
+   *
+   * @param group - The group to insert.
+   */
+  const insertGroup = (group: Group) => {
+    groups.value.push(group)
+  }
 
   /**
    * Inserts or updates a group in the store.
@@ -31,7 +39,7 @@ export const useGroupStore = defineStore('group', () => {
   const upsertGroup = (group: Group): Group => {
     const index = groups.value.findIndex((g) => g.id === group.id)
     if (index === -1) {
-      groups.value.push(group)
+      insertGroup(group)
     } else {
       groups.value[index] = group
     }
@@ -54,10 +62,16 @@ export const useGroupStore = defineStore('group', () => {
     name: string,
     description: string,
   ): Promise<Group> => {
-    const response = await groupService.createGroup(tenantId, name, description)
-    const group = groupMapper.fromApiData(response)
+    const groupApiData = await groupService.createGroup(
+      tenantId,
+      name,
+      description,
+    )
+    const group = groupMapper.fromApiData(groupApiData)
 
-    return upsertGroup(group)
+    insertGroup(group)
+
+    return group
   }
 
   /**
@@ -81,15 +95,14 @@ export const useGroupStore = defineStore('group', () => {
       throw new Error(`Group with ID ${groupId} not found`)
     }
 
-    const apiResponse = await groupService.addUserToGroup(
+    const groupUserApiData = await groupService.addUserToGroup(
       tenantId,
       groupId,
       user,
     )
+    const groupUser = groupUserMapper.fromApiData(groupUserApiData)
 
-    // Update group users after adding
-    const addedUser = groupUserMapper.fromApiData(apiResponse)
-    group.groupUsers.push(addedUser)
+    group.groupUsers.push(groupUser)
   }
 
   /**
@@ -103,15 +116,10 @@ export const useGroupStore = defineStore('group', () => {
     tenantId: TenantId,
     groupId: GroupId,
   ): Promise<Group> => {
-    loading.value = true
-    try {
-      const groupData = await groupService.getGroup(tenantId, groupId)
-      const group = groupMapper.fromApiData(groupData)
+    const groupApiData = await groupService.getGroup(tenantId, groupId)
+    const group = groupMapper.fromApiData(groupApiData)
 
-      return upsertGroup(group)
-    } finally {
-      loading.value = false
-    }
+    return upsertGroup(group)
   }
 
   /**
@@ -122,13 +130,8 @@ export const useGroupStore = defineStore('group', () => {
    *   is updated.
    */
   const fetchGroups = async (tenantId: TenantId): Promise<void> => {
-    loading.value = true
-    try {
-      const groupList = await groupService.getTenantGroups(tenantId)
-      groups.value = groupList.map(groupMapper.fromApiData)
-    } finally {
-      loading.value = false
-    }
+    const groupApiData = await groupService.getTenantGroups(tenantId)
+    groups.value = groupApiData.map(groupMapper.fromApiData)
   }
 
   /**
@@ -144,16 +147,11 @@ export const useGroupStore = defineStore('group', () => {
     tenantId: TenantId,
     groupId: GroupId,
   ): Promise<void> => {
-    loading.value = true
-    try {
-      const groupServiceList = await serviceService.getTenantGroupServices(
-        tenantId,
-        groupId,
-      )
-      groupServices.value = groupServiceList.map(groupServiceMapper.fromApiData)
-    } finally {
-      loading.value = false
-    }
+    const groupApiData = await serviceService.getTenantGroupServices(
+      tenantId,
+      groupId,
+    )
+    groupServices.value = groupApiData.map(groupServiceMapper.fromApiData)
   }
 
   /**
@@ -202,10 +200,9 @@ export const useGroupStore = defineStore('group', () => {
    * @param tenantId - The ID of the tenant.
    * @param groupId - The ID of the group.
    * @param data - The new group service roles.
-   * @throws {Error} If the group is not found in the store.
    * @returns A promise that resolves when the roles are updated.
    */
-  const updateGroupRoles = async (
+  const updateGroupServiceRoles = async (
     tenantId: TenantId,
     groupId: GroupId,
     updatedGroupServices: GroupService[],
@@ -221,7 +218,6 @@ export const useGroupStore = defineStore('group', () => {
   return {
     groups,
     groupServices,
-    loading,
 
     addGroup,
     addGroupUser,
@@ -230,6 +226,6 @@ export const useGroupStore = defineStore('group', () => {
     fetchGroupServices,
     getGroup,
     removeGroupUser,
-    updateGroupRoles,
+    updateGroupServiceRoles,
   }
 })

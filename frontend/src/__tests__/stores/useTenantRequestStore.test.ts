@@ -2,14 +2,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 
 import {
-  makeSsoUser,
   makeTenantRequest,
   makeTenantRequestApiData,
   makeTenantRequestDetailFields,
   makeUser,
 } from '@/__tests__/__factories__'
 
-import { toSsoUserId } from '@/models/ssouser.model'
 import { toTenantRequestId } from '@/models/tenantrequest.model'
 import { tenantRequestService } from '@/services/tenantrequest.service'
 import { useTenantRequestStore } from '@/stores/useTenantRequestStore'
@@ -31,7 +29,6 @@ describe('useTenantRequestStore', () => {
   it('starts with default values', () => {
     const store = useTenantRequestStore()
 
-    expect(store.loading).toBe(false)
     expect(store.tenantRequests).toEqual([])
   })
 
@@ -48,65 +45,9 @@ describe('useTenantRequestStore', () => {
 
       expect(store.tenantRequests).toHaveLength(0)
     })
-
-    it.todo('creates a new tenant request in the store', async () => {
-      const store = useTenantRequestStore()
-      const tenantRequestDetailFields = makeTenantRequestDetailFields({
-        description: 'tenantRequestDescription',
-        ministryName: 'tenantRequestMinistryName',
-        name: 'tenantRequestName',
-      })
-      const user = makeUser({
-        ssoUser: makeSsoUser({
-          displayName: 'ssoUserDisplayName',
-          email: 'ssoUserEmail',
-          firstName: 'ssoUserFirstName',
-          idpType: 'ssoUserIdpType',
-          lastName: 'ssoUserLastName',
-          ssoUserId: toSsoUserId('ssoUserSsoUserId'),
-          userName: 'ssoUserUserName',
-        }),
-      })
-
-      expect(store.tenantRequests).toHaveLength(0)
-
-      await store.createTenantRequest(tenantRequestDetailFields, user)
-
-      expect(store.tenantRequests).toHaveLength(1)
-    })
   })
 
   describe('fetchTenantRequests', () => {
-    it('manages loading state', async () => {
-      const store = useTenantRequestStore()
-      vi.mocked(tenantRequestService.getTenantRequests).mockResolvedValue([
-        makeTenantRequestApiData(),
-      ])
-
-      expect(store.loading).toBe(false)
-
-      const promise = store.fetchTenantRequests()
-
-      expect(store.loading).toBe(true)
-
-      await promise
-
-      expect(store.loading).toBe(false)
-    })
-
-    it('clears loading state on error', async () => {
-      const store = useTenantRequestStore()
-      vi.mocked(tenantRequestService.getTenantRequests).mockRejectedValueOnce(
-        new Error('API error'),
-      )
-
-      expect(store.loading).toBe(false)
-
-      await expect(store.fetchTenantRequests()).rejects.toThrow()
-
-      expect(store.loading).toBe(false)
-    })
-
     it('overwrites store with results', async () => {
       const store = useTenantRequestStore()
       const tenantRequest = makeTenantRequest({
@@ -209,7 +150,7 @@ describe('useTenantRequestStore', () => {
       )
     })
 
-    it.todo('updates name in the store if given', async () => {
+    it('updates name in the store if given', async () => {
       const store = useTenantRequestStore()
       const tenantRequest = makeTenantRequest({
         id: toTenantRequestId('tenantRequestId'),
@@ -228,7 +169,7 @@ describe('useTenantRequestStore', () => {
       expect(store.tenantRequests[0].name).toBe('tenantRequestName2')
     })
 
-    it('gracefully ignores updates for non-existent IDs', async () => {
+    it('throws an error for non-existent IDs', async () => {
       const store = useTenantRequestStore()
       store.tenantRequests = []
 
@@ -237,7 +178,7 @@ describe('useTenantRequestStore', () => {
           toTenantRequestId('tenantRequestId'),
           'tenantRequestStatus',
         ),
-      ).resolves.not.toThrow()
+      ).rejects.toThrow()
     })
   })
 })

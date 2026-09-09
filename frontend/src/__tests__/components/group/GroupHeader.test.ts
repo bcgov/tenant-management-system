@@ -1,6 +1,7 @@
-import { mount } from '@vue/test-utils'
+import { render, screen, waitFor } from '@testing-library/vue'
+import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { nextTick, reactive } from 'vue'
+import { reactive } from 'vue'
 import { useRoute } from 'vue-router'
 
 import { makeGroup, makeGroupUser, makeTenant } from '@/__tests__/__factories__'
@@ -30,8 +31,8 @@ const createRoute = (path = '/current-path'): ReturnType<typeof useRoute> => {
   return reactive({ path }) as ReturnType<typeof useRoute>
 }
 
-const mountComponent = (props = defaultProps) => {
-  return mount(GroupHeader, {
+const renderComponent = (props = defaultProps) => {
+  return render(GroupHeader, {
     props,
     global: {
       plugins: [vuetify],
@@ -46,76 +47,145 @@ describe('GroupHeader', () => {
 
   describe('header', () => {
     it('renders the group name', () => {
-      const wrapper = mountComponent()
+      renderComponent()
 
-      expect(wrapper.text()).toContain('test-group-name')
+      expect(screen.getByText(mockGroup.name)).toBeInTheDocument()
     })
 
     it('renders the tenant name', () => {
-      const wrapper = mountComponent()
+      renderComponent()
 
-      expect(wrapper.text()).toContain('test-tenant-name')
+      expect(screen.getByText(new RegExp(mockTenant.name))).toBeInTheDocument()
     })
 
-    it('shows the chevron down icon when collapsed', () => {
-      const wrapper = mountComponent()
+    it('starts collapsed', () => {
+      renderComponent()
 
-      expect(wrapper.text()).not.toContain('chevron-up')
+      // "group details" matches the button's label in both its expanded and
+      // collapsed state, so this same query works as a stable locator
+      // throughout the test file — no re-querying by a name that changes.
+      expect(
+        screen.getByRole('button', { name: /group details/i }),
+      ).toHaveAttribute('aria-expanded', 'false')
+    })
+
+    it('expands after the toggle button is clicked', async () => {
+      const user = userEvent.setup()
+      renderComponent()
+
+      const toggle = screen.getByRole('button', { name: /group details/i })
+      await user.click(toggle)
+
+      // waitFor re-checks the same element reference until the attribute
+      // updates, rather than re-querying by a name that's mid-change.
+      await waitFor(() =>
+        expect(toggle).toHaveAttribute('aria-expanded', 'true'),
+      )
     })
   })
 
   describe('toggle detail', () => {
     it('does not show detail by default', () => {
-      const wrapper = mountComponent()
+      renderComponent()
 
-      expect(wrapper.find('pre.description').exists()).toBe(false)
+      expect(screen.queryByText(mockGroup.description)).not.toBeInTheDocument()
     })
 
-    it('shows detail when header is clicked', async () => {
-      const wrapper = mountComponent()
+    it('shows detail when the toggle button is clicked', async () => {
+      const user = userEvent.setup()
+      renderComponent()
 
-      await wrapper.find('.v-sheet').trigger('click')
+      await user.click(screen.getByRole('button', { name: /group details/i }))
 
-      expect(wrapper.find('pre.description').exists()).toBe(true)
+      expect(await screen.findByText(mockGroup.description)).toBeInTheDocument()
     })
 
-    it('hides detail when header is clicked again', async () => {
-      const wrapper = mountComponent()
+    it('shows detail when the toggle button is activated via keyboard', async () => {
+      const user = userEvent.setup()
+      renderComponent()
 
-      await wrapper.find('.v-sheet').trigger('click')
-      await wrapper.find('.v-sheet').trigger('click')
+      screen.getByRole('button', { name: /group details/i }).focus()
+      await user.keyboard('{Enter}')
 
-      expect(wrapper.find('pre.description').exists()).toBe(false)
+      expect(await screen.findByText(mockGroup.description)).toBeInTheDocument()
+    })
+
+    it('hides detail when the toggle button is clicked again', async () => {
+      const user = userEvent.setup()
+      renderComponent()
+
+      const toggle = screen.getByRole('button', { name: /group details/i })
+      await user.click(toggle)
+      await screen.findByText(mockGroup.description)
+
+      await user.click(toggle)
+
+      expect(screen.queryByText(mockGroup.description)).not.toBeInTheDocument()
+    })
+
+    // The header's larger surrounding area also toggles detail as a mouse
+    // convenience — the button above is the real accessible affordance, so
+    // this is the only test that exercises the extra hit area, by clicking
+    // on visible header text rather than the toggle button itself.
+    it('also shows detail when clicking the group name in the header', async () => {
+      const user = userEvent.setup()
+      renderComponent()
+
+      await user.click(screen.getByText(mockGroup.name))
+
+      expect(await screen.findByText(mockGroup.description)).toBeInTheDocument()
     })
   })
 
   describe('detail panel', () => {
-    it('renders group description', async () => {
-      const wrapper = mountComponent()
-      await wrapper.find('.v-sheet').trigger('click')
+    it('renders the created date', async () => {
+      const user = userEvent.setup()
+      renderComponent()
 
-      expect(wrapper.find('pre.description').text()).toBe(mockGroup.description)
+      await user.click(screen.getByRole('button', { name: /group details/i }))
+      await screen.findByText(mockGroup.description)
+
+      expect(screen.getByText(mockGroup.createdDate)).toBeInTheDocument()
+    })
+
+    it('renders who created the group', async () => {
+      const user = userEvent.setup()
+      renderComponent()
+
+      await user.click(screen.getByRole('button', { name: /group details/i }))
+      await screen.findByText(mockGroup.description)
+
+      expect(screen.getByText(mockGroup.createdBy)).toBeInTheDocument()
     })
 
     it('renders member count from groupUsers', async () => {
-      const wrapper = mountComponent()
-      await wrapper.find('.v-sheet').trigger('click')
+      const user = userEvent.setup()
+      renderComponent()
 
-      expect(wrapper.text()).toContain('3')
+      await user.click(screen.getByRole('button', { name: /group details/i }))
+      await screen.findByText(mockGroup.description)
+
+      expect(screen.getByText('3')).toBeInTheDocument()
     })
 
     it('renders enabled roles count', async () => {
-      const wrapper = mountComponent()
-      await wrapper.find('.v-sheet').trigger('click')
+      const user = userEvent.setup()
+      renderComponent()
 
-      expect(wrapper.text()).toContain('4')
+      await user.click(screen.getByRole('button', { name: /group details/i }))
+      await screen.findByText(mockGroup.description)
+
+      expect(screen.getByText('4')).toBeInTheDocument()
     })
 
     it('renders enabled service count', async () => {
-      const wrapper = mountComponent()
-      await wrapper.find('.v-sheet').trigger('click')
+      const user = userEvent.setup()
+      renderComponent()
 
-      expect(wrapper.text()).toContain('7')
+      await user.click(screen.getByRole('button', { name: /group details/i }))
+      await screen.findByText(mockGroup.description)
+
+      expect(screen.getByText('7')).toBeInTheDocument()
     })
   })
 
@@ -123,28 +193,19 @@ describe('GroupHeader', () => {
     it('collapses detail when route changes', async () => {
       const route = createRoute('/initial-path')
       mockedUseRoute.mockReturnValue(route)
+      const user = userEvent.setup()
 
-      const wrapper = mountComponent()
-      await wrapper.find('.v-sheet').trigger('click')
-      expect(wrapper.find('pre.description').exists()).toBe(true)
+      renderComponent()
+      const toggle = screen.getByRole('button', { name: /group details/i })
+      await user.click(toggle)
+      await screen.findByText(mockGroup.description)
 
       route.path = '/new-path'
-      await nextTick()
 
-      expect(wrapper.find('pre.description').exists()).toBe(false)
-    })
-
-    it('does not collapse detail when route does not change', async () => {
-      const route = createRoute('/same-path')
-      mockedUseRoute.mockReturnValue(route)
-
-      const wrapper = mountComponent()
-      await wrapper.find('.v-sheet').trigger('click')
-
-      route.path = '/same-path'
-      await nextTick()
-
-      expect(wrapper.find('pre.description').exists()).toBe(true)
+      await waitFor(() =>
+        expect(toggle).toHaveAttribute('aria-expanded', 'false'),
+      )
+      expect(screen.queryByText(mockGroup.description)).not.toBeInTheDocument()
     })
   })
 })

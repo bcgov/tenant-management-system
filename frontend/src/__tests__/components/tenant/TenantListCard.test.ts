@@ -10,9 +10,6 @@ const mountComponent = (props: { tenant: Tenant }) =>
   mount(TenantListCard, {
     props,
     global: {
-      mocks: {
-        $t: (key: string) => key,
-      },
       stubs: {
         'v-card': {
           template: '<div @click="$emit(\'click\')"><slot /></div>',

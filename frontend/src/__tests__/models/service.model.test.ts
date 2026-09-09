@@ -27,7 +27,7 @@ describe('Service model', () => {
       expect(service.id).toBe('id')
       expect(service.landingPageUrl).toBe('landingPageUrl')
       expect(service.name).toBe('name')
-      expect(service.roles.length).toBe(1)
+      expect(service.roles).toHaveLength(1)
       expect(service.roles[0]).toBe(serviceRole)
       expect(service.updatedDate).toBe('updatedDate')
     })
@@ -45,7 +45,7 @@ describe('Service model', () => {
         updatedDate: 'updatedDate',
       })
 
-      expect(service.roles.length).toBe(0)
+      expect(service.roles).toHaveLength(0)
     })
   })
 })

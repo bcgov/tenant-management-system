@@ -35,11 +35,13 @@ const user = computed(() => {
     <v-main>
       <v-container>
         <div v-if="loggedOut" class="my-3 text-center">
-          <h1>{{ $t('general.sessionExpired') }}</h1>
+          <h1>Your session has timed out</h1>
 
           <p class="p-xlarge">
-            {{ $t('general.sessionExpiredDesc') }}<br />
-            {{ $t('general.sessionExpiredDesc2') }}
+            For security reasons, CSTAR automatically logs you out after a
+            period of inactivity.
+            <br />
+            Please log in again to continue where you left off.
           </p>
 
           <v-row class="justify-center mt-12">

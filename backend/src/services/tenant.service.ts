@@ -26,6 +26,7 @@ import {
   UnassignUserRolesInputDto,
 } from '../dtos/tms.dto'
 import { config } from '../services/config.service'
+import { notificationService } from './notification.service'
 
 export class TenantService {
   mapper: TMSMapper
@@ -69,6 +70,8 @@ export class TenantService {
 
   public async addTenantUser(req: Request) {
     let response: AddTenantUserResponseDto | undefined
+    let addedUser: AddTenantUserResultDto | undefined
+    let addedGroups: Group[] = []
     const input: AddTenantUserInputDto = {
       tenantId: req.params.tenantId,
       updatedBy: req.decodedJwt?.idir_user_guid || 'system',
@@ -89,6 +92,8 @@ export class TenantService {
           input.updatedBy,
           transactionEntityManager,
         )
+        addedUser = tenantResponse
+        addedGroups = groups
         response = this.mapper.toAddTenantUserResponseDto(
           tenantResponse.savedTenantUser,
           tenantResponse.roleAssignments,
@@ -102,9 +107,16 @@ export class TenantService {
         throw error
       }
     })
-    if (!response) {
+    if (!response || !addedUser) {
       throw new Error('Failed to create add tenant user response')
     }
+
+    await notificationService.notifyUserAddedToTenant(
+      addedUser.savedTenantUser,
+      addedUser.roleAssignments,
+      addedGroups,
+    )
+
     return response
   }
 
@@ -339,6 +351,38 @@ export class TenantService {
     }
   }
 
+  private async notifyUserRemovedFromTenant(
+    tenantUserId: string,
+    removedBy: { ssoUserId: string; displayName: string },
+  ) {
+    try {
+      const tenantUser =
+        await tenantRepository.getTenantUserWithRelations(tenantUserId)
+
+      if (!tenantUser) {
+        return
+      }
+
+      const removedTheirOwnAccess =
+        tenantUser.ssoUser?.ssoUserId?.toUpperCase() ===
+        removedBy.ssoUserId.toUpperCase()
+
+      if (removedTheirOwnAccess) {
+        return
+      }
+
+      await notificationService.notifyUserRemovedFromTenant(
+        tenantUser,
+        removedBy.displayName,
+      )
+    } catch (error: unknown) {
+      logger.error('Notification lookup failed', {
+        tenantUserId,
+        reason: getErrorMessage(error),
+      })
+    }
+  }
+
   public async removeTenantUser(req: Request) {
     const input: RemoveTenantUserInputDto = {
       tenantId: req.params.tenantId,
@@ -361,6 +405,12 @@ export class TenantService {
         )
         throw error
       }
+    })
+
+    await this.notifyUserRemovedFromTenant(input.tenantUserId, {
+      ssoUserId: input.deletedBy,
+      displayName:
+        req.decodedJwt?.display_name || req.decodedJwt?.name || 'System User',
     })
   }
 

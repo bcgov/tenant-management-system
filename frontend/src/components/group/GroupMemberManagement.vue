@@ -125,6 +125,7 @@ const toggleSearch = () => {
         </p>
 
         <UserSearch
+          :current-members="group.groupUsers"
           :loading="loadingSearch"
           :search-results="searchResults"
           :tenant="tenant"

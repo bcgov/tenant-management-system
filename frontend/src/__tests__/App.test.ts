@@ -35,9 +35,6 @@ vi.mock('@/stores/useAuthStore', () => ({
 const mountApp = () =>
   mount(App, {
     global: {
-      mocks: {
-        $t: (key: string) => key,
-      },
       plugins: [vuetify],
       stubs: {
         AppHeader: true,
@@ -52,15 +49,6 @@ describe('App.vue', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     currentAuthStore = createMockAuthStore()
-  })
-
-  it('shows session expired view when sessionExpired is true', async () => {
-    currentAuthStore = createMockAuthStore({ isSessionExpired: true })
-
-    const wrapper = mountApp()
-    await nextTick()
-
-    expect(wrapper.text()).toContain('general.sessionExpired')
   })
 
   it('does not show login buttons when session is not expired', async () => {

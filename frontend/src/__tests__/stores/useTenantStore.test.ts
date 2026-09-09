@@ -73,7 +73,6 @@ describe('useTenantStore', () => {
   it('starts with default values', () => {
     const store = useTenantStore()
     expect(store.tenants).toEqual([])
-    expect(store.loading).toBe(false)
   })
 
   describe('addTenantUser', () => {
@@ -123,16 +122,16 @@ describe('useTenantStore', () => {
   })
 
   describe('fetchTenant', () => {
-    it('manages loading state and upserts fetched tenant', async () => {
+    it('creates new tenant in state during upsert', async () => {
       const store = useTenantStore()
       vi.mocked(tenantService.getTenant).mockResolvedValue(mockTenantApiData)
 
-      const promise = store.fetchTenant(mockTenantApiData.id)
-      expect(store.loading).toBe(true)
+      expect(store.tenants).toHaveLength(0)
 
-      const result = await promise
-      expect(store.loading).toBe(false)
-      expect(result.id).toBe(mockTenantApiData.id)
+      await store.fetchTenant(mockTenantApiData.id)
+
+      expect(store.tenants).toHaveLength(1)
+      expect(store.tenants[0].name).toBe('Test Tenant')
     })
 
     it('updates existing tenant in state during upsert', async () => {
@@ -169,18 +168,6 @@ describe('useTenantStore', () => {
       expect(store.tenants[0].name).toBe(mockTenantApiData.name)
       expect(store.tenants[1].name).toBe(secondTenant.name)
       expect(store.tenants[1]).toBeInstanceOf(Tenant)
-    })
-
-    it('sets loading to false even if the fetch fails', async () => {
-      const store = useTenantStore()
-      vi.mocked(tenantService.getUserTenants).mockRejectedValueOnce(
-        new Error('Fail'),
-      )
-
-      await expect(store.fetchTenants(toSsoUserId('u-1'))).rejects.toThrow(
-        'Fail',
-      )
-      expect(store.loading).toBe(false)
     })
   })
 

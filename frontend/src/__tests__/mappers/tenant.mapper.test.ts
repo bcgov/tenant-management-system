@@ -30,7 +30,7 @@ describe('Tenant mapper', () => {
       expect(tenant.id).toBe('id')
       expect(tenant.ministryName).toBe('ministryName')
       expect(tenant.name).toBe('name')
-      expect(tenant.users.length).toBe(1)
+      expect(tenant.users).toHaveLength(1)
       expect(tenant.users[0]).toEqual(user)
     })
 
@@ -66,7 +66,7 @@ describe('Tenant mapper', () => {
       const tenant = tenantMapper.fromApiData(apiData)
 
       expect(tenant).toBeInstanceOf(Tenant)
-      expect(tenant.users.length).toBe(0)
+      expect(tenant.users).toHaveLength(0)
     })
   })
 })

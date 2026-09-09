@@ -14,9 +14,6 @@ vi.mock('@/stores/useAuthStore', () => ({
 const mountComponent = () =>
   mount(LandingPageBceidContainer, {
     global: {
-      mocks: {
-        $t: (key: string) => key,
-      },
       stubs: {
         'v-btn': {
           template: '<button @click="$emit(\'click\')"><slot /></button>',
@@ -33,15 +30,6 @@ describe('LandingPageBceidContainer.vue', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     currentAuthStore = createMockAuthStore()
-  })
-
-  it('renders i18n keys for expected text nodes', () => {
-    const wrapper = mountComponent()
-    const text = wrapper.text()
-
-    expect(text).toContain('general.logout')
-    expect(text).toContain('landing.bceidWelcome')
-    expect(text).toContain('landing.bceidWelcomeDesc')
   })
 
   it('renders the greeting icon', () => {

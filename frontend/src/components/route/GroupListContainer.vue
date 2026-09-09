@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
+import LoginContainer from '@/components/auth/LoginContainer.vue'
 import GroupCreateDialog from '@/components/group/GroupCreateDialog.vue'
 import GroupList from '@/components/group/GroupList.vue'
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
@@ -19,7 +20,7 @@ import { currentUserHasRole } from '@/utils/permissions'
 
 // --- Component Interface -----------------------------------------------------
 
-const props = defineProps<{
+const { tenantId } = defineProps<{
   tenantId: TenantId
 }>()
 
@@ -50,9 +51,9 @@ const isUserAdmin = computed(() => {
 })
 
 const tenant = computed(() => {
-  const tenant = tenantStore.getTenant(props.tenantId)
+  const tenant = tenantStore.getTenant(tenantId)
   if (!tenant) {
-    throw new Error(`Tenant ${props.tenantId} not found`)
+    throw new Error(`Tenant ${tenantId} not found`)
   }
 
   return tenant
@@ -68,7 +69,7 @@ const dialogClose = () => {
 const dialogOpen = () => (dialogVisible.value = true)
 
 const handleCardClick = (id: Group['id']) => {
-  router.push(`/tenants/${props.tenantId}/groups/${id}/members`)
+  router.push(`/tenants/${tenantId}/groups/${id}/members`)
 }
 
 const handleGroupCreate = async (
@@ -79,7 +80,7 @@ const handleGroupCreate = async (
 
   try {
     group = await groupStore.addGroup(
-      props.tenantId,
+      tenantId,
       groupDetails.name,
       groupDetails.description,
     )
@@ -114,7 +115,7 @@ const handleGroupCreate = async (
   if (addUser) {
     try {
       await groupStore.addGroupUser(
-        props.tenantId,
+        tenantId,
         group.id,
         authStore.authenticatedUser,
       )
@@ -136,47 +137,49 @@ const handleGroupCreate = async (
 </script>
 
 <template>
-  <v-container class="ms-6">
-    <template v-if="groups.length > 0">
-      <h4>Groups</h4>
+  <LoginContainer>
+    <v-container class="ms-6">
+      <template v-if="groups.length > 0">
+        <h4>Groups</h4>
 
-      <ButtonPrimary
-        v-if="isUserAdmin"
-        class="mb-12"
-        text="Create a Group"
-        @click="dialogOpen"
-      />
+        <ButtonPrimary
+          v-if="isUserAdmin"
+          class="mb-12"
+          text="Create a Group"
+          @click="dialogOpen"
+        />
 
-      <GroupList :groups="groups" @select="handleCardClick" />
-    </template>
-    <v-container v-else class="fill-height">
-      <v-row class="center-align justify-center">
-        <v-col class="align-center d-flex flex-column" cols="auto">
-          <h1>No groups yet</h1>
-          <p class="p-large">
-            No groups have been created for this tenant yet.
-            <span v-if="isUserAdmin">
-              Create your first group to get started.
+        <GroupList :groups="groups" @select="handleCardClick" />
+      </template>
+      <v-container v-else class="fill-height">
+        <v-row class="center-align justify-center">
+          <v-col class="align-center d-flex flex-column" cols="auto">
+            <h1>No groups yet</h1>
+            <p class="p-large">
+              No groups have been created for this tenant yet.
+              <span v-if="isUserAdmin">
+                Create your first group to get started.
+              </span>
+            </p>
+
+            <p v-if="isUserAdmin">
+              <ButtonPrimary text="Create a Group" @click="dialogOpen" />
+            </p>
+
+            <span class="mt-12 p-small">
+              Groups help you manage access for multiple users at once and keep
+              role assignments consistent.
             </span>
-          </p>
-
-          <p v-if="isUserAdmin">
-            <ButtonPrimary text="Create a Group" @click="dialogOpen" />
-          </p>
-
-          <span class="mt-12 p-small">
-            Groups help you manage access for multiple users at once and keep
-            role assignments consistent.
-          </span>
-        </v-col>
-      </v-row>
+          </v-col>
+        </v-row>
+      </v-container>
     </v-container>
-  </v-container>
 
-  <GroupCreateDialog
-    v-model="dialogVisible"
-    :is-duplicate-name="isDuplicateName"
-    @clear-duplicate-error="isDuplicateName = false"
-    @submit="handleGroupCreate"
-  />
+    <GroupCreateDialog
+      v-model="dialogVisible"
+      :is-duplicate-name="isDuplicateName"
+      @clear-duplicate-error="isDuplicateName = false"
+      @submit="handleGroupCreate"
+    />
+  </LoginContainer>
 </template>

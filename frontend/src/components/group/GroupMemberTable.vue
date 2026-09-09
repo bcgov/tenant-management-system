@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { mdiDeleteOutline, mdiDotsVertical } from '@mdi/js'
+import { mdiDeleteOutline, mdiDotsVertical, mdiMagnify } from '@mdi/js'
 import { computed, ref } from 'vue'
 
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
@@ -36,6 +36,8 @@ const emit = defineEmits<{
 // --- Component State ---------------------------------------------------------
 
 const groupUserToRemove = ref<GroupUser | null>(null)
+
+const memberFilter = ref('')
 
 const showRemoveDialog = ref(false)
 
@@ -121,19 +123,35 @@ const handleRemoveMemberButton = (groupUser: GroupUser) => {
 </script>
 
 <template>
+  <v-row v-if="groupMembers.length > 0" class="mb-6">
+    <v-col cols="12" sm="4">
+      <v-text-field
+        v-model="memberFilter"
+        :append-inner-icon="mdiMagnify"
+        label="Search"
+        variant="outlined"
+        clearable
+        hide-details
+        single-line
+      ></v-text-field>
+    </v-col>
+  </v-row>
+
   <v-data-table
-    :header-props="{
-      class: 'bg-surface-light font-weight-bold',
-    }"
+    :header-props="{ class: 'bg-surface-light font-weight-bold' }"
     :headers="headers"
     :hide-default-footer="groupMembers.length === 0"
     :items="groupMembers"
+    :search="memberFilter"
     :sort-by="[{ key: 'user.ssoUser.firstName' }]"
     item-value="id"
     striped="even"
   >
     <template #no-data>
-      <div class="my-8">
+      <div v-if="memberFilter" class="my-8">
+        <p class="mt-0">No members match your search criteria</p>
+      </div>
+      <div v-else class="my-8">
         <h5 class="mb-2">No group members added yet</h5>
 
         <p class="mt-0">Add your first group member to get started.</p>

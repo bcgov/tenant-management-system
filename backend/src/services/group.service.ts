@@ -21,6 +21,7 @@ import {
   UpdateGroupInputDto,
 } from '../dtos/tm.dto'
 import { config } from '../services/config.service'
+import { notificationService } from './notification.service'
 
 export class GroupService {
   public async createGroup(req: Request) {
@@ -62,8 +63,33 @@ export class GroupService {
     }
   }
 
+  private async notifyUserAddedToTenant(tenantUserId: string, groupId: string) {
+    try {
+      const tenantUser =
+        await tenantRepository.getTenantUserWithRelations(tenantUserId)
+
+      if (tenantUser) {
+        const group = await groupRepository.getGroupById(groupId)
+
+        await notificationService.notifyUserAddedToTenant(
+          tenantUser,
+          tenantUser.roles || [],
+          [group],
+        )
+      }
+    } catch (error: unknown) {
+      logger.error('Notification lookup failed', {
+        tenantUserId,
+        reason: getErrorMessage(error),
+      })
+    }
+  }
+
   public async addGroupUser(req: Request) {
     let savedGroupUser: AddGroupUserResultDto | null = null
+    let addedTenantUserId: string | undefined
+    let isNewTenantUser = false
+    let addedGroupUserId: string | undefined
 
     await connection.manager.transaction(async (tx) => {
       try {
@@ -71,6 +97,12 @@ export class GroupService {
         const groupId: string = req.params.groupId
         const { user } = req.body
         const updatedBy: string = req.decodedJwt?.idir_user_guid || 'system'
+
+        const existingTenantUser = await tenantRepository.getTenantUserBySsoId(
+          user.ssoUserId,
+          tenantId,
+          tx,
+        )
 
         const tenantUser = await tenantRepository.ensureTenantUserExists(
           user,
@@ -92,6 +124,9 @@ export class GroupService {
           updatedBy,
         }
         savedGroupUser = await groupRepository.addGroupUser(input, tx)
+        addedTenantUserId = tenantUser.id
+        addedGroupUserId = savedGroupUser?.id
+        isNewTenantUser = !existingTenantUser
       } catch (error: unknown) {
         logger.error(
           'Add user to group transaction failure - rolling back inserts ',
@@ -103,6 +138,16 @@ export class GroupService {
 
     if (!savedGroupUser) {
       throw new UnexpectedStateError('Group user creation failed')
+    }
+
+    if (isNewTenantUser && addedTenantUserId) {
+      await this.notifyUserAddedToTenant(addedTenantUserId, req.params.groupId)
+    } else if (addedGroupUserId) {
+      await this.notifyUserAddedToGroup(addedGroupUserId, {
+        ssoUserId: req.decodedJwt?.idir_user_guid || 'system',
+        displayName:
+          req.decodedJwt?.display_name || req.decodedJwt?.name || 'System User',
+      })
     }
 
     return {
@@ -150,6 +195,70 @@ export class GroupService {
     }
   }
 
+  private async notifyUserAddedToGroup(
+    groupUserId: string,
+    addedBy: { ssoUserId: string; displayName: string },
+  ) {
+    try {
+      const groupUser =
+        await groupRepository.getGroupUserWithRelations(groupUserId)
+
+      if (!groupUser) {
+        return
+      }
+
+      const addedThemselves =
+        groupUser.tenantUser?.ssoUser?.ssoUserId?.toUpperCase() ===
+        addedBy.ssoUserId.toUpperCase()
+
+      if (addedThemselves) {
+        return
+      }
+
+      await notificationService.notifyUserAddedToGroup(
+        groupUser,
+        addedBy.displayName,
+      )
+    } catch (error: unknown) {
+      logger.error('Notification lookup failed', {
+        groupUserId,
+        reason: getErrorMessage(error),
+      })
+    }
+  }
+
+  private async notifyUserRemovedFromGroup(
+    groupUserId: string,
+    removedBy: { ssoUserId: string; displayName: string },
+  ) {
+    try {
+      const groupUser =
+        await groupRepository.getGroupUserWithRelations(groupUserId)
+
+      if (!groupUser) {
+        return
+      }
+
+      const removedTheirOwnAccess =
+        groupUser.tenantUser?.ssoUser?.ssoUserId?.toUpperCase() ===
+        removedBy.ssoUserId.toUpperCase()
+
+      if (removedTheirOwnAccess) {
+        return
+      }
+
+      await notificationService.notifyUserRemovedFromGroup(
+        groupUser,
+        removedBy.displayName,
+      )
+    } catch (error: unknown) {
+      logger.error('Notification lookup failed', {
+        groupUserId,
+        reason: getErrorMessage(error),
+      })
+    }
+  }
+
   public async removeGroupUser(req: Request) {
     const input: RemoveGroupUserInputDto = {
       tenantId: req.params.tenantId,
@@ -167,6 +276,12 @@ export class GroupService {
         )
         throw error
       }
+    })
+
+    await this.notifyUserRemovedFromGroup(input.groupUserId, {
+      ssoUserId: input.updatedBy,
+      displayName:
+        req.decodedJwt?.display_name || req.decodedJwt?.name || 'System User',
     })
 
     return {

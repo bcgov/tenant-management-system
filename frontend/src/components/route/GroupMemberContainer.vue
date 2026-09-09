@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 
+import LoginContainer from '@/components/auth/LoginContainer.vue'
 import GroupMemberManagement from '@/components/group/GroupMemberManagement.vue'
 import { useNotification } from '@/composables/useNotification'
 import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
@@ -10,12 +11,12 @@ import { type TenantId } from '@/models/tenant.model'
 import { User } from '@/models/user.model'
 import { useGroupStore } from '@/stores/useGroupStore'
 import { useTenantStore } from '@/stores/useTenantStore'
-import { useUserStore } from '@/stores/useUserStore'
-import { type IdirSearchType, IDIR_SEARCH_TYPE } from '@/utils/constants'
+import { useUserSearchStore } from '@/stores/useUserSearchStore'
+import { type IdirSearchType } from '@/utils/constants'
 
 // --- Component Interface -----------------------------------------------------
 
-const props = defineProps<{
+const { groupId, tenantId } = defineProps<{
   groupId: GroupId
   tenantId: TenantId
 }>()
@@ -25,7 +26,7 @@ const props = defineProps<{
 const groupStore = useGroupStore()
 const notification = useNotification()
 const tenantStore = useTenantStore()
-const userStore = useUserStore()
+const userSearchStore = useUserSearchStore()
 
 // --- Component State ---------------------------------------------------------
 
@@ -34,14 +35,14 @@ const searchResults = ref<User[] | null>(null)
 
 // --- Computed Values ---------------------------------------------------------
 
-const group = computed(() => groupStore.getGroup(props.groupId))
-const tenant = computed(() => tenantStore.getTenant(props.tenantId))
+const group = computed(() => groupStore.getGroup(groupId))
+const tenant = computed(() => tenantStore.getTenant(tenantId))
 
 // --- Component Methods -------------------------------------------------------
 
 const handleAddMember = async (user: User) => {
   try {
-    await groupStore.addGroupUser(props.tenantId, props.groupId, user)
+    await groupStore.addGroupUser(tenantId, groupId, user)
     searchResults.value = null
     notification.success(
       'New member successfully added to this group',
@@ -66,7 +67,7 @@ const handleClearSearch = async () => {
 
 const handleDeleteMember = async (groupUserId: GroupUserId) => {
   try {
-    await groupStore.removeGroupUser(props.tenantId, props.groupId, groupUserId)
+    await groupStore.removeGroupUser(tenantId, groupId, groupUserId)
     notification.success(
       'Member successfully removed from this group',
       'Member Removed',
@@ -83,24 +84,10 @@ const handleUserSearch = async (
   isLoadingSearch.value = true
 
   try {
-    if (searchType === IDIR_SEARCH_TYPE.FIRST_NAME.value) {
-      searchResults.value = await userStore.searchIdirFirstName(searchText)
-      searchResults.value = searchResults.value.concat(
-        await userStore.searchBCeIDDisplayName(searchText),
-      )
-    } else if (searchType === IDIR_SEARCH_TYPE.LAST_NAME.value) {
-      searchResults.value = await userStore.searchIdirLastName(searchText)
-      searchResults.value = searchResults.value.concat(
-        await userStore.searchBCeIDDisplayName(searchText),
-      )
-    } else if (searchType === IDIR_SEARCH_TYPE.EMAIL.value) {
-      searchResults.value = await userStore.searchIdirEmail(searchText)
-      searchResults.value = searchResults.value.concat(
-        await userStore.searchBCeIDEmail(searchText),
-      )
-    } else {
-      throw new Error('Invalid search type')
-    }
+    searchResults.value = await userSearchStore.searchUsers(
+      searchType,
+      searchText,
+    )
   } catch {
     notification.error('User search failed')
     searchResults.value = null
@@ -111,15 +98,17 @@ const handleUserSearch = async (
 </script>
 
 <template>
-  <GroupMemberManagement
-    :group="group!"
-    :loading-search="isLoadingSearch"
-    :search-results="searchResults"
-    :tenant="tenant!"
-    @add="handleAddMember"
-    @cancel="searchResults = null"
-    @clear-search="handleClearSearch"
-    @delete="handleDeleteMember"
-    @search="handleUserSearch"
-  />
+  <LoginContainer>
+    <GroupMemberManagement
+      :group="group!"
+      :loading-search="isLoadingSearch"
+      :search-results="searchResults"
+      :tenant="tenant!"
+      @add="handleAddMember"
+      @cancel="searchResults = null"
+      @clear-search="handleClearSearch"
+      @delete="handleDeleteMember"
+      @search="handleUserSearch"
+    />
+  </LoginContainer>
 </template>

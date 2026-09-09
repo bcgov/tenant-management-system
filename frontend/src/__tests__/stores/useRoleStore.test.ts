@@ -23,38 +23,9 @@ describe('useRoleStore', () => {
     const store = useRoleStore()
 
     expect(store.roles).toEqual([])
-    expect(store.loading).toBe(false)
   })
 
   describe('fetchRoles', () => {
-    it('manages loading state', async () => {
-      const store = useRoleStore()
-      vi.mocked(roleService.getRoles).mockResolvedValue([makeRoleApiData()])
-
-      expect(store.loading).toBe(false)
-
-      const promise = store.fetchRoles()
-
-      expect(store.loading).toBe(true)
-
-      await promise
-
-      expect(store.loading).toBe(false)
-    })
-
-    it('clears loading state on error', async () => {
-      const store = useRoleStore()
-      vi.mocked(roleService.getRoles).mockRejectedValueOnce(
-        new Error('API Error'),
-      )
-
-      expect(store.loading).toBe(false)
-
-      await expect(store.fetchRoles()).rejects.toThrow('API Error')
-
-      expect(store.loading).toBe(false)
-    })
-
     it('overwrites store with results', async () => {
       const store = useRoleStore()
       const role = makeRole({

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { mdiClose } from '@mdi/js'
 import { watch, ref, computed } from 'vue'
-import { useI18n } from 'vue-i18n'
 
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
@@ -13,8 +12,6 @@ import { useRoleStore } from '@/stores/useRoleStore'
 import { useTenantStore } from '@/stores/useTenantStore'
 import { ROLES } from '@/utils/constants'
 
-const { t } = useI18n()
-
 // TODO: non-container components should not directly use stores - they should
 // emit events and let the parent container handle the store interactions.
 // Refactor this component to follow that pattern.
@@ -24,7 +21,7 @@ const notification = useNotification()
 
 // --- Component Interface -----------------------------------------------------
 
-const props = defineProps<{
+const { tenant, userIndex } = defineProps<{
   tenant: Tenant | null
   userIndex: number | null
 }>()
@@ -43,25 +40,25 @@ const items = ref<Array<{ role: string; description: string; value: boolean }>>(
   isBCeIDUser.value
     ? [
         {
-          role: t('roles.serviceUser'),
-          description: t('roles.serviceUserDesc'),
+          description: 'Accesses services via groups',
+          role: 'Service User',
           value: false,
         },
       ]
     : [
         {
-          role: t('roles.owner'),
-          description: t('roles.ownerDesc'),
+          description: 'Creates and manages tenants',
+          role: 'Tenant Owner',
           value: false,
         },
         {
-          role: t('roles.admin'),
-          description: t('roles.adminDesc'),
+          description: 'Manages groups and users',
+          role: 'User Admin',
           value: false,
         },
         {
-          role: t('roles.user'),
-          description: t('roles.userDesc'),
+          description: 'Accesses services via groups',
+          role: 'Service User',
           value: false,
         },
       ],
@@ -70,15 +67,15 @@ const items = ref<Array<{ role: string; description: string; value: boolean }>>(
 // --- Watchers and Effects ----------------------------------------------------
 
 watch(
-  () => props.userIndex,
+  () => userIndex,
   (newIndex) => {
     if (
-      props.tenant &&
+      tenant &&
       newIndex !== null &&
       newIndex >= 0 &&
-      newIndex < props.tenant.users.length
+      newIndex < tenant.users.length
     ) {
-      const newUser = props.tenant.users[newIndex]
+      const newUser = tenant.users[newIndex]
       updateState(newUser)
     }
   },
@@ -115,12 +112,12 @@ const roleLookup = computed(() => [
 
 const user = computed<User | null>(() => {
   if (
-    props.tenant &&
-    props.userIndex !== null &&
-    props.userIndex >= 0 &&
-    props.userIndex < props.tenant.users.length
+    tenant &&
+    userIndex !== null &&
+    userIndex >= 0 &&
+    userIndex < tenant.users.length
   ) {
-    const newUser = props.tenant.users[props.userIndex]
+    const newUser = tenant.users[userIndex]
     updateState(newUser)
 
     return newUser
@@ -155,7 +152,7 @@ const handleSave = async () => {
     if (roleIds.length > 0) {
       // TODO
       await tenantStore.assignTenantUserRoles(
-        props.tenant as Tenant,
+        tenant as Tenant,
         user?.value?.id as UserId,
         roleIds as RoleId[],
         fullRoleIds,
@@ -167,7 +164,7 @@ const handleSave = async () => {
       for (const removeId of removeIds) {
         // TODO
         await tenantStore.removeTenantUserRole(
-          props.tenant?.id as TenantId,
+          tenant?.id as TenantId,
           user?.value?.id as UserId,
           removeId as RoleId,
         )
@@ -175,7 +172,7 @@ const handleSave = async () => {
     }
 
     //success, show notification toast
-    notification.success(t('roles.updateSuccess'))
+    notification.success('Roles updated successfully')
     emit('update:openDialog', false)
     // TODO: remove this
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -185,7 +182,7 @@ const handleSave = async () => {
       error.response?.data?.details?.body?.[0]?.message ||
       error.response?.data?.message ||
       error.message
-    notification.error(`${t('roles.updateError')} ${msg}`)
+    notification.error(`Failed to update roles: ${msg}`)
     console.error('Error updating roles:', error)
   }
 }
@@ -200,25 +197,25 @@ const updateState = (newUser: User | null) => {
   items.value = isBCeIDUser.value
     ? [
         {
-          role: t('roles.user'),
-          description: t('roles.userDesc'),
+          description: 'Accesses services via groups',
+          role: 'Service User',
           value: false,
         },
       ]
     : [
         {
-          role: t('roles.owner'),
-          description: t('roles.ownerDesc'),
+          description: 'Creates and manages tenants',
+          role: 'Tenant Owner',
           value: false,
         },
         {
-          role: t('roles.admin'),
-          description: t('roles.adminDesc'),
+          description: 'Manages groups and users',
+          role: 'User Admin',
           value: false,
         },
         {
-          role: t('roles.user'),
-          description: t('roles.userDesc'),
+          description: 'Accesses services via groups',
+          role: 'Service User',
           value: false,
         },
       ]
@@ -254,8 +251,7 @@ const updateState = (newUser: User | null) => {
   <v-dialog v-model="dialogVisible" height="777px" width="627px" persistent>
     <v-card class="pa-6">
       <v-card-title class="align-center d-flex justify-space-between">
-        {{ $t('general.edit') }} {{ $t('tenants.tenant', 1) }}
-        {{ $t('roles.role', 1) }}
+        Edit Tenant Role
         <v-btn
           :icon="mdiClose"
           variant="plain"
@@ -267,10 +263,14 @@ const updateState = (newUser: User | null) => {
           <h3 class="text-bold">{{ user?.ssoUser.displayName }}</h3>
         </div>
         <p class="mb-4 text-body-medium">
-          {{ $t('tenants.learnMore') }}
+          Tenant roles define what a user can see and do within a tenant. Each
+          role provides a different level of access, from full management to
+          limited use.
         </p>
         <p class="mb-12 text-body-medium">
-          {{ $t('tenants.roleAssignDesc') }}
+          Below are the available tenant roles you can assign to a user. A
+          checkmark shows roles currently assigned to this user. Select
+          additional role(s) to update their permissions.
         </p>
 
         <v-data-table
@@ -278,8 +278,8 @@ const updateState = (newUser: User | null) => {
             class: 'bg-surface-light font-weight-bold text-body-medium',
           }"
           :headers="[
-            { title: t('roles.role', 1), value: 'role' },
-            { title: t('general.description'), value: 'description' },
+            { title: 'Role', value: 'role' },
+            { title: 'Description', value: 'description' },
           ]"
           :items="items"
           hide-default-footer
@@ -295,13 +295,13 @@ const updateState = (newUser: User | null) => {
       </v-card-text>
       <v-card-actions class="d-flex justify-end">
         <ButtonSecondary
-          :text="$t('general.cancel')"
           class="me-4"
+          text="Cancel"
           @click="$emit('update:openDialog', false)"
         />
         <ButtonPrimary
           :disabled="!hasChanges || !atLeastOneRole"
-          :text="$t('general.save')"
+          text="Save"
           @click="handleSave"
         />
       </v-card-actions>

@@ -5,7 +5,6 @@ import { createApp } from 'vue'
 import App from '@/App.vue'
 import '@/assets/styles/global.css'
 import { useNotification } from '@/composables/useNotification'
-import { i18n } from '@/i18n'
 import vuetify from '@/plugins/vuetify'
 import router from '@/router'
 import { ConfigError, loadConfig } from '@/services/config.service'
@@ -20,7 +19,6 @@ export const initializeApp = async () => {
   app.use(createPinia())
   app.use(router)
   app.use(vuetify)
-  app.use(i18n)
 
   app.config.errorHandler = (error) => {
     // Log the error for debugging, as it could be something unexpected like a

@@ -1,7 +1,6 @@
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { nextTick } from 'vue'
 
 import {
   makeGroup,
@@ -16,25 +15,43 @@ import { useNotification } from '@/composables/useNotification'
 import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
 import { toGroupId } from '@/models/group.model'
 import { toTenantId } from '@/models/tenant.model'
+import { toUserId } from '@/models/user.model'
 import vuetify from '@/plugins/vuetify'
 import { useGroupStore } from '@/stores/useGroupStore'
 import { useRoleStore } from '@/stores/useRoleStore'
 import { useTenantStore } from '@/stores/useTenantStore'
-import { useUserStore } from '@/stores/useUserStore'
+import { useUserSearchStore } from '@/stores/useUserSearchStore'
 import { IDIR_SEARCH_TYPE } from '@/utils/constants'
-import { toUserId } from '@/models/user.model'
 
 vi.mock('@/composables/useNotification', () => ({
   useNotification: vi.fn(),
 }))
 
+const loginContainerStub = {
+  name: 'LoginContainer',
+  template: '<div><slot /></div>',
+}
+
+const loadingWrapperStub = {
+  name: 'LoadingWrapper',
+  props: ['loading', 'loadingMessage'],
+  template: '<div><slot /></div>',
+}
+
 const child = (wrapper: ReturnType<typeof mountComponent>) => {
   return wrapper.getComponent({ name: 'TenantUserManagement' })
 }
 
-const mountComponent = (tenantId = 't-1') => {
+const mountComponent = (tenantId = 'tenantId1') => {
   return mount(TenantUserContainer, {
-    global: { plugins: [vuetify], stubs: { TenantUserManagement: true } },
+    global: {
+      plugins: [vuetify],
+      stubs: {
+        LoadingWrapper: loadingWrapperStub,
+        LoginContainer: loginContainerStub,
+        TenantUserManagement: true,
+      },
+    },
     props: { tenantId: toTenantId(tenantId) },
   })
 }
@@ -43,7 +60,7 @@ describe('TenantUserContainer', () => {
   let groupStore: ReturnType<typeof useGroupStore>
   let roleStore: ReturnType<typeof useRoleStore>
   let tenantStore: ReturnType<typeof useTenantStore>
-  let userStore: ReturnType<typeof useUserStore>
+  let userSearchStore: ReturnType<typeof useUserSearchStore>
   let notificationMock: ReturnType<typeof useNotification>
 
   beforeEach(() => {
@@ -51,10 +68,10 @@ describe('TenantUserContainer', () => {
     groupStore = useGroupStore()
     roleStore = useRoleStore()
     tenantStore = useTenantStore()
-    userStore = useUserStore()
+    userSearchStore = useUserSearchStore()
 
     tenantStore = useTenantStore()
-    tenantStore.tenants = [makeTenant({ id: toTenantId('t-1') })]
+    tenantStore.tenants = [makeTenant({ id: toTenantId('tenantId1') })]
 
     notificationMock = {
       success: vi.fn(),
@@ -70,12 +87,16 @@ describe('TenantUserContainer', () => {
     roleStore.fetchRoles = vi.fn().mockResolvedValue(undefined)
   })
 
-  // --- onMounted -------------------------------------------------------------
-
   describe('onMounted', () => {
+    it('throws an error when the tenant cannot be found', () => {
+      tenantStore.tenants = []
+
+      expect(() => mountComponent()).toThrow('Tenant tenantId1 not found')
+    })
+
     it('calls fetchRoles on mount', async () => {
       mountComponent()
-      await nextTick()
+      await flushPromises()
 
       expect(roleStore.fetchRoles).toHaveBeenCalled()
     })
@@ -84,8 +105,7 @@ describe('TenantUserContainer', () => {
       roleStore.fetchRoles = vi.fn().mockRejectedValue(new Error('fail'))
 
       mountComponent()
-      await nextTick()
-      await nextTick()
+      await flushPromises()
 
       expect(notificationMock.error).toHaveBeenCalledWith(
         'Failed to load roles',
@@ -93,7 +113,38 @@ describe('TenantUserContainer', () => {
     })
   })
 
-  // --- roles computed --------------------------------------------------------
+  describe('loading computed', () => {
+    it('does not render TenantUserManagement until roles are loaded', async () => {
+      let resolveRoles!: () => void
+      roleStore.fetchRoles = vi.fn(
+        () =>
+          new Promise<void>((resolve) => {
+            resolveRoles = () => resolve()
+          }),
+      )
+      const wrapper = mount(TenantUserContainer, {
+        global: {
+          plugins: [vuetify],
+          stubs: {
+            LoginContainer: loginContainerStub,
+            TenantUserManagement: true,
+          },
+        },
+        props: { tenantId: toTenantId('tenantId1') },
+      })
+
+      expect(
+        wrapper.findComponent({ name: 'TenantUserManagement' }).exists(),
+      ).toBe(false)
+
+      resolveRoles()
+      await flushPromises()
+
+      expect(
+        wrapper.findComponent({ name: 'TenantUserManagement' }).exists(),
+      ).toBe(true)
+    })
+  })
 
   describe('roles computed', () => {
     it('passes roleStore.roles down as possible-roles prop', async () => {
@@ -101,27 +152,24 @@ describe('TenantUserContainer', () => {
       roleStore.roles = roles
 
       const wrapper = mountComponent()
-      await nextTick()
+      await flushPromises()
 
       expect(child(wrapper).props('possibleRoles')).toEqual(roles)
     })
   })
 
-  // --- handleAddUser ---------------------------------------------------------
-
   describe('handleAddUser', () => {
     it('calls addTenantUser, clears searchResults, and shows success notification', async () => {
       const user = makeUser()
       tenantStore.addTenantUser = vi.fn().mockResolvedValue(undefined)
-      const tenantId = 'tenant-1'
+      const tenantId = 'tenantId1'
       const tenant = makeTenant({ id: toTenantId(tenantId) })
       tenantStore.tenants.push(tenant)
       groupStore.addGroupUser = vi.fn().mockResolvedValue(undefined)
 
       const wrapper = mountComponent(tenantId)
       await child(wrapper).vm.$emit('add', user, [])
-      await nextTick()
-      await nextTick()
+      await flushPromises()
 
       expect(tenantStore.addTenantUser).toHaveBeenCalledWith(tenantId, user)
       expect(notificationMock.success).toHaveBeenCalledWith(
@@ -134,25 +182,32 @@ describe('TenantUserContainer', () => {
     it('adds user to each provided group and shows group success notification', async () => {
       const user = makeUser()
       const groups = [
-        makeGroup({ id: toGroupId('g1') }),
-        makeGroup({ id: toGroupId('g2') }),
+        makeGroup({ id: toGroupId('groupId1') }),
+        makeGroup({ id: toGroupId('groupId2') }),
       ]
       tenantStore.addTenantUser = vi.fn().mockResolvedValue(undefined)
-      const tenantId = 'tenant-1'
+      const tenantId = 'tenantId1'
       const tenant = makeTenant({ id: toTenantId(tenantId) })
       tenantStore.tenants.push(tenant)
       groupStore.addGroupUser = vi.fn().mockResolvedValue(undefined)
 
       const wrapper = mountComponent(tenantId)
       await child(wrapper).vm.$emit('add', user, groups)
-      await nextTick()
-      await nextTick()
+      await flushPromises()
 
       expect(groupStore.addGroupUser).toHaveBeenCalledTimes(2)
-      expect(groupStore.addGroupUser).toHaveBeenCalledWith(tenantId, 'g1', user)
-      expect(groupStore.addGroupUser).toHaveBeenCalledWith(tenantId, 'g2', user)
+      expect(groupStore.addGroupUser).toHaveBeenCalledWith(
+        tenantId,
+        'groupId1',
+        user,
+      )
+      expect(groupStore.addGroupUser).toHaveBeenCalledWith(
+        tenantId,
+        'groupId2',
+        user,
+      )
       expect(notificationMock.success).toHaveBeenCalledWith(
-        'New user succesfully added to groups',
+        'New user successfully added to groups',
         'User Added to Groups',
       )
     })
@@ -160,15 +215,14 @@ describe('TenantUserContainer', () => {
     it('does not show group success notification when groups array is empty', async () => {
       const user = makeUser()
       tenantStore.addTenantUser = vi.fn().mockResolvedValue(undefined)
-      const tenantId = 'tenant-1'
+      const tenantId = 'tenantId1'
       const tenant = makeTenant({ id: toTenantId(tenantId) })
       tenantStore.tenants.push(tenant)
       groupStore.addGroupUser = vi.fn().mockResolvedValue(undefined)
 
       const wrapper = mountComponent(tenantId)
       await child(wrapper).vm.$emit('add', user, [])
-      await nextTick()
-      await nextTick()
+      await flushPromises()
 
       const groupSuccessCalls = vi
         .mocked(notificationMock.success)
@@ -186,8 +240,7 @@ describe('TenantUserContainer', () => {
 
       const wrapper = mountComponent()
       await child(wrapper).vm.$emit('add', user, [])
-      await nextTick()
-      await nextTick()
+      await flushPromises()
 
       expect(notificationMock.error).toHaveBeenCalledWith(
         expect.stringContaining('Jane Doe'),
@@ -202,8 +255,7 @@ describe('TenantUserContainer', () => {
 
       const wrapper = mountComponent()
       await child(wrapper).vm.$emit('add', makeUser(), [])
-      await nextTick()
-      await nextTick()
+      await flushPromises()
 
       expect(notificationMock.error).toHaveBeenCalledWith('Failed to add user')
     })
@@ -214,8 +266,7 @@ describe('TenantUserContainer', () => {
 
       const wrapper = mountComponent()
       await child(wrapper).vm.$emit('add', makeUser(), [makeGroup()])
-      await nextTick()
-      await nextTick()
+      await flushPromises()
 
       expect(groupStore.addGroupUser).not.toHaveBeenCalled()
     })
@@ -228,8 +279,7 @@ describe('TenantUserContainer', () => {
 
       const wrapper = mountComponent()
       await child(wrapper).vm.$emit('add', makeUser(), [makeGroup()])
-      await nextTick()
-      await nextTick()
+      await flushPromises()
 
       expect(notificationMock.error).toHaveBeenCalledWith(
         'Failed to add user to groups',
@@ -237,16 +287,14 @@ describe('TenantUserContainer', () => {
     })
   })
 
-  // --- handleClearSearch -----------------------------------------------------
-
   describe('handleClearSearch', () => {
     it('sets searchResults to null', async () => {
-      userStore.searchIdirEmail = vi
+      userSearchStore.searchUsers = vi
         .fn()
-        .mockResolvedValue([makeUser({ id: toUserId('a') })])
-      userStore.searchBCeIDEmail = vi
-        .fn()
-        .mockResolvedValue([makeUser({ id: toUserId('b') })])
+        .mockResolvedValue([
+          makeUser({ id: toUserId('a') }),
+          makeUser({ id: toUserId('b') }),
+        ])
 
       const wrapper = mountComponent()
       await child(wrapper).vm.$emit(
@@ -254,26 +302,23 @@ describe('TenantUserContainer', () => {
         IDIR_SEARCH_TYPE.EMAIL.value,
         'x@x.com',
       )
-      await nextTick()
-      await nextTick()
+      await flushPromises()
 
       await child(wrapper).vm.$emit('clear-search')
-      await nextTick()
+      await flushPromises()
 
       expect(child(wrapper).props('searchResults')).toBeNull()
     })
   })
-
-  // --- cancel inline handler -------------------------------------------------
 
   describe('@cancel inline handler', () => {
     it('sets searchResults to null on cancel', async () => {
-      userStore.searchIdirEmail = vi
+      userSearchStore.searchUsers = vi
         .fn()
-        .mockResolvedValue([makeUser({ id: toUserId('a') })])
-      userStore.searchBCeIDEmail = vi
-        .fn()
-        .mockResolvedValue([makeUser({ id: toUserId('b') })])
+        .mockResolvedValue([
+          makeUser({ id: toUserId('a') }),
+          makeUser({ id: toUserId('b') }),
+        ])
 
       const wrapper = mountComponent()
       await child(wrapper).vm.$emit(
@@ -281,17 +326,14 @@ describe('TenantUserContainer', () => {
         IDIR_SEARCH_TYPE.EMAIL.value,
         'x@x.com',
       )
-      await nextTick()
-      await nextTick()
+      await flushPromises()
 
       await child(wrapper).vm.$emit('cancel')
-      await nextTick()
+      await flushPromises()
 
       expect(child(wrapper).props('searchResults')).toBeNull()
     })
   })
-
-  // --- handleRemoveRole ------------------------------------------------------
 
   describe('handleRemoveRole', () => {
     it('calls removeTenantUserRole and shows success notification', async () => {
@@ -301,14 +343,13 @@ describe('TenantUserContainer', () => {
       tenantStore.tenants.push(tenant)
 
       const wrapper = mountComponent(tenantId)
-      await child(wrapper).vm.$emit('remove-role', 'u1', 'r1')
-      await nextTick()
-      await nextTick()
+      await child(wrapper).vm.$emit('remove-role', 'userId1', 'roleId1')
+      await flushPromises()
 
       expect(tenantStore.removeTenantUserRole).toHaveBeenCalledWith(
         tenantId,
-        'u1',
-        'r1',
+        'userId1',
+        'roleId1',
       )
       expect(notificationMock.success).toHaveBeenCalledWith(
         'The role was successfully removed from the user',
@@ -322,9 +363,8 @@ describe('TenantUserContainer', () => {
         .mockRejectedValue(new Error('fail'))
 
       const wrapper = mountComponent()
-      await child(wrapper).vm.$emit('remove-role', 'u1', 'r1')
-      await nextTick()
-      await nextTick()
+      await child(wrapper).vm.$emit('remove-role', 'userId1', 'roleId1')
+      await flushPromises()
 
       expect(notificationMock.error).toHaveBeenCalledWith(
         'Failed to remove user role',
@@ -332,21 +372,21 @@ describe('TenantUserContainer', () => {
     })
   })
 
-  // --- handleRemoveUser ------------------------------------------------------
-
   describe('handleRemoveUser', () => {
     it('calls removeTenantUser and shows success notification', async () => {
       tenantStore.removeTenantUser = vi.fn().mockResolvedValue(undefined)
-      const tenantId = 'tenant-1'
+      const tenantId = 'tenantId1'
       const tenant = makeTenant({ id: toTenantId(tenantId) })
       tenantStore.tenants.push(tenant)
 
       const wrapper = mountComponent(tenantId)
-      await child(wrapper).vm.$emit('remove-user', 'u1')
-      await nextTick()
-      await nextTick()
+      await child(wrapper).vm.$emit('remove-user', 'userId1')
+      await flushPromises()
 
-      expect(tenantStore.removeTenantUser).toHaveBeenCalledWith(tenantId, 'u1')
+      expect(tenantStore.removeTenantUser).toHaveBeenCalledWith(
+        tenantId,
+        'userId1',
+      )
       expect(notificationMock.success).toHaveBeenCalledWith(
         'The user was successfully removed',
         'User Removed',
@@ -359,9 +399,8 @@ describe('TenantUserContainer', () => {
         .mockRejectedValue(new Error('fail'))
 
       const wrapper = mountComponent()
-      await child(wrapper).vm.$emit('remove-user', 'u1')
-      await nextTick()
-      await nextTick()
+      await child(wrapper).vm.$emit('remove-user', 'userId1')
+      await flushPromises()
 
       expect(notificationMock.error).toHaveBeenCalledWith(
         'Failed to remove user',
@@ -373,8 +412,7 @@ describe('TenantUserContainer', () => {
 
       const wrapper = mountComponent()
       await child(wrapper).vm.$emit('remove-user', undefined)
-      await nextTick()
-      await nextTick()
+      await flushPromises()
 
       expect(tenantStore.removeTenantUser).not.toHaveBeenCalled()
       expect(notificationMock.error).toHaveBeenCalledWith(
@@ -383,25 +421,11 @@ describe('TenantUserContainer', () => {
     })
   })
 
-  // --- handleUserSearch ------------------------------------------------------
-
   describe('handleUserSearch', () => {
     beforeEach(() => {
-      userStore.searchIdirFirstName = vi
+      userSearchStore.searchUsers = vi
         .fn()
         .mockResolvedValue([makeUser({ id: toUserId('a') })])
-      userStore.searchIdirLastName = vi
-        .fn()
-        .mockResolvedValue([makeUser({ id: toUserId('b') })])
-      userStore.searchIdirEmail = vi
-        .fn()
-        .mockResolvedValue([makeUser({ id: toUserId('c') })])
-      userStore.searchBCeIDDisplayName = vi
-        .fn()
-        .mockResolvedValue([makeUser({ id: toUserId('d') })])
-      userStore.searchBCeIDEmail = vi
-        .fn()
-        .mockResolvedValue([makeUser({ id: toUserId('e') })])
     })
 
     it('searches by first name and concatenates BCeID display name results', async () => {
@@ -411,12 +435,13 @@ describe('TenantUserContainer', () => {
         IDIR_SEARCH_TYPE.FIRST_NAME.value,
         'Jane',
       )
-      await nextTick()
-      await nextTick()
+      await flushPromises()
 
-      expect(userStore.searchIdirFirstName).toHaveBeenCalledWith('Jane')
-      expect(userStore.searchBCeIDDisplayName).toHaveBeenCalledWith('Jane')
-      expect(child(wrapper).props('searchResults')).toHaveLength(2)
+      expect(userSearchStore.searchUsers).toHaveBeenCalledWith(
+        IDIR_SEARCH_TYPE.FIRST_NAME.value,
+        'Jane',
+      )
+      expect(child(wrapper).props('searchResults')).toHaveLength(1)
     })
 
     it('searches by last name and concatenates BCeID display name results', async () => {
@@ -426,12 +451,13 @@ describe('TenantUserContainer', () => {
         IDIR_SEARCH_TYPE.LAST_NAME.value,
         'Smith',
       )
-      await nextTick()
-      await nextTick()
+      await flushPromises()
 
-      expect(userStore.searchIdirLastName).toHaveBeenCalledWith('Smith')
-      expect(userStore.searchBCeIDDisplayName).toHaveBeenCalledWith('Smith')
-      expect(child(wrapper).props('searchResults')).toHaveLength(2)
+      expect(userSearchStore.searchUsers).toHaveBeenCalledWith(
+        IDIR_SEARCH_TYPE.LAST_NAME.value,
+        'Smith',
+      )
+      expect(child(wrapper).props('searchResults')).toHaveLength(1)
     })
 
     it('searches by email and concatenates BCeID email results', async () => {
@@ -441,18 +467,17 @@ describe('TenantUserContainer', () => {
         IDIR_SEARCH_TYPE.EMAIL.value,
         'jane@example.com',
       )
-      await nextTick()
-      await nextTick()
+      await flushPromises()
 
-      expect(userStore.searchIdirEmail).toHaveBeenCalledWith('jane@example.com')
-      expect(userStore.searchBCeIDEmail).toHaveBeenCalledWith(
+      expect(userSearchStore.searchUsers).toHaveBeenCalledWith(
+        IDIR_SEARCH_TYPE.EMAIL.value,
         'jane@example.com',
       )
-      expect(child(wrapper).props('searchResults')).toHaveLength(2)
+      expect(child(wrapper).props('searchResults')).toHaveLength(1)
     })
 
     it('shows error and nulls results when search throws', async () => {
-      userStore.searchIdirFirstName = vi
+      userSearchStore.searchUsers = vi
         .fn()
         .mockRejectedValue(new Error('network'))
 
@@ -462,8 +487,7 @@ describe('TenantUserContainer', () => {
         IDIR_SEARCH_TYPE.FIRST_NAME.value,
         'Jane',
       )
-      await nextTick()
-      await nextTick()
+      await flushPromises()
 
       expect(notificationMock.error).toHaveBeenCalledWith('User search failed')
       expect(child(wrapper).props('searchResults')).toBeNull()
@@ -476,14 +500,13 @@ describe('TenantUserContainer', () => {
         IDIR_SEARCH_TYPE.EMAIL.value,
         'x@x.com',
       )
-      await nextTick()
-      await nextTick()
+      await flushPromises()
 
       expect(child(wrapper).props('loadingSearch')).toBe(false)
     })
 
     it('resets loadingSearch to false even when search throws', async () => {
-      userStore.searchIdirEmail = vi.fn().mockRejectedValue(new Error('fail'))
+      userSearchStore.searchUsers = vi.fn().mockRejectedValue(new Error('fail'))
 
       const wrapper = mountComponent()
       await child(wrapper).vm.$emit(
@@ -491,8 +514,7 @@ describe('TenantUserContainer', () => {
         IDIR_SEARCH_TYPE.EMAIL.value,
         'x@x.com',
       )
-      await nextTick()
-      await nextTick()
+      await flushPromises()
 
       expect(child(wrapper).props('loadingSearch')).toBe(false)
     })

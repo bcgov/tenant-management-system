@@ -673,6 +673,21 @@ export class GroupRepository {
     return groupResponse
   }
 
+  public async getGroupUserWithRelations(
+    groupUserId: string,
+    manager?: EntityManager,
+  ) {
+    const em = manager ?? getManager()
+    return em
+      .createQueryBuilder(GroupUser, 'groupUser')
+      .leftJoinAndSelect('groupUser.group', 'group')
+      .leftJoinAndSelect('group.tenant', 'tenant')
+      .leftJoinAndSelect('groupUser.tenantUser', 'tenantUser')
+      .leftJoinAndSelect('tenantUser.ssoUser', 'ssoUser')
+      .where('groupUser.id = :groupUserId', { groupUserId })
+      .getOne()
+  }
+
   public async removeGroupUser(
     input: RemoveGroupUserInputDto,
     manager: EntityManager,

@@ -22,7 +22,7 @@ describe('User model', () => {
 
       const user = new User({ id: toUserId('id'), roles: [], ssoUser })
 
-      expect(user.roles.length).toBe(0)
+      expect(user.roles).toHaveLength(0)
     })
   })
 })
