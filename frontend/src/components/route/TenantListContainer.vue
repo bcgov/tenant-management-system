@@ -44,7 +44,7 @@ const dialogClose = () => {
 const dialogOpen = () => (dialogVisible.value = true)
 
 const handleCardClick = (id: Tenant['id']) => {
-  router.push(`/tenants/${id}/users`)
+  router.push(`/tenants/${id}/services`)
 }
 
 const handleTenantSubmit = async (
