@@ -3,7 +3,7 @@ import { defineConfig } from '@playwright/test'
 export default defineConfig({
   testDir: './playwright_tests',
   fullyParallel: false,
-  workers: 1,
+  workers: 2,
 
   use: {
     baseURL: process.env.BASE_URL || 'http://localhost:3000',
