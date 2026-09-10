@@ -17,6 +17,8 @@ crunchy:
   clone:
     enabled: false
 
+    s3:
+      enabled: false
   # No PITR
   restore:
     enabled: false
