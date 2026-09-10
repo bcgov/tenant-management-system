@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import {
-  mdiClose,
   mdiDeleteOutline,
   mdiDotsVertical,
   mdiMagnify,
@@ -253,18 +252,15 @@ const showRemoveUserDialog = (user: User) => {
             a.description.localeCompare(b.description),
           )"
           :key="role.id"
+          :closable="canRemoveRole(item, role)"
+          :close-label="`Remove Role ${role.description} for ${item.getName()}`"
+          :model-value="true"
           class="d-inline-flex align-center"
           color="primary"
+          @click:close="showRemoveRoleDialog(item, role)"
+          @update:model-value="() => {}"
         >
           {{ role.description }}
-          <v-icon
-            v-if="canRemoveRole(item, role)"
-            :aria-label="`Remove Role ${role.description}`"
-            :icon="mdiClose"
-            class="ml-1 cursor-pointer"
-            size="small"
-            @click.stop="showRemoveRoleDialog(item, role)"
-          />
         </v-chip>
       </div>
     </template>

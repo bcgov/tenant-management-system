@@ -18,10 +18,12 @@ import { isVuetifyDisabled } from '@/__tests__/__helpers__/vuetify'
 import TenantUserTable from '@/components/tenant/TenantUserTable.vue'
 import { type Tenant } from '@/models/tenant.model'
 import { toUserId, type User } from '@/models/user.model'
+import { isIdpIdir } from '@/utils/identityProvider'
 import { currentUserHasRole } from '@/utils/permissions'
 
 vi.mock('@/utils/identityProvider', () => ({
   identityProviderToDisplay: vi.fn((idpType: string) => idpType),
+  isIdpIdir: vi.fn(),
 }))
 
 vi.mock('@/utils/permissions', () => ({
@@ -203,7 +205,7 @@ describe('TenantUserTable', () => {
       ])
     })
 
-    it('does not show a remove icon for non-admins', () => {
+    it('has no remove icon for non-admins', () => {
       const user = makeUser({
         roles: [makeRoleServiceUser()],
       })
@@ -215,7 +217,7 @@ describe('TenantUserTable', () => {
       expect(screen.queryByLabelText(/Remove Role/)).not.toBeInTheDocument()
     })
 
-    it('does not show a remove icon when the user has only one role', () => {
+    it('has no remove icon when only one role', () => {
       const user = makeUser({
         roles: [makeRoleServiceUser()],
       })
@@ -227,41 +229,58 @@ describe('TenantUserTable', () => {
       expect(screen.queryByLabelText(/Remove Role/)).not.toBeInTheDocument()
     })
 
-    it('does not show a remove icon for the Tenant Owner role when there is only one owner', () => {
+    it('has no remove icon when only one tenant owner', () => {
       const owner = makeRoleTenantOwner()
       const service = makeRoleServiceUser()
       const user = makeUser({
         roles: [service, owner],
+        ssoUser: makeSsoUser({ firstName: 'firstName', lastName: 'lastName' }),
       })
       const tenant = makeTenant({ users: [user] })
       vi.mocked(currentUserHasRole).mockReturnValue(true)
+      vi.mocked(isIdpIdir).mockReturnValue(true)
 
       renderComponent({ tenant, users: [user] })
 
       expect(
-        screen.queryByLabelText(`Remove Role ${owner.description}`),
+        screen.queryByLabelText(
+          `Remove Role ${owner.description} for firstName lastName`,
+        ),
       ).not.toBeInTheDocument()
       expect(
-        screen.getByLabelText(`Remove Role ${service.description}`),
+        screen.getByLabelText(
+          `Remove Role ${service.description} for firstName lastName`,
+        ),
       ).toBeInTheDocument()
     })
 
-    it('shows a remove icon for the Tenant Owner role when there are multiple owners', () => {
+    it('has remove icon when multiple tenant owners', () => {
       const owner = makeRoleTenantOwner()
       const userA = makeUser({
         roles: [owner, makeRoleServiceUser()],
+        ssoUser: makeSsoUser({
+          firstName: 'firstName1',
+          lastName: 'lastName1',
+        }),
       })
       const userB = makeUser({
         roles: [owner],
+        ssoUser: makeSsoUser({
+          firstName: 'firstName2',
+          lastName: 'lastName2',
+        }),
       })
       const tenant = makeTenant({ users: [userA, userB] })
       vi.mocked(currentUserHasRole).mockReturnValue(true)
+      vi.mocked(isIdpIdir).mockReturnValue(true)
 
       renderComponent({ tenant, users: [userA, userB] })
 
       expect(
-        screen.getAllByLabelText(`Remove Role ${owner.description}`).length,
-      ).toBeGreaterThan(0)
+        screen.getAllByLabelText(
+          `Remove Role ${owner.description} for firstName1 lastName1`,
+        ),
+      ).toHaveLength(1)
     })
   })
 
@@ -270,14 +289,18 @@ describe('TenantUserTable', () => {
       const role = makeRoleServiceUser()
       const user = makeUser({
         roles: [role, makeRoleUserAdmin()],
+        ssoUser: makeSsoUser({ firstName: 'firstName', lastName: 'lastName' }),
       })
       const tenant = makeTenant({ users: [user] })
       vi.mocked(currentUserHasRole).mockReturnValue(true)
+      vi.mocked(isIdpIdir).mockReturnValue(true)
 
       const { emitted } = renderComponent({ tenant, users: [user] })
 
       await fireEvent.click(
-        screen.getByLabelText(`Remove Role ${role.description}`),
+        screen.getByLabelText(
+          `Remove Role ${role.description} for firstName lastName`,
+        ),
       )
       expect(screen.getByText('Confirm Role Removal')).toBeInTheDocument()
 
@@ -291,14 +314,18 @@ describe('TenantUserTable', () => {
       const role = makeRoleServiceUser()
       const user = makeUser({
         roles: [role, makeRoleUserAdmin()],
+        ssoUser: makeSsoUser({ firstName: 'firstName', lastName: 'lastName' }),
       })
       const tenant = makeTenant({ users: [user] })
       vi.mocked(currentUserHasRole).mockReturnValue(true)
+      vi.mocked(isIdpIdir).mockReturnValue(true)
 
       const { emitted } = renderComponent({ tenant, users: [user] })
 
       await fireEvent.click(
-        screen.getByLabelText(`Remove Role ${role.description}`),
+        screen.getByLabelText(
+          `Remove Role ${role.description} for firstName lastName`,
+        ),
       )
       await fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
 
