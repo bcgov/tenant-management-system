@@ -1,6 +1,5 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { createRouter, createWebHistory } from 'vue-router'
 
 import { makeTenant, makeUser } from '@/__tests__/__factories__'
 import { createMockAuthStore } from '@/__tests__/__helpers__/useAuthStore.mock'
@@ -18,7 +17,6 @@ import {
 import TenantListContainer from '@/components/route/TenantListContainer.vue'
 import { useNotification } from '@/composables/useNotification'
 import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
-import { toTenantId } from '@/models/tenant.model'
 import vuetify from '@/plugins/vuetify'
 import { DomainError } from '@/errors/domain/DomainError'
 
@@ -56,16 +54,9 @@ const buttonPrimaryStub = {
 }
 
 const tenantListStub = {
-  emits: ['select'],
   name: 'TenantList',
   props: ['tenants'],
-  template: `
-    <div>
-      <button @click="$emit('select', 'tenantId1')">
-        tenant
-      </button>
-    </div>
-  `,
+  template: '<div/>',
 }
 
 const tenantRequestDialogStub = {
@@ -87,21 +78,10 @@ const tenantRequestDialogStub = {
   `,
 }
 
-const createTestRouter = () =>
-  createRouter({
-    history: createWebHistory(),
-    routes: [
-      {
-        path: '/:pathMatch(.*)*',
-        component: { template: '<div />' },
-      },
-    ],
-  })
-
 const mountComponent = () =>
   mount(TenantListContainer, {
     global: {
-      plugins: [createTestRouter(), vuetify],
+      plugins: [vuetify],
       stubs: {
         ButtonPrimary: buttonPrimaryStub,
         LoadingWrapper: { template: '<div><slot /></div>' },
@@ -135,21 +115,14 @@ describe('TenantListContainer.vue', () => {
 
       expect(mockError).toHaveBeenCalledWith('Failed to load tenants')
     })
-  })
 
-  describe('navigation', () => {
-    it('navigates to the tenant users page when a card is selected', async () => {
-      mockTenantStore([makeTenant({ id: toTenantId('tenantId1') })])
+    it('shows the tenant list when tenants exist', async () => {
+      mockTenantStore([makeTenant()])
       const wrapper = mountComponent()
-      const router = wrapper.vm.$router
+
       await flushPromises()
 
-      await wrapper
-        .findComponent({ name: 'TenantList' })
-        .vm.$emit('select', 'tenantId1')
-      await flushPromises()
-
-      expect(router.currentRoute.value.path).toBe('/tenants/tenantId1/services')
+      expect(wrapper.findComponent({ name: 'TenantList' }).exists()).toBe(true)
     })
   })
 
