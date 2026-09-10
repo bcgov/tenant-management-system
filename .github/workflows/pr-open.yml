@@ -39,7 +39,7 @@ jobs:
     secrets: inherit
     with:
       dr_enabled: false
-      crunchy_release_name: cstar-${{ github.event.number }}
+      crunchy_release_name: cstar-${{ github.event.number }}-db
       release_name: cstar-${{ github.event.number }}
       tag: ${{ github.event.number }}
       db_user: app-${{ github.event.number }}
@@ -92,7 +92,7 @@ jobs:
     secrets: inherit
     with:
       dr_enabled: false
-      crunchy_release_name: cstar-${{ github.event.number }}
+      crunchy_release_name: cstar-db
       release_name: cstar-${{ github.event.number }}
       tag: ${{ github.event.number }}
       db_user: app-${{ github.event.number }}
