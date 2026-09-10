@@ -32,23 +32,23 @@ jobs:
           tag_fallback: latest
           triggers: ('${{ matrix.package }}/')
 
-  deploys-gold-dev:
+  deploys-staging-dev: # PR iSandbox Deploy + ephemeral crunchy database
     name: Deploys (${{ github.event.number }})
     needs: [builds]
-    uses: ./.github/workflows/gold-dev.yml
+    uses: ./.github/workflows/staging-dev.yml
     secrets: inherit
     with:
       dr_enabled: false
+      crunchy_release_name: cstar-${{ github.event.number }}
       release_name: cstar-${{ github.event.number }}
       tag: ${{ github.event.number }}
       db_user: app-${{ github.event.number }}
       params:
         --set global.secrets.persist=false
         --set frontend.ingress.tls=""
-
-  tests:
+  tests-staging-dev:
     name: Tests
-    needs: [deploys-gold-dev]
+    needs: [deploys-staging-dev]
     permissions:
       checks: write
     uses: ./.github/workflows/.tests.yml
@@ -60,10 +60,9 @@ jobs:
       Username: ${{ secrets.E2E_IDIR_USERNAME }}
       Password: ${{ secrets.E2E_IDIR_PASSWORD }}
       MFA_CODE: ${{ secrets.E2E_MFA_CODE }}
-
-  zap:
+  zaps-staging-dev:
     name: ZAP Security Scan
-    needs: [deploys-gold-dev]
+    needs: [deploys-staging-dev]
     if: |
       contains(github.event.pull_request.labels.*.name, 'zap') &&
       needs.deploys-gold-dev.outputs.triggered == 'true'
@@ -85,9 +84,24 @@ jobs:
           target: https://cstar-${{ github.event.number }}-frontend.apps.gold.devops.gov.bc.ca/${{ matrix.path }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
+  deploys-gold-dev:
+    name: Deploys (${{ github.event.number }})
+    needs: [tests-staging-dev, zaps-staging-dev]
+    uses: ./.github/workflows/staging-dev.yml
+    secrets: inherit
+    with:
+      dr_enabled: false
+      crunchy_release_name: cstar-${{ github.event.number }}
+      release_name: cstar-${{ github.event.number }}
+      tag: ${{ github.event.number }}
+      db_user: app-${{ github.event.number }}
+      params:
+        --set global.secrets.persist=false
+        --set frontend.ingress.tls=""
+
   results:
     name: PR Results
-    needs: [builds, deploys-gold-dev, tests, zap]
+    needs: [builds, tests-staging-dev, zaps-staging-dev, deploys-gold-dev]
     if: always()
     runs-on: ubuntu-24.04
     steps:
