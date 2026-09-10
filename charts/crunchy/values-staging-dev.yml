@@ -35,16 +35,10 @@ crunchy:
         prometheus.io/scrape: 'true'
         prometheus.io/port: '9187'
 
-    # Ephemeral PostgreSQL data storage
     dataVolumeClaimSpec:
-      ephemeral:
-        volumeClaimTemplate:
-          spec:
-            accessModes:
-              - ReadWriteOnce
-            resources:
-              requests:
-                storage: 1Gi
+      storage: 1Gi
+      storageClassName: netapp-block-standard
+      walStorage: 2.0Gi
 
     requests:
       cpu: 50m
@@ -76,12 +70,7 @@ crunchy:
 
   # Keep monitoring
   pgmonitor:
-    enabled: true
-    exporter:
-      image:
-      requests:
-        cpu: 10m
-        memory: 32Mi
+    enabled: false
 
   patroni:
     postgresql:
