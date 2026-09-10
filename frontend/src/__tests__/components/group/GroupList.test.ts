@@ -1,12 +1,12 @@
-import { mount } from '@vue/test-utils'
+import { render, screen } from '@testing-library/vue'
 import { describe, expect, it } from 'vitest'
 import { createVuetify } from 'vuetify'
 
-import { makeGroup } from '@/__tests__/__factories__'
+import { makeGroup, makeTenant } from '@/__tests__/__factories__'
 
 import GroupList from '@/components/group/GroupList.vue'
-import GroupListCard from '@/components/group/GroupListCard.vue'
 import { type Group, toGroupId } from '@/models/group.model'
+import type { Tenant } from '@/models/tenant.model'
 
 const vuetify = createVuetify()
 
@@ -16,42 +16,39 @@ const groups = [
   makeGroup({ id: toGroupId('3'), name: 'M Is Middle' }),
 ]
 
-const mountComponent = (props: { groups: Group[] }) =>
-  mount(GroupList, {
-    props,
+const renderComponent = (props: { groups: Group[]; tenant: Tenant }) =>
+  render(GroupList, {
     global: {
       plugins: [vuetify],
-      stubs: { GroupListCard: true },
+      stubs: {
+        GroupListCard: {
+          props: ['group', 'tenant'],
+          template: '<div data-testid="group-list-card">{{ group.name }}</div>',
+        },
+      },
     },
+    props,
   })
 
 describe('GroupList.vue', () => {
   it('renders no cards when groups is empty', () => {
-    const wrapper = mountComponent({ groups: [] })
+    renderComponent({ groups: [], tenant: makeTenant() })
 
-    expect(wrapper.findAllComponents(GroupListCard)).toHaveLength(0)
+    expect(screen.queryAllByTestId('group-list-card')).toHaveLength(0)
   })
 
   it('renders a card for each group', () => {
-    const wrapper = mountComponent({ groups })
+    renderComponent({ groups, tenant: makeTenant() })
 
-    expect(wrapper.findAllComponents(GroupListCard)).toHaveLength(3)
+    expect(screen.getAllByTestId('group-list-card')).toHaveLength(3)
   })
 
   it('renders groups sorted alphabetically by name', () => {
-    const wrapper = mountComponent({ groups })
+    renderComponent({ groups, tenant: makeTenant() })
 
-    const cards = wrapper.findAllComponents(GroupListCard)
-    expect(cards[0].props('group').name).toBe('A Is First')
-    expect(cards[1].props('group').name).toBe('M Is Middle')
-    expect(cards[2].props('group').name).toBe('Z Is Last')
-  })
-
-  it('emits select with the group id when a card is clicked', async () => {
-    const wrapper = mountComponent({ groups })
-
-    await wrapper.findAllComponents(GroupListCard)[0].trigger('click')
-
-    expect(wrapper.emitted('select')?.[0]).toEqual(['2'])
+    const cards = screen.getAllByTestId('group-list-card')
+    expect(cards[0]).toHaveTextContent('A Is First')
+    expect(cards[1]).toHaveTextContent('M Is Middle')
+    expect(cards[2]).toHaveTextContent('Z Is Last')
   })
 })
