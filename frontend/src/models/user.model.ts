@@ -46,6 +46,20 @@ export class User {
   }
 
   /**
+   * Gets the name of the user. This will be firstName and lastName for IDIR
+   * users, and just the firstName for BCeID users.
+   *
+   * @returns The name of the user.
+   */
+  getName(): string {
+    if (this.isIdir()) {
+      return `${this.ssoUser.firstName} ${this.ssoUser.lastName}`
+    }
+
+    return this.ssoUser.firstName
+  }
+
+  /**
    * Gets whether or not this user is a business BCeID user.
    *
    * @returns true if a BCeID user, false otherwise.

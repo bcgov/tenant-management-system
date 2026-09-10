@@ -149,7 +149,7 @@ describe('TenantListContainer.vue', () => {
         .vm.$emit('select', 'tenantId1')
       await flushPromises()
 
-      expect(router.currentRoute.value.path).toBe('/tenants/tenantId1/users')
+      expect(router.currentRoute.value.path).toBe('/tenants/tenantId1/services')
     })
   })
 

@@ -77,7 +77,8 @@ test.describe.serial('Landing page tests', () => {
     await expect(sharedPage.getByText(tenantNameValue)).toBeVisible()
     await sharedPage.getByText(tenantNameValue).click()
   })
-  test('Checks the tenant details page', async () => {
+  test('Checks the tenant users page', async () => {
+    await sharedPage.getByText('Tenant Users').click()
     await expect(sharedPage.getByText('Groups', { exact: true })).toBeVisible()
     await expect(
       sharedPage.getByRole('link', { name: 'Tenant Users' }),
