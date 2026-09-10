@@ -60,12 +60,13 @@ jobs:
       Username: ${{ secrets.E2E_IDIR_USERNAME }}
       Password: ${{ secrets.E2E_IDIR_PASSWORD }}
       MFA_CODE: ${{ secrets.E2E_MFA_CODE }}
+
   zaps-staging-dev:
     name: ZAP Security Scan
     needs: [deploys-staging-dev]
     if: |
       contains(github.event.pull_request.labels.*.name, 'zap') &&
-      needs.deploys-gold-dev.outputs.triggered == 'true'
+      needs.deploys-staging-dev.outputs.triggered == 'true'
     runs-on: ubuntu-24.04
     strategy:
       matrix:
@@ -87,7 +88,7 @@ jobs:
   deploys-gold-dev:
     name: Deploys (${{ github.event.number }})
     needs: [tests-staging-dev, zaps-staging-dev]
-    uses: ./.github/workflows/staging-dev.yml
+    uses: ./.github/workflows/gold-dev.yml
     secrets: inherit
     with:
       dr_enabled: false
