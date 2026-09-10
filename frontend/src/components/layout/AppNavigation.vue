@@ -94,6 +94,12 @@ watch(mobile, () => {
         <v-divider />
         <v-list-item
           :class="{ 'pl-6': !rail }"
+          :prepend-icon="mdiVectorRectangle"
+          :to="`/tenants/${routeTenantId}/services`"
+          title="Connected Services"
+        />
+        <v-list-item
+          :class="{ 'pl-6': !rail }"
           :prepend-icon="mdiAccountOutline"
           :to="`/tenants/${routeTenantId}/users`"
           title="Tenant Users"
@@ -118,16 +124,11 @@ watch(mobile, () => {
             title="Service Roles"
           />
         </template>
-        <v-list-item
-          :class="{ 'pl-6': !rail }"
-          :prepend-icon="mdiVectorRectangle"
-          :to="`/tenants/${routeTenantId}/services`"
-          title="Connected Services"
-        />
       </template>
     </v-list>
     <template #append>
       <v-list-item
+        :aria-label="rail ? 'Expand navigation' : 'Collapse navigation'"
         :prepend-icon="rail ? mdiChevronRight : mdiChevronLeft"
         @click="railManual = !rail"
       />
