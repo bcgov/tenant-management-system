@@ -1,56 +1,47 @@
-import { mount } from '@vue/test-utils'
+import { render, screen } from '@testing-library/vue'
 import { describe, expect, it } from 'vitest'
+import { createVuetify } from 'vuetify'
 
 import { makeTenant } from '@/__tests__/__factories__'
 
 import TenantListCard from '@/components/tenant/TenantListCard.vue'
-import { type Tenant } from '@/models/tenant.model'
+import { toTenantId } from '@/models/tenant.model'
 
-const mountComponent = (props: { tenant: Tenant }) =>
-  mount(TenantListCard, {
-    props,
+const vuetify = createVuetify()
+
+const renderComponent = (tenant = makeTenant()) =>
+  render(TenantListCard, {
+    props: { tenant },
     global: {
+      plugins: [vuetify],
       stubs: {
-        'v-card': {
-          template: '<div @click="$emit(\'click\')"><slot /></div>',
-          emits: ['click'],
+        RouterLink: {
+          props: ['to'],
+          template: '<a :href="to"><slot /></a>',
         },
-        'v-card-title': { template: '<div><slot /></div>' },
-        'v-card-subtitle': { template: '<div><slot /></div>' },
       },
     },
   })
 
 describe('TenantListCard.vue', () => {
-  describe('tenant info', () => {
-    it('renders the tenant name', () => {
-      const tenant = makeTenant({
-        name: 'My Tenant',
-      })
-      const wrapper = mountComponent({ tenant })
+  it('renders the tenant name', () => {
+    renderComponent(makeTenant({ name: 'My Tenant' }))
 
-      expect(wrapper.text()).toContain('My Tenant')
-    })
-
-    it('renders the ministry name', () => {
-      const tenant = makeTenant({
-        ministryName: 'Test Ministry',
-        name: 'My Tenant',
-      })
-      const wrapper = mountComponent({ tenant })
-
-      expect(wrapper.text()).toContain('Test Ministry')
-    })
+    expect(screen.getByText('My Tenant')).toBeInTheDocument()
   })
 
-  describe('click', () => {
-    it('emits click when the card is clicked', async () => {
-      const tenant = makeTenant()
-      const wrapper = mountComponent({ tenant })
+  it('renders the ministry name', () => {
+    renderComponent(makeTenant({ ministryName: 'Test Ministry' }))
 
-      await wrapper.find('div').trigger('click')
+    expect(screen.getByText('Test Ministry')).toBeInTheDocument()
+  })
 
-      expect(wrapper.emitted('click')).toHaveLength(1)
-    })
+  it('links to the tenant users page', () => {
+    renderComponent(makeTenant({ id: toTenantId('tenantId1') }))
+
+    expect(screen.getByRole('link')).toHaveAttribute(
+      'href',
+      '/tenants/tenantId1/services',
+    )
   })
 })

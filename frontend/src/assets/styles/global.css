@@ -13,6 +13,34 @@ a:hover {
   text-decoration: underline;
 }
 
+.card {
+  height: 100%;
+}
+
+.card-link {
+  text-decoration: none !important;
+}
+
+.card-link:focus-visible .v-card,
+.card-link:hover .v-card {
+  background-color: rgb(var(--v-theme-surface-light-gray-hover));
+}
+
+.card-subtitle,
+.card-title {
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  display: -webkit-box;
+  line-clamp: 2;
+  line-height: 1.5;
+  overflow: hidden;
+  white-space: normal;
+}
+
+.card-title {
+  color: rgb(var(--v-theme-typography-link-color)) !important;
+}
+
 h1 {
   font: var(--bcds-typography-bold-h1);
 }
