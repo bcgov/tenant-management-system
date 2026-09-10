@@ -75,8 +75,8 @@ jobs:
     uses: ./.github/workflows/.deployer.yml
     secrets: inherit
     with:
-      crunchy_release_name: ${{ inputs.crunchy_release_name }}
       release_name: ${{ inputs.release_name }}
+      crunchy_release_name: ${{ inputs.crunchy_release_name }}
       environment: staging-dev
       db_user: ${{ inputs.db_user }} # appproxy is the user which works with pgbouncer.
       db_triggers: ('charts/crunchy/')
