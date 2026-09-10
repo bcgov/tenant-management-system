@@ -32,23 +32,23 @@ jobs:
           tag_fallback: latest
           triggers: ('${{ matrix.package }}/')
 
-  deploys-staging-dev: # PR iSandbox Deploy + ephemeral crunchy database
+  deploys-gold-dev:
     name: Deploys (${{ github.event.number }})
     needs: [builds]
-    uses: ./.github/workflows/staging-dev.yml
+    uses: ./.github/workflows/gold-dev.yml
     secrets: inherit
     with:
       dr_enabled: false
-      crunchy_release_name: cstar-${{ github.event.number }}
       release_name: cstar-${{ github.event.number }}
       tag: ${{ github.event.number }}
       db_user: app-${{ github.event.number }}
       params:
         --set global.secrets.persist=false
         --set frontend.ingress.tls=""
-  tests-staging-dev:
+
+  tests:
     name: Tests
-    needs: [deploys-staging-dev]
+    needs: [deploys-gold-dev]
     permissions:
       checks: write
     uses: ./.github/workflows/.tests.yml
@@ -61,12 +61,12 @@ jobs:
       Password: ${{ secrets.E2E_IDIR_PASSWORD }}
       MFA_CODE: ${{ secrets.E2E_MFA_CODE }}
 
-  zaps-staging-dev:
+  zap:
     name: ZAP Security Scan
-    needs: [deploys-staging-dev]
+    needs: [deploys-gold-dev]
     if: |
       contains(github.event.pull_request.labels.*.name, 'zap') &&
-      needs.deploys-staging-dev.outputs.triggered == 'true'
+      needs.deploys-gold-dev.outputs.triggered == 'true'
     runs-on: ubuntu-24.04
     strategy:
       matrix:
@@ -85,24 +85,9 @@ jobs:
           target: https://cstar-${{ github.event.number }}-frontend.apps.gold.devops.gov.bc.ca/${{ matrix.path }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
-  deploys-gold-dev:
-    name: Deploys (${{ github.event.number }})
-    needs: [tests-staging-dev, zaps-staging-dev]
-    uses: ./.github/workflows/gold-dev.yml
-    secrets: inherit
-    with:
-      dr_enabled: false
-      crunchy_release_name: cstar-${{ github.event.number }}
-      release_name: cstar-${{ github.event.number }}
-      tag: ${{ github.event.number }}
-      db_user: app-${{ github.event.number }}
-      params:
-        --set global.secrets.persist=false
-        --set frontend.ingress.tls=""
-
   results:
     name: PR Results
-    needs: [builds, tests-staging-dev, zaps-staging-dev, deploys-gold-dev]
+    needs: [builds, deploys-gold-dev, tests, zap]
     if: always()
     runs-on: ubuntu-24.04
     steps:

@@ -58,11 +58,6 @@ on:
         description: 'Release name to use if defined'
         required: false
         type: string
-      crunchy_release_name:
-        description: 'Release name to use if defined'
-        default: cstar-db
-        required: false
-        type: string
       timeout-minutes:
         description: 'Timeout minutes'
         default: 10
@@ -99,7 +94,7 @@ jobs:
           oc_namespace: ${{ secrets.OC_NAMESPACE }}
           oc_token: ${{ secrets.OC_TOKEN }}
           oc_server: ${{ vars.OC_SERVER }}
-          release_name: ${{ inputs.crunchy_release_name }}
+          release_name: cstar-db
           environment: ${{ inputs.environment }}
           values_file: charts/crunchy/values-${{ inputs.environment || 'dev' }}.yml
           triggers: ${{ inputs.db_triggers }}
