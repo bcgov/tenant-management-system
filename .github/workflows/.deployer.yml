@@ -92,7 +92,7 @@ jobs:
       tag: ${{ inputs.tag || steps.pr.outputs.pr }}
       triggered: ${{ steps.deploy.outputs.triggered }}
     steps:
-      - uses: bcgov/action-crunchy@e6448470ae0290ff5ce9ee5ce9bf4aef4dba8610
+      - uses: bcgov/action-crunchy@f6d72a2deda7d81e8c68845adb48241445d1f13e
         name: Deploy Crunchy
         id: deploy_crunchy
         with:

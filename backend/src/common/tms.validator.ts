@@ -525,13 +525,4 @@ export default {
       .or('name', 'description', 'allowedIdentityProviders')
       .options({ abortEarly: false, convert: false }),
   },
-
-  createAssertion: {
-    params: Joi.object({
-      tenantId: Joi.string().guid().required(),
-    }),
-    body: Joi.object({
-      audience: Joi.string().min(1).max(255).required(),
-    }).options({ abortEarly: false, convert: false }),
-  },
 }

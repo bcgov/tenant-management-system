@@ -9,13 +9,6 @@ export type LogLevel = 'error' | 'info' | 'debug'
 
 export interface AppConfig {
   allowedOrigins: string[]
-  assertion: {
-    issuer: string
-    keyId: string
-    expiresInSeconds: number
-    privateKey: string
-    publicKey: string
-  }
   appBaseUrl?: string
   bcgovSsoApi: {
     clientId: string
@@ -61,14 +54,9 @@ function validateConfig(raw: unknown): AppConfig {
   const bcgovSsoApi = config.bcgovSsoApi as Record<string, unknown> | undefined
   const oidc = config.oidc as Record<string, unknown> | undefined
   const postgres = config.postgres as Record<string, unknown> | undefined
-  const assertion = config.assertion as Record<string, unknown> | undefined
 
   const required: [string, unknown][] = [
     ['ALLOWED_ORIGINS', config.allowedOrigins],
-    ['ASSERTION_ISSUER', assertion?.issuer],
-    ['ASSERTION_KEY_ID', assertion?.keyId],
-    ['ASSERTION_PRIVATE_KEY', assertion?.privateKey],
-    ['ASSERTION_PUBLIC_KEY', assertion?.publicKey],
     ['BCGOV_SSO_API_CLIENT_ID', bcgovSsoApi?.clientId],
     ['BCGOV_SSO_API_CLIENT_SECRET', bcgovSsoApi?.clientSecret],
     ['BCGOV_SSO_API_URL', bcgovSsoApi?.url],
@@ -104,10 +92,6 @@ function validateConfig(raw: unknown): AppConfig {
   return raw as AppConfig
 }
 
-function toPemKey(key?: string): string | undefined {
-  return key?.replace(/\\n/g, '\n')
-}
-
 export const config = {} as AppConfig
 
 export function loadConfig() {
@@ -122,15 +106,6 @@ export function loadConfig() {
     allowedOrigins: process.env.ALLOWED_ORIGINS
       ? process.env.ALLOWED_ORIGINS.split(',')
       : ['*'],
-    assertion: {
-      issuer: process.env.ASSERTION_ISSUER,
-      keyId: process.env.ASSERTION_KEY_ID,
-      expiresInSeconds: process.env.ASSERTION_EXPIRES_IN_SECONDS
-        ? Number.parseInt(process.env.ASSERTION_EXPIRES_IN_SECONDS, 10)
-        : 300,
-      privateKey: toPemKey(process.env.ASSERTION_PRIVATE_KEY),
-      publicKey: toPemKey(process.env.ASSERTION_PUBLIC_KEY),
-    },
     appBaseUrl: process.env.APP_BASE_URL,
     ches: {
       adminNotificationEmail: process.env.ADMIN_NOTIFICATION_EMAIL,
