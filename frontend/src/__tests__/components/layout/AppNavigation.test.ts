@@ -1,16 +1,16 @@
-import { mount } from '@vue/test-utils'
+import { fireEvent, render, screen } from '@testing-library/vue'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick, ref } from 'vue'
 import { createRouter, createWebHistory, useRoute } from 'vue-router'
 import { useDisplay } from 'vuetify'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { VLayout } from 'vuetify/components'
 
 import AppNavigation from '@/components/layout/AppNavigation.vue'
+import vuetify from '@/plugins/vuetify'
 import {
   currentUserIsIdir,
   currentUserIsOperationsAdmin,
 } from '@/utils/permissions'
-import vuetify from '@/plugins/vuetify'
-import { VLayout } from 'vuetify/lib/components/VLayout/VLayout.mjs'
 
 vi.mock('vue-router', async (importOriginal) => {
   const actual = await importOriginal<typeof import('vue-router')>()
@@ -23,7 +23,7 @@ const mockedUseRoute = vi.mocked(useRoute)
 
 const router = createRouter({
   history: createWebHistory(),
-  routes: [{ path: '/:pathMatch(.*)*', component: { template: '<div />' } }],
+  routes: [{ component: { template: '<div />' }, path: '/:pathMatch(.*)*' }],
 })
 
 vi.mock('vuetify', async (importOriginal) => {
@@ -58,8 +58,8 @@ const createDisplay = (mobile = false): ReturnType<typeof useDisplay> => {
   return { mobile: ref(mobile) } as unknown as ReturnType<typeof useDisplay>
 }
 
-const mountComponent = () => {
-  return mount(VLayout, {
+const renderComponent = () => {
+  return render(VLayout, {
     global: {
       plugins: [router, vuetify],
     },
@@ -71,25 +71,25 @@ const mountComponent = () => {
 
 describe('AppNavigation', () => {
   beforeEach(() => {
-    mockedUseRoute.mockReturnValue(createRoute())
-    mockedUseDisplay.mockReturnValue(createDisplay())
     mockedCurrentUserIsIdir.mockReturnValue(false)
     mockedCurrentUserIsOperationsAdmin.mockReturnValue(false)
+    mockedUseDisplay.mockReturnValue(createDisplay())
+    mockedUseRoute.mockReturnValue(createRoute())
   })
 
   describe('drawer visibility', () => {
     it('does not render the drawer for non-IDIR users', () => {
       mockedCurrentUserIsIdir.mockReturnValue(false)
-      const wrapper = mountComponent()
+      renderComponent()
 
-      expect(wrapper.find('.v-navigation-drawer').exists()).toBe(false)
+      expect(screen.queryByText('All Tenants')).not.toBeInTheDocument()
     })
 
     it('renders the drawer for IDIR users', () => {
       mockedCurrentUserIsIdir.mockReturnValue(true)
-      const wrapper = mountComponent()
+      renderComponent()
 
-      expect(wrapper.find('.v-navigation-drawer').exists()).toBe(true)
+      expect(screen.getByText('All Tenants')).toBeInTheDocument()
     })
   })
 
@@ -99,9 +99,9 @@ describe('AppNavigation', () => {
     })
 
     it('renders the All Tenants nav item', () => {
-      const wrapper = mountComponent()
+      renderComponent()
 
-      expect(wrapper.text()).toContain('All Tenants')
+      expect(screen.getByText('All Tenants')).toBeInTheDocument()
     })
   })
 
@@ -112,16 +112,16 @@ describe('AppNavigation', () => {
 
     it('does not render Settings for non-administrators', () => {
       mockedCurrentUserIsOperationsAdmin.mockReturnValue(false)
-      const wrapper = mountComponent()
+      renderComponent()
 
-      expect(wrapper.text()).not.toContain('Settings')
+      expect(screen.queryByText('Settings')).not.toBeInTheDocument()
     })
 
     it('renders Settings for administrators', () => {
       mockedCurrentUserIsOperationsAdmin.mockReturnValue(true)
-      const wrapper = mountComponent()
+      renderComponent()
 
-      expect(wrapper.text()).toContain('Settings')
+      expect(screen.getByText('Settings')).toBeInTheDocument()
     })
   })
 
@@ -134,23 +134,23 @@ describe('AppNavigation', () => {
     })
 
     it('renders Tenant Requests nav item', () => {
-      const wrapper = mountComponent()
+      renderComponent()
 
-      expect(wrapper.text()).toContain('Tenant Requests')
+      expect(screen.getByText('Tenant Requests')).toBeInTheDocument()
     })
 
     it('renders Services nav item', () => {
-      const wrapper = mountComponent()
+      renderComponent()
 
-      expect(wrapper.text()).toContain('Services')
+      expect(screen.getByText('Services')).toBeInTheDocument()
     })
 
     it('does not render settings sub-items on non-settings routes', () => {
       mockedUseRoute.mockReturnValue(createRoute({ path: '/tenants' }))
-      const wrapper = mountComponent()
+      renderComponent()
 
-      expect(wrapper.text()).not.toContain('Tenant Requests')
-      expect(wrapper.text()).not.toContain('Services')
+      expect(screen.queryByText('Tenant Requests')).not.toBeInTheDocument()
+      expect(screen.queryByText('Services')).not.toBeInTheDocument()
     })
   })
 
@@ -159,33 +159,41 @@ describe('AppNavigation', () => {
       mockedCurrentUserIsIdir.mockReturnValue(true)
       mockedUseRoute.mockReturnValue(
         createRoute({
-          params: { tenantId: 'tenant-123' },
+          params: { tenantId: 'tenantId' },
         }),
       )
     })
 
     it('renders tenant nav items when on a tenant route', () => {
-      const wrapper = mountComponent()
+      renderComponent()
 
-      expect(wrapper.text()).toContain('Tenant Users')
-      expect(wrapper.text()).toContain('Groups')
-      expect(wrapper.text()).toContain('Connected Services')
+      expect(screen.getByText('Tenant Users')).toBeInTheDocument()
+      expect(screen.getByText('Groups')).toBeInTheDocument()
+      expect(screen.getByText('Connected Services')).toBeInTheDocument()
     })
 
     it('links to the correct tenant routes', () => {
-      const wrapper = mountComponent()
+      renderComponent()
 
-      expect(wrapper.html()).toContain('/tenants/tenant-123/users')
-      expect(wrapper.html()).toContain('/tenants/tenant-123/groups')
-      expect(wrapper.html()).toContain('/tenants/tenant-123/services')
+      expect(screen.getByText('Tenant Users').closest('a')).toHaveAttribute(
+        'href',
+        '/tenants/tenantId/users',
+      )
+      expect(screen.getByText('Groups').closest('a')).toHaveAttribute(
+        'href',
+        '/tenants/tenantId/groups',
+      )
+      expect(
+        screen.getByText('Connected Services').closest('a'),
+      ).toHaveAttribute('href', '/tenants/tenantId/services')
     })
 
     it('does not render tenant nav items when not on a tenant route', () => {
       mockedUseRoute.mockReturnValue(createRoute({ params: {} }))
-      const wrapper = mountComponent()
+      renderComponent()
 
-      expect(wrapper.text()).not.toContain('Tenant Users')
-      expect(wrapper.text()).not.toContain('Groups')
+      expect(screen.queryByText('Tenant Users')).not.toBeInTheDocument()
+      expect(screen.queryByText('Groups')).not.toBeInTheDocument()
     })
   })
 
@@ -194,39 +202,41 @@ describe('AppNavigation', () => {
       mockedCurrentUserIsIdir.mockReturnValue(true)
       mockedUseRoute.mockReturnValue(
         createRoute({
-          params: { tenantId: 'tenant-123', groupId: 'group-456' },
+          params: { tenantId: 'tenantId', groupId: 'groupId' },
         }),
       )
     })
 
     it('renders group nav items when on a group route', () => {
-      const wrapper = mountComponent()
+      renderComponent()
 
-      expect(wrapper.text()).toContain('Members')
-      expect(wrapper.text()).toContain('Service Roles')
+      expect(screen.getByText('Members')).toBeInTheDocument()
+      expect(screen.getByText('Service Roles')).toBeInTheDocument()
     })
 
     it('links to the correct group routes', () => {
-      const wrapper = mountComponent()
+      renderComponent()
 
-      expect(wrapper.html()).toContain(
-        '/tenants/tenant-123/groups/group-456/members',
+      expect(screen.getByText('Members').closest('a')).toHaveAttribute(
+        'href',
+        '/tenants/tenantId/groups/groupId/members',
       )
-      expect(wrapper.html()).toContain(
-        '/tenants/tenant-123/groups/group-456/roles',
+      expect(screen.getByText('Service Roles').closest('a')).toHaveAttribute(
+        'href',
+        '/tenants/tenantId/groups/groupId/roles',
       )
     })
 
     it('does not render group nav items without a group route', () => {
       mockedUseRoute.mockReturnValue(
         createRoute({
-          params: { tenantId: 'tenant-123' },
+          params: { tenantId: 'tenantId' },
         }),
       )
-      const wrapper = mountComponent()
+      renderComponent()
 
-      expect(wrapper.text()).not.toContain('Members')
-      expect(wrapper.text()).not.toContain('Service Roles')
+      expect(screen.queryByText('Members')).not.toBeInTheDocument()
+      expect(screen.queryByText('Service Roles')).not.toBeInTheDocument()
     })
   })
 
@@ -237,18 +247,18 @@ describe('AppNavigation', () => {
 
     it('is in rail mode on mobile', () => {
       mockedUseDisplay.mockReturnValue(createDisplay(true))
-      const wrapper = mountComponent()
+      renderComponent()
 
-      expect(wrapper.find('.v-navigation-drawer').classes()).toContain(
+      expect(screen.getByRole('navigation')).toHaveClass(
         'v-navigation-drawer--rail',
       )
     })
 
     it('is not in rail mode on desktop', () => {
       mockedUseDisplay.mockReturnValue(createDisplay(false))
-      const wrapper = mountComponent()
+      renderComponent()
 
-      expect(wrapper.find('.v-navigation-drawer').classes()).not.toContain(
+      expect(screen.getByRole('navigation')).not.toHaveClass(
         'v-navigation-drawer--rail',
       )
     })
@@ -258,18 +268,17 @@ describe('AppNavigation', () => {
       mockedUseDisplay.mockReturnValue({ mobile } as unknown as ReturnType<
         typeof useDisplay
       >)
-      const wrapper = mountComponent()
+      const { container } = renderComponent()
 
-      // Manually set rail
-      await wrapper
-        .find('.v-navigation-drawer__append .v-list-item')
-        .trigger('click')
+      const toggleButton = container.querySelector(
+        '.v-navigation-drawer__append .v-list-item',
+      ) as HTMLElement
+      await fireEvent.click(toggleButton)
 
-      // Simulate display change
       mobile.value = true
       await nextTick()
 
-      expect(wrapper.find('.v-navigation-drawer').classes()).toContain(
+      expect(screen.getByRole('navigation')).toHaveClass(
         'v-navigation-drawer--rail',
       )
     })
