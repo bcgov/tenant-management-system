@@ -184,6 +184,39 @@ describe('TenantRequestContainer', () => {
       )
       expect(screen.queryByText('Tenant Requests')).not.toBeInTheDocument()
     })
+
+    it('selects the tenant request when its row is activated with Enter', async () => {
+      const tenantRequest = makeTenantRequest({ name: 'name' })
+      tenantRequestStore.tenantRequests = [tenantRequest]
+
+      renderComponent()
+      await screen.findByText('Tenant Requests')
+
+      const row = screen.getByRole('row', { name: /name/ })
+
+      await fireEvent.keyDown(row, { key: 'Enter' })
+
+      expect(screen.getByTestId('selected-request-id')).toHaveTextContent(
+        tenantRequest.id,
+      )
+      expect(screen.queryByText('Tenant Requests')).not.toBeInTheDocument()
+    })
+
+    it('does not select the tenant request for other keys', async () => {
+      const tenantRequest = makeTenantRequest({ name: 'name' })
+      tenantRequestStore.tenantRequests = [tenantRequest]
+
+      renderComponent()
+      await screen.findByText('Tenant Requests')
+
+      const row = screen.getByRole('row', { name: /name/ })
+
+      await fireEvent.keyDown(row, { key: 'Escape' })
+
+      expect(
+        screen.queryByTestId('selected-request-id'),
+      ).not.toBeInTheDocument()
+    })
   })
 
   describe('handleCancel', () => {
