@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { useRouter } from 'vue-router'
 
 import LoginContainer from '@/components/auth/LoginContainer.vue'
 import TenantList from '@/components/tenant/TenantList.vue'
@@ -10,7 +9,6 @@ import LoadingWrapper from '@/components/ui/LoadingWrapper.vue'
 import { useNotification } from '@/composables/useNotification'
 import { DomainError } from '@/errors/domain/DomainError'
 import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
-import { Tenant } from '@/models/tenant.model'
 import { type TenantRequestDetailFields } from '@/models/tenantrequest.model'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { useTenantRequestStore } from '@/stores/useTenantRequestStore'
@@ -20,14 +18,12 @@ import { useTenantStore } from '@/stores/useTenantStore'
 
 const authStore = useAuthStore()
 const notification = useNotification()
-const router = useRouter()
 const tenantRequestStore = useTenantRequestStore()
 const tenantStore = useTenantStore()
 
 // --- Component State ---------------------------------------------------------
 
 const dialogVisible = ref(false)
-
 const isDuplicateName = ref(false)
 
 // --- Computed Values ---------------------------------------------------------
@@ -42,10 +38,6 @@ const dialogClose = () => {
 }
 
 const dialogOpen = () => (dialogVisible.value = true)
-
-const handleCardClick = (id: Tenant['id']) => {
-  router.push(`/tenants/${id}/services`)
-}
 
 const handleTenantSubmit = async (
   tenantRequestDetails: TenantRequestDetailFields,
@@ -133,7 +125,7 @@ init() // NOSONAR
             <ButtonPrimary text="Request a Tenant" @click="dialogOpen" />
           </v-col>
         </v-row>
-        <TenantList :tenants="tenants" @select="handleCardClick" />
+        <TenantList :tenants="tenants" />
       </template>
     </LoadingWrapper>
   </LoginContainer>
