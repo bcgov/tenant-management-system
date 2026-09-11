@@ -73,9 +73,9 @@ spec:
               drop: [ "ALL" ]
           image: "{{ .Values.global.registry }}/{{ .Values.global.repository }}/backend:{{ .Values.global.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ default "Always" .Values.backend.imagePullPolicy }}
-          envFrom:
-            - secretRef:
-                name: {{ .Release.Name }}-backend
+            #envFrom:
+            #- secretRef:
+            #name: {{ .Release.Name }}-backend
           env:
             - name: ALLOWED_ORIGINS
               value: "{{ .Values.backend.allowedOrigins }}"
