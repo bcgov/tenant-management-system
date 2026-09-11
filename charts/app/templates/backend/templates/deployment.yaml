@@ -79,14 +79,14 @@ spec:
           env:
             - name: ALLOWED_ORIGINS
               value: "{{ .Values.backend.allowedOrigins }}"
-            - name: ASSERTION_EXPIRES_IN_SECONDS
-              value: "{{ .Values.backend.assertionExpiresInSeconds }}"
-            - name: ASSERTION_ISSUER
-              value: "{{ .Values.backend.assertionIssuer }}"
-            - name: ASSERTION_KEY_ID
-              value: "{{ .Values.backend.assertionKeyId }}"
-            - name: ASSERTION_PUBLIC_KEY
-              value: "{{ .Values.backend.assertionPublicKey }}"
+                #- name: ASSERTION_EXPIRES_IN_SECONDS
+                #value: "{{ .Values.backend.assertionExpiresInSeconds }}"
+                #- name: ASSERTION_ISSUER
+                #value: "{{ .Values.backend.assertionIssuer }}"
+                #- name: ASSERTION_KEY_ID
+                #value: "{{ .Values.backend.assertionKeyId }}"
+                #- name: ASSERTION_PUBLIC_KEY
+                #value: "{{ .Values.backend.assertionPublicKey }}"
             - name: BCGOV_SSO_API_URL
               value: "{{ .Values.backend.bcgovSsoApiUrl }}"
             - name: BCGOV_SSO_API_URL_BCEID
