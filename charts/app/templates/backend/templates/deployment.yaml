@@ -78,41 +78,41 @@ spec:
                 name: {{ .Release.Name }}-backend
           env:
             - name: ALLOWED_ORIGINS
-              value: "{{ .Values.backend.allowedOrigins }}"
+              value: "{{ .Values.backend.allowedOrigins | squote }}"
             - name: ASSERTION_EXPIRES_IN_SECONDS
-              value: "{{ .Values.backend.assertionExpiresInSeconds }}"
+              value: "{{ .Values.backend.assertionExpiresInSeconds | squote }}"
             - name: ASSERTION_ISSUER
-              value: "{{ .Values.backend.assertionIssuer }}"
+              value: "{{ .Values.backend.assertionIssuer | squote }}"
             - name: ASSERTION_KEY_ID
-              value: "{{ .Values.backend.assertionKeyId }}"
+              value: "{{ .Values.backend.assertionKeyId | squote }}"
             - name: ASSERTION_PUBLIC_KEY
-              value: "{{ .Values.backend.assertionPublicKey }}"
+              value: "{{ .Values.backend.assertionPublicKey | squote }}"
             - name: BCGOV_SSO_API_URL
-              value: "{{ .Values.backend.bcgovSsoApiUrl }}"
+              value: "{{ .Values.backend.bcgovSsoApiUrl | squote }}"
             - name: BCGOV_SSO_API_URL_BCEID
-              value: "{{ .Values.backend.bcgovSsoApiUrlBceid }}"
+              value: "{{ .Values.backend.bcgovSsoApiUrlBceid | squote }}"
             - name: BCGOV_TOKEN_URL
-              value: "{{ .Values.backend.bcgovTokenUrl }}"
+              value: "{{ .Values.backend.bcgovTokenUrl | squote }}"
             - name: ISSUER
-              value: "https://{{ .Values.global.loginProxy.hostName }}/auth/realms/standard"
+              value: "https://{{ .Values.global.loginProxy.hostName  }}/auth/realms/standard"
             - name: JWKS_URI
               value: "https://{{ .Values.global.loginProxy.hostName }}/auth/realms/standard/protocol/openid-connect/certs"
             - name: NODE_ENV
               value: production
             - name: PORT
-              value: "{{ .Values.backend.service.targetPort }}"
+              value: "{{ .Values.backend.service.targetPort | squote }}"
             - name: TMS_AUDIENCE
-              value: "{{ .Values.backend.tmsAudience }}"
+              value: "{{ .Values.backend.tmsAudience | squote }}"
             - name: LOG_LEVEL
-              value: "{{ .Values.global.env.logLevel }}"
+              value: "{{ .Values.global.env.logLevel | squote }}"
             - name: CHES_TOKEN_URL
-              value: "{{ .Values.backend.chesTokenUrl }}"
+              value: "{{ .Values.backend.chesTokenUrl | squote }}"
             - name: CHES_API_URL
-              value: "{{ .Values.backend.chesApiUrl }}"
+              value: "{{ .Values.backend.chesApiUrl | squote }}"
             - name: ADMIN_NOTIFICATION_EMAIL
-              value: "{{ .Values.backend.adminNotificationEmail }}"
+              value: "{{ .Values.backend.adminNotificationEmail | squote }}"
             - name: APP_BASE_URL
-              value: "{{ .Values.backend.appBaseUrl }}"
+              value: "{{ .Values.backend.appBaseUrl | squote }}"
           ports:
             - name: http
               containerPort: {{ .Values.backend.service.targetPort }}
