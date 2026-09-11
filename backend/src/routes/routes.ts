@@ -2,6 +2,7 @@ import { Application, NextFunction, Request, Response } from 'express'
 import { RoutesConstants } from '../common/routes.constants'
 import { sharedServiceController } from '../controllers/shared-service.controller'
 import { tenantRequestController } from '../controllers/tenant-request.controller'
+import { assertionController } from '../controllers/assertion.controller'
 import { groupController } from '../controllers/group.controller'
 import { ssoSearchController } from '../controllers/sso-search.controller'
 import { tenantController } from '../controllers/tenant.controller'
@@ -347,6 +348,27 @@ export class Routes {
         checkTenantAccess([TMSConstants.TENANT_OWNER, TMSConstants.USER_ADMIN]),
         (req: Request, res: Response) =>
           tenantController.getTenantUser(req, res),
+      )
+
+    app
+      .route(RoutesConstants.JWKS)
+      .get((req: Request, res: Response) =>
+        assertionController.getJwks(req, res),
+      )
+    app
+      .route(RoutesConstants.CREATE_ASSERTION)
+      .post(
+        checkJwt({ sharedServiceAccess: true }),
+        validate(validator.createAssertion, {}, {}),
+        (req: Request, res: Response) =>
+          assertionController.createAssertion(req, res),
+      )
+    app
+      .route(RoutesConstants.VERIFY_ASSERTION)
+      .get(
+        checkJwt({ sharedServiceAccess: true }),
+        (req: Request, res: Response) =>
+          assertionController.verifyAssertion(req, res),
       )
 
     app.use(jwtErrorHandler)
