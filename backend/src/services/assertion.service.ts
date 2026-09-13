@@ -83,7 +83,7 @@ export class AssertionService {
 
     const claims: JwtPayload = {
       azp: input.callingService,
-      tid: input.tenantId,
+      tenantId: input.tenantId,
       jti: randomUUID(),
     }
 
@@ -139,7 +139,7 @@ export class AssertionService {
     const assertion = this.getAssertionFromHeader(req)
     const claims = this.readAssertion(assertion, callingService)
 
-    const tenantId: string = claims.tid
+    const tenantId: string = claims.tenantId
     const azp: string = claims.azp
 
     if (!tenantId || !azp) {

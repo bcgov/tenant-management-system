@@ -66,7 +66,7 @@ function signWith(
 function aValidAssertion(overrides: jwt.SignOptions = {}): string {
   return signWith(
     config.assertion.privateKey,
-    { azp: CALLER, tid: TENANT_ID, sub: IDIR_USER },
+    { azp: CALLER, tenantId: TENANT_ID, sub: IDIR_USER },
     {
       issuer: config.assertion.issuer,
       audience: TARGET,
@@ -92,7 +92,7 @@ describe('AssertionService', () => {
       )
 
       const claims = claimsOf(result.data.assertion)
-      expect(claims.tid).toBe(TENANT_ID)
+      expect(claims.tenantId).toBe(TENANT_ID)
       expect(claims.azp).toBe(CALLER)
       expect(claims.aud).toBe(TARGET)
       expect(claims.iss).toBe(config.assertion.issuer)
@@ -323,7 +323,7 @@ describe('AssertionService', () => {
       const { privateKey } = generateKeyPairSync('rsa', { modulusLength: 2048 })
       const forged = signWith(
         privateKey.export({ format: 'pem', type: 'pkcs8' }) as string,
-        { azp: CALLER, tid: TENANT_ID },
+        { azp: CALLER, tenantId: TENANT_ID },
         { issuer: config.assertion.issuer, audience: TARGET, expiresIn: 300 },
       )
 
@@ -373,7 +373,7 @@ describe('AssertionService', () => {
     it('refuses an assertion that does not say which service made it', async () => {
       const noAzp = signWith(
         config.assertion.privateKey,
-        { tid: TENANT_ID },
+        { tenantId: TENANT_ID },
         { issuer: config.assertion.issuer, audience: TARGET, expiresIn: 300 },
       )
 
