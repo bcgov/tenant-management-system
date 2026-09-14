@@ -4,20 +4,20 @@ import { type ComponentPublicInstance } from 'vue'
 
 import router from '@/router'
 
-vi.mock('@/components/route/BCeidLandingContainer.vue', () => ({
-  default: { template: `<div>BCeidLandingContainer</div>` },
-}))
 vi.mock('@/components/route/GroupHeaderContainer.vue', () => ({
-  default: { template: `<div>GroupHeaderContainer</div>` },
+  default: { template: `<div>GroupHeaderContainer<router-view /></div>` },
 }))
 vi.mock('@/components/route/GroupListContainer.vue', () => ({
   default: { template: `<div>GroupListContainer</div>` },
 }))
+vi.mock('@/components/route/GroupMemberContainer.vue', () => ({
+  default: { template: `<div>GroupMemberContainer</div>` },
+}))
 vi.mock('@/components/route/GroupRoleContainer.vue', () => ({
   default: { template: `<div>GroupRoleContainer</div>` },
 }))
-vi.mock('@/components/route/GroupUserContainer.vue', () => ({
-  default: { template: `<div>GroupUserContainer</div>` },
+vi.mock('@/components/route/LandingPageBceidContainer.vue', () => ({
+  default: { template: `<div>LandingPageBceidContainer</div>` },
 }))
 vi.mock('@/components/route/LandingPageContainer.vue', () => ({
   default: { template: `<div>LandingPageContainer</div>` },
@@ -56,6 +56,13 @@ describe('Vue Router', () => {
     wrapper?.unmount()
   })
 
+  it('loads bceid landing page', async () => {
+    await router.push('/bceid')
+    await router.isReady()
+
+    expect(wrapper.text()).toContain('LandingPageBceidContainer')
+  })
+
   it('loads landing page', async () => {
     expect(router.currentRoute.value.path).toBe('/')
     expect(wrapper.text()).toContain('LandingPageContainer')
@@ -68,13 +75,15 @@ describe('Vue Router', () => {
     expect(router.currentRoute.value.path).toBe('/settings/requests')
   })
 
-  it('navigates to tenants list', async () => {
-    await router.push('/tenants')
-    await router.isReady()
+  it.each(['/settings/requests', '/settings/services', '/tenants'])(
+    'navigates to unparameterized route %s',
+    async (route) => {
+      await router.push(route)
+      await router.isReady()
 
-    expect(router.currentRoute.value.path).toBe('/tenants')
-    expect(wrapper.text()).toContain('TenantListContainer')
-  })
+      expect(router.currentRoute.value.path).toBe(route)
+    },
+  )
 
   it('navigates to tenant with params', async () => {
     await router.push('/tenants/123')
@@ -84,13 +93,55 @@ describe('Vue Router', () => {
     expect(wrapper.text()).toContain('TenantHeaderContainer')
   })
 
-  it('navigates to group with params', async () => {
-    await router.push('/tenants/123/groups/456')
+  it('navigates to tenant groups', async () => {
+    await router.push('/tenants/123/groups')
     await router.isReady()
 
     expect(router.currentRoute.value.params.tenantId).toBe('123')
+    expect(wrapper.text()).toContain('GroupListContainer')
+  })
+
+  it('navigates to group', async () => {
+    await router.push('/tenants/123/groups/456')
+    await router.isReady()
+
     expect(router.currentRoute.value.params.groupId).toBe('456')
+    expect(router.currentRoute.value.params.tenantId).toBe('123')
     expect(wrapper.text()).toContain('GroupHeaderContainer')
+  })
+
+  it('navigates to group members', async () => {
+    await router.push('/tenants/123/groups/456/members')
+    await router.isReady()
+
+    expect(router.currentRoute.value.params.groupId).toBe('456')
+    expect(router.currentRoute.value.params.tenantId).toBe('123')
+    expect(wrapper.text()).toContain('GroupMemberContainer')
+  })
+
+  it('navigates to group roles', async () => {
+    await router.push('/tenants/123/groups/456/roles')
+    await router.isReady()
+
+    expect(router.currentRoute.value.params.groupId).toBe('456')
+    expect(router.currentRoute.value.params.tenantId).toBe('123')
+    expect(wrapper.text()).toContain('GroupRoleContainer')
+  })
+
+  it('navigates to tenant services', async () => {
+    await router.push('/tenants/123/services')
+    await router.isReady()
+
+    expect(router.currentRoute.value.params.tenantId).toBe('123')
+    expect(wrapper.text()).toContain('TenantServiceContainer')
+  })
+
+  it('navigates to tenant users', async () => {
+    await router.push('/tenants/123/users')
+    await router.isReady()
+
+    expect(router.currentRoute.value.params.tenantId).toBe('123')
+    expect(wrapper.text()).toContain('TenantUserContainer')
   })
 
   it('redirects unknown routes to home', async () => {
@@ -107,6 +158,8 @@ describe('Route Configuration', () => {
 
     expect(paths).toContain('/')
     expect(paths).toContain('/settings')
+    expect(paths).toContain('/settings/requests')
+    expect(paths).toContain('/settings/services')
     expect(paths).toContain('/tenants')
     expect(paths).toContain('/tenants/:tenantId')
     expect(paths).toContain('/tenants/:tenantId/groups/:groupId')
