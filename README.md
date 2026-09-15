@@ -45,7 +45,7 @@ Pull Requests:
 
 - `[uncheck] Allow merge commits`
 - `[check] Allow squash merging`
-  - `Default to pull request title`
+  - `Default message`
 - `[uncheck] Allow rebase merging`
 - `[check] Always suggest updating pull request branches`
 - `[uncheck] Allow auto-merge`
@@ -111,10 +111,9 @@ Note: Required status checks will only be available to select after the relevant
 Don't forget to add your team members!
 
 1. Select Settings (gear, top right) \*> Collaborators and teams (under `Access`)
-2. Click `Add people` or `Add teams`
+2. Click the name of the team with the desired `Role`
 3. Use the search box to find people or teams
-4. Choose a role (read, triage, write, maintain, admin)
-5. Click Add
+4. Click `Add a member`
 
 # App Stack
 
