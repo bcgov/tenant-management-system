@@ -25,6 +25,7 @@ spec:
       labels:
         {{- include "backend.labels" . | nindent 8 }}
     spec:
+      automountServiceAccountToken: false
       securityContext:
         runAsNonRoot: true
         seccompProfile:
