@@ -89,8 +89,10 @@ spec:
           resources:
             requests:
               cpu: 5m
+              ephemeral-storage: 500Mi
               memory: 50Mi
             limits:
+              ephemeral-storage: 15Gi
               memory: 8Gi
           volumeMounts:
             - name: data
