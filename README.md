@@ -8,21 +8,6 @@
 The Connected Services, Team Access & Roles (CSTAR) manages tenants who use
 multitenanted common components.
 
-# Setup
-
-Initial setup is intended to take an hour or less. This depends greatly on intended complexity, features selected/excluded and outside cooperation.
-
-## Prerequisites
-
-The following are required:
-
-- [ ] BC Government IDIR accounts for anyone submitting requests
-- [ ] [GitHub accounts](https://github.com/signup) for all participating team members
-- [ ] Membership in the BCGov GitHub organization
-  - Join the bcgov organization using [these instructions](https://developer.gov.bc.ca/docs/default/component/bc-developer-guide/use-github-in-bcgov/bc-government-organizations-in-github/#directions-to-sign-up-and-link-your-account-for-bcgov).
-- [ ] OpenShift project namespaces:
-  - [BCGov signup](https://registry.developer.gov.bc.ca)
-
 ## Updating Dependencies
 
 Dependabot and Mend Renovate can both provide dependency updates using pull requests. Dependabot is simpler to configure, while Renovate is much more configurable and lighter on resources.
