@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { useRouter } from 'vue-router'
 
 import LoginContainer from '@/components/auth/LoginContainer.vue'
 import GroupCreateDialog from '@/components/group/GroupCreateDialog.vue'
@@ -29,7 +28,6 @@ const { tenantId } = defineProps<{
 const authStore = useAuthStore()
 const groupStore = useGroupStore()
 const notification = useNotification()
-const router = useRouter()
 const tenantStore = useTenantStore()
 
 // --- Component State ---------------------------------------------------------
@@ -67,10 +65,6 @@ const dialogClose = () => {
 }
 
 const dialogOpen = () => (dialogVisible.value = true)
-
-const handleCardClick = (id: Group['id']) => {
-  router.push(`/tenants/${tenantId}/groups/${id}/members`)
-}
 
 const handleGroupCreate = async (
   groupDetails: GroupDetailFields,
@@ -149,7 +143,7 @@ const handleGroupCreate = async (
           @click="dialogOpen"
         />
 
-        <GroupList :groups="groups" @select="handleCardClick" />
+        <GroupList :groups="groups" :tenant="tenant" />
       </template>
       <v-container v-else class="fill-height">
         <v-row class="center-align justify-center">
