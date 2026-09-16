@@ -123,5 +123,6 @@ const tenantUsersCount = computed(() => tenant.users.length)
 
 .text-stack p {
   margin: 0;
+  overflow-wrap: break-word;
 }
 </style>

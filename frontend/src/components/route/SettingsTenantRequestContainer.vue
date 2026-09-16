@@ -32,7 +32,7 @@ const tenantRequests = computed(() => tenantRequestStore.tenantRequests)
 // --- Component Methods -------------------------------------------------------
 
 const getCellProps = ({ column }: { column: { key: string } }) => ({
-  class: column.key === 'status' ? 'text-right' : 'text-left',
+  class: [column.key === 'status' ? 'text-right' : 'text-left', 'text-wrap'],
 })
 
 const getStatusColor = (status: string) => {
@@ -280,3 +280,9 @@ init() // NOSONAR
     </AdministratorContainer>
   </LoginContainer>
 </template>
+
+<style lang="css" scoped>
+:deep(.text-wrap) {
+  overflow-wrap: anywhere;
+}
+</style>
