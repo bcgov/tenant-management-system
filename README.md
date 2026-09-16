@@ -8,6 +8,22 @@
 The Connected Services, Team Access & Roles (CSTAR) manages tenants who use
 multitenanted common components.
 
+## Static Code Analysis
+
+[![Quality gate](https://sonarcloud.io/api/project_badges/quality_gate?project=bcgov_tenant-management-system)](https://sonarcloud.io/summary/new_code?id=bcgov_tenant-management-system)
+
+[![Duplicated Lines](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system&metric=duplicated_lines_density)](https://sonarcloud.io/component_measures?id=bcgov_tenant-management-system&metric=duplicated_lines_density&view=list)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system&metric=coverage)](https://sonarcloud.io/component_measures?id=bcgov_tenant-management-system&metric=coverage&view=list)
+
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system&metric=security_rating)](https://sonarcloud.io/component_measures?id=bcgov_tenant-management-system&metric=security_rating&view=list)
+[![Security Issues](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system&metric=software_quality_security_issues)](https://sonarcloud.io/project/issues?id=bcgov_tenant-management-system&impactSoftwareQualities=SECURITY&s=FILE_LINE&issueStatuses=OPEN)
+
+[![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system&metric=reliability_rating)](https://sonarcloud.io/component_measures?id=bcgov_tenant-management-system&metric=reliability_rating&view=list)
+[![Reliability Issues](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system&metric=software_quality_reliability_issues)](https://sonarcloud.io/project/issues?id=bcgov_tenant-management-system&impactSoftwareQualities=RELIABILITY&s=FILE_LINE&issueStatuses=OPEN)
+
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system&metric=sqale_rating)](https://sonarcloud.io/component_measures?id=bcgov_tenant-management-system&metric=sqale_rating&view=list)
+[![Maintainability Issues](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system&metric=software_quality_maintainability_issues)](https://sonarcloud.io/project/issues?id=bcgov_tenant-management-system&impactSoftwareQualities=MAINTAINABILITY&s=FILE_LINE&issueStatuses=OPEN)
+
 ## Updating Dependencies
 
 Dependabot and Mend Renovate can both provide dependency updates using pull requests. Dependabot is simpler to configure, while Renovate is much more configurable and lighter on resources.
@@ -116,17 +132,6 @@ Don't forget to add your team members!
 4. Click `Add a member`
 
 # App Stack
-
-[![Duplicated Lines](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system&metric=duplicated_lines_density)](https://sonarcloud.io/component_measures?id=bcgov_tenant-management-system&metric=duplicated_lines_density&view=list)
-[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system&metric=coverage)](https://sonarcloud.io/component_measures?id=bcgov_tenant-management-system&metric=coverage&view=list)
-[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system&metric=security_rating)](https://sonarcloud.io/component_measures?id=bcgov_tenant-management-system&metric=security_rating&view=list)
-[![Security Issues](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system&metric=software_quality_security_issues)](https://sonarcloud.io/project/issues?id=bcgov_tenant-management-system&impactSoftwareQualities=SECURITY&s=FILE_LINE&issueStatuses=OPEN)
-[![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system&metric=reliability_rating)](https://sonarcloud.io/component_measures?id=bcgov_tenant-management-system&metric=reliability_rating&view=list)
-[![Reliability Issues](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system&metric=software_quality_reliability_issues)](https://sonarcloud.io/project/issues?id=bcgov_tenant-management-system&impactSoftwareQualities=RELIABILITY&s=FILE_LINE&issueStatuses=OPEN)
-[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system&metric=sqale_rating)](https://sonarcloud.io/component_measures?id=bcgov_tenant-management-system&metric=sqale_rating&view=list)
-[![Maintainability Issues](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system&metric=software_quality_maintainability_issues)](https://sonarcloud.io/project/issues?id=bcgov_tenant-management-system&impactSoftwareQualities=MAINTAINABILITY&s=FILE_LINE&issueStatuses=OPEN)
-
-## Stack
 
 The stack includes a frontend (Vue.js, Vite, Caddy), backend (Express, Node) and Postgres database. See subfolder for source, including Dockerfiles and OpenShift templates.
 
