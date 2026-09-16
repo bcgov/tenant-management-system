@@ -17,14 +17,17 @@ defineProps<{
 
 <template>
   <v-app-bar class="px-4" elevation="1">
-    <v-toolbar-title class="align-center d-flex flex-grow-1">
-      <router-link to="/">
-        <img alt="Logo" class="logo" src="/BCID_H_RGB_pos.svg" />
+    <div class="d-flex align-center flex-grow-1">
+      <router-link aria-label="C STAR Home" class="me-4 ms-1" to="/">
+        <img alt="" height="56" src="/BCID_H_RGB_pos.svg" width="145" />
       </router-link>
+
       <span class="app-title">
-        Connected Services, Team Access, and Roles (CSTAR)
+        Connected Services, Team Access, and Roles (<span aria-label="C STAR"
+          >CSTAR</span
+        >)
       </span>
-    </v-toolbar-title>
+    </div>
 
     <div v-if="user" class="d-flex align-center user-info">
       <v-icon :icon="mdiAccountOutline" />
@@ -47,12 +50,6 @@ defineProps<{
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.logo {
-  height: 60px;
-  margin-right: 8px;
-  vertical-align: middle;
 }
 
 .user-info {

@@ -225,6 +225,17 @@ init() // NOSONAR
                   ]"
                   :hide-default-footer="tenantRequests.length === 0"
                   :items="tenantRequests"
+                  :row-props="
+                    ({ item }) => ({
+                      tabindex: 0,
+                      onkeydown: (event: KeyboardEvent) => {
+                        if (event.key === 'Enter') {
+                          event.preventDefault()
+                          handleRowClick(event, { item })
+                        }
+                      },
+                    })
+                  "
                   :search="search"
                   :sort-by="[{ key: 'createdDate', order: 'desc' }]"
                   item-value="id"
