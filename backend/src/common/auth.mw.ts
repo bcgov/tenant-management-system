@@ -82,7 +82,7 @@ const createJwtMiddleware = (options: CheckJwtOptions = {}) => {
       }
       throw new UnauthorizedError('Bearer token is missing or invalid')
     },
-  }).unless({ path: [RoutesConstants.HEALTH] })
+  }).unless({ path: [RoutesConstants.HEALTH, RoutesConstants.JWKS] })
 }
 
 export const checkJwt = (options: CheckJwtOptions = {}) => {
