@@ -56,6 +56,14 @@ jobs:
             ${{ runner.os }}-build-
             ${{ runner.os }}-
 
+      - name: Generate assertion keys
+        run: |
+          openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out private.pem
+          openssl rsa -in private.pem -pubout -out public.pem
+          echo "ASSERTION_PRIVATE_KEY=$(perl -pe 's/\r?\n/\x5cn/' private.pem)" >> $GITHUB_ENV
+          echo "ASSERTION_PUBLIC_KEY=$(perl -pe 's/\r?\n/\x5cn/' public.pem)" >> $GITHUB_ENV
+          rm private.pem public.pem
+
       - name: Start test services
         run: docker compose -f docker-compose.yml up -d --quiet-pull --wait
         working-directory: tests/integration
