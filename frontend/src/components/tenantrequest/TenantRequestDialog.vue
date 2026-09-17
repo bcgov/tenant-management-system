@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { mdiClose } from '@mdi/js'
 import { nextTick, ref, watch } from 'vue'
 import { VForm } from 'vuetify/components'
 
@@ -10,7 +9,7 @@ import { MINISTRIES } from '@/utils/constants'
 
 // --- Component Interface -----------------------------------------------------
 
-const props = defineProps<{
+const { isDuplicateName } = defineProps<{
   isDuplicateName: boolean
 }>()
 
@@ -36,8 +35,12 @@ const isFormValid = ref(false)
 // When parent sets the duplicated name flag, force re-validation so that the
 // message is displayed.
 watch(
-  () => props.isDuplicateName,
-  async () => {
+  () => isDuplicateName,
+  async (newVal) => {
+    if (!newVal) {
+      return
+    }
+
     await nextTick()
     await form.value?.validate()
   },
@@ -88,8 +91,7 @@ const rules = {
   maxLength: (max: number) => (value: string) =>
     !value || value.length <= max || `Must be ${max} characters or less`,
   notDuplicated: () =>
-    !props.isDuplicateName ||
-    'Name must be unique for this ministry/organization',
+    !isDuplicateName || 'Name must be unique for this ministry/organization',
   required: (value: string) => {
     if (!value) {
       return 'Required'
@@ -109,46 +111,33 @@ const rules = {
     <v-card class="pa-6">
       <v-card-title class="align-center d-flex justify-space-between">
         Request New Tenant
-        <v-btn
-          :icon="mdiClose"
-          variant="plain"
-          @click="dialogVisible = false"
-        ></v-btn>
       </v-card-title>
 
       <v-card-text>
         <v-form ref="form" v-model="isFormValid">
-          <v-row no-gutters>
-            <v-col class="pe-md-3" cols="12" md="6">
-              <v-text-field
-                v-model="formData.name"
-                :maxlength="30"
-                :rules="[
-                  rules.required,
-                  rules.maxLength(30),
-                  rules.notDuplicated,
-                ]"
-                required
-              >
-                <template #label>
-                  Name of Tenant <span class="text-error">*</span>
-                </template>
-              </v-text-field>
-            </v-col>
-            <v-col class="ps-md-3" cols="12" md="6">
-              <v-select
-                v-model="formData.ministryName"
-                :items="MINISTRIES"
-                :rules="[rules.required]"
-                placeholder="Select an option..."
-                required
-              >
-                <template #label>
-                  Ministry/Organization <span class="text-error">*</span>
-                </template>
-              </v-select>
-            </v-col>
-          </v-row>
+          <v-text-field
+            v-model="formData.name"
+            :rules="[rules.required, rules.maxLength(150), rules.notDuplicated]"
+            counter="150"
+            required
+          >
+            <template #label>
+              Name of Tenant <span class="text-error">*</span>
+            </template>
+          </v-text-field>
+
+          <v-select
+            v-model="formData.ministryName"
+            :items="MINISTRIES"
+            :rules="[rules.required]"
+            autocomplete="off"
+            placeholder="Select an option..."
+            required
+          >
+            <template #label>
+              Ministry/Organization <span class="text-error">*</span>
+            </template>
+          </v-select>
 
           <v-textarea
             v-model="formData.description"
