@@ -82,7 +82,8 @@ jobs:
     environment:
       name: ${{ inputs.environment || 'dev' }}
       url: "https://${{ steps.vars.outputs.release }}.${{ steps.vars.outputs.domain }}"
-    runs-on: ubuntu-24.04
+    runs-on:
+      group: Larger Runners - OpenShift Static-IP
     outputs:
       tag: ${{ inputs.tag || steps.pr.outputs.pr }}
       triggered: ${{ steps.deploy.outputs.triggered }}

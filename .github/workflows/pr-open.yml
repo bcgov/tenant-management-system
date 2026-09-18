@@ -19,7 +19,8 @@ jobs:
       attestations: write
       id-token: write
       packages: write
-    runs-on: ubuntu-24.04
+    runs-on:
+      group: Larger Runners - OpenShift Static-IP
     strategy:
       matrix:
         package: [backend, frontend, migrations]
@@ -67,7 +68,8 @@ jobs:
     if: |
       contains(github.event.pull_request.labels.*.name, 'zap') &&
       needs.deploys-gold-dev.outputs.triggered == 'true'
-    runs-on: ubuntu-24.04
+    runs-on:
+      group: Larger Runners - OpenShift Static-IP
     strategy:
       matrix:
         name: [backend, frontend]
@@ -89,7 +91,8 @@ jobs:
     name: PR Results
     needs: [builds, deploys-gold-dev, tests, zap]
     if: always()
-    runs-on: ubuntu-24.04
+    runs-on:
+      group: Larger Runners - OpenShift Static-IP
     steps:
       - if: contains(needs.*.result, 'failure')||contains(needs.*.result, 'canceled')
         run: echo "At least one job has failed." && exit 1
