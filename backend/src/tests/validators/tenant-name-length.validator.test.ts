@@ -56,6 +56,10 @@ describe('tenant name length', () => {
         .post('/')
         .send({ name, ministryName: MINISTRY, user: TENANT_USER })
 
+    it('accepts a name of 1 character', async () => {
+      expect((await send(nameOfLength(1))).status).toBe(200)
+    })
+
     it('accepts a name of 255 characters', async () => {
       expect((await send(nameOfLength(255))).status).toBe(200)
     })
@@ -90,6 +94,10 @@ describe('tenant name length', () => {
     const app = createApp('put', '/:tenantId', validator.updateTenant)
 
     const send = (name: string) => request(app).put(`/${UUID}`).send({ name })
+
+    it('accepts a name of 1 character', async () => {
+      expect((await send(nameOfLength(1))).status).toBe(200)
+    })
 
     it('accepts a name of 255 characters', async () => {
       expect((await send(nameOfLength(255))).status).toBe(200)

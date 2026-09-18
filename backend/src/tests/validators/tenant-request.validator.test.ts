@@ -46,6 +46,22 @@ describe('tenant-request validators', () => {
       const response = await request(app).post('/').send({})
       expect(response.status).toBe(400)
     })
+
+    it('accepts a one character name', async () => {
+      const response = await request(app).post('/').send({
+        name: 'A',
+        ministryName: 'Ministry of Natural Resources',
+      })
+      expect(response.status).toBe(200)
+    })
+
+    it('rejects a name with leading or trailing spaces', async () => {
+      const response = await request(app).post('/').send({
+        name: ' Roads Initiative ',
+        ministryName: 'Ministry of Natural Resources',
+      })
+      expect(response.status).toBe(400)
+    })
   })
 
   describe('updateTenantRequestStatus', () => {
