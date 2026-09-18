@@ -88,6 +88,16 @@ jobs:
       tag: ${{ inputs.tag || steps.pr.outputs.pr }}
       triggered: ${{ steps.deploy.outputs.triggered }}
     steps:
+      - name: Get runner public IP
+        id: ip
+        run: |
+          ip=$(curl -s https://api.ipify.org)
+          echo "ipv4=$ip" >> $GITHUB_OUTPUT
+
+      - name: Use the IP
+        run: |
+          echo "The runner IP is ${{ steps.ip.outputs.ipv4 }}"
+
       - uses: bcgov/action-crunchy@e6448470ae0290ff5ce9ee5ce9bf4aef4dba8610
         name: Deploy Crunchy
         id: deploy_crunchy
