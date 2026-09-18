@@ -3338,6 +3338,145 @@ paths:
               schema:
                 $ref: '#/components/schemas/InternalServerErrorResponse'
 
+  /v1/tenants/{tenantId}/assertions:
+    post:
+      summary: Create a tenant context assertion
+      description: |
+        Authentication: Shared service audience token allowed.
+
+        Creates a short lived, signed assertion that carries the tenant info for a service to service call. The calling service is taken from the audience of the request token. Both the calling service and the target service must be associated with the tenant. If the request token belongs to a user that user must also belong to the tenant and is included in the assertion.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: tenantId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The unique identifier of the tenant
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - audience
+              properties:
+                audience:
+                  type: string
+                  minLength: 1
+                  maxLength: 255
+                  description: Client identifier of the connected service that will receive and verify the assertion
+                  example: notify-6388
+      responses:
+        '201':
+          description: Assertion successfully created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/CreateAssertionResponse'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        '403':
+          description: The calling service, the target service or the user is not associated with the tenant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+
+  /v1/assertions/verify:
+    get:
+      summary: Verify a tenant context assertion
+      description: |
+        Authentication: Shared service audience token allowed.
+
+        Verifies an assertion presented in the X-CSTAR-Assertion header. The assertion must have been issued for the calling service and the tenant relationships it carries are rechecked at the time of the call. An assertion stops verifying as soon as the issuing service or the user leaves the tenant, even if it has not expired.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: X-CSTAR-Assertion
+          in: header
+          required: true
+          schema:
+            type: string
+          description: The assertion to verify
+      responses:
+        '200':
+          description: Assertion is valid
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/VerifyAssertionResponse'
+        '400':
+          description: The X-CSTAR-Assertion header is missing or invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestResponse'
+        '401':
+          description: The assertion is not valid, has expired, or was issued for another service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        '403':
+          description: The issuing service or the user is no longer associated with the tenant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+
+  /v1/.well-known/jwks.json:
+    get:
+      summary: Get the assertion signing keys
+      description: |
+        Authentication: None. This endpoint is public.
+
+        Returns the public keys used to sign assertions, in JWKS format. A connected service can use this to verify an assertion signature on its own, without calling the verify endpoint. Verifying this way checks the signature only, not the current tenant relationships.
+      responses:
+        '200':
+          description: Signing keys successfully retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JwksResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+
 components:
   schemas:
     BasicUser:
@@ -3652,6 +3791,67 @@ components:
                         type: array
                         items:
                           $ref: '#/components/schemas/Role'
+
+    CreateAssertionResponse:
+      type: object
+      properties:
+        assertion:
+          type: string
+          description: The signed assertion, to be sent to the target service in the X-CSTAR-Assertion header
+          example: 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6ImNzdGFyLWRldi1hc3NlcnRpb24ta2V5LTEifQ...'
+        expiresAt:
+          type: string
+          format: date-time
+          description: When the assertion stops being valid
+          example: '2026-09-18T19:45:00.000Z'
+
+    VerifyAssertionResponse:
+      type: object
+      properties:
+        valid:
+          type: boolean
+          example: true
+        tenantId:
+          type: string
+          format: uuid
+          description: The tenant the assertion was issued for
+          example: 'b89c58cc-c886-4851-ae07-59bf2dab6d84'
+        azp:
+          type: string
+          description: Client identifier of the service that requested the assertion
+          example: 'chefs-frontend-5299'
+        sub:
+          type: string
+          description: The user the assertion was issued for. Absent when a service called on its own behalf.
+          example: 'F45AFBBD68C44D6F956BA3A1D91878AD'
+
+    JwksResponse:
+      type: object
+      properties:
+        keys:
+          type: array
+          items:
+            type: object
+            properties:
+              kty:
+                type: string
+                example: 'RSA'
+              n:
+                type: string
+                description: RSA modulus, base64url encoded
+              e:
+                type: string
+                example: 'AQAB'
+              alg:
+                type: string
+                example: 'RS256'
+              kid:
+                type: string
+                description: Key identifier, matching the kid in the assertion header
+                example: 'cstar-dev-assertion-key-1'
+              use:
+                type: string
+                example: 'sig'
 
     BadRequestResponse:
       type: object
