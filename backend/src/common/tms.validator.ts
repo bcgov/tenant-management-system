@@ -11,7 +11,7 @@ export default {
       name: Joi.string()
         .min(1)
         .max(255)
-        .pattern(/^\S.*\S$/)
+        .pattern(/^\S(?:.*\S)?$/)
         .required(),
       ministryName: Joi.string().min(1).max(100).required(),
       description: Joi.string().min(1).max(500).optional(),
@@ -184,7 +184,7 @@ export default {
       name: Joi.string()
         .min(1)
         .max(255)
-        .pattern(/^\S.*\S$/)
+        .pattern(/^\S(?:.*\S)?$/)
         .optional(),
       ministryName: Joi.string().min(1).max(100).optional(),
       description: Joi.string().min(1).max(500).optional(),
@@ -196,7 +196,7 @@ export default {
       name: Joi.string()
         .min(1)
         .max(255)
-        .pattern(/^\S.*\S$/)
+        .pattern(/^\S(?:.*\S)?$/)
         .required(),
       ministryName: Joi.string().min(1).max(100).required(),
       description: Joi.string().min(1).max(500).optional(),
