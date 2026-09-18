@@ -1,5 +1,5 @@
 ---
-name: Deploy Dev (Gold)
+name: Deploy Dev (Staging)
 permissions: {}
 on:
   workflow_dispatch:
@@ -70,14 +70,14 @@ on:
         required: false
         type: string
 jobs:
-  deploy-gold-dev:
-    name: Deploys Dev (Gold)
+  deploy-staging-dev:
+    name: Deploys Dev (Staging)
     uses: ./.github/workflows/.deployer.yml
     secrets: inherit
     with:
       release_name: ${{ inputs.release_name }}
       crunchy_release_name: ${{ inputs.crunchy_release_name }}
-      environment: gold-dev
+      environment: staging-dev
       db_user: ${{ inputs.db_user }} # appproxy is the user which works with pgbouncer.
       db_triggers: ('charts/crunchy/')
       params: 
@@ -95,34 +95,5 @@ jobs:
         --set backend.pdb.enabled=true
         --set backend.pdb.minAvailable=1
         --set global.domain="apps.gold.devops.gov.bc.ca"
-        ${{ inputs.params }}
-      tag: ${{ inputs.tag }}
-
-  deploy-golddr-dev:
-    if:  inputs.dr_enabled == true
-    name: Deploys Dev (Golddr)
-    uses: ./.github/workflows/.deployer.yml
-    secrets: inherit
-    with:
-      release_name: ${{ inputs.release_name }}
-      crunchy_release_name: ${{ inputs.crunchy_release_name }}
-      environment: golddr-dev
-      db_user: ${{ inputs.db_user }} # appproxy is the user which works with pgbouncer.
-      db_triggers: ('charts/crunchy/')
-      params: 
-        --set global.autoscaling=${{ inputs.autoscaling }}
-        --set frontend.autoscaling.enabled=${{ inputs.autoscaling }}
-        --set frontend.autoscaling.minReplicas=2
-        --set frontend.autoscaling.maxReplicas=3
-        --set frontend.deploymentStrategy=RollingUpdate
-        --set frontend.pdb.enabled=true
-        --set frontend.pdb.minAvailable=1
-        --set backend.autoscaling.enabled=${{ inputs.autoscaling }}
-        --set backend.autoscaling.minReplicas=2
-        --set backend.autoscaling.maxReplicas=3
-        --set backend.deploymentStrategy=RollingUpdate
-        --set backend.pdb.enabled=true
-        --set backend.pdb.minAvailable=1
-        --set global.domain="apps.golddr.devops.gov.bc.ca"
         ${{ inputs.params }}
       tag: ${{ inputs.tag }}
