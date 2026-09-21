@@ -252,7 +252,7 @@ export default {
     body: Joi.object({
       name: Joi.string()
         .min(1)
-        .max(30)
+        .max(255)
         .pattern(/^\S(?:.*\S)?$/)
         .required(),
       description: Joi.string().min(1).max(500).optional(),
@@ -268,7 +268,7 @@ export default {
     body: Joi.object({
       name: Joi.string()
         .min(1)
-        .max(30)
+        .max(255)
         .pattern(/^\S(?:.*\S)?$/)
         .optional(),
       description: Joi.string().min(1).max(500).optional(),
