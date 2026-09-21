@@ -13,9 +13,7 @@ BASE_URL=https://your-environment-url
 
 Replace the placeholder values with your actual IDIR credentials, MFA code, and environment URL.
 
-Update the .env values when switching between environments or when the application URL changes.
-
-Note: Do not commit credentials or other sensitive values to .env. Use the appropriate local configuration or GitHub Actions secrets for sensitive information.
+Note: All sensitive environment variables are stored securely in GitHub Secrets, and the repository's GitHub Actions workflows have access to them when running Playwright tests.Do not commit credentials or other sensitive values to .env. Use the appropriate local configuration or GitHub Actions secrets for sensitive information.
 
 ## Running in VS Code
 
