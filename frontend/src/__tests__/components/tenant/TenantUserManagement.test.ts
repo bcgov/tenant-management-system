@@ -129,7 +129,7 @@ describe('TenantUserManagement', () => {
       ).not.toBeInTheDocument()
 
       await fireEvent.click(
-        screen.getByRole('button', { name: 'Add another user to this tenant' }),
+        screen.getByRole('button', { name: 'Add user to tenant' }),
       )
 
       expect(
@@ -146,7 +146,7 @@ describe('TenantUserManagement', () => {
 
       expect(
         screen.queryByRole('button', {
-          name: 'Add another user to this tenant',
+          name: 'Add user to tenant',
         }),
       ).not.toBeInTheDocument()
     })
@@ -157,7 +157,7 @@ describe('TenantUserManagement', () => {
       renderComponent({ tenant: makeTenant() })
 
       expect(
-        screen.getByRole('button', { name: 'Add another user to this tenant' }),
+        screen.getByRole('button', { name: 'Add user to tenant' }),
       ).toBeInTheDocument()
     })
 
@@ -167,12 +167,12 @@ describe('TenantUserManagement', () => {
       renderComponent({ tenant: makeTenant() })
 
       await fireEvent.click(
-        screen.getByRole('button', { name: 'Add another user to this tenant' }),
+        screen.getByRole('button', { name: 'Add user to tenant' }),
       )
 
       expect(
         screen.queryByRole('button', {
-          name: 'Add another user to this tenant',
+          name: 'Add user to tenant',
         }),
       ).not.toBeInTheDocument()
     })
@@ -185,7 +185,7 @@ describe('TenantUserManagement', () => {
       renderComponent({ tenant: makeTenant() })
 
       await fireEvent.click(
-        screen.getByRole('button', { name: 'Add another user to this tenant' }),
+        screen.getByRole('button', { name: 'Add user to tenant' }),
       )
 
       expect(
@@ -200,7 +200,7 @@ describe('TenantUserManagement', () => {
       renderComponent({ possibleRoles: [role], tenant: makeTenant() })
 
       await fireEvent.click(
-        screen.getByRole('button', { name: 'Add another user to this tenant' }),
+        screen.getByRole('button', { name: 'Add user to tenant' }),
       )
       await fireEvent.click(screen.getByRole('button', { name: 'stub-select' }))
 
@@ -219,7 +219,7 @@ describe('TenantUserManagement', () => {
       const { emitted } = renderComponent({ tenant: makeTenant() })
 
       await fireEvent.click(
-        screen.getByRole('button', { name: 'Add another user to this tenant' }),
+        screen.getByRole('button', { name: 'Add user to tenant' }),
       )
       await fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
 
@@ -236,7 +236,7 @@ describe('TenantUserManagement', () => {
       renderComponent({ tenant: makeTenant() })
 
       await fireEvent.click(
-        screen.getByRole('button', { name: 'Add another user to this tenant' }),
+        screen.getByRole('button', { name: 'Add user to tenant' }),
       )
       await fireEvent.click(screen.getByRole('button', { name: 'stub-select' }))
 
@@ -253,7 +253,7 @@ describe('TenantUserManagement', () => {
       renderComponent({ tenant: makeTenant() })
 
       await fireEvent.click(
-        screen.getByRole('button', { name: 'Add another user to this tenant' }),
+        screen.getByRole('button', { name: 'Add user to tenant' }),
       )
       await fireEvent.click(screen.getByRole('button', { name: 'stub-select' }))
 
@@ -277,7 +277,7 @@ describe('TenantUserManagement', () => {
       })
 
       await fireEvent.click(
-        screen.getByRole('button', { name: 'Add another user to this tenant' }),
+        screen.getByRole('button', { name: 'Add user to tenant' }),
       )
       await fireEvent.click(screen.getByRole('button', { name: 'stub-select' }))
       await fireEvent.click(screen.getByRole('checkbox', { name: 'Role One' }))
@@ -303,7 +303,7 @@ describe('TenantUserManagement', () => {
       const { emitted } = renderComponent({ tenant: makeTenant() })
 
       await fireEvent.click(
-        screen.getByRole('button', { name: 'Add another user to this tenant' }),
+        screen.getByRole('button', { name: 'Add user to tenant' }),
       )
       await fireEvent.click(screen.getByRole('button', { name: 'stub-search' }))
 
@@ -317,7 +317,7 @@ describe('TenantUserManagement', () => {
       const { emitted } = renderComponent({ tenant: makeTenant() })
 
       await fireEvent.click(
-        screen.getByRole('button', { name: 'Add another user to this tenant' }),
+        screen.getByRole('button', { name: 'Add user to tenant' }),
       )
       await fireEvent.click(
         screen.getByRole('button', { name: 'stub-clear-search' }),

@@ -115,8 +115,9 @@ test.describe.serial('Landing page tests', () => {
         name: 'Open Menu for CHEFS Testing',
       }),
     ).toBeEnabled()
-    const addUserButton = sharedPage.getByTestId('floating-action-button')
-    await expect(addUserButton).toContainText('Add another user to this tenant')
+    const addUserButton = sharedPage.getByRole('button', {
+      name: 'Add user to tenant',
+    })
     await expect(addUserButton).toBeEnabled()
     await addUserButton.click()
   })
