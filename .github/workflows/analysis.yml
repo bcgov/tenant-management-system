@@ -110,9 +110,9 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
           args: >
-            -Dsonar.coverage.exclusions=**/types/**,**/__tests__/**,**/src/tests/**,**/tests/e2e/**
-            -Dsonar.cpd.exclusions=**/tests/e2e/**
-            -Dsonar.exclusions=**/coverage/**,**/node_modules/**,**/dist/**,**/*.config.ts,**/*.ico,**/*.png,**/*.sql
+            -Dsonar.coverage.exclusions=**/migrations/**,**/types/**,**/__tests__/**,**/tests/**
+            -Dsonar.cpd.exclusions=**/migrations/**,**/tests/e2e/**
+            -Dsonar.exclusions=**/coverage/**,**/node_modules/**,**/dist/**,**/*.config.ts,**/*.setup.ts,**/*.ico,**/*.png,**/*.sql
             -Dsonar.javascript.lcov.reportPaths=backend/coverage/lcov.info,frontend/coverage/lcov.info
             -Dsonar.organization=bcgov-sonarcloud
             -Dsonar.projectKey=bcgov_tenant-management-system
