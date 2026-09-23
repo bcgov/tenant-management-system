@@ -132,5 +132,6 @@ const groupMembersCount = computed(() => group.groupUsers.length)
 
 .text-stack p {
   margin: 0;
+  overflow-wrap: break-word;
 }
 </style>
