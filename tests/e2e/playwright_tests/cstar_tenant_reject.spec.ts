@@ -8,15 +8,13 @@ test.beforeAll(async ({ browser }: { browser: Browser }) => {
   })
   sharedPage = await context.newPage()
   await sharedPage.goto('/')
-  // Wait until the authenticated session is fully loaded
-  await expect(sharedPage.getByText('Logout')).toBeVisible({
-    timeout: 30000,
-  })
 })
 
 test.describe.serial('Landing page tests', () => {
   test('Checks the homepage', async () => {
-    await expect(sharedPage.getByText('Logout')).toBeVisible()
+    await expect(sharedPage.getByText('Logout')).toBeVisible({
+      timeout: 30000,
+    })
   })
 
   test('Checks the navigation links', async () => {
