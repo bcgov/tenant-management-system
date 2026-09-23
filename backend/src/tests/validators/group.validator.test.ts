@@ -30,6 +30,8 @@ function createApp(
 
 const VALID_UUID = '123e4567-e89b-12d3-a456-426614174000'
 
+const nameOfLength = (length: number) => 'a'.repeat(length)
+
 describe('group validators', () => {
   describe('createGroup', () => {
     const app = createApp('post', '/:tenantId/groups', validator.createGroup)
@@ -52,6 +54,20 @@ describe('group validators', () => {
         .send({ name: 'Engineering' })
       expect(response.status).toBe(400)
     })
+
+    it('accepts a name of 255 characters', async () => {
+      const response = await request(app)
+        .post(`/${VALID_UUID}/groups`)
+        .send({ name: nameOfLength(255) })
+      expect(response.status).toBe(200)
+    })
+
+    it('rejects a name of 256 characters', async () => {
+      const response = await request(app)
+        .post(`/${VALID_UUID}/groups`)
+        .send({ name: nameOfLength(256) })
+      expect(response.status).toBe(400)
+    })
   })
 
   describe('updateGroup', () => {
@@ -72,6 +88,20 @@ describe('group validators', () => {
       const response = await request(app)
         .put(`/${VALID_UUID}/groups/not-a-uuid`)
         .send({ name: 'Updated Name' })
+      expect(response.status).toBe(400)
+    })
+
+    it('accepts a name of 255 characters', async () => {
+      const response = await request(app)
+        .put(`/${VALID_UUID}/groups/${VALID_UUID}`)
+        .send({ name: nameOfLength(255) })
+      expect(response.status).toBe(200)
+    })
+
+    it('rejects a name of 256 characters', async () => {
+      const response = await request(app)
+        .put(`/${VALID_UUID}/groups/${VALID_UUID}`)
+        .send({ name: nameOfLength(256) })
       expect(response.status).toBe(400)
     })
   })

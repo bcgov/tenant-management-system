@@ -1,300 +1,352 @@
-import { flushPromises, mount } from '@vue/test-utils'
-import { afterEach, describe, expect, it, vi } from 'vitest'
-import { nextTick } from 'vue'
+import userEvent from '@testing-library/user-event'
+import { fireEvent, render, screen, waitFor } from '@testing-library/vue'
+import { describe, expect, it } from 'vitest'
 import { createVuetify } from 'vuetify'
 import * as components from 'vuetify/components'
 import * as directives from 'vuetify/directives'
 
 import GroupCreateDialog from '@/components/group/GroupCreateDialog.vue'
 
-const makeVuetify = () => {
-  return createVuetify({ components, directives })
+const vuetify = createVuetify({ components, directives })
+
+const defaultProps = {
+  isDuplicateName: false,
+  modelValue: true,
 }
 
-const mountDialog = (
-  props: { isDuplicateName?: boolean; modelValue?: boolean } = {},
-) => {
-  return mount(GroupCreateDialog, {
-    props: { isDuplicateName: false, modelValue: true, ...props },
-    global: { plugins: [makeVuetify()] },
+const renderComponent = (props = defaultProps) => {
+  return render(GroupCreateDialog, {
+    global: { plugins: [vuetify] },
+    props,
   })
 }
-
-const getNameInput = () => {
-  return document.body.querySelector('input[type="text"]') as HTMLInputElement
-}
-
-const getTextarea = () => {
-  return document.body.querySelector('textarea') as HTMLTextAreaElement
-}
-
-const getCheckbox = () => {
-  return document.body.querySelector(
-    'input[type="checkbox"]',
-  ) as HTMLInputElement
-}
-
-const setName = async (value: string) => {
-  const el = getNameInput()
-  el.value = value
-  el.dispatchEvent(new Event('input'))
-  await nextTick()
-}
-
-const setDescription = async (value: string) => {
-  const el = getTextarea()
-  el.value = value
-  el.dispatchEvent(new Event('input'))
-  await nextTick()
-}
-
-const fillValidForm = async (
-  name = 'My Group',
-  description = 'A description',
-) => {
-  await setName(name)
-  await setDescription(description)
-  await flushPromises()
-}
-
-const clickSubmit = async (wrapper: ReturnType<typeof mountDialog>) => {
-  await wrapper.findComponent({ name: 'ButtonPrimary' }).trigger('click')
-  await flushPromises()
-}
-
-let wrapper: ReturnType<typeof mountDialog>
-
-afterEach(() => {
-  wrapper.unmount()
-})
 
 describe('GroupCreateDialog', () => {
   describe('dialog visibility', () => {
     it('renders card content when modelValue is true', () => {
-      wrapper = mountDialog({ modelValue: true })
+      renderComponent()
 
-      expect(
-        document.body.querySelector('.v-card-title')?.textContent,
-      ).toContain('Create a Group')
+      expect(screen.getByText('Create a Group')).toBeInTheDocument()
     })
 
     it('does not render card content when modelValue is false', () => {
-      wrapper = mountDialog({ modelValue: false })
+      renderComponent({ ...defaultProps, modelValue: false })
 
-      expect(document.body.querySelector('.v-card-title')).toBeNull()
+      expect(screen.queryByText('Create a Group')).not.toBeInTheDocument()
     })
   })
 
   describe('closing the dialog', () => {
-    it('emits update:modelValue=false when the x icon button is clicked', async () => {
-      wrapper = mountDialog()
-      const btn = document.body.querySelector(
-        '.v-card-title .v-btn',
-      ) as HTMLElement
+    // The dialog never closes itself — it emits update:modelValue and lets
+    // the parent decide, so these assert on the emit rather than the DOM.
+    it('does not emit update:modelValue on a successful submit', async () => {
+      const user = userEvent.setup()
+      const { emitted } = renderComponent()
 
-      btn.click()
-      await nextTick()
+      await fireEvent.update(screen.getByLabelText(/group name/i), 'My Group')
+      await fireEvent.update(
+        screen.getByLabelText(/group description/i),
+        'A description',
+      )
 
-      const emissions = wrapper.emitted('update:modelValue') as boolean[][]
-      expect(emissions.at(-1)?.[0]).toBe(false)
+      await user.click(screen.getByRole('button', { name: /submit/i }))
+
+      expect(emitted('update:modelValue')).toBeFalsy()
     })
 
-    it('does NOT close the dialog on a successful submit', async () => {
-      wrapper = mountDialog()
-      await fillValidForm()
+    it('emits update:modelValue(false) when Cancel is clicked', async () => {
+      const user = userEvent.setup()
+      const { emitted } = renderComponent()
 
-      await clickSubmit(wrapper)
+      await user.click(screen.getByRole('button', { name: /cancel/i }))
 
-      expect(wrapper.emitted('update:modelValue')).toBeFalsy()
+      expect(emitted('update:modelValue')).toEqual([[false]])
+    })
+
+    it('does not emit submit when Cancel is clicked, even with a valid form', async () => {
+      const user = userEvent.setup()
+      const { emitted } = renderComponent()
+
+      await fireEvent.update(screen.getByLabelText(/group name/i), 'My Group')
+      await fireEvent.update(
+        screen.getByLabelText(/group description/i),
+        'A description',
+      )
+
+      await user.click(screen.getByRole('button', { name: /cancel/i }))
+
+      expect(emitted('submit')).toBeFalsy()
+    })
+
+    it('closes via Cancel without the form needing to be valid', async () => {
+      const user = userEvent.setup()
+      const { emitted } = renderComponent()
+      // form is left empty on purpose
+
+      await user.click(screen.getByRole('button', { name: /cancel/i }))
+
+      expect(emitted('update:modelValue')).toEqual([[false]])
+    })
+
+    it('emits update:modelValue when the dialog is closed with Escape', async () => {
+      const { emitted } = renderComponent()
+
+      await fireEvent.keyDown(document, { key: 'Escape' })
+
+      await waitFor(() => {
+        expect(emitted('update:modelValue')).toEqual([[false]])
+      })
     })
   })
 
   describe('state reset on reopen', () => {
-    it('clears name and description when dialog is reopened', async () => {
-      wrapper = mountDialog()
-      await fillValidForm('Old Name', 'Old description')
-      await wrapper.setProps({ modelValue: false })
-      await nextTick()
+    it('clears name and description when the dialog is reopened', async () => {
+      const { rerender } = renderComponent()
 
-      await wrapper.setProps({ modelValue: true })
-      await nextTick()
+      await fireEvent.update(screen.getByLabelText(/group name/i), 'Old Name')
+      await fireEvent.update(
+        screen.getByLabelText(/group description/i),
+        'Old description',
+      )
 
-      expect(getNameInput().value).toBe('')
-      expect(getTextarea().value).toBe('')
+      await rerender({ ...defaultProps, modelValue: false })
+      await rerender({ ...defaultProps, modelValue: true })
+
+      expect(screen.getByLabelText(/group name/i)).toHaveValue('')
+      expect(screen.getByLabelText(/group description/i)).toHaveValue('')
     })
 
-    it('unchecks "Add me as a user" when dialog is reopened', async () => {
-      wrapper = mountDialog()
-      getCheckbox().click()
-      await nextTick()
-      await wrapper.setProps({ modelValue: false })
-      await nextTick()
+    it('unchecks "Add me as a user" when the dialog is reopened', async () => {
+      const user = userEvent.setup()
+      const { rerender } = renderComponent()
 
-      await wrapper.setProps({ modelValue: true })
-      await nextTick()
+      await user.click(screen.getByLabelText(/add me as a user to this group/i))
+      expect(
+        screen.getByLabelText(/add me as a user to this group/i),
+      ).toBeChecked()
 
-      expect(getCheckbox().checked).toBe(false)
+      await rerender({ ...defaultProps, modelValue: false })
+      await rerender({ ...defaultProps, modelValue: true })
+
+      expect(
+        screen.getByLabelText(/add me as a user to this group/i),
+      ).not.toBeChecked()
     })
 
-    it('resets form validity so empty form cannot be submitted after reopen', async () => {
-      wrapper = mountDialog()
-      await fillValidForm()
-      await clickSubmit(wrapper)
-      await wrapper.setProps({ modelValue: false })
-      await nextTick()
-      await wrapper.setProps({ modelValue: true })
-      await nextTick()
+    it('resets form validity so an empty form cannot be submitted after reopen', async () => {
+      const user = userEvent.setup()
+      const { rerender, emitted } = renderComponent()
 
-      await clickSubmit(wrapper)
+      await fireEvent.update(screen.getByLabelText(/group name/i), 'My Group')
+      await fireEvent.update(
+        screen.getByLabelText(/group description/i),
+        'A description',
+      )
+      await user.click(screen.getByRole('button', { name: /submit/i }))
+      await rerender({ ...defaultProps, modelValue: false })
+      await rerender({ ...defaultProps, modelValue: true })
 
-      expect((wrapper.emitted('submit') as unknown[][]).length).toBe(1)
+      // Reopened with a blank form, so this click should be blocked by
+      // validation, leaving only the earlier successful submit.
+      await user.click(screen.getByRole('button', { name: /submit/i }))
+
+      expect(emitted('submit')).toHaveLength(1)
     })
   })
 
   describe('required rule', () => {
-    it('blocks submit when name is empty', async () => {
-      wrapper = mountDialog()
-      await fillValidForm('', 'Some description')
+    it.each([
+      ['name is empty', '', 'Some description'],
+      ['name is only whitespace', '   ', 'Some description'],
+      ['description is empty', 'My Group', ''],
+      ['description is only whitespace', 'My Group', '   '],
+    ])('blocks submit when %s', async (_case, name, description) => {
+      const user = userEvent.setup()
+      const { emitted } = renderComponent()
 
-      await clickSubmit(wrapper)
+      await fireEvent.update(screen.getByLabelText(/group name/i), name)
+      await fireEvent.update(
+        screen.getByLabelText(/group description/i),
+        description,
+      )
 
-      expect(wrapper.emitted('submit')).toBeFalsy()
-    })
+      await user.click(screen.getByRole('button', { name: /submit/i }))
 
-    it('blocks submit when name is only whitespace', async () => {
-      wrapper = mountDialog()
-      await fillValidForm('   ', 'Some description')
-
-      await clickSubmit(wrapper)
-
-      expect(wrapper.emitted('submit')).toBeFalsy()
-    })
-
-    it('blocks submit when description is empty', async () => {
-      wrapper = mountDialog()
-      await fillValidForm('My Group', '')
-
-      await clickSubmit(wrapper)
-
-      expect(wrapper.emitted('submit')).toBeFalsy()
-    })
-
-    it('blocks submit when description is only whitespace', async () => {
-      wrapper = mountDialog()
-      await fillValidForm('My Group', '   ')
-
-      await clickSubmit(wrapper)
-
-      expect(wrapper.emitted('submit')).toBeFalsy()
+      expect(emitted('submit')).toBeFalsy()
     })
   })
 
   describe('maxLength rule', () => {
-    it('allows name of exactly 30 characters', async () => {
-      wrapper = mountDialog()
-      await fillValidForm('A'.repeat(30), 'Some description')
+    it('allows a name of exactly 150 characters', async () => {
+      const user = userEvent.setup()
+      const { emitted } = renderComponent()
 
-      await clickSubmit(wrapper)
+      await fireEvent.update(
+        screen.getByLabelText(/group name/i),
+        'A'.repeat(150),
+      )
+      await fireEvent.update(
+        screen.getByLabelText(/group description/i),
+        'Some description',
+      )
 
-      expect(wrapper.emitted('submit')).toBeTruthy()
+      await user.click(screen.getByRole('button', { name: /submit/i }))
+
+      expect(emitted('submit')).toBeTruthy()
     })
 
-    it('blocks submit when name is 31 characters', async () => {
-      wrapper = mountDialog()
-      await fillValidForm('A'.repeat(31), 'Some description')
+    it('blocks submit when name is 151 characters', async () => {
+      const user = userEvent.setup()
+      const { emitted } = renderComponent()
 
-      await clickSubmit(wrapper)
+      await fireEvent.update(
+        screen.getByLabelText(/group name/i),
+        'A'.repeat(151),
+      )
+      await fireEvent.update(
+        screen.getByLabelText(/group description/i),
+        'Some description',
+      )
 
-      expect(wrapper.emitted('submit')).toBeFalsy()
+      await user.click(screen.getByRole('button', { name: /submit/i }))
+
+      expect(emitted('submit')).toBeFalsy()
     })
 
-    it('allows description of exactly 500 characters', async () => {
-      wrapper = mountDialog()
-      await fillValidForm('My Group', 'B'.repeat(500))
+    it('allows a description of exactly 500 characters', async () => {
+      const user = userEvent.setup()
+      const { emitted } = renderComponent()
 
-      await clickSubmit(wrapper)
+      await fireEvent.update(screen.getByLabelText(/group name/i), 'My Group')
+      await fireEvent.update(
+        screen.getByLabelText(/group description/i),
+        'B'.repeat(500),
+      )
 
-      expect(wrapper.emitted('submit')).toBeTruthy()
+      await user.click(screen.getByRole('button', { name: /submit/i }))
+
+      expect(emitted('submit')).toBeTruthy()
     })
 
     it('blocks submit when description is 501 characters', async () => {
-      wrapper = mountDialog()
-      await fillValidForm('My Group', 'B'.repeat(501))
+      const user = userEvent.setup()
+      const { emitted } = renderComponent()
 
-      await clickSubmit(wrapper)
+      await fireEvent.update(screen.getByLabelText(/group name/i), 'My Group')
+      await fireEvent.update(
+        screen.getByLabelText(/group description/i),
+        'B'.repeat(501),
+      )
 
-      expect(wrapper.emitted('submit')).toBeFalsy()
+      await user.click(screen.getByRole('button', { name: /submit/i }))
+
+      expect(emitted('submit')).toBeFalsy()
     })
   })
 
   describe('notDuplicated rule', () => {
     it('blocks submit when isDuplicateName is true', async () => {
-      wrapper = mountDialog({ isDuplicateName: true })
-      await fillValidForm()
+      const user = userEvent.setup()
+      const { emitted } = renderComponent({
+        ...defaultProps,
+        isDuplicateName: true,
+      })
 
-      await clickSubmit(wrapper)
+      await fireEvent.update(screen.getByLabelText(/group name/i), 'My Group')
+      await fireEvent.update(
+        screen.getByLabelText(/group description/i),
+        'A description',
+      )
 
-      expect(wrapper.emitted('submit')).toBeFalsy()
+      await user.click(screen.getByRole('button', { name: /submit/i }))
+
+      expect(emitted('submit')).toBeFalsy()
     })
 
     it('allows submit when isDuplicateName is false', async () => {
-      wrapper = mountDialog({ isDuplicateName: false })
-      await fillValidForm()
+      const user = userEvent.setup()
+      const { emitted } = renderComponent()
 
-      await clickSubmit(wrapper)
+      await fireEvent.update(screen.getByLabelText(/group name/i), 'My Group')
+      await fireEvent.update(
+        screen.getByLabelText(/group description/i),
+        'A description',
+      )
 
-      expect(wrapper.emitted('submit')).toBeTruthy()
+      await user.click(screen.getByRole('button', { name: /submit/i }))
+
+      expect(emitted('submit')).toBeTruthy()
     })
   })
 
   describe('submit payload', () => {
-    it('emits submit with group fields and addUser=false by default', async () => {
-      wrapper = mountDialog()
-      await fillValidForm('My Group', 'A description')
+    it('emits submit with the group fields and addUser=false by default', async () => {
+      const user = userEvent.setup()
+      const { emitted } = renderComponent()
 
-      await clickSubmit(wrapper)
+      await fireEvent.update(screen.getByLabelText(/group name/i), 'My Group')
+      await fireEvent.update(
+        screen.getByLabelText(/group description/i),
+        'A description',
+      )
 
-      const [[group, addUser]] = wrapper.emitted('submit') as [
-        object,
-        boolean,
-      ][]
+      await user.click(screen.getByRole('button', { name: /submit/i }))
+
+      const [[group, addUser]] = emitted('submit') as [object, boolean][]
       expect(group).toEqual({ name: 'My Group', description: 'A description' })
       expect(addUser).toBe(false)
     })
 
-    it('emits submit with addUser=true when checkbox is checked', async () => {
-      wrapper = mountDialog()
-      await fillValidForm()
-      getCheckbox().click()
-      await nextTick()
+    it('emits submit with addUser=true when the checkbox is checked', async () => {
+      const user = userEvent.setup()
+      const { emitted } = renderComponent()
 
-      await clickSubmit(wrapper)
+      await fireEvent.update(screen.getByLabelText(/group name/i), 'My Group')
+      await fireEvent.update(
+        screen.getByLabelText(/group description/i),
+        'A description',
+      )
+      await user.click(screen.getByLabelText(/add me as a user to this group/i))
 
-      const [[, addUser]] = wrapper.emitted('submit') as [object, boolean][]
+      await user.click(screen.getByRole('button', { name: /submit/i }))
+
+      const [[, addUser]] = emitted('submit') as [object, boolean][]
       expect(addUser).toBe(true)
     })
 
-    it('trims whitespace from name before emitting', async () => {
-      wrapper = mountDialog()
-      await fillValidForm('  Trimmed  ', 'A description')
+    it('trims whitespace from the name before emitting', async () => {
+      const user = userEvent.setup()
+      const { emitted } = renderComponent()
 
-      await clickSubmit(wrapper)
+      await fireEvent.update(
+        screen.getByLabelText(/group name/i),
+        '  Trimmed  ',
+      )
+      await fireEvent.update(
+        screen.getByLabelText(/group description/i),
+        'A description',
+      )
 
-      const [[group]] = wrapper.emitted('submit') as [
-        { name: string; description: string },
-        boolean,
-      ][]
+      await user.click(screen.getByRole('button', { name: /submit/i }))
+
+      const [[group]] = emitted('submit') as [{ name: string }, boolean][]
       expect(group.name).toBe('Trimmed')
     })
 
-    it('trims whitespace from description before emitting', async () => {
-      wrapper = mountDialog()
-      await fillValidForm('My Group', '  Trimmed description  ')
+    it('trims whitespace from the description before emitting', async () => {
+      const user = userEvent.setup()
+      const { emitted } = renderComponent()
 
-      await clickSubmit(wrapper)
+      await fireEvent.update(screen.getByLabelText(/group name/i), 'My Group')
+      await fireEvent.update(
+        screen.getByLabelText(/group description/i),
+        '  Trimmed description  ',
+      )
 
-      const [[group]] = wrapper.emitted('submit') as [
-        { name: string; description: string },
+      await user.click(screen.getByRole('button', { name: /submit/i }))
+
+      const [[group]] = emitted('submit') as [
+        { description: string },
         boolean,
       ][]
       expect(group.description).toBe('Trimmed description')
@@ -302,64 +354,82 @@ describe('GroupCreateDialog', () => {
   })
 
   describe('watcher: isDuplicateName triggers revalidation', () => {
-    it('calls form.validate() when isDuplicateName changes to true', async () => {
-      wrapper = mountDialog({ isDuplicateName: false })
-      const vm = wrapper.vm as unknown as {
-        form: { validate: () => Promise<void> }
-      }
-      const validateSpy = vi.spyOn(vm.form, 'validate')
+    it('surfaces the duplicate-name error as soon as isDuplicateName becomes true', async () => {
+      const { rerender } = renderComponent()
 
-      await wrapper.setProps({ isDuplicateName: true })
-      await flushPromises()
+      await fireEvent.update(screen.getByLabelText(/group name/i), 'My Group')
+      await fireEvent.update(
+        screen.getByLabelText(/group description/i),
+        'A description',
+      )
+      expect(
+        screen.queryByText(/this name is already in use/i),
+      ).not.toBeInTheDocument()
 
-      expect(validateSpy).toHaveBeenCalledOnce()
+      await rerender({ ...defaultProps, isDuplicateName: true })
+
+      expect(
+        await screen.findByText(/this name is already in use/i),
+      ).toBeInTheDocument()
     })
 
-    it('calls form.validate() when isDuplicateName changes back to false', async () => {
-      wrapper = mountDialog({ isDuplicateName: true })
-      const vm = wrapper.vm as unknown as {
-        form: { validate: () => Promise<void> }
-      }
-      const validateSpy = vi.spyOn(vm.form, 'validate')
+    it('allows submission again once isDuplicateName changes back to false', async () => {
+      const user = userEvent.setup()
+      const { rerender, emitted } = renderComponent({
+        ...defaultProps,
+        isDuplicateName: true,
+      })
 
-      await wrapper.setProps({ isDuplicateName: false })
-      await flushPromises()
+      await fireEvent.update(screen.getByLabelText(/group name/i), 'My Group')
+      await fireEvent.update(
+        screen.getByLabelText(/group description/i),
+        'A description',
+      )
+      await user.click(screen.getByRole('button', { name: /submit/i }))
+      expect(emitted('submit')).toBeFalsy()
 
-      expect(validateSpy).toHaveBeenCalledOnce()
+      await rerender({ ...defaultProps, isDuplicateName: false })
+
+      await fireEvent.update(
+        screen.getByLabelText(/group name/i),
+        'A Different Group',
+      )
+
+      await user.click(screen.getByRole('button', { name: /submit/i }))
+
+      expect(emitted('submit')).toBeTruthy()
     })
   })
 
   describe('watcher: name change clears duplicate error', () => {
-    it('emits clear-duplicate-error when name field changes', async () => {
-      wrapper = mountDialog()
+    it('emits clear-duplicate-error when the name field changes', async () => {
+      const { emitted } = renderComponent()
 
-      await setName('New Name')
-      await nextTick()
+      await fireEvent.update(screen.getByLabelText(/group name/i), 'New Name')
 
-      expect(wrapper.emitted('clear-duplicate-error')).toBeTruthy()
+      expect(emitted('clear-duplicate-error')).toBeTruthy()
     })
 
-    it('emits clear-duplicate-error even when name is cleared', async () => {
-      wrapper = mountDialog()
-      await setName('Something')
+    it('emits clear-duplicate-error even when the name is cleared', async () => {
+      const { emitted } = renderComponent()
 
-      await setName('')
-      await nextTick()
+      await fireEvent.update(screen.getByLabelText(/group name/i), 'Something')
 
-      const emissions = wrapper.emitted('clear-duplicate-error') as unknown[][]
-      expect(emissions.length).toBeGreaterThanOrEqual(2)
+      await fireEvent.update(screen.getByLabelText(/group name/i), '')
+
+      expect(emitted('clear-duplicate-error')).toHaveLength(2)
     })
 
-    it('does NOT emit clear-duplicate-error when only description changes', async () => {
-      wrapper = mountDialog()
-      const before = (wrapper.emitted('clear-duplicate-error') ?? []).length
+    it('does not emit clear-duplicate-error when only the description changes', async () => {
+      const { emitted } = renderComponent()
+      const before = (emitted('clear-duplicate-error') ?? []).length
 
-      await setDescription('Changed description')
-      await nextTick()
-
-      expect((wrapper.emitted('clear-duplicate-error') ?? []).length).toBe(
-        before,
+      await fireEvent.update(
+        screen.getByLabelText(/group description/i),
+        'Changed description',
       )
+
+      expect(emitted('clear-duplicate-error') ?? []).toHaveLength(before)
     })
   })
 })

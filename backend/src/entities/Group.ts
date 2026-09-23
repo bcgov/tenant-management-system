@@ -20,7 +20,7 @@ export class Group {
   @PrimaryGeneratedColumn('uuid', { name: 'id' })
   id!: string
 
-  @Column({ type: 'varchar', length: 30, name: 'name' })
+  @Column({ type: 'varchar', length: 255, name: 'name' })
   name!: string
 
   @Column({ type: 'varchar', length: 500, name: 'description', nullable: true })
