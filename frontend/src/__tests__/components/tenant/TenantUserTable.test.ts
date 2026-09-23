@@ -304,7 +304,7 @@ describe('TenantUserTable', () => {
       )
       expect(screen.getByText('Confirm Role Removal')).toBeInTheDocument()
 
-      await fireEvent.click(screen.getByRole('button', { name: 'Remove' }))
+      await fireEvent.click(screen.getByRole('button', { name: 'Remove Role' }))
 
       expect(emitted()['remove-role']).toHaveLength(1)
       expect(emitted()['remove-role'][0]).toEqual([user, role])

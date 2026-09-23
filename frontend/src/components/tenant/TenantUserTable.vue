@@ -47,7 +47,7 @@ const modifyingUserIndex = ref<number | null>(null)
 const removeRoleDialog = ref({
   buttons: [
     { action: 'cancel', text: 'Cancel', type: 'secondary' as const },
-    { action: 'remove', text: 'Remove', type: 'primary' as const },
+    { action: 'remove', text: 'Remove Role', type: 'primary' as const },
   ],
   message: 'Are you sure you want to remove this role from the user?',
   title: 'Confirm Role Removal',
