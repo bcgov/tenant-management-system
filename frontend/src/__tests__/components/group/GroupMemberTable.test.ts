@@ -243,7 +243,7 @@ describe('GroupMemberTable', () => {
       await fireEvent.click(
         screen.getByLabelText('Open Menu for firstName lastName'),
       )
-      await fireEvent.click(await screen.findByText('Remove Member'))
+      await fireEvent.click(await screen.findByText('Remove member'))
       await fireEvent.click(
         screen.getByRole('button', { name: 'Remove Member' }),
       )
@@ -271,7 +271,7 @@ describe('GroupMemberTable', () => {
       await fireEvent.click(
         screen.getByLabelText('Open Menu for firstName lastName'),
       )
-      await fireEvent.click(await screen.findByText('Remove Member'))
+      await fireEvent.click(await screen.findByText('Remove member'))
       await fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
 
       expect(emitted()['remove-member']).toBeUndefined()
