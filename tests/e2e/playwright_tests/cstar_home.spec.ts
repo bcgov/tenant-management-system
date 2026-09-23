@@ -66,7 +66,7 @@ test.describe.serial('Landing page tests', () => {
     ).toBeVisible()
     await sharedPage.getByText('Approved', { exact: true }).click()
     // Approve Tenant request
-    await sharedPage.getByRole('button', { name: 'Submit' }).click()
+    await sharedPage.getByRole('button', { name: 'Update status' }).click()
     await expect(sharedPage.getByText('Success')).toBeVisible()
     await expect(
       sharedPage.getByText('Tenant request has been successfully updated'),
