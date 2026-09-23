@@ -8,6 +8,10 @@ test.beforeAll(async ({ browser }: { browser: Browser }) => {
   })
   sharedPage = await context.newPage()
   await sharedPage.goto('/')
+  // Wait until the authenticated session is fully loaded
+  await expect(sharedPage.getByText('Logout')).toBeVisible({
+    timeout: 30000,
+  })
 })
 
 test.describe.serial('Landing page tests', () => {
@@ -16,8 +20,12 @@ test.describe.serial('Landing page tests', () => {
   })
 
   test('Checks the navigation links', async () => {
-    await expect(sharedPage.getByText('All Tenants')).toBeVisible()
-    await expect(sharedPage.getByText('Request a Tenant')).toBeVisible()
+    await expect(
+      sharedPage.getByText('All Tenants', { exact: true }),
+    ).toBeVisible({ timeout: 30000 })
+    await expect(
+      sharedPage.getByText('Request a Tenant', { exact: true }),
+    ).toBeVisible({ timeout: 30000 })
   })
 
   test('Submit tenant request under a Ministry', async () => {
