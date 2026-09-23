@@ -25,6 +25,7 @@ spec:
       labels:
         {{- include "backend.labels" . | nindent 8 }}
     spec:
+      automountServiceAccountToken: false
       securityContext:
         runAsNonRoot: true
         seccompProfile:
@@ -58,6 +59,7 @@ spec:
           resources:
             requests:
               cpu: 5m
+              ephemeral-storage: 500Mi
               memory: 200Mi
             limits:
               memory: 8Gi
@@ -150,6 +152,7 @@ spec:
           resources: # this is optional
             requests:
               cpu: 5m
+              ephemeral-storage: 500Mi
               memory: 200Mi
             limits:
               memory: 8Gi

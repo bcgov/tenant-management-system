@@ -2140,7 +2140,7 @@ paths:
                 name:
                   type: string
                   minLength: 1
-                  maxLength: 30
+                  maxLength: 255
                   pattern: '^\S(?:.*\S)?$'
                   example: 'Development Team'
                 description:
@@ -2387,7 +2387,7 @@ paths:
                 name:
                   type: string
                   minLength: 1
-                  maxLength: 30
+                  maxLength: 255
                   pattern: '^\S(?:.*\S)?$'
                   example: 'Updated Development Team'
                 description:
@@ -4082,7 +4082,7 @@ components:
         name:
           type: string
           minLength: 1
-          maxLength: 30
+          maxLength: 255
           example: 'Development Team'
         description:
           type: string
