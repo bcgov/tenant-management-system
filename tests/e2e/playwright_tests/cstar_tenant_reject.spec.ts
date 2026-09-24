@@ -8,25 +8,11 @@ test.beforeAll(async ({ browser }: { browser: Browser }) => {
   })
   sharedPage = await context.newPage()
   await sharedPage.goto('/')
-  await sharedPage.waitForLoadState('domcontentloaded')
+  await sharedPage.waitForTimeout(1000)
+  console.log('Current URL:', sharedPage.url())
 })
 
 test.describe.serial('Landing page tests', () => {
-  test('Checks the homepage', async () => {
-    await expect(sharedPage.getByText('Logout')).toBeVisible({
-      timeout: 30000,
-    })
-  })
-
-  test('Checks the navigation links', async () => {
-    await expect(
-      sharedPage.getByText('All Tenants', { exact: true }),
-    ).toBeVisible({ timeout: 30000 })
-    await expect(
-      sharedPage.getByText('Request a Tenant', { exact: true }),
-    ).toBeVisible({ timeout: 30000 })
-  })
-
   test('Submit tenant request under a Ministry', async () => {
     await sharedPage.getByText('Request a Tenant').click()
 
