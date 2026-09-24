@@ -26,7 +26,7 @@ import { notificationService } from './notification.service'
 export class GroupService {
   public async createGroup(req: Request) {
     const input: CreateGroupInputDto = {
-      tenantId: req.params.tenantId,
+      tenantId: req.params.tenantId as string,
       name: req.body.name,
       description: req.body.description,
       tenantUserId: req.body.tenantUserId,
@@ -93,8 +93,8 @@ export class GroupService {
 
     await connection.manager.transaction(async (tx) => {
       try {
-        const tenantId: string = req.params.tenantId
-        const groupId: string = req.params.groupId
+        const tenantId: string = req.params.tenantId as string
+        const groupId: string = req.params.groupId as string
         const { user } = req.body
         const updatedBy: string = req.decodedJwt?.idir_user_guid || 'system'
 
@@ -141,7 +141,10 @@ export class GroupService {
     }
 
     if (isNewTenantUser && addedTenantUserId) {
-      await this.notifyUserAddedToTenant(addedTenantUserId, req.params.groupId)
+      await this.notifyUserAddedToTenant(
+        addedTenantUserId,
+        req.params.groupId as string,
+      )
     } else if (addedGroupUserId) {
       await this.notifyUserAddedToGroup(addedGroupUserId, {
         ssoUserId: req.decodedJwt?.idir_user_guid || 'system',
@@ -159,8 +162,8 @@ export class GroupService {
 
   public async updateGroup(req: Request) {
     const input: UpdateGroupInputDto = {
-      tenantId: req.params.tenantId,
-      groupId: req.params.groupId,
+      tenantId: req.params.tenantId as string,
+      groupId: req.params.groupId as string,
       name: req.body.name,
       description: req.body.description,
       updatedBy: req.decodedJwt?.idir_user_guid || 'system',
@@ -261,9 +264,9 @@ export class GroupService {
 
   public async removeGroupUser(req: Request) {
     const input: RemoveGroupUserInputDto = {
-      tenantId: req.params.tenantId,
-      groupId: req.params.groupId,
-      groupUserId: req.params.groupUserId,
+      tenantId: req.params.tenantId as string,
+      groupId: req.params.groupId as string,
+      groupUserId: req.params.groupUserId as string,
       updatedBy: req.decodedJwt?.idir_user_guid || 'system',
     }
     await connection.manager.transaction(async (tx) => {
@@ -295,8 +298,8 @@ export class GroupService {
     const expandParam =
       typeof req.query.expand === 'string' ? req.query.expand : undefined
     const input: GetGroupInputDto = {
-      tenantId: req.params.tenantId,
-      groupId: req.params.groupId,
+      tenantId: req.params.tenantId as string,
+      groupId: req.params.groupId as string,
       expand: expandParam ? expandParam.split(',') : [],
     }
     const group = await groupRepository.getGroup(input)
@@ -310,7 +313,7 @@ export class GroupService {
 
   public async getTenantGroups(req: Request) {
     const input: GetTenantGroupsInputDto = {
-      tenantId: req.params.tenantId,
+      tenantId: req.params.tenantId as string,
       ssoUserId: req.decodedJwt?.idir_user_guid,
       jwtAudience:
         req.decodedJwt?.aud ||
@@ -329,8 +332,8 @@ export class GroupService {
 
   public async getSharedServiceRolesForGroup(req: Request) {
     const input: GetSharedServiceRolesForGroupInputDto = {
-      tenantId: req.params.tenantId,
-      groupId: req.params.groupId,
+      tenantId: req.params.tenantId as string,
+      groupId: req.params.groupId as string,
     }
     const sharedServices =
       await groupRepository.getSharedServiceRolesForGroup(input)
@@ -344,8 +347,8 @@ export class GroupService {
 
   public async updateSharedServiceRolesForGroup(req: Request) {
     const input: UpdateSharedServiceRolesForGroupInputDto = {
-      tenantId: req.params.tenantId,
-      groupId: req.params.groupId,
+      tenantId: req.params.tenantId as string,
+      groupId: req.params.groupId as string,
       updatedBy: req.decodedJwt?.idir_user_guid || 'system',
       sharedServices: req.body.sharedServices,
     }
@@ -370,8 +373,8 @@ export class GroupService {
     }
 
     const input: GetUserGroupsWithSharedServiceRolesInputDto = {
-      tenantId: req.params.tenantId,
-      ssoUserId: req.params.ssoUserId,
+      tenantId: req.params.tenantId as string,
+      ssoUserId: req.params.ssoUserId as string,
       audience,
       idpType: req.idpType,
     }
@@ -393,8 +396,8 @@ export class GroupService {
     }
 
     const input: GetEffectiveSharedServiceRolesInputDto = {
-      tenantId: req.params.tenantId,
-      ssoUserId: req.params.ssoUserId,
+      tenantId: req.params.tenantId as string,
+      ssoUserId: req.params.ssoUserId as string,
       audience,
       idpType: req.idpType,
     }

@@ -47,7 +47,7 @@ export class SharedServiceService {
 
   public async updateSharedService(req: Request) {
     const input: UpdateSharedServiceInputDto = {
-      sharedServiceId: req.params.sharedServiceId,
+      sharedServiceId: req.params.sharedServiceId as string,
       name: req.body.name,
       displayName: req.body.displayName,
       clientIdentifier: req.body.clientIdentifier,
@@ -67,7 +67,7 @@ export class SharedServiceService {
 
   public async addSharedServiceRoles(req: Request) {
     const input: AddSharedServiceRolesInputDto = {
-      sharedServiceId: req.params.sharedServiceId,
+      sharedServiceId: req.params.sharedServiceId as string,
       roles: req.body.roles,
       updatedBy: req.decodedJwt?.idir_user_guid || 'system',
     }
@@ -83,8 +83,8 @@ export class SharedServiceService {
 
   public async updateSharedServiceRole(req: Request) {
     const input: UpdateSharedServiceRoleInputDto = {
-      sharedServiceId: req.params.sharedServiceId,
-      sharedServiceRoleId: req.params.sharedServiceRoleId,
+      sharedServiceId: req.params.sharedServiceId as string,
+      sharedServiceRoleId: req.params.sharedServiceRoleId as string,
       name: req.body.name,
       description: req.body.description,
       allowedIdentityProviders: req.body.allowedIdentityProviders,
@@ -102,7 +102,7 @@ export class SharedServiceService {
 
   public async updateSharedServiceStatus(req: Request) {
     const input: UpdateSharedServiceStatusInputDto = {
-      sharedServiceId: req.params.sharedServiceId,
+      sharedServiceId: req.params.sharedServiceId as string,
       isActive: req.body.isActive,
       updatedBy: req.decodedJwt?.idir_user_guid || 'system',
     }
@@ -118,7 +118,7 @@ export class SharedServiceService {
 
   public async associateSharedServiceToTenant(req: Request) {
     const input: AssociateSharedServiceToTenantInputDto = {
-      tenantId: req.params.tenantId,
+      tenantId: req.params.tenantId as string,
       sharedServiceId: req.body.sharedServiceId,
       updatedBy: req.decodedJwt?.idir_user_guid || 'system',
     }
@@ -147,7 +147,7 @@ export class SharedServiceService {
 
   public async getSharedServicesForTenant(req: Request) {
     const input: GetSharedServicesForTenantInputDto = {
-      tenantId: req.params.tenantId,
+      tenantId: req.params.tenantId as string,
     }
     const sharedServices =
       await sharedServiceRepository.getSharedServicesForTenant(input)
