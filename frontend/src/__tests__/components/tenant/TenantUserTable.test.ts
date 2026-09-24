@@ -304,7 +304,7 @@ describe('TenantUserTable', () => {
       )
       expect(screen.getByText('Confirm Role Removal')).toBeInTheDocument()
 
-      await fireEvent.click(screen.getByRole('button', { name: 'Remove' }))
+      await fireEvent.click(screen.getByRole('button', { name: 'Remove role' }))
 
       expect(emitted()['remove-role']).toHaveLength(1)
       expect(emitted()['remove-role'][0]).toEqual([user, role])
@@ -333,7 +333,7 @@ describe('TenantUserTable', () => {
     })
   })
 
-  describe('Offboard User action', () => {
+  describe('Remove user action', () => {
     it('is enabled when there are multiple tenant owners', async () => {
       const userA = makeUser({
         roles: [makeRoleTenantOwner()],
@@ -357,10 +357,10 @@ describe('TenantUserTable', () => {
         screen.getByLabelText('Open Menu for firstNameA lastNameA'),
       )
 
-      const offboardItem = screen.getByLabelText(
-        'Offboard User firstNameA lastNameA',
+      const removeItem = screen.getByLabelText(
+        'Remove user firstNameA lastNameA',
       )
-      expect(isVuetifyDisabled(offboardItem)).toBe(false)
+      expect(isVuetifyDisabled(removeItem)).toBe(false)
     })
 
     it('is disabled when the user is the sole tenant owner', async () => {
@@ -379,10 +379,8 @@ describe('TenantUserTable', () => {
         screen.getByLabelText('Open Menu for firstName lastName'),
       )
 
-      const offboardItem = screen.getByLabelText(
-        'Offboard User firstName lastName',
-      )
-      expect(isVuetifyDisabled(offboardItem)).toBe(true)
+      const removeItem = screen.getByLabelText('Remove user firstName lastName')
+      expect(isVuetifyDisabled(removeItem)).toBe(true)
     })
 
     it('emits remove-user after confirming', async () => {
@@ -399,12 +397,9 @@ describe('TenantUserTable', () => {
       await fireEvent.click(
         screen.getByLabelText('Open Menu for firstName lastName'),
       )
-      await fireEvent.click(await screen.findByText('Offboard User'))
-      expect(screen.getByText('Offboarding User')).toBeInTheDocument()
+      await fireEvent.click(await screen.findByText('Remove user'))
 
-      await fireEvent.click(
-        screen.getByRole('button', { name: 'Offboard User' }),
-      )
+      await fireEvent.click(screen.getByRole('button', { name: 'Remove user' }))
 
       expect(emitted()['remove-user']).toHaveLength(1)
       expect(emitted()['remove-user'][0]).toEqual([user])
@@ -424,7 +419,7 @@ describe('TenantUserTable', () => {
       await fireEvent.click(
         screen.getByLabelText('Open Menu for firstName lastName'),
       )
-      await fireEvent.click(await screen.findByText('Offboard User'))
+      await fireEvent.click(await screen.findByText('Remove user'))
       await fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
 
       expect(emitted()['remove-user']).toBeUndefined()

@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { mdiPlusBox } from '@mdi/js'
+import { mdiPlus } from '@mdi/js'
 import { computed, ref } from 'vue'
 
 import GroupMemberTable from '@/components/group/GroupMemberTable.vue'
 import UserSearch from '@/components/group/UserSearch.vue'
-import FloatingActionButton from '@/components/ui/FloatingActionButton.vue'
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
 import { type Group } from '@/models/group.model'
@@ -106,9 +105,9 @@ const toggleSearch = () => {
       class="mt-4"
     >
       <v-col class="d-flex justify-start" cols="12">
-        <FloatingActionButton
-          :icon="mdiPlusBox"
-          text="Add Member to Group"
+        <ButtonPrimary
+          :prepend-icon="mdiPlus"
+          text="Add member to group"
           @click="toggleSearch"
         />
       </v-col>

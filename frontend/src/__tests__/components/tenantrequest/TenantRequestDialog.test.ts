@@ -51,7 +51,9 @@ describe('form validation', () => {
       'A description',
     )
 
-    await user.click(screen.getByRole('button', { name: /submit request/i }))
+    await user.click(
+      screen.getByRole('button', { name: /create tenant request/i }),
+    )
 
     expect(screen.getByText('Required')).toBeInTheDocument()
     expect(emitted('submit')).toBeUndefined()
@@ -61,7 +63,9 @@ describe('form validation', () => {
     const user = userEvent.setup()
     const { emitted } = renderComponent()
 
-    await user.click(screen.getByRole('button', { name: /submit request/i }))
+    await user.click(
+      screen.getByRole('button', { name: /create tenant request/i }),
+    )
 
     expect(screen.getAllByText('Required')).toHaveLength(3)
     expect(emitted('submit')).toBeUndefined()
@@ -76,7 +80,9 @@ describe('form validation', () => {
     await user.click(screen.getByLabelText(/ministry\/organization/i))
     await user.click(screen.getByRole('option', { name: MINISTRIES[0] }))
 
-    await user.click(screen.getByRole('button', { name: /submit request/i }))
+    await user.click(
+      screen.getByRole('button', { name: /create tenant request/i }),
+    )
 
     expect(screen.getByText('Required')).toBeInTheDocument()
     expect(emitted('submit')).toBeUndefined()
@@ -87,7 +93,9 @@ describe('form validation', () => {
     const { emitted } = renderComponent()
 
     await user.type(screen.getByLabelText(/name of tenant/i), '   ')
-    await user.click(screen.getByRole('button', { name: /submit request/i }))
+    await user.click(
+      screen.getByRole('button', { name: /create tenant request/i }),
+    )
 
     expect(screen.getByText('Cannot be only spaces')).toBeInTheDocument()
     expect(emitted('submit')).toBeUndefined()
@@ -98,7 +106,9 @@ describe('form validation', () => {
     const { emitted } = renderComponent()
 
     await user.type(screen.getByLabelText(/description of tenant/i), '   ')
-    await user.click(screen.getByRole('button', { name: /submit request/i }))
+    await user.click(
+      screen.getByRole('button', { name: /create tenant request/i }),
+    )
 
     expect(screen.getByText('Cannot be only spaces')).toBeInTheDocument()
     expect(emitted('submit')).toBeUndefined()
@@ -113,7 +123,7 @@ describe('form validation', () => {
     )
 
     await fireEvent.click(
-      screen.getByRole('button', { name: /submit request/i }),
+      screen.getByRole('button', { name: /create tenant request/i }),
     )
 
     expect(
@@ -131,7 +141,7 @@ describe('form validation', () => {
     )
 
     await fireEvent.click(
-      screen.getByRole('button', { name: /submit request/i }),
+      screen.getByRole('button', { name: /create tenant request/i }),
     )
 
     expect(
@@ -156,7 +166,9 @@ describe('submitting', () => {
       '  A description  ',
     )
 
-    await user.click(screen.getByRole('button', { name: /submit request/i }))
+    await user.click(
+      screen.getByRole('button', { name: /create tenant request/i }),
+    )
 
     expect(emitted('submit')).toEqual([
       [
@@ -192,7 +204,9 @@ describe('submitting', () => {
       ).toBeInTheDocument()
     })
 
-    await user.click(screen.getByRole('button', { name: /submit request/i }))
+    await user.click(
+      screen.getByRole('button', { name: /create tenant request/i }),
+    )
 
     expect(emitted('submit')).toBeUndefined()
   })

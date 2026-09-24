@@ -119,7 +119,7 @@ describe('GroupMemberManagement', () => {
       })
 
       expect(
-        screen.queryByRole('button', { name: 'Add Member to Group' }),
+        screen.queryByRole('button', { name: 'Add member to group' }),
       ).not.toBeInTheDocument()
     })
 
@@ -132,7 +132,7 @@ describe('GroupMemberManagement', () => {
       })
 
       expect(
-        screen.queryByRole('button', { name: 'Add Member to Group' }),
+        screen.queryByRole('button', { name: 'Add member to group' }),
       ).not.toBeInTheDocument()
     })
 
@@ -145,7 +145,7 @@ describe('GroupMemberManagement', () => {
       })
 
       expect(
-        screen.getByRole('button', { name: 'Add Member to Group' }),
+        screen.getByRole('button', { name: 'Add member to group' }),
       ).toBeInTheDocument()
     })
 
@@ -158,11 +158,11 @@ describe('GroupMemberManagement', () => {
       })
 
       await fireEvent.click(
-        screen.getByRole('button', { name: 'Add Member to Group' }),
+        screen.getByRole('button', { name: 'Add member to group' }),
       )
 
       expect(
-        screen.queryByRole('button', { name: 'Add Member to Group' }),
+        screen.queryByRole('button', { name: 'Add member to group' }),
       ).not.toBeInTheDocument()
     })
   })
@@ -177,7 +177,7 @@ describe('GroupMemberManagement', () => {
       })
 
       await fireEvent.click(
-        screen.getByRole('button', { name: 'Add Member to Group' }),
+        screen.getByRole('button', { name: 'Add member to group' }),
       )
 
       expect(screen.getByRole('button', { name: 'Add Member' })).toBeDisabled()
@@ -198,7 +198,7 @@ describe('GroupMemberManagement', () => {
       })
 
       await fireEvent.click(
-        screen.getByRole('button', { name: 'Add Member to Group' }),
+        screen.getByRole('button', { name: 'Add member to group' }),
       )
       await fireEvent.click(screen.getByRole('button', { name: 'Add Member' }))
 
@@ -217,7 +217,7 @@ describe('GroupMemberManagement', () => {
       })
 
       await fireEvent.click(
-        screen.getByRole('button', { name: 'Add Member to Group' }),
+        screen.getByRole('button', { name: 'Add member to group' }),
       )
       await fireEvent.click(screen.getByRole('button', { name: 'stub-select' }))
       await fireEvent.click(screen.getByRole('button', { name: 'Add Member' }))
@@ -239,7 +239,7 @@ describe('GroupMemberManagement', () => {
       })
 
       await fireEvent.click(
-        screen.getByRole('button', { name: 'Add Member to Group' }),
+        screen.getByRole('button', { name: 'Add member to group' }),
       )
       await fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
 
@@ -260,7 +260,7 @@ describe('GroupMemberManagement', () => {
       })
 
       await fireEvent.click(
-        screen.getByRole('button', { name: 'Add Member to Group' }),
+        screen.getByRole('button', { name: 'Add member to group' }),
       )
       await fireEvent.click(screen.getByRole('button', { name: 'stub-search' }))
 
@@ -277,7 +277,7 @@ describe('GroupMemberManagement', () => {
       })
 
       await fireEvent.click(
-        screen.getByRole('button', { name: 'Add Member to Group' }),
+        screen.getByRole('button', { name: 'Add member to group' }),
       )
       await fireEvent.click(
         screen.getByRole('button', { name: 'stub-clear-search' }),

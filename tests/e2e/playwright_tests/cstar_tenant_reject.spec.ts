@@ -49,7 +49,9 @@ test.describe.serial('Landing page tests', () => {
 
     await tenantDescription.fill('Test Tenant Description')
 
-    await sharedPage.getByText('Submit Request').click()
+    await sharedPage
+      .getByRole('button', { name: 'Create tenant request' })
+      .click()
 
     await expect(sharedPage.getByText('Success')).toBeVisible()
 
@@ -78,7 +80,7 @@ test.describe.serial('Landing page tests', () => {
     const rejectionNotes = sharedPage.getByLabel('Rejection Notes')
     await rejectionNotes.fill('Test rejection reason')
     //Reject Tenant request
-    await sharedPage.getByRole('button', { name: 'Submit' }).click()
+    await sharedPage.getByRole('button', { name: 'Update status' }).click()
     await expect(sharedPage.getByText('Success')).toBeVisible()
     await expect(
       sharedPage.getByText('Tenant request has been successfully updated'),

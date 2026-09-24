@@ -156,7 +156,7 @@ const rules = {
 
       <v-card-actions class="d-flex justify-end">
         <ButtonSecondary class="me-4" text="Cancel" @click="dialogClose" />
-        <ButtonPrimary text="Submit Request" @click="handleSubmit" />
+        <ButtonPrimary text="Create tenant request" @click="handleSubmit" />
       </v-card-actions>
     </v-card>
   </v-dialog>

@@ -46,7 +46,9 @@ test.describe.serial('Landing page tests', () => {
       .click()
     const tenantDescription = sharedPage.getByLabel('Description of Tenant')
     await tenantDescription.fill('Test Tenant Description')
-    await sharedPage.getByText('Submit Request').click()
+    await sharedPage
+      .getByRole('button', { name: 'Create tenant request' })
+      .click()
     await expect(sharedPage.getByText('Success')).toBeVisible()
     await sharedPage.getByText('settings').click()
     await sharedPage
@@ -66,7 +68,7 @@ test.describe.serial('Landing page tests', () => {
     ).toBeVisible()
     await sharedPage.getByText('Approved', { exact: true }).click()
     // Approve Tenant request
-    await sharedPage.getByRole('button', { name: 'Submit' }).click()
+    await sharedPage.getByRole('button', { name: 'Update status' }).click()
     await expect(sharedPage.getByText('Success')).toBeVisible()
     await expect(
       sharedPage.getByText('Tenant request has been successfully updated'),
@@ -115,8 +117,9 @@ test.describe.serial('Landing page tests', () => {
         name: 'Open Menu for CHEFS Testing',
       }),
     ).toBeEnabled()
-    const addUserButton = sharedPage.getByTestId('floating-action-button')
-    await expect(addUserButton).toContainText('Add another user to this tenant')
+    const addUserButton = sharedPage.getByRole('button', {
+      name: 'Add user to tenant',
+    })
     await expect(addUserButton).toBeEnabled()
     await addUserButton.click()
   })
@@ -252,14 +255,14 @@ test.describe.serial('Landing page tests', () => {
     })
     await expect(menuButton).toBeEnabled()
     await menuButton.click()
-    await sharedPage.getByText('Offboard User', { exact: true }).click()
+    await sharedPage.getByText('Remove user', { exact: true }).click()
     const cancelButton = sharedPage.getByTestId('button-cancel')
     await expect(cancelButton).toBeEnabled()
     const removeButton = sharedPage.getByTestId('button-remove')
     await expect(removeButton).toBeEnabled()
     await sharedPage
       .getByRole('button', {
-        name: 'Offboard User',
+        name: 'Remove User',
       })
       .click()
     await expect(sharedPage.getByText('User Removed')).toBeVisible()
