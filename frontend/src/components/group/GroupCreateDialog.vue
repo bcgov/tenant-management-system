@@ -73,7 +73,7 @@ watch(
 
 const dialogClose = () => (dialogVisible.value = false)
 
-const handleSubmit = () => {
+const handleCreate = () => {
   form.value?.validate()
 
   if (isFormValid.value) {
@@ -164,7 +164,7 @@ const rules = {
       </v-card-text>
       <v-card-actions class="d-flex justify-end">
         <ButtonSecondary class="me-4" text="Cancel" @click="dialogClose" />
-        <ButtonPrimary text="Submit" @click="handleSubmit" />
+        <ButtonPrimary text="Create group" @click="handleCreate" />
       </v-card-actions>
     </v-card>
   </v-dialog>
