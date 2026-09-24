@@ -399,7 +399,7 @@ describe('TenantUserTable', () => {
       )
       await fireEvent.click(await screen.findByText('Remove user'))
 
-      await fireEvent.click(screen.getByRole('button', { name: 'Remove User' }))
+      await fireEvent.click(screen.getByRole('button', { name: 'Remove user' }))
 
       expect(emitted()['remove-user']).toHaveLength(1)
       expect(emitted()['remove-user'][0]).toEqual([user])

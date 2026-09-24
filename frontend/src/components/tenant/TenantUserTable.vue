@@ -59,14 +59,14 @@ const removeUserDialog = ref({
     { action: 'cancel', text: 'Cancel', type: 'secondary' as const },
     {
       action: 'remove',
-      text: 'Remove User',
+      text: 'Remove user',
       type: 'primary' as const,
     },
   ],
   message:
     "This action will remove this user's tenant and group memberships. They " +
     'will no longer have access to any systems using CSTAR.',
-  title: 'Confirm User Removal',
+  title: 'Confirm user removal',
   visible: false,
 })
 
