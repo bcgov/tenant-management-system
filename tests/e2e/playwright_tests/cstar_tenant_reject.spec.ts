@@ -49,7 +49,9 @@ test.describe.serial('Landing page tests', () => {
 
     await tenantDescription.fill('Test Tenant Description')
 
-    await sharedPage.getByText('Submit Request').click()
+    await sharedPage
+      .getByRole('button', { name: 'Create tenant request' })
+      .click()
 
     await expect(sharedPage.getByText('Success')).toBeVisible()
 
