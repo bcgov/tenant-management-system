@@ -8,6 +8,7 @@ test.beforeAll(async ({ browser }: { browser: Browser }) => {
   })
   sharedPage = await context.newPage()
   await sharedPage.goto('/')
+  await sharedPage.waitForLoadState('domcontentloaded')
 })
 
 test.describe.serial('Landing page tests', () => {
