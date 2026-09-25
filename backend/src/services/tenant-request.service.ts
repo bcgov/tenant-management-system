@@ -101,7 +101,7 @@ export class TenantRequestService {
 
   public async updateTenantRequestStatus(req: Request) {
     const input: UpdateTenantRequestStatusInputDto = {
-      requestId: req.params.requestId,
+      requestId: req.params.requestId as string,
       status: req.body.status,
       rejectionReason: req.body.rejectionReason,
       tenantName: req.body.tenantName,
@@ -173,7 +173,7 @@ export class TenantRequestService {
   public async getUserTenantRequests(req: Request) {
     const input: GetTenantRequestsInputDto = {
       status: 'NEW',
-      ssoUserId: req.params.ssoUserId,
+      ssoUserId: req.params.ssoUserId as string,
     }
     const tenantRequests =
       await tenantRequestRepository.getTenantRequests(input)
