@@ -85,12 +85,25 @@
       "type": "shell"
     },
     {
+      "args": ["run", "test:e2e"],
+      "command": "npm",
+      "group": "test",
+      "label": "Playwright - E2E Tests",
+      "options": {
+        "cwd": "${workspaceFolder}/tests/e2e"
+      },
+      "problemMatcher": [],
+      "type": "shell"
+    },
+    {
       "command": "sh docker_start.sh",
       "label": "Integration Tests - Start Dependencies",
       "options": {
         "cwd": "${workspaceFolder}/tests/integration"
       },
-      "presentation": { "reveal": "always" },
+      "presentation": {
+        "reveal": "always"
+      },
       "type": "shell"
     },
     {
@@ -99,7 +112,9 @@
       "options": {
         "cwd": "${workspaceFolder}/tests/integration"
       },
-      "presentation": { "reveal": "always" },
+      "presentation": {
+        "reveal": "always"
+      },
       "type": "shell"
     }
   ],
