@@ -25,4 +25,4 @@ cd "$REPOSITORY_ROOT/tests/e2e"
 npm ci --ignore-scripts
 
 echo "==> Installing Playwright browsers"
-./node_modules/.bin/playwright install --with-deps chromium
+./node_modules/.bin/playwright install chromium

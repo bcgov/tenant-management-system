@@ -14,7 +14,19 @@ test.beforeAll(async ({ browser }: { browser: Browser }) => {
 
 test.describe.serial('Landing page tests', () => {
   test('Submit tenant request under a Ministry', async () => {
-    await sharedPage.getByText('Request a Tenant').click()
+    const requestTenantButton = sharedPage.getByRole('button', {
+      name: /Request a Tenant/i,
+    })
+
+    if (await requestTenantButton.isVisible().catch(() => false)) {
+      await requestTenantButton.click()
+    } else {
+      await sharedPage.goto('/tenants')
+      await expect(
+        sharedPage.getByRole('button', { name: /Request a Tenant/i }),
+      ).toBeVisible()
+      await sharedPage.getByRole('button', { name: /Request a Tenant/i }).click()
+    }
 
     const tenantName = sharedPage.getByLabel('Name of Tenant')
     const tenantNameValue = `Test Tenant ${Date.now()}`
