@@ -37,6 +37,7 @@ export interface AppConfig {
     jwksUri: string
     tmsAudience: string
   }
+  pocApiKey?: string
   port: number
   postgres: {
     database: string
@@ -152,6 +153,7 @@ export function loadConfig() {
       jwksUri: process.env.JWKS_URI,
       tmsAudience: process.env.TMS_AUDIENCE,
     },
+    pocApiKey: process.env.POC_API_KEY,
     port: process.env.PORT ? Number.parseInt(process.env.PORT, 10) : 4144,
     postgres: {
       database: process.env.POSTGRES_DATABASE,

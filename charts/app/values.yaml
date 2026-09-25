@@ -57,6 +57,8 @@ backend:
   bcgovSsoApiUrlBceid: ~
   #-- the token URL, used for looking up BCeID users
   bcgovTokenUrl: ~
+  #-- the key for the POC routes. leave unset and the POC routes do not exist
+  pocApiKey: ~
   #-- the JWT audience for the application, used for JWT validation
   tmsAudience: ~
   #-- enable or disable backend
