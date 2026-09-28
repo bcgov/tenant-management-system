@@ -6,7 +6,7 @@ import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
 import { useNotification } from '@/composables/useNotification'
 import { type RoleId } from '@/models/role.model'
-import { type Tenant, type TenantId } from '@/models/tenant.model'
+import { type Tenant } from '@/models/tenant.model'
 import { type User, type UserId } from '@/models/user.model'
 import { useRoleStore } from '@/stores/useRoleStore'
 import { useTenantStore } from '@/stores/useTenantStore'
@@ -22,7 +22,7 @@ const notification = useNotification()
 // --- Component Interface -----------------------------------------------------
 
 const { tenant, userIndex } = defineProps<{
-  tenant: Tenant | null
+  tenant: Tenant
   userIndex: number | null
 }>()
 
@@ -69,12 +69,7 @@ const items = ref<Array<{ role: string; description: string; value: boolean }>>(
 watch(
   () => userIndex,
   (newIndex) => {
-    if (
-      tenant &&
-      newIndex !== null &&
-      newIndex >= 0 &&
-      newIndex < tenant.users.length
-    ) {
+    if (newIndex !== null && newIndex >= 0 && newIndex < tenant.users.length) {
       const newUser = tenant.users[newIndex]
       updateState(newUser)
     }
@@ -111,12 +106,7 @@ const roleLookup = computed(() => [
 ])
 
 const user = computed<User | null>(() => {
-  if (
-    tenant &&
-    userIndex !== null &&
-    userIndex >= 0 &&
-    userIndex < tenant.users.length
-  ) {
+  if (userIndex !== null && userIndex >= 0 && userIndex < tenant.users.length) {
     const newUser = tenant.users[userIndex]
     updateState(newUser)
 
@@ -152,7 +142,7 @@ const handleSave = async () => {
     if (roleIds.length > 0) {
       // TODO
       await tenantStore.assignTenantUserRoles(
-        tenant as Tenant,
+        tenant,
         user?.value?.id as UserId,
         roleIds as RoleId[],
         fullRoleIds,
@@ -164,7 +154,7 @@ const handleSave = async () => {
       for (const removeId of removeIds) {
         // TODO
         await tenantStore.removeTenantUserRole(
-          tenant?.id as TenantId,
+          tenant.id,
           user?.value?.id as UserId,
           removeId as RoleId,
         )
