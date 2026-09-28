@@ -4,30 +4,22 @@ import { computed, ref } from 'vue'
 
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
-import { useNotification } from '@/composables/useNotification'
-import { type RoleId } from '@/models/role.model'
-import { type Tenant } from '@/models/tenant.model'
+import { Role, type RoleId } from '@/models/role.model'
 import { type User } from '@/models/user.model'
-import { useRoleStore } from '@/stores/useRoleStore'
-import { useTenantStore } from '@/stores/useTenantStore'
 import { ROLES } from '@/utils/constants'
 import { isIdpBceidBusiness } from '@/utils/identityProvider'
 
-// TODO: non-container components should not directly use stores - they should
-// emit events and let the parent container handle the store interactions.
-// Refactor this component to follow that pattern.
-const tenantStore = useTenantStore()
-const roleStore = useRoleStore()
-const notification = useNotification()
-
 // --- Component Interface -----------------------------------------------------
 
-const { tenant, user } = defineProps<{
-  tenant: Tenant
+const { roles, user } = defineProps<{
+  roles: Role[]
   user: User
 }>()
 
-const emit = defineEmits(['update:openDialog'])
+const emit = defineEmits<{
+  'roles-changed': [RoleId[], RoleId[]]
+  'update:openDialog': [boolean]
+}>()
 
 // --- Component State ---------------------------------------------------------
 
@@ -35,9 +27,9 @@ const defaultValues = ref<boolean[]>([])
 
 const dialogVisible = defineModel<boolean>()
 
-const items = ref<Array<{ description: string; role: string; value: boolean }>>(
-  [],
-)
+const items = ref<
+  Array<{ description: string; role: string; roleName: string; value: boolean }>
+>([])
 
 // --- Computed Values ---------------------------------------------------------
 
@@ -62,71 +54,30 @@ const hasChanges = computed(() => {
   return false
 })
 
-const roleLookup = computed(() => [
-  roleStore.roles.find((r) => r.name === ROLES.TENANT_OWNER.value),
-  roleStore.roles.find((r) => r.name === ROLES.USER_ADMIN.value),
-  roleStore.roles.find((r) => r.name === ROLES.SERVICE_USER.value),
-])
-
 // --- Component Methods -------------------------------------------------------
 
-const handleSave = async () => {
-  const roleIds = []
-  const fullRoleIds = []
-  const removeIds = []
+const handleSave = () => {
+  const rolesToAdd: RoleId[] = []
+  const rolesToRemove: RoleId[] = []
 
-  //built array of roles to add/remove
-  for (let i = 0; i < items.value.length; i++) {
-    if (items.value[i].value) {
-      fullRoleIds.push(roleLookup.value?.[i]?.id as string)
-      if (!defaultValues.value[i]) {
-        roleIds.push(roleLookup.value?.[i]?.id as string)
-      }
-    } else if (!items.value[i].value && defaultValues.value[i]) {
-      if (roleLookup?.value?.[i]?.id !== undefined) {
-        removeIds.push(roleLookup.value?.[i]?.id as string)
-      }
-    }
-  }
+  items.value.forEach((item, index) => {
+    const role = roles.find((r) => r.name === item.roleName)
 
-  try {
-    //add first because remove fails if last role
-    if (roleIds.length > 0) {
-      // TODO
-      await tenantStore.assignTenantUserRoles(
-        tenant,
-        user.id,
-        roleIds as RoleId[],
-        fullRoleIds,
-      )
+    if (role === undefined) {
+      return
     }
 
-    //remove any that aren't added
-    if (removeIds.length > 0) {
-      for (const removeId of removeIds) {
-        // TODO
-        await tenantStore.removeTenantUserRole(
-          tenant.id,
-          user.id,
-          removeId as RoleId,
-        )
-      }
+    if (item.value && !defaultValues.value[index]) {
+      rolesToAdd.push(role.id)
     }
 
-    //success, show notification toast
-    notification.success('Roles updated successfully')
-    emit('update:openDialog', false)
-    // TODO: remove this
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  } catch (error: any) {
-    // show the best possible error message in error case
-    const msg =
-      error.response?.data?.details?.body?.[0]?.message ||
-      error.response?.data?.message ||
-      error.message
-    notification.error(`Failed to update roles: ${msg}`)
-    console.error('Error updating roles:', error)
-  }
+    if (!item.value && defaultValues.value[index]) {
+      rolesToRemove.push(role.id)
+    }
+  })
+
+  emit('roles-changed', rolesToAdd, rolesToRemove)
+  emit('update:openDialog', false)
 }
 
 const initializeState = () => {
@@ -135,6 +86,7 @@ const initializeState = () => {
         {
           description: ROLES.SERVICE_USER.description,
           role: ROLES.SERVICE_USER.title,
+          roleName: ROLES.SERVICE_USER.value,
           value: user.roles.some(
             (role) => role.name === ROLES.SERVICE_USER.value,
           ),
@@ -144,6 +96,7 @@ const initializeState = () => {
         {
           description: ROLES.TENANT_OWNER.description,
           role: ROLES.TENANT_OWNER.title,
+          roleName: ROLES.TENANT_OWNER.value,
           value: user.roles.some(
             (role) => role.name === ROLES.TENANT_OWNER.value,
           ),
@@ -151,6 +104,7 @@ const initializeState = () => {
         {
           description: ROLES.USER_ADMIN.description,
           role: ROLES.USER_ADMIN.title,
+          roleName: ROLES.USER_ADMIN.value,
           value: user.roles.some(
             (role) => role.name === ROLES.USER_ADMIN.value,
           ),
@@ -158,6 +112,7 @@ const initializeState = () => {
         {
           description: ROLES.SERVICE_USER.description,
           role: ROLES.SERVICE_USER.title,
+          roleName: ROLES.SERVICE_USER.value,
           value: user.roles.some(
             (role) => role.name === ROLES.SERVICE_USER.value,
           ),

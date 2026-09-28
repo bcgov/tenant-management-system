@@ -9,7 +9,7 @@ import { computed, ref } from 'vue'
 
 import RoleDialog from '@/components/tenant/RoleDialog.vue'
 import SimpleDialog from '@/components/ui/SimpleDialog.vue'
-import { type Role } from '@/models/role.model'
+import { type Role, type RoleId } from '@/models/role.model'
 import { type Tenant } from '@/models/tenant.model'
 import { type User } from '@/models/user.model'
 import { ROLES } from '@/utils/constants'
@@ -28,6 +28,7 @@ type TableHeaderItem = {
 // --- Component Interface -----------------------------------------------------
 
 const { tenant, users } = defineProps<{
+  roles: Role[]
   tenant: Tenant
   users: User[]
 }>()
@@ -36,6 +37,7 @@ const emit = defineEmits<{
   'add-user': [User]
   'remove-role': [User, Role]
   'remove-user': [User]
+  'roles-changed': [User, RoleId[], RoleId[]]
 }>()
 
 // --- Component State ---------------------------------------------------------
@@ -194,6 +196,12 @@ const handleRemoveUserButtonClick = (action: string) => {
   selectedUser.value = null
 }
 
+const handleRolesChanged = (rolesToAdd: RoleId[], rolesToRemove: RoleId[]) => {
+  if (modifyingUser.value) {
+    emit('roles-changed', modifyingUser.value, rolesToAdd, rolesToRemove)
+  }
+}
+
 const showEditRolesDialog = (user: User) => {
   modifyingUser.value = user
   editRolesDialogVisible.value = true
@@ -315,8 +323,9 @@ const showRemoveUserDialog = (user: User) => {
   <RoleDialog
     v-if="modifyingUser"
     v-model="editRolesDialogVisible"
-    :tenant="tenant"
+    :roles="roles"
     :user="modifyingUser"
+    @roles-changed="handleRolesChanged"
     @update:open-dialog="handleEditRolesDialog"
   />
 

@@ -159,31 +159,37 @@ export const makeRoleApiData = (
   }
 }
 
-export const makeRoleOperationsAdmin = (): Role => {
+export const makeRoleOperationsAdmin = (
+  overrides: Partial<Role> = {},
+): Role => {
   return makeRole({
     description: ROLES.OPERATIONS_ADMIN.title,
     name: ROLES.OPERATIONS_ADMIN.value,
+    ...overrides,
   })
 }
 
-export const makeRoleServiceUser = (): Role => {
+export const makeRoleServiceUser = (overrides: Partial<Role> = {}): Role => {
   return makeRole({
     description: ROLES.SERVICE_USER.title,
     name: ROLES.SERVICE_USER.value,
+    ...overrides,
   })
 }
 
-export const makeRoleTenantOwner = (): Role => {
+export const makeRoleTenantOwner = (overrides: Partial<Role> = {}): Role => {
   return makeRole({
     description: ROLES.TENANT_OWNER.title,
     name: ROLES.TENANT_OWNER.value,
+    ...overrides,
   })
 }
 
-export const makeRoleUserAdmin = (): Role => {
+export const makeRoleUserAdmin = (overrides: Partial<Role> = {}): Role => {
   return makeRole({
     description: ROLES.USER_ADMIN.title,
     name: ROLES.USER_ADMIN.value,
+    ...overrides,
   })
 }
 

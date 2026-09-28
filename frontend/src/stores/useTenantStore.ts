@@ -74,10 +74,7 @@ export const useTenantStore = defineStore('tenant', () => {
     tenant: Tenant,
     userId: UserId,
     roleIds: RoleId[],
-    fullRoleIds?: string[],
   ): Promise<void> => {
-    fullRoleIds ??= roleIds
-
     const roleStore = useRoleStore()
     await tenantService.assignUserRoles(tenant.id, userId, roleIds)
 
@@ -86,11 +83,9 @@ export const useTenantStore = defineStore('tenant', () => {
       throw new Error(`User with ID ${userId} not found in tenant ${tenant.id}`)
     }
 
-    const newRoles = roleStore.roles.filter((role) => {
-      return fullRoleIds.includes(role.id)
-    })
+    const newRoles = roleStore.roles.filter((role) => roleIds.includes(role.id))
 
-    user.roles = newRoles
+    user.roles = [...user.roles, ...newRoles]
   }
 
   /**

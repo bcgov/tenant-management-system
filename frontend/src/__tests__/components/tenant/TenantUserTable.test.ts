@@ -34,7 +34,7 @@ vi.mock('@/components/tenant/RoleDialog.vue', () => ({
   default: {
     emits: ['update:open-dialog'],
     name: 'RoleDialog',
-    props: ['modelValue', 'tenant', 'user'],
+    props: ['modelValue', 'roles', 'user'],
     template:
       '<div v-if="modelValue" data-testid="role-dialog">' +
       'Editing user: {{ user.ssoUser.displayName }}' +
@@ -42,6 +42,9 @@ vi.mock('@/components/tenant/RoleDialog.vue', () => ({
       '@click="$emit(\'update:open-dialog\', false)">Close</button>' +
       '<button data-testid="dismiss-role-dialog" ' +
       '@click="$emit(\'update:modelValue\', false)">Dismiss</button>' +
+      '<button data-testid="change-roles-dialog" ' +
+      "@click=\"$emit('roles-changed', ['role-2', 'role-3'], ['role-1'])\">" +
+      'Change</button>' +
       '</div>',
   },
 }))
@@ -53,7 +56,14 @@ function renderComponent(props: { tenant: Tenant; users: User[] }) {
     global: {
       plugins: [vuetify],
     },
-    props,
+    props: {
+      ...props,
+      roles: [
+        makeRoleServiceUser(),
+        makeRoleTenantOwner(),
+        makeRoleUserAdmin(),
+      ],
+    },
   })
 }
 
@@ -527,6 +537,65 @@ describe('TenantUserTable', () => {
       await fireEvent.click(screen.getByTestId('dismiss-role-dialog'))
 
       expect(screen.queryByTestId('role-dialog')).not.toBeInTheDocument()
+    })
+
+    it('emits roles-changed with the edited user and both role lists', async () => {
+      const userA = makeUser({
+        id: toUserId('a'),
+        roles: [makeRoleTenantOwner()],
+        ssoUser: makeSsoUser({
+          firstName: 'firstNameA',
+          lastName: 'lastNameA',
+        }),
+      })
+      const userB = makeUser({
+        id: toUserId('b'),
+        roles: [makeRoleUserAdmin()],
+        ssoUser: makeSsoUser({
+          firstName: 'firstNameB',
+          lastName: 'lastNameB',
+        }),
+      })
+      const tenant = makeTenant({ users: [userA, userB] })
+      vi.mocked(currentUserHasRole).mockReturnValue(true)
+
+      const { emitted } = renderComponent({ tenant, users: [userA, userB] })
+
+      await fireEvent.click(
+        screen.getByLabelText('Open Menu for firstNameB lastNameB'),
+      )
+      await fireEvent.click(
+        screen.getByLabelText('Edit Tenant Roles for firstNameB lastNameB'),
+      )
+      await fireEvent.click(screen.getByTestId('change-roles-dialog'))
+
+      expect(emitted()['roles-changed']).toHaveLength(1)
+      expect(emitted()['roles-changed'][0]).toEqual([
+        userB,
+        ['role-2', 'role-3'],
+        ['role-1'],
+      ])
+    })
+
+    it('does not emit roles-changed just by opening the dialog', async () => {
+      const user = makeUser({
+        roles: [makeRoleUserAdmin()],
+        ssoUser: makeSsoUser({ firstName: 'firstName', lastName: 'lastName' }),
+      })
+      const tenant = makeTenant({ users: [user] })
+      vi.mocked(currentUserHasRole).mockReturnValue(true)
+
+      const { emitted } = renderComponent({ tenant, users: [user] })
+
+      await fireEvent.click(
+        screen.getByLabelText('Open Menu for firstName lastName'),
+      )
+      await fireEvent.click(
+        screen.getByLabelText('Edit Tenant Roles for firstName lastName'),
+      )
+
+      expect(screen.getByTestId('role-dialog')).toBeInTheDocument()
+      expect(emitted()['roles-changed']).toBeUndefined()
     })
   })
 })
