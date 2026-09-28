@@ -11,12 +11,15 @@ import {
 
 import GroupHeaderContainer from '@/components/route/GroupHeaderContainer.vue'
 import { useNotification } from '@/composables/useNotification'
-import { toGroupId } from '@/models/group.model'
+import { DomainError } from '@/errors/domain/DomainError'
+import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
+import { ServerError } from '@/errors/domain/ServerError'
+import { type GroupDetailFields, toGroupId } from '@/models/group.model'
+import { toGroupServiceId } from '@/models/groupservice.model'
 import { toGroupServiceRoleId } from '@/models/groupservicerole.model'
 import { toTenantId } from '@/models/tenant.model'
 import { useGroupStore } from '@/stores/useGroupStore'
 import { useTenantStore } from '@/stores/useTenantStore'
-import { toGroupServiceId } from '@/models/groupservice.model'
 
 vi.mock('@/composables/useNotification', () => ({
   useNotification: vi.fn(),
@@ -38,6 +41,12 @@ const mountComponent = () =>
     },
   })
 
+// TODO: adjust to match the real shape of GroupDetailFields.
+const groupDetails = {
+  description: 'New description',
+  name: 'New name',
+} as GroupDetailFields
+
 describe('GroupHeaderContainer', () => {
   let groupStore: ReturnType<typeof useGroupStore>
   let notificationMock: ReturnType<typeof useNotification>
@@ -51,6 +60,7 @@ describe('GroupHeaderContainer', () => {
 
     groupStore.fetchGroup = vi.fn().mockResolvedValue(undefined)
     groupStore.fetchGroupServices = vi.fn().mockResolvedValue(undefined)
+    groupStore.updateGroupDetails = vi.fn().mockResolvedValue(undefined)
 
     notificationMock = {
       items: [],
@@ -154,5 +164,177 @@ describe('GroupHeaderContainer', () => {
     const wrapper = mountComponent()
 
     expect(wrapper.find('[data-testid="router-view"]').exists()).toBe(true)
+  })
+
+  describe('edit dialog', () => {
+    const getHeader = (wrapper: ReturnType<typeof mountComponent>) =>
+      wrapper.getComponent({ name: 'GroupHeader' })
+
+    const submitEdit = async (wrapper: ReturnType<typeof mountComponent>) => {
+      getHeader(wrapper).vm.$emit('submit', groupDetails)
+      await flushPromises()
+    }
+
+    const openDialog = async (wrapper: ReturnType<typeof mountComponent>) => {
+      getHeader(wrapper).vm.$emit('update:dialogVisible', true)
+      await flushPromises()
+    }
+
+    it('starts with the dialog closed and no duplicate error', () => {
+      const header = getHeader(mountComponent())
+
+      expect(header.props('dialogVisible')).toBe(false)
+      expect(header.props('isDuplicateName')).toBe(false)
+    })
+
+    it('updates dialogVisible when GroupHeader emits update:dialogVisible', async () => {
+      const wrapper = mountComponent()
+
+      await openDialog(wrapper)
+      expect(getHeader(wrapper).props('dialogVisible')).toBe(true)
+
+      getHeader(wrapper).vm.$emit('update:dialogVisible', false)
+      await flushPromises()
+      expect(getHeader(wrapper).props('dialogVisible')).toBe(false)
+    })
+
+    it('updates the group details when the form is submitted', async () => {
+      const wrapper = mountComponent()
+
+      await submitEdit(wrapper)
+
+      expect(groupStore.updateGroupDetails).toHaveBeenCalledWith(
+        'tenantId1',
+        'groupId1',
+        groupDetails,
+      )
+    })
+
+    it('shows a success notification and closes the dialog on success', async () => {
+      const wrapper = mountComponent()
+      await openDialog(wrapper)
+
+      await submitEdit(wrapper)
+
+      expect(notificationMock.success).toHaveBeenCalledWith(
+        'Group updated successfully',
+      )
+      expect(notificationMock.error).not.toHaveBeenCalled()
+      expect(getHeader(wrapper).props('dialogVisible')).toBe(false)
+    })
+
+    describe('when the update fails', () => {
+      it('flags a duplicate name and keeps the dialog open on DuplicateEntityError', async () => {
+        groupStore.updateGroupDetails = vi
+          .fn()
+          .mockRejectedValue(new DuplicateEntityError())
+        const wrapper = mountComponent()
+        await openDialog(wrapper)
+
+        await submitEdit(wrapper)
+
+        expect(getHeader(wrapper).props('isDuplicateName')).toBe(true)
+        expect(getHeader(wrapper).props('dialogVisible')).toBe(true)
+        expect(notificationMock.error).not.toHaveBeenCalled()
+        expect(notificationMock.success).not.toHaveBeenCalled()
+      })
+
+      it('clears the duplicate name error when GroupHeader emits clear-duplicate-error', async () => {
+        groupStore.updateGroupDetails = vi
+          .fn()
+          .mockRejectedValue(new DuplicateEntityError())
+        const wrapper = mountComponent()
+        await submitEdit(wrapper)
+        expect(getHeader(wrapper).props('isDuplicateName')).toBe(true)
+
+        getHeader(wrapper).vm.$emit('clear-duplicate-error')
+        await flushPromises()
+
+        expect(getHeader(wrapper).props('isDuplicateName')).toBe(false)
+      })
+
+      it('resets the duplicate name error after a subsequent successful submit', async () => {
+        groupStore.updateGroupDetails = vi
+          .fn()
+          .mockRejectedValueOnce(new DuplicateEntityError())
+          .mockResolvedValueOnce(undefined)
+        const wrapper = mountComponent()
+        await openDialog(wrapper)
+
+        await submitEdit(wrapper)
+        expect(getHeader(wrapper).props('isDuplicateName')).toBe(true)
+
+        await submitEdit(wrapper)
+
+        expect(getHeader(wrapper).props('isDuplicateName')).toBe(false)
+        expect(getHeader(wrapper).props('dialogVisible')).toBe(false)
+        expect(notificationMock.success).toHaveBeenCalledTimes(1)
+      })
+
+      it('shows the userMessage for a DomainError that has one', async () => {
+        groupStore.updateGroupDetails = vi
+          .fn()
+          .mockRejectedValue(new DomainError('message', 'userMessage'))
+        const wrapper = mountComponent()
+        await openDialog(wrapper)
+
+        await submitEdit(wrapper)
+
+        expect(notificationMock.error).toHaveBeenCalledWith('userMessage')
+        expect(getHeader(wrapper).props('isDuplicateName')).toBe(false)
+        expect(getHeader(wrapper).props('dialogVisible')).toBe(true)
+      })
+
+      it('shows the userMessage for a ServerError that has one', async () => {
+        groupStore.updateGroupDetails = vi
+          .fn()
+          .mockRejectedValue(new ServerError('userMessage'))
+        const wrapper = mountComponent()
+
+        await submitEdit(wrapper)
+
+        expect(notificationMock.error).toHaveBeenCalledWith('userMessage')
+      })
+
+      it('falls back to a default message for a ServerError without a userMessage', async () => {
+        groupStore.updateGroupDetails = vi
+          .fn()
+          .mockRejectedValue(new ServerError())
+        const wrapper = mountComponent()
+
+        await submitEdit(wrapper)
+
+        expect(notificationMock.error).toHaveBeenCalledWith(
+          'Failed to update the group',
+        )
+      })
+
+      it('shows a default message for an unknown error and keeps the dialog open', async () => {
+        groupStore.updateGroupDetails = vi
+          .fn()
+          .mockRejectedValue(new Error('unexpected'))
+        const wrapper = mountComponent()
+        await openDialog(wrapper)
+
+        await submitEdit(wrapper)
+
+        expect(notificationMock.error).toHaveBeenCalledWith(
+          'Failed to update the group',
+        )
+        expect(notificationMock.success).not.toHaveBeenCalled()
+        expect(getHeader(wrapper).props('dialogVisible')).toBe(true)
+      })
+
+      it('shows a default message when a non-Error value is thrown', async () => {
+        groupStore.updateGroupDetails = vi.fn().mockRejectedValue('nope')
+        const wrapper = mountComponent()
+
+        await submitEdit(wrapper)
+
+        expect(notificationMock.error).toHaveBeenCalledWith(
+          'Failed to update the group',
+        )
+      })
+    })
   })
 })
