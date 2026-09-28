@@ -33,26 +33,11 @@ const items = ref<
 
 // --- Computed Values ---------------------------------------------------------
 
-const atLeastOneRole = computed(() => {
-  for (const item of items.value) {
-    if (item.value) {
-      return true
-    }
-  }
+const atLeastOneRole = computed(() => items.value.some((item) => item.value))
 
-  return false
-})
-
-// watch state for changes based on default values
-const hasChanges = computed(() => {
-  for (let i = 0; i < items.value.length; i++) {
-    if (items.value[i].value !== defaultValues.value[i]) {
-      return true
-    }
-  }
-
-  return false
-})
+const hasChanges = computed(() =>
+  items.value.some((item, i) => item.value !== defaultValues.value[i]),
+)
 
 // --- Component Methods -------------------------------------------------------
 
