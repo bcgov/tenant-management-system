@@ -16,6 +16,8 @@ const { roles, user } = defineProps<{
   user: User
 }>()
 
+const dialogVisible = defineModel<boolean>()
+
 const emit = defineEmits<{
   'roles-changed': [RoleId[], RoleId[]]
   'update:openDialog': [boolean]
@@ -23,12 +25,14 @@ const emit = defineEmits<{
 
 // --- Component State ---------------------------------------------------------
 
-const defaultValues = ref<boolean[]>([])
-
-const dialogVisible = defineModel<boolean>()
-
 const items = ref<
-  Array<{ description: string; role: string; roleName: string; value: boolean }>
+  Array<{
+    description: string
+    role: string
+    roleName: string
+    value: boolean
+    valueInitial: boolean
+  }>
 >([])
 
 // --- Computed Values ---------------------------------------------------------
@@ -36,7 +40,7 @@ const items = ref<
 const atLeastOneRole = computed(() => items.value.some((item) => item.value))
 
 const hasChanges = computed(() =>
-  items.value.some((item, i) => item.value !== defaultValues.value[i]),
+  items.value.some((item) => item.value !== item.valueInitial),
 )
 
 // --- Component Methods -------------------------------------------------------
@@ -45,66 +49,49 @@ const handleSave = () => {
   const rolesToAdd: RoleId[] = []
   const rolesToRemove: RoleId[] = []
 
-  items.value.forEach((item, index) => {
+  for (const item of items.value) {
+    if (item.value === item.valueInitial) {
+      continue
+    }
+
     const role = roles.find((r) => r.name === item.roleName)
-
-    if (role === undefined) {
-      return
+    if (!role) {
+      continue
     }
 
-    if (item.value && !defaultValues.value[index]) {
+    if (item.value) {
       rolesToAdd.push(role.id)
-    }
-
-    if (!item.value && defaultValues.value[index]) {
+    } else {
       rolesToRemove.push(role.id)
     }
-  })
+  }
 
   emit('roles-changed', rolesToAdd, rolesToRemove)
   emit('update:openDialog', false)
 }
 
-const initializeState = () => {
-  items.value = isIdpBceidBusiness(user.ssoUser.idpType)
-    ? [
-        {
-          description: ROLES.SERVICE_USER.description,
-          role: ROLES.SERVICE_USER.title,
-          roleName: ROLES.SERVICE_USER.value,
-          value: user.roles.some(
-            (role) => role.name === ROLES.SERVICE_USER.value,
-          ),
-        },
-      ]
-    : [
-        {
-          description: ROLES.TENANT_OWNER.description,
-          role: ROLES.TENANT_OWNER.title,
-          roleName: ROLES.TENANT_OWNER.value,
-          value: user.roles.some(
-            (role) => role.name === ROLES.TENANT_OWNER.value,
-          ),
-        },
-        {
-          description: ROLES.USER_ADMIN.description,
-          role: ROLES.USER_ADMIN.title,
-          roleName: ROLES.USER_ADMIN.value,
-          value: user.roles.some(
-            (role) => role.name === ROLES.USER_ADMIN.value,
-          ),
-        },
-        {
-          description: ROLES.SERVICE_USER.description,
-          role: ROLES.SERVICE_USER.title,
-          roleName: ROLES.SERVICE_USER.value,
-          value: user.roles.some(
-            (role) => role.name === ROLES.SERVICE_USER.value,
-          ),
-        },
-      ]
+const toItem = (role: {
+  description: string
+  title: string
+  value: string
+}) => {
+  const assigned = user.roles.some((r) => r.name === role.value)
 
-  defaultValues.value = items.value.map((item) => item.value)
+  return {
+    description: role.description,
+    role: role.title,
+    roleName: role.value,
+    value: assigned,
+    valueInitial: assigned,
+  }
+}
+
+const initializeState = () => {
+  const availableRoles = isIdpBceidBusiness(user.ssoUser.idpType)
+    ? [ROLES.SERVICE_USER]
+    : [ROLES.TENANT_OWNER, ROLES.USER_ADMIN, ROLES.SERVICE_USER]
+
+  items.value = availableRoles.map(toItem)
 }
 
 initializeState()
