@@ -79,7 +79,6 @@ const handleGroupCreate = async (
       groupDetails.description,
     )
 
-    isDuplicateName.value = false
     notification.success('Group Created Successfully')
     dialogClose()
   } catch (error: unknown) {
