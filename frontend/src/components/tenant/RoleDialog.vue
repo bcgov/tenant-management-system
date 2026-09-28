@@ -1,16 +1,17 @@
 <script setup lang="ts">
 import { mdiClose } from '@mdi/js'
-import { watch, ref, computed } from 'vue'
+import { computed, ref } from 'vue'
 
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
 import { useNotification } from '@/composables/useNotification'
 import { type RoleId } from '@/models/role.model'
 import { type Tenant } from '@/models/tenant.model'
-import { type User, type UserId } from '@/models/user.model'
+import { type User } from '@/models/user.model'
 import { useRoleStore } from '@/stores/useRoleStore'
 import { useTenantStore } from '@/stores/useTenantStore'
 import { ROLES } from '@/utils/constants'
+import { isIdpBceidBusiness } from '@/utils/identityProvider'
 
 // TODO: non-container components should not directly use stores - they should
 // emit events and let the parent container handle the store interactions.
@@ -21,59 +22,21 @@ const notification = useNotification()
 
 // --- Component Interface -----------------------------------------------------
 
-const { tenant, userIndex } = defineProps<{
+const { tenant, user } = defineProps<{
   tenant: Tenant
-  userIndex: number | null
+  user: User
 }>()
 
 const emit = defineEmits(['update:openDialog'])
 
 // --- Component State ---------------------------------------------------------
 
-const defaultValues = ref<Array<boolean>>([false, false, false])
+const defaultValues = ref<boolean[]>([])
 
 const dialogVisible = defineModel<boolean>()
 
-const isBCeIDUser = ref<boolean>(false)
-
-const items = ref<Array<{ role: string; description: string; value: boolean }>>(
-  isBCeIDUser.value
-    ? [
-        {
-          description: 'Accesses services via groups',
-          role: 'Service User',
-          value: false,
-        },
-      ]
-    : [
-        {
-          description: 'Creates and manages tenants',
-          role: 'Tenant Owner',
-          value: false,
-        },
-        {
-          description: 'Manages groups and users',
-          role: 'User Admin',
-          value: false,
-        },
-        {
-          description: 'Accesses services via groups',
-          role: 'Service User',
-          value: false,
-        },
-      ],
-)
-
-// --- Watchers and Effects ----------------------------------------------------
-
-watch(
-  () => userIndex,
-  (newIndex) => {
-    if (newIndex !== null && newIndex >= 0 && newIndex < tenant.users.length) {
-      const newUser = tenant.users[newIndex]
-      updateState(newUser)
-    }
-  },
+const items = ref<Array<{ description: string; role: string; value: boolean }>>(
+  [],
 )
 
 // --- Computed Values ---------------------------------------------------------
@@ -105,17 +68,6 @@ const roleLookup = computed(() => [
   roleStore.roles.find((r) => r.name === ROLES.SERVICE_USER.value),
 ])
 
-const user = computed<User | null>(() => {
-  if (userIndex !== null && userIndex >= 0 && userIndex < tenant.users.length) {
-    const newUser = tenant.users[userIndex]
-    updateState(newUser)
-
-    return newUser
-  }
-
-  return null
-})
-
 // --- Component Methods -------------------------------------------------------
 
 const handleSave = async () => {
@@ -143,7 +95,7 @@ const handleSave = async () => {
       // TODO
       await tenantStore.assignTenantUserRoles(
         tenant,
-        user?.value?.id as UserId,
+        user.id,
         roleIds as RoleId[],
         fullRoleIds,
       )
@@ -155,7 +107,7 @@ const handleSave = async () => {
         // TODO
         await tenantStore.removeTenantUserRole(
           tenant.id,
-          user?.value?.id as UserId,
+          user.id,
           removeId as RoleId,
         )
       }
@@ -177,64 +129,45 @@ const handleSave = async () => {
   }
 }
 
-const updateState = (newUser: User | null) => {
-  isBCeIDUser.value = false
-  defaultValues.value = []
-  if (newUser && newUser?.ssoUser && newUser?.ssoUser?.idpType) {
-    isBCeIDUser.value = newUser.ssoUser.idpType.toLowerCase().includes('bceid')
-  }
-
-  items.value = isBCeIDUser.value
+const initializeState = () => {
+  items.value = isIdpBceidBusiness(user.ssoUser.idpType)
     ? [
         {
-          description: 'Accesses services via groups',
-          role: 'Service User',
-          value: false,
+          description: ROLES.SERVICE_USER.description,
+          role: ROLES.SERVICE_USER.title,
+          value: user.roles.some(
+            (role) => role.name === ROLES.SERVICE_USER.value,
+          ),
         },
       ]
     : [
         {
-          description: 'Creates and manages tenants',
-          role: 'Tenant Owner',
-          value: false,
+          description: ROLES.TENANT_OWNER.description,
+          role: ROLES.TENANT_OWNER.title,
+          value: user.roles.some(
+            (role) => role.name === ROLES.TENANT_OWNER.value,
+          ),
         },
         {
-          description: 'Manages groups and users',
-          role: 'User Admin',
-          value: false,
+          description: ROLES.USER_ADMIN.description,
+          role: ROLES.USER_ADMIN.title,
+          value: user.roles.some(
+            (role) => role.name === ROLES.USER_ADMIN.value,
+          ),
         },
         {
-          description: 'Accesses services via groups',
-          role: 'Service User',
-          value: false,
+          description: ROLES.SERVICE_USER.description,
+          role: ROLES.SERVICE_USER.title,
+          value: user.roles.some(
+            (role) => role.name === ROLES.SERVICE_USER.value,
+          ),
         },
       ]
-  items.value[0].value = false
-  defaultValues.value[0] = false
 
-  if (items.value.length > 2) {
-    items.value[1].value = false
-    defaultValues.value[1] = false
-    items.value[2].value = false
-    defaultValues.value[2] = false
-  }
-
-  if (newUser && newUser?.roles) {
-    for (const role of newUser.roles) {
-      if (role.name === ROLES.TENANT_OWNER.value && !isBCeIDUser.value) {
-        items.value[0].value = true
-        defaultValues.value[0] = true
-      } else if (role.name === ROLES.USER_ADMIN.value && !isBCeIDUser.value) {
-        items.value[1].value = true
-        defaultValues.value[1] = true
-      } else if (role.name === ROLES.SERVICE_USER.value) {
-        const ind = isBCeIDUser.value ? 0 : 2
-        items.value[ind].value = true
-        defaultValues.value[ind] = true
-      }
-    }
-  }
+  defaultValues.value = items.value.map((item) => item.value)
 }
+
+initializeState()
 </script>
 
 <template>
@@ -250,7 +183,7 @@ const updateState = (newUser: User | null) => {
       </v-card-title>
       <v-card-text>
         <div class="my-4">
-          <h3 class="text-bold">{{ user?.ssoUser.displayName }}</h3>
+          <h3 class="text-bold">{{ user.ssoUser.displayName }}</h3>
         </div>
         <p class="mb-4 text-body-medium">
           Tenant roles define what a user can see and do within a tenant. Each

@@ -34,10 +34,10 @@ vi.mock('@/components/tenant/RoleDialog.vue', () => ({
   default: {
     emits: ['update:open-dialog'],
     name: 'RoleDialog',
-    props: ['modelValue', 'tenant', 'userIndex'],
+    props: ['modelValue', 'tenant', 'user'],
     template:
       '<div v-if="modelValue" data-testid="role-dialog">' +
-      'Editing user index: {{ userIndex }}' +
+      'Editing user: {{ user.ssoUser.displayName }}' +
       '<button data-testid="close-role-dialog" ' +
       '@click="$emit(\'update:open-dialog\', false)">Close</button>' +
       '<button data-testid="dismiss-role-dialog" ' +
@@ -456,11 +456,11 @@ describe('TenantUserTable', () => {
       )
 
       expect(screen.getByTestId('role-dialog')).toHaveTextContent(
-        'Editing user index: 1',
+        `Editing user: ${userB.ssoUser.displayName}`,
       )
     })
 
-    it('closes the dialog and clears the modifying user index', async () => {
+    it('closes the dialog and clears the modifying user', async () => {
       const userA = makeUser({
         id: toUserId('user-a'),
         roles: [makeRoleTenantOwner()],
@@ -482,7 +482,7 @@ describe('TenantUserTable', () => {
 
       renderComponent({ tenant, users: [userA, userB] })
 
-      // Open the dialog for userB (index 1)
+      // Open the dialog for userB
       await fireEvent.click(
         screen.getByLabelText('Open Menu for firstNameB lastNameB'),
       )
@@ -490,7 +490,7 @@ describe('TenantUserTable', () => {
         screen.getByLabelText('Edit Tenant Roles for firstNameB lastNameB'),
       )
       expect(screen.getByTestId('role-dialog')).toHaveTextContent(
-        'Editing user index: 1',
+        `Editing user: ${userB.ssoUser.displayName}`,
       )
 
       await fireEvent.click(screen.getByTestId('close-role-dialog'))
@@ -503,7 +503,7 @@ describe('TenantUserTable', () => {
         screen.getByLabelText('Edit Tenant Roles for firstNameA lastNameA'),
       )
       expect(screen.getByTestId('role-dialog')).toHaveTextContent(
-        'Editing user index: 0',
+        `Editing user: ${userA.ssoUser.displayName}`,
       )
     })
 

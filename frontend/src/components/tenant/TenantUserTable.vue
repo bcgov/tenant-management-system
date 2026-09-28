@@ -42,7 +42,7 @@ const emit = defineEmits<{
 
 const editRolesDialogVisible = ref(false)
 
-const modifyingUserIndex = ref<number | null>(null)
+const modifyingUser = ref<User | null>(null)
 
 const removeRoleDialog = ref({
   buttons: [
@@ -168,7 +168,7 @@ const canRemoveUser = (user: User): boolean => {
 
 const handleEditRolesDialog = (open: boolean) => {
   editRolesDialogVisible.value = open
-  modifyingUserIndex.value = null
+  modifyingUser.value = null
 }
 
 const handleRemoveRoleButtonClick = (action: string) => {
@@ -195,11 +195,7 @@ const handleRemoveUserButtonClick = (action: string) => {
 }
 
 const showEditRolesDialog = (user: User) => {
-  const uIndex = tenant.users.findIndex((u: User) => {
-    return u.id === user.id
-  })
-
-  modifyingUserIndex.value = uIndex
+  modifyingUser.value = user
   editRolesDialogVisible.value = true
 }
 
@@ -317,9 +313,10 @@ const showRemoveUserDialog = (user: User) => {
   </v-data-table>
 
   <RoleDialog
+    v-if="modifyingUser"
     v-model="editRolesDialogVisible"
     :tenant="tenant"
-    :user-index="modifyingUserIndex"
+    :user="modifyingUser"
     @update:open-dialog="handleEditRolesDialog"
   />
 
