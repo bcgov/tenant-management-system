@@ -264,6 +264,7 @@ init() // NOSONAR
                       style="gap: 8px; margin-block: 4px"
                     >
                       <v-chip
+                        :aria-label="`Status: ${item.status}`"
                         :color="getStatusColor(item.status)"
                         class="align-center d-inline-flex"
                       >

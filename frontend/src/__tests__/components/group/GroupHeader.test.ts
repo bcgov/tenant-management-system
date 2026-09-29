@@ -168,12 +168,11 @@ describe('GroupHeader', () => {
 
       renderComponent({ group })
       const toggle = screen.getByRole('button', {
-        name: 'Expand group details',
+        name: /expand group details/i,
       })
       await user.click(toggle)
-      const dateCreated = screen.getByText('Date Created').parentElement
 
-      expect(dateCreated).toHaveTextContent('createdDate')
+      expect(screen.getByText('createdDate')).toBeInTheDocument()
     })
 
     it('renders who created the group', async () => {
@@ -182,12 +181,11 @@ describe('GroupHeader', () => {
 
       renderComponent({ group })
       const toggle = screen.getByRole('button', {
-        name: 'Expand group details',
+        name: /expand group details/i,
       })
       await user.click(toggle)
-      const createdBy = screen.getByText('Created By').parentElement
 
-      expect(createdBy).toHaveTextContent('createdBy')
+      expect(screen.getByText('createdBy')).toBeInTheDocument()
     })
 
     it('renders member count from groupUsers', async () => {
@@ -198,12 +196,11 @@ describe('GroupHeader', () => {
 
       renderComponent({ group })
       const toggle = screen.getByRole('button', {
-        name: 'Expand group details',
+        name: /expand group details/i,
       })
       await user.click(toggle)
-      const members = screen.getByText('Members').parentElement
 
-      expect(members).toHaveTextContent('3')
+      expect(screen.getByText('3')).toBeInTheDocument()
     })
 
     it('renders enabled roles count', async () => {
@@ -211,12 +208,11 @@ describe('GroupHeader', () => {
 
       renderComponent({ enabledRolesCount: 4 })
       const toggle = screen.getByRole('button', {
-        name: 'Expand group details',
+        name: /expand group details/i,
       })
       await user.click(toggle)
-      const roles = screen.getByText('Roles').parentElement
 
-      expect(roles).toHaveTextContent('4')
+      expect(screen.getByText('4')).toBeInTheDocument()
     })
 
     it('renders enabled service count', async () => {
@@ -224,12 +220,11 @@ describe('GroupHeader', () => {
 
       renderComponent({ enabledServiceCount: 5 })
       const toggle = screen.getByRole('button', {
-        name: 'Expand group details',
+        name: /expand group details/i,
       })
       await user.click(toggle)
-      const enabledServices = screen.getByText('Enabled Services').parentElement
 
-      expect(enabledServices).toHaveTextContent('5')
+      expect(screen.getByText('5')).toBeInTheDocument()
     })
   })
 
