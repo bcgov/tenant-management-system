@@ -1,8 +1,9 @@
 import tsEslint from '@typescript-eslint/eslint-plugin'
+import tsParser from '@typescript-eslint/parser'
+import pluginVitest from '@vitest/eslint-plugin'
+import testingLibrary from 'eslint-plugin-testing-library'
 import pluginVue from 'eslint-plugin-vue'
 import pluginVuetify from 'eslint-plugin-vuetify'
-import pluginVitest from '@vitest/eslint-plugin'
-import tsParser from '@typescript-eslint/parser'
 import vueParser from 'vue-eslint-parser'
 import skipFormatting from '@vue/eslint-config-prettier/skip-formatting'
 
@@ -178,6 +179,12 @@ const config = [
     },
     plugins: { ...pluginVitest.configs.recommended.plugins },
     rules: { ...pluginVitest.configs.recommended.rules },
+  },
+
+  // Testing Library (Vue)
+  {
+    ...testingLibrary.configs['flat/vue'],
+    files: ['src/__tests__/**/*.ts'],
   },
 
   ...pluginVuetify.configs['flat/recommended-v4'],
