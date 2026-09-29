@@ -48,7 +48,6 @@ const handleTenantSubmit = async (
       authStore.authenticatedUser,
     )
     notification.success('Request successfully submitted')
-    isDuplicateName.value = false
     dialogClose()
   } catch (error: unknown) {
     if (error instanceof DuplicateEntityError) {
@@ -133,6 +132,7 @@ init() // NOSONAR
   <TenantRequestDialog
     v-model="dialogVisible"
     :is-duplicate-name="isDuplicateName"
+    @cancel="dialogClose"
     @clear-duplicate-error="isDuplicateName = false"
     @submit="handleTenantSubmit"
   />
