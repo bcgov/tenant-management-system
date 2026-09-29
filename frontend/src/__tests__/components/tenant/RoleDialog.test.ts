@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from '@testing-library/vue'
+import { fireEvent, render, screen } from '@testing-library/vue'
 import { mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createVuetify } from 'vuetify'
@@ -14,7 +14,7 @@ import {
 } from '@/__tests__/__factories__'
 
 import RoleDialog from '@/components/tenant/RoleDialog.vue'
-import { type Role, toRoleId } from '@/models/role.model'
+import { type Role, type RoleId, toRoleId } from '@/models/role.model'
 import { type User } from '@/models/user.model'
 import { ROLES } from '@/utils/constants'
 import { isIdpBceidBusiness } from '@/utils/identityProvider'
@@ -178,34 +178,40 @@ describe('RoleDialog', () => {
 
   describe('Save', () => {
     it('emits only rolesToAdd when roles are added', async () => {
-      const { emitted } = renderComponent({ user: makeIdirUser([serviceUser]) })
+      const user = makeIdirUser([serviceUser])
+      const { emitted } = renderComponent({ user })
 
       await fireEvent.click(checkbox(ROLES.USER_ADMIN.title))
       await fireEvent.click(saveButton())
 
       expect(emitted()['roles-changed']).toHaveLength(1)
-      expect(emitted()['roles-changed'][0]).toEqual([[userAdmin.id], []])
+      expect(emitted()['roles-changed'][0]).toEqual([user, [userAdmin.id], []])
     })
 
     it('emits only rolesToRemove when roles are removed', async () => {
-      const { emitted } = renderComponent({
-        user: makeIdirUser([tenantOwner, serviceUser]),
-      })
+      const user = makeIdirUser([tenantOwner, serviceUser])
+      const { emitted } = renderComponent({ user })
 
       await fireEvent.click(checkbox(ROLES.TENANT_OWNER.title))
       await fireEvent.click(saveButton())
 
-      expect(emitted()['roles-changed'][0]).toEqual([[], [tenantOwner.id]])
+      expect(emitted()['roles-changed'][0]).toEqual([
+        user,
+        [],
+        [tenantOwner.id],
+      ])
     })
 
     it('emits both lists when roles are added and removed', async () => {
-      const { emitted } = renderComponent({ user: makeIdirUser([serviceUser]) })
+      const user = makeIdirUser([serviceUser])
+      const { emitted } = renderComponent({ user })
 
       await fireEvent.click(checkbox(ROLES.TENANT_OWNER.title))
       await fireEvent.click(checkbox(ROLES.SERVICE_USER.title))
       await fireEvent.click(saveButton())
 
       expect(emitted()['roles-changed'][0]).toEqual([
+        user,
         [tenantOwner.id],
         [serviceUser.id],
       ])
@@ -219,32 +225,37 @@ describe('RoleDialog', () => {
       await fireEvent.click(checkbox(ROLES.USER_ADMIN.title))
       await fireEvent.click(saveButton())
 
-      const [toAdd, toRemove] = emitted()['roles-changed'][0] as string[][]
+      const [, toAdd, toRemove] = emitted()['roles-changed'][0] as [
+        User,
+        RoleId[],
+        RoleId[],
+      ]
       expect(toAdd).not.toContain(tenantOwner.id)
       expect(toAdd).not.toContain(serviceUser.id)
       expect(toRemove).toEqual([])
     })
 
-    it('requests the dialog be closed after saving', async () => {
+    it('closes the dialog after saving', async () => {
       const { emitted } = renderComponent({ user: makeIdirUser([serviceUser]) })
 
       await fireEvent.click(checkbox(ROLES.USER_ADMIN.title))
       await fireEvent.click(saveButton())
 
-      expect(emitted()['update:openDialog']).toHaveLength(1)
-      expect(emitted()['update:openDialog'][0]).toEqual([false])
+      expect(emitted()['update:modelValue']).toHaveLength(1)
+      expect(emitted()['update:modelValue'][0]).toEqual([false])
     })
 
     it('skips roles missing from the roles prop', async () => {
+      const user = makeIdirUser([serviceUser])
       const { emitted } = renderComponent({
         roles: [tenantOwner, serviceUser], // no user admin role available
-        user: makeIdirUser([serviceUser]),
+        user,
       })
 
       await fireEvent.click(checkbox(ROLES.USER_ADMIN.title))
       await fireEvent.click(saveButton())
 
-      expect(emitted()['roles-changed'][0]).toEqual([[], []])
+      expect(emitted()['roles-changed'][0]).toEqual([user, [], []])
     })
 
     it('maps the BCeID Business service user checkbox to the service user role', async () => {
@@ -259,7 +270,11 @@ describe('RoleDialog', () => {
       await fireEvent.click(checkbox(ROLES.SERVICE_USER.title))
       await fireEvent.click(saveButton())
 
-      expect(emitted()['roles-changed'][0]).toEqual([[serviceUser.id], []])
+      expect(emitted()['roles-changed'][0]).toEqual([
+        user,
+        [serviceUser.id],
+        [],
+      ])
     })
   })
 
@@ -269,17 +284,6 @@ describe('RoleDialog', () => {
 
       await fireEvent.click(checkbox(ROLES.USER_ADMIN.title))
       await fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
-
-      expect(emitted()['update:openDialog']).toHaveLength(1)
-      expect(emitted()['update:openDialog'][0]).toEqual([false])
-      expect(emitted()['roles-changed']).toBeUndefined()
-    })
-
-    it('the X button sets the v-model to false', async () => {
-      const { emitted } = renderComponent({ user: makeIdirUser([serviceUser]) })
-
-      const title = screen.getByText('Edit Tenant Role')
-      await fireEvent.click(within(title).getByRole('button'))
 
       expect(emitted()['update:modelValue']).toHaveLength(1)
       expect(emitted()['update:modelValue'][0]).toEqual([false])

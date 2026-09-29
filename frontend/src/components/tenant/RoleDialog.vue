@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { mdiClose } from '@mdi/js'
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
@@ -19,8 +18,7 @@ const { roles, user } = defineProps<{
 const dialogVisible = defineModel<boolean>()
 
 const emit = defineEmits<{
-  'roles-changed': [RoleId[], RoleId[]]
-  'update:openDialog': [boolean]
+  'roles-changed': [User, RoleId[], RoleId[]]
 }>()
 
 // --- Component State ---------------------------------------------------------
@@ -34,6 +32,38 @@ const items = ref<
     valueInitial: boolean
   }>
 >([])
+
+// --- Watchers and Effects ----------------------------------------------------
+
+const toItem = (role: {
+  description: string
+  title: string
+  value: string
+}) => {
+  const assigned = user.roles.some((r) => r.name === role.value)
+
+  return {
+    description: role.description,
+    role: role.title,
+    roleName: role.value,
+    value: assigned,
+    valueInitial: assigned,
+  }
+}
+
+watch(
+  dialogVisible,
+  (visible) => {
+    if (visible) {
+      const availableRoles = isIdpBceidBusiness(user.ssoUser.idpType)
+        ? [ROLES.SERVICE_USER]
+        : [ROLES.TENANT_OWNER, ROLES.USER_ADMIN, ROLES.SERVICE_USER]
+
+      items.value = availableRoles.map(toItem)
+    }
+  },
+  { immediate: true },
+)
 
 // --- Computed Values ---------------------------------------------------------
 
@@ -66,52 +96,20 @@ const handleSave = () => {
     }
   }
 
-  emit('roles-changed', rolesToAdd, rolesToRemove)
-  emit('update:openDialog', false)
+  dialogVisible.value = false
+  emit('roles-changed', user, rolesToAdd, rolesToRemove)
 }
-
-const toItem = (role: {
-  description: string
-  title: string
-  value: string
-}) => {
-  const assigned = user.roles.some((r) => r.name === role.value)
-
-  return {
-    description: role.description,
-    role: role.title,
-    roleName: role.value,
-    value: assigned,
-    valueInitial: assigned,
-  }
-}
-
-const initializeState = () => {
-  const availableRoles = isIdpBceidBusiness(user.ssoUser.idpType)
-    ? [ROLES.SERVICE_USER]
-    : [ROLES.TENANT_OWNER, ROLES.USER_ADMIN, ROLES.SERVICE_USER]
-
-  items.value = availableRoles.map(toItem)
-}
-
-initializeState()
 </script>
 
 <template>
-  <v-dialog v-model="dialogVisible" height="777px" width="627px" persistent>
+  <v-dialog v-model="dialogVisible" max-width="627" scrollable>
     <v-card class="pa-6">
-      <v-card-title class="align-center d-flex justify-space-between">
+      <v-card-title class="d-flex align-center justify-space-between">
         Edit Tenant Role
-        <v-btn
-          :icon="mdiClose"
-          variant="plain"
-          @click="dialogVisible = false"
-        ></v-btn>
       </v-card-title>
+
       <v-card-text>
-        <div class="my-4">
-          <h3 class="text-bold">{{ user.ssoUser.displayName }}</h3>
-        </div>
+        <h3 class="my-4 font-weight-bold">{{ user.ssoUser.displayName }}</h3>
         <p class="mb-4 text-body-medium">
           Tenant roles define what a user can see and do within a tenant. Each
           role provides a different level of access, from full management to
@@ -135,19 +133,20 @@ initializeState()
           hide-default-footer
         >
           <template #[`item.role`]="{ item }">
-            <v-checkbox
-              v-model="item.value"
-              :label="item.role"
-              class="d-inline-flex normalHeight text-body-medium"
-            />
+            <v-checkbox v-model="item.value" density="compact" hide-details>
+              <template #label>
+                <span class="text-body-medium">{{ item.role }}</span>
+              </template>
+            </v-checkbox>
           </template>
         </v-data-table>
       </v-card-text>
-      <v-card-actions class="d-flex justify-end">
+
+      <v-card-actions class="justify-end">
         <ButtonSecondary
           class="me-4"
           text="Cancel"
-          @click="$emit('update:openDialog', false)"
+          @click="dialogVisible = false"
         />
         <ButtonPrimary
           :disabled="!hasChanges || !atLeastOneRole"
@@ -158,21 +157,3 @@ initializeState()
     </v-card>
   </v-dialog>
 </template>
-
-<style>
-.normalHeight.v-checkbox .v-label {
-  font-family: 'Roboto', sans-serif;
-  font-size: 0.875rem !important;
-  font-weight: 400;
-  letter-spacing: 0.0178571429em !important;
-  line-height: 1.5;
-}
-
-.normalHeight.v-checkbox .v-selection-control {
-  min-height: unset;
-}
-
-.normalHeight.v-input--density-default {
-  height: 68px;
-}
-</style>

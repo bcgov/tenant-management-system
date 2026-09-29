@@ -39,11 +39,9 @@ vi.mock('@/components/tenant/RoleDialog.vue', () => ({
       '<div v-if="modelValue" data-testid="role-dialog">' +
       'Editing user: {{ user.ssoUser.displayName }}' +
       '<button data-testid="close-role-dialog" ' +
-      '@click="$emit(\'update:open-dialog\', false)">Close</button>' +
-      '<button data-testid="dismiss-role-dialog" ' +
-      '@click="$emit(\'update:modelValue\', false)">Dismiss</button>' +
+      '@click="$emit(\'update:modelValue\', false)">Close</button>' +
       '<button data-testid="change-roles-dialog" ' +
-      "@click=\"$emit('roles-changed', ['role-2', 'role-3'], ['role-1'])\">" +
+      "@click=\"$emit('roles-changed', user, ['role-2', 'role-3'], ['role-1'])\">" +
       'Change</button>' +
       '</div>',
   },
@@ -470,7 +468,7 @@ describe('TenantUserTable', () => {
       )
     })
 
-    it('closes the dialog and clears the modifying user', async () => {
+    it('closes the dialog and changes the modifying user', async () => {
       const userA = makeUser({
         id: toUserId('user-a'),
         roles: [makeRoleTenantOwner()],
@@ -492,7 +490,6 @@ describe('TenantUserTable', () => {
 
       renderComponent({ tenant, users: [userA, userB] })
 
-      // Open the dialog for userB
       await fireEvent.click(
         screen.getByLabelText('Open Menu for firstNameB lastNameB'),
       )
@@ -534,7 +531,7 @@ describe('TenantUserTable', () => {
       await fireEvent.click(await screen.findByText('Edit Tenant Roles'))
       expect(screen.getByTestId('role-dialog')).toBeInTheDocument()
 
-      await fireEvent.click(screen.getByTestId('dismiss-role-dialog'))
+      await fireEvent.click(screen.getByTestId('close-role-dialog'))
 
       expect(screen.queryByTestId('role-dialog')).not.toBeInTheDocument()
     })

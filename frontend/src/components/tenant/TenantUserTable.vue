@@ -168,11 +168,6 @@ const canRemoveUser = (user: User): boolean => {
   )
 }
 
-const handleEditRolesDialog = (open: boolean) => {
-  editRolesDialogVisible.value = open
-  modifyingUser.value = null
-}
-
 const handleRemoveRoleButtonClick = (action: string) => {
   // When the action is "remove" the selectedRole.value and selectedUser.value
   // should never be null, but the guard simplifies the event signature.
@@ -196,10 +191,12 @@ const handleRemoveUserButtonClick = (action: string) => {
   selectedUser.value = null
 }
 
-const handleRolesChanged = (rolesToAdd: RoleId[], rolesToRemove: RoleId[]) => {
-  if (modifyingUser.value) {
-    emit('roles-changed', modifyingUser.value, rolesToAdd, rolesToRemove)
-  }
+const handleRolesChanged = (
+  user: User,
+  rolesToAdd: RoleId[],
+  rolesToRemove: RoleId[],
+) => {
+  emit('roles-changed', user, rolesToAdd, rolesToRemove)
 }
 
 const showEditRolesDialog = (user: User) => {
@@ -326,7 +323,6 @@ const showRemoveUserDialog = (user: User) => {
     :roles="roles"
     :user="modifyingUser"
     @roles-changed="handleRolesChanged"
-    @update:open-dialog="handleEditRolesDialog"
   />
 
   <SimpleDialog
