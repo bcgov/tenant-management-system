@@ -14,6 +14,7 @@ const { isDuplicateName } = defineProps<{
 }>()
 
 const emit = defineEmits<{
+  cancel: []
   clearDuplicateError: []
   submit: [tenantRequestDetails: TenantRequestDetailFields]
 }>()
@@ -36,11 +37,7 @@ const isFormValid = ref(false)
 // message is displayed.
 watch(
   () => isDuplicateName,
-  async (newVal) => {
-    if (!newVal) {
-      return
-    }
-
+  async () => {
     await nextTick()
     await form.value?.validate()
   },
@@ -66,13 +63,18 @@ watch(
 watch(
   () => [formData.value.name, formData.value.ministryName],
   () => {
-    emit('clearDuplicateError')
+    if (isDuplicateName) {
+      emit('clearDuplicateError')
+    }
   },
 )
 
 // --- Component Methods -------------------------------------------------------
 
-const dialogClose = () => (dialogVisible.value = false)
+const dialogClose = () => {
+  emit('cancel')
+  dialogVisible.value = false
+}
 
 const handleSubmit = async () => {
   await form.value?.validate()
