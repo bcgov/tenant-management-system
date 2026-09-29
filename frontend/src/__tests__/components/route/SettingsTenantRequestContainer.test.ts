@@ -148,8 +148,8 @@ describe('TenantRequestContainer', () => {
       renderComponent()
       await screen.findByText('Tenant Requests')
 
-      const chip = screen.getByText(status).closest('.v-chip')
-      expect(chip?.className).toMatch(new RegExp(`text-${color}\\b`))
+      const chip = screen.getByLabelText(`Status: ${status}`)
+      expect(chip).toHaveClass(`text-${color}`)
     })
   })
 

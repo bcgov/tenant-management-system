@@ -184,9 +184,7 @@ describe('GroupMemberManagement', () => {
 
       await fireEvent.click(screen.getByRole('button', { name: 'stub-select' }))
 
-      expect(
-        screen.getByRole('button', { name: 'Add Member' }),
-      ).not.toBeDisabled()
+      expect(screen.getByRole('button', { name: 'Add Member' })).toBeEnabled()
     })
 
     it('does not emit add or close the search flow when no user is selected', async () => {
