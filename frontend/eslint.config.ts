@@ -1,6 +1,7 @@
 import tsEslint from '@typescript-eslint/eslint-plugin'
 import tsParser from '@typescript-eslint/parser'
 import pluginVitest from '@vitest/eslint-plugin'
+import jestDom from 'eslint-plugin-jest-dom'
 import testingLibrary from 'eslint-plugin-testing-library'
 import pluginVue from 'eslint-plugin-vue'
 import pluginVuetify from 'eslint-plugin-vuetify'
@@ -184,6 +185,12 @@ const config = [
   // Testing Library (Vue)
   {
     ...testingLibrary.configs['flat/vue'],
+    files: ['src/__tests__/**/*.ts'],
+  },
+
+  // jest-dom
+  {
+    ...jestDom.configs['flat/recommended'],
     files: ['src/__tests__/**/*.ts'],
   },
 
