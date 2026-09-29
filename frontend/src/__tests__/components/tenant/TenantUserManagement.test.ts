@@ -230,9 +230,7 @@ describe('TenantUserManagement', () => {
 
       await fireEvent.click(screen.getByRole('checkbox', { name: 'Role One' }))
 
-      expect(
-        screen.getByRole('button', { name: 'Add User' }),
-      ).not.toBeDisabled()
+      expect(screen.getByRole('button', { name: 'Add User' })).toBeEnabled()
     })
 
     it('emits cancel and closes the search flow when cancelled', async () => {
@@ -358,9 +356,7 @@ describe('TenantUserManagement', () => {
 
         expect(screen.getByRole('checkbox', { name: 'Role One' })).toBeChecked()
         expect(screen.getByRole('checkbox', { name: 'Role Two' })).toBeChecked()
-        expect(
-          screen.getByRole('button', { name: 'Add User' }),
-        ).not.toBeDisabled()
+        expect(screen.getByRole('button', { name: 'Add User' })).toBeEnabled()
       })
 
       it('unchecks every role and disables Add User when unchecked', async () => {

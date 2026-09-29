@@ -152,7 +152,7 @@ describe('TenantRequestDisplay', () => {
       await waitFor(() => {
         expect(
           screen.getByRole('textbox', { name: /name of tenant/i }),
-        ).not.toBeDisabled()
+        ).toBeEnabled()
       })
     })
 
