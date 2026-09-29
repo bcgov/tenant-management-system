@@ -1,267 +1,115 @@
 <script setup lang="ts">
-import { mdiClose } from '@mdi/js'
-import { watch, ref, computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
-import { useNotification } from '@/composables/useNotification'
-import { type RoleId } from '@/models/role.model'
-import { type Tenant, type TenantId } from '@/models/tenant.model'
-import { type User, type UserId } from '@/models/user.model'
-import { useRoleStore } from '@/stores/useRoleStore'
-import { useTenantStore } from '@/stores/useTenantStore'
+import { Role, type RoleId } from '@/models/role.model'
+import { type User } from '@/models/user.model'
 import { ROLES } from '@/utils/constants'
-
-// TODO: non-container components should not directly use stores - they should
-// emit events and let the parent container handle the store interactions.
-// Refactor this component to follow that pattern.
-const tenantStore = useTenantStore()
-const roleStore = useRoleStore()
-const notification = useNotification()
+import { isIdpBceidBusiness } from '@/utils/identityProvider'
 
 // --- Component Interface -----------------------------------------------------
 
-const { tenant, userIndex } = defineProps<{
-  tenant: Tenant | null
-  userIndex: number | null
+const { roles, user } = defineProps<{
+  roles: Role[]
+  user: User
 }>()
-
-const emit = defineEmits(['update:openDialog'])
-
-// --- Component State ---------------------------------------------------------
-
-const defaultValues = ref<Array<boolean>>([false, false, false])
 
 const dialogVisible = defineModel<boolean>()
 
-const isBCeIDUser = ref<boolean>(false)
+const emit = defineEmits<{
+  'roles-changed': [User, RoleId[], RoleId[]]
+}>()
 
-const items = ref<Array<{ role: string; description: string; value: boolean }>>(
-  isBCeIDUser.value
-    ? [
-        {
-          description: 'Accesses services via groups',
-          role: 'Service User',
-          value: false,
-        },
-      ]
-    : [
-        {
-          description: 'Creates and manages tenants',
-          role: 'Tenant Owner',
-          value: false,
-        },
-        {
-          description: 'Manages groups and users',
-          role: 'User Admin',
-          value: false,
-        },
-        {
-          description: 'Accesses services via groups',
-          role: 'Service User',
-          value: false,
-        },
-      ],
-)
+// --- Component State ---------------------------------------------------------
+
+const items = ref<
+  Array<{
+    description: string
+    role: string
+    roleName: string
+    value: boolean
+    valueInitial: boolean
+  }>
+>([])
 
 // --- Watchers and Effects ----------------------------------------------------
 
+const toItem = (role: {
+  description: string
+  title: string
+  value: string
+}) => {
+  const assigned = user.roles.some((r) => r.name === role.value)
+
+  return {
+    description: role.description,
+    role: role.title,
+    roleName: role.value,
+    value: assigned,
+    valueInitial: assigned,
+  }
+}
+
 watch(
-  () => userIndex,
-  (newIndex) => {
-    if (
-      tenant &&
-      newIndex !== null &&
-      newIndex >= 0 &&
-      newIndex < tenant.users.length
-    ) {
-      const newUser = tenant.users[newIndex]
-      updateState(newUser)
+  dialogVisible,
+  (visible) => {
+    if (visible) {
+      const availableRoles = isIdpBceidBusiness(user.ssoUser.idpType)
+        ? [ROLES.SERVICE_USER]
+        : [ROLES.TENANT_OWNER, ROLES.USER_ADMIN, ROLES.SERVICE_USER]
+
+      items.value = availableRoles.map(toItem)
     }
   },
+  { immediate: true },
 )
 
 // --- Computed Values ---------------------------------------------------------
 
-const atLeastOneRole = computed(() => {
-  for (const item of items.value) {
-    if (item.value) {
-      return true
-    }
-  }
+const atLeastOneRole = computed(() => items.value.some((item) => item.value))
 
-  return false
-})
-
-// watch state for changes based on default values
-const hasChanges = computed(() => {
-  for (let i = 0; i < items.value.length; i++) {
-    if (items.value[i].value !== defaultValues.value[i]) {
-      return true
-    }
-  }
-
-  return false
-})
-
-const roleLookup = computed(() => [
-  roleStore.roles.find((r) => r.name === ROLES.TENANT_OWNER.value),
-  roleStore.roles.find((r) => r.name === ROLES.USER_ADMIN.value),
-  roleStore.roles.find((r) => r.name === ROLES.SERVICE_USER.value),
-])
-
-const user = computed<User | null>(() => {
-  if (
-    tenant &&
-    userIndex !== null &&
-    userIndex >= 0 &&
-    userIndex < tenant.users.length
-  ) {
-    const newUser = tenant.users[userIndex]
-    updateState(newUser)
-
-    return newUser
-  }
-
-  return null
-})
+const hasChanges = computed(() =>
+  items.value.some((item) => item.value !== item.valueInitial),
+)
 
 // --- Component Methods -------------------------------------------------------
 
-const handleSave = async () => {
-  const roleIds = []
-  const fullRoleIds = []
-  const removeIds = []
+const handleSave = () => {
+  const rolesToAdd: RoleId[] = []
+  const rolesToRemove: RoleId[] = []
 
-  //built array of roles to add/remove
-  for (let i = 0; i < items.value.length; i++) {
-    if (items.value[i].value) {
-      fullRoleIds.push(roleLookup.value?.[i]?.id as string)
-      if (!defaultValues.value[i]) {
-        roleIds.push(roleLookup.value?.[i]?.id as string)
-      }
-    } else if (!items.value[i].value && defaultValues.value[i]) {
-      if (roleLookup?.value?.[i]?.id !== undefined) {
-        removeIds.push(roleLookup.value?.[i]?.id as string)
-      }
+  for (const item of items.value) {
+    if (item.value === item.valueInitial) {
+      continue
+    }
+
+    const role = roles.find((r) => r.name === item.roleName)
+    if (!role) {
+      continue
+    }
+
+    if (item.value) {
+      rolesToAdd.push(role.id)
+    } else {
+      rolesToRemove.push(role.id)
     }
   }
 
-  try {
-    //add first because remove fails if last role
-    if (roleIds.length > 0) {
-      // TODO
-      await tenantStore.assignTenantUserRoles(
-        tenant as Tenant,
-        user?.value?.id as UserId,
-        roleIds as RoleId[],
-        fullRoleIds,
-      )
-    }
-
-    //remove any that aren't added
-    if (removeIds.length > 0) {
-      for (const removeId of removeIds) {
-        // TODO
-        await tenantStore.removeTenantUserRole(
-          tenant?.id as TenantId,
-          user?.value?.id as UserId,
-          removeId as RoleId,
-        )
-      }
-    }
-
-    //success, show notification toast
-    notification.success('Roles updated successfully')
-    emit('update:openDialog', false)
-    // TODO: remove this
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  } catch (error: any) {
-    // show the best possible error message in error case
-    const msg =
-      error.response?.data?.details?.body?.[0]?.message ||
-      error.response?.data?.message ||
-      error.message
-    notification.error(`Failed to update roles: ${msg}`)
-    console.error('Error updating roles:', error)
-  }
-}
-
-const updateState = (newUser: User | null) => {
-  isBCeIDUser.value = false
-  defaultValues.value = []
-  if (newUser && newUser?.ssoUser && newUser?.ssoUser?.idpType) {
-    isBCeIDUser.value = newUser.ssoUser.idpType.toLowerCase().includes('bceid')
-  }
-
-  items.value = isBCeIDUser.value
-    ? [
-        {
-          description: 'Accesses services via groups',
-          role: 'Service User',
-          value: false,
-        },
-      ]
-    : [
-        {
-          description: 'Creates and manages tenants',
-          role: 'Tenant Owner',
-          value: false,
-        },
-        {
-          description: 'Manages groups and users',
-          role: 'User Admin',
-          value: false,
-        },
-        {
-          description: 'Accesses services via groups',
-          role: 'Service User',
-          value: false,
-        },
-      ]
-  items.value[0].value = false
-  defaultValues.value[0] = false
-
-  if (items.value.length > 2) {
-    items.value[1].value = false
-    defaultValues.value[1] = false
-    items.value[2].value = false
-    defaultValues.value[2] = false
-  }
-
-  if (newUser && newUser?.roles) {
-    for (const role of newUser.roles) {
-      if (role.name === ROLES.TENANT_OWNER.value && !isBCeIDUser.value) {
-        items.value[0].value = true
-        defaultValues.value[0] = true
-      } else if (role.name === ROLES.USER_ADMIN.value && !isBCeIDUser.value) {
-        items.value[1].value = true
-        defaultValues.value[1] = true
-      } else if (role.name === ROLES.SERVICE_USER.value) {
-        const ind = isBCeIDUser.value ? 0 : 2
-        items.value[ind].value = true
-        defaultValues.value[ind] = true
-      }
-    }
-  }
+  dialogVisible.value = false
+  emit('roles-changed', user, rolesToAdd, rolesToRemove)
 }
 </script>
 
 <template>
-  <v-dialog v-model="dialogVisible" height="777px" width="627px" persistent>
+  <v-dialog v-model="dialogVisible" max-width="627" scrollable>
     <v-card class="pa-6">
-      <v-card-title class="align-center d-flex justify-space-between">
+      <v-card-title class="d-flex align-center justify-space-between">
         Edit Tenant Role
-        <v-btn
-          :icon="mdiClose"
-          variant="plain"
-          @click="dialogVisible = false"
-        ></v-btn>
       </v-card-title>
+
       <v-card-text>
-        <div class="my-4">
-          <h3 class="text-bold">{{ user?.ssoUser.displayName }}</h3>
-        </div>
+        <h3 class="my-4 font-weight-bold">{{ user.ssoUser.displayName }}</h3>
         <p class="mb-4 text-body-medium">
           Tenant roles define what a user can see and do within a tenant. Each
           role provides a different level of access, from full management to
@@ -285,19 +133,20 @@ const updateState = (newUser: User | null) => {
           hide-default-footer
         >
           <template #[`item.role`]="{ item }">
-            <v-checkbox
-              v-model="item.value"
-              :label="item.role"
-              class="d-inline-flex normalHeight text-body-medium"
-            />
+            <v-checkbox v-model="item.value" density="compact" hide-details>
+              <template #label>
+                <span class="text-body-medium">{{ item.role }}</span>
+              </template>
+            </v-checkbox>
           </template>
         </v-data-table>
       </v-card-text>
-      <v-card-actions class="d-flex justify-end">
+
+      <v-card-actions class="justify-end">
         <ButtonSecondary
           class="me-4"
           text="Cancel"
-          @click="$emit('update:openDialog', false)"
+          @click="dialogVisible = false"
         />
         <ButtonPrimary
           :disabled="!hasChanges || !atLeastOneRole"
@@ -308,21 +157,3 @@ const updateState = (newUser: User | null) => {
     </v-card>
   </v-dialog>
 </template>
-
-<style>
-.normalHeight.v-checkbox .v-label {
-  font-family: 'Roboto', sans-serif;
-  font-size: 0.875rem !important;
-  font-weight: 400;
-  letter-spacing: 0.0178571429em !important;
-  line-height: 1.5;
-}
-
-.normalHeight.v-checkbox .v-selection-control {
-  min-height: unset;
-}
-
-.normalHeight.v-input--density-default {
-  height: 68px;
-}
-</style>
