@@ -132,7 +132,7 @@ describe('RoleDialog', () => {
 
       await fireEvent.click(checkbox(ROLES.USER_ADMIN.title))
 
-      expect(saveButton()).not.toBeDisabled()
+      expect(saveButton()).toBeEnabled()
     })
 
     it('is enabled after swapping one role for another', async () => {
@@ -141,7 +141,7 @@ describe('RoleDialog', () => {
       await fireEvent.click(checkbox(ROLES.USER_ADMIN.title))
       await fireEvent.click(checkbox(ROLES.SERVICE_USER.title))
 
-      expect(saveButton()).not.toBeDisabled()
+      expect(saveButton()).toBeEnabled()
     })
 
     it('is disabled again when a change is reverted', async () => {
