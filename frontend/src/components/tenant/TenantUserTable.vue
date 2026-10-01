@@ -9,7 +9,7 @@ import { computed, ref } from 'vue'
 
 import RoleDialog from '@/components/tenant/RoleDialog.vue'
 import SimpleDialog from '@/components/ui/SimpleDialog.vue'
-import { type Role } from '@/models/role.model'
+import { type Role, type RoleId } from '@/models/role.model'
 import { type Tenant } from '@/models/tenant.model'
 import { type User } from '@/models/user.model'
 import { ROLES } from '@/utils/constants'
@@ -28,6 +28,7 @@ type TableHeaderItem = {
 // --- Component Interface -----------------------------------------------------
 
 const { tenant, users } = defineProps<{
+  roles: Role[]
   tenant: Tenant
   users: User[]
 }>()
@@ -36,13 +37,14 @@ const emit = defineEmits<{
   'add-user': [User]
   'remove-role': [User, Role]
   'remove-user': [User]
+  'roles-changed': [User, RoleId[], RoleId[]]
 }>()
 
 // --- Component State ---------------------------------------------------------
 
 const editRolesDialogVisible = ref(false)
 
-const modifyingUserIndex = ref<number | null>(null)
+const modifyingUser = ref<User | null>(null)
 
 const removeRoleDialog = ref({
   buttons: [
@@ -166,11 +168,6 @@ const canRemoveUser = (user: User): boolean => {
   )
 }
 
-const handleEditRolesDialog = (open: boolean) => {
-  editRolesDialogVisible.value = open
-  modifyingUserIndex.value = null
-}
-
 const handleRemoveRoleButtonClick = (action: string) => {
   // When the action is "remove" the selectedRole.value and selectedUser.value
   // should never be null, but the guard simplifies the event signature.
@@ -194,12 +191,16 @@ const handleRemoveUserButtonClick = (action: string) => {
   selectedUser.value = null
 }
 
-const showEditRolesDialog = (user: User) => {
-  const uIndex = tenant.users.findIndex((u: User) => {
-    return u.id === user.id
-  })
+const handleRolesChanged = (
+  user: User,
+  rolesToAdd: RoleId[],
+  rolesToRemove: RoleId[],
+) => {
+  emit('roles-changed', user, rolesToAdd, rolesToRemove)
+}
 
-  modifyingUserIndex.value = uIndex
+const showEditRolesDialog = (user: User) => {
+  modifyingUser.value = user
   editRolesDialogVisible.value = true
 }
 
@@ -317,10 +318,11 @@ const showRemoveUserDialog = (user: User) => {
   </v-data-table>
 
   <RoleDialog
+    v-if="modifyingUser"
     v-model="editRolesDialogVisible"
-    :tenant="tenant"
-    :user-index="modifyingUserIndex"
-    @update:open-dialog="handleEditRolesDialog"
+    :roles="roles"
+    :user="modifyingUser"
+    @roles-changed="handleRolesChanged"
   />
 
   <SimpleDialog
