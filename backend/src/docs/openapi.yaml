@@ -878,6 +878,68 @@ paths:
                 $ref: '#/components/schemas/InternalServerErrorResponse'
 
   /v1/tenants/{tenantId}/users/{tenantUserId}/roles:
+    get:
+      summary: Get the roles of a user in a tenant
+      description: |
+        Authentication: CSTAR audience token required.
+
+        Returns the roles assigned to a user within a tenant. Returns an empty list if the user is not part of the tenant. Requires JWT authentication and membership of the tenant.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: tenantId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The unique identifier of the tenant
+        - name: tenantUserId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The unique identifier of the user in the tenant
+      responses:
+        '200':
+          description: Roles of the user
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      roles:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Role'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        '403':
+          description: Forbidden - User is not a member of the tenant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
     post:
       summary: Assign roles to a user in a tenant
       description: |
