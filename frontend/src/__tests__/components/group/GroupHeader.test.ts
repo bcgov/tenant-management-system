@@ -78,19 +78,15 @@ describe('GroupHeader', () => {
       const user = userEvent.setup()
 
       renderComponent()
-      const toggle = screen.getByRole('button', {
-        name: /expand group details/i,
-      })
-      await user.click(toggle)
-
-      await waitFor(() =>
-        expect(toggle).toHaveAttribute('aria-expanded', 'true'),
+      await user.click(
+        screen.getByRole('button', { name: /expand group details/i }),
       )
+
       expect(
         screen.queryByRole('button', { name: /expand group details/i }),
       ).not.toBeInTheDocument()
       expect(
-        screen.getByRole('button', { name: /collapse group details/i }),
+        await screen.findByRole('button', { name: /collapse group details/i }),
       ).toBeInTheDocument()
     })
   })

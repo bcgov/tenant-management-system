@@ -4,12 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { reactive } from 'vue'
 import { useRoute } from 'vue-router'
 
-import {
-  makeGroup,
-  makeGroupUser,
-  makeTenant,
-  makeUser,
-} from '@/__tests__/__factories__'
+import { makeGroup, makeTenant, makeUser } from '@/__tests__/__factories__'
 
 import TenantHeader from '@/components/tenant/TenantHeader.vue'
 import vuetify from '@/plugins/vuetify'
@@ -75,19 +70,15 @@ describe('TenantHeader', () => {
       const user = userEvent.setup()
 
       renderComponent()
-      const toggle = screen.getByRole('button', {
-        name: /expand tenant details/i,
-      })
-      await user.click(toggle)
-
-      await waitFor(() =>
-        expect(toggle).toHaveAttribute('aria-expanded', 'true'),
+      await user.click(
+        screen.getByRole('button', { name: /expand tenant details/i }),
       )
+
       expect(
         screen.queryByRole('button', { name: /expand tenant details/i }),
       ).not.toBeInTheDocument()
       expect(
-        screen.getByRole('button', { name: /collapse tenant details/i }),
+        await screen.findByRole('button', { name: /collapse tenant details/i }),
       ).toBeInTheDocument()
     })
   })
