@@ -341,6 +341,7 @@ export default {
       landingPageUrl: Joi.string().uri().max(500).required(),
       description: Joi.string().min(1).max(500).optional(),
       isActive: Joi.boolean().optional(),
+      allowHeadlessOps: Joi.boolean().optional(),
       roles: Joi.array()
         .items(
           Joi.object().keys({
@@ -384,6 +385,7 @@ export default {
         .optional(),
       landingPageUrl: Joi.string().uri().max(500).optional(),
       description: Joi.string().min(1).max(500).allow(null).optional(),
+      allowHeadlessOps: Joi.boolean().optional(),
     })
       .or(
         'name',
@@ -391,6 +393,7 @@ export default {
         'clientIdentifier',
         'landingPageUrl',
         'description',
+        'allowHeadlessOps',
       )
       .options({ abortEarly: false, convert: false }),
   },

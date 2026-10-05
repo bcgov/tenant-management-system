@@ -1754,6 +1754,11 @@ paths:
                   type: boolean
                   default: true
                   example: true
+                allowHeadlessOps:
+                  type: boolean
+                  default: false
+                  description: Whether this service may call CSTAR on behalf of its users without the CSTAR web app.
+                  example: false
                 roles:
                   type: array
                   minItems: 1
@@ -1913,6 +1918,10 @@ paths:
                   maxLength: 500
                   nullable: true
                   example: 'Updated shared email service for all tenants'
+                allowHeadlessOps:
+                  type: boolean
+                  description: Whether this service may call CSTAR on behalf of its users without the CSTAR web app.
+                  example: true
       responses:
         '200':
           description: Shared service successfully updated
@@ -4293,6 +4302,10 @@ components:
           type: boolean
           default: true
           example: true
+        allowHeadlessOps:
+          type: boolean
+          default: false
+          example: false
         roles:
           type: array
           minItems: 1
@@ -4349,6 +4362,10 @@ components:
           type: boolean
           default: true
           example: true
+        allowHeadlessOps:
+          type: boolean
+          default: false
+          example: false
         createdDateTime:
           type: string
           format: date-time

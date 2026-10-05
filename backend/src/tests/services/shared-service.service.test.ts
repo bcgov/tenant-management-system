@@ -47,6 +47,7 @@ describe('SharedServiceService', () => {
         landingPageUrl: 'https://example.gov.bc.ca',
         description: 'Description',
         isActive: true,
+        allowHeadlessOps: true,
         roles: [{ name: 'Admin' }],
       },
       decodedJwt: { idir_user_guid: 'user-1' },
@@ -69,6 +70,7 @@ describe('SharedServiceService', () => {
           landingPageUrl: 'https://example.gov.bc.ca',
           description: 'Description',
           isActive: true,
+          allowHeadlessOps: true,
           roles: [{ name: 'Admin' }],
           updatedBy: 'user-1',
         }),
@@ -105,7 +107,7 @@ describe('SharedServiceService', () => {
   describe('updateSharedService', () => {
     const req = asRequest({
       params: { sharedServiceId: 'ss-1' },
-      body: { name: 'Updated Name' },
+      body: { name: 'Updated Name', allowHeadlessOps: false },
       decodedJwt: { idir_user_guid: 'user-1' },
     })
 
@@ -119,6 +121,7 @@ describe('SharedServiceService', () => {
         expect.objectContaining({
           sharedServiceId: 'ss-1',
           name: 'Updated Name',
+          allowHeadlessOps: false,
           updatedBy: 'user-1',
         }),
         FAKE_TX,

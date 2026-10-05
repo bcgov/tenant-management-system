@@ -36,6 +36,9 @@ export class SharedService {
   @Column({ type: 'boolean', name: 'is_active', default: true })
   isActive!: boolean
 
+  @Column({ type: 'boolean', name: 'allow_headless_ops', default: false })
+  allowHeadlessOps!: boolean
+
   @OneToMany(
     () => SharedServiceRole,
     (sharedServiceRole) => sharedServiceRole.sharedService,

@@ -39,6 +39,7 @@ export class SharedServiceRepository {
       landingPageUrl,
       description,
       isActive,
+      allowHeadlessOps,
       roles,
       updatedBy,
     } = input
@@ -78,7 +79,8 @@ export class SharedServiceRepository {
     if (description !== undefined) {
       sharedService.description = description
     }
-    sharedService.isActive = isActive !== undefined ? isActive : true
+    sharedService.isActive = isActive ?? true
+    sharedService.allowHeadlessOps = allowHeadlessOps ?? false
     sharedService.createdBy = updatedBy
     sharedService.updatedBy = updatedBy
 
@@ -112,6 +114,7 @@ export class SharedServiceRepository {
       clientIdentifier,
       landingPageUrl,
       description,
+      allowHeadlessOps,
       updatedBy,
     } = input
 
@@ -187,6 +190,9 @@ export class SharedServiceRepository {
     }
     if (description !== undefined) {
       sharedService.description = description
+    }
+    if (allowHeadlessOps !== undefined) {
+      sharedService.allowHeadlessOps = allowHeadlessOps
     }
     sharedService.updatedBy = updatedBy
 
