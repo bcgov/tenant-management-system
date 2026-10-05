@@ -78,6 +78,10 @@ test.describe.serial('Landing page tests', () => {
     await sharedPage.getByText(tenantNameValue).click()
   })
   test('Checks the tenant users page', async () => {
+    test.skip(
+      process.env.GITHUB_ACTIONS !== 'true',
+      'This test runs only in GitHub Actions',
+    )
     await sharedPage.getByText('Tenant Users').click()
     await expect(sharedPage.getByText('Groups', { exact: true })).toBeVisible()
     await expect(
@@ -121,6 +125,10 @@ test.describe.serial('Landing page tests', () => {
     await addUserButton.click()
   })
   test('Checks the IDIR User search', async () => {
+    test.skip(
+      process.env.GITHUB_ACTIONS !== 'true',
+      'This test runs only in GitHub Actions',
+    )
     await sharedPage
       .locator('.v-field')
       .filter({ hasText: 'Search by' })
@@ -222,6 +230,10 @@ test.describe.serial('Landing page tests', () => {
     ).toBeEnabled()
   })
   test('Checks add/remove IDIR user', async () => {
+    test.skip(
+      process.env.GITHUB_ACTIONS !== 'true',
+      'This test runs only in GitHub Actions',
+    )
     await sharedPage
       .getByRole('button', {
         name: 'Add User',

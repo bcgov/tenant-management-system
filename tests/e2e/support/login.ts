@@ -1,4 +1,3 @@
-/// <reference types="node" />
 import { expect, type Page } from '@playwright/test'
 import { authenticator } from '@otplib/preset-default'
 
@@ -18,17 +17,67 @@ export function formsettings() {
   }
 }
 
+// Existing real IDIR + MFA login
 export async function login(page: Page) {
   const { username, password, mfaCode } = formsettings()
+
   await page.fill('input[type="email"]', username)
   await page.click('input[type="submit"]')
+
   await page.fill('input[name="passwd"]', password)
   await page.click('input[type="submit"]')
 
   const token = authenticator.generate(mfaCode)
-  console.log('Generated OTP:', token)
+
   await page.fill('input[name="otc"]', token)
   await page.click('input[type="submit"]')
-  await expect(page.locator('#idSIButton9')).toBeVisible()
-  await page.locator('#idSIButton9').click()
+
+  const staySignedInButton = page.locator('#idSIButton9')
+  if (await staySignedInButton.isVisible().catch(() => false)) {
+    await staySignedInButton.click()
+  }
+}
+
+// Keycloak / mock OIDC E2E login
+export async function loginE2E(page: Page) {
+  const username = process.env.E2E_KEYCLOAK_USERNAME ?? ''
+  const password = process.env.E2E_KEYCLOAK_PASSWORD ?? ''
+
+  if (!username || !password) {
+    throw new Error('Missing E2E_KEYCLOAK_USERNAME or E2E_KEYCLOAK_PASSWORD')
+  }
+
+  await page.waitForLoadState('domcontentloaded')
+
+  const usernameField = page
+    .locator(
+      'input[name="username"], input[name="loginfmt"], input[type="email"], input[type="text"], #username, #email',
+    )
+    .first()
+
+  await expect(usernameField).toBeVisible({ timeout: 30000 })
+  await usernameField.fill(username)
+
+  const nextButton = page
+    .getByRole('button', { name: /next|sign in|continue/i })
+    .first()
+  if (await nextButton.isVisible().catch(() => false)) {
+    await nextButton.click()
+  }
+
+  const passwordField = page
+    .locator(
+      'input[name="password"], input[name="passwd"], input[type="password"], #password',
+    )
+    .first()
+
+  await expect(passwordField).toBeVisible({ timeout: 30000 })
+  await passwordField.fill(password)
+
+  const submitButton = page
+    .getByRole('button', { name: /sign in|sign in with|continue|submit/i })
+    .first()
+
+  await expect(submitButton).toBeVisible({ timeout: 30000 })
+  await submitButton.click()
 }

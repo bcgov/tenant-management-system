@@ -6,16 +6,63 @@ Playwright-based end-to-end tests for CSTAR.
 
 Before running the Playwright tests locally, make sure the `tests/e2e/.env` file is configured with the required environment values.
 
-Set the following variables in your local `.env` file:
+For local runs, start the dedicated E2E Keycloak realm from `tests/e2e`:
 
-E2E_IDIR_USERNAME=$$$
-E2E_IDIR_PASSWORD=$$$
-E2E_MFA_CODE=$$$
-BASE_URL=https://your-environment-url
+```bash
+docker compose -f keycloak/docker-compose.yml up -d
+```
 
-````
+It listens on port `8082`, separate from the devcontainer Keycloak on port `8081`. The imported `standard` realm contains the `cstar-e2e` client, test user, `TMS.OPERATIONS_ADMIN` role, and `client_roles` token mapper. The local-only test credentials are `cstar-e2e-user` / `e2euser`.
 
-Replace the placeholder values with your local IDIR test credentials, MFA code, and environment URL.
+Point the local frontend at this realm in `frontend/.env` (do not commit this local override):
+
+```dotenv
+VITE_DISABLE_RUNTIME_CONFIG=true
+VITE_KEYCLOAK_URL=http://localhost:8082
+VITE_KEYCLOAK_REALM=standard
+VITE_KEYCLOAK_CLIENT_ID=cstar-e2e
+VITE_KEYCLOAK_LOGOUT_URL=http://localhost:8082/realms/standard/protocol/openid-connect/logout
+```
+
+Run the local backend with JWT settings matching the mock realm. In PowerShell, from `backend`:
+
+```powershell
+$env:ISSUER = 'http://localhost:8082/realms/standard'
+$env:JWKS_URI = 'http://localhost:8082/realms/standard/protocol/openid-connect/certs'
+$env:TMS_AUDIENCE = 'cstar-e2e'
+npm run dev
+```
+
+In Bash, use:
+
+```bash
+ISSUER=http://localhost:8082/realms/standard \
+JWKS_URI=http://localhost:8082/realms/standard/protocol/openid-connect/certs \
+TMS_AUDIENCE=cstar-e2e npm run dev
+```
+
+Configure `tests/e2e/.env`:
+
+```dotenv
+BASE_URL=http://localhost:5173/
+E2E_AUTH_MODE=keycloak
+E2E_KEYCLOAK_URL=http://localhost:8082
+E2E_KEYCLOAK_USERNAME=cstar-e2e-user
+E2E_KEYCLOAK_PASSWORD=e2euser
+```
+
+These credentials are disposable local-test credentials, not real IDIR credentials. To stop the isolated E2E Keycloak, run `docker compose -f keycloak/docker-compose.yml down` from `tests/e2e`.
+
+### Keycloak URL from the Host or Dev Container
+
+Use the Keycloak address reachable from the machine running the Playwright browser:
+
+| Playwright runs on | Keycloak URL                       |
+| ------------------ | ---------------------------------- |
+| Windows host       | `http://localhost:8082`            |
+| Dev Container      | `http://host.docker.internal:8082` |
+
+Use the same host consistently in `VITE_KEYCLOAK_URL`, `VITE_KEYCLOAK_LOGOUT_URL`, the backend `ISSUER` and `JWKS_URI`, and `E2E_KEYCLOAK_URL`. The Dev Container's `localhost` refers to the container itself, so it cannot reach a Keycloak port published on Windows via `localhost`. Keep the frontend `BASE_URL`, Keycloak redirect URI, and web origin as `http://localhost:5173`; those refer to the browser-facing frontend.
 
 **Important:**
 
@@ -56,9 +103,9 @@ From the Playwright directory:
 ```bash
 cd /workspaces/tenant-management-system/tests/e2e
 npm run test:e2e
-````
+```
 
-The `test:e2e` command loads the required environment variables from `.env`.
+The `test:e2e` script uses Node's `--env-file=.env` option to load the required environment variables. It runs the setup project first to log in through local Keycloak, saves `support/user.json`, and then reuses that state for the E2E tests.
 
 ### Run in Headed Mode
 
@@ -76,6 +123,15 @@ The Playwright tests should run inside the Dev Container because the repository 
 /workspaces/tenant-management-system
 ```
 
+Before running them, start the CSTAR Backend and CSTAR Frontend from **Run and Debug → CSTAR**. Confirm the backend is healthy and the frontend is reachable from a Dev Container terminal:
+
+```bash
+curl -fsS http://localhost:4144/v1/health
+curl -fsS http://localhost:5173/ >/dev/null
+```
+
+The API health check must return HTTP 200. If either command fails, start or fix that service before running Playwright; the tests do not start the application services.
+
 If you are already using the Dev Container terminal, run:
 
 ```bash
@@ -83,11 +139,15 @@ cd /workspaces/tenant-management-system/tests/e2e
 npm run test:e2e
 ```
 
+This runs the full Playwright suite: the `setup` project authenticates first, then all Chromium E2E specs run with the saved state.
+
 If you are running the command from a local Windows PowerShell terminal, you can execute Playwright inside the running Dev Container with:
 
 ```bash
-docker exec -it devcontainer-devcontainer-1 bash -lc "cd /workspaces/tenant-management-system/tests/e2e && npm run test:e2e"
+docker exec -it -e E2E_KEYCLOAK_URL=http://host.docker.internal:8082 devcontainer-devcontainer-1 bash -lc "cd /workspaces/tenant-management-system/tests/e2e && npm run test:e2e"
 ```
+
+The npm script uses Node's `--env-file=.env` to load the remaining E2E settings and credentials. The `docker exec -e` value overrides `E2E_KEYCLOAK_URL` for this run so Playwright can reach Keycloak published on the Windows host. This override applies only to Playwright; use `host.docker.internal` in the frontend Keycloak URL and backend `ISSUER`/`JWKS_URI` settings too when those services run inside the Dev Container. Keep `BASE_URL` at `http://localhost:5173` when the frontend also runs inside the Dev Container.
 
 Chromium is installed automatically by `post-install.sh`, so it does not need to be installed before every test run.
 
@@ -124,8 +184,8 @@ Screenshots, videos, and traces may also be available for failed tests depending
 
 Playwright tests run against the deployed application environment as part of the GitHub Actions workflow.
 
-For pull requests, the tests run against the corresponding PR environment.
+For pull requests and deployment test workflows, the tests run against the corresponding deployed environment and use the real IDIR login with MFA.
 
-The required credentials are provided through GitHub Repository Secrets. Sensitive credentials are not stored in the repository.
+The workflow sets `E2E_AUTH_MODE=idir` and provides the IDIR username, password, and TOTP secret through GitHub Actions secrets. The setup project generates the one-time code at runtime and saves the authenticated state for the rest of the suite. Sensitive credentials are not stored in the repository.
 
 The application environment and URL are configured by the GitHub Actions workflow.
