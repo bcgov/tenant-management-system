@@ -1,7 +1,7 @@
 import userEvent from '@testing-library/user-event'
 import { render, screen } from '@testing-library/vue'
 import { describe, expect, it, vi } from 'vitest'
-import { defineComponent, ref } from 'vue'
+import { defineComponent } from 'vue'
 
 import ServiceRoleList from '@/components/service/ServiceRoleList.vue'
 import { type ServiceRoleDetailFields } from '@/models/servicerole.model'
@@ -145,23 +145,5 @@ describe('ServiceRoleList', () => {
     renderComponent([{ name: 'Role One' } as ServiceRoleDetailFields])
 
     expect(screen.queryByText('Duplicate')).not.toBeInTheDocument()
-  })
-
-  it('returns true from validate when all cards are valid', async () => {
-    const { emitted, ...result } = renderComponent([
-      { name: 'Role One' } as ServiceRoleDetailFields,
-      { name: 'Role Two' } as ServiceRoleDetailFields,
-    ])
-
-    const component = result.container.firstElementChild
-
-    expect(component).toBeTruthy()
-
-    const validate = result as typeof result & {
-      rerender: unknown
-    }
-
-    expect(validate).toBeDefined()
-    expect(emitted).toBeDefined()
   })
 })

@@ -96,7 +96,7 @@ const renderComponent = ({
     id: TENANT_ID,
   } as ReturnType<typeof tenantStore.getTenant>)
 
-  const result = render(GroupRoleContainer, {
+  const view = render(GroupRoleContainer, {
     global: {
       plugins: [vuetify, pinia],
     },
@@ -106,14 +106,14 @@ const renderComponent = ({
     },
   })
 
-  return { ...result, groupStore }
+  return { ...view, groupStore }
 }
 
 const getButton = (name: string) => screen.getByRole('button', { name })
 
 const getCheckbox = (name: string) => screen.getByRole('checkbox', { name })
 
-const getDialog = async () => within(await screen.findByRole('dialog'))
+const getDialog = () => screen.findByRole('dialog')
 
 const expectDialogClosed = () =>
   waitFor(() => expect(screen.getByTestId('button-confirm')).not.toBeVisible())
@@ -374,9 +374,11 @@ describe('GroupRoleContainer.vue', () => {
       await user.click(getButton('Clear All'))
 
       const dialog = await getDialog()
-      expect(dialog.getByText('Delete all Selections?')).toBeInTheDocument()
       expect(
-        dialog.getByText(/delete all of your current role selections/i),
+        within(dialog).getByText('Delete all Selections?'),
+      ).toBeInTheDocument()
+      expect(
+        within(dialog).getByText(/delete all of your current role selections/i),
       ).toBeInTheDocument()
     })
 
@@ -387,7 +389,7 @@ describe('GroupRoleContainer.vue', () => {
       await user.click(getButton('Edit'))
       await user.click(getButton('Clear All'))
       await user.click(
-        (await getDialog()).getByRole('button', { name: 'Clear All' }),
+        within(await getDialog()).getByRole('button', { name: 'Clear All' }),
       )
 
       await waitFor(() => expect(getCheckbox('Admin')).not.toBeChecked())
@@ -403,7 +405,7 @@ describe('GroupRoleContainer.vue', () => {
       await user.click(getButton('Edit'))
       await user.click(getButton('Clear All'))
       await user.click(
-        (await getDialog()).getByRole('button', { name: 'Cancel' }),
+        within(await getDialog()).getByRole('button', { name: 'Cancel' }),
       )
 
       await expectDialogClosed()
@@ -420,8 +422,12 @@ describe('GroupRoleContainer.vue', () => {
       await user.click(getButton('Undo Changes'))
 
       const dialog = await getDialog()
-      expect(dialog.getByText('Revert to Previous Roles?')).toBeInTheDocument()
-      expect(dialog.getByRole('button', { name: 'Revert' })).toBeInTheDocument()
+      expect(
+        within(dialog).getByText('Revert to Previous Roles?'),
+      ).toBeInTheDocument()
+      expect(
+        within(dialog).getByRole('button', { name: 'Revert' }),
+      ).toBeInTheDocument()
     })
 
     it('restores the original selections when confirmed', async () => {
@@ -433,7 +439,7 @@ describe('GroupRoleContainer.vue', () => {
       await user.click(getCheckbox('Admin'))
       await user.click(getButton('Undo Changes'))
       await user.click(
-        (await getDialog()).getByRole('button', { name: 'Revert' }),
+        within(await getDialog()).getByRole('button', { name: 'Revert' }),
       )
 
       await waitFor(() => expect(getCheckbox('Viewer')).not.toBeChecked())
@@ -448,7 +454,7 @@ describe('GroupRoleContainer.vue', () => {
       await user.click(getCheckbox('Viewer'))
       await user.click(getButton('Undo Changes'))
       await user.click(
-        (await getDialog()).getByRole('button', { name: 'Cancel' }),
+        within(await getDialog()).getByRole('button', { name: 'Cancel' }),
       )
 
       await expectDialogClosed()

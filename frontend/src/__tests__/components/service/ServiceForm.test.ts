@@ -9,6 +9,14 @@ const vuetify = createVuetify()
 
 type User = ReturnType<typeof userEvent.setup>
 
+const nth = <T>(items: T[], index: number): T => {
+  const item = items[index]
+  if (item === undefined) {
+    throw new Error(`Expected an element at index ${index}`)
+  }
+  return item
+}
+
 const renderComponent = (props = {}) =>
   render(ServiceForm, {
     global: {
@@ -44,7 +52,7 @@ const fillServiceFields = async (
 
   await user.type(screen.getByLabelText(/^name/i), v.name)
   await user.type(screen.getByLabelText(/^display name/i), v.displayName)
-  await user.type(screen.getAllByLabelText(/^description/i)[0]!, v.description)
+  await user.type(screen.getByLabelText(/^description/i), v.description)
   await user.type(
     screen.getByLabelText(/^client identifier/i),
     v.clientIdentifier,
@@ -61,12 +69,17 @@ const fillRole = async (
   index: number,
   values: { description: string; name: string },
 ) => {
-  await user.type(screen.getAllByLabelText(/role name/i)[index]!, values.name)
   await user.type(
-    screen.getAllByLabelText(/^description/i)[index + 1]!,
+    nth(screen.getAllByLabelText(/role name/i), index),
+    values.name,
+  )
+  await user.type(
+    nth(screen.getAllByLabelText(/^description/i), index + 1),
     values.description,
   )
-  await user.click(screen.getAllByRole('checkbox', { name: 'IDIR' })[index]!)
+  await user.click(
+    nth(screen.getAllByRole('checkbox', { name: 'IDIR' }), index),
+  )
 }
 
 const submit = async (user: User) => {
@@ -180,7 +193,7 @@ describe('ServiceForm.vue', () => {
       await submit(user)
 
       await waitFor(() => expect(emitted().submit).toHaveLength(1))
-      expect(emitted().submit![0]).toEqual([
+      expect(emitted().submit?.[0]).toEqual([
         {
           clientIdentifier: 'client-id',
           description: 'Service description',
@@ -214,7 +227,7 @@ describe('ServiceForm.vue', () => {
       await submit(user)
 
       await waitFor(() => expect(emitted().submit).toHaveLength(1))
-      expect(emitted().submit![0]).toEqual([
+      expect(emitted().submit?.[0]).toEqual([
         expect.objectContaining({
           clientIdentifier: 'client-id',
           description: 'Service description',
@@ -303,11 +316,11 @@ describe('ServiceForm.vue', () => {
 
       await addRole(user)
       await addRole(user)
-      await user.type(screen.getAllByLabelText(/role name/i)[0]!, 'First')
-      await user.type(screen.getAllByLabelText(/role name/i)[1]!, 'Second')
+      await user.type(nth(screen.getAllByLabelText(/role name/i), 0), 'First')
+      await user.type(nth(screen.getAllByLabelText(/role name/i), 1), 'Second')
 
       await user.click(
-        screen.getAllByRole('button', { name: /remove role/i })[0]!,
+        nth(screen.getAllByRole('button', { name: /remove role/i }), 0),
       )
 
       expect(screen.queryByText('First')).not.toBeInTheDocument()

@@ -275,7 +275,6 @@ describe('GroupHeader', () => {
 
     it('dialog is not opened before clicked', async () => {
       vi.mocked(currentUserHasRole).mockReturnValue(true)
-      const user = userEvent.setup()
 
       renderComponent()
 

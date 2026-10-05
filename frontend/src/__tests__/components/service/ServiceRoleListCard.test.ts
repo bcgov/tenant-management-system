@@ -226,7 +226,7 @@ describe('ServiceRoleListCard.vue', () => {
         modelValue: makeServiceRole({ name: '' }),
       })
 
-      await wrapper.findAll('button')[1]!.trigger('click')
+      await wrapper.findAll('button')?.[1].trigger('click')
       await flushPromises()
       expect(wrapper.find('form').isVisible()).toBe(false)
 
