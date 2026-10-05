@@ -180,14 +180,14 @@ describe('TenantRequestDisplay', () => {
 
       await user.clear(nameField)
       await user.type(nameField, 'a'.repeat(150))
-      await user.click(screen.getByRole('button', { name: 'Submit' }))
+      await user.click(screen.getByRole('button', { name: 'Update status' }))
 
       expect(
         screen.queryByText('Must be 150 characters or less'),
       ).not.toBeInTheDocument()
 
       await user.type(nameField, 'a')
-      await user.click(screen.getByRole('button', { name: 'Submit' }))
+      await user.click(screen.getByRole('button', { name: 'Update status' }))
 
       expect(
         screen.getByText('Must be 150 characters or less'),
@@ -232,7 +232,7 @@ describe('TenantRequestDisplay', () => {
         await user.type(nameField, name)
       }
 
-      await user.click(screen.getByRole('button', { name: 'Submit' }))
+      await user.click(screen.getByRole('button', { name: 'Update status' }))
 
       expect(screen.getByText(error)).toBeInTheDocument()
     })
@@ -273,7 +273,7 @@ describe('TenantRequestDisplay', () => {
 
       await user.clear(nameField)
       await user.type(nameField, '  Original Name  ')
-      await user.click(screen.getByRole('button', { name: 'Submit' }))
+      await user.click(screen.getByRole('button', { name: 'Update status' }))
 
       expect(
         screen.getByText('Name must be unique for this ministry/organization'),
@@ -313,7 +313,7 @@ describe('TenantRequestDisplay', () => {
         tenantRequest,
       })
 
-      await user.click(screen.getByRole('button', { name: 'Submit' }))
+      await user.click(screen.getByRole('button', { name: 'Update status' }))
 
       expect(emitted('approved')).toEqual([['New Tenant Name']])
     })
@@ -379,7 +379,9 @@ describe('TenantRequestDisplay', () => {
         }),
       })
 
-      const submitButton = screen.queryByRole('button', { name: 'Submit' })
+      const submitButton = screen.queryByRole('button', {
+        name: 'Update status',
+      })
 
       expect(submitButton).not.toBeInTheDocument()
     })
@@ -392,7 +394,9 @@ describe('TenantRequestDisplay', () => {
         }),
       })
 
-      const submitButton = screen.queryByRole('button', { name: 'Submit' })
+      const submitButton = screen.queryByRole('button', {
+        name: 'Update status',
+      })
 
       expect(submitButton).toBeEnabled()
     })
@@ -414,7 +418,7 @@ describe('TenantRequestDisplay', () => {
         }),
       )
 
-      await user.click(screen.getByRole('button', { name: 'Submit' }))
+      await user.click(screen.getByRole('button', { name: 'Update status' }))
 
       await waitFor(() => {
         expect(emitted('approved')).toEqual([['tenantRequestName']])
@@ -437,7 +441,7 @@ describe('TenantRequestDisplay', () => {
         }),
       )
 
-      await user.click(screen.getByRole('button', { name: 'Submit' }))
+      await user.click(screen.getByRole('button', { name: 'Update status' }))
 
       expect(screen.getByText('Required')).toBeInTheDocument()
       expect(emitted('rejected')).toBeUndefined()
@@ -464,7 +468,7 @@ describe('TenantRequestDisplay', () => {
         'Tenant does not meet requirements',
       )
 
-      await user.click(screen.getByRole('button', { name: 'Submit' }))
+      await user.click(screen.getByRole('button', { name: 'Update status' }))
 
       await waitFor(() => {
         expect(emitted('rejected')).toEqual([

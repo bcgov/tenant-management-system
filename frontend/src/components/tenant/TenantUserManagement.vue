@@ -1,12 +1,11 @@
 <script setup lang="ts">
-import { mdiPlusBox } from '@mdi/js'
+import { mdiPlus } from '@mdi/js'
 import { computed, ref, watch } from 'vue'
 
 import TenantUserTable from '@/components/tenant/TenantUserTable.vue'
 import UserSearch from '@/components/tenant/UserSearch.vue'
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
-import FloatingActionButton from '@/components/ui/FloatingActionButton.vue'
 import { type Group } from '@/models/group.model'
 import { type Role, type RoleId } from '@/models/role.model'
 import { type Tenant } from '@/models/tenant.model'
@@ -169,9 +168,9 @@ const toggleSearch = () => {
 
     <v-row v-if="isUserAdmin && !showSearch" class="mt-4">
       <v-col class="d-flex justify-start" cols="12">
-        <FloatingActionButton
-          :icon="mdiPlusBox"
-          text="Add another user to this tenant"
+        <ButtonPrimary
+          :prepend-icon="mdiPlus"
+          text="Add user to tenant"
           @click="toggleSearch"
         />
       </v-col>

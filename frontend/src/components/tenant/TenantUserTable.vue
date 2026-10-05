@@ -47,7 +47,7 @@ const modifyingUserIndex = ref<number | null>(null)
 const removeRoleDialog = ref({
   buttons: [
     { action: 'cancel', text: 'Cancel', type: 'secondary' as const },
-    { action: 'remove', text: 'Remove', type: 'primary' as const },
+    { action: 'remove', text: 'Remove role', type: 'primary' as const },
   ],
   message: 'Are you sure you want to remove this role from the user?',
   title: 'Confirm Role Removal',
@@ -59,14 +59,14 @@ const removeUserDialog = ref({
     { action: 'cancel', text: 'Cancel', type: 'secondary' as const },
     {
       action: 'remove',
-      text: 'Offboard User',
+      text: 'Remove user',
       type: 'primary' as const,
     },
   ],
   message:
     "This action will remove this user's tenant and group memberships. They " +
     'will no longer have access to any systems using CSTAR.',
-  title: 'Offboarding User',
+  title: 'Confirm user removal',
   visible: false,
 })
 
@@ -190,7 +190,7 @@ const handleRemoveUserButtonClick = (action: string) => {
     emit('remove-user', selectedUser.value)
   }
 
-  // Clear the selected user for both "Offboard User" and "Cancel" choices.
+  // Clear the selected user for both "Remove User" and "Cancel" choices.
   selectedUser.value = null
 }
 
@@ -294,18 +294,18 @@ const showRemoveUserDialog = (user: User) => {
           <v-tooltip
             :disabled="canRemoveUser(item)"
             location="top"
-            text="You can't offboard the last tenant owner"
+            text="You can't remove the last tenant owner"
           >
             <template #activator="{ props: tooltipProps }">
               <span v-bind="tooltipProps">
                 <v-list-item
-                  :aria-label="`Offboard User ${item.ssoUser.firstName} ${item.ssoUser.lastName}`"
+                  :aria-label="`Remove user ${item.ssoUser.firstName} ${item.ssoUser.lastName}`"
                   :disabled="!canRemoveUser(item)"
                   @click="showRemoveUserDialog(item)"
                 >
                   <v-list-item-title>
                     <v-icon :icon="mdiDeleteOutline" />
-                    Offboard User
+                    Remove user
                   </v-list-item-title>
                 </v-list-item>
               </span>

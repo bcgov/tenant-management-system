@@ -186,8 +186,8 @@ const handleRemoveMemberButton = (groupUser: GroupUser) => {
             @click="handleRemoveMemberButton(item)"
           >
             <v-list-item-title>
-              <v-icon :icon="mdiDeleteOutline" aria-label="Remove Member" />
-              Remove Member
+              <v-icon :icon="mdiDeleteOutline" aria-label="Remove member" />
+              Remove member
             </v-list-item-title>
           </v-list-item>
         </v-list>
@@ -201,7 +201,7 @@ const handleRemoveMemberButton = (groupUser: GroupUser) => {
     :max-width="650"
     message="This will remove the member from this group only. This action can't
       be undone."
-    title="Remove member from group?"
+    title="Confirm Remove Member"
     @button-click="handleRemoveDialogAction"
   />
 </template>

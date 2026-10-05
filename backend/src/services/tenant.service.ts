@@ -73,7 +73,7 @@ export class TenantService {
     let addedUser: AddTenantUserResultDto | undefined
     let addedGroups: Group[] = []
     const input: AddTenantUserInputDto = {
-      tenantId: req.params.tenantId,
+      tenantId: req.params.tenantId as string,
       updatedBy: req.decodedJwt?.idir_user_guid || 'system',
       user: req.body.user,
       roles: req.body.roles,
@@ -124,7 +124,7 @@ export class TenantService {
     const expand =
       typeof req.query.expand === 'string' ? req.query.expand.split(',') : []
     const input: GetUserTenantsInputDto = {
-      ssoUserId: req.params.ssoUserId,
+      ssoUserId: req.params.ssoUserId as string,
       expand,
       jwtAudience:
         req.decodedJwt?.aud ||
@@ -165,7 +165,7 @@ export class TenantService {
         : undefined
 
     const input: GetTenantUsersInputDto = {
-      tenantId: req.params.tenantId,
+      tenantId: req.params.tenantId as string,
       groupIds,
       sharedServiceRoleIds,
     }
@@ -179,7 +179,7 @@ export class TenantService {
 
   public async createRoles(req: Request) {
     const input: CreateTenantRolesInputDto = {
-      tenantId: req.params.tenantId,
+      tenantId: req.params.tenantId as string,
       role: req.body.role,
     }
 
@@ -207,7 +207,8 @@ export class TenantService {
   }
 
   public async assignUserRoles(req: Request) {
-    const { tenantId, tenantUserId } = req.params
+    const tenantId = req.params.tenantId as string
+    const tenantUserId = req.params.tenantUserId as string
     const { roles } = req.body
 
     const input: AssignUserRolesInputDto = {
@@ -239,7 +240,7 @@ export class TenantService {
 
   public async getTenantRoles(req: Request) {
     const input: GetTenantRolesInputDto = {
-      tenantId: req.params.tenantId,
+      tenantId: req.params.tenantId as string,
     }
     const roles = await tenantRepository.getTenantRoles(input)
     return {
@@ -251,8 +252,8 @@ export class TenantService {
 
   public async getUserRoles(req: Request) {
     const input: GetUserRolesInputDto = {
-      tenantId: req.params.tenantId,
-      tenantUserId: req.params.tenantUserId,
+      tenantId: req.params.tenantId as string,
+      tenantUserId: req.params.tenantUserId as string,
     }
     const roles = await tenantRepository.getUserRoles(input)
     return {
@@ -264,9 +265,9 @@ export class TenantService {
 
   public async unassignUserRoles(req: Request) {
     const input: UnassignUserRolesInputDto = {
-      tenantId: req.params.tenantId,
-      tenantUserId: req.params.tenantUserId,
-      roleId: req.params.roleId,
+      tenantId: req.params.tenantId as string,
+      tenantUserId: req.params.tenantUserId as string,
+      roleId: req.params.roleId as string,
       updatedBy: req.decodedJwt?.idir_user_guid || 'system',
     }
 
@@ -279,7 +280,7 @@ export class TenantService {
     const expand =
       typeof req.query.expand === 'string' ? req.query.expand.split(',') : []
     const input: GetTenantInputDto = {
-      tenantId: req.params.tenantId,
+      tenantId: req.params.tenantId as string,
       expand,
     }
     const tenant = await tenantRepository.getTenant(input)
@@ -302,7 +303,7 @@ export class TenantService {
 
   public async updateTenant(req: Request) {
     const input: UpdateTenantInputDto = {
-      tenantId: req.params.tenantId,
+      tenantId: req.params.tenantId as string,
       name: req.body.name,
       ministryName: req.body.ministryName,
       description: req.body.description,
@@ -340,8 +341,8 @@ export class TenantService {
 
   public async getRolesForSSOUser(req: Request) {
     const input: GetRolesForSsoUserInputDto = {
-      tenantId: req.params.tenantId,
-      ssoUserId: req.params.ssoUserId,
+      tenantId: req.params.tenantId as string,
+      ssoUserId: req.params.ssoUserId as string,
     }
     const roles = await tenantRepository.getRolesForSSOUser(input)
     return {
@@ -385,8 +386,8 @@ export class TenantService {
 
   public async removeTenantUser(req: Request) {
     const input: RemoveTenantUserInputDto = {
-      tenantId: req.params.tenantId,
-      tenantUserId: req.params.tenantUserId,
+      tenantId: req.params.tenantId as string,
+      tenantUserId: req.params.tenantUserId as string,
       deletedBy: req.decodedJwt?.idir_user_guid || 'system',
     }
 
@@ -420,8 +421,8 @@ export class TenantService {
         ? req.query.expand.split(',').map((v) => v.trim())
         : []
     const input: GetTenantUserInputDto = {
-      tenantId: req.params.tenantId,
-      tenantUserId: req.params.tenantUserId,
+      tenantId: req.params.tenantId as string,
+      tenantUserId: req.params.tenantUserId as string,
       expand,
     }
     const tenantUser: GetTenantUserResultDto =

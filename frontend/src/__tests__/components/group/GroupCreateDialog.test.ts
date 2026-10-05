@@ -49,7 +49,7 @@ describe('GroupCreateDialog', () => {
         'A description',
       )
 
-      await user.click(screen.getByRole('button', { name: /submit/i }))
+      await user.click(screen.getByRole('button', { name: /create group/i }))
 
       expect(emitted('update:modelValue')).toBeFalsy()
     })
@@ -142,13 +142,13 @@ describe('GroupCreateDialog', () => {
         screen.getByLabelText(/group description/i),
         'A description',
       )
-      await user.click(screen.getByRole('button', { name: /submit/i }))
+      await user.click(screen.getByRole('button', { name: /create group/i }))
       await rerender({ ...defaultProps, modelValue: false })
       await rerender({ ...defaultProps, modelValue: true })
 
       // Reopened with a blank form, so this click should be blocked by
       // validation, leaving only the earlier successful submit.
-      await user.click(screen.getByRole('button', { name: /submit/i }))
+      await user.click(screen.getByRole('button', { name: /create group/i }))
 
       expect(emitted('submit')).toHaveLength(1)
     })
@@ -170,7 +170,7 @@ describe('GroupCreateDialog', () => {
         description,
       )
 
-      await user.click(screen.getByRole('button', { name: /submit/i }))
+      await user.click(screen.getByRole('button', { name: /create group/i }))
 
       expect(emitted('submit')).toBeFalsy()
     })
@@ -190,7 +190,7 @@ describe('GroupCreateDialog', () => {
         'Some description',
       )
 
-      await user.click(screen.getByRole('button', { name: /submit/i }))
+      await user.click(screen.getByRole('button', { name: /create group/i }))
 
       expect(emitted('submit')).toBeTruthy()
     })
@@ -208,7 +208,7 @@ describe('GroupCreateDialog', () => {
         'Some description',
       )
 
-      await user.click(screen.getByRole('button', { name: /submit/i }))
+      await user.click(screen.getByRole('button', { name: /create group/i }))
 
       expect(emitted('submit')).toBeFalsy()
     })
@@ -223,7 +223,7 @@ describe('GroupCreateDialog', () => {
         'B'.repeat(500),
       )
 
-      await user.click(screen.getByRole('button', { name: /submit/i }))
+      await user.click(screen.getByRole('button', { name: /create group/i }))
 
       expect(emitted('submit')).toBeTruthy()
     })
@@ -238,7 +238,7 @@ describe('GroupCreateDialog', () => {
         'B'.repeat(501),
       )
 
-      await user.click(screen.getByRole('button', { name: /submit/i }))
+      await user.click(screen.getByRole('button', { name: /create group/i }))
 
       expect(emitted('submit')).toBeFalsy()
     })
@@ -258,7 +258,7 @@ describe('GroupCreateDialog', () => {
         'A description',
       )
 
-      await user.click(screen.getByRole('button', { name: /submit/i }))
+      await user.click(screen.getByRole('button', { name: /create group/i }))
 
       expect(emitted('submit')).toBeFalsy()
     })
@@ -273,7 +273,7 @@ describe('GroupCreateDialog', () => {
         'A description',
       )
 
-      await user.click(screen.getByRole('button', { name: /submit/i }))
+      await user.click(screen.getByRole('button', { name: /create group/i }))
 
       expect(emitted('submit')).toBeTruthy()
     })
@@ -290,7 +290,7 @@ describe('GroupCreateDialog', () => {
         'A description',
       )
 
-      await user.click(screen.getByRole('button', { name: /submit/i }))
+      await user.click(screen.getByRole('button', { name: /create group/i }))
 
       const [[group, addUser]] = emitted('submit') as [object, boolean][]
       expect(group).toEqual({ name: 'My Group', description: 'A description' })
@@ -308,7 +308,7 @@ describe('GroupCreateDialog', () => {
       )
       await user.click(screen.getByLabelText(/add me as a user to this group/i))
 
-      await user.click(screen.getByRole('button', { name: /submit/i }))
+      await user.click(screen.getByRole('button', { name: /create group/i }))
 
       const [[, addUser]] = emitted('submit') as [object, boolean][]
       expect(addUser).toBe(true)
@@ -327,7 +327,7 @@ describe('GroupCreateDialog', () => {
         'A description',
       )
 
-      await user.click(screen.getByRole('button', { name: /submit/i }))
+      await user.click(screen.getByRole('button', { name: /create group/i }))
 
       const [[group]] = emitted('submit') as [{ name: string }, boolean][]
       expect(group.name).toBe('Trimmed')
@@ -343,7 +343,7 @@ describe('GroupCreateDialog', () => {
         '  Trimmed description  ',
       )
 
-      await user.click(screen.getByRole('button', { name: /submit/i }))
+      await user.click(screen.getByRole('button', { name: /create group/i }))
 
       const [[group]] = emitted('submit') as [
         { description: string },
@@ -385,7 +385,7 @@ describe('GroupCreateDialog', () => {
         screen.getByLabelText(/group description/i),
         'A description',
       )
-      await user.click(screen.getByRole('button', { name: /submit/i }))
+      await user.click(screen.getByRole('button', { name: /create group/i }))
       expect(emitted('submit')).toBeFalsy()
 
       await rerender({ ...defaultProps, isDuplicateName: false })
@@ -395,7 +395,7 @@ describe('GroupCreateDialog', () => {
         'A Different Group',
       )
 
-      await user.click(screen.getByRole('button', { name: /submit/i }))
+      await user.click(screen.getByRole('button', { name: /create group/i }))
 
       expect(emitted('submit')).toBeTruthy()
     })

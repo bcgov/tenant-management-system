@@ -244,7 +244,7 @@ const rules = {
             <ButtonSecondary class="me-4" text="Cancel" @click="handleCancel" />
             <ButtonPrimary
               v-if="!isReadonly"
-              text="Submit"
+              text="Update status"
               @click="handleSubmit"
             />
           </div>

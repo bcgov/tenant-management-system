@@ -301,7 +301,7 @@ const updateState = (newUser: User | null) => {
         />
         <ButtonPrimary
           :disabled="!hasChanges || !atLeastOneRole"
-          text="Save"
+          text="Save roles"
           @click="handleSave"
         />
       </v-card-actions>
