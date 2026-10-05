@@ -179,7 +179,7 @@ describe('TenantRequestDisplay', () => {
       })
 
       await user.clear(nameField)
-      await user.type(nameField, 'a'.repeat(150))
+      await user.paste('a'.repeat(150))
       await user.click(screen.getByRole('button', { name: 'Update status' }))
 
       expect(
