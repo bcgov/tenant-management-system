@@ -104,6 +104,7 @@ export class Routes {
       .get(
         checkJwt(),
         validate(validator.getUserRoles, {}, {}),
+        checkTenantAccess([]),
         (req: Request, res: Response) =>
           tenantController.getUserRoles(req, res),
       )

@@ -55,7 +55,7 @@ describe('form validation', () => {
       screen.getByRole('button', { name: /create tenant request/i }),
     )
 
-    expect(screen.getByText('Required')).toBeInTheDocument()
+    expect(await screen.findByText('Required')).toBeInTheDocument()
     expect(emitted('submit')).toBeUndefined()
   })
 
@@ -84,7 +84,7 @@ describe('form validation', () => {
       screen.getByRole('button', { name: /create tenant request/i }),
     )
 
-    expect(screen.getByText('Required')).toBeInTheDocument()
+    expect(await screen.findByText('Required')).toBeInTheDocument()
     expect(emitted('submit')).toBeUndefined()
   })
 
@@ -97,7 +97,7 @@ describe('form validation', () => {
       screen.getByRole('button', { name: /create tenant request/i }),
     )
 
-    expect(screen.getByText('Cannot be only spaces')).toBeInTheDocument()
+    expect(await screen.findByText('Cannot be only spaces')).toBeInTheDocument()
     expect(emitted('submit')).toBeUndefined()
   })
 
@@ -110,7 +110,7 @@ describe('form validation', () => {
       screen.getByRole('button', { name: /create tenant request/i }),
     )
 
-    expect(screen.getByText('Cannot be only spaces')).toBeInTheDocument()
+    expect(await screen.findByText('Cannot be only spaces')).toBeInTheDocument()
     expect(emitted('submit')).toBeUndefined()
   })
 
@@ -127,7 +127,7 @@ describe('form validation', () => {
     )
 
     expect(
-      screen.getByText('Must be 150 characters or less'),
+      await screen.findByText('Must be 150 characters or less'),
     ).toBeInTheDocument()
     expect(emitted('submit')).toBeUndefined()
   })
@@ -145,7 +145,7 @@ describe('form validation', () => {
     )
 
     expect(
-      screen.getByText('Must be 500 characters or less'),
+      await screen.findByText('Must be 500 characters or less'),
     ).toBeInTheDocument()
     expect(emitted('submit')).toBeUndefined()
   })
@@ -154,18 +154,15 @@ describe('form validation', () => {
 describe('submitting', () => {
   it('submits the tenant request details', async () => {
     const user = userEvent.setup()
+
     const { emitted } = renderComponent()
-
     await user.type(screen.getByLabelText(/name of tenant/i), '  My Tenant  ')
-
     await user.click(screen.getByLabelText(/ministry\/organization/i))
     await user.click(screen.getByRole('option', { name: MINISTRIES[0] }))
-
     await user.type(
       screen.getByLabelText(/description of tenant/i),
       '  A description  ',
     )
-
     await user.click(
       screen.getByRole('button', { name: /create tenant request/i }),
     )
@@ -197,13 +194,9 @@ describe('submitting', () => {
       screen.getByLabelText(/description of tenant/i),
       'A description',
     )
-
-    await waitFor(() => {
-      expect(
-        screen.getByText('Name must be unique for this ministry/organization'),
-      ).toBeInTheDocument()
-    })
-
+    await screen.findByText(
+      'Name must be unique for this ministry/organization',
+    )
     await user.click(
       screen.getByRole('button', { name: /create tenant request/i }),
     )
@@ -221,13 +214,9 @@ describe('duplicate name handling', () => {
     })
 
     await user.type(screen.getByLabelText(/name of tenant/i), 'Existing Tenant')
-
-    await waitFor(() => {
-      expect(
-        screen.getByText('Name must be unique for this ministry/organization'),
-      ).toBeInTheDocument()
-    })
-
+    await screen.findByText(
+      'Name must be unique for this ministry/organization',
+    )
     await user.type(screen.getByLabelText(/name of tenant/i), ' Changed')
 
     expect(emitted('clearDuplicateError')).toBeTruthy()

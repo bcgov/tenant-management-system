@@ -6,23 +6,52 @@ import {
   mdiChevronDown,
   mdiChevronUp,
   mdiKeyOutline,
+  mdiPencil,
   mdiVectorPolyline,
 } from '@mdi/js'
 import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
+import GroupEditDialog from '@/components/group/GroupEditDialog.vue'
 import StatBlock from '@/components/ui/StatBlock.vue'
-import { type Group } from '@/models/group.model'
+import { type Group, type GroupDetailFields } from '@/models/group.model'
 import { type Tenant } from '@/models/tenant.model'
+import { ROLES } from '@/utils/constants'
+import { currentUserHasRole } from '@/utils/permissions'
 
 // --- Component Interface -----------------------------------------------------
 
-const { enabledRolesCount, enabledServiceCount, group, tenant } = defineProps<{
+const {
+  enabledRolesCount,
+  enabledServiceCount,
+  group,
+  isDuplicateName,
+  tenant,
+} = defineProps<{
   enabledRolesCount: number
   enabledServiceCount: number
   group: Group
+  isDuplicateName: boolean
   tenant: Tenant
 }>()
+
+const dialogVisible = defineModel<boolean>('dialogVisible', { default: false })
+
+const emit = defineEmits<{
+  'clear-duplicate-error': []
+  submit: [GroupDetailFields]
+}>()
+
+// --- Computed Values ---------------------------------------------------------
+
+const isUserAdmin = computed(() => {
+  // A tenant owner, by default, is also a user admin - even if they don't have
+  // the USER_ADMIN role.
+  return (
+    currentUserHasRole(tenant, ROLES.TENANT_OWNER.value) ||
+    currentUserHasRole(tenant, ROLES.USER_ADMIN.value)
+  )
+})
 
 // --- Store and Composable Setup ----------------------------------------------
 
@@ -45,6 +74,13 @@ watch(
 // --- Computed Values ---------------------------------------------------------
 
 const groupMembersCount = computed(() => group.groupUsers.length)
+
+// --- Component Methods -------------------------------------------------------
+
+function dialogOpen() {
+  emit('clear-duplicate-error')
+  dialogVisible.value = true
+}
 </script>
 
 <template>
@@ -56,7 +92,18 @@ const groupMembersCount = computed(() => group.groupUsers.length)
     <v-row class="align-center">
       <v-col>
         <hgroup class="text-stack">
-          <p class="p-large">{{ group.name }}</p>
+          <p class="p-large">
+            {{ group.name }}
+            <v-icon
+              v-if="isUserAdmin"
+              :icon="mdiPencil"
+              aria-label="Edit group details"
+              class="edit-icon"
+              size="x-small"
+              title="Edit"
+              @click.stop="dialogOpen"
+            />
+          </p>
           <p class="p-label">Tenant: {{ tenant.name }}</p>
         </hgroup>
       </v-col>
@@ -121,6 +168,14 @@ const groupMembersCount = computed(() => group.groupUsers.length)
       </v-col>
     </v-row>
   </v-sheet>
+
+  <GroupEditDialog
+    v-model="dialogVisible"
+    :group="group"
+    :is-duplicate-name="isDuplicateName"
+    @clear-duplicate-error="emit('clear-duplicate-error')"
+    @submit="(updatedGroup) => emit('submit', updatedGroup)"
+  />
 </template>
 
 <style scoped>
@@ -128,6 +183,10 @@ const groupMembersCount = computed(() => group.groupUsers.length)
   margin: 0;
   overflow-wrap: break-word;
   white-space: pre-wrap;
+}
+
+.edit-icon {
+  vertical-align: text-top;
 }
 
 .text-stack p {

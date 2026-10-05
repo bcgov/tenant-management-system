@@ -4,7 +4,11 @@ import { ref } from 'vue'
 import { groupMapper } from '@/mappers/group.mapper'
 import { groupServiceMapper } from '@/mappers/groupservice.mapper'
 import { groupUserMapper } from '@/mappers/groupuser.mapper'
-import { Group, type GroupId } from '@/models/group.model'
+import {
+  Group,
+  type GroupDetailFields,
+  type GroupId,
+} from '@/models/group.model'
 import { GroupService } from '@/models/groupservice.model'
 import { type GroupUserId } from '@/models/groupuser.model'
 import { type TenantId } from '@/models/tenant.model'
@@ -195,12 +199,48 @@ export const useGroupStore = defineStore('group', () => {
   }
 
   /**
-   * Updates the roles of a group.
+   * Updates the name and description of a group.
+   *
+   * @param tenantId - The ID of the tenant.
+   * @param groupId - The ID of the group.
+   * @param groupDetails - The new group details.
+   * @throws {Error} If the group is not found in the store.
+   * @returns A promise that resolves when the group details are updated.
+   */
+  const updateGroupDetails = async (
+    tenantId: TenantId,
+    groupId: GroupId,
+    groupDetails: GroupDetailFields,
+  ): Promise<Group> => {
+    // Grab the existing group from the store, to confirm the ID and for use
+    // later.
+    const group = getGroup(groupId)
+    if (!group) {
+      throw new Error(`Group with ID ${groupId} not found`)
+    }
+
+    const groupApiData = await groupService.updateGroup(
+      tenantId,
+      groupId,
+      groupDetails.name,
+      groupDetails.description,
+    )
+    const updatedGroup = groupMapper.fromApiData(groupApiData)
+
+    // Data returned from updateGroup does not include groupUsers, so be sure
+    // not to lose them.
+    updatedGroup.groupUsers = group.groupUsers
+
+    return upsertGroup(updatedGroup)
+  }
+
+  /**
+   * Updates the service roles of a group.
    *
    * @param tenantId - The ID of the tenant.
    * @param groupId - The ID of the group.
    * @param data - The new group service roles.
-   * @returns A promise that resolves when the roles are updated.
+   * @returns A promise that resolves when the group service roles are updated.
    */
   const updateGroupServiceRoles = async (
     tenantId: TenantId,
@@ -226,6 +266,7 @@ export const useGroupStore = defineStore('group', () => {
     fetchGroupServices,
     getGroup,
     removeGroupUser,
+    updateGroupDetails,
     updateGroupServiceRoles,
   }
 })

@@ -115,6 +115,7 @@ export const ROLES = Object.freeze({
    * tenants and services. Controlled via the SSO role 'TMS.OPERATIONS_ADMIN'.
    */
   OPERATIONS_ADMIN: {
+    description: 'Administrative role with full system access',
     title: 'Operations Admin',
     value: 'TMS.OPERATIONS_ADMIN',
   },
@@ -124,6 +125,7 @@ export const ROLES = Object.freeze({
    * services.
    */
   SERVICE_USER: {
+    description: 'Accesses services via groups',
     title: 'Service User',
     value: 'TMS.SERVICE_USER',
   },
@@ -132,12 +134,20 @@ export const ROLES = Object.freeze({
    * Owner of a specific tenant with full management privileges to manage users,
    * services, and roles.
    */
-  TENANT_OWNER: { title: 'Tenant Owner', value: 'TMS.TENANT_OWNER' },
+  TENANT_OWNER: {
+    description: 'Creates and manages tenants',
+    title: 'Tenant Owner',
+    value: 'TMS.TENANT_OWNER',
+  },
 
   /**
    * Administrative role for managing users within a tenant.
    */
-  USER_ADMIN: { title: 'User Admin', value: 'TMS.USER_ADMIN' },
+  USER_ADMIN: {
+    description: 'Manages groups and users',
+    title: 'User Admin',
+    value: 'TMS.USER_ADMIN',
+  },
 })
 
 /**

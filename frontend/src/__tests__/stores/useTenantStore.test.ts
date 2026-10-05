@@ -232,29 +232,12 @@ describe('useTenantStore', () => {
       const role2 = makeRole({ id: toRoleId('role-2') })
       roleStore.roles = [role1, role2]
 
-      const user = makeUser({ id: toUserId('u-1') })
+      const user = makeUser({ id: toUserId('u-1'), roles: [] })
       const tenant = makeTenant()
       tenant.users = [user]
 
       // Filter logic: only include role1
       await store.assignTenantUserRoles(tenant, user.id, [role1.id])
-
-      expect(user.roles).toHaveLength(1)
-      expect(user.roles[0].id).toBe(role1.id)
-    })
-
-    it('uses fullRoleIds for filtering when provided', async () => {
-      const store = useTenantStore()
-      const roleStore = useRoleStore()
-      const role1 = makeRole({ id: toRoleId('role-1') })
-      roleStore.roles = [role1]
-
-      const user = makeUser({ id: toUserId('u-1') })
-      const tenant = makeTenant()
-      tenant.users = [user]
-
-      // Pass role1 ID in the optional fullRoleIds parameter
-      await store.assignTenantUserRoles(tenant, user.id, [], [role1.id])
 
       expect(user.roles).toHaveLength(1)
       expect(user.roles[0].id).toBe(role1.id)

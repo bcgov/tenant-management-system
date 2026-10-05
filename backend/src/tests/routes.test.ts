@@ -106,6 +106,11 @@ describe('Routes middleware wiring', () => {
         res.status(200).send({ ok: true })
       })
     jest
+      .spyOn(TenantController.prototype, 'getUserRoles')
+      .mockImplementation(async (_req, res) => {
+        res.status(200).send({ ok: true })
+      })
+    jest
       .spyOn(GroupController.prototype, 'getTenantGroups')
       .mockImplementation(async (_req, res) => {
         res.status(200).send({ ok: true })
@@ -146,6 +151,29 @@ describe('Routes middleware wiring', () => {
 
     expect(response.status).toBe(403)
     expect(TenantController.prototype.removeTenantUser).not.toHaveBeenCalled()
+  })
+
+  it('should require tenant access for getting user roles after JWT passes', async () => {
+    const response = await request(app)
+      .get(
+        '/v1/tenants/123e4567-e89b-12d3-a456-426614174000/users/123e4567-e89b-12d3-a456-426614174001/roles',
+      )
+      .set('Authorization', 'Bearer ok')
+
+    expect(response.status).toBe(403)
+    expect(TenantController.prototype.getUserRoles).not.toHaveBeenCalled()
+  })
+
+  it('should return user roles when JWT and tenant access pass', async () => {
+    const response = await request(app)
+      .get(
+        '/v1/tenants/123e4567-e89b-12d3-a456-426614174000/users/123e4567-e89b-12d3-a456-426614174001/roles',
+      )
+      .set('Authorization', 'Bearer ok')
+      .set('x-tenant-access', 'allow')
+
+    expect(response.status).toBe(200)
+    expect(TenantController.prototype.getUserRoles).toHaveBeenCalled()
   })
 
   it('should configure shared service JWT mode for get tenant users', () => {

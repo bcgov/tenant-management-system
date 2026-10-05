@@ -1,6 +1,8 @@
 import { EntityManager } from 'typeorm'
 import { SharedServiceRepository } from '../../repositories/shared-service.repository'
+import { BadRequestError } from '../../errors/BadRequestError'
 import { ConflictError } from '../../errors/ConflictError'
+import { config } from '../../services/config.service'
 import { NotFoundError } from '../../errors/NotFoundError'
 import { getManager } from '../../common/db.connection'
 
@@ -97,6 +99,16 @@ describe('SharedServiceRepository', () => {
   }
 
   describe('saveSharedService', () => {
+    it('refuses a client identifier that is reserved for CSTAR', async () => {
+      await expect(
+        repo.saveSharedService(
+          { ...validCreateInput, clientIdentifier: config.oidc.tmsAudience },
+          asManager(manager),
+        ),
+      ).rejects.toThrow(BadRequestError)
+      expect(manager.save).not.toHaveBeenCalled()
+    })
+
     it('creates the shared service and its roles', async () => {
       const aggregate = { id: 'generated-id', name: validCreateInput.name }
       manager.createQueryBuilder
@@ -213,6 +225,20 @@ describe('SharedServiceRepository', () => {
       displayName: 'Old Display',
       clientIdentifier: 'old-client',
     }
+
+    it('refuses changing the client identifier to one reserved for CSTAR', async () => {
+      await expect(
+        repo.updateSharedService(
+          {
+            sharedServiceId: 'ss-1',
+            clientIdentifier: config.oidc.tmsAudience,
+            updatedBy: 'system',
+          },
+          asManager(manager),
+        ),
+      ).rejects.toThrow(BadRequestError)
+      expect(manager.save).not.toHaveBeenCalled()
+    })
 
     it('patches only the provided fields', async () => {
       manager.createQueryBuilder

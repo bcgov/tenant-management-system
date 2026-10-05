@@ -8,34 +8,33 @@ import { makeGroup, makeGroupUser, makeTenant } from '@/__tests__/__factories__'
 
 import GroupHeader from '@/components/group/GroupHeader.vue'
 import vuetify from '@/plugins/vuetify'
+import { currentUserHasRole } from '@/utils/permissions'
 
-const mockGroup = makeGroup({
-  groupUsers: [makeGroupUser(), makeGroupUser(), makeGroupUser()],
-})
-
-const mockTenant = makeTenant()
+vi.mock('@/utils/permissions', () => ({
+  currentUserHasRole: vi.fn(),
+}))
 
 vi.mock('vue-router', () => ({
   useRoute: vi.fn(),
 }))
 const mockedUseRoute = vi.mocked(useRoute)
 
-const defaultProps = {
-  enabledRolesCount: 4,
-  enabledServiceCount: 7,
-  group: mockGroup,
-  tenant: mockTenant,
-}
-
 const createRoute = (path = '/current-path'): ReturnType<typeof useRoute> => {
   return reactive({ path }) as ReturnType<typeof useRoute>
 }
 
-const renderComponent = (props = defaultProps) => {
+const renderComponent = (props = {}) => {
   return render(GroupHeader, {
-    props,
     global: {
       plugins: [vuetify],
+    },
+    props: {
+      enabledRolesCount: 0,
+      enabledServiceCount: 0,
+      group: makeGroup(),
+      isDuplicateName: false,
+      tenant: makeTenant(),
+      ...props,
     },
   })
 }
@@ -47,145 +46,190 @@ describe('GroupHeader', () => {
 
   describe('header', () => {
     it('renders the group name', () => {
-      renderComponent()
+      const group = makeGroup({ name: 'groupName' })
 
-      expect(screen.getByText(mockGroup.name)).toBeInTheDocument()
+      renderComponent({ group })
+
+      expect(screen.getByText('groupName')).toBeInTheDocument()
     })
 
     it('renders the tenant name', () => {
-      renderComponent()
+      const tenant = makeTenant({ name: 'tenantName' })
 
-      expect(screen.getByText(new RegExp(mockTenant.name))).toBeInTheDocument()
+      renderComponent({ tenant })
+
+      expect(screen.getByText('Tenant: tenantName')).toBeInTheDocument()
     })
+  })
 
+  describe('header details', () => {
     it('starts collapsed', () => {
       renderComponent()
+      const toggle = screen.getByRole('button', {
+        name: 'Expand group details',
+      })
 
-      // "group details" matches the button's label in both its expanded and
-      // collapsed state, so this same query works as a stable locator
-      // throughout the test file — no re-querying by a name that changes.
+      expect(toggle).toHaveAttribute('aria-expanded', 'false')
       expect(
-        screen.getByRole('button', { name: /group details/i }),
-      ).toHaveAttribute('aria-expanded', 'false')
+        screen.queryByRole('button', { name: 'Collapse group details' }),
+      ).not.toBeInTheDocument()
     })
 
-    it('expands after the toggle button is clicked', async () => {
+    it('expands after click', async () => {
       const user = userEvent.setup()
-      renderComponent()
 
-      const toggle = screen.getByRole('button', { name: /group details/i })
+      renderComponent()
+      const toggle = screen.getByRole('button', {
+        name: 'Expand group details',
+      })
       await user.click(toggle)
 
-      // waitFor re-checks the same element reference until the attribute
-      // updates, rather than re-querying by a name that's mid-change.
       await waitFor(() =>
         expect(toggle).toHaveAttribute('aria-expanded', 'true'),
       )
+      expect(
+        screen.queryByRole('button', { name: 'Expand group details' }),
+      ).not.toBeInTheDocument()
+      expect(
+        screen.getByRole('button', { name: 'Collapse group details' }),
+      ).toBeInTheDocument()
     })
   })
 
-  describe('toggle detail', () => {
-    it('does not show detail by default', () => {
-      renderComponent()
+  describe('group description', () => {
+    it('does not show by default', () => {
+      const group = makeGroup({ description: 'groupDescription' })
 
-      expect(screen.queryByText(mockGroup.description)).not.toBeInTheDocument()
+      renderComponent({ group })
+
+      expect(screen.queryByText('groupDescription')).not.toBeInTheDocument()
     })
 
-    it('shows detail when the toggle button is clicked', async () => {
+    it('shows when the toggle button is clicked', async () => {
+      const group = makeGroup({ description: 'groupDescription' })
       const user = userEvent.setup()
-      renderComponent()
 
-      await user.click(screen.getByRole('button', { name: /group details/i }))
+      renderComponent({ group })
+      const toggle = screen.getByRole('button', {
+        name: 'Expand group details',
+      })
+      await user.click(toggle)
 
-      expect(await screen.findByText(mockGroup.description)).toBeInTheDocument()
+      expect(await screen.findByText('groupDescription')).toBeInTheDocument()
     })
 
-    it('shows detail when the toggle button is activated via keyboard', async () => {
+    it('shows when the toggle button is activated via keyboard', async () => {
+      const group = makeGroup({ description: 'groupDescription' })
       const user = userEvent.setup()
-      renderComponent()
 
-      screen.getByRole('button', { name: /group details/i }).focus()
+      renderComponent({ group })
+      const toggle = screen.getByRole('button', {
+        name: 'Expand group details',
+      })
+      toggle.focus()
       await user.keyboard('{Enter}')
 
-      expect(await screen.findByText(mockGroup.description)).toBeInTheDocument()
+      expect(await screen.findByText('groupDescription')).toBeInTheDocument()
     })
 
-    it('hides detail when the toggle button is clicked again', async () => {
+    it('hides when the toggle button is clicked again', async () => {
+      const group = makeGroup({ description: 'groupDescription' })
       const user = userEvent.setup()
-      renderComponent()
 
-      const toggle = screen.getByRole('button', { name: /group details/i })
+      renderComponent({ group })
+      const toggle = screen.getByRole('button', {
+        name: 'Expand group details',
+      })
       await user.click(toggle)
-      await screen.findByText(mockGroup.description)
-
+      await screen.findByText('groupDescription')
       await user.click(toggle)
 
-      expect(screen.queryByText(mockGroup.description)).not.toBeInTheDocument()
+      expect(screen.queryByText('groupDescription')).not.toBeInTheDocument()
     })
 
-    // The header's larger surrounding area also toggles detail as a mouse
-    // convenience — the button above is the real accessible affordance, so
-    // this is the only test that exercises the extra hit area, by clicking
-    // on visible header text rather than the toggle button itself.
     it('also shows detail when clicking the group name in the header', async () => {
+      const group = makeGroup({
+        description: 'groupDescription',
+        name: 'groupName',
+      })
       const user = userEvent.setup()
-      renderComponent()
 
-      await user.click(screen.getByText(mockGroup.name))
+      renderComponent({ group })
+      await user.click(screen.getByText('groupName'))
 
-      expect(await screen.findByText(mockGroup.description)).toBeInTheDocument()
+      expect(await screen.findByText('groupDescription')).toBeInTheDocument()
     })
   })
 
-  describe('detail panel', () => {
+  describe('detail fields', () => {
     it('renders the created date', async () => {
+      const group = makeGroup({ createdDate: 'createdDate' })
       const user = userEvent.setup()
-      renderComponent()
 
-      await user.click(screen.getByRole('button', { name: /group details/i }))
-      await screen.findByText(mockGroup.description)
+      renderComponent({ group })
+      const toggle = screen.getByRole('button', {
+        name: 'Expand group details',
+      })
+      await user.click(toggle)
+      const dateCreated = screen.getByText('Date Created').parentElement
 
-      expect(screen.getByText(mockGroup.createdDate)).toBeInTheDocument()
+      expect(dateCreated).toHaveTextContent('createdDate')
     })
 
     it('renders who created the group', async () => {
+      const group = makeGroup({ createdBy: 'createdBy' })
       const user = userEvent.setup()
-      renderComponent()
 
-      await user.click(screen.getByRole('button', { name: /group details/i }))
-      await screen.findByText(mockGroup.description)
+      renderComponent({ group })
+      const toggle = screen.getByRole('button', {
+        name: 'Expand group details',
+      })
+      await user.click(toggle)
+      const createdBy = screen.getByText('Created By').parentElement
 
-      expect(screen.getByText(mockGroup.createdBy)).toBeInTheDocument()
+      expect(createdBy).toHaveTextContent('createdBy')
     })
 
     it('renders member count from groupUsers', async () => {
+      const group = makeGroup({
+        groupUsers: [makeGroupUser(), makeGroupUser(), makeGroupUser()],
+      })
       const user = userEvent.setup()
-      renderComponent()
 
-      await user.click(screen.getByRole('button', { name: /group details/i }))
-      await screen.findByText(mockGroup.description)
+      renderComponent({ group })
+      const toggle = screen.getByRole('button', {
+        name: 'Expand group details',
+      })
+      await user.click(toggle)
+      const members = screen.getByText('Members').parentElement
 
-      expect(screen.getByText('3')).toBeInTheDocument()
+      expect(members).toHaveTextContent('3')
     })
 
     it('renders enabled roles count', async () => {
       const user = userEvent.setup()
-      renderComponent()
 
-      await user.click(screen.getByRole('button', { name: /group details/i }))
-      await screen.findByText(mockGroup.description)
+      renderComponent({ enabledRolesCount: 4 })
+      const toggle = screen.getByRole('button', {
+        name: 'Expand group details',
+      })
+      await user.click(toggle)
+      const roles = screen.getByText('Roles').parentElement
 
-      expect(screen.getByText('4')).toBeInTheDocument()
+      expect(roles).toHaveTextContent('4')
     })
 
     it('renders enabled service count', async () => {
       const user = userEvent.setup()
-      renderComponent()
 
-      await user.click(screen.getByRole('button', { name: /group details/i }))
-      await screen.findByText(mockGroup.description)
+      renderComponent({ enabledServiceCount: 5 })
+      const toggle = screen.getByRole('button', {
+        name: 'Expand group details',
+      })
+      await user.click(toggle)
+      const enabledServices = screen.getByText('Enabled Services').parentElement
 
-      expect(screen.getByText('7')).toBeInTheDocument()
+      expect(enabledServices).toHaveTextContent('5')
     })
   })
 
@@ -195,17 +239,186 @@ describe('GroupHeader', () => {
       mockedUseRoute.mockReturnValue(route)
       const user = userEvent.setup()
 
-      renderComponent()
-      const toggle = screen.getByRole('button', { name: /group details/i })
+      renderComponent({ group: makeGroup({ description: 'groupDescription' }) })
+      const toggle = screen.getByRole('button', {
+        name: 'Expand group details',
+      })
       await user.click(toggle)
-      await screen.findByText(mockGroup.description)
+
+      expect(screen.getByText('groupDescription')).toBeInTheDocument()
 
       route.path = '/new-path'
-
       await waitFor(() =>
         expect(toggle).toHaveAttribute('aria-expanded', 'false'),
       )
-      expect(screen.queryByText(mockGroup.description)).not.toBeInTheDocument()
+
+      expect(screen.queryByText('groupDescription')).not.toBeInTheDocument()
+    })
+  })
+
+  describe('Edit details button', () => {
+    it('is shown for admins', () => {
+      vi.mocked(currentUserHasRole).mockReturnValue(true)
+
+      renderComponent()
+
+      expect(
+        screen.getByRole('button', { name: 'Edit group details' }),
+      ).toBeInTheDocument()
+    })
+
+    it('is hidden for non-admins', () => {
+      vi.mocked(currentUserHasRole).mockReturnValue(false)
+
+      renderComponent()
+
+      expect(
+        screen.queryByRole('button', { name: 'Edit group details' }),
+      ).not.toBeInTheDocument()
+    })
+
+    it('opens dialog when clicked', async () => {
+      vi.mocked(currentUserHasRole).mockReturnValue(true)
+      const user = userEvent.setup()
+
+      renderComponent()
+      const button = screen.getByRole('button', { name: 'Edit group details' })
+      await user.click(button)
+
+      expect(screen.getByRole('dialog')).toBeInTheDocument()
+    })
+
+    it('closes dialog when the dialog emits update:modelValue', async () => {
+      vi.mocked(currentUserHasRole).mockReturnValue(true)
+      const user = userEvent.setup()
+
+      render(GroupHeader, {
+        props: {
+          enabledRolesCount: 0,
+          enabledServiceCount: 0,
+          group: makeGroup(),
+          isDuplicateName: false,
+          tenant: makeTenant(),
+        },
+        global: {
+          plugins: [vuetify],
+          stubs: {
+            GroupEditDialog: {
+              props: ['modelValue'],
+              emits: ['update:modelValue'],
+              template: `
+          <div v-if="modelValue" role="dialog">
+            <button
+              type="button"
+              @click="$emit('update:modelValue', false)"
+            >
+              Close
+            </button>
+          </div>
+        `,
+            },
+          },
+        },
+      })
+      await user.click(
+        screen.getByRole('button', { name: 'Edit group details' }),
+      )
+
+      expect(screen.getByRole('dialog')).toBeInTheDocument()
+
+      await user.click(screen.getByRole('button', { name: 'Close' }))
+
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    })
+
+    it('closes dialog when dialog emits update:modelValue', async () => {
+      vi.mocked(currentUserHasRole).mockReturnValue(true)
+      const user = userEvent.setup()
+
+      render(GroupHeader, {
+        props: {
+          enabledRolesCount: 0,
+          enabledServiceCount: 0,
+          group: makeGroup(),
+          isDuplicateName: false,
+          tenant: makeTenant(),
+        },
+        global: {
+          plugins: [vuetify],
+          stubs: {
+            GroupEditDialog: {
+              props: ['modelValue'],
+              emits: ['update:modelValue'],
+              template: `
+            <div v-if="modelValue" role="dialog">
+              <button
+                type="button"
+                @click="$emit('update:modelValue', false)"
+              >
+                Close
+              </button>
+            </div>
+          `,
+            },
+          },
+        },
+      })
+
+      await user.click(
+        screen.getByRole('button', { name: 'Edit group details' }),
+      )
+
+      expect(screen.getByRole('dialog')).toBeInTheDocument()
+
+      await user.click(screen.getByRole('button', { name: 'Close' }))
+
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    })
+
+    it('emits submit when dialog is submitted', async () => {
+      vi.mocked(currentUserHasRole).mockReturnValue(true)
+      const updatedGroup = makeGroup({ name: 'Updated group' })
+
+      const { emitted } = render(GroupHeader, {
+        props: {
+          enabledRolesCount: 0,
+          enabledServiceCount: 0,
+          group: makeGroup(),
+          isDuplicateName: false,
+          tenant: makeTenant(),
+        },
+        global: {
+          plugins: [vuetify],
+          stubs: {
+            GroupEditDialog: {
+              props: ['modelValue'],
+              emits: ['submit'],
+              template: `
+            <div v-if="modelValue" role="dialog">
+              <button
+                type="button"
+                @click="$emit('submit', updatedGroup)"
+              >
+                Submit
+              </button>
+            </div>
+          `,
+              setup() {
+                return { updatedGroup }
+              },
+            },
+          },
+        },
+      })
+
+      const user = userEvent.setup()
+
+      await user.click(
+        screen.getByRole('button', { name: 'Edit group details' }),
+      )
+      await user.click(screen.getByRole('button', { name: 'Submit' }))
+
+      expect(emitted().submit).toEqual([[updatedGroup]])
     })
   })
 })
