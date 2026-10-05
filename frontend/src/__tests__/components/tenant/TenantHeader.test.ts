@@ -9,31 +9,24 @@ import { makeGroup, makeTenant, makeUser } from '@/__tests__/__factories__'
 import TenantHeader from '@/components/tenant/TenantHeader.vue'
 import vuetify from '@/plugins/vuetify'
 
-const mockGroups = [makeGroup(), makeGroup()]
-
-const mockTenant = makeTenant({
-  users: [makeUser(), makeUser(), makeUser(), makeUser(), makeUser()],
-})
-
 vi.mock('vue-router', () => ({
   useRoute: vi.fn(),
 }))
 const mockedUseRoute = vi.mocked(useRoute)
 
-const defaultProps = {
-  groups: mockGroups,
-  tenant: mockTenant,
-}
-
 const createRoute = (path = '/current-path'): ReturnType<typeof useRoute> => {
   return reactive({ path }) as ReturnType<typeof useRoute>
 }
 
-const renderComponent = (props = defaultProps) => {
+const renderComponent = (props = {}) => {
   return render(TenantHeader, {
-    props,
     global: {
       plugins: [vuetify],
+    },
+    props: {
+      groups: [],
+      tenant: makeTenant(),
+      ...props,
     },
   })
 }
@@ -45,161 +38,194 @@ describe('TenantHeader', () => {
 
   describe('header', () => {
     it('renders the tenant name', () => {
-      renderComponent()
+      const tenant = makeTenant({ name: 'tenantName' })
 
-      expect(screen.getByText(mockTenant.name)).toBeInTheDocument()
+      renderComponent({ tenant })
+
+      expect(screen.getByText('tenantName')).toBeInTheDocument()
     })
 
     it('renders the tenant ministry name', () => {
-      renderComponent()
+      const tenant = makeTenant({ ministryName: 'tenantMinistryName' })
 
-      expect(screen.getByText(mockTenant.ministryName)).toBeInTheDocument()
+      renderComponent({ tenant })
+
+      expect(screen.getByText('tenantMinistryName')).toBeInTheDocument()
     })
+  })
 
+  describe('header details', () => {
     it('starts collapsed', () => {
       renderComponent()
 
-      // "tenant details" matches the button's label in both its expanded
-      // and collapsed state, so this same query works as a stable locator
-      // throughout the test file — no re-querying by a name that changes.
       expect(
-        screen.getByRole('button', { name: /tenant details/i }),
+        screen.getByRole('button', { name: /expand tenant details/i }),
       ).toHaveAttribute('aria-expanded', 'false')
+      expect(
+        screen.queryByRole('button', { name: /collapse tenant details/i }),
+      ).not.toBeInTheDocument()
     })
 
-    it('expands after the toggle button is clicked', async () => {
+    it('expands after click', async () => {
       const user = userEvent.setup()
+
       renderComponent()
-
-      const toggle = screen.getByRole('button', { name: /tenant details/i })
-      await user.click(toggle)
-
-      // waitFor re-checks the same element reference until the attribute
-      // updates, rather than re-querying by a name that's mid-change.
-      await waitFor(() =>
-        expect(toggle).toHaveAttribute('aria-expanded', 'true'),
+      await user.click(
+        screen.getByRole('button', { name: /expand tenant details/i }),
       )
+
+      expect(
+        screen.queryByRole('button', { name: /expand tenant details/i }),
+      ).not.toBeInTheDocument()
+      expect(
+        await screen.findByRole('button', { name: /collapse tenant details/i }),
+      ).toBeInTheDocument()
     })
   })
 
-  describe('toggle detail', () => {
-    it('does not show detail by default', () => {
-      renderComponent()
+  describe('tenant description', () => {
+    it('does not show by default', () => {
+      const tenant = makeTenant({ description: 'tenantDescription' })
 
-      expect(screen.queryByText(mockTenant.description)).not.toBeInTheDocument()
+      renderComponent({ tenant })
+
+      expect(screen.queryByText('tenantDescription')).not.toBeInTheDocument()
     })
 
-    it('shows detail when the toggle button is clicked', async () => {
+    it('shows when the toggle button is clicked', async () => {
+      const tenant = makeTenant({ description: 'tenantDescription' })
       const user = userEvent.setup()
-      renderComponent()
 
-      await user.click(screen.getByRole('button', { name: /tenant details/i }))
+      renderComponent({ tenant })
+      await user.click(
+        screen.getByRole('button', { name: /expand tenant details/i }),
+      )
 
-      expect(
-        await screen.findByText(mockTenant.description),
-      ).toBeInTheDocument()
+      expect(await screen.findByText('tenantDescription')).toBeInTheDocument()
     })
 
-    it('shows detail when the toggle button is activated via keyboard', async () => {
+    it('shows when the toggle button is activated via keyboard', async () => {
+      const tenant = makeTenant({ description: 'tenantDescription' })
       const user = userEvent.setup()
-      renderComponent()
 
-      screen.getByRole('button', { name: /tenant details/i }).focus()
+      renderComponent({ tenant })
+      screen.getByRole('button', { name: /expand tenant details/i }).focus()
       await user.keyboard('{Enter}')
 
-      expect(
-        await screen.findByText(mockTenant.description),
-      ).toBeInTheDocument()
+      expect(await screen.findByText('tenantDescription')).toBeInTheDocument()
     })
 
-    it('hides detail when the toggle button is clicked again', async () => {
+    it('hides when the toggle button is clicked again', async () => {
+      const tenant = makeTenant({ description: 'tenantDescription' })
       const user = userEvent.setup()
-      renderComponent()
 
-      const toggle = screen.getByRole('button', { name: /tenant details/i })
+      renderComponent({ tenant })
+      const toggle = screen.getByRole('button', {
+        name: /expand tenant details/i,
+      })
       await user.click(toggle)
-      await screen.findByText(mockTenant.description)
-
+      await screen.findByText('tenantDescription')
       await user.click(toggle)
 
-      expect(screen.queryByText(mockTenant.description)).not.toBeInTheDocument()
+      expect(screen.queryByText('tenantDescription')).not.toBeInTheDocument()
     })
 
-    // The header's larger surrounding area also toggles detail as a mouse
-    // convenience — the button above is the real accessible affordance, so
-    // this is the only test that exercises the extra hit area, by clicking
-    // on visible header text rather than the toggle button itself.
     it('also shows detail when clicking the tenant name in the header', async () => {
+      const tenant = makeTenant({
+        description: 'tenantDescription',
+        name: 'tenantName',
+      })
       const user = userEvent.setup()
-      renderComponent()
 
-      await user.click(screen.getByText(mockTenant.name))
+      renderComponent({ tenant })
+      await user.click(screen.getByText('tenantName'))
 
-      expect(
-        await screen.findByText(mockTenant.description),
-      ).toBeInTheDocument()
+      expect(await screen.findByText('tenantDescription')).toBeInTheDocument()
     })
   })
 
-  describe('detail panel', () => {
+  describe('detail fields', () => {
     it('renders the created date', async () => {
+      const tenant = makeTenant({ createdDate: 'createdDate' })
       const user = userEvent.setup()
-      renderComponent()
 
-      await user.click(screen.getByRole('button', { name: /tenant details/i }))
-      await screen.findByText(mockTenant.description)
+      renderComponent({ tenant })
 
-      expect(screen.getByText(mockTenant.createdDate)).toBeInTheDocument()
+      expect(screen.queryByText('createdDate')).not.toBeInTheDocument()
+
+      await user.click(
+        screen.getByRole('button', { name: /expand tenant details/i }),
+      )
+
+      expect(await screen.findByText('createdDate')).toBeInTheDocument()
     })
 
     it('renders who created the tenant', async () => {
+      const tenant = makeTenant({ createdBy: 'createdBy' })
       const user = userEvent.setup()
-      renderComponent()
 
-      await user.click(screen.getByRole('button', { name: /tenant details/i }))
-      await screen.findByText(mockTenant.description)
+      renderComponent({ tenant })
 
-      expect(screen.getByText(mockTenant.createdBy)).toBeInTheDocument()
+      expect(screen.queryByText('createdBy')).not.toBeInTheDocument()
+
+      await user.click(
+        screen.getByRole('button', { name: /expand tenant details/i }),
+      )
+
+      expect(await screen.findByText('createdBy')).toBeInTheDocument()
     })
 
-    it('renders user count from tenant.users', async () => {
+    it('renders user count from users', async () => {
+      const tenant = makeTenant({ users: [makeUser(), makeUser(), makeUser()] })
       const user = userEvent.setup()
-      renderComponent()
 
-      await user.click(screen.getByRole('button', { name: /tenant details/i }))
-      await screen.findByText(mockTenant.description)
+      renderComponent({ tenant })
 
-      expect(screen.getByText('5')).toBeInTheDocument()
+      expect(screen.queryByText('3')).not.toBeInTheDocument()
+
+      await user.click(
+        screen.getByRole('button', { name: /expand tenant details/i }),
+      )
+
+      expect(await screen.findByText('3')).toBeInTheDocument()
     })
 
-    it('renders group count from the groups prop', async () => {
+    it('renders group count from groups prop', async () => {
+      const groups = [makeGroup(), makeGroup(), makeGroup(), makeGroup()]
       const user = userEvent.setup()
-      renderComponent()
 
-      await user.click(screen.getByRole('button', { name: /tenant details/i }))
-      await screen.findByText(mockTenant.description)
+      renderComponent({ groups })
 
-      expect(screen.getByText('2')).toBeInTheDocument()
+      expect(screen.queryByText('4')).not.toBeInTheDocument()
+
+      await user.click(
+        screen.getByRole('button', { name: /expand tenant details/i }),
+      )
+
+      expect(await screen.findByText('4')).toBeInTheDocument()
     })
   })
 
   describe('route watcher', () => {
     it('collapses detail when route changes', async () => {
+      const tenant = makeTenant({ description: 'tenantDescription' })
       const route = createRoute('/initial-path')
       mockedUseRoute.mockReturnValue(route)
       const user = userEvent.setup()
 
-      renderComponent()
-      const toggle = screen.getByRole('button', { name: /tenant details/i })
+      renderComponent({ tenant })
+      const toggle = screen.getByRole('button', {
+        name: /expand tenant details/i,
+      })
       await user.click(toggle)
-      await screen.findByText(mockTenant.description)
+      await screen.findByText('tenantDescription')
 
       route.path = '/new-path'
 
       await waitFor(() =>
         expect(toggle).toHaveAttribute('aria-expanded', 'false'),
       )
-      expect(screen.queryByText(mockTenant.description)).not.toBeInTheDocument()
+      expect(screen.queryByText('tenantDescription')).not.toBeInTheDocument()
     })
   })
 })

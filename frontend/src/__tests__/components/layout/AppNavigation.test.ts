@@ -175,16 +175,15 @@ describe('AppNavigation', () => {
     it('links to the correct tenant routes', () => {
       renderComponent()
 
-      expect(screen.getByText('Tenant Users').closest('a')).toHaveAttribute(
-        'href',
-        '/tenants/tenantId/users',
-      )
-      expect(screen.getByText('Groups').closest('a')).toHaveAttribute(
+      expect(
+        screen.getByRole('link', { name: /tenant users/i }),
+      ).toHaveAttribute('href', '/tenants/tenantId/users')
+      expect(screen.getByRole('link', { name: /groups/i })).toHaveAttribute(
         'href',
         '/tenants/tenantId/groups',
       )
       expect(
-        screen.getByText('Connected Services').closest('a'),
+        screen.getByRole('link', { name: /connected services/i }),
       ).toHaveAttribute('href', '/tenants/tenantId/services')
     })
 
@@ -217,14 +216,13 @@ describe('AppNavigation', () => {
     it('links to the correct group routes', () => {
       renderComponent()
 
-      expect(screen.getByText('Members').closest('a')).toHaveAttribute(
+      expect(screen.getByRole('link', { name: /members/i })).toHaveAttribute(
         'href',
         '/tenants/tenantId/groups/groupId/members',
       )
-      expect(screen.getByText('Service Roles').closest('a')).toHaveAttribute(
-        'href',
-        '/tenants/tenantId/groups/groupId/roles',
-      )
+      expect(
+        screen.getByRole('link', { name: /service roles/i }),
+      ).toHaveAttribute('href', '/tenants/tenantId/groups/groupId/roles')
     })
 
     it('does not render group nav items without a group route', () => {
@@ -268,11 +266,10 @@ describe('AppNavigation', () => {
       mockedUseDisplay.mockReturnValue({ mobile } as unknown as ReturnType<
         typeof useDisplay
       >)
-      const { container } = renderComponent()
 
-      const toggleButton = container.querySelector(
-        '.v-navigation-drawer__append .v-list-item',
-      ) as HTMLElement
+      renderComponent()
+
+      const toggleButton = screen.getByLabelText('Collapse navigation')
       await fireEvent.click(toggleButton)
 
       mobile.value = true
