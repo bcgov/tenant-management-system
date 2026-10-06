@@ -32,10 +32,18 @@ export async function login(page: Page) {
   await page.fill('input[name="otc"]', token)
   await page.click('input[type="submit"]')
 
+  const tenantsUrl = /\/tenants(?:[?#].*)?$/
   const staySignedInButton = page.locator('#idSIButton9')
+  await Promise.race([
+    page.waitForURL(tenantsUrl, { timeout: 60_000 }),
+    staySignedInButton.waitFor({ state: 'visible', timeout: 60_000 }),
+  ])
+
   if (await staySignedInButton.isVisible().catch(() => false)) {
     await staySignedInButton.click()
   }
+
+  await page.waitForURL(tenantsUrl, { timeout: 60_000 })
 }
 
 // Keycloak / mock OIDC E2E login
