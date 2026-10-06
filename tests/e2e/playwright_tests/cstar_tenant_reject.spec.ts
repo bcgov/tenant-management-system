@@ -7,11 +7,11 @@ test.beforeAll(async ({ browser }: { browser: Browser }) => {
     storageState: 'support/user.json',
   })
   sharedPage = await context.newPage()
-  await sharedPage.goto('/tenants')
-  await expect(sharedPage.getByText('Logout')).toBeVisible({ timeout: 30_000 })
+  await sharedPage.goto('/')
   await expect(sharedPage).toHaveURL(/\/tenants(?:[?#].*)?$/, {
     timeout: 30_000,
   })
+  await expect(sharedPage.getByText('Logout')).toBeVisible({ timeout: 30_000 })
 })
 
 test.describe.serial('Landing page tests', () => {
