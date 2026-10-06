@@ -1,6 +1,8 @@
 import { test, expect, Page, Browser } from '@playwright/test'
 import { MINISTRIES } from '../../../frontend/src/utils/constants'
 
+const authMode = process.env.E2E_AUTH_MODE ?? 'keycloak'
+
 let sharedPage: Page
 
 test.beforeAll(async ({ browser }: { browser: Browser }) => {
@@ -81,8 +83,8 @@ test.describe.serial('Landing page tests', () => {
   })
   test('Checks the tenant users page', async () => {
     test.skip(
-      process.env.GITHUB_ACTIONS !== 'true',
-      'This test runs only in GitHub Actions',
+      authMode !== 'idir',
+      'This test requires the IDIR test account and data',
     )
     await sharedPage.getByText('Tenant Users').click()
     await expect(sharedPage.getByText('Groups', { exact: true })).toBeVisible()
@@ -129,8 +131,8 @@ test.describe.serial('Landing page tests', () => {
   })
   test('Checks the IDIR User search', async () => {
     test.skip(
-      process.env.GITHUB_ACTIONS !== 'true',
-      'This test runs only in GitHub Actions',
+      authMode !== 'idir',
+      'This test requires the IDIR test account and data',
     )
     await sharedPage
       .locator('.v-field')
@@ -234,8 +236,8 @@ test.describe.serial('Landing page tests', () => {
   })
   test('Checks add/remove IDIR user', async () => {
     test.skip(
-      process.env.GITHUB_ACTIONS !== 'true',
-      'This test runs only in GitHub Actions',
+      authMode !== 'idir',
+      'This test requires the IDIR test account and data',
     )
     await sharedPage
       .getByRole('button', {

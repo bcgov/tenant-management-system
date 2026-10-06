@@ -1,22 +1,27 @@
-import { test, expect, Page } from '@playwright/test'
+import { test, expect, Page, Browser } from '@playwright/test'
 
 let sharedPage: Page
 
+test.beforeAll(async ({ browser }: { browser: Browser }) => {
+  const context = await browser.newContext({
+    storageState: 'support/user.json',
+  })
+  sharedPage = await context.newPage()
+  await sharedPage.goto('/')
+})
+
 test.describe.serial('Landing page tests', () => {
-  test('Submit tenant request under a Ministry', async ({ page }) => {
-    sharedPage = page
-    await sharedPage.goto('/')
-    await expect(sharedPage).toHaveURL(/\/tenants(?:[?#].*)?$/, {
-      timeout: 30_000,
-    })
-    await expect(sharedPage.getByText('Logout')).toBeVisible({
-      timeout: 30_000,
-    })
-    const requestTenantButton = sharedPage.getByRole('button', {
-      name: /Request a Tenant/i,
-    })
-    await expect(requestTenantButton).toBeVisible({ timeout: 30_000 })
-    await requestTenantButton.click()
+  test('Checks the homepage', async () => {
+    await expect(sharedPage.getByText('Logout')).toBeVisible()
+  })
+
+  test('Checks the navigation links', async () => {
+    await expect(sharedPage.getByText('All Tenants')).toBeVisible()
+    await expect(sharedPage.getByText('Request a Tenant')).toBeVisible()
+  })
+
+  test('Submit tenant request under a Ministry', async () => {
+    await sharedPage.getByText('Request a Tenant').click()
 
     const tenantName = sharedPage.getByLabel('Name of Tenant')
     const tenantNameValue = `Test Tenant ${Date.now()}`

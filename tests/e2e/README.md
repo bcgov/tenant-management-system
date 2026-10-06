@@ -90,6 +90,35 @@ cd /workspaces/tenant-management-system/tests/e2e
 npm run test:e2e
 ```
 
+To choose the authentication mode explicitly, use the mode runner:
+
+```bash
+npm run test:e2e:mode -- keycloak
+npm run test:e2e:mode -- idir
+```
+
+`keycloak` runs against the local E2E realm and local application. `idir` uses
+the real IDIR/MFA login and requires `IDIR_BASE_URL` to point to an IDIR-enabled
+deployed environment; it will not run against localhost. Set `IDIR_BASE_URL` in
+the ignored `tests/e2e/.env` file to keep it separate from the local `BASE_URL`.
+The IDIR workflow creates and rejects tenant requests, so use a test
+environment. The runner loads credentials from `.env` without displaying them.
+Playwright options can be added after the mode, for example
+`npm run test:e2e:mode -- keycloak --headed`.
+
+For a one-off IDIR run in PowerShell:
+
+```powershell
+$env:IDIR_BASE_URL = 'https://<deployed-test-environment>/'
+npm run test:e2e:mode -- idir
+```
+
+For a one-off IDIR run in Bash:
+
+```bash
+IDIR_BASE_URL=https://<deployed-test-environment>/ npm run test:e2e:mode -- idir
+```
+
 The `test:e2e` script uses Node's `--env-file=.env` option to load the required
 environment variables. For local runs, Playwright starts or reuses the backend
 and frontend, waiting for `http://localhost:4144/v1/health` and `BASE_URL` to
