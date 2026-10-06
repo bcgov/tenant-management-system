@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, within } from '@testing-library/vue'
 import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { ref } from 'vue'
 
 import { makeTenantRequest } from '@/__tests__/__factories__'
 
@@ -63,13 +64,13 @@ describe('TenantRequestContainer', () => {
       .mockResolvedValue(undefined)
 
     notificationMock = {
+      messages: ref([]),
+
+      dismiss: vi.fn(),
       error: vi.fn(),
       info: vi.fn(),
-      remove: vi.fn(),
       success: vi.fn(),
       warning: vi.fn(),
-
-      items: [],
     }
     vi.mocked(useNotification).mockReturnValue(notificationMock)
   })
@@ -261,9 +262,7 @@ describe('TenantRequestContainer', () => {
         undefined,
         'Approved Tenant Name',
       )
-      expect(notificationMock.success).toHaveBeenCalledWith(
-        'Tenant Request has been successfully updated',
-      )
+      expect(notificationMock.success).not.toHaveBeenCalled()
       expect(await screen.findByText('Tenant Requests')).toBeInTheDocument()
     })
 
@@ -366,9 +365,7 @@ describe('TenantRequestContainer', () => {
         TENANT_REQUEST_STATUS.REJECTED.value,
         'rejectionReason',
       )
-      expect(notificationMock.success).toHaveBeenCalledWith(
-        'Tenant Request has been successfully updated',
-      )
+      expect(notificationMock.success).not.toHaveBeenCalled()
       expect(await screen.findByText('Tenant Requests')).toBeInTheDocument()
     })
 

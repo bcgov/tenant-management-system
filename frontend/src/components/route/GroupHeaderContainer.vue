@@ -61,8 +61,6 @@ const dialogClose = () => {
 const handleGroupEdit = async (groupDetails: GroupDetailFields) => {
   try {
     await groupStore.updateGroupDetails(tenantId, groupId, groupDetails)
-
-    notification.success('Group updated successfully')
     dialogClose()
   } catch (error: unknown) {
     if (error instanceof DuplicateEntityError) {

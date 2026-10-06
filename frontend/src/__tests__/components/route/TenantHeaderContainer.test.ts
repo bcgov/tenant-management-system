@@ -2,6 +2,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createRouter, createMemoryHistory } from 'vue-router'
+import { ref } from 'vue'
 
 import { makeTenant } from '@/__tests__/__factories__'
 
@@ -72,11 +73,11 @@ describe('TenantContainer', () => {
     tenantStore.tenants = [makeTenant({ id: toTenantId('tenantId1') })]
 
     notificationMock = {
-      items: [],
+      messages: ref([]),
 
+      dismiss: vi.fn(),
       error: vi.fn(),
       info: vi.fn(),
-      remove: vi.fn(),
       success: vi.fn(),
       warning: vi.fn(),
     }

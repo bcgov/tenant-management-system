@@ -44,8 +44,6 @@ const handleSubmit = async (serviceDetails: ServiceDetailFields) => {
 
   try {
     await serviceStore.createService(serviceDetails)
-    notification.success('Service has been successfully created')
-
     handleCancel()
   } catch (error) {
     if (error instanceof DuplicateEntityError) {
