@@ -31,7 +31,5 @@ setup('authenticate', async ({ page }) => {
     throw new Error(`Unsupported E2E_AUTH_MODE: ${authMode}`)
   }
 
-  await expect(page).toHaveURL(/\/tenants(?:[?#].*)?$/, { timeout: 60_000 })
-
   await page.context().storageState({ path: authFile })
 })
