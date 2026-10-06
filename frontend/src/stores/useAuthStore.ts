@@ -229,16 +229,23 @@ export const useAuthStore = defineStore('auth', () => {
    * This redirects the user to the Keycloak login screen. Upon successful login
    * will redirect back to the app, where the `init()` method will complete the
    * authentication process and set the user data.
+   *
+   * @returns a Promise that resolves when the login process is initiated.
    */
-  const login = (options: KeycloakLoginOptions = {}): void => {
-    getKeycloak().login(options)
+  const login = (options: KeycloakLoginOptions = {}): Promise<void> => {
+    return getKeycloak().login(options)
   }
 
   /**
    * Logs out the user.
+   *
+   * This will redirect the user to the Keycloak logout endpoint and then back
+   * to the landing page.
+   *
+   * @returns a Promise that resolves when the logout process is complete.
    */
-  const logout = (): void => {
-    getKeycloak().logout({
+  const logout = (): Promise<void> => {
+    return getKeycloak().logout({
       redirectUri: globalThis.location.origin,
     })
   }
