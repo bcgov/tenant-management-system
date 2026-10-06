@@ -7,9 +7,11 @@ test.beforeAll(async ({ browser }: { browser: Browser }) => {
     storageState: 'support/user.json',
   })
   sharedPage = await context.newPage()
-  await sharedPage.goto('/')
-  await sharedPage.waitForTimeout(1000)
-  console.log('Current URL:', sharedPage.url())
+  await sharedPage.goto('/tenants')
+  await expect(sharedPage.getByText('Logout')).toBeVisible({ timeout: 30_000 })
+  await expect(sharedPage).toHaveURL(/\/tenants(?:[?#].*)?$/, {
+    timeout: 30_000,
+  })
 })
 
 test.describe.serial('Landing page tests', () => {
@@ -17,16 +19,8 @@ test.describe.serial('Landing page tests', () => {
     const requestTenantButton = sharedPage.getByRole('button', {
       name: /Request a Tenant/i,
     })
-
-    if (await requestTenantButton.isVisible().catch(() => false)) {
-      await requestTenantButton.click()
-    } else {
-      await sharedPage.goto('/tenants')
-      await expect(
-        sharedPage.getByRole('button', { name: /Request a Tenant/i }),
-      ).toBeVisible()
-      await sharedPage.getByRole('button', { name: /Request a Tenant/i }).click()
-    }
+    await expect(requestTenantButton).toBeVisible({ timeout: 30_000 })
+    await requestTenantButton.click()
 
     const tenantName = sharedPage.getByLabel('Name of Tenant')
     const tenantNameValue = `Test Tenant ${Date.now()}`
