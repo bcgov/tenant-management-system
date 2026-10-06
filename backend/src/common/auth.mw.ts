@@ -7,7 +7,6 @@ import { RoutesConstants } from './routes.constants'
 import { TMSConstants } from './tms.constants'
 import { config } from '../services/config.service'
 import { sendErrorResponse } from './error.handler'
-import { HeadlessMessages } from './headless.constants'
 import { sharedServiceRepository } from '../repositories/shared-service.repository'
 
 const sendUnauthorized = (res: Response, message: string) => {
@@ -119,7 +118,7 @@ const resolveHeadlessAccess = async (
       reason: 'headless_not_allowed',
       audience,
     })
-    return sendForbidden(res, HeadlessMessages.SERVICE_NOT_ALLOWED)
+    return sendForbidden(res, TMSConstants.HEADLESS_SERVICE_NOT_ALLOWED)
   }
 
   const provider = getProvider(req.decodedJwt)
@@ -128,7 +127,7 @@ const resolveHeadlessAccess = async (
       reason: 'unsupported_identity_provider',
       provider,
     })
-    return sendForbidden(res, HeadlessMessages.IDIR_ONLY)
+    return sendForbidden(res, TMSConstants.HEADLESS_IDIR_ONLY)
   }
 
   req.isHeadlessAccess = true
@@ -180,7 +179,7 @@ export const checkJwt = (options: CheckJwtOptions = {}) => {
   const middleware = createJwtMiddleware(options)
 
   return (req: Request, res: Response, next: NextFunction) => {
-    middleware(req, res, (err) => {
+    middleware(req, res, async (err) => {
       if (err) {
         logJwtValidationError(
           'JWT validation failed',
@@ -211,7 +210,11 @@ export const checkJwt = (options: CheckJwtOptions = {}) => {
       }
 
       if (options.headlessAccess) {
-        resolveHeadlessAccess(req, res, next).catch(next)
+        try {
+          await resolveHeadlessAccess(req, res, next)
+        } catch (error: unknown) {
+          next(error)
+        }
         return
       }
 

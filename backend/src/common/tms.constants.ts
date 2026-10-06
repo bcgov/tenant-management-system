@@ -14,4 +14,10 @@ export class TMSConstants {
   ]
   public static TENANT_REQUEST_INVALID_STATUS = 'TENANT_REQUEST_INVALID_STATUS'
   public static TENANT_NAME_ALREADY_EXISTS = 'TENANT_NAME_ALREADY_EXISTS'
+  public static HEADLESS_SERVICE_NOT_ALLOWED =
+    'This connected service is not allowed to call CSTAR directly. Ask a CSTAR operations admin to enable it.'
+  public static HEADLESS_IDIR_ONLY =
+    'Only IDIR users can manage a tenant from a connected service.'
+  public static HEADLESS_TENANT_MEMBER_REQUIRED =
+    'You must be a member of this tenant to do this.'
 }
