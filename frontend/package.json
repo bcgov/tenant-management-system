@@ -18,10 +18,10 @@
     "format": "prettier --write src/"
   },
   "dependencies": {
-    "@bcgov/design-tokens": "^4.0.0",
-    "@mdi/js": "^7.4.47",
+    "@bcgov/design-tokens": "4.0.0",
+    "@mdi/js": "7.4.47",
     "axios": "1.20.0",
-    "keycloak-js": "^26.2.0",
+    "keycloak-js": "26.2.0",
     "pinia": "4.0.3",
     "vue": "3.5.42",
     "vue-router": "5.3.1",
@@ -58,11 +58,6 @@
     "vitest": "^5.0.0",
     "vue-eslint-parser": "^10.4.0",
     "vue-tsc": "^3.3.4"
-  },
-  "depcheck": {
-    "ignores": [
-      "@vitest/coverage-v8"
-    ]
   },
   "engines": {
     "node": "22",
