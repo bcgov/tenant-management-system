@@ -11,6 +11,8 @@ const authMode =
   (process.env.E2E_KEYCLOAK_USERNAME ? 'keycloak' : 'idir')
 
 setup('authenticate', async ({ page }) => {
+  setup.setTimeout(120_000)
+
   await page.goto('/')
 
   await page.getByTestId('button-primary').filter({ hasText: 'IDIR' }).click()
@@ -29,7 +31,7 @@ setup('authenticate', async ({ page }) => {
     throw new Error(`Unsupported E2E_AUTH_MODE: ${authMode}`)
   }
 
-  await expect(page).toHaveURL(/\/tenants(?:[?#].*)?$/)
+  await expect(page).toHaveURL(/\/tenants(?:[?#].*)?$/, { timeout: 60_000 })
 
   await page.context().storageState({ path: authFile })
 })
