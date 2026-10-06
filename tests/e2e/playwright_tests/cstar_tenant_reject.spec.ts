@@ -1,21 +1,17 @@
-import { test, expect, Page, Browser } from '@playwright/test'
+import { test, expect, Page } from '@playwright/test'
 
 let sharedPage: Page
 
-test.beforeAll(async ({ browser }: { browser: Browser }) => {
-  const context = await browser.newContext({
-    storageState: 'support/user.json',
-  })
-  sharedPage = await context.newPage()
-  await sharedPage.goto('/')
-  await expect(sharedPage).toHaveURL(/\/tenants(?:[?#].*)?$/, {
-    timeout: 30_000,
-  })
-  await expect(sharedPage.getByText('Logout')).toBeVisible({ timeout: 30_000 })
-})
-
 test.describe.serial('Landing page tests', () => {
-  test('Submit tenant request under a Ministry', async () => {
+  test('Submit tenant request under a Ministry', async ({ page }) => {
+    sharedPage = page
+    await sharedPage.goto('/')
+    await expect(sharedPage).toHaveURL(/\/tenants(?:[?#].*)?$/, {
+      timeout: 30_000,
+    })
+    await expect(sharedPage.getByText('Logout')).toBeVisible({
+      timeout: 30_000,
+    })
     const requestTenantButton = sharedPage.getByRole('button', {
       name: /Request a Tenant/i,
     })
