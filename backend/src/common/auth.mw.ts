@@ -7,13 +7,26 @@ import { RoutesConstants } from './routes.constants'
 import { TMSConstants } from './tms.constants'
 import { config } from '../services/config.service'
 import { sendErrorResponse } from './error.handler'
+import { HeadlessMessages } from './headless.constants'
+import { sharedServiceRepository } from '../repositories/shared-service.repository'
 
 const sendUnauthorized = (res: Response, message: string) => {
   return sendErrorResponse(res, 'Unauthorized', message, 401, 'Unauthorized')
 }
 
+const sendForbidden = (res: Response, message: string) => {
+  return sendErrorResponse(
+    res,
+    'Authorization Failure',
+    message,
+    403,
+    'Forbidden',
+  )
+}
+
 interface CheckJwtOptions {
   sharedServiceAccess?: boolean
+  headlessAccess?: boolean
   skipSsoUserParamMatch?: boolean
 }
 
@@ -54,8 +67,83 @@ const logJwtValidationError = (message: string, error: JwtValidationError) => {
   })
 }
 
+const getProvider = (decodedJwt?: Express.DecodedJwt) =>
+  decodedJwt?.idp || decodedJwt?.identity_provider
+
+const isIdirProvider = (provider: unknown) =>
+  provider === TMSConstants.IDIR_PROVIDER ||
+  provider === TMSConstants.AZURE_IDIR_PROVIDER
+
+const allowTmsIdirUser = (req: Request, res: Response): boolean => {
+  const provider = getProvider(req.decodedJwt)
+
+  if (!isIdirProvider(provider)) {
+    logger.error('Invalid provider - TMS endpoints require IDIR access', {
+      reason: 'unsupported_identity_provider',
+      provider,
+      expectedProvider: [
+        TMSConstants.IDIR_PROVIDER,
+        TMSConstants.AZURE_IDIR_PROVIDER,
+      ],
+    })
+    sendUnauthorized(res, 'TMS endpoints require IDIR or Azure IDIR access')
+    return false
+  }
+
+  req.idpType = 'idir'
+  return true
+}
+
+const resolveHeadlessAccess = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  const audience = req.decodedJwt?.aud
+
+  if (audience && audience === config.oidc.tmsAudience) {
+    if (allowTmsIdirUser(req, res)) {
+      next()
+    }
+    return
+  }
+
+  const sharedService = audience
+    ? await sharedServiceRepository.findSharedServiceByClientIdentifier(
+        audience,
+      )
+    : null
+
+  if (!sharedService?.isActive || !sharedService.allowHeadlessOps) {
+    logger.error('Connected service is not allowed headless access', {
+      reason: 'headless_not_allowed',
+      audience,
+    })
+    return sendForbidden(res, HeadlessMessages.SERVICE_NOT_ALLOWED)
+  }
+
+  const provider = getProvider(req.decodedJwt)
+  if (!isIdirProvider(provider)) {
+    logger.error('Headless access requires an IDIR user', {
+      reason: 'unsupported_identity_provider',
+      provider,
+    })
+    return sendForbidden(res, HeadlessMessages.IDIR_ONLY)
+  }
+
+  req.isHeadlessAccess = true
+  req.headlessService = {
+    id: sharedService.id,
+    name: sharedService.name,
+    displayName: sharedService.displayName,
+    clientIdentifier: sharedService.clientIdentifier,
+  }
+  req.idpType = 'idir'
+  next()
+}
+
 const createJwtMiddleware = (options: CheckJwtOptions = {}) => {
-  const { sharedServiceAccess = false } = options
+  const { sharedServiceAccess = false, headlessAccess = false } = options
 
   return jwt({
     secret: jwksRsa.expressJwtSecret({
@@ -71,7 +159,10 @@ const createJwtMiddleware = (options: CheckJwtOptions = {}) => {
       },
     }),
     issuer: config.oidc.issuer,
-    audience: sharedServiceAccess ? undefined : config.oidc.tmsAudience,
+    audience:
+      sharedServiceAccess || headlessAccess
+        ? undefined
+        : config.oidc.tmsAudience,
     algorithms: ['RS256'],
     requestProperty: 'decodedJwt',
     getToken: function fromHeaderOrQuerystring(req) {
@@ -119,6 +210,11 @@ export const checkJwt = (options: CheckJwtOptions = {}) => {
         }
       }
 
+      if (options.headlessAccess) {
+        resolveHeadlessAccess(req, res, next).catch(next)
+        return
+      }
+
       if (options.sharedServiceAccess) {
         req.isSharedServiceAccess = true
 
@@ -154,27 +250,8 @@ export const checkJwt = (options: CheckJwtOptions = {}) => {
             return sendUnauthorized(res, 'Unsupported identity provider')
           }
         }
-      } else if (req.decodedJwt) {
-        const provider = req.decodedJwt.idp || req.decodedJwt.identity_provider
-
-        if (
-          provider !== TMSConstants.IDIR_PROVIDER &&
-          provider !== TMSConstants.AZURE_IDIR_PROVIDER
-        ) {
-          logger.error('Invalid provider - TMS endpoints require IDIR access', {
-            reason: 'unsupported_identity_provider',
-            provider,
-            expectedProvider: [
-              TMSConstants.IDIR_PROVIDER,
-              TMSConstants.AZURE_IDIR_PROVIDER,
-            ],
-          })
-          return sendUnauthorized(
-            res,
-            'TMS endpoints require IDIR or Azure IDIR access',
-          )
-        }
-        req.idpType = 'idir'
+      } else if (req.decodedJwt && !allowTmsIdirUser(req, res)) {
+        return
       }
 
       next()

@@ -827,6 +827,35 @@ describe('SharedServiceRepository', () => {
     )
   })
 
+  describe('findSharedServiceByClientIdentifier', () => {
+    it('looks the service up by its client identifier', async () => {
+      const qb = createQueryBuilder({ getOne: { id: 'ss-1' } })
+      manager.createQueryBuilder.mockReturnValueOnce(qb)
+
+      await expect(
+        repo.findSharedServiceByClientIdentifier(
+          'client-a',
+          asManager(manager),
+        ),
+      ).resolves.toEqual({ id: 'ss-1' })
+      expect(qb.where).toHaveBeenCalledWith(
+        'ss.clientIdentifier = :clientIdentifier',
+        { clientIdentifier: 'client-a' },
+      )
+      expect(getManager).not.toHaveBeenCalled()
+    })
+
+    it('returns null when no service has that client identifier', async () => {
+      manager.createQueryBuilder.mockReturnValueOnce(
+        createQueryBuilder({ getOne: null }),
+      )
+
+      await expect(
+        repo.findSharedServiceByClientIdentifier('unknown', asManager(manager)),
+      ).resolves.toBeNull()
+    })
+  })
+
   describe('checkIfTenantHasSharedServiceAccess', () => {
     it('returns true when the tenant has access using the passed manager', async () => {
       manager.createQueryBuilder.mockReturnValueOnce(

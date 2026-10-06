@@ -502,6 +502,17 @@ export class SharedServiceRepository {
       .getExists()
   }
 
+  public async findSharedServiceByClientIdentifier(
+    clientIdentifier: string,
+    manager?: EntityManager,
+  ) {
+    const em = manager ?? getManager()
+    return em
+      .createQueryBuilder(SharedService, 'ss')
+      .where('ss.clientIdentifier = :clientIdentifier', { clientIdentifier })
+      .getOne()
+  }
+
   public async checkIfTenantHasSharedServiceAccess(
     tenantId: string,
     clientIdentifier: string,
