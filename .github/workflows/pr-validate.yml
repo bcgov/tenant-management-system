@@ -26,6 +26,7 @@ jobs:
     name: Validate Results
     if: always()
     needs: [validate]
-    runs-on: ubuntu-24.04
+    runs-on:
+      group: Larger Runners - OpenShift Static-IP
     steps:
       - run: echo "Success!"

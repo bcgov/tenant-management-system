@@ -41,7 +41,8 @@ jobs:
     name: Integration
     permissions:
       checks: write
-    runs-on: ubuntu-24.04
+    runs-on:
+      group: Larger Runners - OpenShift Static-IP
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v6
@@ -108,7 +109,8 @@ jobs:
     defaults:
       run:
         working-directory: tests/e2e
-    runs-on: ubuntu-24.04
+    runs-on:
+      group: Larger Runners - OpenShift Static-IP
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v6
@@ -152,7 +154,8 @@ jobs:
 
   load-tests:
     name: Load
-    runs-on: ubuntu-24.04
+    runs-on:
+      group: Larger Runners - OpenShift Static-IP
     strategy:
       matrix:
         name: [backend, frontend]

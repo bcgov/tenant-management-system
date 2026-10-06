@@ -69,7 +69,8 @@ jobs:
   cleanup-db-gold-dev: # TODO move it off to another action later.
     name: Remove DB User from Crunchy
     environment: gold-dev
-    runs-on: ubuntu-24.04
+    runs-on:
+      group: Larger Runners - OpenShift Static-IP
     env:
       oc_namespace: ${{ secrets.OC_NAMESPACE }}
       oc_token: ${{ secrets.OC_TOKEN }}
@@ -88,7 +89,8 @@ jobs:
   cleanup-db-golddr-dev: # TODO move it off to another action later.
     name: Remove DB User from Crunchy
     environment: golddr-dev
-    runs-on: ubuntu-24.04
+    runs-on:
+      group: Larger Runners - OpenShift Static-IP
     env:
       oc_namespace: ${{ secrets.OC_NAMESPACE }}
       oc_token: ${{ secrets.OC_TOKEN }}

@@ -22,7 +22,8 @@ jobs:
       contents: write
       pages: write
       id-token: write
-    runs-on: ubuntu-22.04
+    runs-on:
+      group: Larger Runners - OpenShift Static-IP
     timeout-minutes: 1
 
     steps:

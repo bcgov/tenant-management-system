@@ -18,7 +18,8 @@ permissions: {}
 jobs:
   backend-tests:
     name: Backend Tests
-    runs-on: ubuntu-24.04
+    runs-on:
+      group: Larger Runners - OpenShift Static-IP
     timeout-minutes: 5
     services:
       postgres:
@@ -51,7 +52,8 @@ jobs:
 
   frontend-tests:
     name: Frontend Tests
-    runs-on: ubuntu-24.04
+    runs-on:
+      group: Larger Runners - OpenShift Static-IP
     timeout-minutes: 5
     steps:
       - uses: bcgov/action-test-and-analyse@87f88c90526b8b05cea760492ff33db4ba6e271b # v1.6.0
@@ -73,7 +75,8 @@ jobs:
   sonar-analysis:
     name: SonarCloud Analysis
     needs: [backend-tests, frontend-tests]
-    runs-on: ubuntu-24.04
+    runs-on:
+      group: Larger Runners - OpenShift Static-IP
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
@@ -126,7 +129,8 @@ jobs:
     continue-on-error: true
     permissions:
       security-events: write
-    runs-on: ubuntu-24.04
+    runs-on:
+      group: Larger Runners - OpenShift Static-IP
     timeout-minutes: 1
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
@@ -149,7 +153,8 @@ jobs:
   results:
     name: Analysis Results
     needs: [backend-tests, frontend-tests, sonar-analysis, trivy]
-    runs-on: ubuntu-24.04
+    runs-on:
+      group: Larger Runners - OpenShift Static-IP
     steps:
       - if: contains(needs.*.result, 'failure')||contains(needs.*.result, 'canceled')
         run: echo "At least one job has failed." && exit 1
