@@ -24,11 +24,13 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (event: 'add', user: User, groups: Group[]): void
-  (event: 'cancel' | 'clear-search'): void
-  (event: 'remove-role', userId: UserId, roleId: RoleId): void
-  (event: 'remove-user', userId: UserId): void
-  (event: 'search', searchType: IdirSearchType, searchText: string): void
+  add: [User, Group[]]
+  cancel: []
+  'clear-search': []
+  'remove-role': [UserId, RoleId]
+  'remove-user': [UserId]
+  'roles-changed': [User, RoleId[], RoleId[]]
+  search: [IdirSearchType, string]
 }>()
 
 // --- Store and Composable Setup ----------------------------------------------
@@ -130,6 +132,14 @@ const handleRemoveUser = (user: User) => {
   emit('remove-user', user.id)
 }
 
+const handleRolesChanged = (
+  user: User,
+  rolesToAdd: RoleId[],
+  rolesToRemove: RoleId[],
+) => {
+  emit('roles-changed', user, rolesToAdd, rolesToRemove)
+}
+
 const handleSearch = (searchType: IdirSearchType, searchText: string) => {
   emit('search', searchType, searchText)
 }
@@ -158,10 +168,12 @@ const toggleSearch = () => {
     <v-row>
       <v-col cols="12">
         <TenantUserTable
+          :roles="roles"
           :tenant="tenant"
           :users="tenant.users"
           @remove-role="handleRemoveRole"
           @remove-user="handleRemoveUser"
+          @roles-changed="handleRolesChanged"
         />
       </v-col>
     </v-row>

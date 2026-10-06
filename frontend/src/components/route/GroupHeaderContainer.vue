@@ -5,7 +5,10 @@ import LoginContainer from '@/components/auth/LoginContainer.vue'
 import GroupHeader from '@/components/group/GroupHeader.vue'
 import LoadingWrapper from '@/components/ui/LoadingWrapper.vue'
 import { useNotification } from '@/composables/useNotification'
-import { type GroupId } from '@/models/group.model'
+import { DomainError } from '@/errors/domain/DomainError'
+import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
+import { ServerError } from '@/errors/domain/ServerError'
+import { type GroupDetailFields, type GroupId } from '@/models/group.model'
 import { type TenantId } from '@/models/tenant.model'
 import { useGroupStore } from '@/stores/useGroupStore'
 import { useTenantStore } from '@/stores/useTenantStore'
@@ -22,6 +25,12 @@ const { groupId, tenantId } = defineProps<{
 const groupStore = useGroupStore()
 const notification = useNotification()
 const tenantStore = useTenantStore()
+
+// --- Component State ---------------------------------------------------------
+
+const dialogVisible = ref(false)
+
+const isDuplicateName = ref(false)
 
 // --- Computed Values ---------------------------------------------------------
 
@@ -41,6 +50,34 @@ const enabledServiceCount = computed(
 const group = computed(() => groupStore.getGroup(groupId))
 
 const tenant = computed(() => tenantStore.getTenant(tenantId))
+
+// --- Component Methods -------------------------------------------------------
+
+const dialogClose = () => {
+  dialogVisible.value = false
+  isDuplicateName.value = false
+}
+
+const handleGroupEdit = async (groupDetails: GroupDetailFields) => {
+  try {
+    await groupStore.updateGroupDetails(tenantId, groupId, groupDetails)
+
+    notification.success('Group updated successfully')
+    dialogClose()
+  } catch (error: unknown) {
+    if (error instanceof DuplicateEntityError) {
+      // If the API says that this name exists already, then show the name
+      // duplicated validation error.
+      isDuplicateName.value = true
+    } else if (error instanceof DomainError && error.userMessage) {
+      notification.error(error.userMessage)
+    } else if (error instanceof ServerError) {
+      notification.error(error.userMessage ?? 'Failed to update the group')
+    } else {
+      notification.error('Failed to update the group')
+    }
+  }
+}
 
 // --- Component Lifecycle -----------------------------------------------------
 
@@ -77,10 +114,14 @@ init() // NOSONAR
   <LoginContainer>
     <LoadingWrapper :loading="!initialized" loading-message="Loading group...">
       <GroupHeader
+        v-model:dialog-visible="dialogVisible"
         :enabled-roles-count="enabledRolesCount"
         :enabled-service-count="enabledServiceCount"
         :group="group!"
+        :is-duplicate-name="isDuplicateName"
         :tenant="tenant!"
+        @clear-duplicate-error="isDuplicateName = false"
+        @submit="handleGroupEdit"
       />
       <router-view />
     </LoadingWrapper>

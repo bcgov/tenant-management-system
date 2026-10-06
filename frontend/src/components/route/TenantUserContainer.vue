@@ -122,6 +122,29 @@ const handleRemoveUser = async (userId: UserId) => {
   }
 }
 
+const handleRolesChanged = async (
+  user: User,
+  rolesToAdd: RoleId[],
+  rolesToRemove: RoleId[],
+) => {
+  try {
+    if (rolesToAdd.length > 0) {
+      await tenantStore.assignTenantUserRoles(tenant.value, user.id, rolesToAdd)
+    }
+
+    for (const roleId of rolesToRemove) {
+      await tenantStore.removeTenantUserRole(tenantId, user.id, roleId)
+    }
+
+    notification.success(
+      'The user roles were successfully updated',
+      'Roles Updated',
+    )
+  } catch {
+    notification.error('Failed to update user roles')
+  }
+}
+
 const handleUserSearch = async (
   searchType: IdirSearchType,
   searchText: string,
@@ -181,6 +204,7 @@ init() // NOSONAR
         @clear-search="handleClearSearch"
         @remove-role="handleRemoveRole"
         @remove-user="handleRemoveUser"
+        @roles-changed="handleRolesChanged"
         @search="handleUserSearch"
       />
     </LoadingWrapper>
