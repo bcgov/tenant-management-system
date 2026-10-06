@@ -24,22 +24,11 @@ VITE_KEYCLOAK_CLIENT_ID=cstar-e2e
 VITE_KEYCLOAK_LOGOUT_URL=http://localhost:8082/realms/standard/protocol/openid-connect/logout
 ```
 
-Run the local backend with JWT settings matching the mock realm. In PowerShell, from `backend`:
-
-```powershell
-$env:ISSUER = 'http://localhost:8082/realms/standard'
-$env:JWKS_URI = 'http://localhost:8082/realms/standard/protocol/openid-connect/certs'
-$env:TMS_AUDIENCE = 'cstar-e2e'
-npm run dev
-```
-
-In Bash, use:
-
-```bash
-ISSUER=http://localhost:8082/realms/standard \
-JWKS_URI=http://localhost:8082/realms/standard/protocol/openid-connect/certs \
-TMS_AUDIENCE=cstar-e2e npm run dev
-```
+Playwright starts or reuses the local backend and frontend. It derives the
+backend issuer, JWKS URI, and audience from `E2E_KEYCLOAK_URL` and
+`E2E_KEYCLOAK_REALM`; there is no need to start either app manually for a local
+Playwright run. The database must be running and initialized before the tests
+start.
 
 Configure `tests/e2e/.env`:
 
@@ -83,14 +72,10 @@ If Playwright is not available after creating or rebuilding the Dev Container, r
 
 ## Running in VS Code
 
-Playwright tests can be run directly from VS Code.
-
-1. Start the CSTAR Backend and CSTAR Frontend:
-   - Open **Run and Debug** in the Activity Bar.
-   - Select **CSTAR**.
-   - Start the configuration.
-
-2. Run **CSTAR Playwright** from **Run and Debug**.
+Start the E2E Keycloak realm and ensure the database is available, then run
+**CSTAR Playwright** from **Run and Debug**. Playwright starts or reuses the
+backend and frontend and waits for the backend health endpoint and frontend
+URL before running tests.
 
 You can also run the tests from:
 
@@ -105,7 +90,12 @@ cd /workspaces/tenant-management-system/tests/e2e
 npm run test:e2e
 ```
 
-The `test:e2e` script uses Node's `--env-file=.env` option to load the required environment variables. It runs the setup project first to log in through local Keycloak, saves `support/user.json`, and then reuses that state for the E2E tests.
+The `test:e2e` script uses Node's `--env-file=.env` option to load the required
+environment variables. For local runs, Playwright starts or reuses the backend
+and frontend, waiting for `http://localhost:4144/v1/health` and `BASE_URL` to
+respond before running tests. It runs the setup project first to log in through
+local Keycloak, saves `support/user.json`, and then reuses that state for the
+E2E tests.
 
 ### Run in Headed Mode
 
@@ -123,14 +113,16 @@ The Playwright tests should run inside the Dev Container because the repository 
 /workspaces/tenant-management-system
 ```
 
-Before running them, start the CSTAR Backend and CSTAR Frontend from **Run and Debug → CSTAR**. Confirm the backend is healthy and the frontend is reachable from a Dev Container terminal:
+The Dev Container starts PostgreSQL and applies backend migrations during
+`post-install.sh`. Start the dedicated E2E Keycloak realm from `tests/e2e`:
 
 ```bash
-curl -fsS http://localhost:4144/v1/health
-curl -fsS http://localhost:5173/ >/dev/null
+docker compose -f keycloak/docker-compose.yml up -d
 ```
 
-The API health check must return HTTP 200. If either command fails, start or fix that service before running Playwright; the tests do not start the application services.
+Playwright starts or reuses the backend and frontend, and waits for their
+readiness URLs. The backend health endpoint is `http://localhost:4144/v1/health`;
+the frontend defaults to `http://localhost:5173/`.
 
 If you are already using the Dev Container terminal, run:
 
@@ -147,7 +139,13 @@ If you are running the command from a local Windows PowerShell terminal, you can
 docker exec -it -e E2E_KEYCLOAK_URL=http://host.docker.internal:8082 devcontainer-devcontainer-1 bash -lc "cd /workspaces/tenant-management-system/tests/e2e && npm run test:e2e"
 ```
 
-The npm script uses Node's `--env-file=.env` to load the remaining E2E settings and credentials. The `docker exec -e` value overrides `E2E_KEYCLOAK_URL` for this run so Playwright can reach Keycloak published on the Windows host. This override applies only to Playwright; use `host.docker.internal` in the frontend Keycloak URL and backend `ISSUER`/`JWKS_URI` settings too when those services run inside the Dev Container. Keep `BASE_URL` at `http://localhost:5173` when the frontend also runs inside the Dev Container.
+The npm script uses Node's `--env-file=.env` to load the remaining E2E settings
+and credentials. The `docker exec -e` value overrides `E2E_KEYCLOAK_URL` for
+this run so Playwright can reach Keycloak published on the Windows host. When
+the frontend runs inside the Dev Container, set its Keycloak URL and logout URL
+to `host.docker.internal`; Playwright derives the backend issuer and JWKS URL
+from `E2E_KEYCLOAK_URL`. Keep `BASE_URL` at `http://localhost:5173` when the
+frontend also runs inside the Dev Container.
 
 Chromium is installed automatically by `post-install.sh`, so it does not need to be installed before every test run.
 
