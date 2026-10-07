@@ -322,19 +322,13 @@ describe('GroupRoleContainer.vue', () => {
       )
     })
 
-    it('shows a success notification and exits edit mode', async () => {
+    it('exits edit mode', async () => {
       const user = userEvent.setup()
       renderComponent()
 
       await user.click(getButton('Edit'))
       await user.click(getButton('Save'))
 
-      await waitFor(() =>
-        expect(mockNotification.success).toHaveBeenCalledWith(
-          'The roles for this group have been successfully updated.',
-          'Roles Saved',
-        ),
-      )
       expect(
         await screen.findByRole('button', { name: 'Edit' }),
       ).toBeInTheDocument()
@@ -353,8 +347,7 @@ describe('GroupRoleContainer.vue', () => {
 
       await waitFor(() =>
         expect(mockNotification.error).toHaveBeenCalledWith(
-          'There was an error updating the roles. Please try again.',
-          'Error Saving Roles',
+          'Error saving roles',
         ),
       )
       expect(mockNotification.success).not.toHaveBeenCalled()

@@ -58,8 +58,6 @@ const handleApproved = async (tenantRequest: TenantRequest, name: string) => {
       undefined,
       name,
     )
-    notification.success('Tenant Request has been successfully updated')
-
     handleCancel()
   } catch (error) {
     if (error instanceof DuplicateEntityError) {
@@ -110,7 +108,6 @@ const handleRejected = async (tenantRequest: TenantRequest, notes: string) => {
       TENANT_REQUEST_STATUS.REJECTED.value,
       notes,
     )
-    notification.success('Tenant Request has been successfully updated')
     handleCancel()
   } catch {
     notification.error('Failed to update Tenant Request')

@@ -1,6 +1,7 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { ref } from 'vue'
 
 import {
   makeGroup,
@@ -63,12 +64,12 @@ describe('GroupHeaderContainer', () => {
     groupStore.updateGroupDetails = vi.fn().mockResolvedValue(undefined)
 
     notificationMock = {
-      items: [],
+      messages: ref([]),
 
-      info: vi.fn(),
+      dismiss: vi.fn(),
       error: vi.fn(),
+      info: vi.fn(),
       success: vi.fn(),
-      remove: vi.fn(),
       warning: vi.fn(),
     }
 
@@ -210,16 +211,14 @@ describe('GroupHeaderContainer', () => {
       )
     })
 
-    it('shows a success notification and closes the dialog on success', async () => {
+    it('closes the dialog on success', async () => {
       const wrapper = mountComponent()
       await openDialog(wrapper)
 
       await submitEdit(wrapper)
 
-      expect(notificationMock.success).toHaveBeenCalledWith(
-        'Group updated successfully',
-      )
       expect(notificationMock.error).not.toHaveBeenCalled()
+      expect(notificationMock.success).not.toHaveBeenCalled()
       expect(getHeader(wrapper).props('dialogVisible')).toBe(false)
     })
 
@@ -268,7 +267,6 @@ describe('GroupHeaderContainer', () => {
 
         expect(getHeader(wrapper).props('isDuplicateName')).toBe(false)
         expect(getHeader(wrapper).props('dialogVisible')).toBe(false)
-        expect(notificationMock.success).toHaveBeenCalledTimes(1)
       })
 
       it('shows the userMessage for a DomainError that has one', async () => {

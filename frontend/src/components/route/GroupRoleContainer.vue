@@ -156,17 +156,10 @@ const saveChanges = async () => {
       groupId,
       updated as GroupService[],
     )
-    notification.success(
-      'The roles for this group have been successfully updated.',
-      'Roles Saved',
-    )
     editing.value = false
     draft.value.clear()
   } catch {
-    notification.error(
-      'There was an error updating the roles. Please try again.',
-      'Error Saving Roles',
-    )
+    notification.error('Error saving roles')
   }
 }
 

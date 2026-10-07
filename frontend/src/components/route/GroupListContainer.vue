@@ -78,8 +78,6 @@ const handleGroupCreate = async (
       groupDetails.name,
       groupDetails.description,
     )
-
-    notification.success('Group Created Successfully')
     dialogClose()
   } catch (error: unknown) {
     if (error instanceof DuplicateEntityError) {
@@ -113,7 +111,7 @@ const handleGroupCreate = async (
         authStore.authenticatedUser,
       )
 
-      notification.success('User added to Group Successfully')
+      notification.success('Member added')
     } catch (error: unknown) {
       if (error instanceof DomainError && error.userMessage) {
         // For any other API Domain Error, display the user message that comes
@@ -122,7 +120,7 @@ const handleGroupCreate = async (
         notification.error(error.userMessage)
       } else {
         // Otherwise display a generic error message.
-        notification.error('Failed to add the user to the new group')
+        notification.error('Failed to add the member to the new group')
       }
     }
   }
