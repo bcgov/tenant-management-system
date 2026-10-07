@@ -7,7 +7,7 @@ test.beforeAll(async ({ browser }: { browser: Browser }) => {
     storageState: 'support/user.json',
   })
   sharedPage = await context.newPage()
-  await sharedPage.goto('/')
+  await sharedPage.goto('/tenants')
 })
 
 test.describe.serial('Landing page tests', () => {
