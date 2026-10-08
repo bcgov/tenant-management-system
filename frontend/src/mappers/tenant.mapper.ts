@@ -1,5 +1,9 @@
 import { type UserApiData, userMapper } from '@/mappers/user.mapper'
 import { Tenant, type TenantId } from '@/models/tenant.model'
+import { type ApiEnvelope } from '@/services/api'
+
+export type TenantApiEnvelope = ApiEnvelope<'tenant', TenantApiData>
+export type TenantListApiEnvelope = ApiEnvelope<'tenants', TenantApiData[]>
 
 /**
  * The shape of the data that comes from the API.

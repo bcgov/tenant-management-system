@@ -16,6 +16,10 @@ import { toTenantId } from '@/models/tenant.model'
 import { toUserId } from '@/models/user.model'
 import * as utils from '@/services/utils'
 
+vi.mock('@/services/config.service', () => ({
+  config: { api: { baseUrl: 'https://api.example.com' } },
+}))
+
 vi.mock('@/services/utils', () => ({
   isDuplicateEntityError: vi.fn(),
   isValidationError: vi.fn(),
@@ -35,8 +39,8 @@ const { mockDelete, mockGet, mockPost, mockPut } = vi.hoisted(() => ({
   mockPut: vi.fn(),
 }))
 
-vi.mock('@/services/authenticated.axios', () => ({
-  authenticatedAxios: () => ({
+vi.mock('@/services/api', () => ({
+  authenticatedFetch: () => ({
     delete: mockDelete,
     get: mockGet,
     post: mockPost,
@@ -112,7 +116,7 @@ describe('tenantService', () => {
           userName: 'ssoUserUserName',
         }),
       })
-      mockPost.mockResolvedValueOnce({ data: { data: { user: userApiData } } })
+      mockPost.mockResolvedValueOnce({ data: { user: userApiData } })
 
       const result = await tenantService.addUser(
         toTenantId('tenantId'),
@@ -135,11 +139,8 @@ describe('tenantService', () => {
 
     it('should throw DuplicateEntityError on HTTP 409', async () => {
       const error = {
-        isAxiosError: true,
-        response: {
-          data: { message: 'User already exists in tenant' },
-          status: 409,
-        },
+        data: { message: 'User already exists in tenant' },
+        status: 409,
       }
       mockPost.mockRejectedValueOnce(error)
       mockedUtils.isDuplicateEntityError.mockReturnValueOnce(true)
@@ -203,7 +204,7 @@ describe('tenantService', () => {
 
   describe('getTenant', () => {
     it('should correctly call the api', async () => {
-      mockGet.mockResolvedValueOnce({ data: { data: {} } })
+      mockGet.mockResolvedValueOnce({ data: {} })
 
       await tenantService.getTenant(toTenantId('tenantId'))
 
@@ -222,9 +223,7 @@ describe('tenantService', () => {
         name: 'tenantName',
         users: [makeUserApiData()],
       })
-      mockGet.mockResolvedValueOnce({
-        data: { data: { tenant: tenantApiData } },
-      })
+      mockGet.mockResolvedValueOnce({ data: { tenant: tenantApiData } })
 
       const result = await tenantService.getTenant(toTenantId('tenantId'))
 
@@ -254,7 +253,7 @@ describe('tenantService', () => {
 
   describe('getTenantRoles', () => {
     it('should correctly call the api', async () => {
-      mockGet.mockResolvedValueOnce({ data: { data: {} } })
+      mockGet.mockResolvedValueOnce({ data: {} })
 
       await tenantService.getTenantRoles(toTenantId('tenantId'))
 
@@ -267,9 +266,7 @@ describe('tenantService', () => {
         id: toRoleId('roleId'),
         name: 'roleName',
       })
-      mockGet.mockResolvedValueOnce({
-        data: { data: { roles: [roleApiData] } },
-      })
+      mockGet.mockResolvedValueOnce({ data: { roles: [roleApiData] } })
 
       const result = await tenantService.getTenantRoles(toTenantId('tenantId'))
 
@@ -296,7 +293,7 @@ describe('tenantService', () => {
 
   describe('getUserRoles', () => {
     it('should correctly call the api', async () => {
-      mockGet.mockResolvedValueOnce({ data: { data: {} } })
+      mockGet.mockResolvedValueOnce({ data: {} })
 
       await tenantService.getUserRoles(
         toTenantId('tenantId'),
@@ -314,9 +311,7 @@ describe('tenantService', () => {
         id: toRoleId('roleId'),
         name: 'roleName',
       })
-      mockGet.mockResolvedValueOnce({
-        data: { data: { roles: [roleApiData] } },
-      })
+      mockGet.mockResolvedValueOnce({ data: { roles: [roleApiData] } })
 
       const result = await tenantService.getUserRoles(
         toTenantId('tenantId'),
@@ -346,7 +341,7 @@ describe('tenantService', () => {
 
   describe('getUserTenants', () => {
     it('should correctly call the api', async () => {
-      mockGet.mockResolvedValueOnce({ data: { data: {} } })
+      mockGet.mockResolvedValueOnce({ data: {} })
 
       await tenantService.getUserTenants(toSsoUserId('ssoUserId'))
 
@@ -365,9 +360,7 @@ describe('tenantService', () => {
         name: 'tenantName',
         users: [makeUserApiData()],
       })
-      mockGet.mockResolvedValueOnce({
-        data: { data: { tenants: [tenantApiData] } },
-      })
+      mockGet.mockResolvedValueOnce({ data: { tenants: [tenantApiData] } })
 
       const result = await tenantService.getUserTenants(
         toSsoUserId('ssoUserId'),
@@ -400,7 +393,7 @@ describe('tenantService', () => {
 
   describe('getUsers', () => {
     it('should correctly call the api', async () => {
-      mockGet.mockResolvedValueOnce({ data: { data: {} } })
+      mockGet.mockResolvedValueOnce({ data: {} })
 
       await tenantService.getUsers(toTenantId('tenantId'))
 
@@ -420,7 +413,7 @@ describe('tenantService', () => {
           userName: 'ssoUserName',
         }),
       })
-      mockGet.mockResolvedValueOnce({ data: { data: { users: [user] } } })
+      mockGet.mockResolvedValueOnce({ data: { users: [user] } })
 
       const result = await tenantService.getUsers(toTenantId('tenantId'))
 
@@ -461,11 +454,8 @@ describe('tenantService', () => {
 
     it('should throw DuplicateEntityError on HTTP 409', async () => {
       const error = {
-        isAxiosError: true,
-        response: {
-          data: { message: 'Tenant name already exists' },
-          status: 409,
-        },
+        data: { message: 'Tenant name already exists' },
+        status: 409,
       }
       mockDelete.mockRejectedValueOnce(error)
       mockedUtils.isDuplicateEntityError.mockReturnValueOnce(true)
@@ -526,7 +516,7 @@ describe('tenantService', () => {
 
   describe('updateTenant', () => {
     it('should correctly call the api', async () => {
-      mockPut.mockResolvedValueOnce({ data: { data: {} } })
+      mockPut.mockResolvedValueOnce({ data: {} })
 
       await tenantService.updateTenant(
         toTenantId('tenantId'),
@@ -552,9 +542,7 @@ describe('tenantService', () => {
         name: 'tenantName',
         users: [makeUserApiData()],
       })
-      mockPut.mockResolvedValueOnce({
-        data: { data: { tenant: tenantApiData } },
-      })
+      mockPut.mockResolvedValueOnce({ data: { tenant: tenantApiData } })
 
       const result = await tenantService.updateTenant(
         toTenantId('tenantId'),
@@ -574,11 +562,8 @@ describe('tenantService', () => {
 
     it('should throw ValidationError on HTTP 400', async () => {
       const error = {
-        isAxiosError: true,
-        response: {
-          data: { details: { body: [{ message: 'Name cannot be empty' }] } },
-          status: 400,
-        },
+        data: { details: { body: [{ message: 'Name cannot be empty' }] } },
+        status: 400,
       }
       mockPut.mockRejectedValueOnce(error)
       mockedUtils.isValidationError.mockReturnValueOnce(true)
@@ -595,11 +580,8 @@ describe('tenantService', () => {
 
     it('should throw DuplicateEntityError on HTTP 409', async () => {
       const error = {
-        isAxiosError: true,
-        response: {
-          data: { message: 'Tenant name already exists' },
-          status: 409,
-        },
+        data: { message: 'Tenant name already exists' },
+        status: 409,
       }
       mockPut.mockRejectedValueOnce(error)
       mockedUtils.isDuplicateEntityError.mockReturnValueOnce(true)

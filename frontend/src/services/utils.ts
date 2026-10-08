@@ -1,15 +1,17 @@
-import axios, { AxiosError } from 'axios'
-
+import { ApiError } from '@/services/api'
 import { logger } from '@/utils/logger'
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null
 
 /**
  * Type guard to check if an error is a duplicate entity error (HTTP 409
  * Conflict).
  *
  * This function verifies that:
- * 1. The error is an Axios error with a response
- * 2. The response has HTTP status 409 (Conflict)
- * 3. The response data contains a message field that is a string
+ * 1. The error is an ApiError
+ * 2. The error has HTTP status 409 (Conflict)
+ * 3. The error data contains a message field that is a string
  *
  * @param error - The error object to check (typically from a try/catch block)
  * @returns True if the error is a duplicate entity error with the expected
@@ -17,13 +19,11 @@ import { logger } from '@/utils/logger'
  */
 export const isDuplicateEntityError = (
   error: unknown,
-): error is AxiosError & {
-  response: { data: { message: string } }
-} => {
+): error is ApiError & { data: { message: string } } => {
   return (
-    axios.isAxiosError(error) &&
-    error.response?.status === 409 &&
-    typeof error.response?.data?.message === 'string'
+    error instanceof ApiError &&
+    error.status === 409 &&
+    typeof error.data?.message === 'string'
   )
 }
 
@@ -31,24 +31,23 @@ export const isDuplicateEntityError = (
  * Type guard to check if an error is a validation error (HTTP 400 Bad Request).
  *
  * This function verifies that:
- * 1. The error is an Axios error with a response
- * 2. The response has HTTP status 400 (Bad Request)
- * 3. The response data contains validation details with a body array
+ * 1. The error is an ApiError
+ * 2. The error has HTTP status 400 (Bad Request)
+ * 3. The error data contains validation details with a body array
  *
  * @param error - The error object to check (typically from a try/catch block)
  * @returns True if the error is a validation error with the expected structure
  */
 export const isValidationError = (
   error: unknown,
-): error is AxiosError & {
-  response: {
-    data: { details: { body: Array<{ field: string; message: string }> } }
-  }
+): error is ApiError & {
+  data: { details: { body: Array<{ field: string; message: string }> } }
 } => {
   return (
-    axios.isAxiosError(error) &&
-    error.response?.status === 400 &&
-    Array.isArray(error.response?.data?.details?.body)
+    error instanceof ApiError &&
+    error.status === 400 &&
+    isRecord(error.data?.details) &&
+    Array.isArray(error.data.details.body)
   )
 }
 
@@ -62,12 +61,10 @@ export const isValidationError = (
  * @param cause - The error object caught from an API call or other source.
  */
 export const logApiError = (message: string, cause: unknown) => {
-  if (axios.isAxiosError(cause)) {
-    if (isDuplicateEntityError(cause)) {
-      logger.warning(`${message}: ${cause.message}`, cause)
-    } else {
-      logger.error(`${message}: ${cause.message}`, cause)
-    }
+  if (isDuplicateEntityError(cause)) {
+    logger.warning(`${message}: ${cause.message}`, cause)
+  } else if (cause instanceof ApiError) {
+    logger.error(`${message}: ${cause.message}`, cause)
   } else {
     logger.error(message, cause)
   }
