@@ -115,17 +115,21 @@ const runOrPassError = async (
   }
 }
 
+const refuseUnregisteredApp = (res: Response) => {
+  logger.error('JWT validation failed', {
+    reason: 'invalid_audience',
+    code: 'invalid_token',
+    error: 'jwt audience invalid',
+  })
+  return sendUnauthorized(res, 'Error occurred during authentication')
+}
+
 const refuseNonTmsToken = async (req: Request, res: Response) => {
   const audience = getAudience(req.decodedJwt)
   const sharedService = await findServiceForAudience(audience)
 
   if (!sharedService) {
-    logger.error('JWT validation failed', {
-      reason: 'invalid_audience',
-      code: 'invalid_token',
-      error: 'jwt audience invalid',
-    })
-    return sendUnauthorized(res, 'Error occurred during authentication')
+    return refuseUnregisteredApp(res)
   }
 
   const canUseHeadless =
@@ -158,7 +162,11 @@ const resolveHeadlessAccess = async (
 
   const sharedService = await findServiceForAudience(audience)
 
-  if (!sharedService?.isActive || !sharedService.allowHeadlessOps) {
+  if (!sharedService) {
+    return refuseUnregisteredApp(res)
+  }
+
+  if (!sharedService.isActive || !sharedService.allowHeadlessOps) {
     logger.error('Connected service is not allowed headless access', {
       reason: 'headless_not_allowed',
       audience,

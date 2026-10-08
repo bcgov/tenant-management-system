@@ -102,7 +102,7 @@ export class Routes {
     app
       .route(RoutesConstants.GET_USER_ROLES)
       .get(
-        checkJwt(),
+        checkJwt({ headlessAccess: true }),
         validate(validator.getUserRoles, {}, {}),
         checkTenantAccess([]),
         (req: Request, res: Response) =>
@@ -136,7 +136,7 @@ export class Routes {
     app
       .route(RoutesConstants.GET_TENANT)
       .get(
-        checkJwt(),
+        checkJwt({ headlessAccess: true }),
         validate(validator.getTenant, {}, {}),
         checkTenantAccess([]),
         (req: Request, res: Response) => tenantController.getTenant(req, res),
@@ -222,7 +222,7 @@ export class Routes {
     app
       .route(RoutesConstants.GET_GROUP)
       .get(
-        checkJwt(),
+        checkJwt({ headlessAccess: true }),
         validate(validator.getGroup, {}, {}),
         checkTenantAccess([]),
         (req: Request, res: Response) => groupController.getGroup(req, res),
@@ -317,7 +317,7 @@ export class Routes {
     app
       .route(RoutesConstants.GET_SHARED_SERVICES_FOR_TENANT)
       .get(
-        checkJwt(),
+        checkJwt({ headlessAccess: true }),
         validate(validator.getSharedServicesForTenant, {}, {}),
         checkTenantAccess([]),
         (req: Request, res: Response) =>
@@ -344,7 +344,7 @@ export class Routes {
     app
       .route(RoutesConstants.GET_TENANT_USER)
       .get(
-        checkJwt(),
+        checkJwt({ headlessAccess: true }),
         validate(validator.getTenantUser, {}, {}),
         checkTenantAccess([TMSConstants.TENANT_OWNER, TMSConstants.USER_ADMIN]),
         (req: Request, res: Response) =>

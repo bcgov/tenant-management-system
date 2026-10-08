@@ -354,7 +354,6 @@ describe('when a connected service calls a headless route', () => {
   it.each([
     ['is not switched on', { ...chefs, allowHeadlessOps: false }],
     ['is inactive', { ...chefs, isActive: false }],
-    ['is not registered', null],
   ])('turns away a service that %s', async (_case, sharedService) => {
     signedInAs({ aud: 'chefs-client', idp: 'idir' })
     mockFindSharedService.mockResolvedValueOnce(sharedService)
@@ -375,12 +374,26 @@ describe('when a connected service calls a headless route', () => {
     )
   })
 
-  it('turns away a token that names no service', async () => {
+  it('gives an app that is not registered the same 401 as other routes', async () => {
+    signedInAs({ aud: 'some-other-app', idp: 'idir' })
+    mockFindSharedService.mockResolvedValueOnce(null)
+
+    const response = await callHeadless()
+
+    expect(response.status).toBe(401)
+    expect(response.body.message).toBe('Error occurred during authentication')
+    expect(mockLoggerError).toHaveBeenCalledWith(
+      'JWT validation failed',
+      expect.objectContaining({ reason: 'invalid_audience' }),
+    )
+  })
+
+  it('gives a token that names no app a 401 without a lookup', async () => {
     signedInAs({ aud: undefined, idp: 'idir' })
 
     const response = await callHeadless()
 
-    expect(response.status).toBe(403)
+    expect(response.status).toBe(401)
     expect(mockFindSharedService).not.toHaveBeenCalled()
   })
 

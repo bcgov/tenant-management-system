@@ -3,6 +3,7 @@ import express from 'express'
 import { Routes } from '../routes/routes'
 import { TenantController } from '../controllers/tenant.controller'
 import { GroupController } from '../controllers/group.controller'
+import { SharedServiceController } from '../controllers/shared-service.controller'
 import { checkJwt } from '../common/auth.mw'
 import { checkTenantAccess } from '../common/tenant-access.mw'
 
@@ -21,14 +22,19 @@ jest.mock('../common/db.connection', () => ({
 }))
 
 jest.mock('../common/auth.mw', () => ({
-  checkJwt: jest.fn((options?: unknown) => {
-    void options
+  checkJwt: jest.fn((options?: { headlessAccess?: boolean }) => {
     return (
       req: express.Request,
       res: express.Response,
       next: express.NextFunction,
     ) => {
       if (req.headers.authorization === 'Bearer ok') {
+        return next()
+      }
+      if (
+        req.headers.authorization === 'Bearer connected-service' &&
+        options?.headlessAccess
+      ) {
         return next()
       }
       return res.status(401).json({ error: 'Unauthorized' })
@@ -115,6 +121,31 @@ describe('Routes middleware wiring', () => {
       .mockImplementation(async (_req, res) => {
         res.status(200).send({ ok: true })
       })
+    jest
+      .spyOn(TenantController.prototype, 'getTenant')
+      .mockImplementation(async (_req, res) => {
+        res.status(200).send({ ok: true })
+      })
+    jest
+      .spyOn(TenantController.prototype, 'getTenantUser')
+      .mockImplementation(async (_req, res) => {
+        res.status(200).send({ ok: true })
+      })
+    jest
+      .spyOn(GroupController.prototype, 'getGroup')
+      .mockImplementation(async (_req, res) => {
+        res.status(200).send({ ok: true })
+      })
+    jest
+      .spyOn(SharedServiceController.prototype, 'getSharedServicesForTenant')
+      .mockImplementation(async (_req, res) => {
+        res.status(200).send({ ok: true })
+      })
+    jest
+      .spyOn(TenantController.prototype, 'updateTenant')
+      .mockImplementation(async (_req, res) => {
+        res.status(200).send({ ok: true })
+      })
 
     new Routes().routes(app)
   })
@@ -179,5 +210,45 @@ describe('Routes middleware wiring', () => {
   it('should configure shared service JWT mode for get tenant users', () => {
     expect(mockedCheckJwt).toHaveBeenCalledWith({ sharedServiceAccess: true })
     expect(mockedCheckTenantAccess).toHaveBeenCalledWith([])
+  })
+
+  describe('read routes open to connected services', () => {
+    const tenantId = '123e4567-e89b-12d3-a456-426614174000'
+    const otherId = '123e4567-e89b-12d3-a456-426614174001'
+
+    it.each([
+      ['get tenant', `/v1/tenants/${tenantId}`],
+      ['get group', `/v1/tenants/${tenantId}/groups/${otherId}`],
+      ['get tenant services', `/v1/tenants/${tenantId}/shared-services`],
+      ['get tenant user', `/v1/tenants/${tenantId}/users/${otherId}`],
+      ['get user roles', `/v1/tenants/${tenantId}/users/${otherId}/roles`],
+    ])('lets a connected service call %s', async (_name, path) => {
+      const response = await request(app)
+        .get(path)
+        .set('Authorization', 'Bearer connected-service')
+        .set('x-tenant-access', 'allow')
+
+      expect(response.status).toBe(200)
+    })
+
+    it('still keeps update tenant to the web app', async () => {
+      const response = await request(app)
+        .put(`/v1/tenants/${tenantId}`)
+        .set('Authorization', 'Bearer connected-service')
+        .set('x-tenant-access', 'allow')
+        .send({ name: 'New Name' })
+
+      expect(response.status).toBe(401)
+      expect(TenantController.prototype.updateTenant).not.toHaveBeenCalled()
+    })
+
+    it('checks tenant access after a connected service is let in', async () => {
+      const response = await request(app)
+        .get(`/v1/tenants/${tenantId}/users/${otherId}`)
+        .set('Authorization', 'Bearer connected-service')
+
+      expect(response.status).toBe(403)
+      expect(TenantController.prototype.getTenantUser).not.toHaveBeenCalled()
+    })
   })
 })

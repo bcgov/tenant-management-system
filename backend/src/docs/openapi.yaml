@@ -368,7 +368,7 @@ paths:
     get:
       summary: Get tenant user details
       description: |
-        Authentication: CSTAR audience token required.
+        Authentication: CSTAR audience token, or a token from a connected service that is switched on for headless access (IDIR users only, and the tenant must use that service).
 
         Retrieves details of a specific tenant user with optional expansions. Requires JWT authentication and tenant access.
       security:
@@ -499,7 +499,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/UnauthorizedErrorResponse'
         '403':
-          description: Forbidden - User does not have access to the tenant
+          description: Forbidden - User does not have access to the tenant, the connected service is not switched on, the tenant does not use the service, or the user is not IDIR
           content:
             application/json:
               schema:
@@ -897,7 +897,7 @@ paths:
     get:
       summary: Get the roles of a user in a tenant
       description: |
-        Authentication: CSTAR audience token required.
+        Authentication: CSTAR audience token, or a token from a connected service that is switched on for headless access (IDIR users only, and the tenant must use that service).
 
         Returns the roles assigned to a user within a tenant. Returns an empty list if the user is not part of the tenant. Requires JWT authentication and membership of the tenant.
       security:
@@ -945,7 +945,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/UnauthorizedErrorResponse'
         '403':
-          description: Forbidden - User is not a member of the tenant
+          description: Forbidden - User is not a member of the tenant, the connected service is not switched on, the tenant does not use the service, or the user is not IDIR
           content:
             application/json:
               schema:
@@ -1114,7 +1114,7 @@ paths:
     get:
       summary: Get tenant details
       description: |
-        Authentication: CSTAR audience token required.
+        Authentication: CSTAR audience token, or a token from a connected service that is switched on for headless access (IDIR users only, and the tenant must use that service).
 
         Retrieves details of a specific tenant. Requires JWT authentication and tenant access.
       security:
@@ -1160,7 +1160,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/UnauthorizedErrorResponse'
         '403':
-          description: Forbidden - User does not have access to the tenant
+          description: Forbidden - User does not have access to the tenant, the connected service is not switched on, the tenant does not use the service, or the user is not IDIR
           content:
             application/json:
               schema:
@@ -2163,7 +2163,7 @@ paths:
     get:
       summary: Get shared services associated with a tenant
       description: |
-        Authentication: CSTAR audience token required.
+        Authentication: CSTAR audience token, or a token from a connected service that is switched on for headless access (IDIR users only, and the tenant must use that service).
 
         Retrieves all shared services that are associated with a specific tenant. Returns shared services with their associated roles. Requires JWT authentication and tenant access.
       security:
@@ -2204,7 +2204,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/UnauthorizedErrorResponse'
         '403':
-          description: Forbidden - User does not have access to the tenant
+          description: Forbidden - User does not have access to the tenant, the connected service is not switched on, the tenant does not use the service, or the user is not IDIR
           content:
             application/json:
               schema:
@@ -2385,7 +2385,7 @@ paths:
     get:
       summary: Get a specific group in a tenant
       description: |
-        Authentication: CSTAR audience token required.
+        Authentication: CSTAR audience token, or a token from a connected service that is switched on for headless access (IDIR users only, and the tenant must use that service).
 
         Retrieves details of a specific group within a tenant. Requires JWT authentication and tenant access.
       security:
@@ -2447,7 +2447,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/UnauthorizedErrorResponse'
         '403':
-          description: Forbidden - User does not have access to the tenant
+          description: Forbidden - User does not have access to the tenant, the connected service is not switched on, the tenant does not use the service, or the user is not IDIR
           content:
             application/json:
               schema:
