@@ -1,7 +1,15 @@
 import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
 import { ValidationError } from '@/errors/domain/ValidationError'
-import { type GroupServiceApiData } from '@/mappers/groupservice.mapper'
-import { type ServiceApiData } from '@/mappers/service.mapper'
+import {
+  type GroupServiceApiData,
+  type GroupServiceListApiEnvelope,
+} from '@/mappers/groupservice.mapper'
+import {
+  type ServiceApiData,
+  type ServiceApiEnvelope,
+  type ServiceListApiEnvelope,
+  type ServiceListApiEnvelopeUnkeyed,
+} from '@/mappers/service.mapper'
 import { type GroupId } from '@/models/group.model'
 import { type GroupService } from '@/models/groupservice.model'
 import {
@@ -9,14 +17,14 @@ import {
   type ServiceId,
 } from '@/models/service.model'
 import { type TenantId } from '@/models/tenant.model'
-import { authenticatedAxios } from '@/services/authenticated.axios'
+import { authenticatedFetch } from '@/services/api'
 import {
   isDuplicateEntityError,
   isValidationError,
   logApiError,
 } from '@/services/utils'
 
-const api = authenticatedAxios()
+const api = authenticatedFetch()
 
 export const serviceService = {
   /**
@@ -29,13 +37,13 @@ export const serviceService = {
   async addServiceToTenant(
     tenantId: TenantId,
     serviceId: ServiceId,
-  ): Promise<void> {
+  ): Promise<ServiceApiData[]> {
     try {
       const requestBody = {
         sharedServiceId: serviceId,
       }
 
-      const response = await api.post(
+      const response = await api.post<ServiceListApiEnvelopeUnkeyed>(
         `/tenants/${tenantId}/shared-services`,
         requestBody,
       )
@@ -76,7 +84,10 @@ export const serviceService = {
         roles: roles,
       }
 
-      const response = await api.post(`/shared-services`, requestBody)
+      const response = await api.post<ServiceApiEnvelope>(
+        `/shared-services`,
+        requestBody,
+      )
 
       return response.data.data.sharedService
     } catch (error: unknown) {
@@ -108,7 +119,7 @@ export const serviceService = {
    */
   async getServices(): Promise<ServiceApiData[]> {
     try {
-      const response = await api.get('/shared-services')
+      const response = await api.get<ServiceListApiEnvelope>('/shared-services')
 
       return response.data.data.sharedServices
     } catch (error) {
@@ -130,7 +141,7 @@ export const serviceService = {
     groupId: GroupId,
   ): Promise<GroupServiceApiData[]> {
     try {
-      const response = await api.get(
+      const response = await api.get<GroupServiceListApiEnvelope>(
         `/tenants/${tenantId}/groups/${groupId}/shared-services/shared-service-roles`,
       )
 
@@ -150,7 +161,9 @@ export const serviceService = {
    */
   async getTenantServices(tenantId: TenantId): Promise<ServiceApiData[]> {
     try {
-      const response = await api.get(`/tenants/${tenantId}/shared-services`)
+      const response = await api.get<ServiceListApiEnvelope>(
+        `/tenants/${tenantId}/shared-services`,
+      )
 
       return response.data.data.sharedServices
     } catch (error) {
@@ -183,7 +196,7 @@ export const serviceService = {
         })),
       }
 
-      const response = await api.put(
+      const response = await api.put<ServiceListApiEnvelopeUnkeyed>(
         `/tenants/${tenantId}/groups/${groupId}/shared-services/shared-service-roles`,
         payload,
       )

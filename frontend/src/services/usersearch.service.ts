@@ -1,9 +1,12 @@
-import { type UserSearchApiData } from '@/mappers/user.mapper'
-import { authenticatedAxios } from '@/services/authenticated.axios'
+import {
+  type UserSearchApiData,
+  type UserSearchListApiEnvelope,
+} from '@/mappers/user.mapper'
+import { authenticatedFetch } from '@/services/api'
 import { logApiError } from '@/services/utils'
 import { type BCeIDSearchType, type IdirSearchType } from '@/utils/constants'
 
-const api = authenticatedAxios()
+const api = authenticatedFetch()
 
 export const userSearchService = {
   /**
@@ -19,9 +22,12 @@ export const userSearchService = {
     searchValue: string,
   ): Promise<UserSearchApiData[]> {
     try {
-      const response = await api.get('/users/bcgovssousers/bceid/search', {
-        params: { [searchType]: searchValue, bceidType: 'business' },
-      })
+      const response = await api.get<UserSearchListApiEnvelope>(
+        '/users/bcgovssousers/bceid/search',
+        {
+          params: { [searchType]: searchValue, bceidType: 'business' },
+        },
+      )
 
       return response.data.data
     } catch (error) {
@@ -42,9 +48,12 @@ export const userSearchService = {
     searchValue: string,
   ): Promise<UserSearchApiData[]> {
     try {
-      const response = await api.get('/users/bcgovssousers/idir/search', {
-        params: { [searchType]: searchValue },
-      })
+      const response = await api.get<UserSearchListApiEnvelope>(
+        '/users/bcgovssousers/idir/search',
+        {
+          params: { [searchType]: searchValue },
+        },
+      )
 
       return response.data.data
     } catch (error) {

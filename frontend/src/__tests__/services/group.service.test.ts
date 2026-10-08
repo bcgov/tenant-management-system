@@ -9,10 +9,19 @@ import {
   makeUserApiData,
 } from '@/__tests__/__factories__'
 
+import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
+import { ValidationError } from '@/errors/domain/ValidationError'
 import { toGroupId } from '@/models/group.model'
 import { toGroupUserId } from '@/models/groupuser.model'
+import { toSsoUserId } from '@/models/ssouser.model'
 import { toTenantId } from '@/models/tenant.model'
+import { toUserId } from '@/models/user.model'
+import { groupService } from '@/services/group.service'
 import * as utils from '@/services/utils'
+
+vi.mock('@/services/config.service', () => ({
+  config: { api: { baseUrl: 'https://api.example.com' } },
+}))
 
 vi.mock('@/services/utils', () => ({
   isDuplicateEntityError: vi.fn(),
@@ -21,7 +30,6 @@ vi.mock('@/services/utils', () => ({
 }))
 
 const mockedUtils = vi.mocked(utils)
-
 mockedUtils.isDuplicateEntityError.mockReturnValue(false)
 mockedUtils.isValidationError.mockReturnValue(false)
 mockedUtils.logApiError.mockImplementation(() => {})
@@ -33,20 +41,14 @@ const { mockDelete, mockGet, mockPost, mockPut } = vi.hoisted(() => ({
   mockPut: vi.fn(),
 }))
 
-vi.mock('@/services/authenticated.axios', () => ({
-  authenticatedAxios: () => ({
+vi.mock('@/services/api', () => ({
+  authenticatedFetch: () => ({
     delete: mockDelete,
     get: mockGet,
     post: mockPost,
     put: mockPut,
   }),
 }))
-
-import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
-import { ValidationError } from '@/errors/domain/ValidationError'
-import { groupService } from '@/services/group.service'
-import { toUserId } from '@/models/user.model'
-import { toSsoUserId } from '@/models/ssouser.model'
 
 describe('groupService', () => {
   beforeEach(() => {

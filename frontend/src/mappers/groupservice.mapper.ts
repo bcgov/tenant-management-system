@@ -3,6 +3,12 @@ import {
   groupServiceRoleMapper,
 } from '@/mappers/groupservicerole.mapper'
 import { GroupService, type GroupServiceId } from '@/models/groupservice.model'
+import { type ApiEnvelope } from '@/services/api'
+
+export type GroupServiceListApiEnvelope = ApiEnvelope<
+  'sharedServices',
+  GroupServiceApiData[]
+>
 
 /**
  * The shape of the data that comes from the API.

@@ -3,6 +3,10 @@ import {
   groupUserMapper,
 } from '@/mappers/groupuser.mapper'
 import { Group, type GroupId } from '@/models/group.model'
+import { type ApiEnvelope } from '@/services/api'
+
+export type GroupApiEnvelope = ApiEnvelope<'group', GroupApiData>
+export type GroupListApiEnvelope = ApiEnvelope<'groups', GroupApiData[]>
 
 /**
  * The shape of the data that comes from the API.

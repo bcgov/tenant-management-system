@@ -5,6 +5,10 @@ import { makeUserSearchApiData } from '@/__tests__/__factories__'
 import * as utils from '@/services/utils'
 import { BCEID_SEARCH_TYPE, IDIR_SEARCH_TYPE } from '@/utils/constants'
 
+vi.mock('@/services/config.service', () => ({
+  config: { api: { baseUrl: 'https://api.example.com' } },
+}))
+
 vi.mock('@/services/utils', () => ({
   logApiError: vi.fn(),
 }))
@@ -17,8 +21,8 @@ const { mockGet } = vi.hoisted(() => ({
   mockGet: vi.fn(),
 }))
 
-vi.mock('@/services/authenticated.axios', () => ({
-  authenticatedAxios: () => ({
+vi.mock('@/services/api', () => ({
+  authenticatedFetch: () => ({
     get: mockGet,
   }),
 }))

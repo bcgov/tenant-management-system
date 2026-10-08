@@ -1,4 +1,7 @@
 import { Role, type RoleId } from '@/models/role.model'
+import { type ApiEnvelope } from '@/services/api'
+
+export type RoleListApiEnvelope = ApiEnvelope<'roles', RoleApiData[]>
 
 /**
  * The shape of the data that comes from the API.

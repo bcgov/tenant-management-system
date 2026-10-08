@@ -1,19 +1,26 @@
 import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
 import { ValidationError } from '@/errors/domain/ValidationError'
-import { type GroupApiData } from '@/mappers/group.mapper'
-import { type GroupUserApiData } from '@/mappers/groupuser.mapper'
+import {
+  type GroupApiData,
+  type GroupApiEnvelope,
+  type GroupListApiEnvelope,
+} from '@/mappers/group.mapper'
+import {
+  type GroupUserApiData,
+  type GroupUserApiEnvelope,
+} from '@/mappers/groupuser.mapper'
 import { type GroupId } from '@/models/group.model'
 import { type GroupUserId } from '@/models/groupuser.model'
 import { type TenantId } from '@/models/tenant.model'
 import { User } from '@/models/user.model'
-import { authenticatedAxios } from '@/services/authenticated.axios'
+import { authenticatedFetch } from '@/services/api'
 import {
   isDuplicateEntityError,
   isValidationError,
   logApiError,
 } from '@/services/utils'
 
-const api = authenticatedAxios()
+const api = authenticatedFetch()
 
 export const groupService = {
   /**
@@ -48,7 +55,7 @@ export const groupService = {
         },
       }
 
-      const response = await api.post(
+      const response = await api.post<GroupUserApiEnvelope>(
         `/tenants/${tenantId}/groups/${groupId}/users`,
         requestBody,
       )
@@ -95,7 +102,7 @@ export const groupService = {
         name,
       }
 
-      const response = await api.post(
+      const response = await api.post<GroupApiEnvelope>(
         `/tenants/${tenantId}/groups`,
         requestBody,
       )
@@ -132,7 +139,7 @@ export const groupService = {
    */
   async getGroup(tenantId: TenantId, groupId: GroupId): Promise<GroupApiData> {
     try {
-      const response = await api.get(
+      const response = await api.get<GroupApiEnvelope>(
         `/tenants/${tenantId}/groups/${groupId}?expand=groupUsers`,
       )
 
@@ -152,7 +159,9 @@ export const groupService = {
    */
   async getTenantGroups(tenantId: TenantId): Promise<GroupApiData[]> {
     try {
-      const response = await api.get(`/tenants/${tenantId}/groups`)
+      const response = await api.get<GroupListApiEnvelope>(
+        `/tenants/${tenantId}/groups`,
+      )
 
       return response.data.data.groups
     } catch (error) {
@@ -207,7 +216,7 @@ export const groupService = {
         name: name,
       }
 
-      const response = await api.put(
+      const response = await api.put<GroupApiEnvelope>(
         `/tenants/${tenantId}/groups/${groupId}`,
         requestBody,
       )

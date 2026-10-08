@@ -8,11 +8,18 @@ import {
   makeUser,
 } from '@/__tests__/__factories__'
 
+import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
+import { ValidationError } from '@/errors/domain/ValidationError'
 import { toRoleId } from '@/models/role.model'
 import { toTenantRequestId } from '@/models/tenantrequest.model'
 import { toUserId } from '@/models/user.model'
 import { toSsoUserId } from '@/models/ssouser.model'
+import { tenantRequestService } from '@/services/tenantrequest.service'
 import * as utils from '@/services/utils'
+
+vi.mock('@/services/config.service', () => ({
+  config: { api: { baseUrl: 'https://api.example.com' } },
+}))
 
 vi.mock('@/services/utils', () => ({
   isDuplicateEntityError: vi.fn(),
@@ -32,17 +39,13 @@ const { mockGet, mockPatch, mockPost } = vi.hoisted(() => ({
   mockPost: vi.fn(),
 }))
 
-vi.mock('@/services/authenticated.axios', () => ({
-  authenticatedAxios: () => ({
+vi.mock('@/services/api', () => ({
+  authenticatedFetch: () => ({
     get: mockGet,
     patch: mockPatch,
     post: mockPost,
   }),
 }))
-
-import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
-import { ValidationError } from '@/errors/domain/ValidationError'
-import { tenantRequestService } from '@/services/tenantrequest.service'
 
 describe('tenantRequestService', () => {
   beforeEach(() => {
