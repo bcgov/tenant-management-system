@@ -94,15 +94,19 @@ function dialogOpen() {
         <hgroup class="text-stack">
           <p class="p-large">
             {{ group.name }}
-            <v-icon
+            <v-btn
               v-if="isUserAdmin"
-              :icon="mdiPencil"
               aria-label="Edit group details"
               class="edit-icon"
-              size="x-small"
+              density="comfortable"
+              size="small"
               title="Edit"
+              variant="text"
+              icon
               @click.stop="dialogOpen"
-            />
+            >
+              <v-icon :icon="mdiPencil" size="x-small" />
+            </v-btn>
           </p>
           <p class="p-label">Tenant: {{ tenant.name }}</p>
         </hgroup>
@@ -186,7 +190,7 @@ function dialogOpen() {
 }
 
 .edit-icon {
-  vertical-align: text-top;
+  transform: translateY(-6px);
 }
 
 .text-stack p {
