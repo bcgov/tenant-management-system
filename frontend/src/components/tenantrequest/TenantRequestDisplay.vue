@@ -129,28 +129,28 @@ const rules = {
 
 <template>
   <v-container class="pa-6">
-    <h4 class="mb-12 text-wrap">Tenant Request: {{ tenantRequest.name }}</h4>
+    <h4 class="mb-12 text-wrap">Tenant request: {{ tenantRequest.name }}</h4>
 
     <v-form ref="form" v-model="isFormValid">
       <v-row>
         <v-col cols="12" md="4">
           <v-text-field
             :model-value="tenantRequest.createdBy"
-            label="Requested By"
+            label="Requested by"
             disabled
           />
         </v-col>
         <v-col cols="12" md="5">
           <v-text-field
             :model-value="tenantRequest.ministryName"
-            label="Ministry/Organization"
+            label="Ministry/organization"
             disabled
           />
         </v-col>
         <v-col cols="12" md="3">
           <v-text-field
             :model-value="tenantRequest.createdDate"
-            label="Date of Request (YYYY-MM-DD)"
+            label="Date of request"
             disabled
           />
         </v-col>
@@ -159,7 +159,7 @@ const rules = {
       <v-textarea
         v-if="isReadonly || !isNameEditable"
         :model-value="tenantRequest.name"
-        label="Name of Tenant"
+        label="Name of tenant"
         rows="1"
         auto-grow
         disabled
@@ -177,13 +177,13 @@ const rules = {
         variant="outlined"
       >
         <template #label>
-          Name of Tenant <span class="text-error">*</span>
+          Name of tenant <span class="text-error">*</span>
         </template>
       </v-text-field>
 
       <v-textarea
         :model-value="tenantRequest.description"
-        label="Description of Tenant"
+        label="Description of tenant"
         rows="1"
         auto-grow
         disabled
@@ -215,7 +215,7 @@ const rules = {
           <v-textarea
             v-if="isReadonly"
             :model-value="tenantRequest.rejectionReason"
-            label="Rejection Notes"
+            label="Rejection notes"
             rows="1"
             auto-grow
             disabled
@@ -231,7 +231,7 @@ const rules = {
             auto-grow
           >
             <template #label>
-              Rejection Notes <span class="text-error">*</span>
+              Rejection notes <span class="text-error">*</span>
             </template>
           </v-textarea>
         </v-col>

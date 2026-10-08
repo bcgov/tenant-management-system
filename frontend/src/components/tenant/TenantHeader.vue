@@ -83,14 +83,14 @@ const tenantUsersCount = computed(() => tenant.users.length)
         <StatBlock
           :icon="mdiCalendarMonthOutline"
           :value="tenant.createdDate"
-          label="Date Created"
+          label="Date created"
         />
       </v-col>
       <v-col cols="12" md="9">
         <StatBlock
           :icon="mdiAccountCircleOutline"
           :value="tenant.createdBy"
-          label="Created By"
+          label="Created by"
         />
       </v-col>
     </v-row>

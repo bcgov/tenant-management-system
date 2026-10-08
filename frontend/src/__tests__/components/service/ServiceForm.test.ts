@@ -93,9 +93,9 @@ describe('ServiceForm.vue', () => {
     it('renders both section headings', () => {
       renderComponent()
 
-      expect(screen.getByText('1. Add a Connected Service')).toBeInTheDocument()
+      expect(screen.getByText('1. Add a connected service')).toBeInTheDocument()
       expect(
-        screen.getByText('2. Add Connected Service Roles'),
+        screen.getByText('2. Add connected service roles'),
       ).toBeInTheDocument()
     })
 
@@ -112,7 +112,7 @@ describe('ServiceForm.vue', () => {
     it('renders no role cards initially', () => {
       renderComponent()
 
-      expect(screen.queryByText('New Role')).not.toBeInTheDocument()
+      expect(screen.queryByText('New role')).not.toBeInTheDocument()
     })
   })
 
@@ -269,7 +269,7 @@ describe('ServiceForm.vue', () => {
 
       await addRole(user)
 
-      expect(screen.getByText('New Role')).toBeInTheDocument()
+      expect(screen.getByText('New role')).toBeInTheDocument()
     })
 
     it('clears the "at least one role" error when a role is added', async () => {
@@ -295,7 +295,7 @@ describe('ServiceForm.vue', () => {
       await addRole(user)
       await user.click(screen.getByRole('button', { name: /remove role/i }))
 
-      expect(screen.queryByText('New Role')).not.toBeInTheDocument()
+      expect(screen.queryByText('New role')).not.toBeInTheDocument()
     })
 
     it('shows the "at least one role" error after removing the last role', async () => {

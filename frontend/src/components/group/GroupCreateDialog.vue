@@ -109,7 +109,7 @@ const rules = {
   <v-dialog v-model="dialogVisible" max-width="600px">
     <v-card class="pa-6">
       <v-card-title class="align-center d-flex justify-space-between">
-        Create a Group
+        Create a group
       </v-card-title>
       <v-card-subtitle class="my-6 text-wrap">
         Groups let you manage access for multiple users at once. Assign roles to
@@ -131,7 +131,7 @@ const rules = {
                 required
               >
                 <template #label>
-                  Group Name <span class="text-error">*</span>
+                  Group name <span class="text-error">*</span>
                 </template>
               </v-text-field>
             </v-col>
@@ -147,7 +147,7 @@ const rules = {
                 required
               >
                 <template #label>
-                  Group Description <span class="text-error">*</span>
+                  Group description <span class="text-error">*</span>
                 </template>
               </v-textarea>
             </v-col>

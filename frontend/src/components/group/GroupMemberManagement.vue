@@ -90,7 +90,7 @@ const toggleSearch = () => {
   <v-container class="ms-6">
     <v-row>
       <v-col :cols="12">
-        <h4>Group Members</h4>
+        <h4>Group members</h4>
         <GroupMemberTable
           :group-members="group.groupUsers"
           :tenant="tenant"
@@ -117,7 +117,7 @@ const toggleSearch = () => {
       <div v-if="showSearch">
         <v-divider class="my-12" />
 
-        <h4 class="mb-4">Add a member to this Group</h4>
+        <h4 class="mb-4">Add a member to this group</h4>
 
         <p class="mb-2 mt-8">
           1. Search for a member based on the selection criteria below:
@@ -139,7 +139,7 @@ const toggleSearch = () => {
 
             <ButtonPrimary
               :disabled="!selectedMember"
-              text="Add Member"
+              text="Add member"
               @click="handleAddMember"
             />
           </v-col>

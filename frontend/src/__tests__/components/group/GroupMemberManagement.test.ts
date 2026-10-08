@@ -180,11 +180,11 @@ describe('GroupMemberManagement', () => {
         screen.getByRole('button', { name: 'Add member to group' }),
       )
 
-      expect(screen.getByRole('button', { name: 'Add Member' })).toBeDisabled()
+      expect(screen.getByRole('button', { name: 'Add member' })).toBeDisabled()
 
       await fireEvent.click(screen.getByRole('button', { name: 'stub-select' }))
 
-      expect(screen.getByRole('button', { name: 'Add Member' })).toBeEnabled()
+      expect(screen.getByRole('button', { name: 'Add member' })).toBeEnabled()
     })
 
     it('does not emit add or close the search flow when no user is selected', async () => {
@@ -198,7 +198,7 @@ describe('GroupMemberManagement', () => {
       await fireEvent.click(
         screen.getByRole('button', { name: 'Add member to group' }),
       )
-      await fireEvent.click(screen.getByRole('button', { name: 'Add Member' }))
+      await fireEvent.click(screen.getByRole('button', { name: 'Add member' }))
 
       expect(emitted().add).toBeUndefined()
       expect(
@@ -218,7 +218,7 @@ describe('GroupMemberManagement', () => {
         screen.getByRole('button', { name: 'Add member to group' }),
       )
       await fireEvent.click(screen.getByRole('button', { name: 'stub-select' }))
-      await fireEvent.click(screen.getByRole('button', { name: 'Add Member' }))
+      await fireEvent.click(screen.getByRole('button', { name: 'Add member' }))
 
       expect(emitted().add).toHaveLength(1)
       expect(emitted().add[0]).toEqual([{ id: 'user-1' }])

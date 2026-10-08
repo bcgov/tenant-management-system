@@ -6,8 +6,8 @@
  */
 export const IDIR_SEARCH_TYPE = Object.freeze({
   EMAIL: { title: 'Email', value: 'email' },
-  FIRST_NAME: { title: 'First Name', value: 'firstName' },
-  LAST_NAME: { title: 'Last Name', value: 'lastName' },
+  FIRST_NAME: { title: 'First name', value: 'firstName' },
+  LAST_NAME: { title: 'Last name', value: 'lastName' },
 })
 
 /**
@@ -116,7 +116,7 @@ export const ROLES = Object.freeze({
    */
   OPERATIONS_ADMIN: {
     description: 'Administrative role with full system access',
-    title: 'Operations Admin',
+    title: 'Operations admin',
     value: 'TMS.OPERATIONS_ADMIN',
   },
 
@@ -126,7 +126,7 @@ export const ROLES = Object.freeze({
    */
   SERVICE_USER: {
     description: 'Accesses services via groups',
-    title: 'Service User',
+    title: 'Service user',
     value: 'TMS.SERVICE_USER',
   },
 
@@ -136,7 +136,7 @@ export const ROLES = Object.freeze({
    */
   TENANT_OWNER: {
     description: 'Creates and manages tenants',
-    title: 'Tenant Owner',
+    title: 'Tenant owner',
     value: 'TMS.TENANT_OWNER',
   },
 
@@ -145,7 +145,7 @@ export const ROLES = Object.freeze({
    */
   USER_ADMIN: {
     description: 'Manages groups and users',
-    title: 'User Admin',
+    title: 'User admin',
     value: 'TMS.USER_ADMIN',
   },
 })

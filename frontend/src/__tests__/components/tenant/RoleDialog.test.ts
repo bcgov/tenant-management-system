@@ -67,14 +67,14 @@ describe('RoleDialog', () => {
     it('shows the title and the user display name', () => {
       renderComponent({ user: makeIdirUser([serviceUser]) })
 
-      expect(screen.getByText('Edit Tenant Role')).toBeInTheDocument()
+      expect(screen.getByText('Edit tenant roles')).toBeInTheDocument()
       expect(screen.getByText('Jane Doe')).toBeInTheDocument()
     })
 
     it('renders nothing when modelValue is false', () => {
       renderComponent({ modelValue: false, user: makeIdirUser([serviceUser]) })
 
-      expect(screen.queryByText('Edit Tenant Role')).not.toBeInTheDocument()
+      expect(screen.queryByText('Edit tenant roles')).not.toBeInTheDocument()
     })
 
     it('shows all three roles with descriptions for non-BCeID Business users', () => {

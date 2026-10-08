@@ -71,7 +71,7 @@ const handleDeleteMember = async (groupUserId: GroupUserId) => {
   }
 }
 
-const handleUserSearch = async (
+const handleMemberSearch = async (
   searchType: IdirSearchType,
   searchText: string,
 ) => {
@@ -83,7 +83,7 @@ const handleUserSearch = async (
       searchText,
     )
   } catch {
-    notification.error('User search failed')
+    notification.error('Member search failed')
     searchResults.value = null
   } finally {
     isLoadingSearch.value = false
@@ -102,7 +102,7 @@ const handleUserSearch = async (
       @cancel="searchResults = null"
       @clear-search="handleClearSearch"
       @delete="handleDeleteMember"
-      @search="handleUserSearch"
+      @search="handleMemberSearch"
     />
   </LoginContainer>
 </template>

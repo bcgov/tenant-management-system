@@ -105,7 +105,7 @@ const handleSave = () => {
   <v-dialog v-model="dialogVisible" max-width="627" scrollable>
     <v-card class="pa-6">
       <v-card-title class="d-flex align-center justify-space-between">
-        Edit Tenant Role
+        Edit tenant roles
       </v-card-title>
 
       <v-card-text>

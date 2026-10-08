@@ -16,11 +16,11 @@ describe('IDIR_SEARCH_TYPE', () => {
   it('has the correct values', () => {
     expect(IDIR_SEARCH_TYPE.EMAIL).toEqual({ title: 'Email', value: 'email' })
     expect(IDIR_SEARCH_TYPE.FIRST_NAME).toEqual({
-      title: 'First Name',
+      title: 'First name',
       value: 'firstName',
     })
     expect(IDIR_SEARCH_TYPE.LAST_NAME).toEqual({
-      title: 'Last Name',
+      title: 'Last name',
       value: 'lastName',
     })
   })
@@ -79,22 +79,22 @@ describe('ROLES', () => {
   it('has the correct values', () => {
     expect(ROLES.OPERATIONS_ADMIN).toEqual({
       description: 'Administrative role with full system access',
-      title: 'Operations Admin',
+      title: 'Operations admin',
       value: 'TMS.OPERATIONS_ADMIN',
     })
     expect(ROLES.SERVICE_USER).toEqual({
       description: 'Accesses services via groups',
-      title: 'Service User',
+      title: 'Service user',
       value: 'TMS.SERVICE_USER',
     })
     expect(ROLES.TENANT_OWNER).toEqual({
       description: 'Creates and manages tenants',
-      title: 'Tenant Owner',
+      title: 'Tenant owner',
       value: 'TMS.TENANT_OWNER',
     })
     expect(ROLES.USER_ADMIN).toEqual({
       description: 'Manages groups and users',
-      title: 'User Admin',
+      title: 'User admin',
       value: 'TMS.USER_ADMIN',
     })
   })

@@ -55,7 +55,7 @@ const handleSubmit = async (serviceDetails: ServiceDetailFields) => {
       notification.error(error.userMessage)
     } else {
       // Otherwise display a generic error message.
-      notification.error('Failed to create Service')
+      notification.error('Failed to create service')
     }
   }
 }
@@ -103,7 +103,7 @@ init() // NOSONAR
           <template v-else>
             <v-row>
               <v-col cols="12">
-                <h4 class="mb-6 mt-12">Connected Services</h4>
+                <h4 class="mb-6 mt-12">Connected services</h4>
               </v-col>
             </v-row>
 
@@ -126,12 +126,12 @@ init() // NOSONAR
               <v-col cols="12">
                 <v-data-table
                   :header-props="{
-                    class: 'bg-surface-light font-weight-bold text-body-small',
+                    class: 'bg-surface-light font-weight-bold',
                   }"
                   :headers="[
                     {
                       key: 'displayName',
-                      title: 'Connected Service',
+                      title: 'Connected service',
                     },
                     {
                       key: 'status',
@@ -139,7 +139,7 @@ init() // NOSONAR
                     },
                     {
                       key: 'updatedDate',
-                      title: 'Last Synced',
+                      title: 'Last synced',
                     },
                   ]"
                   :hide-default-footer="services.length === 0"
@@ -158,13 +158,13 @@ init() // NOSONAR
                       </p>
                     </v-sheet>
                     <v-sheet v-else class="mb-6" color="surface-white">
-                      <h5 class="mb-2">No Connected Services yet</h5>
+                      <h5 class="mb-2">No connected services yet</h5>
                       <p class="mt-0">
                         Connected services allow CSTAR to manage service roles
                         and access across tenants.
                       </p>
                       <ButtonPrimary
-                        text="Add Connected Service"
+                        text="Add connected service"
                         @click="handleAddService"
                       />
                     </v-sheet>
@@ -181,7 +181,7 @@ init() // NOSONAR
             <ButtonPrimary
               v-if="services.length > 0"
               class="mt-6"
-              text="Add Connected Service"
+              text="Add connected service"
               @click="handleAddService"
             />
           </template>

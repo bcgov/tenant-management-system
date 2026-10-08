@@ -84,11 +84,11 @@ describe('ServiceManagement', () => {
       })
 
       expect(
-        screen.getByRole('heading', { name: 'Connected Services' }),
+        screen.getByRole('heading', { name: 'Connected services' }),
       ).toBeInTheDocument()
       expect(
         screen.getByText(
-          'There are no Connected Services set up in this CSTAR environment.',
+          'There are no connected services set up in this CSTAR environment.',
         ),
       ).toBeInTheDocument()
     })
@@ -103,7 +103,7 @@ describe('ServiceManagement', () => {
       })
 
       expect(
-        screen.getByRole('heading', { name: 'Connected Services' }),
+        screen.getByRole('heading', { name: 'Connected services' }),
       ).toBeInTheDocument()
       expect(screen.getByText(service1.name)).toBeInTheDocument()
     })
@@ -129,7 +129,7 @@ describe('ServiceManagement', () => {
       })
 
       expect(
-        screen.getByRole('heading', { name: 'Available Services' }),
+        screen.getByRole('heading', { name: 'Available services' }),
       ).toBeInTheDocument()
     })
 
@@ -141,7 +141,9 @@ describe('ServiceManagement', () => {
 
       expect(
         screen.getByText(
-          'All available services have already been added to this tenant. Additional connected services will appear here when they become available.',
+          'All available services have already been added to this tenant. ' +
+            'Additional connected services will appear here when they become ' +
+            'available.',
         ),
       ).toBeInTheDocument()
     })
@@ -153,7 +155,7 @@ describe('ServiceManagement', () => {
 
       expect(
         screen.getByRole('heading', {
-          name: 'Add your first Connected Service',
+          name: 'Add your first connected service',
         }),
       ).toBeInTheDocument()
     })
@@ -163,7 +165,8 @@ describe('ServiceManagement', () => {
 
       expect(
         screen.getByText(
-          'Add a Connected Service, then go to Service Roles to assign roles to groups.',
+          'Add a connected service, then go to service roles to assign roles ' +
+            'to groups.',
         ),
       ).toBeInTheDocument()
     })
@@ -176,11 +179,11 @@ describe('ServiceManagement', () => {
 
       expect(
         screen.getByRole('heading', {
-          name: 'No Connected Services have been added',
+          name: 'No connected services have been added',
         }),
       ).toBeInTheDocument()
       expect(
-        screen.getByText('Connected Services are managed by Tenant Owners.'),
+        screen.getByText('Connected services are managed by tenant owners.'),
       ).toBeInTheDocument()
     })
 
@@ -192,7 +195,7 @@ describe('ServiceManagement', () => {
 
       expect(
         screen.getByText(
-          'Contact a Tenant Owner to request additional services.',
+          'Contact a tenant owner to request additional services.',
         ),
       ).toBeInTheDocument()
     })

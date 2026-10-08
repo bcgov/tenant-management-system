@@ -105,7 +105,7 @@ init() // NOSONAR
             <p class="p-large">You don't currently have access to a tenant.</p>
 
             <p>
-              <ButtonPrimary text="Request a Tenant" @click="dialogOpen" />
+              <ButtonPrimary text="Request a tenant" @click="dialogOpen" />
             </p>
 
             <span class="mt-12 p-small">
@@ -121,7 +121,7 @@ init() // NOSONAR
       <template v-else>
         <v-row class="mb-8 mt-12">
           <v-col cols="12">
-            <ButtonPrimary text="Request a Tenant" @click="dialogOpen" />
+            <ButtonPrimary text="Request a tenant" @click="dialogOpen" />
           </v-col>
         </v-row>
         <TenantList :tenants="tenants" />
