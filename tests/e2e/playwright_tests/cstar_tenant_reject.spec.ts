@@ -16,7 +16,9 @@ test.describe.serial('Landing page tests', () => {
   })
 
   test('Checks the navigation links', async () => {
-    await expect(sharedPage.getByText('All Tenants')).toBeVisible()
+    await expect(
+      sharedPage.getByRole('link', { name: 'all tenants' }),
+    ).toBeVisible()
     await expect(sharedPage.getByText('Request a Tenant')).toBeVisible()
   })
 
@@ -97,7 +99,7 @@ test.describe.serial('Landing page tests', () => {
     //Reject Tenant request
     await sharedPage.getByRole('button', { name: 'Update status' }).click()
     //Check visibility of rejected tenant in the All Tenants list
-    await sharedPage.getByText('All Tenants').click()
+    await sharedPage.getByRole('link', { name: 'all tenants' }).click()
     await expect(sharedPage.getByText('Request a Tenant')).toBeVisible()
     await expect(sharedPage.getByText(tenantNameValue)).not.toBeVisible()
   })
