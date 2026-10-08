@@ -47,7 +47,7 @@ const handleTenantSubmit = async (
       tenantRequestDetails,
       authStore.authenticatedUser,
     )
-    notification.success('Request successfully submitted')
+    notification.success('Tenant request submitted')
     dialogClose()
   } catch (error: unknown) {
     if (error instanceof DuplicateEntityError) {

@@ -44,10 +44,7 @@ const handleAddMember = async (user: User) => {
   try {
     await groupStore.addGroupUser(tenantId, groupId, user)
     searchResults.value = null
-    notification.success(
-      'New member successfully added to this group',
-      'Member Added',
-    )
+    notification.success('Member added')
   } catch (error) {
     if (error instanceof DuplicateEntityError) {
       notification.error(
@@ -68,10 +65,7 @@ const handleClearSearch = async () => {
 const handleDeleteMember = async (groupUserId: GroupUserId) => {
   try {
     await groupStore.removeGroupUser(tenantId, groupId, groupUserId)
-    notification.success(
-      'Member successfully removed from this group',
-      'Member Removed',
-    )
+    notification.success('Member removed')
   } catch {
     notification.error('Failed to remove member from group')
   }

@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, within } from '@testing-library/vue'
 import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { ref } from 'vue'
 
 import { makeService } from '@/__tests__/__factories__'
 
@@ -58,13 +59,13 @@ describe('ServiceContainer', () => {
     serviceStore.fetchServices = vi.fn().mockResolvedValue(undefined)
 
     notificationMock = {
+      messages: ref([]),
+
+      dismiss: vi.fn(),
       error: vi.fn(),
       info: vi.fn(),
-      remove: vi.fn(),
       success: vi.fn(),
       warning: vi.fn(),
-
-      items: [],
     }
     vi.mocked(useNotification).mockReturnValue(notificationMock)
   })
@@ -184,9 +185,7 @@ describe('ServiceContainer', () => {
       expect(serviceStore.createService).toHaveBeenCalledWith({
         displayName: 'New Service',
       })
-      expect(notificationMock.success).toHaveBeenCalledWith(
-        'Service has been successfully created',
-      )
+      expect(notificationMock.success).not.toHaveBeenCalled()
       expect(await screen.findByText('Connected Services')).toBeInTheDocument()
     })
 

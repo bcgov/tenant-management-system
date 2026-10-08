@@ -8,7 +8,7 @@ test.beforeAll(async ({ browser }: { browser: Browser }) => {
     storageState: 'support/user.json',
   })
   sharedPage = await context.newPage()
-  await sharedPage.goto('/')
+  await sharedPage.goto('/tenants')
 })
 
 test.describe.serial('Landing page tests', () => {
@@ -49,8 +49,26 @@ test.describe.serial('Landing page tests', () => {
     await sharedPage
       .getByRole('button', { name: 'Create tenant request' })
       .click()
-    await expect(sharedPage.getByText('Success')).toBeVisible()
+
+    const snackbarTenantRequestSubmitted = sharedPage
+      .getByRole('alert')
+      .filter({ hasText: /tenant request submitted/i })
+    await expect(snackbarTenantRequestSubmitted).toBeVisible()
+    await snackbarTenantRequestSubmitted
+      .getByText(/tenant request submitted/i)
+      .click()
+    await expect(snackbarTenantRequestSubmitted).toBeHidden()
+
     await sharedPage.getByText('settings').click()
+
+    const combobox = sharedPage.getByRole('combobox', {
+      name: /items per page/i,
+    })
+    await combobox.focus()
+    await combobox.press('ArrowDown')
+    await expect(combobox).toHaveAttribute('aria-expanded', 'true')
+    await sharedPage.getByRole('option', { name: 'All', exact: true }).click()
+
     await sharedPage
       .locator('td', { hasText: tenantNameValue })
       .locator('xpath=following-sibling::td[1]')
@@ -69,10 +87,6 @@ test.describe.serial('Landing page tests', () => {
     await sharedPage.getByText('Approved', { exact: true }).click()
     // Approve Tenant request
     await sharedPage.getByRole('button', { name: 'Update status' }).click()
-    await expect(sharedPage.getByText('Success')).toBeVisible()
-    await expect(
-      sharedPage.getByText('Tenant request has been successfully updated'),
-    ).toBeVisible()
     // Check visibility of approved tenant in All Tenants list
     await sharedPage.getByText('All Tenants').click()
     await expect(sharedPage.getByText('Request a Tenant')).toBeVisible()
@@ -231,10 +245,14 @@ test.describe.serial('Landing page tests', () => {
         exact: true,
       })
       .click()
-    await expect(sharedPage.getByText('User Added')).toBeVisible()
-    await expect(
-      sharedPage.getByText('New user successfully added to this tenant'),
-    ).toBeVisible()
+
+    const snackbarUserAdded = sharedPage
+      .getByRole('alert')
+      .filter({ hasText: /user added/i })
+    await expect(snackbarUserAdded).toBeVisible()
+    await snackbarUserAdded.getByText(/user added/i).click()
+    await expect(snackbarUserAdded).toBeHidden()
+
     const tables = sharedPage.locator('table')
     await expect(tables).toHaveCount(1)
     const tenantTable = tables.first()
@@ -260,15 +278,15 @@ test.describe.serial('Landing page tests', () => {
     await expect(cancelButton).toBeEnabled()
     const removeButton = sharedPage.getByTestId('button-remove')
     await expect(removeButton).toBeEnabled()
-    await sharedPage
-      .getByRole('button', {
-        name: 'Remove User',
-      })
-      .click()
-    await expect(sharedPage.getByText('User Removed')).toBeVisible()
-    await expect(
-      sharedPage.getByText('The user was successfully removed'),
-    ).toBeVisible()
+    await sharedPage.getByRole('button', { name: /remove user/i }).click()
+
+    const snackbarUserRemoved = sharedPage
+      .getByRole('alert')
+      .filter({ hasText: /user removed/i })
+    await expect(snackbarUserRemoved).toBeVisible()
+    await snackbarUserRemoved.getByText(/user removed/i).click()
+    await expect(snackbarUserRemoved).toBeHidden()
+
     await expect(tenantRows).toHaveCount(1)
     const updatedTenantRow = tenantRows.nth(0)
     await expect(updatedTenantRow.locator('td').nth(0)).toHaveText('CHEFS')

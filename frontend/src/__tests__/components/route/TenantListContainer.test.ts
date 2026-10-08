@@ -182,7 +182,7 @@ describe('TenantListContainer.vue', () => {
         user,
       )
       expect(notification.success).toHaveBeenCalledWith(
-        'Request successfully submitted',
+        'Tenant request submitted',
       )
       expect(
         wrapper
