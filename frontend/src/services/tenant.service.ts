@@ -1,20 +1,31 @@
 import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
 import { ValidationError } from '@/errors/domain/ValidationError'
-import { type RoleApiData } from '@/mappers/role.mapper'
-import { type TenantApiData } from '@/mappers/tenant.mapper'
-import { type UserApiData } from '@/mappers/user.mapper'
+import {
+  type RoleApiData,
+  type RoleListApiEnvelope,
+} from '@/mappers/role.mapper'
+import {
+  type TenantApiData,
+  type TenantApiEnvelope,
+  type TenantListApiEnvelope,
+} from '@/mappers/tenant.mapper'
+import {
+  type UserApiData,
+  type UserApiEnvelope,
+  type UserListApiEnvelope,
+} from '@/mappers/user.mapper'
 import { type RoleId } from '@/models/role.model'
 import { type SsoUserId } from '@/models/ssouser.model'
 import { type TenantId } from '@/models/tenant.model'
 import { User, type UserId } from '@/models/user.model'
-import { authenticatedAxios } from '@/services/authenticated.axios'
+import { authenticatedFetch } from '@/services/api'
 import {
   isDuplicateEntityError,
   isValidationError,
   logApiError,
 } from '@/services/utils'
 
-const api = authenticatedAxios()
+const api = authenticatedFetch()
 
 export const tenantService = {
   /**
@@ -44,7 +55,10 @@ export const tenantService = {
         },
       }
 
-      const response = await api.post(`/tenants/${tenantId}/users`, request)
+      const response = await api.post<UserApiEnvelope>(
+        `/tenants/${tenantId}/users`,
+        request,
+      )
 
       return response.data.data.user
     } catch (error: unknown) {
@@ -97,7 +111,7 @@ export const tenantService = {
    */
   async getTenant(tenantId: TenantId): Promise<TenantApiData> {
     try {
-      const response = await api.get(
+      const response = await api.get<TenantApiEnvelope>(
         `/tenants/${tenantId}?expand=tenantUserRoles`,
       )
 
@@ -117,7 +131,9 @@ export const tenantService = {
    */
   async getTenantRoles(tenantId: TenantId): Promise<RoleApiData[]> {
     try {
-      const response = await api.get(`/tenants/${tenantId}/roles`)
+      const response = await api.get<RoleListApiEnvelope>(
+        `/tenants/${tenantId}/roles`,
+      )
 
       return response.data.data.roles
     } catch (error) {
@@ -139,7 +155,7 @@ export const tenantService = {
     userId: UserId,
   ): Promise<RoleApiData[]> {
     try {
-      const response = await api.get(
+      const response = await api.get<RoleListApiEnvelope>(
         `/tenants/${tenantId}/users/${userId}/roles`,
       )
 
@@ -159,7 +175,7 @@ export const tenantService = {
    */
   async getUserTenants(ssoUserId: SsoUserId): Promise<TenantApiData[]> {
     try {
-      const response = await api.get(
+      const response = await api.get<TenantListApiEnvelope>(
         `/users/${ssoUserId}/tenants?expand=tenantUserRoles`,
       )
 
@@ -179,7 +195,9 @@ export const tenantService = {
    */
   async getUsers(tenantId: TenantId): Promise<UserApiData[]> {
     try {
-      const response = await api.get(`/tenants/${tenantId}/users`)
+      const response = await api.get<UserListApiEnvelope>(
+        `/tenants/${tenantId}/users`,
+      )
 
       return response.data.data.users
     } catch (error) {
@@ -259,7 +277,10 @@ export const tenantService = {
         name: name,
       }
 
-      const response = await api.put(`/tenants/${tenantId}`, requestBody)
+      const response = await api.put<TenantApiEnvelope>(
+        `/tenants/${tenantId}`,
+        requestBody,
+      )
 
       return response.data.data.tenant
     } catch (error: unknown) {

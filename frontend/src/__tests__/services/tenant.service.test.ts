@@ -16,6 +16,10 @@ import { toTenantId } from '@/models/tenant.model'
 import { toUserId } from '@/models/user.model'
 import * as utils from '@/services/utils'
 
+vi.mock('@/services/config.service', () => ({
+  config: { api: { baseUrl: 'https://api.example.com' } },
+}))
+
 vi.mock('@/services/utils', () => ({
   isDuplicateEntityError: vi.fn(),
   isValidationError: vi.fn(),
@@ -35,8 +39,8 @@ const { mockDelete, mockGet, mockPost, mockPut } = vi.hoisted(() => ({
   mockPut: vi.fn(),
 }))
 
-vi.mock('@/services/authenticated.axios', () => ({
-  authenticatedAxios: () => ({
+vi.mock('@/services/api', () => ({
+  authenticatedFetch: () => ({
     delete: mockDelete,
     get: mockGet,
     post: mockPost,

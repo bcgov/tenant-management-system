@@ -3,6 +3,14 @@ import {
   type ServiceRoleApiData,
 } from '@/mappers/servicerole.mapper'
 import { Service, type ServiceId } from '@/models/service.model'
+import { type ApiEnvelope, type ApiEnvelopeUnkeyed } from '@/services/api'
+
+export type ServiceApiEnvelope = ApiEnvelope<'sharedService', ServiceApiData>
+export type ServiceListApiEnvelope = ApiEnvelope<
+  'sharedServices',
+  ServiceApiData[]
+>
+export type ServiceListApiEnvelopeUnkeyed = ApiEnvelopeUnkeyed<ServiceApiData[]>
 
 /**
  * The shape of the data that comes from the API.

@@ -1,4 +1,3 @@
-import { authenticatedAxios } from '@/services/authenticated.axios'
 import {
   isDuplicateEntityError,
   isValidationError,
@@ -6,14 +5,18 @@ import {
 } from '@/services/utils'
 import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
 import { ValidationError } from '@/errors/domain/ValidationError'
-import { type TenantRequestApiData } from '@/mappers/tenantrequest.mapper'
+import {
+  type TenantRequestApiData,
+  type TenantRequestListApiEnvelope,
+} from '@/mappers/tenantrequest.mapper'
 import {
   type TenantRequestDetailFields,
   type TenantRequestId,
 } from '@/models/tenantrequest.model'
 import { type User } from '@/models/user.model'
+import { authenticatedFetch } from '@/services/api'
 
-const api = authenticatedAxios()
+const api = authenticatedFetch()
 
 export const tenantRequestService = {
   /**
@@ -72,7 +75,8 @@ export const tenantRequestService = {
    */
   async getTenantRequests(): Promise<TenantRequestApiData[]> {
     try {
-      const response = await api.get('/tenant-requests')
+      const response =
+        await api.get<TenantRequestListApiEnvelope>('/tenant-requests')
 
       return response.data.data.tenantRequests
     } catch (error) {
