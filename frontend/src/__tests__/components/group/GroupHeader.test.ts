@@ -65,13 +65,12 @@ describe('GroupHeader', () => {
   describe('header details', () => {
     it('starts collapsed', () => {
       renderComponent()
-      const toggle = screen.getByRole('button', {
-        name: 'Expand group details',
-      })
 
-      expect(toggle).toHaveAttribute('aria-expanded', 'false')
       expect(
-        screen.queryByRole('button', { name: 'Collapse group details' }),
+        screen.getByRole('button', { name: /expand group details/i }),
+      ).toHaveAttribute('aria-expanded', 'false')
+      expect(
+        screen.queryByRole('button', { name: /collapse group details/i }),
       ).not.toBeInTheDocument()
     })
 
@@ -79,19 +78,15 @@ describe('GroupHeader', () => {
       const user = userEvent.setup()
 
       renderComponent()
-      const toggle = screen.getByRole('button', {
-        name: 'Expand group details',
-      })
-      await user.click(toggle)
-
-      await waitFor(() =>
-        expect(toggle).toHaveAttribute('aria-expanded', 'true'),
+      await user.click(
+        screen.getByRole('button', { name: /expand group details/i }),
       )
+
       expect(
-        screen.queryByRole('button', { name: 'Expand group details' }),
+        screen.queryByRole('button', { name: /expand group details/i }),
       ).not.toBeInTheDocument()
       expect(
-        screen.getByRole('button', { name: 'Collapse group details' }),
+        await screen.findByRole('button', { name: /collapse group details/i }),
       ).toBeInTheDocument()
     })
   })
@@ -110,10 +105,9 @@ describe('GroupHeader', () => {
       const user = userEvent.setup()
 
       renderComponent({ group })
-      const toggle = screen.getByRole('button', {
-        name: 'Expand group details',
-      })
-      await user.click(toggle)
+      await user.click(
+        screen.getByRole('button', { name: /expand group details/i }),
+      )
 
       expect(await screen.findByText('groupDescription')).toBeInTheDocument()
     })
@@ -123,10 +117,7 @@ describe('GroupHeader', () => {
       const user = userEvent.setup()
 
       renderComponent({ group })
-      const toggle = screen.getByRole('button', {
-        name: 'Expand group details',
-      })
-      toggle.focus()
+      screen.getByRole('button', { name: /expand group details/i }).focus()
       await user.keyboard('{Enter}')
 
       expect(await screen.findByText('groupDescription')).toBeInTheDocument()
@@ -138,7 +129,7 @@ describe('GroupHeader', () => {
 
       renderComponent({ group })
       const toggle = screen.getByRole('button', {
-        name: 'Expand group details',
+        name: /expand group details/i,
       })
       await user.click(toggle)
       await screen.findByText('groupDescription')
@@ -167,13 +158,14 @@ describe('GroupHeader', () => {
       const user = userEvent.setup()
 
       renderComponent({ group })
-      const toggle = screen.getByRole('button', {
-        name: 'Expand group details',
-      })
-      await user.click(toggle)
-      const dateCreated = screen.getByText('Date Created').parentElement
 
-      expect(dateCreated).toHaveTextContent('createdDate')
+      expect(screen.queryByText('createdDate')).not.toBeInTheDocument()
+
+      await user.click(
+        screen.getByRole('button', { name: /expand group details/i }),
+      )
+
+      expect(await screen.findByText('createdDate')).toBeInTheDocument()
     })
 
     it('renders who created the group', async () => {
@@ -181,13 +173,14 @@ describe('GroupHeader', () => {
       const user = userEvent.setup()
 
       renderComponent({ group })
-      const toggle = screen.getByRole('button', {
-        name: 'Expand group details',
-      })
-      await user.click(toggle)
-      const createdBy = screen.getByText('Created By').parentElement
 
-      expect(createdBy).toHaveTextContent('createdBy')
+      expect(screen.queryByText('createdBy')).not.toBeInTheDocument()
+
+      await user.click(
+        screen.getByRole('button', { name: /expand group details/i }),
+      )
+
+      expect(await screen.findByText('createdBy')).toBeInTheDocument()
     })
 
     it('renders member count from groupUsers', async () => {
@@ -197,73 +190,76 @@ describe('GroupHeader', () => {
       const user = userEvent.setup()
 
       renderComponent({ group })
-      const toggle = screen.getByRole('button', {
-        name: 'Expand group details',
-      })
-      await user.click(toggle)
-      const members = screen.getByText('Members').parentElement
 
-      expect(members).toHaveTextContent('3')
+      expect(screen.queryByText('3')).not.toBeInTheDocument()
+
+      await user.click(
+        screen.getByRole('button', { name: /expand group details/i }),
+      )
+
+      expect(await screen.findByText('3')).toBeInTheDocument()
     })
 
     it('renders enabled roles count', async () => {
       const user = userEvent.setup()
 
       renderComponent({ enabledRolesCount: 4 })
-      const toggle = screen.getByRole('button', {
-        name: 'Expand group details',
-      })
-      await user.click(toggle)
-      const roles = screen.getByText('Roles').parentElement
 
-      expect(roles).toHaveTextContent('4')
+      expect(screen.queryByText('4')).not.toBeInTheDocument()
+
+      await user.click(
+        screen.getByRole('button', { name: /expand group details/i }),
+      )
+
+      expect(await screen.findByText('4')).toBeInTheDocument()
     })
 
     it('renders enabled service count', async () => {
       const user = userEvent.setup()
 
       renderComponent({ enabledServiceCount: 5 })
-      const toggle = screen.getByRole('button', {
-        name: 'Expand group details',
-      })
-      await user.click(toggle)
-      const enabledServices = screen.getByText('Enabled Services').parentElement
 
-      expect(enabledServices).toHaveTextContent('5')
+      expect(screen.queryByText('5')).not.toBeInTheDocument()
+
+      await user.click(
+        screen.getByRole('button', { name: /expand group details/i }),
+      )
+
+      expect(await screen.findByText('5')).toBeInTheDocument()
     })
   })
 
   describe('route watcher', () => {
     it('collapses detail when route changes', async () => {
+      const group = makeGroup({ description: 'groupDescription' })
       const route = createRoute('/initial-path')
       mockedUseRoute.mockReturnValue(route)
       const user = userEvent.setup()
 
-      renderComponent({ group: makeGroup({ description: 'groupDescription' }) })
+      renderComponent({ group })
       const toggle = screen.getByRole('button', {
-        name: 'Expand group details',
+        name: /expand group details/i,
       })
       await user.click(toggle)
-
-      expect(screen.getByText('groupDescription')).toBeInTheDocument()
+      await screen.findByText('groupDescription')
 
       route.path = '/new-path'
+
       await waitFor(() =>
         expect(toggle).toHaveAttribute('aria-expanded', 'false'),
       )
-
       expect(screen.queryByText('groupDescription')).not.toBeInTheDocument()
     })
   })
 
-  describe('Edit details button', () => {
+  describe('edit details button', () => {
     it('is shown for admins', () => {
       vi.mocked(currentUserHasRole).mockReturnValue(true)
 
       renderComponent()
 
       expect(
-        screen.getByRole('button', { name: 'Edit group details' }),
+        screen.getByRole('button', { name: /edit group details/i }),
       ).toBeInTheDocument()
     })
 
@@ -273,8 +269,16 @@ describe('GroupHeader', () => {
       renderComponent()
 
       expect(
-        screen.queryByRole('button', { name: 'Edit group details' }),
+        screen.queryByRole('button', { name: /edit group details/i }),
       ).not.toBeInTheDocument()
+    })
+
+    it('dialog is not opened before clicked', async () => {
+      vi.mocked(currentUserHasRole).mockReturnValue(true)
+
+      renderComponent()
+
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     })
 
     it('opens dialog when clicked', async () => {
@@ -282,10 +286,11 @@ describe('GroupHeader', () => {
       const user = userEvent.setup()
 
       renderComponent()
-      const button = screen.getByRole('button', { name: 'Edit group details' })
-      await user.click(button)
+      await user.click(
+        screen.getByRole('button', { name: /edit group details/i }),
+      )
 
-      expect(screen.getByRole('dialog')).toBeInTheDocument()
+      expect(await screen.findByRole('dialog')).toBeInTheDocument()
     })
 
     it('closes dialog when the dialog emits update:modelValue', async () => {
@@ -321,12 +326,12 @@ describe('GroupHeader', () => {
         },
       })
       await user.click(
-        screen.getByRole('button', { name: 'Edit group details' }),
+        screen.getByRole('button', { name: /edit group details/i }),
       )
 
-      expect(screen.getByRole('dialog')).toBeInTheDocument()
+      expect(await screen.findByRole('dialog')).toBeInTheDocument()
 
-      await user.click(screen.getByRole('button', { name: 'Close' }))
+      await user.click(screen.getByRole('button', { name: /close/i }))
 
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     })
@@ -365,12 +370,12 @@ describe('GroupHeader', () => {
       })
 
       await user.click(
-        screen.getByRole('button', { name: 'Edit group details' }),
+        screen.getByRole('button', { name: /edit group details/i }),
       )
 
-      expect(screen.getByRole('dialog')).toBeInTheDocument()
+      expect(await screen.findByRole('dialog')).toBeInTheDocument()
 
-      await user.click(screen.getByRole('button', { name: 'Close' }))
+      await user.click(screen.getByRole('button', { name: /close/i }))
 
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     })
@@ -414,9 +419,9 @@ describe('GroupHeader', () => {
       const user = userEvent.setup()
 
       await user.click(
-        screen.getByRole('button', { name: 'Edit group details' }),
+        screen.getByRole('button', { name: /edit group details/i }),
       )
-      await user.click(screen.getByRole('button', { name: 'Submit' }))
+      await user.click(screen.getByRole('button', { name: /submit/i }))
 
       expect(emitted().submit).toEqual([[updatedGroup]])
     })

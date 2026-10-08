@@ -7,14 +7,14 @@ import { type ServiceRoleDetailFields } from '@/models/servicerole.model'
 
 // --- Component Interface -----------------------------------------------------
 
-const props = defineProps<{
+const { serviceRoles } = defineProps<{
   serviceRoles: ServiceRoleDetailFields[]
 }>()
 
 const emit = defineEmits<{
   'add-service-role': []
-  'remove-service-role': [index: number]
-  'update-service-role': [index: number, fields: ServiceRoleDetailFields]
+  'remove-service-role': [number]
+  'update-service-role': [number, ServiceRoleDetailFields]
 }>()
 
 // --- Component State ---------------------------------------------------------
@@ -28,10 +28,8 @@ const handleAddServiceRole = () => {
 }
 
 const isDuplicateName = (index: number) => {
-  const name = props.serviceRoles[index]?.name.trim()
-  return props.serviceRoles.some(
-    (r, i) => i !== index && r.name.trim() === name,
-  )
+  const name = serviceRoles[index]?.name.trim()
+  return serviceRoles.some((r, i) => i !== index && r.name.trim() === name)
 }
 
 const validate = async () => {
@@ -49,7 +47,7 @@ defineExpose({ validate })
   <div>
     <ButtonSecondary
       class="mb-4"
-      text="Add Role"
+      text="Add role"
       @click="handleAddServiceRole"
     />
 

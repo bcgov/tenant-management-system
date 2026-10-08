@@ -52,7 +52,7 @@ const removeRoleDialog = ref({
     { action: 'remove', text: 'Remove role', type: 'primary' as const },
   ],
   message: 'Are you sure you want to remove this role from the user?',
-  title: 'Confirm Role Removal',
+  title: 'Confirm role removal',
   visible: false,
 })
 
@@ -88,13 +88,13 @@ const headers = computed(() => {
       align: 'start',
       key: 'ssoUser.firstName',
       sortable: true,
-      title: 'First Name',
+      title: 'First name',
     },
     {
       align: 'start',
       key: 'ssoUser.lastName',
       sortable: true,
-      title: 'Last Name',
+      title: 'Last name',
     },
     {
       align: 'start',
@@ -106,13 +106,13 @@ const headers = computed(() => {
       align: 'start',
       key: 'ssoUser.idpType',
       sortable: false,
-      title: 'Identity Provider',
+      title: 'Identity provider',
     },
     {
       align: 'start',
       key: 'roles',
       sortable: false,
-      title: 'Tenant Roles',
+      title: 'Tenant roles',
     },
   ]
 
@@ -254,7 +254,7 @@ const showRemoveUserDialog = (user: User) => {
           )"
           :key="role.id"
           :closable="canRemoveRole(item, role)"
-          :close-label="`Remove Role ${role.description} for ${item.getName()}`"
+          :close-label="`Remove role ${role.description} for ${item.getName()}`"
           :model-value="true"
           class="d-inline-flex align-center"
           color="primary"
@@ -274,7 +274,7 @@ const showRemoveUserDialog = (user: User) => {
       <v-menu>
         <template #activator="{ props: activatorProps }">
           <v-btn
-            :aria-label="`Open Menu for ${item.ssoUser.firstName} ${item.ssoUser.lastName}`"
+            :aria-label="`Open menu for ${item.ssoUser.firstName} ${item.ssoUser.lastName}`"
             :icon="mdiDotsVertical"
             variant="text"
             v-bind="activatorProps"
@@ -283,12 +283,12 @@ const showRemoveUserDialog = (user: User) => {
 
         <v-list>
           <v-list-item
-            :aria-label="`Edit Tenant Roles for ${item.ssoUser.firstName} ${item.ssoUser.lastName}`"
+            :aria-label="`Edit tenant roles for ${item.ssoUser.firstName} ${item.ssoUser.lastName}`"
             @click="showEditRolesDialog(item)"
           >
             <v-list-item-title>
               <v-icon :icon="mdiPencil" />
-              Edit Tenant Roles
+              Edit tenant roles
             </v-list-item-title>
           </v-list-item>
 

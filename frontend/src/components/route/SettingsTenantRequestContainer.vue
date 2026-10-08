@@ -5,7 +5,6 @@ import { computed, ref, type Ref } from 'vue'
 import AdministratorContainer from '@/components/auth/AdministratorContainer.vue'
 import LoginContainer from '@/components/auth/LoginContainer.vue'
 import TenantRequestDisplay from '@/components/tenantrequest/TenantRequestDisplay.vue'
-import EmptyState from '@/components/ui/EmptyState.vue'
 import LoadingWrapper from '@/components/ui/LoadingWrapper.vue'
 import { useNotification } from '@/composables/useNotification'
 import { DomainError } from '@/errors/domain/DomainError'
@@ -58,8 +57,6 @@ const handleApproved = async (tenantRequest: TenantRequest, name: string) => {
       undefined,
       name,
     )
-    notification.success('Tenant Request has been successfully updated')
-
     handleCancel()
   } catch (error) {
     if (error instanceof DuplicateEntityError) {
@@ -74,7 +71,7 @@ const handleApproved = async (tenantRequest: TenantRequest, name: string) => {
         // If the API says that this name exists already, then show the name
         // duplicated validation error.
         notification.error(
-          'Requests can only have a status change from New. Start a new ' +
+          'Requests can only have a status change from "new". Start a new ' +
             'request instead',
         )
 
@@ -91,7 +88,7 @@ const handleApproved = async (tenantRequest: TenantRequest, name: string) => {
       notification.error(error.userMessage)
     } else {
       // Otherwise display a generic error message.
-      notification.error('Failed to update Tenant Request')
+      notification.error('Failed to update tenant request')
     }
   }
 }
@@ -110,10 +107,9 @@ const handleRejected = async (tenantRequest: TenantRequest, notes: string) => {
       TENANT_REQUEST_STATUS.REJECTED.value,
       notes,
     )
-    notification.success('Tenant Request has been successfully updated')
     handleCancel()
   } catch {
-    notification.error('Failed to update Tenant Request')
+    notification.error('Failed to update tenant request')
   }
 }
 
@@ -169,7 +165,7 @@ init() // NOSONAR
           <template v-else>
             <v-row>
               <v-col cols="12">
-                <h4 class="mb-6 mt-12">Tenant Requests</h4>
+                <h4 class="mb-6 mt-12">Tenant requests</h4>
                 <p class="mb-8">
                   Select a request to review details and approve or reject it.
                 </p>
@@ -196,26 +192,26 @@ init() // NOSONAR
                 <v-data-table
                   :cell-props="getCellProps"
                   :header-props="{
-                    class: 'bg-surface-light font-weight-bold text-body-small',
+                    class: 'bg-surface-light font-weight-bold',
                   }"
                   :headers="[
                     {
                       key: 'createdDate',
-                      title: 'Date of Request (YYYY-MM-DD)',
+                      title: 'Date of request',
                     },
                     {
                       key: 'createdBy',
                       sortable: false,
-                      title: 'Requested By',
+                      title: 'Requested by',
                     },
                     {
                       key: 'ministryName',
-                      title: 'Ministry / Organization',
+                      title: 'Ministry / organization',
                     },
                     {
                       key: 'name',
                       sortable: false,
-                      title: 'Requested Tenant Name',
+                      title: 'Requested tenant name',
                     },
                     {
                       align: 'end',
@@ -245,18 +241,18 @@ init() // NOSONAR
                   @click:row="handleRowClick"
                 >
                   <template #no-data>
-                    <EmptyState
-                      v-if="search"
-                      body="Change your search criteria to match tenant requests"
-                      title="No matching tenant requests"
-                      variant="lookup"
-                    />
-                    <EmptyState
-                      v-else
-                      body="Tenant requests submitted by users will appear here"
-                      title="No tenant requests yet"
-                      variant="lookup"
-                    />
+                    <v-sheet v-if="search">
+                      <h5 class="mb-2">No matching tenant requests</h5>
+                      <p class="mt-0">
+                        Change your search criteria to match tenant requests
+                      </p>
+                    </v-sheet>
+                    <v-sheet v-else>
+                      <h5 class="mb-2">No tenant requests yet</h5>
+                      <p class="mt-0">
+                        Tenant requests submitted by users will appear here
+                      </p>
+                    </v-sheet>
                   </template>
                   <template #[`item.status`]="{ item }">
                     <div
@@ -264,6 +260,7 @@ init() // NOSONAR
                       style="gap: 8px; margin-block: 4px"
                     >
                       <v-chip
+                        :aria-label="`Status: ${item.status}`"
                         :color="getStatusColor(item.status)"
                         class="align-center d-inline-flex"
                       >

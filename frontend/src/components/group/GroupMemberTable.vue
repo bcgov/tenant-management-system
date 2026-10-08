@@ -49,13 +49,13 @@ const headers = computed(() => {
       align: 'start',
       key: 'user.ssoUser.firstName',
       sortable: true,
-      title: 'First Name',
+      title: 'First name',
     },
     {
       align: 'start',
       key: 'user.ssoUser.lastName',
       sortable: true,
-      title: 'Last Name',
+      title: 'Last name',
     },
     {
       align: 'start',
@@ -67,7 +67,7 @@ const headers = computed(() => {
       align: 'start',
       key: 'user.ssoUser.idpType',
       sortable: false,
-      title: 'Identity Provider',
+      title: 'Identity provider',
     },
   ]
 
@@ -100,7 +100,7 @@ const removeDialogButtons = computed<DialogButton[]>(() => [
   },
   {
     action: 'remove',
-    text: 'Remove Member',
+    text: 'Remove member',
     type: 'primary',
   },
 ])
@@ -173,7 +173,7 @@ const handleRemoveMemberButton = (groupUser: GroupUser) => {
       <v-menu>
         <template #activator="{ props: activatorProps }">
           <v-btn
-            :aria-label="`Open Menu for ${item.user.ssoUser.firstName} ${item.user.ssoUser.lastName}`"
+            :aria-label="`Open menu for ${item.user.ssoUser.firstName} ${item.user.ssoUser.lastName}`"
             :icon="mdiDotsVertical"
             variant="text"
             v-bind="activatorProps"
@@ -201,7 +201,7 @@ const handleRemoveMemberButton = (groupUser: GroupUser) => {
     :max-width="650"
     message="This will remove the member from this group only. This action can't
       be undone."
-    title="Confirm Remove Member"
+    title="Confirm remove member"
     @button-click="handleRemoveDialogAction"
   />
 </template>

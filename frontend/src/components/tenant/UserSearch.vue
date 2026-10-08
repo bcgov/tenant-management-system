@@ -117,7 +117,7 @@ const handleSearch = () => {
 
   <v-row v-if="searchResults !== null || loading">
     <v-col cols="12">
-      <h4 class="my-6">Search Results</h4>
+      <h4 class="my-6">Search results</h4>
 
       <UserSearchTable
         :loading="loading"
@@ -133,7 +133,7 @@ const handleSearch = () => {
     v-model="duplicateUser"
     :buttons="[{ text: 'OK', action: 'ok', type: 'primary' as const }]"
     message="The selected user is already in this tenant."
-    title="User Already Added"
+    title="User already added"
     @button-click="duplicateUser = false"
   />
 </template>

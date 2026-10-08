@@ -67,14 +67,14 @@ describe('RoleDialog', () => {
     it('shows the title and the user display name', () => {
       renderComponent({ user: makeIdirUser([serviceUser]) })
 
-      expect(screen.getByText('Edit Tenant Role')).toBeInTheDocument()
+      expect(screen.getByText('Edit tenant roles')).toBeInTheDocument()
       expect(screen.getByText('Jane Doe')).toBeInTheDocument()
     })
 
     it('renders nothing when modelValue is false', () => {
       renderComponent({ modelValue: false, user: makeIdirUser([serviceUser]) })
 
-      expect(screen.queryByText('Edit Tenant Role')).not.toBeInTheDocument()
+      expect(screen.queryByText('Edit tenant roles')).not.toBeInTheDocument()
     })
 
     it('shows all three roles with descriptions for non-BCeID Business users', () => {
@@ -132,7 +132,7 @@ describe('RoleDialog', () => {
 
       await fireEvent.click(checkbox(ROLES.USER_ADMIN.title))
 
-      expect(saveButton()).not.toBeDisabled()
+      expect(saveButton()).toBeEnabled()
     })
 
     it('is enabled after swapping one role for another', async () => {
@@ -141,7 +141,7 @@ describe('RoleDialog', () => {
       await fireEvent.click(checkbox(ROLES.USER_ADMIN.title))
       await fireEvent.click(checkbox(ROLES.SERVICE_USER.title))
 
-      expect(saveButton()).not.toBeDisabled()
+      expect(saveButton()).toBeEnabled()
     })
 
     it('is disabled again when a change is reverted', async () => {

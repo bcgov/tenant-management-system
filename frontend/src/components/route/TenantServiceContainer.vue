@@ -26,11 +26,7 @@ const tenantStore = useTenantStore()
 
 const handleAddService = async (serviceId: ServiceId) => {
   try {
-    const service = await serviceStore.addServiceToTenant(tenantId, serviceId)
-
-    notification.success(
-      `${service.displayName} has been added to this tenant.`,
-    )
+    await serviceStore.addServiceToTenant(tenantId, serviceId)
   } catch {
     notification.error('Failed to add service to tenant')
   }

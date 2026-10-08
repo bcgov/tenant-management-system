@@ -211,7 +211,7 @@ describe('TenantUserManagement', () => {
       )
 
       expect(
-        screen.queryByRole('button', { name: 'Add User' }),
+        screen.queryByRole('button', { name: 'Add user' }),
       ).not.toBeInTheDocument()
     })
 
@@ -226,13 +226,11 @@ describe('TenantUserManagement', () => {
       )
       await fireEvent.click(screen.getByRole('button', { name: 'stub-select' }))
 
-      expect(screen.getByRole('button', { name: 'Add User' })).toBeDisabled()
+      expect(screen.getByRole('button', { name: 'Add user' })).toBeDisabled()
 
       await fireEvent.click(screen.getByRole('checkbox', { name: 'Role One' }))
 
-      expect(
-        screen.getByRole('button', { name: 'Add User' }),
-      ).not.toBeDisabled()
+      expect(screen.getByRole('button', { name: 'Add user' })).toBeEnabled()
     })
 
     it('emits cancel and closes the search flow when cancelled', async () => {
@@ -304,7 +302,7 @@ describe('TenantUserManagement', () => {
       await fireEvent.click(screen.getByRole('button', { name: 'stub-select' }))
       await fireEvent.click(screen.getByRole('checkbox', { name: 'Role One' }))
       await fireEvent.click(screen.getByRole('checkbox', { name: 'Group One' }))
-      await fireEvent.click(screen.getByRole('button', { name: 'Add User' }))
+      await fireEvent.click(screen.getByRole('button', { name: 'Add user' }))
 
       expect(emitted().add).toHaveLength(1)
       expect(emitted().add[0]).toEqual([
@@ -352,15 +350,13 @@ describe('TenantUserManagement', () => {
         })
         await openAddFlow()
 
-        expect(screen.getByRole('button', { name: 'Add User' })).toBeDisabled()
+        expect(screen.getByRole('button', { name: 'Add user' })).toBeDisabled()
 
         await fireEvent.click(roleSelectAll())
 
         expect(screen.getByRole('checkbox', { name: 'Role One' })).toBeChecked()
         expect(screen.getByRole('checkbox', { name: 'Role Two' })).toBeChecked()
-        expect(
-          screen.getByRole('button', { name: 'Add User' }),
-        ).not.toBeDisabled()
+        expect(screen.getByRole('button', { name: 'Add user' })).toBeEnabled()
       })
 
       it('unchecks every role and disables Add User when unchecked', async () => {
@@ -379,7 +375,7 @@ describe('TenantUserManagement', () => {
         expect(
           screen.getByRole('checkbox', { name: 'Role Two' }),
         ).not.toBeChecked()
-        expect(screen.getByRole('button', { name: 'Add User' })).toBeDisabled()
+        expect(screen.getByRole('button', { name: 'Add user' })).toBeDisabled()
       })
 
       it('emits add with all roles when Select all is used', async () => {
@@ -390,7 +386,7 @@ describe('TenantUserManagement', () => {
         await openAddFlow()
 
         await fireEvent.click(roleSelectAll())
-        await fireEvent.click(screen.getByRole('button', { name: 'Add User' }))
+        await fireEvent.click(screen.getByRole('button', { name: 'Add user' }))
 
         expect(emitted().add).toHaveLength(1)
         expect(emitted().add[0]).toEqual([
@@ -441,7 +437,7 @@ describe('TenantUserManagement', () => {
           screen.getByRole('checkbox', { name: 'Role One' }),
         )
         await fireEvent.click(groupSelectAll())
-        await fireEvent.click(screen.getByRole('button', { name: 'Add User' }))
+        await fireEvent.click(screen.getByRole('button', { name: 'Add user' }))
 
         expect(emitted().add[0]).toEqual([
           { id: 'user-1', roles: [role1], ssoUser: { idpType: 'idir' } },
@@ -462,7 +458,7 @@ describe('TenantUserManagement', () => {
         expect(
           screen.getByRole('checkbox', { name: 'Role One' }),
         ).not.toBeChecked()
-        expect(screen.getByRole('button', { name: 'Add User' })).toBeDisabled()
+        expect(screen.getByRole('button', { name: 'Add user' })).toBeDisabled()
       })
     })
 
@@ -495,7 +491,7 @@ describe('TenantUserManagement', () => {
         await openAddFlow()
         await selectEverything()
 
-        await fireEvent.click(screen.getByRole('button', { name: 'Add User' }))
+        await fireEvent.click(screen.getByRole('button', { name: 'Add user' }))
         await openAddFlow()
 
         expect(roleSelectAll()).not.toBeChecked()

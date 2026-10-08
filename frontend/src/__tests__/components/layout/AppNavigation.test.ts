@@ -82,14 +82,14 @@ describe('AppNavigation', () => {
       mockedCurrentUserIsIdir.mockReturnValue(false)
       renderComponent()
 
-      expect(screen.queryByText('All Tenants')).not.toBeInTheDocument()
+      expect(screen.queryByText('All tenants')).not.toBeInTheDocument()
     })
 
     it('renders the drawer for IDIR users', () => {
       mockedCurrentUserIsIdir.mockReturnValue(true)
       renderComponent()
 
-      expect(screen.getByText('All Tenants')).toBeInTheDocument()
+      expect(screen.getByText('All tenants')).toBeInTheDocument()
     })
   })
 
@@ -101,7 +101,7 @@ describe('AppNavigation', () => {
     it('renders the All Tenants nav item', () => {
       renderComponent()
 
-      expect(screen.getByText('All Tenants')).toBeInTheDocument()
+      expect(screen.getByText('All tenants')).toBeInTheDocument()
     })
   })
 
@@ -136,7 +136,7 @@ describe('AppNavigation', () => {
     it('renders Tenant Requests nav item', () => {
       renderComponent()
 
-      expect(screen.getByText('Tenant Requests')).toBeInTheDocument()
+      expect(screen.getByText('Tenant requests')).toBeInTheDocument()
     })
 
     it('renders Services nav item', () => {
@@ -149,7 +149,7 @@ describe('AppNavigation', () => {
       mockedUseRoute.mockReturnValue(createRoute({ path: '/tenants' }))
       renderComponent()
 
-      expect(screen.queryByText('Tenant Requests')).not.toBeInTheDocument()
+      expect(screen.queryByText('Tenant requests')).not.toBeInTheDocument()
       expect(screen.queryByText('Services')).not.toBeInTheDocument()
     })
   })
@@ -167,24 +167,23 @@ describe('AppNavigation', () => {
     it('renders tenant nav items when on a tenant route', () => {
       renderComponent()
 
-      expect(screen.getByText('Tenant Users')).toBeInTheDocument()
+      expect(screen.getByText('Tenant users')).toBeInTheDocument()
       expect(screen.getByText('Groups')).toBeInTheDocument()
-      expect(screen.getByText('Connected Services')).toBeInTheDocument()
+      expect(screen.getByText('Connected services')).toBeInTheDocument()
     })
 
     it('links to the correct tenant routes', () => {
       renderComponent()
 
-      expect(screen.getByText('Tenant Users').closest('a')).toHaveAttribute(
-        'href',
-        '/tenants/tenantId/users',
-      )
-      expect(screen.getByText('Groups').closest('a')).toHaveAttribute(
+      expect(
+        screen.getByRole('link', { name: /tenant users/i }),
+      ).toHaveAttribute('href', '/tenants/tenantId/users')
+      expect(screen.getByRole('link', { name: /groups/i })).toHaveAttribute(
         'href',
         '/tenants/tenantId/groups',
       )
       expect(
-        screen.getByText('Connected Services').closest('a'),
+        screen.getByRole('link', { name: /connected services/i }),
       ).toHaveAttribute('href', '/tenants/tenantId/services')
     })
 
@@ -192,7 +191,7 @@ describe('AppNavigation', () => {
       mockedUseRoute.mockReturnValue(createRoute({ params: {} }))
       renderComponent()
 
-      expect(screen.queryByText('Tenant Users')).not.toBeInTheDocument()
+      expect(screen.queryByText('Tenant users')).not.toBeInTheDocument()
       expect(screen.queryByText('Groups')).not.toBeInTheDocument()
     })
   })
@@ -211,20 +210,19 @@ describe('AppNavigation', () => {
       renderComponent()
 
       expect(screen.getByText('Members')).toBeInTheDocument()
-      expect(screen.getByText('Service Roles')).toBeInTheDocument()
+      expect(screen.getByText('Service roles')).toBeInTheDocument()
     })
 
     it('links to the correct group routes', () => {
       renderComponent()
 
-      expect(screen.getByText('Members').closest('a')).toHaveAttribute(
+      expect(screen.getByRole('link', { name: /members/i })).toHaveAttribute(
         'href',
         '/tenants/tenantId/groups/groupId/members',
       )
-      expect(screen.getByText('Service Roles').closest('a')).toHaveAttribute(
-        'href',
-        '/tenants/tenantId/groups/groupId/roles',
-      )
+      expect(
+        screen.getByRole('link', { name: /service roles/i }),
+      ).toHaveAttribute('href', '/tenants/tenantId/groups/groupId/roles')
     })
 
     it('does not render group nav items without a group route', () => {
@@ -236,7 +234,7 @@ describe('AppNavigation', () => {
       renderComponent()
 
       expect(screen.queryByText('Members')).not.toBeInTheDocument()
-      expect(screen.queryByText('Service Roles')).not.toBeInTheDocument()
+      expect(screen.queryByText('Service roles')).not.toBeInTheDocument()
     })
   })
 
@@ -268,11 +266,10 @@ describe('AppNavigation', () => {
       mockedUseDisplay.mockReturnValue({ mobile } as unknown as ReturnType<
         typeof useDisplay
       >)
-      const { container } = renderComponent()
 
-      const toggleButton = container.querySelector(
-        '.v-navigation-drawer__append .v-list-item',
-      ) as HTMLElement
+      renderComponent()
+
+      const toggleButton = screen.getByLabelText('Collapse navigation')
       await fireEvent.click(toggleButton)
 
       mobile.value = true

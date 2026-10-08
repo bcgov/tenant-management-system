@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, within } from '@testing-library/vue'
 import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { ref } from 'vue'
 
 import { makeTenantRequest } from '@/__tests__/__factories__'
 
@@ -63,13 +64,13 @@ describe('TenantRequestContainer', () => {
       .mockResolvedValue(undefined)
 
     notificationMock = {
+      messages: ref([]),
+
+      dismiss: vi.fn(),
       error: vi.fn(),
       info: vi.fn(),
-      remove: vi.fn(),
       success: vi.fn(),
       warning: vi.fn(),
-
-      items: [],
     }
     vi.mocked(useNotification).mockReturnValue(notificationMock)
   })
@@ -86,10 +87,12 @@ describe('TenantRequestContainer', () => {
 
       renderComponent()
 
-      expect(screen.queryByText('Tenant Requests')).not.toBeInTheDocument()
+      expect(
+        screen.queryByRole('heading', { name: 'Tenant requests' }),
+      ).not.toBeInTheDocument()
 
       resolveFetch()
-      await screen.findByText('Tenant Requests')
+      await screen.findByRole('heading', { name: 'Tenant requests' })
     })
 
     it('shows error notification when fetchTenantRequests fails', async () => {
@@ -98,7 +101,7 @@ describe('TenantRequestContainer', () => {
         .mockRejectedValue(new Error('message'))
 
       renderComponent()
-      await screen.findByText('Tenant Requests')
+      await screen.findByRole('heading', { name: 'Tenant requests' })
 
       expect(notificationMock.error).toHaveBeenCalledWith(
         'Failed to load tenant request data',
@@ -125,7 +128,7 @@ describe('TenantRequestContainer', () => {
       ]
 
       renderComponent()
-      await screen.findByText('Tenant Requests')
+      await screen.findByRole('heading', { name: 'Tenant requests' })
 
       const table = screen.getByRole('table')
       expect(within(table).getByText('name1')).toBeInTheDocument()
@@ -146,70 +149,76 @@ describe('TenantRequestContainer', () => {
       ]
 
       renderComponent()
-      await screen.findByText('Tenant Requests')
+      await screen.findByRole('heading', { name: 'Tenant requests' })
 
-      const chip = screen.getByText(status).closest('.v-chip')
-      expect(chip?.className).toMatch(new RegExp(`text-${color}\\b`))
+      const chip = screen.getByLabelText(`Status: ${status}`)
+      expect(chip).toHaveClass(`text-${color}`)
     })
   })
 
   describe('search', () => {
     it('shows a no-match message when the search term does not match', async () => {
-      tenantRequestStore.tenantRequests = [makeTenantRequest({ name: 'name' })]
+      tenantRequestStore.tenantRequests = [
+        makeTenantRequest({ name: 'tenantName' }),
+      ]
 
       renderComponent()
-      await screen.findByText('Tenant Requests')
+      await screen.findByRole('heading', { name: 'Tenant requests' })
 
       await fireEvent.update(screen.getByLabelText('Search'), 'nonexistent')
 
       expect(
         await screen.findByText('No matching tenant requests'),
       ).toBeInTheDocument()
-      expect(screen.queryByText('name')).not.toBeInTheDocument()
+      expect(screen.queryByText('tenantName')).not.toBeInTheDocument()
     })
   })
 
   describe('handleRowClick', () => {
     it('selects the tenant request and shows TenantRequestDisplay', async () => {
-      const tenantRequest = makeTenantRequest({ name: 'name' })
+      const tenantRequest = makeTenantRequest({ name: 'tenantName' })
       tenantRequestStore.tenantRequests = [tenantRequest]
 
       renderComponent()
-      await screen.findByText('Tenant Requests')
+      await screen.findByRole('heading', { name: 'Tenant requests' })
 
-      await fireEvent.click(screen.getByText('name'))
+      await fireEvent.click(screen.getByText('tenantName'))
 
       expect(screen.getByTestId('selected-request-id')).toHaveTextContent(
         tenantRequest.id,
       )
-      expect(screen.queryByText('Tenant Requests')).not.toBeInTheDocument()
+      expect(
+        screen.queryByRole('heading', { name: 'Tenant requests' }),
+      ).not.toBeInTheDocument()
     })
 
     it('selects the tenant request when its row is activated with Enter', async () => {
-      const tenantRequest = makeTenantRequest({ name: 'name' })
+      const tenantRequest = makeTenantRequest({ name: 'tenantName' })
       tenantRequestStore.tenantRequests = [tenantRequest]
 
       renderComponent()
-      await screen.findByText('Tenant Requests')
+      await screen.findByRole('heading', { name: 'Tenant requests' })
 
-      const row = screen.getByRole('row', { name: /name/ })
+      const row = screen.getByRole('row', { name: /tenantName/i })
 
       await fireEvent.keyDown(row, { key: 'Enter' })
 
       expect(screen.getByTestId('selected-request-id')).toHaveTextContent(
         tenantRequest.id,
       )
-      expect(screen.queryByText('Tenant Requests')).not.toBeInTheDocument()
+      expect(
+        screen.queryByRole('heading', { name: 'Tenant requests' }),
+      ).not.toBeInTheDocument()
     })
 
     it('does not select the tenant request for other keys', async () => {
-      const tenantRequest = makeTenantRequest({ name: 'name' })
+      const tenantRequest = makeTenantRequest({ name: 'tenantName' })
       tenantRequestStore.tenantRequests = [tenantRequest]
 
       renderComponent()
-      await screen.findByText('Tenant Requests')
+      await screen.findByRole('heading', { name: 'Tenant requests' })
 
-      const row = screen.getByRole('row', { name: /name/ })
+      const row = screen.getByRole('row', { name: /tenantName/i })
 
       await fireEvent.keyDown(row, { key: 'Escape' })
 
@@ -221,26 +230,30 @@ describe('TenantRequestContainer', () => {
 
   describe('handleCancel', () => {
     it('returns to the table when cancel is emitted', async () => {
-      tenantRequestStore.tenantRequests = [makeTenantRequest({ name: 'name' })]
+      tenantRequestStore.tenantRequests = [
+        makeTenantRequest({ name: 'tenantName' }),
+      ]
 
       renderComponent()
-      await screen.findByText('Tenant Requests')
-      await fireEvent.click(screen.getByText('name'))
+      await screen.findByRole('heading', { name: 'Tenant requests' })
+      await fireEvent.click(screen.getByText('tenantName'))
 
       await fireEvent.click(screen.getByRole('button', { name: 'stub-cancel' }))
 
-      expect(await screen.findByText('Tenant Requests')).toBeInTheDocument()
+      expect(
+        await screen.findByRole('heading', { name: 'Tenant requests' }),
+      ).toBeInTheDocument()
     })
   })
 
   describe('handleApproved', () => {
     const selectRequest = async () => {
-      const tenantRequest = makeTenantRequest({ name: 'name' })
+      const tenantRequest = makeTenantRequest({ name: 'tenantName' })
       tenantRequestStore.tenantRequests = [tenantRequest]
 
       renderComponent()
-      await screen.findByText('Tenant Requests')
-      await fireEvent.click(screen.getByText('name'))
+      await screen.findByRole('heading', { name: 'Tenant requests' })
+      await fireEvent.click(screen.getByText('tenantName'))
 
       return tenantRequest
     }
@@ -261,10 +274,10 @@ describe('TenantRequestContainer', () => {
         undefined,
         'Approved Tenant Name',
       )
-      expect(notificationMock.success).toHaveBeenCalledWith(
-        'Tenant Request has been successfully updated',
-      )
-      expect(await screen.findByText('Tenant Requests')).toBeInTheDocument()
+      expect(notificationMock.success).not.toHaveBeenCalled()
+      expect(
+        await screen.findByRole('heading', { name: 'Tenant requests' }),
+      ).toBeInTheDocument()
     })
 
     it('flags a duplicate name on a generic DuplicateEntityError', async () => {
@@ -294,7 +307,7 @@ describe('TenantRequestContainer', () => {
       )
 
       expect(notificationMock.error).toHaveBeenCalledWith(
-        'Requests can only have a status change from New. Start a new ' +
+        'Requests can only have a status change from "new". Start a new ' +
           'request instead',
       )
       expect(screen.getByTestId('is-duplicate-name')).toHaveTextContent('false')
@@ -324,7 +337,7 @@ describe('TenantRequestContainer', () => {
       )
 
       expect(notificationMock.error).toHaveBeenCalledWith(
-        'Failed to update Tenant Request',
+        'Failed to update tenant request',
       )
     })
 
@@ -356,7 +369,7 @@ describe('TenantRequestContainer', () => {
       tenantRequestStore.tenantRequests = [tenantRequest]
 
       renderComponent()
-      await screen.findByText('Tenant Requests')
+      await screen.findByRole('heading', { name: 'Tenant requests' })
       await fireEvent.click(screen.getByText('name'))
 
       await fireEvent.click(screen.getByRole('button', { name: 'stub-reject' }))
@@ -366,10 +379,10 @@ describe('TenantRequestContainer', () => {
         TENANT_REQUEST_STATUS.REJECTED.value,
         'rejectionReason',
       )
-      expect(notificationMock.success).toHaveBeenCalledWith(
-        'Tenant Request has been successfully updated',
-      )
-      expect(await screen.findByText('Tenant Requests')).toBeInTheDocument()
+      expect(notificationMock.success).not.toHaveBeenCalled()
+      expect(
+        await screen.findByRole('heading', { name: 'Tenant requests' }),
+      ).toBeInTheDocument()
     })
 
     it('shows a generic error notification when the update fails', async () => {
@@ -379,13 +392,13 @@ describe('TenantRequestContainer', () => {
       tenantRequestStore.tenantRequests = [makeTenantRequest({ name: 'name' })]
 
       renderComponent()
-      await screen.findByText('Tenant Requests')
+      await screen.findByRole('heading', { name: 'Tenant requests' })
       await fireEvent.click(screen.getByText('name'))
 
       await fireEvent.click(screen.getByRole('button', { name: 'stub-reject' }))
 
       expect(notificationMock.error).toHaveBeenCalledWith(
-        'Failed to update Tenant Request',
+        'Failed to update tenant request',
       )
     })
   })

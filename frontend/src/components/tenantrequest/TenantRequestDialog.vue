@@ -14,6 +14,7 @@ const { isDuplicateName } = defineProps<{
 }>()
 
 const emit = defineEmits<{
+  cancel: []
   clearDuplicateError: []
   submit: [tenantRequestDetails: TenantRequestDetailFields]
 }>()
@@ -36,11 +37,7 @@ const isFormValid = ref(false)
 // message is displayed.
 watch(
   () => isDuplicateName,
-  async (newVal) => {
-    if (!newVal) {
-      return
-    }
-
+  async () => {
     await nextTick()
     await form.value?.validate()
   },
@@ -66,13 +63,18 @@ watch(
 watch(
   () => [formData.value.name, formData.value.ministryName],
   () => {
-    emit('clearDuplicateError')
+    if (isDuplicateName) {
+      emit('clearDuplicateError')
+    }
   },
 )
 
 // --- Component Methods -------------------------------------------------------
 
-const dialogClose = () => (dialogVisible.value = false)
+const dialogClose = () => {
+  emit('cancel')
+  dialogVisible.value = false
+}
 
 const handleSubmit = async () => {
   await form.value?.validate()
@@ -110,7 +112,7 @@ const rules = {
   <v-dialog v-model="dialogVisible" max-width="800px">
     <v-card class="pa-6">
       <v-card-title class="align-center d-flex justify-space-between">
-        Request New Tenant
+        Request new tenant
       </v-card-title>
 
       <v-card-text>
@@ -122,7 +124,7 @@ const rules = {
             required
           >
             <template #label>
-              Name of Tenant <span class="text-error">*</span>
+              Name of tenant <span class="text-error">*</span>
             </template>
           </v-text-field>
 
@@ -135,7 +137,7 @@ const rules = {
             required
           >
             <template #label>
-              Ministry/Organization <span class="text-error">*</span>
+              Ministry/organization <span class="text-error">*</span>
             </template>
           </v-select>
 
@@ -148,7 +150,7 @@ const rules = {
             required
           >
             <template #label>
-              Description of Tenant <span class="text-error">*</span>
+              Description of tenant <span class="text-error">*</span>
             </template>
           </v-textarea>
         </v-form>

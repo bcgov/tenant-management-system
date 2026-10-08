@@ -224,7 +224,7 @@ describe('GroupListContainer', () => {
 
       expect(groupStore.addGroup).toHaveBeenCalled()
       expect(groupStore.addGroupUser).not.toHaveBeenCalled()
-      expect(mockSuccess).toHaveBeenCalledWith('Group Created Successfully')
+      expect(mockSuccess).not.toHaveBeenCalled()
     })
 
     it('shows group duplicate error', async () => {
@@ -361,7 +361,7 @@ describe('GroupListContainer', () => {
       await flushPromises()
 
       expect(mockError).toHaveBeenCalledWith(
-        'Failed to add the user to the new group',
+        'Failed to add the member to the new group',
       )
     })
   })

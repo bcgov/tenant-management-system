@@ -1,121 +1,98 @@
-import { reactive } from 'vue'
+import { ref } from 'vue'
 
-import { type Notification } from '@/types/Notification'
 import { NotificationType } from '@/types/NotificationType'
 
 /**
- * Reactive state container for managing notification items
+ * Reactive state container for managing notification items.
  */
-const state = reactive<{ notifications: Notification[] }>({
-  notifications: [],
-})
+interface SnackbarMessage {
+  id: string
+  text: string
+  color: NotificationType
+}
+
+const messages = ref<SnackbarMessage[]>([])
 
 /**
- * Adds a new notification to the system with auto-removal after 10 seconds
+ * Adds a new notification to the system.
  *
- * @param message - The main message content of the notification
- * @param title - The title/header text for the notification
+ * @param text - The text content of the notification.
  * @param type - The notification type (SUCCESS, ERROR, WARNING, INFO). Defaults
- *   to SUCCESS
+ *   to SUCCESS.
  */
 const addNotification = (
-  message: string,
-  title: string,
-  type: NotificationType = NotificationType.SUCCESS,
+  text: string,
+  color: NotificationType = NotificationType.SUCCESS,
 ) => {
-  const id = crypto.randomUUID()
-  const notification: Notification = { id, title, message, type }
-  state.notifications.push(notification)
-
-  // Auto-remove notification after 10 seconds
-  setTimeout(() => {
-    removeNotification(id)
-  }, 10000)
+  messages.value.push({ id: crypto.randomUUID(), text, color })
 }
 
 /**
- * Removes a notification from the system by its unique ID
- *
- * @param id - The unique identifier of the notification to remove
+ * Removes the current notification from the system.
  */
-const removeNotification = (id: string) => {
-  const index = state.notifications.findIndex((n) => n.id === id)
-  if (index !== -1) {
-    state.notifications.splice(index, 1)
-  }
+const dismiss = () => {
+  messages.value.shift()
 }
 
 /**
  * Notification system API providing methods for displaying various types of
- * notifications
+ * notifications.
  *
  * Features:
- * - Auto-removal after 10 seconds
  * - Multiple notification types (success, error, warning, info)
  * - Manual removal capability
- * - Reactive state management with Vue 3
  */
 export const notification = {
   /**
-   * Getter for accessing all current notifications
+   * All current notification messages.
    *
-   * @returns Array of active notification objects
+   * @returns Array of active notification messages.
    */
-  get items() {
-    return state.notifications
-  },
+  messages,
 
   /**
-   * Manually remove a notification by ID
-   *
-   * @param id - Unique identifier of the notification to remove
+   * Manually remove a notification.
    */
-  remove: removeNotification,
+  dismiss,
 
   /**
-   * Display a success notification
+   * Display an error notification.
    *
-   * @param message - The success message to display
-   * @param title - Optional title for the notification (defaults to 'Success')
+   * @param message - The error message to display.
    */
-  success: (message: string, title: string = 'Success') =>
-    addNotification(message, title, NotificationType.SUCCESS),
+  error: (message: string) => addNotification(message, NotificationType.ERROR),
 
   /**
-   * Display an error notification
+   * Display an info notification.
    *
-   * @param message - The error message to display
-   * @param title - Optional title for the notification (defaults to 'Error')
+   * @param message - The informational message to display.
    */
-  error: (message: string, title: string = 'Error') =>
-    addNotification(message, title, NotificationType.ERROR),
+  info: (message: string) => addNotification(message, NotificationType.INFO),
 
   /**
-   * Display a warning notification
+   * Display a success notification.
    *
-   * @param message - The warning message to display
-   * @param title - Optional title for the notification (defaults to 'Warning')
+   * @param message - The success message to display.
    */
-  warning: (message: string, title: string = 'Warning') =>
-    addNotification(message, title, NotificationType.WARNING),
+  success: (message: string) =>
+    addNotification(message, NotificationType.SUCCESS),
 
   /**
-   * Display an info notification
+   * Display a warning notification.
    *
-   * @param message - The informational message to display
-   * @param title - Optional title for the notification (defaults to 'Info')
+   * @param message - The warning message to display.
    */
-  info: (message: string, title: string = 'Info') =>
-    addNotification(message, title, NotificationType.INFO),
+  warning: (message: string) =>
+    addNotification(message, NotificationType.WARNING),
 }
 
 /**
- * Vue 3 composable hook for accessing the notification system
+ * Composable hook for accessing the notification system.
  *
  * This function provides access to the notification API within Vue components,
  * following the composition API pattern.
  *
- * @returns The notification object with all available methods
+ * @returns The notification object with all available methods.
  */
 export const useNotification = () => {
   return notification
