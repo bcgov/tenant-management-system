@@ -5,7 +5,6 @@ import { computed, ref, type Ref } from 'vue'
 import AdministratorContainer from '@/components/auth/AdministratorContainer.vue'
 import LoginContainer from '@/components/auth/LoginContainer.vue'
 import TenantRequestDisplay from '@/components/tenantrequest/TenantRequestDisplay.vue'
-import EmptyState from '@/components/ui/EmptyState.vue'
 import LoadingWrapper from '@/components/ui/LoadingWrapper.vue'
 import { useNotification } from '@/composables/useNotification'
 import { DomainError } from '@/errors/domain/DomainError'
@@ -242,18 +241,18 @@ init() // NOSONAR
                   @click:row="handleRowClick"
                 >
                   <template #no-data>
-                    <EmptyState
-                      v-if="search"
-                      body="Change your search criteria to match tenant requests"
-                      title="No matching tenant requests"
-                      variant="lookup"
-                    />
-                    <EmptyState
-                      v-else
-                      body="Tenant requests submitted by users will appear here"
-                      title="No tenant requests yet"
-                      variant="lookup"
-                    />
+                    <v-sheet v-if="search">
+                      <h5 class="mb-2">No matching tenant requests</h5>
+                      <p class="mt-0">
+                        Change your search criteria to match tenant requests
+                      </p>
+                    </v-sheet>
+                    <v-sheet v-else>
+                      <h5 class="mb-2">No tenant requests yet</h5>
+                      <p class="mt-0">
+                        Tenant requests submitted by users will appear here
+                      </p>
+                    </v-sheet>
                   </template>
                   <template #[`item.status`]="{ item }">
                     <div
