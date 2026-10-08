@@ -84,7 +84,7 @@ describe('TenantUserTable', () => {
         screen.getByRole('columnheader', { name: 'Actions' }),
       ).toBeInTheDocument()
       expect(
-        screen.getByLabelText('Open Menu for firstName lastName'),
+        screen.getByLabelText('Open menu for firstName lastName'),
       ).toBeInTheDocument()
     })
 
@@ -101,7 +101,7 @@ describe('TenantUserTable', () => {
         screen.queryByRole('columnheader', { name: 'Actions' }),
       ).not.toBeInTheDocument()
       expect(
-        screen.queryByLabelText('Open Menu for firstName lastName'),
+        screen.queryByLabelText('Open menu for firstName lastName'),
       ).not.toBeInTheDocument()
     })
   })
@@ -222,7 +222,7 @@ describe('TenantUserTable', () => {
 
       renderComponent({ tenant, users: [user] })
 
-      expect(screen.queryByLabelText(/Remove Role/)).not.toBeInTheDocument()
+      expect(screen.queryByLabelText(/Remove role/)).not.toBeInTheDocument()
     })
 
     it('has no remove icon when only one role', () => {
@@ -234,7 +234,7 @@ describe('TenantUserTable', () => {
 
       renderComponent({ tenant, users: [user] })
 
-      expect(screen.queryByLabelText(/Remove Role/)).not.toBeInTheDocument()
+      expect(screen.queryByLabelText(/Remove role/)).not.toBeInTheDocument()
     })
 
     it('has no remove icon when only one tenant owner', () => {
@@ -252,12 +252,12 @@ describe('TenantUserTable', () => {
 
       expect(
         screen.queryByLabelText(
-          `Remove Role ${owner.description} for firstName lastName`,
+          `Remove role ${owner.description} for firstName lastName`,
         ),
       ).not.toBeInTheDocument()
       expect(
         screen.getByLabelText(
-          `Remove Role ${service.description} for firstName lastName`,
+          `Remove role ${service.description} for firstName lastName`,
         ),
       ).toBeInTheDocument()
     })
@@ -286,7 +286,7 @@ describe('TenantUserTable', () => {
 
       expect(
         screen.getAllByLabelText(
-          `Remove Role ${owner.description} for firstName1 lastName1`,
+          `Remove role ${owner.description} for firstName1 lastName1`,
         ),
       ).toHaveLength(1)
     })
@@ -307,10 +307,10 @@ describe('TenantUserTable', () => {
 
       await fireEvent.click(
         screen.getByLabelText(
-          `Remove Role ${role.description} for firstName lastName`,
+          `Remove role ${role.description} for firstName lastName`,
         ),
       )
-      expect(screen.getByText('Confirm Role Removal')).toBeInTheDocument()
+      expect(screen.getByText('Confirm role removal')).toBeInTheDocument()
 
       await fireEvent.click(screen.getByRole('button', { name: 'Remove role' }))
 
@@ -332,7 +332,7 @@ describe('TenantUserTable', () => {
 
       await fireEvent.click(
         screen.getByLabelText(
-          `Remove Role ${role.description} for firstName lastName`,
+          `Remove role ${role.description} for firstName lastName`,
         ),
       )
       await fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
@@ -362,7 +362,7 @@ describe('TenantUserTable', () => {
 
       renderComponent({ tenant, users: [userA, userB] })
       await fireEvent.click(
-        screen.getByLabelText('Open Menu for firstNameA lastNameA'),
+        screen.getByLabelText('Open menu for firstNameA lastNameA'),
       )
 
       const removeItem = screen.getByLabelText(
@@ -384,7 +384,7 @@ describe('TenantUserTable', () => {
 
       renderComponent({ tenant, users: [user] })
       await fireEvent.click(
-        screen.getByLabelText('Open Menu for firstName lastName'),
+        screen.getByLabelText('Open menu for firstName lastName'),
       )
 
       const removeItem = screen.getByLabelText('Remove user firstName lastName')
@@ -403,7 +403,7 @@ describe('TenantUserTable', () => {
       const { emitted } = renderComponent({ tenant, users: [user] })
 
       await fireEvent.click(
-        screen.getByLabelText('Open Menu for firstName lastName'),
+        screen.getByLabelText('Open menu for firstName lastName'),
       )
       await fireEvent.click(await screen.findByText('Remove user'))
 
@@ -425,7 +425,7 @@ describe('TenantUserTable', () => {
       const { emitted } = renderComponent({ tenant, users: [user] })
 
       await fireEvent.click(
-        screen.getByLabelText('Open Menu for firstName lastName'),
+        screen.getByLabelText('Open menu for firstName lastName'),
       )
       await fireEvent.click(await screen.findByText('Remove user'))
       await fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
@@ -457,10 +457,10 @@ describe('TenantUserTable', () => {
 
       renderComponent({ tenant, users: [userA, userB] })
       await fireEvent.click(
-        screen.getByLabelText('Open Menu for firstNameB lastNameB'),
+        screen.getByLabelText('Open menu for firstNameB lastNameB'),
       )
       await fireEvent.click(
-        screen.getByLabelText('Edit Tenant Roles for firstNameB lastNameB'),
+        screen.getByLabelText('Edit tenant roles for firstNameB lastNameB'),
       )
 
       expect(screen.getByTestId('role-dialog')).toHaveTextContent(
@@ -491,10 +491,10 @@ describe('TenantUserTable', () => {
       renderComponent({ tenant, users: [userA, userB] })
 
       await fireEvent.click(
-        screen.getByLabelText('Open Menu for firstNameB lastNameB'),
+        screen.getByLabelText('Open menu for firstNameB lastNameB'),
       )
       await fireEvent.click(
-        screen.getByLabelText('Edit Tenant Roles for firstNameB lastNameB'),
+        screen.getByLabelText('Edit tenant roles for firstNameB lastNameB'),
       )
       expect(screen.getByTestId('role-dialog')).toHaveTextContent(
         `Editing user: ${userB.ssoUser.displayName}`,
@@ -504,10 +504,10 @@ describe('TenantUserTable', () => {
       expect(screen.queryByTestId('role-dialog')).not.toBeInTheDocument()
 
       await fireEvent.click(
-        screen.getByLabelText('Open Menu for firstNameA lastNameA'),
+        screen.getByLabelText('Open menu for firstNameA lastNameA'),
       )
       await fireEvent.click(
-        screen.getByLabelText('Edit Tenant Roles for firstNameA lastNameA'),
+        screen.getByLabelText('Edit tenant roles for firstNameA lastNameA'),
       )
       expect(screen.getByTestId('role-dialog')).toHaveTextContent(
         `Editing user: ${userA.ssoUser.displayName}`,
@@ -526,9 +526,9 @@ describe('TenantUserTable', () => {
       renderComponent({ tenant, users: [user] })
 
       await fireEvent.click(
-        screen.getByLabelText('Open Menu for firstName lastName'),
+        screen.getByLabelText('Open menu for firstName lastName'),
       )
-      await fireEvent.click(await screen.findByText('Edit Tenant Roles'))
+      await fireEvent.click(await screen.findByText('Edit tenant roles'))
       expect(screen.getByTestId('role-dialog')).toBeInTheDocument()
 
       await fireEvent.click(screen.getByTestId('close-role-dialog'))
@@ -559,10 +559,10 @@ describe('TenantUserTable', () => {
       const { emitted } = renderComponent({ tenant, users: [userA, userB] })
 
       await fireEvent.click(
-        screen.getByLabelText('Open Menu for firstNameB lastNameB'),
+        screen.getByLabelText('Open menu for firstNameB lastNameB'),
       )
       await fireEvent.click(
-        screen.getByLabelText('Edit Tenant Roles for firstNameB lastNameB'),
+        screen.getByLabelText('Edit tenant roles for firstNameB lastNameB'),
       )
       await fireEvent.click(screen.getByTestId('change-roles-dialog'))
 
@@ -585,10 +585,10 @@ describe('TenantUserTable', () => {
       const { emitted } = renderComponent({ tenant, users: [user] })
 
       await fireEvent.click(
-        screen.getByLabelText('Open Menu for firstName lastName'),
+        screen.getByLabelText('Open menu for firstName lastName'),
       )
       await fireEvent.click(
-        screen.getByLabelText('Edit Tenant Roles for firstName lastName'),
+        screen.getByLabelText('Edit tenant roles for firstName lastName'),
       )
 
       expect(screen.getByTestId('role-dialog')).toBeInTheDocument()

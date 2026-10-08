@@ -49,7 +49,7 @@ const dialogButtons = computed(() => {
     },
     {
       action: 'confirm',
-      text: promptAction.value === 'clear' ? 'Clear All' : 'Revert',
+      text: promptAction.value === 'clear' ? 'Clear all' : 'Revert',
       type: 'primary',
     },
   ]
@@ -75,9 +75,9 @@ const dialogText = computed(() => {
 
 const dialogTitle = computed(() => {
   if (promptAction.value === 'undo') {
-    return 'Revert to Previous Roles?'
+    return 'Revert to previous roles?'
   } else if (promptAction.value === 'clear') {
-    return 'Delete all Selections?'
+    return 'Delete all selections?'
   }
 
   return ''
@@ -186,33 +186,33 @@ const undoChanges = () => {
     <v-row class="center-align justify-center">
       <v-col class="align-center d-flex flex-column" cols="auto">
         <template v-if="isUserAdmin">
-          <h1>No Connected Services added yet</h1>
+          <h1>No connected services added yet</h1>
           <p class="p-large">
-            Service roles can only be assigned after Connected Services have
+            Service roles can only be assigned after connected services have
             been added to your tenant.
           </p>
 
           <ol>
-            <li>Go to the Connected Services page</li>
-            <li>Add the Connected Service(s) your tenant needs</li>
+            <li>Go to the connected services page</li>
+            <li>Add the connected service(s) your tenant needs</li>
             <li>Return here to assign service roles to this group</li>
           </ol>
 
           <p>
             <ButtonPrimary
-              text="Go to Connected Services"
+              text="Go to connected services"
               @click="navigateToServices"
             />
           </p>
         </template>
         <template v-else>
-          <h1>No Service Roles available yet</h1>
+          <h1>No service roles available yet</h1>
           <hgroup class="text-center text-stack">
             <p class="p-large">
-              Connected Services must be added to this tenant before service
+              Connected services must be added to this tenant before service
               roles can be assigned to groups.
             </p>
-            <p class="p-large">Contact your Tenant Owner for assistance.</p>
+            <p class="p-large">Contact your tenant owner for assistance.</p>
           </hgroup>
         </template>
       </v-col>
@@ -221,10 +221,10 @@ const undoChanges = () => {
   <v-container v-else class="ms-6">
     <v-row>
       <v-col cols="12">
-        <h4>Adding Connected Services Roles</h4>
+        <h4>Adding connected services roles</h4>
         <p>
           Click 'Edit' to start assigning roles. Choose the roles you want to
-          add to your Group from each available Connected Services, then click
+          add to your group from each available connected services, then click
           'Save' to apply your changes.
         </p>
       </v-col>
@@ -268,7 +268,6 @@ const undoChanges = () => {
         </v-expansion-panels>
       </v-col>
 
-      <!-- save/cancel/reset buttons -->
       <v-col v-if="isUserAdmin" class="text-right" cols="12">
         <v-btn
           :disabled="!editing"
@@ -287,13 +286,13 @@ const undoChanges = () => {
           border="sm opacity-100"
           @click="openDialog('clear')"
         >
-          Clear All
+          Clear all
         </v-btn>
 
         <ButtonSecondary
           :disabled="!editing"
           class="mr-2"
-          text="Undo Changes"
+          text="Undo changes"
           @click="openDialog('undo')"
         >
         </ButtonSecondary>

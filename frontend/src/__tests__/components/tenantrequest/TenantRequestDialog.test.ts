@@ -44,11 +44,11 @@ describe('form validation', () => {
 
     const { emitted } = renderComponent()
     await user.click(
-      screen.getByRole('button', { name: /create tenant request/i }),
+      screen.getByRole('button', { name: 'Create tenant request' }),
     )
 
     expect(
-      screen.getByLabelText(/name of tenant/i),
+      screen.getByLabelText('Name of tenant *'),
     ).toHaveAccessibleDescription('Required')
     expect(emitted('submit')).toBeUndefined()
   })
@@ -58,11 +58,11 @@ describe('form validation', () => {
 
     const { emitted } = renderComponent()
     await user.click(
-      screen.getByRole('button', { name: /create tenant request/i }),
+      screen.getByRole('button', { name: 'Create tenant request' }),
     )
 
     expect(
-      screen.getByRole('combobox', { name: /ministry\/organization/i }),
+      screen.getByRole('combobox', { name: 'Ministry/organization *' }),
     ).toHaveAccessibleDescription('Required')
     expect(emitted('submit')).toBeUndefined()
   })
@@ -72,12 +72,12 @@ describe('form validation', () => {
 
     const { emitted } = renderComponent()
     await user.click(
-      screen.getByRole('button', { name: /create tenant request/i }),
+      screen.getByRole('button', { name: 'Create tenant request' }),
     )
 
-    expect(screen.getByLabelText(/description/i)).toHaveAccessibleDescription(
-      'Required',
-    )
+    expect(
+      screen.getByLabelText('Description of tenant *'),
+    ).toHaveAccessibleDescription('Required')
     expect(emitted('submit')).toBeUndefined()
   })
 
@@ -85,13 +85,14 @@ describe('form validation', () => {
     const user = userEvent.setup()
 
     const { emitted } = renderComponent()
-    await fireEvent.update(screen.getByLabelText(/name of tenant/i), '   ')
+    await user.click(screen.getByLabelText('Name of tenant *'))
+    await user.paste('   ')
     await user.click(
-      screen.getByRole('button', { name: /create tenant request/i }),
+      screen.getByRole('button', { name: 'Create tenant request' }),
     )
 
     expect(
-      screen.getByLabelText(/name of tenant/i),
+      screen.getByLabelText('Name of tenant *'),
     ).toHaveAccessibleDescription('Cannot be only spaces')
     expect(emitted('submit')).toBeUndefined()
   })
@@ -100,17 +101,15 @@ describe('form validation', () => {
     const user = userEvent.setup()
 
     const { emitted } = renderComponent()
-    await fireEvent.update(
-      screen.getByLabelText(/description of tenant/i),
-      '   ',
-    )
+    await user.click(screen.getByLabelText('Description of tenant *'))
+    await user.paste('   ')
     await user.click(
-      screen.getByRole('button', { name: /create tenant request/i }),
+      screen.getByRole('button', { name: 'Create tenant request' }),
     )
 
-    expect(screen.getByLabelText(/description/i)).toHaveAccessibleDescription(
-      'Cannot be only spaces',
-    )
+    expect(
+      screen.getByLabelText('Description of tenant *'),
+    ).toHaveAccessibleDescription('Cannot be only spaces')
     expect(emitted('submit')).toBeUndefined()
   })
 
@@ -118,16 +117,14 @@ describe('form validation', () => {
     const user = userEvent.setup()
 
     const { emitted } = renderComponent()
-    await fireEvent.update(
-      screen.getByLabelText(/name of tenant/i),
-      'a'.repeat(151),
-    )
+    await user.click(screen.getByLabelText('Name of tenant *'))
+    await user.paste('a'.repeat(151))
     await user.click(
-      screen.getByRole('button', { name: /create tenant request/i }),
+      screen.getByRole('button', { name: 'Create tenant request' }),
     )
 
     expect(
-      screen.getByLabelText(/name of tenant/i),
+      screen.getByLabelText('Name of tenant *'),
     ).toHaveAccessibleDescription('Must be 150 characters or less')
     expect(emitted('submit')).toBeUndefined()
   })
@@ -136,16 +133,14 @@ describe('form validation', () => {
     const user = userEvent.setup()
 
     const { emitted } = renderComponent()
-    await fireEvent.update(
-      screen.getByLabelText(/description of tenant/i),
-      'a'.repeat(501),
-    )
+    await user.click(screen.getByLabelText('Description of tenant *'))
+    await user.paste('a'.repeat(501))
     await user.click(
-      screen.getByRole('button', { name: /create tenant request/i }),
+      screen.getByRole('button', { name: 'Create tenant request' }),
     )
 
     expect(
-      screen.getByLabelText(/description of tenant/i),
+      screen.getByLabelText('Description of tenant *'),
     ).toHaveAccessibleDescription('Must be 500 characters or less')
     expect(emitted('submit')).toBeUndefined()
   })
@@ -156,22 +151,16 @@ describe('submitting', () => {
     const user = userEvent.setup()
 
     const { emitted } = renderComponent()
-    await fireEvent.update(
-      screen.getByLabelText(/name of tenant/i),
-      '  tenantName  ',
-    )
+    await user.click(screen.getByLabelText('Name of tenant *'))
+    await user.paste('  tenantName  ')
     await user.click(
-      screen.getByRole('combobox', {
-        name: /ministry\/organization/i,
-      }),
+      screen.getByRole('combobox', { name: 'Ministry/organization *' }),
     )
     await user.click(screen.getByRole('option', { name: MINISTRIES[0] }))
-    await fireEvent.update(
-      screen.getByLabelText(/description of tenant/i),
-      '  tenantDescription  ',
-    )
+    await user.click(screen.getByLabelText('Description of tenant *'))
+    await user.paste('  tenantDescription  ')
     await user.click(
-      screen.getByRole('button', { name: /create tenant request/i }),
+      screen.getByRole('button', { name: 'Create tenant request' }),
     )
 
     expect(emitted('submit')).toEqual([
@@ -189,22 +178,16 @@ describe('submitting', () => {
     const user = userEvent.setup()
 
     const { emitted, rerender } = renderComponent()
-    await fireEvent.update(
-      screen.getByLabelText(/name of tenant/i),
-      'tenantName',
-    )
+    await user.click(screen.getByLabelText('Name of tenant *'))
+    await user.paste('tenantName')
     await user.click(
-      screen.getByRole('combobox', {
-        name: /ministry\/organization/i,
-      }),
+      screen.getByRole('combobox', { name: 'Ministry/organization *' }),
     )
     await user.click(screen.getByRole('option', { name: MINISTRIES[0] }))
-    await fireEvent.update(
-      screen.getByLabelText(/description of tenant/i),
-      'tenantDescription',
-    )
+    await user.click(screen.getByLabelText('Description of tenant *'))
+    await user.paste('tenantDescription')
     await user.click(
-      screen.getByRole('button', { name: /create tenant request/i }),
+      screen.getByRole('button', { name: 'Create tenant request' }),
     )
 
     expect(emitted('submit')).toHaveLength(1)
@@ -221,7 +204,7 @@ describe('submitting', () => {
     })
 
     await user.click(
-      screen.getByRole('button', { name: /create tenant request/i }),
+      screen.getByRole('button', { name: 'Create tenant request' }),
     )
 
     expect(emitted('submit')).toHaveLength(1)
@@ -233,22 +216,16 @@ describe('duplicate name handling', () => {
     const user = userEvent.setup()
 
     const { emitted, rerender } = renderComponent()
-    await fireEvent.update(
-      screen.getByLabelText(/name of tenant/i),
-      'tenantName',
-    )
+    await user.click(screen.getByLabelText('Name of tenant *'))
+    await user.paste('tenantName')
     await user.click(
-      screen.getByRole('combobox', {
-        name: /ministry\/organization/i,
-      }),
+      screen.getByRole('combobox', { name: 'Ministry/organization *' }),
     )
     await user.click(screen.getByRole('option', { name: MINISTRIES[0] }))
-    await fireEvent.update(
-      screen.getByLabelText(/description of tenant/i),
-      'tenantDescription',
-    )
+    await user.click(screen.getByLabelText('Description of tenant *'))
+    await user.paste('tenantDescription')
     await user.click(
-      screen.getByRole('button', { name: /create tenant request/i }),
+      screen.getByRole('button', { name: 'Create tenant request' }),
     )
 
     expect(emitted('submit')).toHaveLength(1)
@@ -264,10 +241,8 @@ describe('duplicate name handling', () => {
       ).toBeInTheDocument()
     })
 
-    await fireEvent.update(
-      screen.getByLabelText(/name of tenant/i),
-      'newTenantName',
-    )
+    await user.click(screen.getByLabelText('Name of tenant *'))
+    await user.paste('newTenantName')
 
     expect(emitted('clearDuplicateError')).toHaveLength(1)
   })
@@ -276,22 +251,16 @@ describe('duplicate name handling', () => {
     const user = userEvent.setup()
 
     const { emitted, rerender } = renderComponent()
-    await fireEvent.update(
-      screen.getByLabelText(/name of tenant/i),
-      'tenantName',
-    )
+    await user.click(screen.getByLabelText('Name of tenant *'))
+    await user.paste('tenantName')
     await user.click(
-      screen.getByRole('combobox', {
-        name: /ministry\/organization/i,
-      }),
+      screen.getByRole('combobox', { name: 'Ministry/organization *' }),
     )
     await user.click(screen.getByRole('option', { name: MINISTRIES[0] }))
-    await fireEvent.update(
-      screen.getByLabelText(/description of tenant/i),
-      'tenantDescription',
-    )
+    await user.click(screen.getByLabelText('Description of tenant *'))
+    await user.paste('tenantDescription')
     await user.click(
-      screen.getByRole('button', { name: /create tenant request/i }),
+      screen.getByRole('button', { name: 'Create tenant request' }),
     )
 
     expect(emitted('submit')).toHaveLength(1)
@@ -308,9 +277,7 @@ describe('duplicate name handling', () => {
     })
 
     await user.click(
-      screen.getByRole('combobox', {
-        name: /ministry\/organization/i,
-      }),
+      screen.getByRole('combobox', { name: 'Ministry/organization *' }),
     )
     await user.click(screen.getByRole('option', { name: MINISTRIES[1] }))
 
@@ -321,22 +288,16 @@ describe('duplicate name handling', () => {
     const user = userEvent.setup()
 
     const { emitted, rerender } = renderComponent()
-    await fireEvent.update(
-      screen.getByLabelText(/name of tenant/i),
-      'tenantName',
-    )
+    await user.click(screen.getByLabelText('Name of tenant *'))
+    await user.paste('tenantName')
     await user.click(
-      screen.getByRole('combobox', {
-        name: /ministry\/organization/i,
-      }),
+      screen.getByRole('combobox', { name: 'Ministry/organization *' }),
     )
     await user.click(screen.getByRole('option', { name: MINISTRIES[0] }))
-    await fireEvent.update(
-      screen.getByLabelText(/description of tenant/i),
-      'tenantDescription',
-    )
+    await user.click(screen.getByLabelText('Description of tenant *'))
+    await user.paste('tenantDescription')
     await user.click(
-      screen.getByRole('button', { name: /create tenant request/i }),
+      screen.getByRole('button', { name: 'Create tenant request' }),
     )
 
     expect(emitted('submit')).toHaveLength(1)
@@ -352,10 +313,8 @@ describe('duplicate name handling', () => {
       ).toBeInTheDocument()
     })
 
-    await fireEvent.update(
-      screen.getByLabelText(/description of tenant/i),
-      'newTenantDescription',
-    )
+    await user.click(screen.getByLabelText('Description of tenant *'))
+    await user.paste('newTenantDescription')
 
     expect(emitted('clearDuplicateError')).toBeUndefined()
   })
@@ -366,7 +325,7 @@ describe('dialog closing', () => {
     const user = userEvent.setup()
     const { emitted } = renderComponent()
 
-    await user.click(screen.getByRole('button', { name: /cancel/i }))
+    await user.click(screen.getByRole('button', { name: 'Cancel' }))
 
     expect(emitted('update:modelValue')).toEqual([[false]])
   })
@@ -390,10 +349,10 @@ describe('dialog closing', () => {
       modelValue: true,
     })
 
-    expect(screen.getByLabelText(/name of tenant/i)).toHaveValue('')
+    expect(screen.getByLabelText('Name of tenant *')).toHaveValue('')
     expect(
-      screen.getByRole('combobox', { name: /ministry\/organization/i }),
+      screen.getByRole('combobox', { name: 'Ministry/organization *' }),
     ).toHaveValue('')
-    expect(screen.getByLabelText(/description of tenant/i)).toHaveValue('')
+    expect(screen.getByLabelText('Description of tenant *')).toHaveValue('')
   })
 })

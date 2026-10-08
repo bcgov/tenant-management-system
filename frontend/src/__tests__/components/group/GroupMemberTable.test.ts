@@ -58,7 +58,7 @@ describe('GroupMemberTable', () => {
         screen.getByRole('columnheader', { name: 'Actions' }),
       ).toBeInTheDocument()
       expect(
-        screen.getByLabelText('Open Menu for firstName lastName'),
+        screen.getByLabelText('Open menu for firstName lastName'),
       ).toBeInTheDocument()
     })
 
@@ -79,7 +79,7 @@ describe('GroupMemberTable', () => {
         screen.queryByRole('columnheader', { name: 'Actions' }),
       ).not.toBeInTheDocument()
       expect(
-        screen.queryByLabelText('Open Menu for firstName lastName'),
+        screen.queryByLabelText('Open menu for firstName lastName'),
       ).not.toBeInTheDocument()
     })
   })
@@ -241,11 +241,11 @@ describe('GroupMemberTable', () => {
       })
 
       await fireEvent.click(
-        screen.getByLabelText('Open Menu for firstName lastName'),
+        screen.getByLabelText('Open menu for firstName lastName'),
       )
       await fireEvent.click(await screen.findByText('Remove member'))
       await fireEvent.click(
-        screen.getByRole('button', { name: 'Remove Member' }),
+        screen.getByRole('button', { name: 'Remove member' }),
       )
 
       expect(emitted()['remove-member']).toHaveLength(1)
@@ -269,7 +269,7 @@ describe('GroupMemberTable', () => {
       })
 
       await fireEvent.click(
-        screen.getByLabelText('Open Menu for firstName lastName'),
+        screen.getByLabelText('Open menu for firstName lastName'),
       )
       await fireEvent.click(await screen.findByText('Remove member'))
       await fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))

@@ -42,8 +42,10 @@ describe('TenantRequestDisplay', () => {
       })
 
       expect(
-        screen.getByRole('heading', { name: /tenant request/i }),
-      ).toHaveTextContent('Tenant Request: tenantRequestName')
+        screen.getByRole('heading', {
+          name: 'Tenant request: tenantRequestName',
+        }),
+      ).toBeInTheDocument()
     })
   })
 
@@ -61,7 +63,7 @@ describe('TenantRequestDisplay', () => {
         }),
       })
 
-      expect(screen.getByLabelText('Requested By')).toHaveValue(
+      expect(screen.getByLabelText('Requested by')).toHaveValue(
         'tenantRequestCreatedBy',
       )
     })
@@ -81,7 +83,7 @@ describe('TenantRequestDisplay', () => {
         }),
       })
 
-      expect(screen.getByLabelText('Ministry/Organization')).toHaveValue(
+      expect(screen.getByLabelText('Ministry/organization')).toHaveValue(
         'tenantRequestMinistryName',
       )
     })
@@ -101,7 +103,7 @@ describe('TenantRequestDisplay', () => {
         }),
       })
 
-      expect(screen.getByLabelText('Date of Request (YYYY-MM-DD)')).toHaveValue(
+      expect(screen.getByLabelText('Date of request')).toHaveValue(
         'tenantRequestCreatedDate',
       )
     })
@@ -121,7 +123,7 @@ describe('TenantRequestDisplay', () => {
         }),
       })
 
-      expect(screen.getByLabelText('Name of Tenant')).toHaveValue(
+      expect(screen.getByLabelText('Name of tenant')).toHaveValue(
         'tenantRequestName',
       )
     })
@@ -135,7 +137,7 @@ describe('TenantRequestDisplay', () => {
         }),
       })
 
-      await user.click(screen.getByRole('combobox', { name: /status/i }))
+      await user.click(screen.getByRole('combobox', { name: 'Status *' }))
       await user.click(
         screen.getByRole('option', {
           name: TENANT_REQUEST_STATUS.APPROVED.title,
@@ -151,7 +153,7 @@ describe('TenantRequestDisplay', () => {
 
       await waitFor(() => {
         expect(
-          screen.getByRole('textbox', { name: /name of tenant/i }),
+          screen.getByRole('textbox', { name: 'Name of tenant *' }),
         ).toBeEnabled()
       })
     })
@@ -172,7 +174,9 @@ describe('TenantRequestDisplay', () => {
         }),
       })
 
-      const nameField = screen.getByRole('textbox', { name: /name of tenant/i })
+      const nameField = screen.getByRole('textbox', {
+        name: 'Name of tenant *',
+      })
 
       await waitFor(() => {
         expect(nameField).toBeEnabled()
@@ -206,7 +210,7 @@ describe('TenantRequestDisplay', () => {
         }),
       })
 
-      await user.click(screen.getByRole('combobox', { name: /status/i }))
+      await user.click(screen.getByRole('combobox', { name: 'Status *' }))
       await user.click(
         screen.getByRole('option', {
           name: TENANT_REQUEST_STATUS.APPROVED.title,
@@ -220,7 +224,9 @@ describe('TenantRequestDisplay', () => {
         }),
       })
 
-      const nameField = screen.getByRole('textbox', { name: /name of tenant/i })
+      const nameField = screen.getByRole('textbox', {
+        name: 'Name of tenant *',
+      })
 
       await waitFor(() => {
         expect(nameField).toBeEnabled()
@@ -248,7 +254,7 @@ describe('TenantRequestDisplay', () => {
         tenantRequest,
       })
 
-      await user.click(screen.getByRole('combobox', { name: /status/i }))
+      await user.click(screen.getByRole('combobox', { name: 'Status *' }))
       await user.click(
         screen.getByRole('option', {
           name: TENANT_REQUEST_STATUS.APPROVED.title,
@@ -260,7 +266,9 @@ describe('TenantRequestDisplay', () => {
         tenantRequest,
       })
 
-      const nameField = screen.getByRole('textbox', { name: /name of tenant/i })
+      const nameField = screen.getByRole('textbox', {
+        name: 'Name of tenant *',
+      })
 
       await waitFor(() => {
         expect(nameField).toBeEnabled()
@@ -291,7 +299,7 @@ describe('TenantRequestDisplay', () => {
         tenantRequest,
       })
 
-      await user.click(screen.getByRole('combobox', { name: /status/i }))
+      await user.click(screen.getByRole('combobox', { name: 'Status *' }))
       await user.click(
         screen.getByRole('option', {
           name: TENANT_REQUEST_STATUS.APPROVED.title,
@@ -303,7 +311,9 @@ describe('TenantRequestDisplay', () => {
         tenantRequest,
       })
 
-      const nameField = screen.getByRole('textbox', { name: /name of tenant/i })
+      const nameField = screen.getByRole('textbox', {
+        name: 'Name of tenant *',
+      })
 
       await user.clear(nameField)
       await user.type(nameField, 'New Tenant Name')
@@ -333,7 +343,7 @@ describe('TenantRequestDisplay', () => {
         }),
       })
 
-      expect(screen.getByLabelText('Description of Tenant')).toHaveValue(
+      expect(screen.getByLabelText('Description of tenant')).toHaveValue(
         'tenantRequestDescription',
       )
     })
@@ -411,7 +421,7 @@ describe('TenantRequestDisplay', () => {
         }),
       })
 
-      await user.click(screen.getByRole('combobox', { name: /status/i }))
+      await user.click(screen.getByRole('combobox', { name: 'Status *' }))
       await user.click(
         screen.getByRole('option', {
           name: TENANT_REQUEST_STATUS.APPROVED.title,
@@ -434,7 +444,7 @@ describe('TenantRequestDisplay', () => {
         }),
       })
 
-      await user.click(screen.getByRole('combobox', { name: /status/i }))
+      await user.click(screen.getByRole('combobox', { name: 'Status *' }))
       await user.click(
         screen.getByRole('option', {
           name: TENANT_REQUEST_STATUS.REJECTED.title,
@@ -456,7 +466,7 @@ describe('TenantRequestDisplay', () => {
         }),
       })
 
-      await user.click(screen.getByRole('combobox', { name: /status/i }))
+      await user.click(screen.getByRole('combobox', { name: 'Status *' }))
       await user.click(
         screen.getByRole('option', {
           name: TENANT_REQUEST_STATUS.REJECTED.title,
@@ -464,7 +474,7 @@ describe('TenantRequestDisplay', () => {
       )
 
       await user.type(
-        screen.getByLabelText(/rejection notes/i),
+        screen.getByLabelText('Rejection notes *'),
         'Tenant does not meet requirements',
       )
 
@@ -489,14 +499,14 @@ describe('TenantRequestDisplay', () => {
         }),
       })
 
-      await user.click(screen.getByRole('combobox', { name: /status/i }))
+      await user.click(screen.getByRole('combobox', { name: 'Status *' }))
       await user.click(
         screen.getByRole('option', {
           name: TENANT_REQUEST_STATUS.REJECTED.title,
         }),
       )
 
-      expect(screen.getByLabelText(/rejection notes/i)).toBeInTheDocument()
+      expect(screen.getByLabelText('Rejection notes *')).toBeInTheDocument()
     })
   })
 })

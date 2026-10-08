@@ -128,16 +128,16 @@ describe('GroupRoleContainer.vue', () => {
       renderComponent({ groupServices: [], userRole: 'tenantOwner' })
 
       expect(
-        screen.getByText('No Connected Services added yet'),
+        screen.getByText('No connected services added yet'),
       ).toBeInTheDocument()
-      expect(getButton('Go to Connected Services')).toBeInTheDocument()
+      expect(getButton('Go to connected services')).toBeInTheDocument()
     })
 
     it('shows the setup instructions to a user admin', () => {
       renderComponent({ groupServices: [], userRole: 'userAdmin' })
 
       expect(
-        screen.getByText('No Connected Services added yet'),
+        screen.getByText('No connected services added yet'),
       ).toBeInTheDocument()
     })
 
@@ -145,7 +145,7 @@ describe('GroupRoleContainer.vue', () => {
       const user = userEvent.setup()
       renderComponent({ groupServices: [], userRole: 'userAdmin' })
 
-      await user.click(getButton('Go to Connected Services'))
+      await user.click(getButton('Go to connected services'))
 
       expect(mockPush).toHaveBeenCalledWith(`/tenants/${TENANT_ID}/services`)
     })
@@ -154,13 +154,13 @@ describe('GroupRoleContainer.vue', () => {
       renderComponent({ groupServices: [], userRole: 'none' })
 
       expect(
-        screen.getByText('No Service Roles available yet'),
+        screen.getByText('No service roles available yet'),
       ).toBeInTheDocument()
       expect(
-        screen.getByText('Contact your Tenant Owner for assistance.'),
+        screen.getByText('Contact your tenant owner for assistance.'),
       ).toBeInTheDocument()
       expect(
-        screen.queryByRole('button', { name: 'Go to Connected Services' }),
+        screen.queryByRole('button', { name: 'Go to connected services' }),
       ).not.toBeInTheDocument()
     })
   })
@@ -170,7 +170,7 @@ describe('GroupRoleContainer.vue', () => {
       renderComponent()
 
       expect(
-        screen.getByText('Adding Connected Services Roles'),
+        screen.getByText('Adding connected services roles'),
       ).toBeInTheDocument()
       expect(screen.getByText('Service One')).toBeInTheDocument()
       expect(screen.getByText('Service Two')).toBeInTheDocument()
@@ -195,8 +195,8 @@ describe('GroupRoleContainer.vue', () => {
       renderComponent()
 
       expect(getButton('Cancel')).toBeDisabled()
-      expect(getButton('Clear All')).toBeDisabled()
-      expect(getButton('Undo Changes')).toBeDisabled()
+      expect(getButton('Clear all')).toBeDisabled()
+      expect(getButton('Undo changes')).toBeDisabled()
       expect(getButton('Save')).toBeDisabled()
     })
   })
@@ -246,8 +246,8 @@ describe('GroupRoleContainer.vue', () => {
       ).not.toBeInTheDocument()
       expect(getCheckbox('Admin')).toBeEnabled()
       expect(getButton('Cancel')).toBeEnabled()
-      expect(getButton('Clear All')).toBeEnabled()
-      expect(getButton('Undo Changes')).toBeEnabled()
+      expect(getButton('Clear all')).toBeEnabled()
+      expect(getButton('Undo changes')).toBeEnabled()
       expect(getButton('Save')).toBeEnabled()
     })
 
@@ -364,11 +364,11 @@ describe('GroupRoleContainer.vue', () => {
       renderComponent()
 
       await user.click(getButton('Edit'))
-      await user.click(getButton('Clear All'))
+      await user.click(getButton('Clear all'))
 
       const dialog = await getDialog()
       expect(
-        within(dialog).getByText('Delete all Selections?'),
+        within(dialog).getByText('Delete all selections?'),
       ).toBeInTheDocument()
       expect(
         within(dialog).getByText(/delete all of your current role selections/i),
@@ -380,9 +380,9 @@ describe('GroupRoleContainer.vue', () => {
       renderComponent()
 
       await user.click(getButton('Edit'))
-      await user.click(getButton('Clear All'))
+      await user.click(getButton('Clear all'))
       await user.click(
-        within(await getDialog()).getByRole('button', { name: 'Clear All' }),
+        within(await getDialog()).getByRole('button', { name: 'Clear all' }),
       )
 
       await waitFor(() => expect(getCheckbox('Admin')).not.toBeChecked())
@@ -396,7 +396,7 @@ describe('GroupRoleContainer.vue', () => {
       renderComponent()
 
       await user.click(getButton('Edit'))
-      await user.click(getButton('Clear All'))
+      await user.click(getButton('Clear all'))
       await user.click(
         within(await getDialog()).getByRole('button', { name: 'Cancel' }),
       )
@@ -412,11 +412,11 @@ describe('GroupRoleContainer.vue', () => {
       renderComponent()
 
       await user.click(getButton('Edit'))
-      await user.click(getButton('Undo Changes'))
+      await user.click(getButton('Undo changes'))
 
       const dialog = await getDialog()
       expect(
-        within(dialog).getByText('Revert to Previous Roles?'),
+        within(dialog).getByText('Revert to previous roles?'),
       ).toBeInTheDocument()
       expect(
         within(dialog).getByRole('button', { name: 'Revert' }),
@@ -430,7 +430,7 @@ describe('GroupRoleContainer.vue', () => {
       await user.click(getButton('Edit'))
       await user.click(getCheckbox('Viewer'))
       await user.click(getCheckbox('Admin'))
-      await user.click(getButton('Undo Changes'))
+      await user.click(getButton('Undo changes'))
       await user.click(
         within(await getDialog()).getByRole('button', { name: 'Revert' }),
       )
@@ -445,7 +445,7 @@ describe('GroupRoleContainer.vue', () => {
 
       await user.click(getButton('Edit'))
       await user.click(getCheckbox('Viewer'))
-      await user.click(getButton('Undo Changes'))
+      await user.click(getButton('Undo changes'))
       await user.click(
         within(await getDialog()).getByRole('button', { name: 'Cancel' }),
       )

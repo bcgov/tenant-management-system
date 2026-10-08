@@ -26,13 +26,13 @@ describe('GroupCreateDialog', () => {
     it('renders card content when modelValue is true', () => {
       renderComponent()
 
-      expect(screen.getByText('Create a Group')).toBeInTheDocument()
+      expect(screen.getByText('Create a group')).toBeInTheDocument()
     })
 
     it('does not render card content when modelValue is false', () => {
       renderComponent({ ...defaultProps, modelValue: false })
 
-      expect(screen.queryByText('Create a Group')).not.toBeInTheDocument()
+      expect(screen.queryByText('Create a group')).not.toBeInTheDocument()
     })
   })
 

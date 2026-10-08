@@ -221,7 +221,9 @@ describe('GroupMemberContainer', () => {
       )
       await flushPromises()
 
-      expect(notificationMock.error).toHaveBeenCalledWith('User search failed')
+      expect(notificationMock.error).toHaveBeenCalledWith(
+        'Member search failed',
+      )
     })
   })
 

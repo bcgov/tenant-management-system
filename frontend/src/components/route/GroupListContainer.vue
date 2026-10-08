@@ -136,7 +136,7 @@ const handleGroupCreate = async (
         <ButtonPrimary
           v-if="isUserAdmin"
           class="mb-12"
-          text="Create a Group"
+          text="Create a group"
           @click="dialogOpen"
         />
 
@@ -154,7 +154,7 @@ const handleGroupCreate = async (
             </p>
 
             <p v-if="isUserAdmin">
-              <ButtonPrimary text="Create a Group" @click="dialogOpen" />
+              <ButtonPrimary text="Create a group" @click="dialogOpen" />
             </p>
 
             <span class="mt-12 p-small">
