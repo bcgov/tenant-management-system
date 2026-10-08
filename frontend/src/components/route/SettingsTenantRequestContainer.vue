@@ -72,7 +72,7 @@ const handleApproved = async (tenantRequest: TenantRequest, name: string) => {
         // If the API says that this name exists already, then show the name
         // duplicated validation error.
         notification.error(
-          'Requests can only have a status change from New. Start a new ' +
+          'Requests can only have a status change from "new". Start a new ' +
             'request instead',
         )
 
@@ -89,7 +89,7 @@ const handleApproved = async (tenantRequest: TenantRequest, name: string) => {
       notification.error(error.userMessage)
     } else {
       // Otherwise display a generic error message.
-      notification.error('Failed to update Tenant Request')
+      notification.error('Failed to update tenant request')
     }
   }
 }
@@ -110,7 +110,7 @@ const handleRejected = async (tenantRequest: TenantRequest, notes: string) => {
     )
     handleCancel()
   } catch {
-    notification.error('Failed to update Tenant Request')
+    notification.error('Failed to update tenant request')
   }
 }
 
@@ -166,7 +166,7 @@ init() // NOSONAR
           <template v-else>
             <v-row>
               <v-col cols="12">
-                <h4 class="mb-6 mt-12">Tenant Requests</h4>
+                <h4 class="mb-6 mt-12">Tenant requests</h4>
                 <p class="mb-8">
                   Select a request to review details and approve or reject it.
                 </p>
@@ -193,26 +193,26 @@ init() // NOSONAR
                 <v-data-table
                   :cell-props="getCellProps"
                   :header-props="{
-                    class: 'bg-surface-light font-weight-bold text-body-small',
+                    class: 'bg-surface-light font-weight-bold',
                   }"
                   :headers="[
                     {
                       key: 'createdDate',
-                      title: 'Date of Request (YYYY-MM-DD)',
+                      title: 'Date of request',
                     },
                     {
                       key: 'createdBy',
                       sortable: false,
-                      title: 'Requested By',
+                      title: 'Requested by',
                     },
                     {
                       key: 'ministryName',
-                      title: 'Ministry / Organization',
+                      title: 'Ministry / organization',
                     },
                     {
                       key: 'name',
                       sortable: false,
-                      title: 'Requested Tenant Name',
+                      title: 'Requested tenant name',
                     },
                     {
                       align: 'end',

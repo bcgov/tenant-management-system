@@ -47,7 +47,7 @@ defineExpose({ validate })
   <div>
     <ButtonSecondary
       class="mb-4"
-      text="Add Role"
+      text="Add role"
       @click="handleAddServiceRole"
     />
 

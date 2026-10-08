@@ -56,16 +56,16 @@ describe('UserSearchTable', () => {
       renderComponent()
 
       expect(
-        screen.getByRole('columnheader', { name: 'First Name' }),
+        screen.getByRole('columnheader', { name: 'First name' }),
       ).toBeInTheDocument()
       expect(
-        screen.getByRole('columnheader', { name: 'Last Name' }),
+        screen.getByRole('columnheader', { name: 'Last name' }),
       ).toBeInTheDocument()
       expect(
         screen.getByRole('columnheader', { name: 'Email' }),
       ).toBeInTheDocument()
       expect(
-        screen.getByRole('columnheader', { name: 'Identity Provider' }),
+        screen.getByRole('columnheader', { name: 'Identity provider' }),
       ).toBeInTheDocument()
     })
   })

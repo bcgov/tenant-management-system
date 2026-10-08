@@ -161,7 +161,7 @@ const toggleSearch = () => {
   <v-container class="ms-6">
     <v-row>
       <v-col cols="12">
-        <h4>Tenant Users</h4>
+        <h4>Tenant users</h4>
       </v-col>
     </v-row>
 
@@ -192,7 +192,7 @@ const toggleSearch = () => {
       <div v-if="showSearch">
         <v-divider class="my-12" />
 
-        <h4 class="mb-4">Add a user to this Tenant</h4>
+        <h4 class="mb-4">Add a user to this tenant</h4>
 
         <p class="mb-2 mt-8">
           1. Search for a user based on the selection criteria below:
@@ -213,7 +213,7 @@ const toggleSearch = () => {
             <p class="mb-2">2. Assign role(s) to this user:</p>
           </v-col>
           <v-col cols="6">
-            <p class="mb-2 text-body-medium">Available Roles:</p>
+            <p class="mb-2 text-body-medium">Available roles:</p>
           </v-col>
           <v-col cols="12">
             <v-checkbox
@@ -271,7 +271,7 @@ const toggleSearch = () => {
             <ButtonPrimary
               v-if="selectedUser"
               :disabled="selectedRoles.length === 0"
-              text="Add User"
+              text="Add user"
               @click="handleAddUser"
             />
           </v-col>

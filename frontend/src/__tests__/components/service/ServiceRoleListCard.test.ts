@@ -49,7 +49,7 @@ describe('ServiceRoleListCard.vue', () => {
     it('renders "New Role" when the name is empty', () => {
       renderComponent({ modelValue: makeServiceRole({ name: '' }) })
 
-      expect(screen.getByText('New Role')).toBeInTheDocument()
+      expect(screen.getByText('New role')).toBeInTheDocument()
     })
 
     it('shows Completed when all required fields are filled', () => {

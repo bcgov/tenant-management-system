@@ -112,7 +112,7 @@ const rules = {
   <v-dialog v-model="dialogVisible" max-width="800px">
     <v-card class="pa-6">
       <v-card-title class="align-center d-flex justify-space-between">
-        Request New Tenant
+        Request new tenant
       </v-card-title>
 
       <v-card-text>
@@ -124,7 +124,7 @@ const rules = {
             required
           >
             <template #label>
-              Name of Tenant <span class="text-error">*</span>
+              Name of tenant <span class="text-error">*</span>
             </template>
           </v-text-field>
 
@@ -137,7 +137,7 @@ const rules = {
             required
           >
             <template #label>
-              Ministry/Organization <span class="text-error">*</span>
+              Ministry/organization <span class="text-error">*</span>
             </template>
           </v-select>
 
@@ -150,7 +150,7 @@ const rules = {
             required
           >
             <template #label>
-              Description of Tenant <span class="text-error">*</span>
+              Description of tenant <span class="text-error">*</span>
             </template>
           </v-textarea>
         </v-form>

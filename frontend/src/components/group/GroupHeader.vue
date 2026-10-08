@@ -136,14 +136,14 @@ function dialogOpen() {
         <StatBlock
           :icon="mdiCalendarMonthOutline"
           :value="group.createdDate"
-          label="Date Created"
+          label="Date created"
         />
       </v-col>
       <v-col cols="12" md="9">
         <StatBlock
           :icon="mdiAccountCircleOutline"
           :value="group.createdBy"
-          label="Created By"
+          label="Created by"
         />
       </v-col>
     </v-row>
@@ -167,7 +167,7 @@ function dialogOpen() {
         <StatBlock
           :icon="mdiVectorPolyline"
           :value="enabledServiceCount"
-          label="Enabled Services"
+          label="Enabled services"
         />
       </v-col>
     </v-row>

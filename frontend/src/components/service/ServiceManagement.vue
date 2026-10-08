@@ -44,41 +44,41 @@ const handleAddService = async (serviceId: ServiceId) => {
   <v-container
     v-if="availableServices.length === 0 && tenantServices.length === 0"
   >
-    <h3>Connected Services</h3>
-    <p>There are no Connected Services set up in this CSTAR environment.</p>
+    <h3>Connected services</h3>
+    <p>There are no connected services set up in this CSTAR environment.</p>
   </v-container>
   <v-container v-else>
     <template v-if="tenantServices.length === 0">
       <v-container class="text-center">
         <template v-if="isTenantOwner">
-          <h3>Add your first Connected Service</h3>
+          <h3>Add your first connected service</h3>
           <p class="mt-0">
-            Add a Connected Service, then go to Service Roles to assign roles to
+            Add a connected service, then go to service roles to assign roles to
             groups.
           </p>
         </template>
         <template v-else>
-          <h3>No Connected Services have been added</h3>
-          <p class="mt-0">Connected Services are managed by Tenant Owners.</p>
+          <h3>No connected services have been added</h3>
+          <p class="mt-0">Connected services are managed by tenant owners.</p>
         </template>
       </v-container>
     </template>
 
     <template v-if="tenantServices.length > 0">
-      <h3>Connected Services</h3>
+      <h3>Connected services</h3>
       <TenantServiceList :tenant-services="tenantServices" />
       <v-divider class="my-12" />
     </template>
 
-    <h3 v-if="tenantServices.length > 0">Available Services</h3>
+    <h3 v-if="tenantServices.length > 0">Available services</h3>
 
     <template v-if="availableServices.length > 0">
       <template v-if="tenantServices.length > 0">
         <p v-if="isTenantOwner" class="mb-8">
-          Add a Connected Service, then go to Service Roles to assign roles to
+          Add a connected service, then go to service roles to assign roles to
           groups.
         </p>
-        <p v-else>Contact a Tenant Owner to request additional services.</p>
+        <p v-else>Contact a tenant owner to request additional services.</p>
       </template>
       <ServiceList
         :is-tenant-owner="isTenantOwner"

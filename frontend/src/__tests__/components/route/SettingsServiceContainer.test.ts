@@ -82,10 +82,10 @@ describe('ServiceContainer', () => {
 
       renderComponent()
 
-      expect(screen.queryByText('Connected Services')).not.toBeInTheDocument()
+      expect(screen.queryByText('Connected services')).not.toBeInTheDocument()
 
       resolveFetch()
-      await screen.findByText('Connected Services')
+      await screen.findByText('Connected services')
     })
 
     it('shows error notification when fetchServices fails', async () => {
@@ -94,7 +94,7 @@ describe('ServiceContainer', () => {
         .mockRejectedValue(new Error('message'))
 
       renderComponent()
-      await screen.findByText('Connected Services')
+      await screen.findByText('Connected services')
 
       expect(notificationMock.error).toHaveBeenCalledWith(
         'Failed to load service data',
@@ -107,10 +107,10 @@ describe('ServiceContainer', () => {
       serviceStore.services = []
 
       renderComponent()
-      await screen.findByText('No Connected Services yet')
+      await screen.findByText('No connected services yet')
 
       expect(
-        screen.getByRole('button', { name: 'Add Connected Service' }),
+        screen.getByRole('button', { name: 'Add connected service' }),
       ).toBeInTheDocument()
       expect(screen.queryByLabelText('Search')).not.toBeInTheDocument()
     })
@@ -124,7 +124,7 @@ describe('ServiceContainer', () => {
       ]
 
       renderComponent()
-      await screen.findByText('Connected Services')
+      await screen.findByText('Connected services')
 
       const table = screen.getByRole('table')
       expect(within(table).getByText('displayName1')).toBeInTheDocument()
@@ -138,7 +138,7 @@ describe('ServiceContainer', () => {
       serviceStore.services = [makeService({ displayName: 'displayName' })]
 
       renderComponent()
-      await screen.findByText('Connected Services')
+      await screen.findByText('Connected services')
 
       const searchInput = screen.getByLabelText('Search')
       await fireEvent.update(searchInput, 'nonexistent')
@@ -155,18 +155,18 @@ describe('ServiceContainer', () => {
       serviceStore.services = [makeService({ displayName: 'displayName' })]
 
       renderComponent()
-      await screen.findByText('Connected Services')
+      await screen.findByText('Connected services')
 
       await fireEvent.click(
-        screen.getByRole('button', { name: 'Add Connected Service' }),
+        screen.getByRole('button', { name: 'Add connected service' }),
       )
 
       expect(screen.getByTestId('is-duplicate-name')).toBeInTheDocument()
-      expect(screen.queryByText('Connected Services')).not.toBeInTheDocument()
+      expect(screen.queryByText('Connected services')).not.toBeInTheDocument()
 
       await fireEvent.click(screen.getByRole('button', { name: 'stub-cancel' }))
 
-      expect(await screen.findByText('Connected Services')).toBeInTheDocument()
+      expect(await screen.findByText('Connected services')).toBeInTheDocument()
     })
   })
 
@@ -176,9 +176,9 @@ describe('ServiceContainer', () => {
       serviceStore.services = [makeService({ displayName: 'displayName' })]
 
       renderComponent()
-      await screen.findByText('Connected Services')
+      await screen.findByText('Connected services')
       await fireEvent.click(
-        screen.getByRole('button', { name: 'Add Connected Service' }),
+        screen.getByRole('button', { name: 'Add connected service' }),
       )
       await fireEvent.click(screen.getByRole('button', { name: 'stub-submit' }))
 
@@ -186,7 +186,7 @@ describe('ServiceContainer', () => {
         displayName: 'New Service',
       })
       expect(notificationMock.success).not.toHaveBeenCalled()
-      expect(await screen.findByText('Connected Services')).toBeInTheDocument()
+      expect(await screen.findByText('Connected services')).toBeInTheDocument()
     })
 
     it('flags a duplicate name and keeps the form open on DuplicateEntityError', async () => {
@@ -195,9 +195,9 @@ describe('ServiceContainer', () => {
         .mockRejectedValue(new DuplicateEntityError())
 
       renderComponent()
-      await screen.findByText('Connected Services')
+      await screen.findByText('Connected services')
       await fireEvent.click(
-        screen.getByRole('button', { name: 'Add Connected Service' }),
+        screen.getByRole('button', { name: 'Add connected service' }),
       )
       await fireEvent.click(screen.getByRole('button', { name: 'stub-submit' }))
 
@@ -211,9 +211,9 @@ describe('ServiceContainer', () => {
         .mockRejectedValue(new DomainError('message', 'userMessage'))
 
       renderComponent()
-      await screen.findByText('Connected Services')
+      await screen.findByText('Connected services')
       await fireEvent.click(
-        screen.getByRole('button', { name: 'Add Connected Service' }),
+        screen.getByRole('button', { name: 'Add connected service' }),
       )
       await fireEvent.click(screen.getByRole('button', { name: 'stub-submit' }))
 
@@ -226,14 +226,14 @@ describe('ServiceContainer', () => {
         .mockRejectedValue(new Error('message'))
 
       renderComponent()
-      await screen.findByText('Connected Services')
+      await screen.findByText('Connected services')
       await fireEvent.click(
-        screen.getByRole('button', { name: 'Add Connected Service' }),
+        screen.getByRole('button', { name: 'Add connected service' }),
       )
       await fireEvent.click(screen.getByRole('button', { name: 'stub-submit' }))
 
       expect(notificationMock.error).toHaveBeenCalledWith(
-        'Failed to create Service',
+        'Failed to create service',
       )
     })
 
@@ -243,9 +243,9 @@ describe('ServiceContainer', () => {
         .mockRejectedValue(new DuplicateEntityError())
 
       renderComponent()
-      await screen.findByText('Connected Services')
+      await screen.findByText('Connected services')
       await fireEvent.click(
-        screen.getByRole('button', { name: 'Add Connected Service' }),
+        screen.getByRole('button', { name: 'Add connected service' }),
       )
       await fireEvent.click(screen.getByRole('button', { name: 'stub-submit' }))
       expect(screen.getByTestId('is-duplicate-name')).toHaveTextContent('true')
