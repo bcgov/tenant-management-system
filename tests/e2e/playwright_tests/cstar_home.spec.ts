@@ -143,7 +143,7 @@ test.describe.serial('Landing page tests', () => {
       .filter({ hasText: 'Search by' })
       .locator('.v-field__input')
       .click()
-    const expectedOptions = ['First Name', 'Last Name', 'Email']
+    const expectedOptions = ['First name', 'Last name', 'Email']
     const options = sharedPage.getByRole('listbox').getByRole('option')
     await expect(options).toHaveCount(3)
     for (const option of expectedOptions) {
@@ -216,7 +216,7 @@ test.describe.serial('Landing page tests', () => {
     }
     await expect(
       sharedPage.getByRole('button', {
-        name: 'Add User',
+        name: 'Add user',
         exact: true,
       }),
     ).toBeDisabled()
@@ -233,7 +233,7 @@ test.describe.serial('Landing page tests', () => {
       .check()
     await expect(
       sharedPage.getByRole('button', {
-        name: 'Add User',
+        name: 'Add user',
         exact: true,
       }),
     ).toBeEnabled()
@@ -241,7 +241,7 @@ test.describe.serial('Landing page tests', () => {
   test('Checks add/remove IDIR user', async () => {
     await sharedPage
       .getByRole('button', {
-        name: 'Add User',
+        name: 'Add user',
         exact: true,
       })
       .click()
