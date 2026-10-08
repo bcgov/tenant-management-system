@@ -1,7 +1,11 @@
 openapi: 3.0.3
 info:
   title: Connected Services Team Access and Roles API
-  description: API for managing tenants in Connected Services Team Access and Roles
+  description: |
+    API for managing tenants in Connected Services Team Access and Roles
+
+    Routes marked "CSTAR audience token required" are only available from the CSTAR web app.
+    A registered connected service that calls one of them gets a 403 explaining why.
   version: 1.0.0
 servers:
   - url: http://localhost:4144
@@ -776,6 +780,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        '403':
+          description: Forbidden - this route is only available from the CSTAR web app, not from a connected service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
         '500':
           description: Internal Server Error
           content:
@@ -870,6 +880,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        '403':
+          description: Forbidden - this route is only available from the CSTAR web app, not from a connected service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
         '500':
           description: Internal Server Error
           content:
@@ -1224,6 +1240,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        '403':
+          description: Forbidden - the user is not a Tenant Owner, or the route was called from a connected service (CSTAR web app only)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
         '404':
           description: Tenant not found
           content:
@@ -1286,6 +1308,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        '403':
+          description: Forbidden - this route is only available from the CSTAR web app, not from a connected service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
         '500':
           description: Internal Server Error
           content:
@@ -1375,6 +1403,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BadRequestResponse'
+        '403':
+          description: Forbidden - this route is only available from the CSTAR web app, not from a connected service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
         '409':
           description: Conflict - A tenant with the same name and ministry name already exists
           content:
@@ -1858,6 +1892,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        '403':
+          description: Forbidden - this route is only available from the CSTAR web app, not from a connected service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
         '500':
           description: Internal Server Error
           content:

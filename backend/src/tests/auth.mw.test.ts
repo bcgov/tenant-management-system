@@ -57,7 +57,7 @@ const MY_USER_ID = 'F45AFBBD68C51D6F956BA3A1DE1878A2'
 
 function signedInAs(decodedJwt: Record<string, unknown>) {
   mockJwtBehaviour = (req, _res, next) => {
-    req.decodedJwt = decodedJwt
+    req.decodedJwt = { aud: config.oidc.tmsAudience, ...decodedJwt }
     next()
   }
 }
@@ -376,7 +376,7 @@ describe('when a connected service calls a headless route', () => {
   })
 
   it('turns away a token that names no service', async () => {
-    signedInAs({ idp: 'idir' })
+    signedInAs({ aud: undefined, idp: 'idir' })
 
     const response = await callHeadless()
 
@@ -417,23 +417,125 @@ describe('when a connected service calls a headless route', () => {
   })
 })
 
+describe('when a service calls a web app only route', () => {
+  const chefs = {
+    id: 'ss-1',
+    name: 'chefs',
+    displayName: 'CHEFS',
+    clientIdentifier: 'chefs-client',
+    isActive: true,
+    allowHeadlessOps: true,
+  }
+
+  const callWebAppOnly = () => request(createApp('/tenants')).get('/tenants')
+
+  it('does not look up a service for the CSTAR web app', async () => {
+    const response = await callWebAppOnly()
+
+    expect(response.status).toBe(200)
+    expect(mockFindSharedService).not.toHaveBeenCalled()
+  })
+
+  it('tells a switched on service to use the web app', async () => {
+    signedInAs({ aud: 'chefs-client', idp: 'idir' })
+    mockFindSharedService.mockResolvedValueOnce(chefs)
+
+    const response = await callWebAppOnly()
+
+    expect(response.status).toBe(403)
+    expect(response.body).toEqual({
+      name: 'Authorization Failure',
+      message:
+        'This operation cannot be performed from a connected service. Log in to the CSTAR web app to do this.',
+      httpResponseCode: 403,
+      errorMessage: 'Forbidden',
+    })
+    expect(mockLoggerError).toHaveBeenCalledWith(
+      'Connected service called a route it cannot use',
+      { reason: 'web_app_only', audience: 'chefs-client' },
+    )
+  })
+
+  it.each([
+    ['is not switched on', { ...chefs, allowHeadlessOps: false }],
+    ['is inactive', { ...chefs, isActive: false }],
+  ])('tells a service that %s it is not allowed', async (_case, service) => {
+    signedInAs({ aud: 'chefs-client', idp: 'idir' })
+    mockFindSharedService.mockResolvedValueOnce(service)
+
+    const response = await callWebAppOnly()
+
+    expect(response.status).toBe(403)
+    expect(response.body.message).toBe(
+      'This connected service is not allowed to call CSTAR directly. Ask a CSTAR operations admin to enable it.',
+    )
+  })
+
+  it('gives an unregistered app the same 401 as before', async () => {
+    signedInAs({ aud: 'some-other-app', idp: 'idir' })
+    mockFindSharedService.mockResolvedValueOnce(null)
+
+    const response = await callWebAppOnly()
+
+    expect(response.status).toBe(401)
+    expect(response.body.message).toBe('Error occurred during authentication')
+    expect(mockLoggerError).toHaveBeenCalledWith(
+      'JWT validation failed',
+      expect.objectContaining({ reason: 'invalid_audience' }),
+    )
+  })
+
+  it.each([
+    ['no audience', undefined],
+    ['a list of audiences', ['chefs-client', 'other']],
+  ])('gives a token with %s a 401 without a lookup', async (_case, aud) => {
+    signedInAs({ aud, idp: 'idir' })
+
+    const response = await callWebAppOnly()
+
+    expect(response.status).toBe(401)
+    expect(mockFindSharedService).not.toHaveBeenCalled()
+  })
+
+  it('checks the app before the user in the URL', async () => {
+    signedInAs({ aud: 'some-other-app', idir_user_guid: MY_USER_ID })
+    mockFindSharedService.mockResolvedValueOnce(null)
+
+    const response = await request(createApp('/users/:ssoUserId/tenants')).get(
+      '/users/SOMEONE-ELSE/tenants',
+    )
+
+    expect(response.status).toBe(401)
+  })
+
+  it('passes a failed service lookup on as a server error', async () => {
+    signedInAs({ aud: 'chefs-client', idp: 'idir' })
+    mockFindSharedService.mockRejectedValueOnce(new Error('db down'))
+
+    const response = await callWebAppOnly()
+
+    expect(response.status).toBe(500)
+  })
+
+  it('leaves existing service routes alone', async () => {
+    signedInAs({ aud: 'chefs-client', idp: 'idir' })
+
+    const response = await request(
+      createApp('/tenants', { sharedServiceAccess: true }),
+    ).get('/tenants')
+
+    expect(response.status).toBe(200)
+    expect(mockFindSharedService).not.toHaveBeenCalled()
+  })
+})
+
 describe('how the token check is set up', () => {
-  it('only accepts tokens meant for CSTAR', () => {
+  it('checks the token audience in our own code', () => {
     createApp('/tenants')
 
-    expect(mockJwtOptions.audience).toBe(config.oidc.tmsAudience)
-  })
-
-  it('accepts tokens from other services too', () => {
-    createApp('/tenants', { sharedServiceAccess: true })
-
     expect(mockJwtOptions.audience).toBeUndefined()
-  })
-
-  it('leaves the service check to headless routes', () => {
-    createApp('/tenants', { headlessAccess: true })
-
-    expect(mockJwtOptions.audience).toBeUndefined()
+    expect(mockJwtOptions.issuer).toBe(config.oidc.issuer)
+    expect(mockJwtOptions.algorithms).toEqual(['RS256'])
   })
 
   describe('pulling the token out of the request', () => {

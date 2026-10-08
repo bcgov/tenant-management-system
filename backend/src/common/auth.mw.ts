@@ -93,25 +93,70 @@ const allowTmsIdirUser = (req: Request, res: Response): boolean => {
   return true
 }
 
+const getAudience = (decodedJwt?: Express.DecodedJwt) =>
+  typeof decodedJwt?.aud === 'string' ? decodedJwt.aud : undefined
+
+const isTmsAudience = (audience?: string) =>
+  Boolean(audience) && audience === config.oidc.tmsAudience
+
+const findServiceForAudience = async (audience?: string) =>
+  audience
+    ? sharedServiceRepository.findSharedServiceByClientIdentifier(audience)
+    : null
+
+const runOrPassError = async (
+  next: NextFunction,
+  action: () => Promise<unknown>,
+) => {
+  try {
+    await action()
+  } catch (error: unknown) {
+    next(error)
+  }
+}
+
+const refuseNonTmsToken = async (req: Request, res: Response) => {
+  const audience = getAudience(req.decodedJwt)
+  const sharedService = await findServiceForAudience(audience)
+
+  if (!sharedService) {
+    logger.error('JWT validation failed', {
+      reason: 'invalid_audience',
+      code: 'invalid_token',
+      error: 'jwt audience invalid',
+    })
+    return sendUnauthorized(res, 'Error occurred during authentication')
+  }
+
+  const canUseHeadless =
+    sharedService.isActive && sharedService.allowHeadlessOps
+  logger.error('Connected service called a route it cannot use', {
+    reason: canUseHeadless ? 'web_app_only' : 'headless_not_allowed',
+    audience,
+  })
+  return sendForbidden(
+    res,
+    canUseHeadless
+      ? TMSConstants.HEADLESS_WEB_APP_ONLY
+      : TMSConstants.HEADLESS_SERVICE_NOT_ALLOWED,
+  )
+}
+
 const resolveHeadlessAccess = async (
   req: Request,
   res: Response,
   next: NextFunction,
 ) => {
-  const audience = req.decodedJwt?.aud
+  const audience = getAudience(req.decodedJwt)
 
-  if (audience && audience === config.oidc.tmsAudience) {
+  if (isTmsAudience(audience)) {
     if (allowTmsIdirUser(req, res)) {
       next()
     }
     return
   }
 
-  const sharedService = audience
-    ? await sharedServiceRepository.findSharedServiceByClientIdentifier(
-        audience,
-      )
-    : null
+  const sharedService = await findServiceForAudience(audience)
 
   if (!sharedService?.isActive || !sharedService.allowHeadlessOps) {
     logger.error('Connected service is not allowed headless access', {
@@ -141,9 +186,7 @@ const resolveHeadlessAccess = async (
   next()
 }
 
-const createJwtMiddleware = (options: CheckJwtOptions = {}) => {
-  const { sharedServiceAccess = false, headlessAccess = false } = options
-
+const createJwtMiddleware = () => {
   return jwt({
     secret: jwksRsa.expressJwtSecret({
       cache: true,
@@ -158,10 +201,6 @@ const createJwtMiddleware = (options: CheckJwtOptions = {}) => {
       },
     }),
     issuer: config.oidc.issuer,
-    audience:
-      sharedServiceAccess || headlessAccess
-        ? undefined
-        : config.oidc.tmsAudience,
     algorithms: ['RS256'],
     requestProperty: 'decodedJwt',
     getToken: function fromHeaderOrQuerystring(req) {
@@ -176,7 +215,8 @@ const createJwtMiddleware = (options: CheckJwtOptions = {}) => {
 }
 
 export const checkJwt = (options: CheckJwtOptions = {}) => {
-  const middleware = createJwtMiddleware(options)
+  const middleware = createJwtMiddleware()
+  const isWebAppOnly = !options.sharedServiceAccess && !options.headlessAccess
 
   return (req: Request, res: Response, next: NextFunction) => {
     middleware(req, res, async (err) => {
@@ -187,6 +227,14 @@ export const checkJwt = (options: CheckJwtOptions = {}) => {
         )
 
         return sendUnauthorized(res, 'Error occurred during authentication')
+      }
+
+      if (
+        isWebAppOnly &&
+        req.decodedJwt &&
+        !isTmsAudience(getAudience(req.decodedJwt))
+      ) {
+        return runOrPassError(next, () => refuseNonTmsToken(req, res))
       }
 
       if (req.params.ssoUserId && !options.skipSsoUserParamMatch) {
@@ -210,12 +258,7 @@ export const checkJwt = (options: CheckJwtOptions = {}) => {
       }
 
       if (options.headlessAccess) {
-        try {
-          await resolveHeadlessAccess(req, res, next)
-        } catch (error: unknown) {
-          next(error)
-        }
-        return
+        return runOrPassError(next, () => resolveHeadlessAccess(req, res, next))
       }
 
       if (options.sharedServiceAccess) {
