@@ -22,12 +22,12 @@ const emit = defineEmits<{
 // --- Component State ---------------------------------------------------------
 
 const headers = [
-  { key: 'ssoUser.firstName', title: 'First Name' },
-  { key: 'ssoUser.lastName', title: 'Last Name' },
+  { key: 'ssoUser.firstName', title: 'First name' },
+  { key: 'ssoUser.lastName', title: 'Last name' },
   { key: 'ssoUser.email', title: 'Email' },
   {
     key: 'ssoUser.idpType',
-    title: 'Identity Provider',
+    title: 'Identity provider',
     sortable: false,
   },
 ] satisfies DataTableHeader[]
@@ -54,9 +54,7 @@ const onRowClick = (_event: Event, { item }: { item: User }) => {
 <template>
   <v-data-table
     v-model="selectedUser"
-    :header-props="{
-      class: 'bg-surface-light-blue font-weight-bold text-body-small',
-    }"
+    :header-props="{ class: 'bg-surface-light-blue font-weight-bold' }"
     :headers="headers"
     :hide-default-footer="users.length === 0"
     :items="users"

@@ -1,5 +1,4 @@
 [![MIT License](https://img.shields.io/github/license/bcgov/quickstart-openshift.svg)](/LICENSE)
-[![Lifecycle](https://img.shields.io/badge/Lifecycle-Experimental-339999)](https://github.com/bcgov/repomountie/blob/master/doc/lifecycle-badges.md)
 [![Merge](https://github.com/bcgov/tenant-management-system/actions/workflows/merge.yml/badge.svg)](https://github.com/bcgov/tenant-management-system/actions/workflows/merge.yml)
 [![Analysis](https://github.com/bcgov/tenant-management-system/actions/workflows/analysis.yml/badge.svg)](https://github.com/bcgov/tenant-management-system/actions/workflows/analysis.yml)
 [![Scheduled](https://github.com/bcgov/tenant-management-system/actions/workflows/scheduled.yml/badge.svg)](https://github.com/bcgov/tenant-management-system/actions/workflows/scheduled.yml)
@@ -9,20 +8,21 @@
 The Connected Services, Team Access & Roles (CSTAR) manages tenants who use
 multitenanted common components.
 
-# Setup
+## Static Code Analysis
 
-Initial setup is intended to take an hour or less. This depends greatly on intended complexity, features selected/excluded and outside cooperation.
+[![Quality gate](https://sonarcloud.io/api/project_badges/quality_gate?project=bcgov_tenant-management-system)](https://sonarcloud.io/summary/new_code?id=bcgov_tenant-management-system)
 
-## Prerequisites
+[![Duplicated Lines](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system&metric=duplicated_lines_density)](https://sonarcloud.io/component_measures?id=bcgov_tenant-management-system&metric=duplicated_lines_density&view=list)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system&metric=coverage)](https://sonarcloud.io/component_measures?id=bcgov_tenant-management-system&metric=coverage&view=list)
 
-The following are required:
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system&metric=security_rating)](https://sonarcloud.io/component_measures?id=bcgov_tenant-management-system&metric=security_rating&view=list)
+[![Security Issues](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system&metric=software_quality_security_issues)](https://sonarcloud.io/project/issues?id=bcgov_tenant-management-system&impactSoftwareQualities=SECURITY&s=FILE_LINE&issueStatuses=OPEN)
 
-- [ ] BC Government IDIR accounts for anyone submitting requests
-- [ ] [GitHub accounts](https://github.com/signup) for all participating team members
-- [ ] Membership in the BCGov GitHub organization
-  - Join the bcgov organization using [these instructions](https://developer.gov.bc.ca/docs/default/component/bc-developer-guide/use-github-in-bcgov/bc-government-organizations-in-github/#directions-to-sign-up-and-link-your-account-for-bcgov).
-- [ ] OpenShift project namespaces:
-  - [BCGov signup](https://registry.developer.gov.bc.ca)
+[![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system&metric=reliability_rating)](https://sonarcloud.io/component_measures?id=bcgov_tenant-management-system&metric=reliability_rating&view=list)
+[![Reliability Issues](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system&metric=software_quality_reliability_issues)](https://sonarcloud.io/project/issues?id=bcgov_tenant-management-system&impactSoftwareQualities=RELIABILITY&s=FILE_LINE&issueStatuses=OPEN)
+
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system&metric=sqale_rating)](https://sonarcloud.io/component_measures?id=bcgov_tenant-management-system&metric=sqale_rating&view=list)
+[![Maintainability Issues](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system&metric=software_quality_maintainability_issues)](https://sonarcloud.io/project/issues?id=bcgov_tenant-management-system&impactSoftwareQualities=MAINTAINABILITY&s=FILE_LINE&issueStatuses=OPEN)
 
 ## Updating Dependencies
 
@@ -61,7 +61,7 @@ Pull Requests:
 
 - `[uncheck] Allow merge commits`
 - `[check] Allow squash merging`
-  - `Default to pull request title`
+  - `Default message`
 - `[uncheck] Allow rebase merging`
 - `[check] Always suggest updating pull request branches`
 - `[uncheck] Allow auto-merge`
@@ -127,24 +127,11 @@ Note: Required status checks will only be available to select after the relevant
 Don't forget to add your team members!
 
 1. Select Settings (gear, top right) \*> Collaborators and teams (under `Access`)
-2. Click `Add people` or `Add teams`
+2. Click the name of the team with the desired `Role`
 3. Use the search box to find people or teams
-4. Choose a role (read, triage, write, maintain, admin)
-5. Click Add
+4. Click `Add a member`
 
 # App Stack
-
-[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system&metric=bugs)](https://sonarcloud.io/summary/new_code?id=bcgov_tenant-management-system)
-[![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=bcgov_tenant-management-system)
-[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system&metric=coverage)](https://sonarcloud.io/summary/new_code?id=bcgov_tenant-management-system)
-[![Duplicated Lines](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system&metric=duplicated_lines_density)](https://sonarcloud.io/summary/new_code?id=bcgov_tenant-management-system)
-[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=bcgov_tenant-management-system)
-[![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=bcgov_tenant-management-system)
-[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=bcgov_tenant-management-system)
-[![Technical Debt](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system&metric=sqale_index)](https://sonarcloud.io/summary/new_code?id=bcgov_tenant-management-system)
-[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=bcgov_tenant-management-system&metric=vulnerabilities)](https://sonarcloud.io/summary/new_code?id=bcgov_tenant-management-system)
-
-## Stack
 
 The stack includes a frontend (Vue.js, Vite, Caddy), backend (Express, Node) and Postgres database. See subfolder for source, including Dockerfiles and OpenShift templates.
 

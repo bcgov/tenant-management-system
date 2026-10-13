@@ -4,7 +4,7 @@
 global:
   #-- extra env vars for both frontend and backend
   env:
-    logLevel: "error"
+    logLevel: 'error'
   #-- the logon proxy settings for single sign on
   loginProxy:
     # -- the client ID registered with the login proxy for this application
@@ -37,6 +37,16 @@ global:
 backend:
   #-- allowed origins for the backend
   allowedOrigins: '*'
+  #-- how long an assertion stays valid in secs
+  assertionExpiresInSeconds: 300
+  #-- the issuer set on assertions
+  assertionIssuer: ~
+  #-- the key ID set in the JWKS and set on assertion headers
+  assertionKeyId: ~
+  #-- the private key used to sign assertions
+  assertionPrivateKey: ~
+  #-- the public key set in the JWKS
+  assertionPublicKey: ~
   #-- the client ID registered with the bcgovSsoApiUrl
   bcgovSsoApiClientId: ~
   #-- the client secret used with the bcgovSsoApiUrl

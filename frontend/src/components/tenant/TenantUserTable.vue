@@ -9,7 +9,7 @@ import { computed, ref } from 'vue'
 
 import RoleDialog from '@/components/tenant/RoleDialog.vue'
 import SimpleDialog from '@/components/ui/SimpleDialog.vue'
-import { type Role } from '@/models/role.model'
+import { type Role, type RoleId } from '@/models/role.model'
 import { type Tenant } from '@/models/tenant.model'
 import { type User } from '@/models/user.model'
 import { ROLES } from '@/utils/constants'
@@ -28,6 +28,7 @@ type TableHeaderItem = {
 // --- Component Interface -----------------------------------------------------
 
 const { tenant, users } = defineProps<{
+  roles: Role[]
   tenant: Tenant
   users: User[]
 }>()
@@ -36,21 +37,22 @@ const emit = defineEmits<{
   'add-user': [User]
   'remove-role': [User, Role]
   'remove-user': [User]
+  'roles-changed': [User, RoleId[], RoleId[]]
 }>()
 
 // --- Component State ---------------------------------------------------------
 
 const editRolesDialogVisible = ref(false)
 
-const modifyingUserIndex = ref<number | null>(null)
+const modifyingUser = ref<User | null>(null)
 
 const removeRoleDialog = ref({
   buttons: [
     { action: 'cancel', text: 'Cancel', type: 'secondary' as const },
-    { action: 'remove', text: 'Remove', type: 'primary' as const },
+    { action: 'remove', text: 'Remove role', type: 'primary' as const },
   ],
   message: 'Are you sure you want to remove this role from the user?',
-  title: 'Confirm Role Removal',
+  title: 'Confirm role removal',
   visible: false,
 })
 
@@ -59,14 +61,14 @@ const removeUserDialog = ref({
     { action: 'cancel', text: 'Cancel', type: 'secondary' as const },
     {
       action: 'remove',
-      text: 'Offboard User',
+      text: 'Remove user',
       type: 'primary' as const,
     },
   ],
   message:
     "This action will remove this user's tenant and group memberships. They " +
     'will no longer have access to any systems using CSTAR.',
-  title: 'Offboarding User',
+  title: 'Confirm user removal',
   visible: false,
 })
 
@@ -86,13 +88,13 @@ const headers = computed(() => {
       align: 'start',
       key: 'ssoUser.firstName',
       sortable: true,
-      title: 'First Name',
+      title: 'First name',
     },
     {
       align: 'start',
       key: 'ssoUser.lastName',
       sortable: true,
-      title: 'Last Name',
+      title: 'Last name',
     },
     {
       align: 'start',
@@ -104,13 +106,13 @@ const headers = computed(() => {
       align: 'start',
       key: 'ssoUser.idpType',
       sortable: false,
-      title: 'Identity Provider',
+      title: 'Identity provider',
     },
     {
       align: 'start',
       key: 'roles',
       sortable: false,
-      title: 'Tenant Roles',
+      title: 'Tenant roles',
     },
   ]
 
@@ -166,11 +168,6 @@ const canRemoveUser = (user: User): boolean => {
   )
 }
 
-const handleEditRolesDialog = (open: boolean) => {
-  editRolesDialogVisible.value = open
-  modifyingUserIndex.value = null
-}
-
 const handleRemoveRoleButtonClick = (action: string) => {
   // When the action is "remove" the selectedRole.value and selectedUser.value
   // should never be null, but the guard simplifies the event signature.
@@ -190,16 +187,20 @@ const handleRemoveUserButtonClick = (action: string) => {
     emit('remove-user', selectedUser.value)
   }
 
-  // Clear the selected user for both "Offboard User" and "Cancel" choices.
+  // Clear the selected user for both "Remove User" and "Cancel" choices.
   selectedUser.value = null
 }
 
-const showEditRolesDialog = (user: User) => {
-  const uIndex = tenant.users.findIndex((u: User) => {
-    return u.id === user.id
-  })
+const handleRolesChanged = (
+  user: User,
+  rolesToAdd: RoleId[],
+  rolesToRemove: RoleId[],
+) => {
+  emit('roles-changed', user, rolesToAdd, rolesToRemove)
+}
 
-  modifyingUserIndex.value = uIndex
+const showEditRolesDialog = (user: User) => {
+  modifyingUser.value = user
   editRolesDialogVisible.value = true
 }
 
@@ -253,7 +254,7 @@ const showRemoveUserDialog = (user: User) => {
           )"
           :key="role.id"
           :closable="canRemoveRole(item, role)"
-          :close-label="`Remove Role ${role.description} for ${item.getName()}`"
+          :close-label="`Remove role ${role.description} for ${item.getName()}`"
           :model-value="true"
           class="d-inline-flex align-center"
           color="primary"
@@ -273,7 +274,7 @@ const showRemoveUserDialog = (user: User) => {
       <v-menu>
         <template #activator="{ props: activatorProps }">
           <v-btn
-            :aria-label="`Open Menu for ${item.ssoUser.firstName} ${item.ssoUser.lastName}`"
+            :aria-label="`Open menu for ${item.ssoUser.firstName} ${item.ssoUser.lastName}`"
             :icon="mdiDotsVertical"
             variant="text"
             v-bind="activatorProps"
@@ -282,30 +283,30 @@ const showRemoveUserDialog = (user: User) => {
 
         <v-list>
           <v-list-item
-            :aria-label="`Edit Tenant Roles for ${item.ssoUser.firstName} ${item.ssoUser.lastName}`"
+            :aria-label="`Edit tenant roles for ${item.ssoUser.firstName} ${item.ssoUser.lastName}`"
             @click="showEditRolesDialog(item)"
           >
             <v-list-item-title>
               <v-icon :icon="mdiPencil" />
-              Edit Tenant Roles
+              Edit tenant roles
             </v-list-item-title>
           </v-list-item>
 
           <v-tooltip
             :disabled="canRemoveUser(item)"
             location="top"
-            text="You can't offboard the last tenant owner"
+            text="You can't remove the last tenant owner"
           >
             <template #activator="{ props: tooltipProps }">
               <span v-bind="tooltipProps">
                 <v-list-item
-                  :aria-label="`Offboard User ${item.ssoUser.firstName} ${item.ssoUser.lastName}`"
+                  :aria-label="`Remove user ${item.ssoUser.firstName} ${item.ssoUser.lastName}`"
                   :disabled="!canRemoveUser(item)"
                   @click="showRemoveUserDialog(item)"
                 >
                   <v-list-item-title>
                     <v-icon :icon="mdiDeleteOutline" />
-                    Offboard User
+                    Remove user
                   </v-list-item-title>
                 </v-list-item>
               </span>
@@ -317,10 +318,11 @@ const showRemoveUserDialog = (user: User) => {
   </v-data-table>
 
   <RoleDialog
+    v-if="modifyingUser"
     v-model="editRolesDialogVisible"
-    :tenant="tenant"
-    :user-index="modifyingUserIndex"
-    @update:open-dialog="handleEditRolesDialog"
+    :roles="roles"
+    :user="modifyingUser"
+    @roles-changed="handleRolesChanged"
   />
 
   <SimpleDialog

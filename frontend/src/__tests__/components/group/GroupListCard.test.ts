@@ -1,42 +1,51 @@
-import { mount } from '@vue/test-utils'
+import { render, screen } from '@testing-library/vue'
 import { describe, expect, it } from 'vitest'
+import { createVuetify } from 'vuetify'
 
-import { makeGroup } from '@/__tests__/__factories__'
+import { makeGroup, makeTenant } from '@/__tests__/__factories__'
 
 import GroupListCard from '@/components/group/GroupListCard.vue'
-import { type Group } from '@/models/group.model'
+import { toGroupId } from '@/models/group.model'
+import { toTenantId } from '@/models/tenant.model'
 
-const mountComponent = (props: { group: Group }) =>
-  mount(GroupListCard, {
-    props,
+const vuetify = createVuetify()
+
+const renderComponent = (props = {}) =>
+  render(GroupListCard, {
     global: {
+      plugins: [vuetify],
       stubs: {
-        'v-card': {
-          template: '<div @click="$emit(\'click\')"><slot /></div>',
-          emits: ['click'],
+        RouterLink: {
+          props: ['to'],
+          template: '<a :href="to"><slot /></a>',
         },
-        'v-card-title': { template: '<div><slot /></div>' },
       },
+    },
+    props: {
+      group: makeGroup(),
+      tenant: makeTenant(),
+      ...props,
     },
   })
 
 describe('GroupListCard.vue', () => {
-  describe('group info', () => {
-    it('renders the group name', () => {
-      const group = makeGroup({ name: 'Administrators' })
-      const wrapper = mountComponent({ group })
+  it('renders the group name', () => {
+    const group = makeGroup({ name: 'groupName' })
 
-      expect(wrapper.text()).toContain('Administrators')
-    })
+    renderComponent({ group })
+
+    expect(screen.getByText('groupName')).toBeInTheDocument()
   })
 
-  describe('click', () => {
-    it('emits click when the card is clicked', async () => {
-      const wrapper = mountComponent({ group: makeGroup() })
+  it('links to the group members page', async () => {
+    const group = makeGroup({ id: toGroupId('groupId') })
+    const tenant = makeTenant({ id: toTenantId('tenantId') })
 
-      await wrapper.find('div').trigger('click')
+    renderComponent({ group, tenant })
 
-      expect(wrapper.emitted('click')).toHaveLength(1)
-    })
+    expect(screen.getByRole('link')).toHaveAttribute(
+      'href',
+      '/tenants/tenantId/groups/groupId/members',
+    )
   })
 })

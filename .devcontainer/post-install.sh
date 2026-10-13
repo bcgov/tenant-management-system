@@ -19,3 +19,10 @@ npm run migrate
 echo "==> Installing frontend dependencies"
 cd "$REPOSITORY_ROOT/frontend"
 npm ci --ignore-scripts
+
+echo "==> Installing Playwright test dependencies"
+cd "$REPOSITORY_ROOT/tests/e2e"
+npm ci --ignore-scripts
+
+echo "==> Installing Playwright browsers"
+./node_modules/.bin/playwright install chromium

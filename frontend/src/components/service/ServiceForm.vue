@@ -133,7 +133,7 @@ const handleUpdateServiceRole = (
 <template>
   <v-container class="ms-6">
     <v-form ref="form" v-model="isFormValid">
-      <h4>1. Add a Connected Service</h4>
+      <h4>1. Add a connected service</h4>
 
       <v-row>
         <v-col cols="12" md="6">
@@ -154,7 +154,7 @@ const handleUpdateServiceRole = (
             required
           >
             <template #label>
-              Display Name
+              Display name
               <span class="text-error">*</span>
             </template>
           </v-text-field>
@@ -184,7 +184,7 @@ const handleUpdateServiceRole = (
             required
           >
             <template #label>
-              Client Identifier
+              Client identifier
               <span class="text-error">*</span>
             </template>
           </v-text-field>
@@ -200,7 +200,7 @@ const handleUpdateServiceRole = (
             required
           >
             <template #label>
-              Landing Page URL
+              Landing page URL
               <span class="text-error">*</span>
             </template>
           </v-text-field>
@@ -209,7 +209,7 @@ const handleUpdateServiceRole = (
 
       <v-divider class="my-12" />
 
-      <h4>2. Add Connected Service Roles</h4>
+      <h4>2. Add connected service roles</h4>
 
       <p>
         Define roles for this service. Roles control what users can access. Add
@@ -233,7 +233,7 @@ const handleUpdateServiceRole = (
 
       <v-divider class="my-12" />
 
-      <ButtonPrimary text="Create Connected Service" @click="handleSubmit" />
+      <ButtonPrimary text="Create connected service" @click="handleSubmit" />
       <p>Once created, this service will be available to all tenants.</p>
     </v-form>
   </v-container>

@@ -1,35 +1,34 @@
 <script setup lang="ts">
+/**
+ * Design decision: although cards are presentational components, their purpose
+ * is to navigate to a specific route. Since click events include not only plain
+ * clicks but also keyboard events and modified click like CTRL-click to open in
+ * a new tab, a router-link is the simplest way to handle all cases.
+ *
+ * In other words, this is a presentational component, but its interface is not
+ * just props and events, as it also includes the router.
+ */
+
 import { type Group } from '@/models/group.model'
+import { type Tenant } from '@/models/tenant.model'
 
 // --- Component Interface -----------------------------------------------------
 
-const { group } = defineProps<{
+const { group, tenant } = defineProps<{
   group: Group
-}>()
-
-const emit = defineEmits<{
-  (event: 'click'): void
+  tenant: Tenant
 }>()
 </script>
 
 <template>
-  <v-card
-    class="hoverable pb-4"
-    color="surface-light-gray"
-    @click="emit('click')"
+  <router-link
+    :to="`/tenants/${tenant.id}/groups/${group.id}/members`"
+    class="card-link"
   >
-    <v-card-title class="card-link">{{ group.name }}</v-card-title>
-  </v-card>
+    <v-card class="card pb-4 pt-2" color="surface-light-gray">
+      <v-card-title class="card-title">
+        {{ group.name }}
+      </v-card-title>
+    </v-card>
+  </router-link>
 </template>
-
-<style scoped>
-.card-link {
-  color: rgb(var(--v-theme-typography-link-color)) !important;
-  cursor: pointer;
-  transition: color 0.2s ease;
-}
-
-.card-link:hover {
-  color: rgb(var(--v-theme-typography-link-color-hover)) !important;
-}
-</style>

@@ -22,7 +22,7 @@ const authStore = useAuthStore()
         </p>
 
         <v-btn class="logout-btn mt-4" @click="authStore.logout()">
-          Log Out
+          Log out
         </v-btn>
       </div>
     </v-row>

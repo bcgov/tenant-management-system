@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { mdiPlusBox } from '@mdi/js'
+import { mdiPlus } from '@mdi/js'
 import { computed, ref } from 'vue'
 
 import GroupMemberTable from '@/components/group/GroupMemberTable.vue'
 import UserSearch from '@/components/group/UserSearch.vue'
-import FloatingActionButton from '@/components/ui/FloatingActionButton.vue'
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
 import { type Group } from '@/models/group.model'
@@ -91,7 +90,7 @@ const toggleSearch = () => {
   <v-container class="ms-6">
     <v-row>
       <v-col :cols="12">
-        <h4>Group Members</h4>
+        <h4>Group members</h4>
         <GroupMemberTable
           :group-members="group.groupUsers"
           :tenant="tenant"
@@ -106,9 +105,9 @@ const toggleSearch = () => {
       class="mt-4"
     >
       <v-col class="d-flex justify-start" cols="12">
-        <FloatingActionButton
-          :icon="mdiPlusBox"
-          text="Add Member to Group"
+        <ButtonPrimary
+          :prepend-icon="mdiPlus"
+          text="Add member to group"
           @click="toggleSearch"
         />
       </v-col>
@@ -118,7 +117,7 @@ const toggleSearch = () => {
       <div v-if="showSearch">
         <v-divider class="my-12" />
 
-        <h4 class="mb-4">Add a member to this Group</h4>
+        <h4 class="mb-4">Add a member to this group</h4>
 
         <p class="mb-2 mt-8">
           1. Search for a member based on the selection criteria below:
@@ -140,7 +139,7 @@ const toggleSearch = () => {
 
             <ButtonPrimary
               :disabled="!selectedMember"
-              text="Add Member"
+              text="Add member"
               @click="handleAddMember"
             />
           </v-col>

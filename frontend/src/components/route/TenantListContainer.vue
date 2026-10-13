@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { useRouter } from 'vue-router'
 
 import LoginContainer from '@/components/auth/LoginContainer.vue'
 import TenantList from '@/components/tenant/TenantList.vue'
@@ -10,7 +9,6 @@ import LoadingWrapper from '@/components/ui/LoadingWrapper.vue'
 import { useNotification } from '@/composables/useNotification'
 import { DomainError } from '@/errors/domain/DomainError'
 import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
-import { Tenant } from '@/models/tenant.model'
 import { type TenantRequestDetailFields } from '@/models/tenantrequest.model'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { useTenantRequestStore } from '@/stores/useTenantRequestStore'
@@ -20,14 +18,12 @@ import { useTenantStore } from '@/stores/useTenantStore'
 
 const authStore = useAuthStore()
 const notification = useNotification()
-const router = useRouter()
 const tenantRequestStore = useTenantRequestStore()
 const tenantStore = useTenantStore()
 
 // --- Component State ---------------------------------------------------------
 
 const dialogVisible = ref(false)
-
 const isDuplicateName = ref(false)
 
 // --- Computed Values ---------------------------------------------------------
@@ -43,10 +39,6 @@ const dialogClose = () => {
 
 const dialogOpen = () => (dialogVisible.value = true)
 
-const handleCardClick = (id: Tenant['id']) => {
-  router.push(`/tenants/${id}/services`)
-}
-
 const handleTenantSubmit = async (
   tenantRequestDetails: TenantRequestDetailFields,
 ) => {
@@ -55,8 +47,7 @@ const handleTenantSubmit = async (
       tenantRequestDetails,
       authStore.authenticatedUser,
     )
-    notification.success('Request successfully submitted')
-    isDuplicateName.value = false
+    notification.success('Tenant request submitted')
     dialogClose()
   } catch (error: unknown) {
     if (error instanceof DuplicateEntityError) {
@@ -107,14 +98,16 @@ init() // NOSONAR
       :loading="!initialized"
       loading-message="Loading tenants..."
     >
+      <h1>All tenants</h1>
+
       <v-container v-if="tenants.length === 0" class="fill-height">
         <v-row class="center-align justify-center">
           <v-col class="align-center d-flex flex-column" cols="auto">
-            <h1>No tenants yet</h1>
+            <h2>No tenants yet</h2>
             <p class="p-large">You don't currently have access to a tenant.</p>
 
             <p>
-              <ButtonPrimary text="Request a Tenant" @click="dialogOpen" />
+              <ButtonPrimary text="Request a tenant" @click="dialogOpen" />
             </p>
 
             <span class="mt-12 p-small">
@@ -130,10 +123,10 @@ init() // NOSONAR
       <template v-else>
         <v-row class="mb-8 mt-12">
           <v-col cols="12">
-            <ButtonPrimary text="Request a Tenant" @click="dialogOpen" />
+            <ButtonPrimary text="Request a tenant" @click="dialogOpen" />
           </v-col>
         </v-row>
-        <TenantList :tenants="tenants" @select="handleCardClick" />
+        <TenantList :tenants="tenants" />
       </template>
     </LoadingWrapper>
   </LoginContainer>
@@ -141,6 +134,7 @@ init() // NOSONAR
   <TenantRequestDialog
     v-model="dialogVisible"
     :is-duplicate-name="isDuplicateName"
+    @cancel="dialogClose"
     @clear-duplicate-error="isDuplicateName = false"
     @submit="handleTenantSubmit"
   />

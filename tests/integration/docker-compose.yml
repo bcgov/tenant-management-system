@@ -7,6 +7,11 @@ services:
         condition: service_healthy
     environment:
       ALLOWED_ORIGINS: http://localhost:3000
+      ASSERTION_EXPIRES_IN_SECONDS: '300'
+      ASSERTION_ISSUER: http://localhost:7001
+      ASSERTION_KEY_ID: integration-test-key
+      ASSERTION_PRIVATE_KEY: ${ASSERTION_PRIVATE_KEY}
+      ASSERTION_PUBLIC_KEY: ${ASSERTION_PUBLIC_KEY}
       BCGOV_SSO_API_CLIENT_ID: test-client-id
       BCGOV_SSO_API_CLIENT_SECRET: test-client-secret
       BCGOV_SSO_API_URL: http://localhost/sso

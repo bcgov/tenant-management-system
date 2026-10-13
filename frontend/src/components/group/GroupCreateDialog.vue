@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { mdiClose } from '@mdi/js'
 import { nextTick, ref, watch } from 'vue'
 import { VForm } from 'vuetify/components'
 
@@ -9,7 +8,7 @@ import { type GroupDetailFields } from '@/models/group.model'
 
 // --- Component Interface -----------------------------------------------------
 
-const props = defineProps<{
+const { isDuplicateName } = defineProps<{
   isDuplicateName: boolean
 }>()
 
@@ -35,8 +34,12 @@ const isFormValid = ref(false)
 // When parent sets the duplicated name flag, force re-validation so that the
 // message is displayed.
 watch(
-  () => props.isDuplicateName,
-  async () => {
+  () => isDuplicateName,
+  async (newVal) => {
+    if (!newVal) {
+      return
+    }
+
     await nextTick()
     await form.value?.validate()
   },
@@ -70,7 +73,7 @@ watch(
 
 const dialogClose = () => (dialogVisible.value = false)
 
-const handleSubmit = () => {
+const handleCreate = () => {
   form.value?.validate()
 
   if (isFormValid.value) {
@@ -86,7 +89,7 @@ const rules = {
   maxLength: (max: number) => (value: string) =>
     !value || value.length <= max || `Must be ${max} characters or less`,
   notDuplicated: () =>
-    !props.isDuplicateName ||
+    !isDuplicateName ||
     'This name is already in use. Please choose a unique group name.',
   required: (value: string) => {
     if (!value) {
@@ -106,12 +109,7 @@ const rules = {
   <v-dialog v-model="dialogVisible" max-width="600px">
     <v-card class="pa-6">
       <v-card-title class="align-center d-flex justify-space-between">
-        Create a Group
-        <v-btn
-          :icon="mdiClose"
-          variant="plain"
-          @click="dialogVisible = false"
-        ></v-btn>
+        Create a group
       </v-card-title>
       <v-card-subtitle class="my-6 text-wrap">
         Groups let you manage access for multiple users at once. Assign roles to
@@ -124,16 +122,16 @@ const rules = {
             <v-col>
               <v-text-field
                 v-model="formData.name"
-                :maxlength="30"
                 :rules="[
                   rules.required,
-                  rules.maxLength(30),
+                  rules.maxLength(150),
                   rules.notDuplicated,
                 ]"
+                counter="150"
                 required
               >
                 <template #label>
-                  Group Name <span class="text-error">*</span>
+                  Group name <span class="text-error">*</span>
                 </template>
               </v-text-field>
             </v-col>
@@ -149,7 +147,7 @@ const rules = {
                 required
               >
                 <template #label>
-                  Group Description <span class="text-error">*</span>
+                  Group description <span class="text-error">*</span>
                 </template>
               </v-textarea>
             </v-col>
@@ -166,7 +164,7 @@ const rules = {
       </v-card-text>
       <v-card-actions class="d-flex justify-end">
         <ButtonSecondary class="me-4" text="Cancel" @click="dialogClose" />
-        <ButtonPrimary text="Submit" @click="handleSubmit" />
+        <ButtonPrimary text="Create group" @click="handleCreate" />
       </v-card-actions>
     </v-card>
   </v-dialog>

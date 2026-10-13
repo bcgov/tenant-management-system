@@ -9,7 +9,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "test:e2e": "node --env-file=.env ./node_modules/@playwright/test/cli.js test",
-    "test:e2e:headed": "node --env-file=.env ./node_modules/@playwright/test/cli.js test --headed"
+    "test:e2e:headed": "node --env-file=.env ./node_modules/@playwright/test/cli.js test --headed",
+    "test:e2e:mode": "node --env-file=.env ./run-e2e.mjs"
   },
   "keywords": [],
   "author": "",

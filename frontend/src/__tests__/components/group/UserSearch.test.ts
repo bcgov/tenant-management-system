@@ -145,7 +145,7 @@ describe('UserSearch', () => {
       renderComponent()
 
       expect(
-        screen.queryByRole('heading', { name: 'Search Results' }),
+        screen.queryByRole('heading', { name: 'Search results' }),
       ).not.toBeInTheDocument()
     })
 
@@ -156,7 +156,7 @@ describe('UserSearch', () => {
       })
 
       expect(
-        screen.getByRole('heading', { name: 'Search Results' }),
+        screen.getByRole('heading', { name: 'Search results' }),
       ).toBeInTheDocument()
     })
 
@@ -167,7 +167,7 @@ describe('UserSearch', () => {
       })
 
       expect(
-        screen.getByRole('heading', { name: 'Search Results' }),
+        screen.getByRole('heading', { name: 'Search results' }),
       ).toBeInTheDocument()
     })
   })
@@ -240,12 +240,12 @@ describe('UserSearch', () => {
 
       await user.click(screen.getByRole('button', { name: 'Select user' }))
 
-      expect(screen.getByText('Member Already Added')).toBeInTheDocument()
+      expect(screen.getByText('Member already added')).toBeInTheDocument()
 
       await user.click(screen.getByRole('button', { name: 'OK' }))
 
       await waitFor(() =>
-        expect(screen.getByText('Member Already Added')).not.toBeVisible(),
+        expect(screen.getByText('Member already added')).not.toBeVisible(),
       )
     })
   })

@@ -1,26 +1,16 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
-import GroupHeaderContainer from '@/components/route/GroupHeaderContainer.vue'
-import GroupListContainer from '@/components/route/GroupListContainer.vue'
-import GroupRoleContainer from '@/components/route/GroupRoleContainer.vue'
-import GroupMemberContainer from '@/components/route/GroupMemberContainer.vue'
 import LandingPageContainer from '@/components/route/LandingPageContainer.vue'
-import LandingPageBceidContainer from '@/components/route/LandingPageBceidContainer.vue'
-import SettingsServiceContainer from '@/components/route/SettingsServiceContainer.vue'
-import SettingsTenantRequestContainer from '@/components/route/SettingsTenantRequestContainer.vue'
-import TenantHeaderContainer from '@/components/route/TenantHeaderContainer.vue'
-import TenantListContainer from '@/components/route/TenantListContainer.vue'
-import TenantServiceContainer from '@/components/route/TenantServiceContainer.vue'
-import TenantUserContainer from '@/components/route/TenantUserContainer.vue'
 
 const routes = [
   {
     path: '/',
+    // Eagerly load this since it's the entry point route.
     component: LandingPageContainer,
   },
   {
     path: '/bceid',
-    component: LandingPageBceidContainer,
+    component: () => import('@/components/route/LandingPageBceidContainer.vue'),
   },
   {
     path: '/settings',
@@ -28,45 +18,47 @@ const routes = [
     children: [
       {
         path: 'requests',
-        component: SettingsTenantRequestContainer,
+        component: () =>
+          import('@/components/route/SettingsTenantRequestContainer.vue'),
       },
       {
         path: 'services',
-        component: SettingsServiceContainer,
+        component: () =>
+          import('@/components/route/SettingsServiceContainer.vue'),
       },
     ],
   },
   {
     path: '/tenants',
-    component: TenantListContainer,
+    component: () => import('@/components/route/TenantListContainer.vue'),
   },
   {
     path: '/tenants/:tenantId',
-    component: TenantHeaderContainer,
+    component: () => import('@/components/route/TenantHeaderContainer.vue'),
 
     props: true,
     children: [
       {
         path: 'groups',
-        component: GroupListContainer,
-
+        component: () => import('@/components/route/GroupListContainer.vue'),
         props: true,
       },
       {
         path: 'groups/:groupId',
-        component: GroupHeaderContainer,
-
+        component: () => import('@/components/route/GroupHeaderContainer.vue'),
         props: true,
         children: [
           {
             path: 'members',
-            component: GroupMemberContainer,
+            component: () =>
+              import('@/components/route/GroupMemberContainer.vue'),
 
             props: true,
           },
           {
             path: 'roles',
-            component: GroupRoleContainer,
+            component: () =>
+              import('@/components/route/GroupRoleContainer.vue'),
 
             props: true,
           },
@@ -74,14 +66,13 @@ const routes = [
       },
       {
         path: 'services',
-        component: TenantServiceContainer,
-
+        component: () =>
+          import('@/components/route/TenantServiceContainer.vue'),
         props: true,
       },
       {
         path: 'users',
-        component: TenantUserContainer,
-
+        component: () => import('@/components/route/TenantUserContainer.vue'),
         props: true,
       },
     ],

@@ -2,6 +2,7 @@ import { Application, NextFunction, Request, Response } from 'express'
 import { RoutesConstants } from '../common/routes.constants'
 import { sharedServiceController } from '../controllers/shared-service.controller'
 import { tenantRequestController } from '../controllers/tenant-request.controller'
+import { assertionController } from '../controllers/assertion.controller'
 import { groupController } from '../controllers/group.controller'
 import { ssoSearchController } from '../controllers/sso-search.controller'
 import { tenantController } from '../controllers/tenant.controller'
@@ -20,7 +21,7 @@ export class Routes {
       res.redirect('/docs')
     })
 
-    app.get('/v1/swagger-resources/*', (req: Request, res: Response) => {
+    app.get('/v1/swagger-resources/*rest', (req: Request, res: Response) => {
       const path = req.path.replace('/v1/swagger-resources', '')
       res.redirect(`/swagger-resources${path}`)
     })
@@ -103,6 +104,7 @@ export class Routes {
       .get(
         checkJwt(),
         validate(validator.getUserRoles, {}, {}),
+        checkTenantAccess([]),
         (req: Request, res: Response) =>
           tenantController.getUserRoles(req, res),
       )
@@ -347,6 +349,27 @@ export class Routes {
         checkTenantAccess([TMSConstants.TENANT_OWNER, TMSConstants.USER_ADMIN]),
         (req: Request, res: Response) =>
           tenantController.getTenantUser(req, res),
+      )
+
+    app
+      .route(RoutesConstants.JWKS)
+      .get((req: Request, res: Response) =>
+        assertionController.getJwks(req, res),
+      )
+    app
+      .route(RoutesConstants.CREATE_ASSERTION)
+      .post(
+        checkJwt({ sharedServiceAccess: true }),
+        validate(validator.createAssertion, {}, {}),
+        (req: Request, res: Response) =>
+          assertionController.createAssertion(req, res),
+      )
+    app
+      .route(RoutesConstants.VERIFY_ASSERTION)
+      .get(
+        checkJwt({ sharedServiceAccess: true }),
+        (req: Request, res: Response) =>
+          assertionController.verifyAssertion(req, res),
       )
 
     app.use(jwtErrorHandler)

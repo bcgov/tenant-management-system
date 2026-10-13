@@ -96,7 +96,7 @@ const handleSubmit = async () => {
     if (formData.status === TENANT_REQUEST_STATUS.APPROVED.value) {
       isNameEditable.value = false
       emit('approved', formData.name.trim())
-    } else if (formData.status === TENANT_REQUEST_STATUS.REJECTED.value) {
+    } else {
       emit('rejected', formData.rejectionNotes.trim())
     }
 
@@ -129,67 +129,65 @@ const rules = {
 
 <template>
   <v-container class="pa-6">
-    <h4 class="mb-12">Tenant Request: {{ tenantRequest.name }}</h4>
+    <h4 class="mb-12 text-wrap">Tenant request: {{ tenantRequest.name }}</h4>
 
     <v-form ref="form" v-model="isFormValid">
       <v-row>
         <v-col cols="12" md="4">
           <v-text-field
             :model-value="tenantRequest.createdBy"
-            label="Requested By"
+            label="Requested by"
             disabled
           />
         </v-col>
         <v-col cols="12" md="5">
           <v-text-field
             :model-value="tenantRequest.ministryName"
-            label="Ministry/Organization"
+            label="Ministry/organization"
             disabled
           />
         </v-col>
         <v-col cols="12" md="3">
           <v-text-field
             :model-value="tenantRequest.createdDate"
-            label="Date of Request (YYYY-MM-DD)"
+            label="Date of request"
             disabled
           />
         </v-col>
       </v-row>
-      <v-row>
-        <v-col cols="12" md="4">
-          <v-text-field
-            v-if="isReadonly || !isNameEditable"
-            :model-value="tenantRequest.name"
-            label="Name of Tenant"
-            disabled
-          />
-          <v-text-field
-            v-else
-            v-model="formData.name"
-            :maxlength="30"
-            :rules="[
-              rules.required,
-              rules.maxLength(30),
-              rules.notDuplicated,
-              rules.notSameName,
-            ]"
-            variant="outlined"
-          >
-            <template #label>
-              Name of Tenant <span class="text-error">*</span>
-            </template>
-          </v-text-field>
-        </v-col>
-        <v-col cols="12" md="8">
-          <v-textarea
-            :model-value="tenantRequest.description"
-            label="Description of Tenant"
-            rows="1"
-            auto-grow
-            disabled
-          ></v-textarea>
-        </v-col>
-      </v-row>
+
+      <v-textarea
+        v-if="isReadonly || !isNameEditable"
+        :model-value="tenantRequest.name"
+        label="Name of tenant"
+        rows="1"
+        auto-grow
+        disabled
+      />
+      <v-text-field
+        v-else
+        v-model="formData.name"
+        :rules="[
+          rules.required,
+          rules.maxLength(150),
+          rules.notDuplicated,
+          rules.notSameName,
+        ]"
+        counter="150"
+        variant="outlined"
+      >
+        <template #label>
+          Name of tenant <span class="text-error">*</span>
+        </template>
+      </v-text-field>
+
+      <v-textarea
+        :model-value="tenantRequest.description"
+        label="Description of tenant"
+        rows="1"
+        auto-grow
+        disabled
+      />
 
       <v-row>
         <v-col cols="12" md="4">
@@ -204,6 +202,7 @@ const rules = {
             v-model="formData.status"
             :items="statusOptions"
             :rules="[rules.required]"
+            autocomplete="off"
             variant="outlined"
           >
             <template #label>
@@ -216,7 +215,7 @@ const rules = {
           <v-textarea
             v-if="isReadonly"
             :model-value="tenantRequest.rejectionReason"
-            label="Rejection Notes"
+            label="Rejection notes"
             rows="1"
             auto-grow
             disabled
@@ -232,7 +231,7 @@ const rules = {
             auto-grow
           >
             <template #label>
-              Rejection Notes <span class="text-error">*</span>
+              Rejection notes <span class="text-error">*</span>
             </template>
           </v-textarea>
         </v-col>
@@ -245,7 +244,7 @@ const rules = {
             <ButtonSecondary class="me-4" text="Cancel" @click="handleCancel" />
             <ButtonPrimary
               v-if="!isReadonly"
-              text="Submit"
+              text="Update status"
               @click="handleSubmit"
             />
           </div>
@@ -254,3 +253,9 @@ const rules = {
     </v-form>
   </v-container>
 </template>
+
+<style lang="css" scoped>
+.text-wrap {
+  overflow-wrap: break-word;
+}
+</style>

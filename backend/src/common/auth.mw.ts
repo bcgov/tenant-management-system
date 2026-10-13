@@ -82,7 +82,7 @@ const createJwtMiddleware = (options: CheckJwtOptions = {}) => {
       }
       throw new UnauthorizedError('Bearer token is missing or invalid')
     },
-  }).unless({ path: [RoutesConstants.HEALTH] })
+  }).unless({ path: [RoutesConstants.HEALTH, RoutesConstants.JWKS] })
 }
 
 export const checkJwt = (options: CheckJwtOptions = {}) => {
@@ -102,7 +102,7 @@ export const checkJwt = (options: CheckJwtOptions = {}) => {
       if (req.params.ssoUserId && !options.skipSsoUserParamMatch) {
         const tokenUserId: string | undefined =
           req.decodedJwt?.idir_user_guid || req.decodedJwt?.bceid_user_guid
-        const requestedUserId: string = req.params.ssoUserId
+        const requestedUserId: string = req.params.ssoUserId as string
 
         if (tokenUserId !== requestedUserId) {
           logger.error('JWT user does not match requested user', {

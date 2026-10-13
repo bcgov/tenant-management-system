@@ -13,7 +13,7 @@ import {
   makeUser,
 } from '@/__tests__/__factories__'
 
-import { Group, toGroupId } from '@/models/group.model'
+import { Group, type GroupDetailFields, toGroupId } from '@/models/group.model'
 import { toGroupServiceId } from '@/models/groupservice.model'
 import { GroupUser, toGroupUserId } from '@/models/groupuser.model'
 import { toServiceId } from '@/models/service.model'
@@ -21,6 +21,7 @@ import { toTenantId } from '@/models/tenant.model'
 import { groupService } from '@/services/group.service'
 import { serviceService } from '@/services/service.service'
 import { useGroupStore } from '@/stores/useGroupStore'
+import type { GroupApiData } from '@/mappers/group.mapper'
 import { toGroupServiceRoleId } from '@/models/groupservicerole.model'
 
 vi.mock('@/services/group.service', () => ({
@@ -447,6 +448,53 @@ describe('useGroupStore', () => {
 
       expect(store.groups[0].groupUsers).toHaveLength(1)
       expect(store.groups[0].groupUsers[0].id).toBe('groupUserId')
+    })
+  })
+
+  describe('updateGroupDetails', () => {
+    it('updates name and description on the local group object', async () => {
+      const store = useGroupStore()
+      const group = makeGroup({
+        createdBy: 'groupCreatedBy',
+        createdDate: 'groupCreatedDate',
+        description: 'groupDescription',
+        id: toGroupId('groupId'),
+        name: 'groupName',
+      })
+      store.groups = [group]
+      const updatedData: GroupApiData = {
+        createdBy: group.createdBy,
+        createdDateTime: group.createdDate,
+        description: 'groupDescriptionNew',
+        id: group.id,
+        name: 'groupNameNew',
+      }
+      vi.mocked(groupService.updateGroup).mockResolvedValue(updatedData)
+
+      const updatedGroup = await store.updateGroupDetails(
+        toTenantId('tenantId'),
+        group.id,
+        {
+          description: 'groupDescriptionNew',
+          name: 'groupNameNew',
+        },
+      )
+
+      expect(store.groups[0].description).toBe('groupDescriptionNew')
+      expect(store.groups[0].name).toBe('groupNameNew')
+      expect(updatedGroup.description).toBe('groupDescriptionNew')
+      expect(updatedGroup.name).toBe('groupNameNew')
+    })
+
+    it('throws when group is not in the store', async () => {
+      const store = useGroupStore()
+
+      await expect(
+        store.updateGroupDetails(toTenantId('tenantId'), toGroupId('groupId'), {
+          description: '',
+          name: '',
+        } as GroupDetailFields),
+      ).rejects.toThrow('Group with ID groupId not found')
     })
   })
 

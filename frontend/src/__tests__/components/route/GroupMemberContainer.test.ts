@@ -1,6 +1,7 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { ref } from 'vue'
 
 import {
   makeGroup,
@@ -60,14 +61,15 @@ describe('GroupMemberContainer', () => {
     userSearchStore = useUserSearchStore()
 
     notificationMock = {
-      items: [],
+      messages: ref([]),
 
+      dismiss: vi.fn(),
       error: vi.fn(),
       info: vi.fn(),
-      remove: vi.fn(),
       success: vi.fn(),
       warning: vi.fn(),
     }
+
     vi.mocked(useNotification).mockReturnValue(notificationMock)
   })
 
@@ -99,10 +101,7 @@ describe('GroupMemberContainer', () => {
         'groupId1',
         user,
       )
-      expect(notificationMock.success).toHaveBeenCalledWith(
-        'New member successfully added to this group',
-        'Member Added',
-      )
+      expect(notificationMock.success).toHaveBeenCalledWith('Member added')
       expect(child(wrapper).props('searchResults')).toBeNull()
     })
 
@@ -169,10 +168,7 @@ describe('GroupMemberContainer', () => {
         toGroupId('groupId1'),
         'groupUserId1',
       )
-      expect(notificationMock.success).toHaveBeenCalledWith(
-        'Member successfully removed from this group',
-        'Member Removed',
-      )
+      expect(notificationMock.success).toHaveBeenCalledWith('Member removed')
     })
 
     it('shows error notification when removeGroupUser fails', async () => {
@@ -225,7 +221,9 @@ describe('GroupMemberContainer', () => {
       )
       await flushPromises()
 
-      expect(notificationMock.error).toHaveBeenCalledWith('User search failed')
+      expect(notificationMock.error).toHaveBeenCalledWith(
+        'Member search failed',
+      )
     })
   })
 

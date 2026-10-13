@@ -9,7 +9,6 @@ import GroupListContainer from '@/components/route/GroupListContainer.vue'
 import { DomainError } from '@/errors/domain/DomainError'
 import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
 import { ServerError } from '@/errors/domain/ServerError'
-import { toGroupId } from '@/models/group.model'
 import { toTenantId } from '@/models/tenant.model'
 import { toUserId } from '@/models/user.model'
 import { useGroupStore } from '@/stores/useGroupStore'
@@ -17,14 +16,7 @@ import { useTenantStore } from '@/stores/useTenantStore'
 import { currentUserHasRole } from '@/utils/permissions'
 
 const mockError = vi.fn()
-const mockPush = vi.fn()
 const mockSuccess = vi.fn()
-
-vi.mock('vue-router', () => ({
-  useRouter: () => ({
-    push: mockPush,
-  }),
-}))
 
 vi.mock('@/composables/useNotification', () => ({
   useNotification: () => ({
@@ -66,9 +58,8 @@ const mountComponent = () =>
           template: '<div />',
         },
         GroupList: {
-          emits: ['select'],
           name: 'GroupList',
-          props: ['groups'],
+          props: ['groups', 'tenant'],
           template: '<div />',
         },
         LoginContainer: {
@@ -176,21 +167,6 @@ describe('GroupListContainer', () => {
     })
   })
 
-  describe('navigation', () => {
-    it('navigates to group members when group selected', async () => {
-      groupStore.groups = [makeGroup({ id: toGroupId('groupId1') })]
-
-      const wrapper = mountComponent()
-      await wrapper
-        .findComponent({ name: 'GroupList' })
-        .vm.$emit('select', 'groupId1')
-
-      expect(mockPush).toHaveBeenCalledWith(
-        '/tenants/tenantId1/groups/groupId1/members',
-      )
-    })
-  })
-
   describe('dialog', () => {
     it('opens create dialog when create button clicked', async () => {
       vi.mocked(currentUserHasRole).mockReturnValue(true)
@@ -248,7 +224,7 @@ describe('GroupListContainer', () => {
 
       expect(groupStore.addGroup).toHaveBeenCalled()
       expect(groupStore.addGroupUser).not.toHaveBeenCalled()
-      expect(mockSuccess).toHaveBeenCalledWith('Group Created Successfully')
+      expect(mockSuccess).not.toHaveBeenCalled()
     })
 
     it('shows group duplicate error', async () => {
@@ -385,7 +361,7 @@ describe('GroupListContainer', () => {
       await flushPromises()
 
       expect(mockError).toHaveBeenCalledWith(
-        'Failed to add the user to the new group',
+        'Failed to add the member to the new group',
       )
     })
   })

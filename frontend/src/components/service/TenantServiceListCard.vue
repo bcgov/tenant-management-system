@@ -5,7 +5,7 @@ import { type Service } from '@/models/service.model'
 
 // --- Component Interface -----------------------------------------------------
 
-defineProps<{
+const { service } = defineProps<{
   service: Service
 }>()
 </script>

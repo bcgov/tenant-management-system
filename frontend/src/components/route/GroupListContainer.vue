@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { useRouter } from 'vue-router'
 
 import LoginContainer from '@/components/auth/LoginContainer.vue'
 import GroupCreateDialog from '@/components/group/GroupCreateDialog.vue'
@@ -29,7 +28,6 @@ const { tenantId } = defineProps<{
 const authStore = useAuthStore()
 const groupStore = useGroupStore()
 const notification = useNotification()
-const router = useRouter()
 const tenantStore = useTenantStore()
 
 // --- Component State ---------------------------------------------------------
@@ -68,10 +66,6 @@ const dialogClose = () => {
 
 const dialogOpen = () => (dialogVisible.value = true)
 
-const handleCardClick = (id: Group['id']) => {
-  router.push(`/tenants/${tenantId}/groups/${id}/members`)
-}
-
 const handleGroupCreate = async (
   groupDetails: GroupDetailFields,
   addUser: boolean,
@@ -84,9 +78,6 @@ const handleGroupCreate = async (
       groupDetails.name,
       groupDetails.description,
     )
-
-    isDuplicateName.value = false
-    notification.success('Group Created Successfully')
     dialogClose()
   } catch (error: unknown) {
     if (error instanceof DuplicateEntityError) {
@@ -120,7 +111,7 @@ const handleGroupCreate = async (
         authStore.authenticatedUser,
       )
 
-      notification.success('User added to Group Successfully')
+      notification.success('Member added')
     } catch (error: unknown) {
       if (error instanceof DomainError && error.userMessage) {
         // For any other API Domain Error, display the user message that comes
@@ -129,7 +120,7 @@ const handleGroupCreate = async (
         notification.error(error.userMessage)
       } else {
         // Otherwise display a generic error message.
-        notification.error('Failed to add the user to the new group')
+        notification.error('Failed to add the member to the new group')
       }
     }
   }
@@ -145,11 +136,11 @@ const handleGroupCreate = async (
         <ButtonPrimary
           v-if="isUserAdmin"
           class="mb-12"
-          text="Create a Group"
+          text="Create a group"
           @click="dialogOpen"
         />
 
-        <GroupList :groups="groups" @select="handleCardClick" />
+        <GroupList :groups="groups" :tenant="tenant" />
       </template>
       <v-container v-else class="fill-height">
         <v-row class="center-align justify-center">
@@ -163,7 +154,7 @@ const handleGroupCreate = async (
             </p>
 
             <p v-if="isUserAdmin">
-              <ButtonPrimary text="Create a Group" @click="dialogOpen" />
+              <ButtonPrimary text="Create a group" @click="dialogOpen" />
             </p>
 
             <span class="mt-12 p-small">

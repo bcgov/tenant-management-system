@@ -26,10 +26,11 @@ mockedUtils.isDuplicateEntityError.mockReturnValue(false)
 mockedUtils.isValidationError.mockReturnValue(false)
 mockedUtils.logApiError.mockImplementation(() => {})
 
-const { mockDelete, mockGet, mockPost } = vi.hoisted(() => ({
+const { mockDelete, mockGet, mockPost, mockPut } = vi.hoisted(() => ({
   mockDelete: vi.fn(),
   mockGet: vi.fn(),
   mockPost: vi.fn(),
+  mockPut: vi.fn(),
 }))
 
 vi.mock('@/services/authenticated.axios', () => ({
@@ -37,6 +38,7 @@ vi.mock('@/services/authenticated.axios', () => ({
     delete: mockDelete,
     get: mockGet,
     post: mockPost,
+    put: mockPut,
   }),
 }))
 
@@ -415,6 +417,93 @@ describe('groupService', () => {
       expect(mockedUtils.logApiError).toHaveBeenCalledWith(
         'Error removing user from group',
         error,
+      )
+    })
+  })
+
+  describe('updateGroup', () => {
+    const updatedName = 'Updated Group Name'
+    const updatedDescription = 'Updated description'
+
+    it('should return the updated group on success', async () => {
+      const updatedGroup = makeGroupApiData({
+        description: updatedDescription,
+        name: updatedName,
+      })
+      mockPut.mockResolvedValueOnce({ data: { data: { group: updatedGroup } } })
+
+      const result = await groupService.updateGroup(
+        toTenantId('tenantId'),
+        toGroupId('groupId'),
+        updatedName,
+        updatedDescription,
+      )
+
+      expect(result).toEqual(updatedGroup)
+      expect(mockPut).toHaveBeenCalledWith(`/tenants/tenantId/groups/groupId`, {
+        name: updatedName,
+        description: updatedDescription,
+      })
+    })
+
+    it('should throw DuplicateEntityError on HTTP 409', async () => {
+      const error = {
+        isAxiosError: true,
+        response: {
+          status: 409,
+          data: { message: 'Group name already exists' },
+        },
+      }
+      mockPut.mockRejectedValueOnce(error)
+      mockedUtils.isDuplicateEntityError.mockReturnValueOnce(true)
+
+      await expect(
+        groupService.updateGroup(
+          toTenantId('tenantId'),
+          toGroupId('groupId'),
+          updatedName,
+          updatedDescription,
+        ),
+      ).rejects.toBeInstanceOf(DuplicateEntityError)
+    })
+
+    it('should throw ValidationError on HTTP 400 with validation errors', async () => {
+      const error = {
+        isAxiosError: true,
+        response: {
+          status: 400,
+          data: { details: { body: [{ message: 'Name cannot be empty' }] } },
+        },
+      }
+      mockPut.mockRejectedValueOnce(error)
+      mockedUtils.isValidationError.mockReturnValueOnce(true)
+
+      await expect(
+        groupService.updateGroup(
+          toTenantId('tenantId'),
+          toGroupId('groupId'),
+          updatedName,
+          updatedDescription,
+        ),
+      ).rejects.toBeInstanceOf(ValidationError)
+    })
+
+    it('should log and rethrow unknown errors', async () => {
+      const genericError = new Error('Database connection failed')
+      mockPut.mockRejectedValueOnce(genericError)
+
+      await expect(
+        groupService.updateGroup(
+          toTenantId('tenantId'),
+          toGroupId('groupId'),
+          updatedName,
+          updatedDescription,
+        ),
+      ).rejects.toThrow(genericError)
+
+      expect(mockedUtils.logApiError).toHaveBeenCalledWith(
+        'Error updating group',
+        genericError,
       )
     })
   })

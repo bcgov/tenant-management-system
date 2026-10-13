@@ -1,17 +1,18 @@
 {
-  "extends": "@tsconfig/node22/tsconfig.json",
   "compilerOptions": {
-    "outDir": "./dist",
     "emitDecoratorMetadata": true,
-    "experimentalDecorators": true,
-    "sourceMap": true,
     "esModuleInterop": true,
-    "strict": true,
+    "experimentalDecorators": true,
+    "outDir": "./dist",
     "resolveJsonModule": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "sourceMap": true,
+    "strict": true,
+    "types": ["node", "jest"]
   },
+  "extends": "@tsconfig/node24/tsconfig.json",
+  "include": ["src"],
   "ts-node": {
     "files": true
-  },
-  "include": ["src"]
+  }
 }

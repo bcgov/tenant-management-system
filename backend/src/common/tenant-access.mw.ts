@@ -8,7 +8,7 @@ import { config } from '../services/config.service'
 export const checkTenantAccess = (requiredRoles?: string[]) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const tenantId: string = req.params.tenantId
+      const tenantId: string = req.params.tenantId as string
 
       if (req.isSharedServiceAccess) {
         const clientIdentifier = req.decodedJwt?.aud

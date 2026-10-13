@@ -1,6 +1,8 @@
 import { test, expect, Page, Browser } from '@playwright/test'
 import { MINISTRIES } from '../../../frontend/src/utils/constants'
 
+const authMode = process.env.E2E_AUTH_MODE ?? 'keycloak'
+
 let sharedPage: Page
 
 test.beforeAll(async ({ browser }: { browser: Browser }) => {
@@ -8,7 +10,7 @@ test.beforeAll(async ({ browser }: { browser: Browser }) => {
     storageState: 'support/user.json',
   })
   sharedPage = await context.newPage()
-  await sharedPage.goto('/')
+  await sharedPage.goto('/tenants')
 })
 
 test.describe.serial('Landing page tests', () => {
@@ -16,7 +18,9 @@ test.describe.serial('Landing page tests', () => {
     await expect(sharedPage.getByText('Logout')).toBeVisible()
   })
   test('Checks the navigation links', async () => {
-    await expect(sharedPage.getByText('All Tenants')).toBeVisible()
+    await expect(
+      sharedPage.getByRole('link', { name: 'all tenants' }),
+    ).toBeVisible()
     await expect(sharedPage.getByText('Request a Tenant')).toBeVisible()
   })
   test('Submit tenant request under a Ministry', async () => {
@@ -46,9 +50,29 @@ test.describe.serial('Landing page tests', () => {
       .click()
     const tenantDescription = sharedPage.getByLabel('Description of Tenant')
     await tenantDescription.fill('Test Tenant Description')
-    await sharedPage.getByText('Submit Request').click()
-    await expect(sharedPage.getByText('Success')).toBeVisible()
+    await sharedPage
+      .getByRole('button', { name: 'Create tenant request' })
+      .click()
+
+    const snackbarTenantRequestSubmitted = sharedPage
+      .getByRole('alert')
+      .filter({ hasText: /tenant request submitted/i })
+    await expect(snackbarTenantRequestSubmitted).toBeVisible()
+    await snackbarTenantRequestSubmitted
+      .getByText(/tenant request submitted/i)
+      .click()
+    await expect(snackbarTenantRequestSubmitted).toBeHidden()
+
     await sharedPage.getByText('settings').click()
+
+    const combobox = sharedPage.getByRole('combobox', {
+      name: /items per page/i,
+    })
+    await combobox.focus()
+    await combobox.press('ArrowDown')
+    await expect(combobox).toHaveAttribute('aria-expanded', 'true')
+    await sharedPage.getByRole('option', { name: 'All', exact: true }).click()
+
     await sharedPage
       .locator('td', { hasText: tenantNameValue })
       .locator('xpath=following-sibling::td[1]')
@@ -66,18 +90,18 @@ test.describe.serial('Landing page tests', () => {
     ).toBeVisible()
     await sharedPage.getByText('Approved', { exact: true }).click()
     // Approve Tenant request
-    await sharedPage.getByRole('button', { name: 'Submit' }).click()
-    await expect(sharedPage.getByText('Success')).toBeVisible()
-    await expect(
-      sharedPage.getByText('Tenant request has been successfully updated'),
-    ).toBeVisible()
+    await sharedPage.getByRole('button', { name: 'Update status' }).click()
     // Check visibility of approved tenant in All Tenants list
-    await sharedPage.getByText('All Tenants').click()
+    await sharedPage.getByRole('link', { name: 'all tenants' }).click()
     await expect(sharedPage.getByText('Request a Tenant')).toBeVisible()
     await expect(sharedPage.getByText(tenantNameValue)).toBeVisible()
     await sharedPage.getByText(tenantNameValue).click()
   })
   test('Checks the tenant users page', async () => {
+    test.skip(
+      authMode !== 'idir',
+      'This test requires the IDIR test account and data',
+    )
     await sharedPage.getByText('Tenant Users').click()
     await expect(sharedPage.getByText('Groups', { exact: true })).toBeVisible()
     await expect(
@@ -115,18 +139,23 @@ test.describe.serial('Landing page tests', () => {
         name: 'Open Menu for CHEFS Testing',
       }),
     ).toBeEnabled()
-    const addUserButton = sharedPage.getByTestId('floating-action-button')
-    await expect(addUserButton).toContainText('Add another user to this tenant')
+    const addUserButton = sharedPage.getByRole('button', {
+      name: 'Add user to tenant',
+    })
     await expect(addUserButton).toBeEnabled()
     await addUserButton.click()
   })
   test('Checks the IDIR User search', async () => {
+    test.skip(
+      authMode !== 'idir',
+      'This test requires the IDIR test account and data',
+    )
     await sharedPage
       .locator('.v-field')
       .filter({ hasText: 'Search by' })
       .locator('.v-field__input')
       .click()
-    const expectedOptions = ['First Name', 'Last Name', 'Email']
+    const expectedOptions = ['First name', 'Last name', 'Email']
     const options = sharedPage.getByRole('listbox').getByRole('option')
     await expect(options).toHaveCount(3)
     for (const option of expectedOptions) {
@@ -199,7 +228,7 @@ test.describe.serial('Landing page tests', () => {
     }
     await expect(
       sharedPage.getByRole('button', {
-        name: 'Add User',
+        name: 'Add user',
         exact: true,
       }),
     ).toBeDisabled()
@@ -216,22 +245,30 @@ test.describe.serial('Landing page tests', () => {
       .check()
     await expect(
       sharedPage.getByRole('button', {
-        name: 'Add User',
+        name: 'Add user',
         exact: true,
       }),
     ).toBeEnabled()
   })
   test('Checks add/remove IDIR user', async () => {
+    test.skip(
+      authMode !== 'idir',
+      'This test requires the IDIR test account and data',
+    )
     await sharedPage
       .getByRole('button', {
-        name: 'Add User',
+        name: 'Add user',
         exact: true,
       })
       .click()
-    await expect(sharedPage.getByText('User Added')).toBeVisible()
-    await expect(
-      sharedPage.getByText('New user successfully added to this tenant'),
-    ).toBeVisible()
+
+    const snackbarUserAdded = sharedPage
+      .getByRole('alert')
+      .filter({ hasText: /user added/i })
+    await expect(snackbarUserAdded).toBeVisible()
+    await snackbarUserAdded.getByText(/user added/i).click()
+    await expect(snackbarUserAdded).toBeHidden()
+
     const tables = sharedPage.locator('table')
     await expect(tables).toHaveCount(1)
     const tenantTable = tables.first()
@@ -252,20 +289,20 @@ test.describe.serial('Landing page tests', () => {
     })
     await expect(menuButton).toBeEnabled()
     await menuButton.click()
-    await sharedPage.getByText('Offboard User', { exact: true }).click()
+    await sharedPage.getByText('Remove user', { exact: true }).click()
     const cancelButton = sharedPage.getByTestId('button-cancel')
     await expect(cancelButton).toBeEnabled()
     const removeButton = sharedPage.getByTestId('button-remove')
     await expect(removeButton).toBeEnabled()
-    await sharedPage
-      .getByRole('button', {
-        name: 'Offboard User',
-      })
-      .click()
-    await expect(sharedPage.getByText('User Removed')).toBeVisible()
-    await expect(
-      sharedPage.getByText('The user was successfully removed'),
-    ).toBeVisible()
+    await sharedPage.getByRole('button', { name: /remove user/i }).click()
+
+    const snackbarUserRemoved = sharedPage
+      .getByRole('alert')
+      .filter({ hasText: /user removed/i })
+    await expect(snackbarUserRemoved).toBeVisible()
+    await snackbarUserRemoved.getByText(/user removed/i).click()
+    await expect(snackbarUserRemoved).toBeHidden()
+
     await expect(tenantRows).toHaveCount(1)
     const updatedTenantRow = tenantRows.nth(0)
     await expect(updatedTenantRow.locator('td').nth(0)).toHaveText('CHEFS')

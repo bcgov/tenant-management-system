@@ -6,13 +6,13 @@ import { type Service } from '@/models/service.model'
 
 // --- Component Interface -----------------------------------------------------
 
-defineProps<{
+const { isTenantOwner, service } = defineProps<{
   isTenantOwner: boolean
   service: Service
 }>()
 
 const emit = defineEmits<{
-  (event: 'click-add'): void
+  'click-add': []
 }>()
 
 // --- Component Methods -------------------------------------------------------

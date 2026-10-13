@@ -1,11 +1,10 @@
-import { mount } from '@vue/test-utils'
+import { render, screen } from '@testing-library/vue'
 import { describe, expect, it } from 'vitest'
 import { createVuetify } from 'vuetify'
 
 import { makeTenant } from '@/__tests__/__factories__'
 
 import TenantList from '@/components/tenant/TenantList.vue'
-import TenantListCard from '@/components/tenant/TenantListCard.vue'
 import { type Tenant, toTenantId } from '@/models/tenant.model'
 
 const vuetify = createVuetify()
@@ -16,42 +15,41 @@ const tenants = [
   makeTenant({ id: toTenantId('3'), name: 'M Is Middle' }),
 ]
 
-const mountComponent = (props: { tenants: Tenant[] }) =>
-  mount(TenantList, {
+const renderComponent = (props: { tenants: Tenant[] }) =>
+  render(TenantList, {
     props,
     global: {
       plugins: [vuetify],
-      stubs: { TenantListCard: true },
+      stubs: {
+        TenantListCard: {
+          props: ['tenant'],
+          template:
+            '<div data-testid="tenant-list-card">{{ tenant.name }}</div>',
+        },
+      },
     },
   })
 
 describe('TenantList.vue', () => {
-  it('renders no cards when tenants is empty', () => {
-    const wrapper = mountComponent({ tenants: [] })
+  it('renders no tenant cards when tenants is empty', () => {
+    renderComponent({ tenants: [] })
 
-    expect(wrapper.findAllComponents(TenantListCard)).toHaveLength(0)
+    expect(screen.queryAllByTestId('tenant-list-card')).toHaveLength(0)
   })
 
   it('renders a card for each tenant', () => {
-    const wrapper = mountComponent({ tenants })
+    renderComponent({ tenants })
 
-    expect(wrapper.findAllComponents(TenantListCard)).toHaveLength(3)
+    expect(screen.getAllByTestId('tenant-list-card')).toHaveLength(3)
   })
 
   it('renders tenants sorted alphabetically by name', () => {
-    const wrapper = mountComponent({ tenants })
+    renderComponent({ tenants })
 
-    const cards = wrapper.findAllComponents(TenantListCard)
-    expect(cards[0].props('tenant').name).toBe('A Is First')
-    expect(cards[1].props('tenant').name).toBe('M Is Middle')
-    expect(cards[2].props('tenant').name).toBe('Z Is Last')
-  })
+    const cards = screen.getAllByTestId('tenant-list-card')
 
-  it('emits select with the tenant id when a card is clicked', async () => {
-    const wrapper = mountComponent({ tenants })
-
-    await wrapper.findAllComponents(TenantListCard)[0].trigger('click')
-
-    expect(wrapper.emitted('select')?.[0]).toEqual(['2'])
+    expect(cards[0]).toHaveTextContent('A Is First')
+    expect(cards[1]).toHaveTextContent('M Is Middle')
+    expect(cards[2]).toHaveTextContent('Z Is Last')
   })
 })

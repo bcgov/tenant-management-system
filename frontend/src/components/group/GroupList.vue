@@ -3,15 +3,13 @@ import { computed } from 'vue'
 
 import GroupListCard from '@/components/group/GroupListCard.vue'
 import { type Group } from '@/models/group.model'
+import { type Tenant } from '@/models/tenant.model'
 
 // --- Component Interface -----------------------------------------------------
 
-const { groups } = defineProps<{
+const { groups, tenant } = defineProps<{
   groups: Group[]
-}>()
-
-const emit = defineEmits<{
-  select: [id: Group['id']]
+  tenant: Tenant
 }>()
 
 // --- Computed Values ---------------------------------------------------------
@@ -19,18 +17,18 @@ const emit = defineEmits<{
 const sortedGroups = computed(() => {
   return [...groups].sort((a, b) => a.name.localeCompare(b.name))
 })
-
-// --- Component Methods -------------------------------------------------------
-
-const handleClick = (id: Group['id']) => {
-  emit('select', id)
-}
 </script>
 
 <template>
   <v-row>
-    <v-col v-for="group in sortedGroups" :key="group.id" cols="12" md="4">
-      <GroupListCard :group="group" @click="handleClick(group.id)" />
+    <v-col
+      v-for="group in sortedGroups"
+      :key="group.id"
+      cols="12"
+      lg="4"
+      md="6"
+    >
+      <GroupListCard :group="group" :tenant="tenant" class="w-100" />
     </v-col>
   </v-row>
 </template>

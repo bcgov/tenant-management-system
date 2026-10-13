@@ -185,4 +185,53 @@ export const groupService = {
       throw error
     }
   },
+
+  /**
+   * Updates an existing group with the specified details.
+   *
+   * @param tenantId - The ID of the tenant that the group belongs to.
+   * @param groupId - The ID of the group to update.
+   * @param name - The new name of the group.
+   * @param description - The new description for the group.
+   * @returns A promise that resolves to the group data.
+   */
+  async updateGroup(
+    tenantId: TenantId,
+    groupId: GroupId,
+    name: string,
+    description: string,
+  ): Promise<GroupApiData> {
+    try {
+      const requestBody = {
+        description: description,
+        name: name,
+      }
+
+      const response = await api.put(
+        `/tenants/${tenantId}/groups/${groupId}`,
+        requestBody,
+      )
+
+      return response.data.data.group
+    } catch (error: unknown) {
+      logApiError('Error updating group', error)
+
+      // Handle HTTP 400 Bad Request (validation)
+      if (isValidationError(error)) {
+        const messageArray = error.response.data.details.body.map(
+          (item: { message: string }) => item.message,
+        )
+
+        throw new ValidationError(messageArray)
+      }
+
+      // Handle HTTP 409 Conflict (duplicate)
+      if (isDuplicateEntityError(error)) {
+        throw new DuplicateEntityError(error.response.data.message)
+      }
+
+      // Re-throw all other errors
+      throw error
+    }
+  },
 }

@@ -373,7 +373,7 @@ export class TenantRepository {
     manager: EntityManager,
   ) {
     const tenantUser = await manager.findOne(TenantUser, {
-      where: { id: tenantUserId, isDeleted: false },
+      where: { id: tenantUserId, isDeleted: false, tenant: { id: tenantId } },
     })
     if (!tenantUser) {
       throw new NotFoundError(`Tenant user not found: ${tenantUserId}`)
@@ -484,9 +484,7 @@ export class TenantRepository {
     input: GetUserRolesInputDto,
     manager?: EntityManager,
   ) {
-    const tenantUserId = input.tenantUserId
-    void input.tenantId
-    return this.getRolesForUser(tenantUserId, manager)
+    return this.getRolesForUser(input.tenantId, input.tenantUserId, manager)
   }
 
   public async unassignUserRoles(
@@ -774,13 +772,18 @@ export class TenantRepository {
       .getExists()
   }
 
-  public async getRolesForUser(tenantUserId: string, manager?: EntityManager) {
+  public async getRolesForUser(
+    tenantId: string,
+    tenantUserId: string,
+    manager?: EntityManager,
+  ) {
     const em = manager ?? getManager()
     return em
       .createQueryBuilder(Role, 'role')
       .innerJoin('TenantUserRole', 'tur', 'tur.role_id = role.id')
       .innerJoin('TenantUser', 'tu', 'tu.id = tur.tenant_user_id')
       .where('tu.id = :tenantUserId', { tenantUserId })
+      .andWhere('tu.tenant_id = :tenantId', { tenantId })
       .andWhere('tu.isDeleted = :isDeleted', { isDeleted: false })
       .andWhere('tur.isDeleted = :isDeleted', { isDeleted: false })
       .getMany()

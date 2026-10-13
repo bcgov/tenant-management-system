@@ -1,3 +1,5 @@
+import { generateKeyPairSync } from 'crypto'
+
 process.env.ALLOWED_ORIGINS = 'http://localhost:4144'
 process.env.BCGOV_SSO_API_CLIENT_ID = 'test-client-id'
 process.env.BCGOV_SSO_API_CLIENT_SECRET = 'test-client-secret'
@@ -14,6 +16,21 @@ process.env.POSTGRES_PASSWORD = 'test'
 process.env.POSTGRES_PORT = '5432'
 process.env.POSTGRES_USER = 'test'
 process.env.TMS_AUDIENCE = 'test-audience'
+
+process.env.ASSERTION_ISSUER = 'cstar-test'
+process.env.ASSERTION_KEY_ID = 'cstar-test-key'
+process.env.ASSERTION_EXPIRES_IN_SECONDS = '300'
+const { publicKey, privateKey } = generateKeyPairSync('rsa', {
+  modulusLength: 2048,
+})
+process.env.ASSERTION_PRIVATE_KEY = privateKey.export({
+  format: 'pem',
+  type: 'pkcs8',
+}) as string
+process.env.ASSERTION_PUBLIC_KEY = publicKey.export({
+  format: 'pem',
+  type: 'spki',
+}) as string
 
 import { loadConfig } from '../services/config.service'
 loadConfig()

@@ -1,55 +1,28 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+
 import { useNotification } from '@/composables/useNotification'
 
-// --- Store and Composable Setup ----------------------------------------------
+const { messages, dismiss } = useNotification()
 
-const notification = useNotification()
+const current = computed(() => messages.value[0])
 </script>
 
 <template>
-  <transition-group class="notification-wrapper" name="fade" tag="div">
-    <div v-if="notification.items.length" class="notification-wrapper">
-      <div
-        v-for="notificationItem in notification.items"
-        :key="notificationItem.id"
-        class="notification-container"
-      >
-        <v-alert
-          :title="notificationItem.title"
-          :type="notificationItem.type"
-          role="alert"
-          closable
-          @click="notification.remove(notificationItem.id)"
-        >
-          {{ notificationItem.message }}
-        </v-alert>
-      </div>
+  <v-snackbar
+    v-if="current"
+    :key="current.id"
+    :color="current.color"
+    :model-value="true"
+    :timeout="6000"
+    class="cursor-pointer"
+    role="alert"
+    @click="dismiss"
+    @update:model-value="dismiss"
+  >
+    <div class="align-center d-flex flex-row">
+      <v-icon :icon="`$${current.color}`" class="flex-shrink-0 mr-4" />
+      <div>{{ current.text }}</div>
     </div>
-  </transition-group>
+  </v-snackbar>
 </template>
-
-<style scoped>
-.fade-enter-active,
-.fade-leave-active {
-  transition: all 0.3s ease;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-  transform: translateY(-10px);
-}
-
-.notification-container {
-  margin-bottom: 10px;
-}
-
-.notification-wrapper {
-  left: 50%;
-  position: fixed;
-  top: 10px;
-  transform: translateX(-50%);
-  width: 80%;
-  z-index: 9999;
-}
-</style>

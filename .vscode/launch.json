@@ -45,6 +45,14 @@
       "runtimeArgs": ["run", "dev"],
       "runtimeExecutable": "npm",
       "type": "node"
+    },
+    {
+      "cwd": "${workspaceFolder}/tests/e2e",
+      "name": "CSTAR Playwright",
+      "request": "launch",
+      "runtimeArgs": ["run", "test:e2e"],
+      "runtimeExecutable": "npm",
+      "type": "node"
     }
   ],
   "version": "0.2.0"

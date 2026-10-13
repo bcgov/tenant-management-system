@@ -56,6 +56,14 @@ jobs:
             ${{ runner.os }}-build-
             ${{ runner.os }}-
 
+      - name: Generate assertion keys
+        run: |
+          openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out private.pem
+          openssl rsa -in private.pem -pubout -out public.pem
+          echo "ASSERTION_PRIVATE_KEY=$(perl -pe 's/\r?\n/\x5cn/' private.pem)" >> $GITHUB_ENV
+          echo "ASSERTION_PUBLIC_KEY=$(perl -pe 's/\r?\n/\x5cn/' public.pem)" >> $GITHUB_ENV
+          rm private.pem public.pem
+
       - name: Start test services
         run: docker compose -f docker-compose.yml up -d --quiet-pull --wait
         working-directory: tests/integration
@@ -122,12 +130,13 @@ jobs:
 
         env:
           BASE_URL: https://${{ env.PREFIX }}.${{ env.DOMAIN }}/
+          E2E_AUTH_MODE: idir
           E2E_IDIR_USERNAME: ${{ secrets.Username }}
           E2E_IDIR_PASSWORD: ${{ secrets.Password }}
           E2E_MFA_CODE: ${{ secrets.MFA_CODE }}
 
       - name: Upload Playwright report
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
           name: playwright-report
@@ -135,7 +144,7 @@ jobs:
           if-no-files-found: ignore
 
       - name: Upload Playwright screenshots on failure
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: failure()
         with:
           name: playwright-screenshots
