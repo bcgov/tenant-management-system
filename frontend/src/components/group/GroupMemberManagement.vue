@@ -119,6 +119,11 @@ const toggleSearch = () => {
 
         <h4 class="mb-4">Add a member to this group</h4>
 
+        <p class="mb-2 mt-0">
+          <strong>Note:</strong> Adding a member to a group also adds them to
+          this tenant as a service user.
+        </p>
+
         <p class="mb-2 mt-8">
           1. Search for a member based on the selection criteria below:
         </p>
