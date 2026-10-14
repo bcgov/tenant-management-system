@@ -7,8 +7,10 @@ import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
 import { ValidationError } from '@/errors/domain/ValidationError'
 import {
   type TenantRequestApiData,
+  type TenantRequestApiEnvelope,
   type TenantRequestListApiEnvelope,
 } from '@/mappers/tenantrequest.mapper'
+import type { SsoUserId } from '@/models/ssouser.model'
 import {
   type TenantRequestDetailFields,
   type TenantRequestId,
@@ -29,7 +31,7 @@ export const tenantRequestService = {
   async createTenantRequest(
     tenantRequestDetails: TenantRequestDetailFields,
     user: User,
-  ): Promise<void> {
+  ): Promise<TenantRequestApiData> {
     try {
       const requestBody = {
         description: tenantRequestDetails.description,
@@ -45,7 +47,12 @@ export const tenantRequestService = {
         },
       }
 
-      await api.post(`/tenant-requests`, requestBody)
+      const response = await api.post<TenantRequestApiEnvelope>(
+        `/tenant-requests`,
+        requestBody,
+      )
+
+      return response.data.tenantRequest
     } catch (error: unknown) {
       logApiError('Error creating tenant request', error)
 
@@ -64,6 +71,28 @@ export const tenantRequestService = {
       }
 
       // Re-throw all other errors
+      throw error
+    }
+  },
+
+  /**
+   * Retrieves all the pending tenant requests for a user.
+   *
+   * @param ssoUserId - The ID of the SSO user.
+   * @throws Will throw an error if the API request fails.
+   */
+  async getPendingTenantRequests(
+    ssoUserId: SsoUserId,
+  ): Promise<TenantRequestApiData[]> {
+    try {
+      const response = await api.get<TenantRequestListApiEnvelope>(
+        `/users/${ssoUserId}/tenant-requests`,
+      )
+
+      return response.data.tenantRequests
+    } catch (error) {
+      logApiError('Error getting tenant requests', error)
+
       throw error
     }
   },

@@ -26,6 +26,11 @@ a:hover {
   background-color: rgb(var(--v-theme-surface-light-gray-hover));
 }
 
+.card-link-title {
+  color: rgb(var(--v-theme-typography-link-color)) !important;
+}
+
+.card-link-title,
 .card-subtitle,
 .card-title {
   -webkit-box-orient: vertical;
@@ -35,10 +40,6 @@ a:hover {
   line-height: 1.5;
   overflow: hidden;
   white-space: normal;
-}
-
-.card-title {
-  color: rgb(var(--v-theme-typography-link-color)) !important;
 }
 
 h1 {
@@ -91,6 +92,11 @@ p {
 .p-xxlarge {
   font-size: 1.5rem;
   line-height: 2.25rem;
+}
+
+.v-application,
+.v-card-title {
+  color: rgb(var(--v-theme-on-surface));
 }
 
 .v-input.v-input--disabled .v-input__control {

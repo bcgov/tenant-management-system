@@ -78,7 +78,9 @@ describe('tenantRequestService', () => {
           userName: 'ssoUserUserName',
         }),
       })
-      mockPost.mockResolvedValueOnce({})
+      mockPost.mockResolvedValueOnce({
+        data: { data: { tenantRequest: makeTenantRequestApiData() } },
+      })
 
       await tenantRequestService.createTenantRequest(tenantRequestDetails, user)
 
@@ -160,6 +162,72 @@ describe('tenantRequestService', () => {
       expect(mockedUtils.logApiError).toHaveBeenCalledWith(
         'Error creating tenant request',
         genericError,
+      )
+    })
+  })
+
+  describe('getPendingTenantRequests', () => {
+    it('should correctly call the api', async () => {
+      mockGet.mockResolvedValueOnce({ data: { data: {} } })
+
+      await tenantRequestService.getPendingTenantRequests(
+        toSsoUserId('ssoUserId'),
+      )
+
+      expect(mockGet).toHaveBeenCalledWith('/users/ssoUserId/tenant-requests')
+    })
+
+    it('should correctly return data', async () => {
+      const tenantRequestApiData = makeTenantRequestApiData({
+        createdBy: 'tenantRequestCreatedBy',
+        createdDateTime: 'tenantRequestCreatedDateTime',
+        description: 'tenantRequestDescription',
+        id: toTenantRequestId('tenantRequestId'),
+        ministryName: 'tenantRequestMinistryName',
+        name: 'tenantRequestName',
+        rejectionReason: 'tenantRequestRejectionReason',
+        status: 'tenantRequestStatus',
+      })
+      mockGet.mockResolvedValueOnce({
+        data: { tenantRequests: [tenantRequestApiData] },
+      })
+
+      const result = await tenantRequestService.getPendingTenantRequests(
+        toSsoUserId('ssoUserId'),
+      )
+
+      expect(result).toHaveLength(1)
+      expect(result[0].createdBy).toBe('tenantRequestCreatedBy')
+      expect(result[0].createdDateTime).toBe('tenantRequestCreatedDateTime')
+      expect(result[0].description).toBe('tenantRequestDescription')
+      expect(result[0].id).toBe('tenantRequestId')
+      expect(result[0].ministryName).toBe('tenantRequestMinistryName')
+      expect(result[0].name).toBe('tenantRequestName')
+      expect(result[0].rejectionReason).toBe('tenantRequestRejectionReason')
+      expect(result[0].status).toBe('tenantRequestStatus')
+    })
+
+    it('should return empty array when no requests exist', async () => {
+      mockGet.mockResolvedValueOnce({ data: { tenantRequests: [] } })
+
+      const result = await tenantRequestService.getPendingTenantRequests(
+        toSsoUserId('ssoUserId'),
+      )
+
+      expect(result).toEqual([])
+    })
+
+    it('should log and rethrow errors', async () => {
+      const error = new Error('Failed to fetch tenant requests')
+      mockGet.mockRejectedValueOnce(error)
+
+      await expect(
+        tenantRequestService.getPendingTenantRequests(toSsoUserId('ssoUserId')),
+      ).rejects.toThrow(error)
+
+      expect(mockedUtils.logApiError).toHaveBeenCalledWith(
+        'Error getting tenant requests',
+        error,
       )
     })
   })
