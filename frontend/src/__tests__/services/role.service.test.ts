@@ -1,22 +1,30 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { mockGet } = vi.hoisted(() => ({
-  mockGet: vi.fn(),
-}))
+import { makeRoleApiData } from '@/__tests__/__factories__'
 
-vi.mock('@/services/authenticated.axios', () => ({
-  authenticatedAxios: () => ({
-    get: mockGet,
-  }),
+import { roleService } from '@/services/role.service'
+import * as utils from '@/services/utils'
+
+vi.mock('@/services/config.service', () => ({
+  config: { api: { baseUrl: 'https://api.example.com' } },
 }))
 
 vi.mock('@/services/utils', () => ({
   logApiError: vi.fn(),
 }))
 
-import { roleService } from '@/services/role.service'
-import { logApiError } from '@/services/utils'
-import { makeRoleApiData } from '../__factories__'
+const mockedUtils = vi.mocked(utils)
+mockedUtils.logApiError.mockImplementation(() => {})
+
+const { mockGet } = vi.hoisted(() => ({
+  mockGet: vi.fn(),
+}))
+
+vi.mock('@/services/api', () => ({
+  authenticatedFetch: () => ({
+    get: mockGet,
+  }),
+}))
 
 describe('roleService', () => {
   beforeEach(() => {
@@ -25,7 +33,7 @@ describe('roleService', () => {
 
   describe('getRoles', () => {
     it('should correctly call the api', async () => {
-      mockGet.mockResolvedValue({ data: { data: {} } })
+      mockGet.mockResolvedValue({ data: {} })
 
       await roleService.getRoles()
 
@@ -37,7 +45,7 @@ describe('roleService', () => {
         description: 'roleDescription',
         name: 'roleName',
       })
-      mockGet.mockResolvedValue({ data: { data: { roles: [roleApiData] } } })
+      mockGet.mockResolvedValue({ data: { roles: [roleApiData] } })
 
       const result = await roleService.getRoles()
 
@@ -52,7 +60,10 @@ describe('roleService', () => {
 
       await expect(roleService.getRoles()).rejects.toThrow('Network error')
 
-      expect(logApiError).toHaveBeenCalledWith('Error getting roles', mockError)
+      expect(mockedUtils.logApiError).toHaveBeenCalledWith(
+        'Error getting roles',
+        mockError,
+      )
     })
 
     it('should handle API errors with custom error objects', async () => {
@@ -66,14 +77,14 @@ describe('roleService', () => {
 
       await expect(roleService.getRoles()).rejects.toEqual(mockApiError)
 
-      expect(logApiError).toHaveBeenCalledWith(
+      expect(mockedUtils.logApiError).toHaveBeenCalledWith(
         'Error getting roles',
         mockApiError,
       )
     })
 
     it('should handle empty roles response', async () => {
-      mockGet.mockResolvedValue({ data: { data: { roles: [] } } })
+      mockGet.mockResolvedValue({ data: { roles: [] } })
 
       const result = await roleService.getRoles()
 

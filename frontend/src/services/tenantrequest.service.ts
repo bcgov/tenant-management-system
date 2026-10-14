@@ -1,4 +1,3 @@
-import { authenticatedAxios } from '@/services/authenticated.axios'
 import {
   isDuplicateEntityError,
   isValidationError,
@@ -6,14 +5,18 @@ import {
 } from '@/services/utils'
 import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
 import { ValidationError } from '@/errors/domain/ValidationError'
-import { type TenantRequestApiData } from '@/mappers/tenantrequest.mapper'
+import {
+  type TenantRequestApiData,
+  type TenantRequestListApiEnvelope,
+} from '@/mappers/tenantrequest.mapper'
 import {
   type TenantRequestDetailFields,
   type TenantRequestId,
 } from '@/models/tenantrequest.model'
 import { type User } from '@/models/user.model'
+import { authenticatedFetch } from '@/services/api'
 
-const api = authenticatedAxios()
+const api = authenticatedFetch()
 
 export const tenantRequestService = {
   /**
@@ -48,7 +51,7 @@ export const tenantRequestService = {
 
       // Handle HTTP 400 Bad Request (validation)
       if (isValidationError(error)) {
-        const messageArray = error.response.data.details.body.map(
+        const messageArray = error.data.details.body.map(
           (item: { message: string }) => item.message,
         )
 
@@ -57,7 +60,7 @@ export const tenantRequestService = {
 
       // Handle HTTP 409 Conflict (duplicate)
       if (isDuplicateEntityError(error)) {
-        throw new DuplicateEntityError(error.response.data.message)
+        throw new DuplicateEntityError(error.data.message)
       }
 
       // Re-throw all other errors
@@ -72,9 +75,10 @@ export const tenantRequestService = {
    */
   async getTenantRequests(): Promise<TenantRequestApiData[]> {
     try {
-      const response = await api.get('/tenant-requests')
+      const response =
+        await api.get<TenantRequestListApiEnvelope>('/tenant-requests')
 
-      return response.data.data.tenantRequests
+      return response.data.tenantRequests
     } catch (error) {
       logApiError('Error getting tenant requests', error)
 
@@ -121,7 +125,7 @@ export const tenantRequestService = {
 
       // Handle HTTP 400 Bad Request (validation)
       if (isValidationError(error)) {
-        const messageArray = error.response.data.details.body.map(
+        const messageArray = error.data.details.body.map(
           (item: { message: string }) => item.message,
         )
 
@@ -130,7 +134,7 @@ export const tenantRequestService = {
 
       // Handle HTTP 409 Conflict (duplicate)
       if (isDuplicateEntityError(error)) {
-        throw new DuplicateEntityError(error.response.data.message)
+        throw new DuplicateEntityError(error.data.message)
       }
 
       // Re-throw all other errors
