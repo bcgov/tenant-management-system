@@ -5,6 +5,10 @@ import { makeUserSearchApiData } from '@/__tests__/__factories__'
 import * as utils from '@/services/utils'
 import { BCEID_SEARCH_TYPE, IDIR_SEARCH_TYPE } from '@/utils/constants'
 
+vi.mock('@/services/config.service', () => ({
+  config: { api: { baseUrl: 'https://api.example.com' } },
+}))
+
 vi.mock('@/services/utils', () => ({
   logApiError: vi.fn(),
 }))
@@ -17,8 +21,8 @@ const { mockGet } = vi.hoisted(() => ({
   mockGet: vi.fn(),
 }))
 
-vi.mock('@/services/authenticated.axios', () => ({
-  authenticatedAxios: () => ({
+vi.mock('@/services/api', () => ({
+  authenticatedFetch: () => ({
     get: mockGet,
   }),
 }))
@@ -60,7 +64,7 @@ describe('userSearchService', () => {
         firstName: 'userFirstName',
         lastName: 'userLastName',
       })
-      mockGet.mockResolvedValueOnce({ data: { data: [userApiData] } })
+      mockGet.mockResolvedValueOnce({ data: [userApiData] })
 
       const result = await userSearchService.searchBceidUsers(
         BCEID_SEARCH_TYPE.EMAIL.value,
@@ -76,7 +80,7 @@ describe('userSearchService', () => {
     })
 
     it('returns empty array for no matches', async () => {
-      mockGet.mockResolvedValueOnce({ data: { data: [] } })
+      mockGet.mockResolvedValueOnce({ data: [] })
 
       const result = await userSearchService.searchBceidUsers(
         BCEID_SEARCH_TYPE.EMAIL.value,
@@ -138,7 +142,7 @@ describe('userSearchService', () => {
         firstName: 'userFirstName',
         lastName: 'userLastName',
       })
-      mockGet.mockResolvedValueOnce({ data: { data: [userApiData] } })
+      mockGet.mockResolvedValueOnce({ data: [userApiData] })
 
       const result = await userSearchService.searchIdirUsers(
         IDIR_SEARCH_TYPE.EMAIL.value,
@@ -154,7 +158,7 @@ describe('userSearchService', () => {
     })
 
     it('returns empty array for no matches', async () => {
-      mockGet.mockResolvedValueOnce({ data: { data: [] } })
+      mockGet.mockResolvedValueOnce({ data: [] })
 
       const result = await userSearchService.searchIdirUsers(
         IDIR_SEARCH_TYPE.EMAIL.value,

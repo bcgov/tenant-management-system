@@ -8,11 +8,18 @@ import {
   makeUser,
 } from '@/__tests__/__factories__'
 
+import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
+import { ValidationError } from '@/errors/domain/ValidationError'
 import { toRoleId } from '@/models/role.model'
 import { toTenantRequestId } from '@/models/tenantrequest.model'
 import { toUserId } from '@/models/user.model'
 import { toSsoUserId } from '@/models/ssouser.model'
+import { tenantRequestService } from '@/services/tenantrequest.service'
 import * as utils from '@/services/utils'
+
+vi.mock('@/services/config.service', () => ({
+  config: { api: { baseUrl: 'https://api.example.com' } },
+}))
 
 vi.mock('@/services/utils', () => ({
   isDuplicateEntityError: vi.fn(),
@@ -32,17 +39,13 @@ const { mockGet, mockPatch, mockPost } = vi.hoisted(() => ({
   mockPost: vi.fn(),
 }))
 
-vi.mock('@/services/authenticated.axios', () => ({
-  authenticatedAxios: () => ({
+vi.mock('@/services/api', () => ({
+  authenticatedFetch: () => ({
     get: mockGet,
     patch: mockPatch,
     post: mockPost,
   }),
 }))
-
-import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
-import { ValidationError } from '@/errors/domain/ValidationError'
-import { tenantRequestService } from '@/services/tenantrequest.service'
 
 describe('tenantRequestService', () => {
   beforeEach(() => {
@@ -96,15 +99,12 @@ describe('tenantRequestService', () => {
 
     it('should throw ValidationError on HTTP 400', async () => {
       const error = {
-        isAxiosError: true,
-        response: {
-          data: {
-            details: {
-              body: [
-                { message: 'Name is required' },
-                { message: 'Ministry name cannot be empty' },
-              ],
-            },
+        data: {
+          details: {
+            body: [
+              { message: 'Name is required' },
+              { message: 'Ministry name cannot be empty' },
+            ],
           },
           status: 400,
         },
@@ -127,11 +127,8 @@ describe('tenantRequestService', () => {
 
     it('should throw DuplicateEntityError on HTTP 409', async () => {
       const error = {
-        isAxiosError: true,
-        response: {
-          data: { message: 'Tenant request with this name already exists' },
-          status: 409,
-        },
+        data: { message: 'Tenant request with this name already exists' },
+        status: 409,
       }
       mockPost.mockRejectedValueOnce(error)
       mockedUtils.isDuplicateEntityError.mockReturnValueOnce(true)
@@ -188,7 +185,7 @@ describe('tenantRequestService', () => {
         status: 'tenantRequestStatus',
       })
       mockGet.mockResolvedValueOnce({
-        data: { data: { tenantRequests: [tenantRequestApiData] } },
+        data: { tenantRequests: [tenantRequestApiData] },
       })
 
       const result = await tenantRequestService.getTenantRequests()
@@ -205,9 +202,7 @@ describe('tenantRequestService', () => {
     })
 
     it('should return empty array when no requests exist', async () => {
-      mockGet.mockResolvedValueOnce({
-        data: { data: { tenantRequests: [] } },
-      })
+      mockGet.mockResolvedValueOnce({ data: { tenantRequests: [] } })
 
       const result = await tenantRequestService.getTenantRequests()
 
@@ -320,16 +315,13 @@ describe('tenantRequestService', () => {
 
     it('should throw ValidationError on HTTP 400', async () => {
       const error = {
-        isAxiosError: true,
-        response: {
-          status: 400,
-          data: {
-            details: {
-              body: [
-                { message: 'Invalid status value' },
-                { message: 'Rejection reason is required for REJECTED status' },
-              ],
-            },
+        status: 400,
+        data: {
+          details: {
+            body: [
+              { message: 'Invalid status value' },
+              { message: 'Rejection reason is required for REJECTED status' },
+            ],
           },
         },
       }
@@ -351,11 +343,8 @@ describe('tenantRequestService', () => {
 
     it('should throw DuplicateEntityError on HTTP 409', async () => {
       const error = {
-        isAxiosError: true,
-        response: {
-          data: { message: 'Status update conflict' },
-          status: 409,
-        },
+        data: { message: 'Status update conflict' },
+        status: 409,
       }
       mockPatch.mockRejectedValueOnce(error)
       mockedUtils.isDuplicateEntityError.mockReturnValueOnce(true)
@@ -392,13 +381,8 @@ describe('tenantRequestService', () => {
 
     it('should handle concurrent update conflicts', async () => {
       const concurrencyError = {
-        isAxiosError: true,
-        response: {
-          data: {
-            message: 'Request has already been processed by another user',
-          },
-          status: 409,
-        },
+        data: { message: 'Request has already been processed by another user' },
+        status: 409,
       }
       mockPatch.mockRejectedValueOnce(concurrencyError)
       mockedUtils.isDuplicateEntityError.mockReturnValueOnce(true)

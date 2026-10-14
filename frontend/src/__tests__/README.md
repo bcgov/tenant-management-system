@@ -60,7 +60,7 @@ data or for the models themselves.
 
 ### Services
 
-The `authenticated.axios` service is a special wrapper around Axios. The
+The `authenticated.api` service is a special wrapper around the Fetch API. The
 `config` service deals with configuration. The `utils` file contains utilities
 for the services. These all have file-specific tests.
 

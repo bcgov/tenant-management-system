@@ -98,10 +98,12 @@ init() // NOSONAR
       :loading="!initialized"
       loading-message="Loading tenants..."
     >
+      <h1>All tenants</h1>
+
       <v-container v-if="tenants.length === 0" class="fill-height">
         <v-row class="center-align justify-center">
           <v-col class="align-center d-flex flex-column" cols="auto">
-            <h1>No tenants yet</h1>
+            <h2>No tenants yet</h2>
             <p class="p-large">You don't currently have access to a tenant.</p>
 
             <p>

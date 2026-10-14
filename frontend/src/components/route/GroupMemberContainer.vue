@@ -44,7 +44,7 @@ const handleAddMember = async (user: User) => {
   try {
     await groupStore.addGroupUser(tenantId, groupId, user)
     searchResults.value = null
-    notification.success('Member added')
+    notification.success('Member added to group and tenant as a service user')
   } catch (error) {
     if (error instanceof DuplicateEntityError) {
       notification.error(

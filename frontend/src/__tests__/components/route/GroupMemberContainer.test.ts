@@ -101,7 +101,9 @@ describe('GroupMemberContainer', () => {
         'groupId1',
         user,
       )
-      expect(notificationMock.success).toHaveBeenCalledWith('Member added')
+      expect(notificationMock.success).toHaveBeenCalledWith(
+        'Member added to group and tenant as a service user',
+      )
       expect(child(wrapper).props('searchResults')).toBeNull()
     })
 
