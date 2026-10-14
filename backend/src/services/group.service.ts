@@ -21,6 +21,7 @@ import {
   UpdateGroupInputDto,
 } from '../dtos/tm.dto'
 import { config } from '../services/config.service'
+import { TMSConstants } from '../common/tms.constants'
 import { notificationService } from './notification.service'
 
 export class GroupService {
@@ -338,11 +339,40 @@ export class GroupService {
     const sharedServices =
       await groupRepository.getSharedServiceRolesForGroup(input)
 
+    if (
+      req.decodedJwt?.aud === config.oidc.tmsAudience ||
+      (await this.isTenantAdmin(input.tenantId, req))
+    ) {
+      return {
+        data: {
+          sharedServices: sharedServices,
+        },
+      }
+    }
+
+    const callingService = req.decodedJwt?.aud
     return {
       data: {
-        sharedServices: sharedServices,
+        sharedServices: callingService
+          ? sharedServices.filter(
+              (sharedService) =>
+                sharedService.clientIdentifier === callingService,
+            )
+          : [],
       },
     }
+  }
+
+  private async isTenantAdmin(tenantId: string, req: Request) {
+    const ssoUserId =
+      req.decodedJwt?.idir_user_guid || req.decodedJwt?.bceid_user_guid
+    if (!ssoUserId) {
+      return false
+    }
+    return tenantRepository.checkUserTenantAccess(tenantId, ssoUserId, [
+      TMSConstants.TENANT_OWNER,
+      TMSConstants.USER_ADMIN,
+    ])
   }
 
   public async updateSharedServiceRolesForGroup(req: Request) {

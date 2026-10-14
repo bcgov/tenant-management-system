@@ -6,10 +6,12 @@ import { tenantRepository } from '../../repositories/tenant.repository'
 import { connection } from '../../common/db.connection'
 import logger from '../../common/logger'
 import { notificationService } from '../../services/notification.service'
+import { config } from '../../services/config.service'
 
 jest.mock('../../repositories/group.repository')
 jest.mock('../../repositories/tenant.repository', () => ({
   tenantRepository: {
+    checkUserTenantAccess: jest.fn(),
     ensureTenantUserExists: jest.fn(),
     getTenantUserBySsoId: jest.fn(),
     getTenantUserWithRelations: jest.fn(),
@@ -639,21 +641,101 @@ describe('GroupService', () => {
   })
 
   describe('getSharedServiceRolesForGroup', () => {
-    it("returns a group's shared service roles", async () => {
-      mockRepository.getSharedServiceRolesForGroup.mockResolvedValue([
-        { id: 'ss-1' },
-      ] as never)
+    const chefs = { id: 'ss-1', clientIdentifier: 'chefs-client' }
+    const notify = { id: 'ss-2', clientIdentifier: 'notify-client' }
+    const params = { tenantId: 'tenant-1', groupId: 'group-1' }
 
+    beforeEach(() => {
+      mockRepository.getSharedServiceRolesForGroup.mockResolvedValue([
+        chefs,
+        notify,
+      ] as never)
+    })
+
+    it('shows every service to the CSTAR web app', async () => {
       const result = await service.getSharedServiceRolesForGroup(
         asRequest({
-          params: { tenantId: 'tenant-1', groupId: 'group-1' },
+          params,
+          decodedJwt: { aud: config.oidc.tmsAudience, idir_user_guid: 'sso-1' },
         }),
       )
 
       expect(mockRepository.getSharedServiceRolesForGroup).toHaveBeenCalledWith(
-        expect.objectContaining({ tenantId: 'tenant-1', groupId: 'group-1' }),
+        expect.objectContaining(params),
       )
-      expect(result).toEqual({ data: { sharedServices: [{ id: 'ss-1' }] } })
+      expect(result).toEqual({ data: { sharedServices: [chefs, notify] } })
+      expect(mockTenantRepository.checkUserTenantAccess).not.toHaveBeenCalled()
+    })
+
+    it('shows every service to an owner or user admin calling through a service', async () => {
+      mockTenantRepository.checkUserTenantAccess.mockResolvedValueOnce(true)
+
+      const result = await service.getSharedServiceRolesForGroup(
+        asRequest({
+          params,
+          decodedJwt: { aud: 'chefs-client', idir_user_guid: 'sso-1' },
+        }),
+      )
+
+      expect(mockTenantRepository.checkUserTenantAccess).toHaveBeenCalledWith(
+        'tenant-1',
+        'sso-1',
+        ['TMS.TENANT_OWNER', 'TMS.USER_ADMIN'],
+      )
+      expect(result).toEqual({ data: { sharedServices: [chefs, notify] } })
+    })
+
+    it('shows only the calling service to anyone else', async () => {
+      mockTenantRepository.checkUserTenantAccess.mockResolvedValueOnce(false)
+
+      const result = await service.getSharedServiceRolesForGroup(
+        asRequest({
+          params,
+          decodedJwt: { aud: 'chefs-client', idir_user_guid: 'sso-1' },
+        }),
+      )
+
+      expect(result).toEqual({ data: { sharedServices: [chefs] } })
+    })
+
+    it('checks a BCeID user the same way', async () => {
+      mockTenantRepository.checkUserTenantAccess.mockResolvedValueOnce(false)
+
+      const result = await service.getSharedServiceRolesForGroup(
+        asRequest({
+          params,
+          decodedJwt: { aud: 'chefs-client', bceid_user_guid: 'bceid-1' },
+        }),
+      )
+
+      expect(mockTenantRepository.checkUserTenantAccess).toHaveBeenCalledWith(
+        'tenant-1',
+        'bceid-1',
+        ['TMS.TENANT_OWNER', 'TMS.USER_ADMIN'],
+      )
+      expect(result).toEqual({ data: { sharedServices: [chefs] } })
+    })
+
+    it('shows nothing when the group has none of the calling service roles', async () => {
+      mockTenantRepository.checkUserTenantAccess.mockResolvedValueOnce(false)
+
+      const result = await service.getSharedServiceRolesForGroup(
+        asRequest({
+          params,
+          decodedJwt: { aud: 'forms-client', idir_user_guid: 'sso-1' },
+        }),
+      )
+
+      expect(result).toEqual({ data: { sharedServices: [] } })
+    })
+
+    it('shows nothing when the token names no app and no user', async () => {
+      const result = await service.getSharedServiceRolesForGroup(
+        asRequest({ params, decodedJwt: {} }),
+      )
+
+      expect(result).toEqual({ data: { sharedServices: [] } })
+      expect(mockTenantRepository.checkUserTenantAccess).not.toHaveBeenCalled()
     })
   })
 

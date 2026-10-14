@@ -4,8 +4,9 @@ info:
   description: |
     API for managing tenants in Connected Services Team Access and Roles
 
-    Routes marked "CSTAR audience token required" are only available from the CSTAR web app.
-    A registered connected service that calls one of them gets a 403 explaining why.
+    Routes marked "CSTAR audience token required" do not accept shared service tokens and return 403 to them.
+
+    Routes that allow a "headless shared service token" also accept a token from a shared service with allowHeadlessOps enabled. The user must be IDIR and the tenant must be associated with that shared service.
   version: 1.0.0
 servers:
   - url: http://localhost:4144
@@ -368,7 +369,7 @@ paths:
     get:
       summary: Get tenant user details
       description: |
-        Authentication: CSTAR audience token, or a token from a connected service that is switched on for headless access (IDIR users only, and the tenant must use that service).
+        Authentication: CSTAR audience token or headless shared service token allowed.
 
         Retrieves details of a specific tenant user with optional expansions. Requires JWT authentication and tenant access.
       security:
@@ -499,7 +500,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/UnauthorizedErrorResponse'
         '403':
-          description: Forbidden - User does not have access to the tenant, the connected service is not switched on, the tenant does not use the service, or the user is not IDIR
+          description: Forbidden - User does not have access to the tenant, or headless access is not allowed
           content:
             application/json:
               schema:
@@ -781,7 +782,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/UnauthorizedErrorResponse'
         '403':
-          description: Forbidden - this route is only available from the CSTAR web app, not from a connected service
+          description: Forbidden - CSTAR audience token required
           content:
             application/json:
               schema:
@@ -881,7 +882,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/UnauthorizedErrorResponse'
         '403':
-          description: Forbidden - this route is only available from the CSTAR web app, not from a connected service
+          description: Forbidden - CSTAR audience token required
           content:
             application/json:
               schema:
@@ -897,7 +898,7 @@ paths:
     get:
       summary: Get the roles of a user in a tenant
       description: |
-        Authentication: CSTAR audience token, or a token from a connected service that is switched on for headless access (IDIR users only, and the tenant must use that service).
+        Authentication: CSTAR audience token or headless shared service token allowed.
 
         Returns the roles assigned to a user within a tenant. Returns an empty list if the user is not part of the tenant. Requires JWT authentication and membership of the tenant.
       security:
@@ -945,7 +946,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/UnauthorizedErrorResponse'
         '403':
-          description: Forbidden - User is not a member of the tenant, the connected service is not switched on, the tenant does not use the service, or the user is not IDIR
+          description: Forbidden - User is not a member of the tenant, or headless access is not allowed
           content:
             application/json:
               schema:
@@ -1114,7 +1115,7 @@ paths:
     get:
       summary: Get tenant details
       description: |
-        Authentication: CSTAR audience token, or a token from a connected service that is switched on for headless access (IDIR users only, and the tenant must use that service).
+        Authentication: CSTAR audience token or headless shared service token allowed.
 
         Retrieves details of a specific tenant. Requires JWT authentication and tenant access.
       security:
@@ -1160,7 +1161,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/UnauthorizedErrorResponse'
         '403':
-          description: Forbidden - User does not have access to the tenant, the connected service is not switched on, the tenant does not use the service, or the user is not IDIR
+          description: Forbidden - User does not have access to the tenant, or headless access is not allowed
           content:
             application/json:
               schema:
@@ -1241,7 +1242,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/UnauthorizedErrorResponse'
         '403':
-          description: Forbidden - the user is not a Tenant Owner, or the route was called from a connected service (CSTAR web app only)
+          description: Forbidden - User does not have required role (TENANT_OWNER), or CSTAR audience token required
           content:
             application/json:
               schema:
@@ -1309,7 +1310,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/UnauthorizedErrorResponse'
         '403':
-          description: Forbidden - this route is only available from the CSTAR web app, not from a connected service
+          description: Forbidden - CSTAR audience token required
           content:
             application/json:
               schema:
@@ -1404,7 +1405,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/BadRequestResponse'
         '403':
-          description: Forbidden - this route is only available from the CSTAR web app, not from a connected service
+          description: Forbidden - CSTAR audience token required
           content:
             application/json:
               schema:
@@ -1791,7 +1792,7 @@ paths:
                 allowHeadlessOps:
                   type: boolean
                   default: false
-                  description: Whether this service may call CSTAR on behalf of its users without the CSTAR web app.
+                  description: Allows the shared service to call CSTAR APIs on behalf of its users (headless access).
                   example: false
                 roles:
                   type: array
@@ -1893,7 +1894,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/UnauthorizedErrorResponse'
         '403':
-          description: Forbidden - this route is only available from the CSTAR web app, not from a connected service
+          description: Forbidden - CSTAR audience token required
           content:
             application/json:
               schema:
@@ -1960,7 +1961,7 @@ paths:
                   example: 'Updated shared email service for all tenants'
                 allowHeadlessOps:
                   type: boolean
-                  description: Whether this service may call CSTAR on behalf of its users without the CSTAR web app.
+                  description: Allows the shared service to call CSTAR APIs on behalf of its users (headless access).
                   example: true
       responses:
         '200':
@@ -2163,7 +2164,7 @@ paths:
     get:
       summary: Get shared services associated with a tenant
       description: |
-        Authentication: CSTAR audience token, or a token from a connected service that is switched on for headless access (IDIR users only, and the tenant must use that service).
+        Authentication: CSTAR audience token or headless shared service token allowed.
 
         Retrieves all shared services that are associated with a specific tenant. Returns shared services with their associated roles. Requires JWT authentication and tenant access.
       security:
@@ -2204,7 +2205,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/UnauthorizedErrorResponse'
         '403':
-          description: Forbidden - User does not have access to the tenant, the connected service is not switched on, the tenant does not use the service, or the user is not IDIR
+          description: Forbidden - User does not have access to the tenant, or headless access is not allowed
           content:
             application/json:
               schema:
@@ -2385,7 +2386,7 @@ paths:
     get:
       summary: Get a specific group in a tenant
       description: |
-        Authentication: CSTAR audience token, or a token from a connected service that is switched on for headless access (IDIR users only, and the tenant must use that service).
+        Authentication: CSTAR audience token or headless shared service token allowed.
 
         Retrieves details of a specific group within a tenant. Requires JWT authentication and tenant access.
       security:
@@ -2447,7 +2448,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/UnauthorizedErrorResponse'
         '403':
-          description: Forbidden - User does not have access to the tenant, the connected service is not switched on, the tenant does not use the service, or the user is not IDIR
+          description: Forbidden - User does not have access to the tenant, or headless access is not allowed
           content:
             application/json:
               schema:
@@ -2711,7 +2712,9 @@ paths:
       description: |
         Authentication: Shared service audience token allowed.
 
-        Retrieves all shared service roles for a specific group, including assignment status. Requires JWT authentication and tenant access.
+        Retrieves shared service roles for a specific group, including assignment status. Requires JWT authentication and tenant access.
+
+        With a shared service token, only the calling shared service is returned unless the user has the TENANT_OWNER or USER_ADMIN role.
       security:
         - bearerAuth: []
       parameters:
