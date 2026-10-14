@@ -26,7 +26,7 @@ const { group, tenant } = defineProps<{
     class="card-link"
   >
     <v-card class="card pb-4 pt-2" color="surface-light-gray">
-      <v-card-title class="card-title">
+      <v-card-title class="card-link-title">
         {{ group.name }}
       </v-card-title>
     </v-card>

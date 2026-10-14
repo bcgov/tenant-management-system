@@ -35,6 +35,7 @@ const bcgovLight: ThemeDefinition = {
     'surface-light-blue': tokens.bcdsSurfaceColorBackgroundLightBlue,
     'surface-light-gray': tokens.bcdsSurfaceColorBackgroundLightGray,
     'surface-light-gray-hover': tokens.bcdsSurfaceColorSecondaryHover,
+    'surface-gold-10': tokens.bcdsThemeGold10,
     'typography-input-disabled': tokens.bcdsTypographyColorDisabled,
     'typography-link-color': tokens.bcdsTypographyColorLink,
     'typography-link-color-hover': tokens.bcdsSurfaceColorBorderActive,

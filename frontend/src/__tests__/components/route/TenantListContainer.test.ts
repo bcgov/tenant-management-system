@@ -2,11 +2,17 @@ import { render, screen, waitFor } from '@testing-library/vue'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { makeSsoUser, makeTenant, makeUser } from '@/__tests__/__factories__'
+import {
+  makeSsoUser,
+  makeTenant,
+  makeTenantRequest,
+  makeUser,
+} from '@/__tests__/__factories__'
 import { createMockAuthStore } from '@/__tests__/__helpers__/useAuthStore.mock'
 import {
   mockTenantRequestStore,
   mockTenantRequestStoreCreateTenantRequest,
+  mockTenantRequestStoreFetchPendingTenantRequests,
   mockTenantRequestStoreError,
 } from '@/__tests__/__helpers__/useTenantRequestStore.mock'
 import {
@@ -101,6 +107,23 @@ describe('TenantListContainer.vue', () => {
       )
     })
 
+    it('fetches pending tenant requests on mount', async () => {
+      const user = makeUser({
+        ssoUser: makeSsoUser({
+          ssoUserId: toSsoUserId('user.ssoUser.ssoUserId'),
+        }),
+      })
+      currentAuthStore = createMockAuthStore({ user })
+
+      renderComponent()
+
+      await waitFor(() =>
+        expect(
+          mockTenantRequestStoreFetchPendingTenantRequests,
+        ).toHaveBeenCalledWith('user.ssoUser.ssoUserId'),
+      )
+    })
+
     it('shows an error notification if fetching tenants fails', async () => {
       mockTenantStoreFetchError(new Error('message'))
 
@@ -111,12 +134,32 @@ describe('TenantListContainer.vue', () => {
       )
     })
 
+    it('shows an error notification if fetching pending tenant requests fails', async () => {
+      mockTenantRequestStoreError(new Error('message'))
+
+      renderComponent()
+
+      await waitFor(() =>
+        expect(mockError).toHaveBeenCalledWith(
+          'Failed to load pending tenant requests',
+        ),
+      )
+    })
+
     it('shows the tenant when tenants exist', async () => {
       mockTenantStore([makeTenant({ name: 'tenantName' })])
 
       renderComponent()
 
       expect(await screen.findByText('tenantName')).toBeInTheDocument()
+    })
+
+    it('shows the pending tenant request when exists', async () => {
+      mockTenantRequestStore([makeTenantRequest({ name: 'tenantRequestName' })])
+
+      renderComponent()
+
+      expect(await screen.findByText('tenantRequestName')).toBeInTheDocument()
     })
   })
 
