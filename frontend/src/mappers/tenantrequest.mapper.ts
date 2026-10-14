@@ -2,6 +2,12 @@ import {
   TenantRequest,
   type TenantRequestId,
 } from '@/models/tenantrequest.model'
+import { type ApiEnvelope } from '@/services/api'
+
+export type TenantRequestListApiEnvelope = ApiEnvelope<
+  'tenantRequests',
+  TenantRequestApiData[]
+>
 
 /**
  * The shape of the data that comes from the API.
