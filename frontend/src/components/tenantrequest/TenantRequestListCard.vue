@@ -11,7 +11,7 @@ const { tenantRequest } = defineProps<{
 </script>
 
 <template>
-  <v-card class="card pt-4" color="surface-gold-10">
+  <v-card class="card pt-4" color="surface-gold-10-custom">
     <v-card-subtitle class="p-label">
       <v-icon :icon="mdiClockOutline" />
       Pending Approval
