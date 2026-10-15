@@ -381,6 +381,28 @@ describe('TenantRepository', () => {
       ).rejects.toThrow(NotFoundError)
     })
 
+    it('only looks up the tenant user within the given tenant', async () => {
+      manager.findOne.mockResolvedValueOnce(null)
+
+      await expect(
+        repo.assignUserRoles(
+          'tenant-1',
+          'tu-from-another-tenant',
+          ['role-1'],
+          asManager(manager),
+        ),
+      ).rejects.toThrow(NotFoundError)
+
+      expect(manager.findOne).toHaveBeenCalledWith(expect.anything(), {
+        where: {
+          id: 'tu-from-another-tenant',
+          isDeleted: false,
+          tenant: { id: 'tenant-1' },
+        },
+      })
+      expect(manager.save).not.toHaveBeenCalled()
+    })
+
     it('creates new assignments for roles not yet assigned', async () => {
       manager.findOne.mockResolvedValueOnce({
         id: 'tu-1',
@@ -541,6 +563,20 @@ describe('TenantRepository', () => {
       )
 
       expect(result).toEqual([{ id: 'role-1' }])
+    })
+
+    it('only returns roles for the tenant user within the given tenant', async () => {
+      const qb = createQueryBuilder({ getMany: [] })
+      manager.createQueryBuilder.mockReturnValueOnce(qb)
+
+      await repo.getUserRoles(
+        { tenantId: 'tenant-1', tenantUserId: 'tu-1' },
+        asManager(manager),
+      )
+
+      expect(qb.andWhere).toHaveBeenCalledWith('tu.tenant_id = :tenantId', {
+        tenantId: 'tenant-1',
+      })
     })
   })
 

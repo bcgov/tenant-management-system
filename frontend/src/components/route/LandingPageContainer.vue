@@ -78,7 +78,7 @@ watchEffect(() => {
             href="https://submit.digital.gov.bc.ca/app/form/submit?f=24a08e40-315e-4cfa-a1d4-e5d7a220dacb"
             target="_blank"
           >
-            Contact Us
+            Contact us
             <v-icon :icon="mdiOpenInNew" class="ms-2" size="x-small" />
           </a>
         </h4>

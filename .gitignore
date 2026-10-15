@@ -133,6 +133,10 @@ web_modules/
 .env.production.local
 .env.local
 
+# Playwright authentication state
+/tests/e2e/support/user.json
+/tests/e2e/support/e2e-user.json
+
 # parcel-bundler cache (https://parceljs.org/)
 .cache
 .parcel-cache

@@ -34,14 +34,15 @@ vi.mock('@/components/tenant/RoleDialog.vue', () => ({
   default: {
     emits: ['update:open-dialog'],
     name: 'RoleDialog',
-    props: ['modelValue', 'tenant', 'userIndex'],
+    props: ['modelValue', 'roles', 'user'],
     template:
       '<div v-if="modelValue" data-testid="role-dialog">' +
-      'Editing user index: {{ userIndex }}' +
+      'Editing user: {{ user.ssoUser.displayName }}' +
       '<button data-testid="close-role-dialog" ' +
-      '@click="$emit(\'update:open-dialog\', false)">Close</button>' +
-      '<button data-testid="dismiss-role-dialog" ' +
-      '@click="$emit(\'update:modelValue\', false)">Dismiss</button>' +
+      '@click="$emit(\'update:modelValue\', false)">Close</button>' +
+      '<button data-testid="change-roles-dialog" ' +
+      "@click=\"$emit('roles-changed', user, ['role-2', 'role-3'], ['role-1'])\">" +
+      'Change</button>' +
       '</div>',
   },
 }))
@@ -53,7 +54,14 @@ function renderComponent(props: { tenant: Tenant; users: User[] }) {
     global: {
       plugins: [vuetify],
     },
-    props,
+    props: {
+      ...props,
+      roles: [
+        makeRoleServiceUser(),
+        makeRoleTenantOwner(),
+        makeRoleUserAdmin(),
+      ],
+    },
   })
 }
 
@@ -76,7 +84,7 @@ describe('TenantUserTable', () => {
         screen.getByRole('columnheader', { name: 'Actions' }),
       ).toBeInTheDocument()
       expect(
-        screen.getByLabelText('Open Menu for firstName lastName'),
+        screen.getByLabelText('Open menu for firstName lastName'),
       ).toBeInTheDocument()
     })
 
@@ -93,7 +101,7 @@ describe('TenantUserTable', () => {
         screen.queryByRole('columnheader', { name: 'Actions' }),
       ).not.toBeInTheDocument()
       expect(
-        screen.queryByLabelText('Open Menu for firstName lastName'),
+        screen.queryByLabelText('Open menu for firstName lastName'),
       ).not.toBeInTheDocument()
     })
   })
@@ -214,7 +222,7 @@ describe('TenantUserTable', () => {
 
       renderComponent({ tenant, users: [user] })
 
-      expect(screen.queryByLabelText(/Remove Role/)).not.toBeInTheDocument()
+      expect(screen.queryByLabelText(/Remove role/)).not.toBeInTheDocument()
     })
 
     it('has no remove icon when only one role', () => {
@@ -226,7 +234,7 @@ describe('TenantUserTable', () => {
 
       renderComponent({ tenant, users: [user] })
 
-      expect(screen.queryByLabelText(/Remove Role/)).not.toBeInTheDocument()
+      expect(screen.queryByLabelText(/Remove role/)).not.toBeInTheDocument()
     })
 
     it('has no remove icon when only one tenant owner', () => {
@@ -244,12 +252,12 @@ describe('TenantUserTable', () => {
 
       expect(
         screen.queryByLabelText(
-          `Remove Role ${owner.description} for firstName lastName`,
+          `Remove role ${owner.description} for firstName lastName`,
         ),
       ).not.toBeInTheDocument()
       expect(
         screen.getByLabelText(
-          `Remove Role ${service.description} for firstName lastName`,
+          `Remove role ${service.description} for firstName lastName`,
         ),
       ).toBeInTheDocument()
     })
@@ -278,7 +286,7 @@ describe('TenantUserTable', () => {
 
       expect(
         screen.getAllByLabelText(
-          `Remove Role ${owner.description} for firstName1 lastName1`,
+          `Remove role ${owner.description} for firstName1 lastName1`,
         ),
       ).toHaveLength(1)
     })
@@ -299,12 +307,12 @@ describe('TenantUserTable', () => {
 
       await fireEvent.click(
         screen.getByLabelText(
-          `Remove Role ${role.description} for firstName lastName`,
+          `Remove role ${role.description} for firstName lastName`,
         ),
       )
-      expect(screen.getByText('Confirm Role Removal')).toBeInTheDocument()
+      expect(screen.getByText('Confirm role removal')).toBeInTheDocument()
 
-      await fireEvent.click(screen.getByRole('button', { name: 'Remove' }))
+      await fireEvent.click(screen.getByRole('button', { name: 'Remove role' }))
 
       expect(emitted()['remove-role']).toHaveLength(1)
       expect(emitted()['remove-role'][0]).toEqual([user, role])
@@ -324,7 +332,7 @@ describe('TenantUserTable', () => {
 
       await fireEvent.click(
         screen.getByLabelText(
-          `Remove Role ${role.description} for firstName lastName`,
+          `Remove role ${role.description} for firstName lastName`,
         ),
       )
       await fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
@@ -333,7 +341,7 @@ describe('TenantUserTable', () => {
     })
   })
 
-  describe('Offboard User action', () => {
+  describe('Remove user action', () => {
     it('is enabled when there are multiple tenant owners', async () => {
       const userA = makeUser({
         roles: [makeRoleTenantOwner()],
@@ -354,13 +362,13 @@ describe('TenantUserTable', () => {
 
       renderComponent({ tenant, users: [userA, userB] })
       await fireEvent.click(
-        screen.getByLabelText('Open Menu for firstNameA lastNameA'),
+        screen.getByLabelText('Open menu for firstNameA lastNameA'),
       )
 
-      const offboardItem = screen.getByLabelText(
-        'Offboard User firstNameA lastNameA',
+      const removeItem = screen.getByLabelText(
+        'Remove user firstNameA lastNameA',
       )
-      expect(isVuetifyDisabled(offboardItem)).toBe(false)
+      expect(isVuetifyDisabled(removeItem)).toBe(false)
     })
 
     it('is disabled when the user is the sole tenant owner', async () => {
@@ -376,13 +384,11 @@ describe('TenantUserTable', () => {
 
       renderComponent({ tenant, users: [user] })
       await fireEvent.click(
-        screen.getByLabelText('Open Menu for firstName lastName'),
+        screen.getByLabelText('Open menu for firstName lastName'),
       )
 
-      const offboardItem = screen.getByLabelText(
-        'Offboard User firstName lastName',
-      )
-      expect(isVuetifyDisabled(offboardItem)).toBe(true)
+      const removeItem = screen.getByLabelText('Remove user firstName lastName')
+      expect(isVuetifyDisabled(removeItem)).toBe(true)
     })
 
     it('emits remove-user after confirming', async () => {
@@ -397,14 +403,11 @@ describe('TenantUserTable', () => {
       const { emitted } = renderComponent({ tenant, users: [user] })
 
       await fireEvent.click(
-        screen.getByLabelText('Open Menu for firstName lastName'),
+        screen.getByLabelText('Open menu for firstName lastName'),
       )
-      await fireEvent.click(await screen.findByText('Offboard User'))
-      expect(screen.getByText('Offboarding User')).toBeInTheDocument()
+      await fireEvent.click(await screen.findByText('Remove user'))
 
-      await fireEvent.click(
-        screen.getByRole('button', { name: 'Offboard User' }),
-      )
+      await fireEvent.click(screen.getByRole('button', { name: 'Remove user' }))
 
       expect(emitted()['remove-user']).toHaveLength(1)
       expect(emitted()['remove-user'][0]).toEqual([user])
@@ -422,9 +425,9 @@ describe('TenantUserTable', () => {
       const { emitted } = renderComponent({ tenant, users: [user] })
 
       await fireEvent.click(
-        screen.getByLabelText('Open Menu for firstName lastName'),
+        screen.getByLabelText('Open menu for firstName lastName'),
       )
-      await fireEvent.click(await screen.findByText('Offboard User'))
+      await fireEvent.click(await screen.findByText('Remove user'))
       await fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
 
       expect(emitted()['remove-user']).toBeUndefined()
@@ -454,18 +457,18 @@ describe('TenantUserTable', () => {
 
       renderComponent({ tenant, users: [userA, userB] })
       await fireEvent.click(
-        screen.getByLabelText('Open Menu for firstNameB lastNameB'),
+        screen.getByLabelText('Open menu for firstNameB lastNameB'),
       )
       await fireEvent.click(
-        screen.getByLabelText('Edit Tenant Roles for firstNameB lastNameB'),
+        screen.getByLabelText('Edit tenant roles for firstNameB lastNameB'),
       )
 
       expect(screen.getByTestId('role-dialog')).toHaveTextContent(
-        'Editing user index: 1',
+        `Editing user: ${userB.ssoUser.displayName}`,
       )
     })
 
-    it('closes the dialog and clears the modifying user index', async () => {
+    it('closes the dialog and changes the modifying user', async () => {
       const userA = makeUser({
         id: toUserId('user-a'),
         roles: [makeRoleTenantOwner()],
@@ -487,28 +490,27 @@ describe('TenantUserTable', () => {
 
       renderComponent({ tenant, users: [userA, userB] })
 
-      // Open the dialog for userB (index 1)
       await fireEvent.click(
-        screen.getByLabelText('Open Menu for firstNameB lastNameB'),
+        screen.getByLabelText('Open menu for firstNameB lastNameB'),
       )
       await fireEvent.click(
-        screen.getByLabelText('Edit Tenant Roles for firstNameB lastNameB'),
+        screen.getByLabelText('Edit tenant roles for firstNameB lastNameB'),
       )
       expect(screen.getByTestId('role-dialog')).toHaveTextContent(
-        'Editing user index: 1',
+        `Editing user: ${userB.ssoUser.displayName}`,
       )
 
       await fireEvent.click(screen.getByTestId('close-role-dialog'))
       expect(screen.queryByTestId('role-dialog')).not.toBeInTheDocument()
 
       await fireEvent.click(
-        screen.getByLabelText('Open Menu for firstNameA lastNameA'),
+        screen.getByLabelText('Open menu for firstNameA lastNameA'),
       )
       await fireEvent.click(
-        screen.getByLabelText('Edit Tenant Roles for firstNameA lastNameA'),
+        screen.getByLabelText('Edit tenant roles for firstNameA lastNameA'),
       )
       expect(screen.getByTestId('role-dialog')).toHaveTextContent(
-        'Editing user index: 0',
+        `Editing user: ${userA.ssoUser.displayName}`,
       )
     })
 
@@ -524,14 +526,73 @@ describe('TenantUserTable', () => {
       renderComponent({ tenant, users: [user] })
 
       await fireEvent.click(
-        screen.getByLabelText('Open Menu for firstName lastName'),
+        screen.getByLabelText('Open menu for firstName lastName'),
       )
-      await fireEvent.click(await screen.findByText('Edit Tenant Roles'))
+      await fireEvent.click(await screen.findByText('Edit tenant roles'))
       expect(screen.getByTestId('role-dialog')).toBeInTheDocument()
 
-      await fireEvent.click(screen.getByTestId('dismiss-role-dialog'))
+      await fireEvent.click(screen.getByTestId('close-role-dialog'))
 
       expect(screen.queryByTestId('role-dialog')).not.toBeInTheDocument()
+    })
+
+    it('emits roles-changed with the edited user and both role lists', async () => {
+      const userA = makeUser({
+        id: toUserId('a'),
+        roles: [makeRoleTenantOwner()],
+        ssoUser: makeSsoUser({
+          firstName: 'firstNameA',
+          lastName: 'lastNameA',
+        }),
+      })
+      const userB = makeUser({
+        id: toUserId('b'),
+        roles: [makeRoleUserAdmin()],
+        ssoUser: makeSsoUser({
+          firstName: 'firstNameB',
+          lastName: 'lastNameB',
+        }),
+      })
+      const tenant = makeTenant({ users: [userA, userB] })
+      vi.mocked(currentUserHasRole).mockReturnValue(true)
+
+      const { emitted } = renderComponent({ tenant, users: [userA, userB] })
+
+      await fireEvent.click(
+        screen.getByLabelText('Open menu for firstNameB lastNameB'),
+      )
+      await fireEvent.click(
+        screen.getByLabelText('Edit tenant roles for firstNameB lastNameB'),
+      )
+      await fireEvent.click(screen.getByTestId('change-roles-dialog'))
+
+      expect(emitted()['roles-changed']).toHaveLength(1)
+      expect(emitted()['roles-changed'][0]).toEqual([
+        userB,
+        ['role-2', 'role-3'],
+        ['role-1'],
+      ])
+    })
+
+    it('does not emit roles-changed just by opening the dialog', async () => {
+      const user = makeUser({
+        roles: [makeRoleUserAdmin()],
+        ssoUser: makeSsoUser({ firstName: 'firstName', lastName: 'lastName' }),
+      })
+      const tenant = makeTenant({ users: [user] })
+      vi.mocked(currentUserHasRole).mockReturnValue(true)
+
+      const { emitted } = renderComponent({ tenant, users: [user] })
+
+      await fireEvent.click(
+        screen.getByLabelText('Open menu for firstName lastName'),
+      )
+      await fireEvent.click(
+        screen.getByLabelText('Edit tenant roles for firstName lastName'),
+      )
+
+      expect(screen.getByTestId('role-dialog')).toBeInTheDocument()
+      expect(emitted()['roles-changed']).toBeUndefined()
     })
   })
 })

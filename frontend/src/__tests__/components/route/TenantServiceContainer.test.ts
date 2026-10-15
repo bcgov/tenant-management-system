@@ -1,6 +1,7 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { ref } from 'vue'
 
 import { makeService, makeTenant } from '@/__tests__/__factories__'
 
@@ -63,12 +64,13 @@ describe('TenantServiceContainer', () => {
     serviceStore.fetchTenantServices = vi.fn().mockResolvedValue(undefined)
 
     notificationMock = {
-      success: vi.fn(),
+      messages: ref([]),
+
+      dismiss: vi.fn(),
       error: vi.fn(),
-      warning: vi.fn(),
       info: vi.fn(),
-      remove: vi.fn(),
-      items: [],
+      success: vi.fn(),
+      warning: vi.fn(),
     }
     vi.mocked(useNotification).mockReturnValue(notificationMock)
   })
@@ -247,9 +249,7 @@ describe('TenantServiceContainer', () => {
         toTenantId('tenantId1'),
         service.id,
       )
-      expect(notificationMock.success).toHaveBeenCalledWith(
-        'displayName has been added to this tenant.',
-      )
+      expect(notificationMock.success).not.toHaveBeenCalled()
     })
 
     it('does not update tenantServices or notify success when the added service is not found locally', async () => {

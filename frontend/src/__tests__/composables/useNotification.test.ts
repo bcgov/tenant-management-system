@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 
 import { useNotification } from '@/composables/useNotification'
 import { NotificationType } from '@/types/NotificationType'
@@ -7,93 +7,98 @@ describe('useNotification', () => {
   let notification: ReturnType<typeof useNotification>
 
   beforeEach(() => {
-    vi.useFakeTimers()
-
-    // Directly mutate the notifications array to clear it before each test,
-    // which isn't ideal but perhaps better than exporting a clear function that
-    // is only used for testing.
     notification = useNotification()
-    notification.items.splice(0)
+    notification.messages.value = []
   })
 
-  afterEach(() => {
-    vi.useRealTimers()
+  it('success should add a success notification', () => {
+    notification.success('Test message')
+
+    expect(notification.messages.value).toHaveLength(1)
+    expect(notification.messages.value[0].text).toBe('Test message')
+    expect(notification.messages.value[0].color).toBe(NotificationType.SUCCESS)
   })
 
-  it('success should add a notification', () => {
-    notification.success('Test message', 'Test title')
-
-    expect(notification.items).toHaveLength(1)
-    expect(notification.items[0].message).toBe('Test message')
-    expect(notification.items[0].title).toBe('Test title')
-    expect(notification.items[0].type).toBe(NotificationType.SUCCESS)
-  })
-
-  it('success should use default title when not provided', () => {
-    notification.success('Test success message')
-
-    expect(notification.items).toHaveLength(1)
-    expect(notification.items[0].title).toBe('Success')
-    expect(notification.items[0].type).toBe(NotificationType.SUCCESS)
-  })
-
-  it('info should use default title when not provided', () => {
-    notification.info('Test info message')
-
-    expect(notification.items).toHaveLength(1)
-    expect(notification.items[0].title).toBe('Info')
-    expect(notification.items[0].type).toBe(NotificationType.INFO)
-  })
-
-  it('warning should use default title when not provided', () => {
-    notification.warning('Test warning message')
-
-    expect(notification.items).toHaveLength(1)
-    expect(notification.items[0].title).toBe('Warning')
-    expect(notification.items[0].type).toBe(NotificationType.WARNING)
-  })
-
-  it('error should use default title when not provided', () => {
-    notification.error('Test error message')
-
-    expect(notification.items).toHaveLength(1)
-    expect(notification.items[0].title).toBe('Error')
-    expect(notification.items[0].type).toBe(NotificationType.ERROR)
-  })
-
-  it('should remove notification by id', () => {
+  it('info should add an info notification', () => {
     notification.info('Test message')
-    const notificationId = notification.items[0].id
 
-    notification.remove(notificationId)
-
-    expect(notification.items).toHaveLength(0)
+    expect(notification.messages.value).toHaveLength(1)
+    expect(notification.messages.value[0].text).toBe('Test message')
+    expect(notification.messages.value[0].color).toBe(NotificationType.INFO)
   })
 
-  it('should handle removing a non-existent notification id gracefully', () => {
-    notification.success('Test message')
-    expect(notification.items).toHaveLength(1)
+  it('warning should add a warning notification', () => {
+    notification.warning('Test message')
 
-    notification.remove('non-existent-id')
-
-    expect(notification.items).toHaveLength(1)
+    expect(notification.messages.value).toHaveLength(1)
+    expect(notification.messages.value[0].text).toBe('Test message')
+    expect(notification.messages.value[0].color).toBe(NotificationType.WARNING)
   })
 
-  it('should auto-remove notification after 10 seconds', () => {
-    notification.success('Test message')
-    expect(notification.items).toHaveLength(1)
+  it('error should add an error notification', () => {
+    notification.error('Test message')
 
-    vi.advanceTimersByTime(10000)
-
-    expect(notification.items).toHaveLength(0)
+    expect(notification.messages.value).toHaveLength(1)
+    expect(notification.messages.value[0].text).toBe('Test message')
+    expect(notification.messages.value[0].color).toBe(NotificationType.ERROR)
   })
 
-  it('should not auto-remove notification before 10 seconds', () => {
-    notification.success('Test message')
-    expect(notification.items).toHaveLength(1)
+  it('should assign a unique id to each notification', () => {
+    notification.info('First')
+    notification.info('Second')
 
-    vi.advanceTimersByTime(9000)
+    const [first, second] = notification.messages.value
 
-    expect(notification.items).toHaveLength(1)
+    expect(first.id).toEqual(expect.any(String))
+    expect(second.id).toEqual(expect.any(String))
+    expect(first.id).not.toBe(second.id)
+  })
+
+  it('should keep notifications in the order they were added', () => {
+    notification.success('First')
+    notification.error('Second')
+    notification.warning('Third')
+
+    expect(notification.messages.value.map((m) => m.text)).toEqual([
+      'First',
+      'Second',
+      'Third',
+    ])
+  })
+
+  it('dismiss should remove the oldest notification', () => {
+    notification.success('First')
+    notification.error('Second')
+
+    notification.dismiss()
+
+    expect(notification.messages.value).toHaveLength(1)
+    expect(notification.messages.value[0].text).toBe('Second')
+    expect(notification.messages.value[0].color).toBe(NotificationType.ERROR)
+  })
+
+  it('dismiss should empty the queue after dismissing every notification', () => {
+    notification.success('First')
+    notification.success('Second')
+
+    notification.dismiss()
+    notification.dismiss()
+
+    expect(notification.messages.value).toHaveLength(0)
+  })
+
+  it('dismiss should not throw when there are no notifications', () => {
+    expect(() => notification.dismiss()).not.toThrow()
+    expect(notification.messages.value).toHaveLength(0)
+  })
+
+  it('should share state between multiple useNotification calls', () => {
+    const other = useNotification()
+
+    notification.info('Shared message')
+
+    expect(other).toBe(notification)
+    expect(other.messages.value).toHaveLength(1)
+    expect(other.messages.value[0].text).toBe('Shared message')
   })
 })

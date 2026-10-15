@@ -1,19 +1,26 @@
 import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
 import { ValidationError } from '@/errors/domain/ValidationError'
-import { type GroupApiData } from '@/mappers/group.mapper'
-import { type GroupUserApiData } from '@/mappers/groupuser.mapper'
+import {
+  type GroupApiData,
+  type GroupApiEnvelope,
+  type GroupListApiEnvelope,
+} from '@/mappers/group.mapper'
+import {
+  type GroupUserApiData,
+  type GroupUserApiEnvelope,
+} from '@/mappers/groupuser.mapper'
 import { type GroupId } from '@/models/group.model'
 import { type GroupUserId } from '@/models/groupuser.model'
 import { type TenantId } from '@/models/tenant.model'
 import { User } from '@/models/user.model'
-import { authenticatedAxios } from '@/services/authenticated.axios'
+import { authenticatedFetch } from '@/services/api'
 import {
   isDuplicateEntityError,
   isValidationError,
   logApiError,
 } from '@/services/utils'
 
-const api = authenticatedAxios()
+const api = authenticatedFetch()
 
 export const groupService = {
   /**
@@ -48,18 +55,18 @@ export const groupService = {
         },
       }
 
-      const response = await api.post(
+      const response = await api.post<GroupUserApiEnvelope>(
         `/tenants/${tenantId}/groups/${groupId}/users`,
         requestBody,
       )
 
-      return response.data.data.groupUser
+      return response.data.groupUser
     } catch (error: unknown) {
       logApiError('Error adding user to group', error)
 
       // Handle HTTP 400 Bad Request (validation)
       if (isValidationError(error)) {
-        const messageArray = error.response.data.details.body.map(
+        const messageArray = error.data.details.body.map(
           (item: { message: string }) => item.message,
         )
 
@@ -68,7 +75,7 @@ export const groupService = {
 
       // Handle HTTP 409 Conflict (duplicate)
       if (isDuplicateEntityError(error)) {
-        throw new DuplicateEntityError(error.response.data.message)
+        throw new DuplicateEntityError(error.data.message)
       }
 
       // Re-throw all other errors
@@ -95,18 +102,18 @@ export const groupService = {
         name,
       }
 
-      const response = await api.post(
+      const response = await api.post<GroupApiEnvelope>(
         `/tenants/${tenantId}/groups`,
         requestBody,
       )
 
-      return response.data.data.group
+      return response.data.group
     } catch (error: unknown) {
       logApiError('Error creating group', error)
 
       // Handle HTTP 400 Bad Request (validation)
       if (isValidationError(error)) {
-        const messageArray = error.response.data.details.body.map(
+        const messageArray = error.data.details.body.map(
           (item: { message: string }) => item.message,
         )
 
@@ -115,7 +122,7 @@ export const groupService = {
 
       // Handle HTTP 409 Conflict (duplicate)
       if (isDuplicateEntityError(error)) {
-        throw new DuplicateEntityError(error.response.data.message)
+        throw new DuplicateEntityError(error.data.message)
       }
 
       // Re-throw all other errors
@@ -132,11 +139,11 @@ export const groupService = {
    */
   async getGroup(tenantId: TenantId, groupId: GroupId): Promise<GroupApiData> {
     try {
-      const response = await api.get(
+      const response = await api.get<GroupApiEnvelope>(
         `/tenants/${tenantId}/groups/${groupId}?expand=groupUsers`,
       )
 
-      return response.data.data.group
+      return response.data.group
     } catch (error) {
       logApiError('Error getting group', error)
 
@@ -152,9 +159,11 @@ export const groupService = {
    */
   async getTenantGroups(tenantId: TenantId): Promise<GroupApiData[]> {
     try {
-      const response = await api.get(`/tenants/${tenantId}/groups`)
+      const response = await api.get<GroupListApiEnvelope>(
+        `/tenants/${tenantId}/groups`,
+      )
 
-      return response.data.data.groups
+      return response.data.groups
     } catch (error) {
       logApiError('Error getting tenant groups', error)
 
@@ -182,6 +191,55 @@ export const groupService = {
     } catch (error: unknown) {
       logApiError('Error removing user from group', error)
 
+      throw error
+    }
+  },
+
+  /**
+   * Updates an existing group with the specified details.
+   *
+   * @param tenantId - The ID of the tenant that the group belongs to.
+   * @param groupId - The ID of the group to update.
+   * @param name - The new name of the group.
+   * @param description - The new description for the group.
+   * @returns A promise that resolves to the group data.
+   */
+  async updateGroup(
+    tenantId: TenantId,
+    groupId: GroupId,
+    name: string,
+    description: string,
+  ): Promise<GroupApiData> {
+    try {
+      const requestBody = {
+        description: description,
+        name: name,
+      }
+
+      const response = await api.put<GroupApiEnvelope>(
+        `/tenants/${tenantId}/groups/${groupId}`,
+        requestBody,
+      )
+
+      return response.data.group
+    } catch (error: unknown) {
+      logApiError('Error updating group', error)
+
+      // Handle HTTP 400 Bad Request (validation)
+      if (isValidationError(error)) {
+        const messageArray = error.data.details.body.map(
+          (item: { message: string }) => item.message,
+        )
+
+        throw new ValidationError(messageArray)
+      }
+
+      // Handle HTTP 409 Conflict (duplicate)
+      if (isDuplicateEntityError(error)) {
+        throw new DuplicateEntityError(error.data.message)
+      }
+
+      // Re-throw all other errors
       throw error
     }
   },

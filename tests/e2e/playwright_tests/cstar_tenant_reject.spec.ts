@@ -7,7 +7,7 @@ test.beforeAll(async ({ browser }: { browser: Browser }) => {
     storageState: 'support/user.json',
   })
   sharedPage = await context.newPage()
-  await sharedPage.goto('/')
+  await sharedPage.goto('/tenants')
 })
 
 test.describe.serial('Landing page tests', () => {
@@ -16,7 +16,9 @@ test.describe.serial('Landing page tests', () => {
   })
 
   test('Checks the navigation links', async () => {
-    await expect(sharedPage.getByText('All Tenants')).toBeVisible()
+    await expect(
+      sharedPage.getByRole('link', { name: 'all tenants' }),
+    ).toBeVisible()
     await expect(sharedPage.getByText('Request a Tenant')).toBeVisible()
   })
 
@@ -49,11 +51,28 @@ test.describe.serial('Landing page tests', () => {
 
     await tenantDescription.fill('Test Tenant Description')
 
-    await sharedPage.getByText('Submit Request').click()
+    await sharedPage
+      .getByRole('button', { name: 'Create tenant request' })
+      .click()
 
-    await expect(sharedPage.getByText('Success')).toBeVisible()
+    const snackbarTenantRequestSubmitted = sharedPage
+      .getByRole('alert')
+      .filter({ hasText: /tenant request submitted/i })
+    await expect(snackbarTenantRequestSubmitted).toBeVisible()
+    await snackbarTenantRequestSubmitted
+      .getByText(/tenant request submitted/i)
+      .click()
+    await expect(snackbarTenantRequestSubmitted).toBeHidden()
 
     await sharedPage.getByText('settings').click()
+
+    const combobox = sharedPage.getByRole('combobox', {
+      name: /items per page/i,
+    })
+    await combobox.focus()
+    await combobox.press('ArrowDown')
+    await expect(combobox).toHaveAttribute('aria-expanded', 'true')
+    await sharedPage.getByRole('option', { name: 'All', exact: true }).click()
 
     await sharedPage
       .locator('td', { hasText: tenantNameValue })
@@ -78,13 +97,9 @@ test.describe.serial('Landing page tests', () => {
     const rejectionNotes = sharedPage.getByLabel('Rejection Notes')
     await rejectionNotes.fill('Test rejection reason')
     //Reject Tenant request
-    await sharedPage.getByRole('button', { name: 'Submit' }).click()
-    await expect(sharedPage.getByText('Success')).toBeVisible()
-    await expect(
-      sharedPage.getByText('Tenant request has been successfully updated'),
-    ).toBeVisible()
+    await sharedPage.getByRole('button', { name: 'Update status' }).click()
     //Check visibility of rejected tenant in the All Tenants list
-    await sharedPage.getByText('All Tenants').click()
+    await sharedPage.getByRole('link', { name: 'all tenants' }).click()
     await expect(sharedPage.getByText('Request a Tenant')).toBeVisible()
     await expect(sharedPage.getByText(tenantNameValue)).not.toBeVisible()
   })

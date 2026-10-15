@@ -71,7 +71,7 @@ watch(mobile, () => {
         <v-list-item
           :class="{ 'pl-6': !rail }"
           :prepend-icon="mdiHomePlusOutline"
-          title="Tenant Requests"
+          title="Tenant requests"
           to="/settings/requests"
         />
         <v-list-item
@@ -86,7 +86,7 @@ watch(mobile, () => {
 
       <v-list-item
         :prepend-icon="mdiHomeCircleOutline"
-        title="All Tenants"
+        title="All tenants"
         to="/tenants"
       />
 
@@ -96,13 +96,13 @@ watch(mobile, () => {
           :class="{ 'pl-6': !rail }"
           :prepend-icon="mdiVectorRectangle"
           :to="`/tenants/${routeTenantId}/services`"
-          title="Connected Services"
+          title="Connected services"
         />
         <v-list-item
           :class="{ 'pl-6': !rail }"
           :prepend-icon="mdiAccountOutline"
           :to="`/tenants/${routeTenantId}/users`"
-          title="Tenant Users"
+          title="Tenant users"
         />
         <v-list-item
           :class="{ 'pl-6': !rail }"
@@ -121,7 +121,7 @@ watch(mobile, () => {
             :class="{ 'pl-10': !rail }"
             :prepend-icon="mdiShieldCheckOutline"
             :to="`/tenants/${routeTenantId}/groups/${routeGroupId}/roles`"
-            title="Service Roles"
+            title="Service roles"
           />
         </template>
       </template>

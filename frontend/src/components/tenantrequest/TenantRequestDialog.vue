@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { mdiClose } from '@mdi/js'
 import { nextTick, ref, watch } from 'vue'
 import { VForm } from 'vuetify/components'
 
@@ -10,11 +9,12 @@ import { MINISTRIES } from '@/utils/constants'
 
 // --- Component Interface -----------------------------------------------------
 
-const props = defineProps<{
+const { isDuplicateName } = defineProps<{
   isDuplicateName: boolean
 }>()
 
 const emit = defineEmits<{
+  cancel: []
   clearDuplicateError: []
   submit: [tenantRequestDetails: TenantRequestDetailFields]
 }>()
@@ -36,7 +36,7 @@ const isFormValid = ref(false)
 // When parent sets the duplicated name flag, force re-validation so that the
 // message is displayed.
 watch(
-  () => props.isDuplicateName,
+  () => isDuplicateName,
   async () => {
     await nextTick()
     await form.value?.validate()
@@ -63,13 +63,18 @@ watch(
 watch(
   () => [formData.value.name, formData.value.ministryName],
   () => {
-    emit('clearDuplicateError')
+    if (isDuplicateName) {
+      emit('clearDuplicateError')
+    }
   },
 )
 
 // --- Component Methods -------------------------------------------------------
 
-const dialogClose = () => (dialogVisible.value = false)
+const dialogClose = () => {
+  emit('cancel')
+  dialogVisible.value = false
+}
 
 const handleSubmit = async () => {
   await form.value?.validate()
@@ -88,8 +93,7 @@ const rules = {
   maxLength: (max: number) => (value: string) =>
     !value || value.length <= max || `Must be ${max} characters or less`,
   notDuplicated: () =>
-    !props.isDuplicateName ||
-    'Name must be unique for this ministry/organization',
+    !isDuplicateName || 'Name must be unique for this ministry/organization',
   required: (value: string) => {
     if (!value) {
       return 'Required'
@@ -108,47 +112,34 @@ const rules = {
   <v-dialog v-model="dialogVisible" max-width="800px">
     <v-card class="pa-6">
       <v-card-title class="align-center d-flex justify-space-between">
-        Request New Tenant
-        <v-btn
-          :icon="mdiClose"
-          variant="plain"
-          @click="dialogVisible = false"
-        ></v-btn>
+        Request new tenant
       </v-card-title>
 
       <v-card-text>
         <v-form ref="form" v-model="isFormValid">
-          <v-row no-gutters>
-            <v-col class="pe-md-3" cols="12" md="6">
-              <v-text-field
-                v-model="formData.name"
-                :maxlength="30"
-                :rules="[
-                  rules.required,
-                  rules.maxLength(30),
-                  rules.notDuplicated,
-                ]"
-                required
-              >
-                <template #label>
-                  Name of Tenant <span class="text-error">*</span>
-                </template>
-              </v-text-field>
-            </v-col>
-            <v-col class="ps-md-3" cols="12" md="6">
-              <v-select
-                v-model="formData.ministryName"
-                :items="MINISTRIES"
-                :rules="[rules.required]"
-                placeholder="Select an option..."
-                required
-              >
-                <template #label>
-                  Ministry/Organization <span class="text-error">*</span>
-                </template>
-              </v-select>
-            </v-col>
-          </v-row>
+          <v-text-field
+            v-model="formData.name"
+            :rules="[rules.required, rules.maxLength(150), rules.notDuplicated]"
+            counter="150"
+            required
+          >
+            <template #label>
+              Name of tenant <span class="text-error">*</span>
+            </template>
+          </v-text-field>
+
+          <v-select
+            v-model="formData.ministryName"
+            :items="MINISTRIES"
+            :rules="[rules.required]"
+            autocomplete="off"
+            placeholder="Select an option..."
+            required
+          >
+            <template #label>
+              Ministry/organization <span class="text-error">*</span>
+            </template>
+          </v-select>
 
           <v-textarea
             v-model="formData.description"
@@ -159,7 +150,7 @@ const rules = {
             required
           >
             <template #label>
-              Description of Tenant <span class="text-error">*</span>
+              Description of tenant <span class="text-error">*</span>
             </template>
           </v-textarea>
         </v-form>
@@ -167,7 +158,7 @@ const rules = {
 
       <v-card-actions class="d-flex justify-end">
         <ButtonSecondary class="me-4" text="Cancel" @click="dialogClose" />
-        <ButtonPrimary text="Submit Request" @click="handleSubmit" />
+        <ButtonPrimary text="Create tenant request" @click="handleSubmit" />
       </v-card-actions>
     </v-card>
   </v-dialog>

@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express'
 import logger from './logger'
 import { sendErrorResponse } from './error.handler'
+import { config } from '../services/config.service'
 
 export const checkOperationsAdmin = (
   req: Request,
@@ -8,13 +9,17 @@ export const checkOperationsAdmin = (
   next: NextFunction,
 ) => {
   const roles = req.decodedJwt?.client_roles || []
+  const isTmsToken =
+    Boolean(config.oidc.tmsAudience) &&
+    req.decodedJwt?.aud === config.oidc.tmsAudience
 
-  if (!roles.includes('TMS.OPERATIONS_ADMIN')) {
+  if (!isTmsToken || !roles.includes('TMS.OPERATIONS_ADMIN')) {
     logger.error(
       'Access denied: User does not have required role: TMS.OPERATIONS_ADMIN',
       {
         userId: req.decodedJwt?.idir_user_guid,
         roles: roles,
+        isTmsToken,
       },
     )
 

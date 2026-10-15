@@ -16,6 +16,10 @@ import { toServiceId } from '@/models/service.model'
 import { toTenantId } from '@/models/tenant.model'
 import * as utils from '@/services/utils'
 
+vi.mock('@/services/config.service', () => ({
+  config: { api: { baseUrl: 'https://api.example.com' } },
+}))
+
 vi.mock('@/services/utils', () => ({
   isDuplicateEntityError: vi.fn(),
   isValidationError: vi.fn(),
@@ -34,8 +38,8 @@ const { mockGet, mockPost, mockPut } = vi.hoisted(() => ({
   mockPut: vi.fn(),
 }))
 
-vi.mock('@/services/authenticated.axios', () => ({
-  authenticatedAxios: () => ({
+vi.mock('@/services/api', () => ({
+  authenticatedFetch: () => ({
     get: mockGet,
     post: mockPost,
     put: mockPut,
@@ -55,7 +59,7 @@ describe('serviceService', () => {
 
   describe('addServiceToTenant', () => {
     it('should correctly call the api', async () => {
-      mockPost.mockResolvedValueOnce({ data: { data: {} } })
+      mockPost.mockResolvedValueOnce({ data: {} })
 
       await serviceService.addServiceToTenant(
         toTenantId('tenantId'),
@@ -71,14 +75,14 @@ describe('serviceService', () => {
     })
 
     it('should correctly return no data', async () => {
-      mockPost.mockResolvedValueOnce({ data: { data: {} } })
+      mockPost.mockResolvedValueOnce({})
 
       const result = await serviceService.addServiceToTenant(
         toTenantId('tenantId'),
         toServiceId('serviceId'),
       )
 
-      expect(result).toEqual({})
+      expect(result).toBeUndefined()
     })
 
     it('should log and rethrow errors', async () => {
@@ -110,7 +114,7 @@ describe('serviceService', () => {
           }),
         ],
       })
-      mockPost.mockResolvedValueOnce({ data: { data: {} } })
+      mockPost.mockResolvedValueOnce({ data: {} })
 
       await serviceService.createService(serviceDetailFields)
 
@@ -153,7 +157,7 @@ describe('serviceService', () => {
         updatedDateTime: 'serviceUpdatedDateTime',
       })
       mockPost.mockResolvedValueOnce({
-        data: { data: { sharedService: serviceApiData } },
+        data: { sharedService: serviceApiData },
       })
 
       const result = await serviceService.createService(
@@ -183,11 +187,8 @@ describe('serviceService', () => {
 
     it('should throw DuplicateEntityError on HTTP 409', async () => {
       const error = {
-        isAxiosError: true,
-        response: {
-          data: { message: 'Group already exists' },
-          status: 409,
-        },
+        data: { message: 'Group already exists' },
+        status: 409,
       }
       mockPost.mockRejectedValueOnce(error)
       mockedUtils.isDuplicateEntityError.mockReturnValueOnce(true)
@@ -199,11 +200,8 @@ describe('serviceService', () => {
 
     it('should throw ValidationError on HTTP 400 with validation errors', async () => {
       const error = {
-        isAxiosError: true,
-        response: {
-          data: { details: { body: [{ message: 'Name is required' }] } },
-          status: 400,
-        },
+        data: { details: { body: [{ message: 'Name is required' }] } },
+        status: 400,
       }
       mockPost.mockRejectedValueOnce(error)
       mockedUtils.isValidationError.mockReturnValueOnce(true)
@@ -230,7 +228,7 @@ describe('serviceService', () => {
 
   describe('getServices', () => {
     it('should correctly call the api', async () => {
-      mockGet.mockResolvedValueOnce({ data: { data: {} } })
+      mockGet.mockResolvedValueOnce({ data: {} })
 
       await serviceService.getServices()
 
@@ -260,7 +258,7 @@ describe('serviceService', () => {
         updatedDateTime: 'serviceUpdatedDateTime',
       })
       mockGet.mockResolvedValueOnce({
-        data: { data: { sharedServices: [serviceApiData] } },
+        data: { sharedServices: [serviceApiData] },
       })
 
       const result = await serviceService.getServices()
@@ -299,7 +297,7 @@ describe('serviceService', () => {
 
   describe('getTenantGroupServices', () => {
     it('should correctly call the api', async () => {
-      mockGet.mockResolvedValueOnce({ data: { data: {} } })
+      mockGet.mockResolvedValueOnce({ data: {} })
 
       await serviceService.getTenantGroupServices(
         toTenantId('tenantId'),
@@ -320,7 +318,7 @@ describe('serviceService', () => {
         sharedServiceRoles: [],
       })
       mockGet.mockResolvedValueOnce({
-        data: { data: { sharedServices: [groupServiceApiData] } },
+        data: { sharedServices: [groupServiceApiData] },
       })
 
       const result = await serviceService.getTenantGroupServices(
@@ -337,7 +335,7 @@ describe('serviceService', () => {
     })
 
     it('should return empty array when tenant has no services', async () => {
-      mockGet.mockResolvedValueOnce({ data: { data: { sharedServices: [] } } })
+      mockGet.mockResolvedValueOnce({ data: { sharedServices: [] } })
 
       const result = await serviceService.getTenantGroupServices(
         toTenantId('tenantId'),
@@ -367,7 +365,7 @@ describe('serviceService', () => {
 
   describe('getTenantServices', () => {
     it('should correctly call the api', async () => {
-      mockGet.mockResolvedValueOnce({ data: { data: {} } })
+      mockGet.mockResolvedValueOnce({ data: {} })
 
       await serviceService.getTenantServices(toTenantId('tenantId'))
 
@@ -387,7 +385,7 @@ describe('serviceService', () => {
         updatedDateTime: 'serviceUpdatedDateTime',
       })
       mockGet.mockResolvedValueOnce({
-        data: { data: { sharedServices: [serviceApiData] } },
+        data: { sharedServices: [serviceApiData] },
       })
 
       const result = await serviceService.getTenantServices(
@@ -407,9 +405,7 @@ describe('serviceService', () => {
     })
 
     it('should return empty array when tenant has no services', async () => {
-      mockGet.mockResolvedValueOnce({
-        data: { data: { sharedServices: [] } },
-      })
+      mockGet.mockResolvedValueOnce({ data: { sharedServices: [] } })
 
       const result = await serviceService.getTenantServices(
         toTenantId('tenantId'),
@@ -450,7 +446,7 @@ describe('serviceService', () => {
           }),
         ],
       })
-      mockPut.mockResolvedValueOnce({ data: { data: {} } })
+      mockPut.mockResolvedValueOnce({ data: {} })
 
       await serviceService.updateTenantGroupServiceRoles(
         toTenantId('tenantId'),
@@ -498,9 +494,7 @@ describe('serviceService', () => {
         ],
         updatedDateTime: 'serviceUpdatedDateTime',
       })
-      mockPut.mockResolvedValueOnce({
-        data: { data: [serviceApiData] },
-      })
+      mockPut.mockResolvedValueOnce({ data: [serviceApiData] })
 
       const result = await serviceService.updateTenantGroupServiceRoles(
         toTenantId('tenantId'),

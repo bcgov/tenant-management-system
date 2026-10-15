@@ -43,7 +43,7 @@ watch(
 // --- Computed Values ---------------------------------------------------------
 
 const displayName = computed(() => {
-  return localData.value.name ? localData.value.name : 'New Role'
+  return localData.value.name ? localData.value.name : 'New role'
 })
 
 const isComplete = computed(() => {
@@ -128,7 +128,7 @@ defineExpose({ validate })
           variant="text"
           @click="handleRemoveRole"
         >
-          Remove Role
+          Remove role
         </v-btn>
 
         <v-btn
@@ -158,7 +158,7 @@ defineExpose({ validate })
                 @update:model-value="localData = { ...localData, name: $event }"
               >
                 <template #label>
-                  Role Name <span class="text-error">*</span>
+                  Role name <span class="text-error">*</span>
                 </template>
               </v-text-field>
             </v-row>
@@ -181,7 +181,7 @@ defineExpose({ validate })
               </v-textarea>
             </v-row>
 
-            <h5>Identity Providers</h5>
+            <h5>Identity providers</h5>
             <p>Choose which identity providers can use this role.</p>
 
             <v-input
@@ -196,14 +196,14 @@ defineExpose({ validate })
                   class="text-body-small text-primary"
                   href="#"
                   @click.prevent="idpSelectAll"
-                  >Select All</a
+                  >Select all</a
                 >
                 <span class="text-body-small mx-1">|</span>
                 <a
                   class="text-body-small text-primary"
                   href="#"
                   @click.prevent="idpClearAll"
-                  >Clear All</a
+                  >Clear all</a
                 >
               </div>
             </div>

@@ -10,9 +10,8 @@ import { toTenantId } from '@/models/tenant.model'
 
 const vuetify = createVuetify()
 
-const renderComponent = (group = makeGroup(), tenant = makeTenant()) =>
+const renderComponent = (props = {}) =>
   render(GroupListCard, {
-    props: { group, tenant },
     global: {
       plugins: [vuetify],
       stubs: {
@@ -22,26 +21,31 @@ const renderComponent = (group = makeGroup(), tenant = makeTenant()) =>
         },
       },
     },
+    props: {
+      group: makeGroup(),
+      tenant: makeTenant(),
+      ...props,
+    },
   })
 
 describe('GroupListCard.vue', () => {
-  describe('group info', () => {
-    it('renders the group name', () => {
-      renderComponent(makeGroup({ name: 'My Group' }), makeTenant())
+  it('renders the group name', () => {
+    const group = makeGroup({ name: 'groupName' })
 
-      expect(screen.getByText('My Group')).toBeInTheDocument()
-    })
+    renderComponent({ group })
 
-    it('links to the group members page', async () => {
-      renderComponent(
-        makeGroup({ id: toGroupId('groupId') }),
-        makeTenant({ id: toTenantId('tenantId') }),
-      )
+    expect(screen.getByText('groupName')).toBeInTheDocument()
+  })
 
-      expect(screen.getByRole('link')).toHaveAttribute(
-        'href',
-        '/tenants/tenantId/groups/groupId/members',
-      )
-    })
+  it('links to the group members page', async () => {
+    const group = makeGroup({ id: toGroupId('groupId') })
+    const tenant = makeTenant({ id: toTenantId('tenantId') })
+
+    renderComponent({ group, tenant })
+
+    expect(screen.getByRole('link')).toHaveAttribute(
+      'href',
+      '/tenants/tenantId/groups/groupId/members',
+    )
   })
 })

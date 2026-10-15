@@ -1,12 +1,11 @@
 <script setup lang="ts">
-import { mdiPlusBox } from '@mdi/js'
+import { mdiPlus } from '@mdi/js'
 import { computed, ref, watch } from 'vue'
 
 import TenantUserTable from '@/components/tenant/TenantUserTable.vue'
 import UserSearch from '@/components/tenant/UserSearch.vue'
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
-import FloatingActionButton from '@/components/ui/FloatingActionButton.vue'
 import { type Group } from '@/models/group.model'
 import { type Role, type RoleId } from '@/models/role.model'
 import { type Tenant } from '@/models/tenant.model'
@@ -25,11 +24,13 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (event: 'add', user: User, groups: Group[]): void
-  (event: 'cancel' | 'clear-search'): void
-  (event: 'remove-role', userId: UserId, roleId: RoleId): void
-  (event: 'remove-user', userId: UserId): void
-  (event: 'search', searchType: IdirSearchType, searchText: string): void
+  add: [User, Group[]]
+  cancel: []
+  'clear-search': []
+  'remove-role': [UserId, RoleId]
+  'remove-user': [UserId]
+  'roles-changed': [User, RoleId[], RoleId[]]
+  search: [IdirSearchType, string]
 }>()
 
 // --- Store and Composable Setup ----------------------------------------------
@@ -131,6 +132,14 @@ const handleRemoveUser = (user: User) => {
   emit('remove-user', user.id)
 }
 
+const handleRolesChanged = (
+  user: User,
+  rolesToAdd: RoleId[],
+  rolesToRemove: RoleId[],
+) => {
+  emit('roles-changed', user, rolesToAdd, rolesToRemove)
+}
+
 const handleSearch = (searchType: IdirSearchType, searchText: string) => {
   emit('search', searchType, searchText)
 }
@@ -152,26 +161,28 @@ const toggleSearch = () => {
   <v-container class="ms-6">
     <v-row>
       <v-col cols="12">
-        <h4>Tenant Users</h4>
+        <h4>Tenant users</h4>
       </v-col>
     </v-row>
 
     <v-row>
       <v-col cols="12">
         <TenantUserTable
+          :roles="roles"
           :tenant="tenant"
           :users="tenant.users"
           @remove-role="handleRemoveRole"
           @remove-user="handleRemoveUser"
+          @roles-changed="handleRolesChanged"
         />
       </v-col>
     </v-row>
 
     <v-row v-if="isUserAdmin && !showSearch" class="mt-4">
       <v-col class="d-flex justify-start" cols="12">
-        <FloatingActionButton
-          :icon="mdiPlusBox"
-          text="Add another user to this tenant"
+        <ButtonPrimary
+          :prepend-icon="mdiPlus"
+          text="Add user to tenant"
           @click="toggleSearch"
         />
       </v-col>
@@ -181,7 +192,7 @@ const toggleSearch = () => {
       <div v-if="showSearch">
         <v-divider class="my-12" />
 
-        <h4 class="mb-4">Add a user to this Tenant</h4>
+        <h4 class="mb-4">Add a user to this tenant</h4>
 
         <p class="mb-2 mt-8">
           1. Search for a user based on the selection criteria below:
@@ -202,7 +213,7 @@ const toggleSearch = () => {
             <p class="mb-2">2. Assign role(s) to this user:</p>
           </v-col>
           <v-col cols="6">
-            <p class="mb-2 text-body-medium">Available Roles:</p>
+            <p class="mb-2 text-body-medium">Available roles:</p>
           </v-col>
           <v-col cols="12">
             <v-checkbox
@@ -260,7 +271,7 @@ const toggleSearch = () => {
             <ButtonPrimary
               v-if="selectedUser"
               :disabled="selectedRoles.length === 0"
-              text="Add User"
+              text="Add user"
               @click="handleAddUser"
             />
           </v-col>

@@ -118,7 +118,7 @@ const handleSearch = () => {
 
   <v-row v-if="searchResults !== null || loading">
     <v-col cols="12">
-      <h4 class="my-6">Search Results</h4>
+      <h4 class="my-6">Search results</h4>
 
       <UserSearchTable
         :loading="loading"
@@ -134,7 +134,7 @@ const handleSearch = () => {
     v-model="duplicateMember"
     :buttons="[{ text: 'OK', action: 'ok', type: 'primary' as const }]"
     message="The selected member is already in this group."
-    title="Member Already Added"
+    title="Member already added"
     @button-click="duplicateMember = false"
   />
 </template>

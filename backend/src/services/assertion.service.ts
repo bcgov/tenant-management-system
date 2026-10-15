@@ -73,7 +73,7 @@ export class AssertionService {
 
   public async createAssertion(req: Request) {
     const input: CreateAssertionInputDto = {
-      tenantId: req.params.tenantId,
+      tenantId: req.params.tenantId as string,
       audience: req.body.audience,
       callingService: this.getCallingService(req),
       ssoUserId: this.getSsoUserId(req),

@@ -55,10 +55,7 @@ const handleAddUser = async (user: User, groups: Group[]) => {
   try {
     await tenantStore.addTenantUser(tenantId, user)
     searchResults.value = null
-    notification.success(
-      'New user successfully added to this tenant',
-      'User Added',
-    )
+    notification.success('User added')
   } catch (error) {
     addToGroups = false
     if (error instanceof DuplicateEntityError) {
@@ -83,10 +80,7 @@ const handleAddUser = async (user: User, groups: Group[]) => {
 
     // Only show alert if user was added to at least one group.
     if (groups.length > 0) {
-      notification.success(
-        'New user successfully added to groups',
-        'User Added to Groups',
-      )
+      notification.success('User added to groups')
     }
   } catch {
     notification.error('Failed to add user to groups')
@@ -100,10 +94,6 @@ const handleClearSearch = async () => {
 const handleRemoveRole = async (userId: UserId, roleId: RoleId) => {
   try {
     await tenantStore.removeTenantUserRole(tenantId, userId, roleId)
-    notification.success(
-      'The role was successfully removed from the user',
-      'Role Removed',
-    )
   } catch {
     notification.error('Failed to remove user role')
   }
@@ -116,9 +106,27 @@ const handleRemoveUser = async (userId: UserId) => {
     }
 
     await tenantStore.removeTenantUser(tenantId, userId)
-    notification.success('The user was successfully removed', 'User Removed')
+    notification.success('User removed')
   } catch {
     notification.error('Failed to remove user')
+  }
+}
+
+const handleRolesChanged = async (
+  user: User,
+  rolesToAdd: RoleId[],
+  rolesToRemove: RoleId[],
+) => {
+  try {
+    if (rolesToAdd.length > 0) {
+      await tenantStore.assignTenantUserRoles(tenant.value, user.id, rolesToAdd)
+    }
+
+    for (const roleId of rolesToRemove) {
+      await tenantStore.removeTenantUserRole(tenantId, user.id, roleId)
+    }
+  } catch {
+    notification.error('Failed to update user roles')
   }
 }
 
@@ -181,6 +189,7 @@ init() // NOSONAR
         @clear-search="handleClearSearch"
         @remove-role="handleRemoveRole"
         @remove-user="handleRemoveUser"
+        @roles-changed="handleRolesChanged"
         @search="handleUserSearch"
       />
     </LoadingWrapper>

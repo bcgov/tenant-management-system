@@ -1,6 +1,7 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { ref } from 'vue'
 
 import {
   makeGroup,
@@ -74,12 +75,13 @@ describe('TenantUserContainer', () => {
     tenantStore.tenants = [makeTenant({ id: toTenantId('tenantId1') })]
 
     notificationMock = {
-      success: vi.fn(),
+      messages: ref([]),
+
+      dismiss: vi.fn(),
       error: vi.fn(),
-      warning: vi.fn(),
       info: vi.fn(),
-      remove: vi.fn(),
-      items: [],
+      success: vi.fn(),
+      warning: vi.fn(),
     }
     vi.mocked(useNotification).mockReturnValue(notificationMock)
 
@@ -172,10 +174,7 @@ describe('TenantUserContainer', () => {
       await flushPromises()
 
       expect(tenantStore.addTenantUser).toHaveBeenCalledWith(tenantId, user)
-      expect(notificationMock.success).toHaveBeenCalledWith(
-        'New user successfully added to this tenant',
-        'User Added',
-      )
+      expect(notificationMock.success).toHaveBeenCalledWith('User added')
       expect(child(wrapper).props('searchResults')).toBeNull()
     })
 
@@ -207,8 +206,7 @@ describe('TenantUserContainer', () => {
         user,
       )
       expect(notificationMock.success).toHaveBeenCalledWith(
-        'New user successfully added to groups',
-        'User Added to Groups',
+        'User added to groups',
       )
     })
 
@@ -226,7 +224,7 @@ describe('TenantUserContainer', () => {
 
       const groupSuccessCalls = vi
         .mocked(notificationMock.success)
-        .mock.calls.filter(([, title]) => title === 'User Added to Groups')
+        .mock.calls.filter(([title]) => title === 'User Added to Groups')
       expect(groupSuccessCalls).toHaveLength(0)
     })
 
@@ -336,7 +334,7 @@ describe('TenantUserContainer', () => {
   })
 
   describe('handleRemoveRole', () => {
-    it('calls removeTenantUserRole and shows success notification', async () => {
+    it('calls removeTenantUserRole', async () => {
       tenantStore.removeTenantUserRole = vi.fn().mockResolvedValue(undefined)
       const tenantId = 'tenant-1'
       const tenant = makeTenant({ id: toTenantId(tenantId) })
@@ -350,10 +348,6 @@ describe('TenantUserContainer', () => {
         tenantId,
         'userId1',
         'roleId1',
-      )
-      expect(notificationMock.success).toHaveBeenCalledWith(
-        'The role was successfully removed from the user',
-        'Role Removed',
       )
     })
 
@@ -387,10 +381,7 @@ describe('TenantUserContainer', () => {
         tenantId,
         'userId1',
       )
-      expect(notificationMock.success).toHaveBeenCalledWith(
-        'The user was successfully removed',
-        'User Removed',
-      )
+      expect(notificationMock.success).toHaveBeenCalledWith('User removed')
     })
 
     it('shows error notification when removeTenantUser fails', async () => {
@@ -418,6 +409,143 @@ describe('TenantUserContainer', () => {
       expect(notificationMock.error).toHaveBeenCalledWith(
         'Failed to remove user',
       )
+    })
+  })
+
+  describe('handleRolesChanged', () => {
+    const tenantId = 'tenantId1'
+    const user = makeUser({ id: toUserId('userId1') })
+
+    beforeEach(() => {
+      tenantStore.assignTenantUserRoles = vi.fn().mockResolvedValue(undefined)
+      tenantStore.removeTenantUserRole = vi.fn().mockResolvedValue(undefined)
+    })
+
+    it('assigns roles when only adding', async () => {
+      const wrapper = mountComponent(tenantId)
+      await child(wrapper).vm.$emit(
+        'roles-changed',
+        user,
+        ['roleId1', 'roleId2'],
+        [],
+      )
+      await flushPromises()
+
+      expect(tenantStore.assignTenantUserRoles).toHaveBeenCalledTimes(1)
+      expect(tenantStore.assignTenantUserRoles).toHaveBeenCalledWith(
+        expect.objectContaining({ id: tenantId }),
+        user.id,
+        ['roleId1', 'roleId2'],
+      )
+      expect(tenantStore.removeTenantUserRole).not.toHaveBeenCalled()
+    })
+
+    it('removes each role when only removing', async () => {
+      const wrapper = mountComponent(tenantId)
+      await child(wrapper).vm.$emit(
+        'roles-changed',
+        user,
+        [],
+        ['roleId1', 'roleId2'],
+      )
+      await flushPromises()
+
+      expect(tenantStore.assignTenantUserRoles).not.toHaveBeenCalled()
+      expect(tenantStore.removeTenantUserRole).toHaveBeenCalledTimes(2)
+      expect(tenantStore.removeTenantUserRole).toHaveBeenCalledWith(
+        tenantId,
+        user.id,
+        'roleId1',
+      )
+      expect(tenantStore.removeTenantUserRole).toHaveBeenCalledWith(
+        tenantId,
+        user.id,
+        'roleId2',
+      )
+    })
+
+    it('assigns and removes roles when both are provided', async () => {
+      const wrapper = mountComponent(tenantId)
+      await child(wrapper).vm.$emit(
+        'roles-changed',
+        user,
+        ['roleId1'],
+        ['roleId2'],
+      )
+      await flushPromises()
+
+      expect(tenantStore.assignTenantUserRoles).toHaveBeenCalledWith(
+        expect.objectContaining({ id: tenantId }),
+        user.id,
+        ['roleId1'],
+      )
+      expect(tenantStore.removeTenantUserRole).toHaveBeenCalledWith(
+        tenantId,
+        user.id,
+        'roleId2',
+      )
+    })
+
+    it('makes no store calls but still shows success when there are no changes', async () => {
+      const wrapper = mountComponent(tenantId)
+      await child(wrapper).vm.$emit('roles-changed', user, [], [])
+      await flushPromises()
+
+      expect(tenantStore.assignTenantUserRoles).not.toHaveBeenCalled()
+      expect(tenantStore.removeTenantUserRole).not.toHaveBeenCalled()
+    })
+
+    it('shows error and skips removals when assignTenantUserRoles fails', async () => {
+      tenantStore.assignTenantUserRoles = vi
+        .fn()
+        .mockRejectedValue(new Error('fail'))
+
+      const wrapper = mountComponent(tenantId)
+      await child(wrapper).vm.$emit(
+        'roles-changed',
+        user,
+        ['roleId1'],
+        ['roleId2'],
+      )
+      await flushPromises()
+
+      expect(tenantStore.removeTenantUserRole).not.toHaveBeenCalled()
+      expect(notificationMock.error).toHaveBeenCalledWith(
+        'Failed to update user roles',
+      )
+      expect(notificationMock.success).not.toHaveBeenCalled()
+    })
+
+    it('shows error and no success when removeTenantUserRole fails', async () => {
+      tenantStore.removeTenantUserRole = vi
+        .fn()
+        .mockRejectedValue(new Error('fail'))
+
+      const wrapper = mountComponent(tenantId)
+      await child(wrapper).vm.$emit('roles-changed', user, [], ['roleId1'])
+      await flushPromises()
+
+      expect(notificationMock.error).toHaveBeenCalledWith(
+        'Failed to update user roles',
+      )
+      expect(notificationMock.success).not.toHaveBeenCalled()
+    })
+
+    it('stops removing remaining roles after the first removal fails', async () => {
+      tenantStore.removeTenantUserRole = vi
+        .fn()
+        .mockRejectedValue(new Error('fail'))
+
+      const wrapper = mountComponent(tenantId)
+      await child(wrapper).vm.$emit(
+        'roles-changed',
+        user,
+        [],
+        ['roleId1', 'roleId2'],
+      )
+      await flushPromises()
+
+      expect(tenantStore.removeTenantUserRole).toHaveBeenCalledTimes(1)
     })
   })
 

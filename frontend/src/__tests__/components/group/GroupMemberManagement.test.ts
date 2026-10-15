@@ -119,7 +119,7 @@ describe('GroupMemberManagement', () => {
       })
 
       expect(
-        screen.queryByRole('button', { name: 'Add Member to Group' }),
+        screen.queryByRole('button', { name: 'Add member to group' }),
       ).not.toBeInTheDocument()
     })
 
@@ -132,7 +132,7 @@ describe('GroupMemberManagement', () => {
       })
 
       expect(
-        screen.queryByRole('button', { name: 'Add Member to Group' }),
+        screen.queryByRole('button', { name: 'Add member to group' }),
       ).not.toBeInTheDocument()
     })
 
@@ -145,7 +145,7 @@ describe('GroupMemberManagement', () => {
       })
 
       expect(
-        screen.getByRole('button', { name: 'Add Member to Group' }),
+        screen.getByRole('button', { name: 'Add member to group' }),
       ).toBeInTheDocument()
     })
 
@@ -158,11 +158,11 @@ describe('GroupMemberManagement', () => {
       })
 
       await fireEvent.click(
-        screen.getByRole('button', { name: 'Add Member to Group' }),
+        screen.getByRole('button', { name: 'Add member to group' }),
       )
 
       expect(
-        screen.queryByRole('button', { name: 'Add Member to Group' }),
+        screen.queryByRole('button', { name: 'Add member to group' }),
       ).not.toBeInTheDocument()
     })
   })
@@ -177,16 +177,14 @@ describe('GroupMemberManagement', () => {
       })
 
       await fireEvent.click(
-        screen.getByRole('button', { name: 'Add Member to Group' }),
+        screen.getByRole('button', { name: 'Add member to group' }),
       )
 
-      expect(screen.getByRole('button', { name: 'Add Member' })).toBeDisabled()
+      expect(screen.getByRole('button', { name: 'Add member' })).toBeDisabled()
 
       await fireEvent.click(screen.getByRole('button', { name: 'stub-select' }))
 
-      expect(
-        screen.getByRole('button', { name: 'Add Member' }),
-      ).not.toBeDisabled()
+      expect(screen.getByRole('button', { name: 'Add member' })).toBeEnabled()
     })
 
     it('does not emit add or close the search flow when no user is selected', async () => {
@@ -198,9 +196,9 @@ describe('GroupMemberManagement', () => {
       })
 
       await fireEvent.click(
-        screen.getByRole('button', { name: 'Add Member to Group' }),
+        screen.getByRole('button', { name: 'Add member to group' }),
       )
-      await fireEvent.click(screen.getByRole('button', { name: 'Add Member' }))
+      await fireEvent.click(screen.getByRole('button', { name: 'Add member' }))
 
       expect(emitted().add).toBeUndefined()
       expect(
@@ -217,10 +215,10 @@ describe('GroupMemberManagement', () => {
       })
 
       await fireEvent.click(
-        screen.getByRole('button', { name: 'Add Member to Group' }),
+        screen.getByRole('button', { name: 'Add member to group' }),
       )
       await fireEvent.click(screen.getByRole('button', { name: 'stub-select' }))
-      await fireEvent.click(screen.getByRole('button', { name: 'Add Member' }))
+      await fireEvent.click(screen.getByRole('button', { name: 'Add member' }))
 
       expect(emitted().add).toHaveLength(1)
       expect(emitted().add[0]).toEqual([{ id: 'user-1' }])
@@ -239,7 +237,7 @@ describe('GroupMemberManagement', () => {
       })
 
       await fireEvent.click(
-        screen.getByRole('button', { name: 'Add Member to Group' }),
+        screen.getByRole('button', { name: 'Add member to group' }),
       )
       await fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
 
@@ -260,7 +258,7 @@ describe('GroupMemberManagement', () => {
       })
 
       await fireEvent.click(
-        screen.getByRole('button', { name: 'Add Member to Group' }),
+        screen.getByRole('button', { name: 'Add member to group' }),
       )
       await fireEvent.click(screen.getByRole('button', { name: 'stub-search' }))
 
@@ -277,7 +275,7 @@ describe('GroupMemberManagement', () => {
       })
 
       await fireEvent.click(
-        screen.getByRole('button', { name: 'Add Member to Group' }),
+        screen.getByRole('button', { name: 'Add member to group' }),
       )
       await fireEvent.click(
         screen.getByRole('button', { name: 'stub-clear-search' }),

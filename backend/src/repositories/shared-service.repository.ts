@@ -3,10 +3,12 @@ import { SharedService } from '../entities/SharedService'
 import { SharedServiceRole } from '../entities/SharedServiceRole'
 import { TenantSharedService } from '../entities/TenantSharedService'
 import { Tenant } from '../entities/Tenant'
+import { BadRequestError } from '../errors/BadRequestError'
 import { ConflictError } from '../errors/ConflictError'
 import { NotFoundError } from '../errors/NotFoundError'
 import { UnexpectedStateError } from '../errors/UnexpectedStateError'
 import { getManager } from '../common/db.connection'
+import { config } from '../services/config.service'
 import {
   AddSharedServiceRolesInputDto,
   AssociateSharedServiceToTenantInputDto,
@@ -18,6 +20,14 @@ import {
 } from '../dtos/tms.dto'
 
 export class SharedServiceRepository {
+  private ensureClientIdentifierIsNotReserved(clientIdentifier: string) {
+    if (clientIdentifier === config.oidc.tmsAudience) {
+      throw new BadRequestError(
+        `Client identifier '${clientIdentifier}' is reserved for CSTAR`,
+      )
+    }
+  }
+
   public async saveSharedService(
     input: CreateSharedServiceInputDto,
     manager: EntityManager,
@@ -32,6 +42,8 @@ export class SharedServiceRepository {
       roles,
       updatedBy,
     } = input
+
+    this.ensureClientIdentifierIsNotReserved(clientIdentifier)
 
     if (await this.checkIfSharedServiceNameExists(name, manager)) {
       throw new ConflictError(
@@ -102,6 +114,10 @@ export class SharedServiceRepository {
       description,
       updatedBy,
     } = input
+
+    if (clientIdentifier !== undefined) {
+      this.ensureClientIdentifierIsNotReserved(clientIdentifier)
+    }
 
     const sharedService = await manager
       .createQueryBuilder(SharedService, 'sharedService')

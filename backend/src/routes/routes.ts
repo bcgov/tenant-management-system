@@ -21,7 +21,7 @@ export class Routes {
       res.redirect('/docs')
     })
 
-    app.get('/v1/swagger-resources/*', (req: Request, res: Response) => {
+    app.get('/v1/swagger-resources/*rest', (req: Request, res: Response) => {
       const path = req.path.replace('/v1/swagger-resources', '')
       res.redirect(`/swagger-resources${path}`)
     })
@@ -104,6 +104,7 @@ export class Routes {
       .get(
         checkJwt(),
         validate(validator.getUserRoles, {}, {}),
+        checkTenantAccess([]),
         (req: Request, res: Response) =>
           tenantController.getUserRoles(req, res),
       )

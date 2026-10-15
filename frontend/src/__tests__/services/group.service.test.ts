@@ -9,10 +9,19 @@ import {
   makeUserApiData,
 } from '@/__tests__/__factories__'
 
+import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
+import { ValidationError } from '@/errors/domain/ValidationError'
 import { toGroupId } from '@/models/group.model'
 import { toGroupUserId } from '@/models/groupuser.model'
+import { toSsoUserId } from '@/models/ssouser.model'
 import { toTenantId } from '@/models/tenant.model'
+import { toUserId } from '@/models/user.model'
+import { groupService } from '@/services/group.service'
 import * as utils from '@/services/utils'
+
+vi.mock('@/services/config.service', () => ({
+  config: { api: { baseUrl: 'https://api.example.com' } },
+}))
 
 vi.mock('@/services/utils', () => ({
   isDuplicateEntityError: vi.fn(),
@@ -21,30 +30,25 @@ vi.mock('@/services/utils', () => ({
 }))
 
 const mockedUtils = vi.mocked(utils)
-
 mockedUtils.isDuplicateEntityError.mockReturnValue(false)
 mockedUtils.isValidationError.mockReturnValue(false)
 mockedUtils.logApiError.mockImplementation(() => {})
 
-const { mockDelete, mockGet, mockPost } = vi.hoisted(() => ({
+const { mockDelete, mockGet, mockPost, mockPut } = vi.hoisted(() => ({
   mockDelete: vi.fn(),
   mockGet: vi.fn(),
   mockPost: vi.fn(),
+  mockPut: vi.fn(),
 }))
 
-vi.mock('@/services/authenticated.axios', () => ({
-  authenticatedAxios: () => ({
+vi.mock('@/services/api', () => ({
+  authenticatedFetch: () => ({
     delete: mockDelete,
     get: mockGet,
     post: mockPost,
+    put: mockPut,
   }),
 }))
-
-import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
-import { ValidationError } from '@/errors/domain/ValidationError'
-import { groupService } from '@/services/group.service'
-import { toUserId } from '@/models/user.model'
-import { toSsoUserId } from '@/models/ssouser.model'
 
 describe('groupService', () => {
   beforeEach(() => {
@@ -64,7 +68,7 @@ describe('groupService', () => {
           userName: 'ssoUserUserName',
         }),
       })
-      mockPost.mockResolvedValueOnce({ data: { data: {} } })
+      mockPost.mockResolvedValueOnce({ data: {} })
 
       await groupService.addUserToGroup(
         toTenantId('tenantId'),
@@ -94,7 +98,7 @@ describe('groupService', () => {
           idpType: 'azureidir',
         }),
       })
-      mockPost.mockResolvedValueOnce({ data: { data: {} } })
+      mockPost.mockResolvedValueOnce({ data: {} })
 
       await groupService.addUserToGroup(
         toTenantId('tenantId'),
@@ -127,9 +131,7 @@ describe('groupService', () => {
           }),
         }),
       })
-      mockPost.mockResolvedValueOnce({
-        data: { data: { groupUser: groupUserApiData } },
-      })
+      mockPost.mockResolvedValueOnce({ data: { groupUser: groupUserApiData } })
 
       const result = await groupService.addUserToGroup(
         toTenantId('tenantId'),
@@ -149,11 +151,8 @@ describe('groupService', () => {
     it('should throw DuplicateEntityError on HTTP 409', async () => {
       const user = makeUser()
       const error = {
-        isAxiosError: true,
-        response: {
-          data: { message: 'User already in group' },
-          status: 409,
-        },
+        data: { message: 'User already in group' },
+        status: 409,
       }
       mockPost.mockRejectedValueOnce(error)
       mockedUtils.isDuplicateEntityError.mockReturnValueOnce(true)
@@ -170,11 +169,8 @@ describe('groupService', () => {
     it('should throw ValidationError on HTTP 400', async () => {
       const user = makeUser()
       const error = {
-        isAxiosError: true,
-        response: {
-          data: { details: { body: [{ message: 'Invalid user data' }] } },
-          status: 400,
-        },
+        data: { details: { body: [{ message: 'Invalid user data' }] } },
+        status: 400,
       }
       mockPost.mockRejectedValueOnce(error)
       mockedUtils.isValidationError.mockReturnValueOnce(true)
@@ -210,7 +206,7 @@ describe('groupService', () => {
 
   describe('createGroup', () => {
     it('should correctly call the api', async () => {
-      mockPost.mockResolvedValueOnce({ data: { data: {} } })
+      mockPost.mockResolvedValueOnce({ data: {} })
 
       await groupService.createGroup(
         toTenantId('tenantId'),
@@ -229,9 +225,7 @@ describe('groupService', () => {
         description: 'groupDescription',
         name: 'groupName',
       })
-      mockPost.mockResolvedValueOnce({
-        data: { data: { group: groupApiData } },
-      })
+      mockPost.mockResolvedValueOnce({ data: { group: groupApiData } })
 
       const result = await groupService.createGroup(
         toTenantId('tenantId'),
@@ -245,11 +239,8 @@ describe('groupService', () => {
 
     it('should throw DuplicateEntityError on HTTP 409', async () => {
       const error = {
-        isAxiosError: true,
-        response: {
-          data: { message: 'Group already exists' },
-          status: 409,
-        },
+        data: { message: 'Group already exists' },
+        status: 409,
       }
       mockPost.mockRejectedValueOnce(error)
       mockedUtils.isDuplicateEntityError.mockReturnValueOnce(true)
@@ -265,11 +256,8 @@ describe('groupService', () => {
 
     it('should throw ValidationError on HTTP 400 with validation errors', async () => {
       const error = {
-        isAxiosError: true,
-        response: {
-          data: { details: { body: [{ message: 'Name is required' }] } },
-          status: 400,
-        },
+        data: { details: { body: [{ message: 'Name is required' }] } },
+        status: 400,
       }
       mockPost.mockRejectedValueOnce(error)
       mockedUtils.isValidationError.mockReturnValueOnce(true)
@@ -304,7 +292,7 @@ describe('groupService', () => {
 
   describe('getGroup', () => {
     it('should correctly call the api', async () => {
-      mockGet.mockResolvedValueOnce({ data: { data: {} } })
+      mockGet.mockResolvedValueOnce({ data: {} })
 
       await groupService.getGroup(toTenantId('tenantId'), toGroupId('groupId'))
 
@@ -318,9 +306,7 @@ describe('groupService', () => {
         description: 'groupDescription',
         name: 'groupName',
       })
-      mockGet.mockResolvedValueOnce({
-        data: { data: { group: groupApiData } },
-      })
+      mockGet.mockResolvedValueOnce({ data: { group: groupApiData } })
 
       const result = await groupService.getGroup(
         toTenantId('tenantId'),
@@ -348,7 +334,7 @@ describe('groupService', () => {
 
   describe('getTenantGroups', () => {
     it('should correctly call the api', async () => {
-      mockGet.mockResolvedValueOnce({ data: { data: {} } })
+      mockGet.mockResolvedValueOnce({ data: {} })
 
       await groupService.getTenantGroups(toTenantId('tenantId'))
 
@@ -360,9 +346,7 @@ describe('groupService', () => {
         description: 'groupDescription',
         name: 'groupName',
       })
-      mockGet.mockResolvedValueOnce({
-        data: { data: { groups: [groupApiData] } },
-      })
+      mockGet.mockResolvedValueOnce({ data: { groups: [groupApiData] } })
 
       const result = await groupService.getTenantGroups(toTenantId('tenantId'))
 
@@ -415,6 +399,87 @@ describe('groupService', () => {
       expect(mockedUtils.logApiError).toHaveBeenCalledWith(
         'Error removing user from group',
         error,
+      )
+    })
+  })
+
+  describe('updateGroup', () => {
+    const updatedName = 'Updated Group Name'
+    const updatedDescription = 'Updated description'
+
+    it('should return the updated group on success', async () => {
+      const updatedGroup = makeGroupApiData({
+        description: updatedDescription,
+        name: updatedName,
+      })
+      mockPut.mockResolvedValueOnce({ data: { group: updatedGroup } })
+
+      const result = await groupService.updateGroup(
+        toTenantId('tenantId'),
+        toGroupId('groupId'),
+        updatedName,
+        updatedDescription,
+      )
+
+      expect(result).toEqual(updatedGroup)
+      expect(mockPut).toHaveBeenCalledWith(`/tenants/tenantId/groups/groupId`, {
+        name: updatedName,
+        description: updatedDescription,
+      })
+    })
+
+    it('should throw DuplicateEntityError on HTTP 409', async () => {
+      const error = {
+        status: 409,
+        data: { message: 'Group name already exists' },
+      }
+      mockPut.mockRejectedValueOnce(error)
+      mockedUtils.isDuplicateEntityError.mockReturnValueOnce(true)
+
+      await expect(
+        groupService.updateGroup(
+          toTenantId('tenantId'),
+          toGroupId('groupId'),
+          updatedName,
+          updatedDescription,
+        ),
+      ).rejects.toBeInstanceOf(DuplicateEntityError)
+    })
+
+    it('should throw ValidationError on HTTP 400 with validation errors', async () => {
+      const error = {
+        status: 400,
+        data: { details: { body: [{ message: 'Name cannot be empty' }] } },
+      }
+      mockPut.mockRejectedValueOnce(error)
+      mockedUtils.isValidationError.mockReturnValueOnce(true)
+
+      await expect(
+        groupService.updateGroup(
+          toTenantId('tenantId'),
+          toGroupId('groupId'),
+          updatedName,
+          updatedDescription,
+        ),
+      ).rejects.toBeInstanceOf(ValidationError)
+    })
+
+    it('should log and rethrow unknown errors', async () => {
+      const genericError = new Error('Database connection failed')
+      mockPut.mockRejectedValueOnce(genericError)
+
+      await expect(
+        groupService.updateGroup(
+          toTenantId('tenantId'),
+          toGroupId('groupId'),
+          updatedName,
+          updatedDescription,
+        ),
+      ).rejects.toThrow(genericError)
+
+      expect(mockedUtils.logApiError).toHaveBeenCalledWith(
+        'Error updating group',
+        genericError,
       )
     })
   })

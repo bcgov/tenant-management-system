@@ -9,9 +9,8 @@ import { toTenantId } from '@/models/tenant.model'
 
 const vuetify = createVuetify()
 
-const renderComponent = (tenant = makeTenant()) =>
+const renderComponent = (props = {}) =>
   render(TenantListCard, {
-    props: { tenant },
     global: {
       plugins: [vuetify],
       stubs: {
@@ -21,27 +20,37 @@ const renderComponent = (tenant = makeTenant()) =>
         },
       },
     },
+    props: {
+      tenant: makeTenant(),
+      ...props,
+    },
   })
 
 describe('TenantListCard.vue', () => {
   it('renders the tenant name', () => {
-    renderComponent(makeTenant({ name: 'My Tenant' }))
+    const tenant = makeTenant({ name: 'tenantName' })
 
-    expect(screen.getByText('My Tenant')).toBeInTheDocument()
+    renderComponent({ tenant })
+
+    expect(screen.getByText('tenantName')).toBeInTheDocument()
   })
 
   it('renders the ministry name', () => {
-    renderComponent(makeTenant({ ministryName: 'Test Ministry' }))
+    const tenant = makeTenant({ ministryName: 'tenantMinistryName' })
 
-    expect(screen.getByText('Test Ministry')).toBeInTheDocument()
+    renderComponent({ tenant })
+
+    expect(screen.getByText('tenantMinistryName')).toBeInTheDocument()
   })
 
-  it('links to the tenant users page', () => {
-    renderComponent(makeTenant({ id: toTenantId('tenantId1') }))
+  it('links to the tenant services page', () => {
+    const tenant = makeTenant({ id: toTenantId('tenantId') })
+
+    renderComponent({ tenant })
 
     expect(screen.getByRole('link')).toHaveAttribute(
       'href',
-      '/tenants/tenantId1/services',
+      '/tenants/tenantId/services',
     )
   })
 })

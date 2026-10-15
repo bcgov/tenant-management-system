@@ -1,17 +1,25 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+
 import ServiceListCard from '@/components/service/ServiceListCard.vue'
 import { type Service, type ServiceId } from '@/models/service.model'
 
 // --- Component Interface -----------------------------------------------------
 
-defineProps<{
+const { isTenantOwner, services } = defineProps<{
   isTenantOwner: boolean
   services: Service[]
 }>()
 
 const emit = defineEmits<{
-  (event: 'add-service', serviceId: ServiceId): void
+  'add-service': [ServiceId]
 }>()
+
+// --- Computed Values ---------------------------------------------------------
+
+const sortedServices = computed(() => {
+  return [...services].sort((a, b) => a.name.localeCompare(b.name))
+})
 
 // --- Component Methods -------------------------------------------------------
 
@@ -22,7 +30,7 @@ const handleAddService = (id: Service['id']) => {
 
 <template>
   <v-row>
-    <v-col v-for="service in services" :key="service.id" cols="12" md="4">
+    <v-col v-for="service in sortedServices" :key="service.id" cols="12" md="4">
       <ServiceListCard
         :is-tenant-owner="isTenantOwner"
         :service="service"
