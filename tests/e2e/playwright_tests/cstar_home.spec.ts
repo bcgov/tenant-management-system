@@ -1,5 +1,5 @@
-import { test, expect, Page, Browser } from '@playwright/test'
-import { MINISTRIES } from '../../../frontend/src/utils/constants'
+import { Page, Browser } from '@playwright/test'
+import { test, expect } from '../support/tenant.fixture'
 
 const authMode = process.env.E2E_AUTH_MODE ?? 'keycloak'
 
@@ -14,88 +14,18 @@ test.beforeAll(async ({ browser }: { browser: Browser }) => {
 })
 
 test.describe.serial('Landing page tests', () => {
-  test('Checks the homepage', async () => {
-    await expect(sharedPage.getByText('Logout')).toBeVisible()
-  })
   test('Checks the navigation links', async () => {
-    await expect(
-      sharedPage.getByRole('link', { name: 'all tenants' }),
-    ).toBeVisible()
+    await expect(sharedPage.getByText('Logout')).toBeVisible()
+    await expect(sharedPage.getByText('All Tenants')).toBeVisible()
     await expect(sharedPage.getByText('Request a Tenant')).toBeVisible()
   })
-  test('Submit tenant request under a Ministry', async () => {
-    await sharedPage.getByText('Request a Tenant').click()
-    const tenantName = sharedPage.getByLabel('Name of Tenant')
-    const tenantNameValue = `Test Tenant ${Date.now()}`
-    await tenantName.fill(tenantNameValue)
-    await expect(
-      sharedPage.locator('[data-testid="button-secondary"]'),
-    ).toContainText('Cancel')
-    await expect(
-      sharedPage.getByRole('button', { name: 'Cancel' }),
-    ).toBeEnabled()
-    // Select Ministry list
-    await sharedPage
-      .locator('.v-field')
-      .filter({ hasText: 'Ministry/Organization' })
-      .click()
-    const options = sharedPage.locator('[role="listbox"] [role="option"]')
-    await expect(options).toHaveCount(MINISTRIES.length)
-    for (const item of MINISTRIES) {
-      await expect(options.filter({ hasText: item })).toHaveCount(1)
-    }
-    await sharedPage
-      .locator('[role="listbox"] [role="option"]')
-      .filter({ hasText: 'Health' })
-      .click()
-    const tenantDescription = sharedPage.getByLabel('Description of Tenant')
-    await tenantDescription.fill('Test Tenant Description')
-    await sharedPage
-      .getByRole('button', { name: 'Create tenant request' })
-      .click()
-
-    const snackbarTenantRequestSubmitted = sharedPage
-      .getByRole('alert')
-      .filter({ hasText: /tenant request submitted/i })
-    await expect(snackbarTenantRequestSubmitted).toBeVisible()
-    await snackbarTenantRequestSubmitted
-      .getByText(/tenant request submitted/i)
-      .click()
-    await expect(snackbarTenantRequestSubmitted).toBeHidden()
-
-    await sharedPage.getByText('settings').click()
-
-    const combobox = sharedPage.getByRole('combobox', {
-      name: /items per page/i,
-    })
-    await combobox.focus()
-    await combobox.press('ArrowDown')
-    await expect(combobox).toHaveAttribute('aria-expanded', 'true')
-    await sharedPage.getByRole('option', { name: 'All', exact: true }).click()
-
-    await sharedPage
-      .locator('td', { hasText: tenantNameValue })
-      .locator('xpath=following-sibling::td[1]')
-      .getByText('NEW', { exact: true })
-      .click()
-    const statusField = sharedPage.locator('.v-field').filter({
-      has: sharedPage.locator('label', { hasText: 'Status' }),
-    })
-    await statusField.locator('.v-field__input').click()
-    await expect(
-      sharedPage.getByText('Approved', { exact: true }),
-    ).toBeVisible()
-    await expect(
-      sharedPage.getByText('Rejected', { exact: true }),
-    ).toBeVisible()
-    await sharedPage.getByText('Approved', { exact: true }).click()
-    // Approve Tenant request
-    await sharedPage.getByRole('button', { name: 'Update status' }).click()
-    // Check visibility of approved tenant in All Tenants list
-    await sharedPage.getByRole('link', { name: 'all tenants' }).click()
-    await expect(sharedPage.getByText('Request a Tenant')).toBeVisible()
-    await expect(sharedPage.getByText(tenantNameValue)).toBeVisible()
-    await sharedPage.getByText(tenantNameValue).click()
+  test('Submit tenant request under a Ministry', async ({
+    createApprovedTenant,
+  }) => {
+    const approvedTenantName = await createApprovedTenant(sharedPage)
+    await sharedPage.goto('/tenants')
+    await expect(sharedPage.getByText(approvedTenantName)).toBeVisible()
+    await sharedPage.getByText(approvedTenantName).click()
   })
   test('Checks the tenant users page', async () => {
     test.skip(
