@@ -1,15 +1,11 @@
-* {
-  font-family:
-    var(--bcds-typography-font-families-bc-sans), sans-serif !important;
-}
-
 a {
   color: rgb(var(--v-theme-primary));
   text-decoration: none;
 }
 
+a:focus-visible,
 a:hover {
-  color: rgb(var(--v-theme-primary-hover));
+  color: rgb(var(--v-theme-primary-hover-custom));
   text-decoration: underline;
 }
 
@@ -17,17 +13,17 @@ a:hover {
   height: 100%;
 }
 
-.card-link {
-  text-decoration: none !important;
+a.card-link {
+  text-decoration: none;
 }
 
 .card-link:focus-visible .v-card,
 .card-link:hover .v-card {
-  background-color: rgb(var(--v-theme-surface-light-gray-hover));
+  background-color: rgb(var(--v-theme-surface-hover-custom));
 }
 
 .card-link-title {
-  color: rgb(var(--v-theme-typography-link-color)) !important;
+  color: rgb(var(--v-theme-typography-link-color-custom));
 }
 
 .card-link-title,
@@ -94,11 +90,6 @@ p {
   line-height: 2.25rem;
 }
 
-.v-application,
-.v-card-title {
-  color: rgb(var(--v-theme-on-surface));
-}
-
-.v-input.v-input--disabled .v-input__control {
-  background-color: rgb(var(--v-theme-surface-input-disabled)) !important;
+.v-application {
+  font-family: var(--bcds-typography-font-families-bc-sans), sans-serif;
 }

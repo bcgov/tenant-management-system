@@ -103,7 +103,7 @@ init() // NOSONAR
           <template v-else>
             <v-row>
               <v-col cols="12">
-                <h4 class="mb-6 mt-12">Connected services</h4>
+                <h1 class="mb-6 mt-12">Connected services</h1>
               </v-col>
             </v-row>
 
@@ -125,9 +125,7 @@ init() // NOSONAR
             <v-row>
               <v-col cols="12">
                 <v-data-table
-                  :header-props="{
-                    class: 'bg-surface-light font-weight-bold',
-                  }"
+                  :header-props="{ class: 'bg-surface-light font-weight-bold' }"
                   :headers="[
                     {
                       key: 'displayName',
