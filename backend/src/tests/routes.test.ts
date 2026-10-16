@@ -156,6 +156,11 @@ describe('Routes middleware wiring', () => {
       .mockImplementation(async (_req, res) => {
         res.status(200).send({ ok: true })
       })
+    jest
+      .spyOn(GroupController.prototype, 'updateSharedServiceRolesForGroup')
+      .mockImplementation(async (_req, res) => {
+        res.status(200).send({ ok: true })
+      })
 
     new Routes().routes(app)
   })
@@ -296,6 +301,30 @@ describe('Routes middleware wiring', () => {
 
       expect(response.status).toBe(403)
       expect(GroupController.prototype.createGroup).not.toHaveBeenCalled()
+    })
+
+    it('lets a connected service set roles on a group', async () => {
+      const response = await request(app)
+        .put(
+          `/v1/tenants/${tenantId}/groups/${groupId}/shared-services/shared-service-roles`,
+        )
+        .set('Authorization', 'Bearer connected-service')
+        .set('x-tenant-access', 'allow')
+        .send({
+          sharedServices: [
+            {
+              id: '123e4567-e89b-12d3-a456-426614174002',
+              sharedServiceRoles: [
+                { id: '123e4567-e89b-12d3-a456-426614174003', enabled: true },
+              ],
+            },
+          ],
+        })
+
+      expect(response.status).toBe(200)
+      expect(
+        GroupController.prototype.updateSharedServiceRolesForGroup,
+      ).toHaveBeenCalled()
     })
   })
 })

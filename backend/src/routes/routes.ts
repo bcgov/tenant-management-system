@@ -299,7 +299,7 @@ export class Routes {
     app
       .route(RoutesConstants.UPDATE_SHARED_SERVICE_ROLES_FOR_GROUP)
       .put(
-        checkJwt(),
+        checkJwt({ headlessAccess: true }),
         validate(validator.updateSharedServiceRolesForGroup, {}, {}),
         checkTenantAccess([TMSConstants.TENANT_OWNER, TMSConstants.USER_ADMIN]),
         (req: Request, res: Response) =>

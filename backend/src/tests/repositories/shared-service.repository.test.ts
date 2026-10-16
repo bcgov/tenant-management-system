@@ -856,6 +856,23 @@ describe('SharedServiceRepository', () => {
     })
   })
 
+  describe('findSharedServicesByIds', () => {
+    it('looks the services up by id', async () => {
+      const qb = createQueryBuilder({
+        getMany: [{ id: 'ss-1', displayName: 'Notify' }],
+      })
+      manager.createQueryBuilder.mockReturnValueOnce(qb)
+
+      await expect(
+        repo.findSharedServicesByIds(['ss-1'], asManager(manager)),
+      ).resolves.toEqual([{ id: 'ss-1', displayName: 'Notify' }])
+      expect(qb.where).toHaveBeenCalledWith('ss.id IN (:...sharedServiceIds)', {
+        sharedServiceIds: ['ss-1'],
+      })
+      expect(getManager).not.toHaveBeenCalled()
+    })
+  })
+
   describe('checkIfTenantHasSharedServiceAccess', () => {
     it('returns true when the tenant has access using the passed manager', async () => {
       manager.createQueryBuilder.mockReturnValueOnce(

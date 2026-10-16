@@ -23,6 +23,13 @@ import {
 import { config } from '../services/config.service'
 import { TMSConstants } from '../common/tms.constants'
 import { notificationService } from './notification.service'
+import { sharedServiceRepository } from '../repositories/shared-service.repository'
+import { ForbiddenError } from '../errors/ForbiddenError'
+
+const joinNames = (names: string[]) =>
+  names.length > 1
+    ? `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`
+    : names[0]
 
 export class GroupService {
   public async createGroup(req: Request) {
@@ -382,6 +389,14 @@ export class GroupService {
       updatedBy: req.decodedJwt?.idir_user_guid || 'system',
       sharedServices: req.body.sharedServices,
     }
+
+    if (req.isHeadlessAccess && req.headlessService) {
+      await this.ensureOnlyOwnServiceRoles(
+        req.headlessService,
+        input.sharedServices,
+      )
+    }
+
     const sharedServices = await connection.manager.transaction((tx) =>
       groupRepository.updateSharedServiceRolesForGroup(input, tx),
     )
@@ -391,6 +406,33 @@ export class GroupService {
         sharedServices: sharedServices,
       },
     }
+  }
+
+  private async ensureOnlyOwnServiceRoles(
+    callingService: Express.HeadlessService,
+    sharedServices: UpdateSharedServiceRolesForGroupInputDto['sharedServices'],
+  ) {
+    const otherServiceIds = [
+      ...new Set(
+        sharedServices
+          .map((sharedService) => sharedService.id)
+          .filter((id) => id !== callingService.id),
+      ),
+    ]
+    if (otherServiceIds.length === 0) {
+      return
+    }
+
+    const otherServices =
+      await sharedServiceRepository.findSharedServicesByIds(otherServiceIds)
+    const otherServiceNames =
+      otherServices.length > 0
+        ? joinNames(otherServices.map((service) => service.displayName))
+        : 'other services'
+
+    throw new ForbiddenError(
+      `${callingService.displayName} can only change its own roles. Roles for ${otherServiceNames} can only be changed in the CSTAR web app.`,
+    )
   }
 
   public async getUserGroupsWithSharedServiceRoles(req: Request) {

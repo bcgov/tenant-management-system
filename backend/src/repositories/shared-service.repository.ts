@@ -513,6 +513,17 @@ export class SharedServiceRepository {
       .getOne()
   }
 
+  public async findSharedServicesByIds(
+    sharedServiceIds: string[],
+    manager?: EntityManager,
+  ) {
+    const em = manager ?? getManager()
+    return em
+      .createQueryBuilder(SharedService, 'ss')
+      .where('ss.id IN (:...sharedServiceIds)', { sharedServiceIds })
+      .getMany()
+  }
+
   public async checkIfTenantHasSharedServiceAccess(
     tenantId: string,
     clientIdentifier: string,

@@ -7,6 +7,8 @@ import { connection } from '../../common/db.connection'
 import logger from '../../common/logger'
 import { notificationService } from '../../services/notification.service'
 import { config } from '../../services/config.service'
+import { sharedServiceRepository } from '../../repositories/shared-service.repository'
+import { ForbiddenError } from '../../errors/ForbiddenError'
 
 jest.mock('../../repositories/group.repository')
 jest.mock('../../repositories/tenant.repository', () => ({
@@ -15,6 +17,11 @@ jest.mock('../../repositories/tenant.repository', () => ({
     ensureTenantUserExists: jest.fn(),
     getTenantUserBySsoId: jest.fn(),
     getTenantUserWithRelations: jest.fn(),
+  },
+}))
+jest.mock('../../repositories/shared-service.repository', () => ({
+  sharedServiceRepository: {
+    findSharedServicesByIds: jest.fn(),
   },
 }))
 jest.mock('../../services/notification.service', () => ({
@@ -40,6 +47,9 @@ const mockTenantRepository = tenantRepository as jest.Mocked<
   typeof tenantRepository
 >
 const mockTransaction = connection.manager.transaction as jest.Mock
+const mockSharedServiceRepository = sharedServiceRepository as jest.Mocked<
+  typeof sharedServiceRepository
+>
 const mockNotifyAdded = notificationService.notifyUserAddedToTenant as jest.Mock
 const mockNotifyGroupAdded =
   notificationService.notifyUserAddedToGroup as jest.Mock
@@ -740,6 +750,131 @@ describe('GroupService', () => {
   })
 
   describe('updateSharedServiceRolesForGroup', () => {
+    describe('when a connected service calls', () => {
+      const chefs = {
+        id: 'ss-chefs',
+        name: 'chefs',
+        displayName: 'CHEFS',
+        clientIdentifier: 'chefs-client',
+      }
+      const headlessRequest = (sharedServices: unknown[]) =>
+        asRequest({
+          params: { tenantId: 'tenant-1', groupId: 'group-1' },
+          body: { sharedServices },
+          decodedJwt: { idir_user_guid: 'sso-1', aud: 'chefs-client' },
+          isHeadlessAccess: true,
+          headlessService: chefs,
+        })
+      const role = (id: string) => ({ id, enabled: true })
+
+      it('saves changes to its own roles', async () => {
+        mockRepository.updateSharedServiceRolesForGroup.mockResolvedValue(
+          [] as never,
+        )
+
+        await service.updateSharedServiceRolesForGroup(
+          headlessRequest([
+            { id: 'ss-chefs', sharedServiceRoles: [role('r-1')] },
+          ]),
+        )
+
+        expect(
+          mockSharedServiceRepository.findSharedServicesByIds,
+        ).not.toHaveBeenCalled()
+        expect(mockTransaction).toHaveBeenCalledTimes(1)
+      })
+
+      it('refuses changes to another service and saves nothing', async () => {
+        mockSharedServiceRepository.findSharedServicesByIds.mockResolvedValueOnce(
+          [{ id: 'ss-notify', displayName: 'Notify' }] as never,
+        )
+
+        await expect(
+          service.updateSharedServiceRolesForGroup(
+            headlessRequest([
+              { id: 'ss-chefs', sharedServiceRoles: [role('r-1')] },
+              { id: 'ss-notify', sharedServiceRoles: [role('r-2')] },
+            ]),
+          ),
+        ).rejects.toThrow(
+          new ForbiddenError(
+            'CHEFS can only change its own roles. Roles for Notify can only be changed in the CSTAR web app.',
+          ),
+        )
+        expect(
+          mockSharedServiceRepository.findSharedServicesByIds,
+        ).toHaveBeenCalledWith(['ss-notify'])
+        expect(mockTransaction).not.toHaveBeenCalled()
+      })
+
+      it('names every other service in a readable list', async () => {
+        mockSharedServiceRepository.findSharedServicesByIds.mockResolvedValueOnce(
+          [
+            { id: 'ss-notify', displayName: 'Notify' },
+            { id: 'ss-forms', displayName: 'Forms' },
+            { id: 'ss-docs', displayName: 'CDOGS' },
+          ] as never,
+        )
+
+        await expect(
+          service.updateSharedServiceRolesForGroup(
+            headlessRequest([
+              { id: 'ss-notify', sharedServiceRoles: [role('r-2')] },
+              { id: 'ss-forms', sharedServiceRoles: [role('r-3')] },
+              { id: 'ss-docs', sharedServiceRoles: [role('r-4')] },
+              { id: 'ss-notify', sharedServiceRoles: [role('r-5')] },
+            ]),
+          ),
+        ).rejects.toThrow(
+          'Roles for Notify, Forms and CDOGS can only be changed in the CSTAR web app.',
+        )
+        expect(
+          mockSharedServiceRepository.findSharedServicesByIds,
+        ).toHaveBeenCalledWith(['ss-notify', 'ss-forms', 'ss-docs'])
+      })
+
+      it('still refuses when the other service cannot be found', async () => {
+        mockSharedServiceRepository.findSharedServicesByIds.mockResolvedValueOnce(
+          [] as never,
+        )
+
+        await expect(
+          service.updateSharedServiceRolesForGroup(
+            headlessRequest([
+              { id: 'ss-unknown', sharedServiceRoles: [role('r-9')] },
+            ]),
+          ),
+        ).rejects.toThrow(
+          'CHEFS can only change its own roles. Roles for other services can only be changed in the CSTAR web app.',
+        )
+        expect(mockTransaction).not.toHaveBeenCalled()
+      })
+    })
+
+    it('lets the web app change several services at once', async () => {
+      mockRepository.updateSharedServiceRolesForGroup.mockResolvedValue(
+        [] as never,
+      )
+
+      await service.updateSharedServiceRolesForGroup(
+        asRequest({
+          params: { tenantId: 'tenant-1', groupId: 'group-1' },
+          body: {
+            sharedServices: [
+              { id: 'ss-chefs', sharedServiceRoles: [] },
+              { id: 'ss-notify', sharedServiceRoles: [] },
+            ],
+          },
+          decodedJwt: { idir_user_guid: 'sso-1' },
+        }),
+      )
+
+      expect(
+        mockSharedServiceRepository.findSharedServicesByIds,
+      ).not.toHaveBeenCalled()
+      expect(mockTransaction).toHaveBeenCalledTimes(1)
+    })
+
     it('threads the transaction manager', async () => {
       mockRepository.updateSharedServiceRolesForGroup.mockResolvedValue(
         [] as never,
