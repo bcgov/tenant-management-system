@@ -213,7 +213,7 @@ export class Routes {
     app
       .route(RoutesConstants.REMOVE_GROUP_USER)
       .delete(
-        checkJwt(),
+        checkJwt({ headlessAccess: true }),
         validate(validator.removeGroupUser, {}, {}),
         checkTenantAccess([TMSConstants.TENANT_OWNER, TMSConstants.USER_ADMIN]),
         (req: Request, res: Response) =>

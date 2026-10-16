@@ -161,6 +161,11 @@ describe('Routes middleware wiring', () => {
       .mockImplementation(async (_req, res) => {
         res.status(200).send({ ok: true })
       })
+    jest
+      .spyOn(GroupController.prototype, 'removeGroupUser')
+      .mockImplementation(async (_req, res) => {
+        res.status(204).send()
+      })
 
     new Routes().routes(app)
   })
@@ -325,6 +330,29 @@ describe('Routes middleware wiring', () => {
       expect(
         GroupController.prototype.updateSharedServiceRolesForGroup,
       ).toHaveBeenCalled()
+    })
+
+    it('lets a connected service remove a group member', async () => {
+      const response = await request(app)
+        .delete(
+          `/v1/tenants/${tenantId}/groups/${groupId}/users/123e4567-e89b-12d3-a456-426614174004`,
+        )
+        .set('Authorization', 'Bearer connected-service')
+        .set('x-tenant-access', 'allow')
+
+      expect(response.status).toBe(204)
+      expect(GroupController.prototype.removeGroupUser).toHaveBeenCalled()
+    })
+
+    it('still checks tenant access before removing a group member', async () => {
+      const response = await request(app)
+        .delete(
+          `/v1/tenants/${tenantId}/groups/${groupId}/users/123e4567-e89b-12d3-a456-426614174004`,
+        )
+        .set('Authorization', 'Bearer connected-service')
+
+      expect(response.status).toBe(403)
+      expect(GroupController.prototype.removeGroupUser).not.toHaveBeenCalled()
     })
   })
 })
