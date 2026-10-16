@@ -165,7 +165,7 @@ init() // NOSONAR
           <template v-else>
             <v-row>
               <v-col cols="12">
-                <h4 class="mb-6 mt-12">Tenant requests</h4>
+                <h1 class="mb-6 mt-12">Tenant requests</h1>
                 <p class="mb-8">
                   Select a request to review details and approve or reject it.
                 </p>
@@ -191,9 +191,7 @@ init() // NOSONAR
               <v-col cols="12">
                 <v-data-table
                   :cell-props="getCellProps"
-                  :header-props="{
-                    class: 'bg-surface-light font-weight-bold',
-                  }"
+                  :header-props="{ class: 'bg-surface-light font-weight-bold' }"
                   :headers="[
                     {
                       key: 'createdDate',

@@ -48,7 +48,7 @@ const handleButtonClick = (action: string) => {
     data-testid="dialog"
     @update:model-value="$emit('update:modelValue', $event)"
   >
-    <v-card>
+    <v-card color="background">
       <v-card-item class="pa-6">
         <v-card-title class="text-wrap" data-testid="title">
           <h4 class="ma-0">{{ title }}</h4>

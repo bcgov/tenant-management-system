@@ -108,7 +108,7 @@ const rules = {
 
 <template>
   <v-dialog v-model="dialogVisible" max-width="600px">
-    <v-card class="pa-6">
+    <v-card class="pa-6" color="background">
       <v-card-title class="align-center d-flex justify-space-between">
         Edit group details
       </v-card-title>
