@@ -27,7 +27,8 @@ jobs:
     name: Set Variables
     outputs:
       pr: ${{ steps.pr.outputs.pr }}
-    runs-on: ubuntu-22.04
+    runs-on:
+      group: Larger Runners - OpenShift Static-IP
     timeout-minutes: 1
     steps:
       # Get PR number for squash merges to main
@@ -54,7 +55,8 @@ jobs:
   promote-dev:
     name: Promote Images
     needs: [vars, deploys-gold-dev]
-    runs-on: ubuntu-24.04
+    runs-on:
+      group: Larger Runners - OpenShift Static-IP
     permissions:
       packages: write
     strategy:
@@ -98,7 +100,8 @@ jobs:
   promote-test:
     name: Promote Images
     needs: [vars, deploys-gold-test]
-    runs-on: ubuntu-24.04
+    runs-on:
+      group: Larger Runners - OpenShift Static-IP
     permissions:
       packages: write
     strategy:
@@ -142,7 +145,8 @@ jobs:
   promote-prod:
     name: Promote Images Prod
     needs: [vars, deploys-gold-prod]
-    runs-on: ubuntu-24.04
+    runs-on:
+      group: Larger Runners - OpenShift Static-IP
     permissions:
       packages: write
     strategy:

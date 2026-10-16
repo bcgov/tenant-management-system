@@ -24,7 +24,8 @@ jobs:
       DEST: demo
       DOMAIN: apps.gold.devops.gov.bc.ca
       REPO: ${{ github.event.repository.name }}
-    runs-on: ubuntu-24.04
+    runs-on:
+      group: Larger Runners - OpenShift Static-IP
     steps:
       - name: Point DEMO URL to Existing Service
         uses: bcgov/action-oc-runner@d2fc921aaa9d70684c186dbb7754e6985d44d86f # v1.4.1
