@@ -189,7 +189,7 @@ export class Routes {
     app
       .route(RoutesConstants.CREATE_GROUP)
       .post(
-        checkJwt(),
+        checkJwt({ headlessAccess: true }),
         validate(validator.createGroup, {}, {}),
         checkTenantAccess([TMSConstants.TENANT_OWNER, TMSConstants.USER_ADMIN]),
         (req: Request, res: Response) => groupController.createGroup(req, res),
@@ -197,7 +197,7 @@ export class Routes {
     app
       .route(RoutesConstants.UPDATE_GROUP)
       .put(
-        checkJwt(),
+        checkJwt({ headlessAccess: true }),
         validate(validator.updateGroup, {}, {}),
         checkTenantAccess([TMSConstants.TENANT_OWNER, TMSConstants.USER_ADMIN]),
         (req: Request, res: Response) => groupController.updateGroup(req, res),

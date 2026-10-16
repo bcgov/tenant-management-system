@@ -146,6 +146,16 @@ describe('Routes middleware wiring', () => {
       .mockImplementation(async (_req, res) => {
         res.status(200).send({ ok: true })
       })
+    jest
+      .spyOn(GroupController.prototype, 'createGroup')
+      .mockImplementation(async (_req, res) => {
+        res.status(201).send({ ok: true })
+      })
+    jest
+      .spyOn(GroupController.prototype, 'updateGroup')
+      .mockImplementation(async (_req, res) => {
+        res.status(200).send({ ok: true })
+      })
 
     new Routes().routes(app)
   })
@@ -249,6 +259,43 @@ describe('Routes middleware wiring', () => {
 
       expect(response.status).toBe(403)
       expect(TenantController.prototype.getTenantUser).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('group changes open to connected services', () => {
+    const tenantId = '123e4567-e89b-12d3-a456-426614174000'
+    const groupId = '123e4567-e89b-12d3-a456-426614174001'
+
+    it('lets a connected service create a group', async () => {
+      const response = await request(app)
+        .post(`/v1/tenants/${tenantId}/groups`)
+        .set('Authorization', 'Bearer connected-service')
+        .set('x-tenant-access', 'allow')
+        .send({ name: 'Reviewers' })
+
+      expect(response.status).toBe(201)
+      expect(GroupController.prototype.createGroup).toHaveBeenCalled()
+    })
+
+    it('lets a connected service update a group', async () => {
+      const response = await request(app)
+        .put(`/v1/tenants/${tenantId}/groups/${groupId}`)
+        .set('Authorization', 'Bearer connected-service')
+        .set('x-tenant-access', 'allow')
+        .send({ name: 'Senior Reviewers' })
+
+      expect(response.status).toBe(200)
+      expect(GroupController.prototype.updateGroup).toHaveBeenCalled()
+    })
+
+    it('still checks tenant access before creating a group', async () => {
+      const response = await request(app)
+        .post(`/v1/tenants/${tenantId}/groups`)
+        .set('Authorization', 'Bearer connected-service')
+        .send({ name: 'Reviewers' })
+
+      expect(response.status).toBe(403)
+      expect(GroupController.prototype.createGroup).not.toHaveBeenCalled()
     })
   })
 })
