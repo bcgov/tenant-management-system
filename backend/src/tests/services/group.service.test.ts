@@ -151,6 +151,128 @@ describe('GroupService', () => {
       decodedJwt: { idir_user_guid: 'admin-1' },
     })
 
+    describe('when a connected service adds someone', () => {
+      const sam = {
+        ssoUserId: 'SAM-GUID',
+        displayName: 'Sam Lee',
+        idpType: 'idir',
+      }
+      const notify = { id: 'ss-notify', name: 'notify', displayName: 'Notify' }
+      const forms = { id: 'ss-forms', name: 'forms', displayName: 'Forms' }
+      const headlessRequest = (confirmOtherServices?: string[]) =>
+        asRequest({
+          params: { tenantId: 'tenant-1', groupId: 'group-1' },
+          body: { user: sam, confirmOtherServices },
+          decodedJwt: { idir_user_guid: 'admin-1', aud: 'chefs-client' },
+          isHeadlessAccess: true,
+          headlessService: {
+            id: 'ss-chefs',
+            name: 'chefs',
+            displayName: 'CHEFS',
+            clientIdentifier: 'chefs-client',
+          },
+        })
+
+      beforeEach(() => {
+        mockTenantRepository.ensureTenantUserExists.mockResolvedValue({
+          id: 'tu-1',
+        } as never)
+        mockRepository.addGroupUser.mockResolvedValue({ id: 'gu-1' } as never)
+      })
+
+      it('adds them when the group gives nothing new in other services', async () => {
+        mockRepository.getNewRolesFromOtherServices.mockResolvedValueOnce([])
+
+        await service.addGroupUser(headlessRequest())
+
+        expect(
+          mockRepository.getNewRolesFromOtherServices,
+        ).toHaveBeenCalledWith({
+          tenantId: 'tenant-1',
+          groupId: 'group-1',
+          callingServiceId: 'ss-chefs',
+          ssoUserId: 'SAM-GUID',
+          idpType: 'idir',
+        })
+        expect(mockRepository.addGroupUser).toHaveBeenCalled()
+      })
+
+      it('refuses and lists the other services when they are not confirmed', async () => {
+        mockRepository.getNewRolesFromOtherServices.mockResolvedValueOnce([
+          { id: 'r-1', name: 'Admin', sharedService: notify },
+          { id: 'r-2', name: 'Sender', sharedService: notify },
+          { id: 'r-3', name: 'Reviewer', sharedService: forms },
+        ] as never)
+
+        const attempt = service.addGroupUser(headlessRequest())
+
+        await expect(attempt).rejects.toThrow(
+          'Adding Sam Lee to this group would also give them access to Notify (Admin, Sender) and Forms (Reviewer). To go ahead, list these services in confirmOtherServices, or add them in the CSTAR web app.',
+        )
+        await expect(attempt).rejects.toBeInstanceOf(ForbiddenError)
+        await expect(attempt).rejects.toMatchObject({
+          code: 'OTHER_SERVICES_NOT_CONFIRMED',
+          details: {
+            otherServices: [
+              {
+                name: 'notify',
+                displayName: 'Notify',
+                roles: ['Admin', 'Sender'],
+              },
+              { name: 'forms', displayName: 'Forms', roles: ['Reviewer'] },
+            ],
+          },
+        })
+        expect(mockTransaction).not.toHaveBeenCalled()
+        expect(mockRepository.addGroupUser).not.toHaveBeenCalled()
+      })
+
+      it('adds them once every other service is confirmed', async () => {
+        mockRepository.getNewRolesFromOtherServices.mockResolvedValueOnce([
+          { id: 'r-1', name: 'Admin', sharedService: notify },
+          { id: 'r-3', name: 'Reviewer', sharedService: forms },
+        ] as never)
+
+        await service.addGroupUser(headlessRequest(['Notify ', 'forms']))
+
+        expect(mockRepository.addGroupUser).toHaveBeenCalled()
+      })
+
+      it('refuses when only some of the other services are confirmed', async () => {
+        mockRepository.getNewRolesFromOtherServices.mockResolvedValueOnce([
+          { id: 'r-1', name: 'Admin', sharedService: notify },
+          { id: 'r-3', name: 'Reviewer', sharedService: forms },
+        ] as never)
+
+        await expect(
+          service.addGroupUser(headlessRequest(['notify'])),
+        ).rejects.toMatchObject({ code: 'OTHER_SERVICES_NOT_CONFIRMED' })
+        expect(mockRepository.addGroupUser).not.toHaveBeenCalled()
+      })
+
+      it('ignores extra services that were confirmed but not needed', async () => {
+        mockRepository.getNewRolesFromOtherServices.mockResolvedValueOnce([
+          { id: 'r-1', name: 'Admin', sharedService: notify },
+        ] as never)
+
+        await service.addGroupUser(headlessRequest(['notify', 'cdogs']))
+
+        expect(mockRepository.addGroupUser).toHaveBeenCalled()
+      })
+    })
+
+    it('does not run the check for the web app', async () => {
+      mockTenantRepository.ensureTenantUserExists.mockResolvedValue({
+        id: 'tu-1',
+      } as never)
+      mockRepository.addGroupUser.mockResolvedValue({ id: 'gu-1' } as never)
+
+      await service.addGroupUser(req)
+
+      expect(mockRepository.getNewRolesFromOtherServices).not.toHaveBeenCalled()
+      expect(mockRepository.addGroupUser).toHaveBeenCalled()
+    })
+
     it('ensures the tenant user exists then adds them to the group', async () => {
       mockTenantRepository.ensureTenantUserExists.mockResolvedValue({
         id: 'tu-1',

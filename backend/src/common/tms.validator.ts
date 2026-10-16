@@ -292,6 +292,10 @@ export default {
           idpType: idpTypeValidator,
         })
         .required(),
+      confirmOtherServices: Joi.array()
+        .items(Joi.string().min(1).max(30))
+        .max(50)
+        .optional(),
     }).options({ abortEarly: false, convert: false }),
   },
 

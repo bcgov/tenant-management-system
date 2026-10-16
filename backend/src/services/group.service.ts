@@ -25,11 +25,32 @@ import { TMSConstants } from '../common/tms.constants'
 import { notificationService } from './notification.service'
 import { sharedServiceRepository } from '../repositories/shared-service.repository'
 import { ForbiddenError } from '../errors/ForbiddenError'
+import { SharedServiceRole } from '../entities/SharedServiceRole'
+
+type OtherServiceAccess = {
+  name: string
+  displayName: string
+  roles: string[]
+}
 
 const joinNames = (names: string[]) =>
   names.length > 1
     ? `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`
     : names[0]
+
+const groupRolesByService = (roles: SharedServiceRole[]) => {
+  const services = new Map<string, OtherServiceAccess>()
+  for (const role of roles) {
+    const service = services.get(role.sharedService.id) ?? {
+      name: role.sharedService.name,
+      displayName: role.sharedService.displayName,
+      roles: [],
+    }
+    service.roles.push(role.name)
+    services.set(role.sharedService.id, service)
+  }
+  return Array.from(services.values())
+}
 
 export class GroupService {
   public async createGroup(req: Request) {
@@ -98,6 +119,10 @@ export class GroupService {
     let addedTenantUserId: string | undefined
     let isNewTenantUser = false
     let addedGroupUserId: string | undefined
+
+    if (req.isHeadlessAccess && req.headlessService) {
+      await this.ensureOtherServicesConfirmed(req, req.headlessService)
+    }
 
     await connection.manager.transaction(async (tx) => {
       try {
@@ -406,6 +431,45 @@ export class GroupService {
         sharedServices: sharedServices,
       },
     }
+  }
+
+  private async ensureOtherServicesConfirmed(
+    req: Request,
+    callingService: Express.HeadlessService,
+  ) {
+    const { user } = req.body
+    const confirmed = new Set(
+      ((req.body.confirmOtherServices ?? []) as string[]).map((name) =>
+        name.trim().toLowerCase(),
+      ),
+    )
+
+    const newRoles = await groupRepository.getNewRolesFromOtherServices({
+      tenantId: req.params.tenantId as string,
+      groupId: req.params.groupId as string,
+      callingServiceId: callingService.id,
+      ssoUserId: user.ssoUserId,
+      idpType: user.idpType,
+    })
+
+    const otherServices = groupRolesByService(newRoles)
+    const allConfirmed = otherServices.every((service) =>
+      confirmed.has(service.name.trim().toLowerCase()),
+    )
+    if (allConfirmed) {
+      return
+    }
+
+    const access = joinNames(
+      otherServices.map(
+        (service) => `${service.displayName} (${service.roles.join(', ')})`,
+      ),
+    )
+    throw new ForbiddenError(
+      `Adding ${user.displayName} to this group would also give them access to ${access}. To go ahead, list these services in confirmOtherServices, or add them in the CSTAR web app.`,
+      'OTHER_SERVICES_NOT_CONFIRMED',
+      { otherServices },
+    )
   }
 
   private async ensureOnlyOwnServiceRoles(

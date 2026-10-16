@@ -166,6 +166,11 @@ describe('Routes middleware wiring', () => {
       .mockImplementation(async (_req, res) => {
         res.status(204).send()
       })
+    jest
+      .spyOn(GroupController.prototype, 'addGroupUser')
+      .mockImplementation(async (_req, res) => {
+        res.status(201).send({ ok: true })
+      })
 
     new Routes().routes(app)
   })
@@ -353,6 +358,26 @@ describe('Routes middleware wiring', () => {
 
       expect(response.status).toBe(403)
       expect(GroupController.prototype.removeGroupUser).not.toHaveBeenCalled()
+    })
+
+    it('lets a connected service add a group member', async () => {
+      const response = await request(app)
+        .post(`/v1/tenants/${tenantId}/groups/${groupId}/users`)
+        .set('Authorization', 'Bearer connected-service')
+        .set('x-tenant-access', 'allow')
+        .send({
+          user: {
+            firstName: 'Sam',
+            lastName: 'Lee',
+            displayName: 'Sam Lee',
+            ssoUserId: 'F45AFBBD68C4466F956BA3A1D91878AD',
+            idpType: 'idir',
+          },
+          confirmOtherServices: ['notify'],
+        })
+
+      expect(response.status).toBe(201)
+      expect(GroupController.prototype.addGroupUser).toHaveBeenCalled()
     })
   })
 })

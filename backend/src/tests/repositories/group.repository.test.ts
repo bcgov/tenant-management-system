@@ -25,6 +25,8 @@ type MockQueryBuilder = {
   innerJoin: jest.Mock
   leftJoin: jest.Mock
   leftJoinAndSelect: jest.Mock
+  innerJoinAndSelect: jest.Mock
+  select: jest.Mock
   addSelect: jest.Mock
   setParameter: jest.Mock
   orderBy: jest.Mock
@@ -36,6 +38,7 @@ type MockQueryBuilder = {
   getMany: jest.Mock
   getExists: jest.Mock
   getRawAndEntities: jest.Mock
+  getRawMany: jest.Mock
   execute: jest.Mock
 }
 
@@ -45,6 +48,7 @@ function createQueryBuilder(
     getMany?: unknown[]
     getExists?: boolean
     getRawAndEntities?: { entities: unknown[]; raw: unknown[] }
+    getRawMany?: unknown[]
   } = {},
 ): MockQueryBuilder {
   const qb = {} as MockQueryBuilder
@@ -54,6 +58,8 @@ function createQueryBuilder(
     'innerJoin',
     'leftJoin',
     'leftJoinAndSelect',
+    'innerJoinAndSelect',
+    'select',
     'addSelect',
     'setParameter',
     'orderBy',
@@ -71,6 +77,7 @@ function createQueryBuilder(
   qb.getRawAndEntities = jest
     .fn()
     .mockResolvedValue(overrides.getRawAndEntities ?? { entities: [], raw: [] })
+  qb.getRawMany = jest.fn().mockResolvedValue(overrides.getRawMany ?? [])
   qb.execute = jest.fn().mockResolvedValue(undefined)
   return qb
 }
@@ -386,6 +393,62 @@ describe('GroupRepository', () => {
       )
 
       expect(result).toBeNull()
+    })
+  })
+
+  describe('getNewRolesFromOtherServices', () => {
+    const input = {
+      tenantId: 'tenant-1',
+      groupId: 'group-1',
+      callingServiceId: 'ss-chefs',
+      ssoUserId: 'SAM-GUID',
+      idpType: 'idir',
+    }
+    const notifyAdmin = {
+      id: 'r-admin',
+      name: 'Admin',
+      sharedService: { id: 'ss-notify', name: 'notify' },
+    }
+    const notifySender = {
+      id: 'r-sender',
+      name: 'Sender',
+      sharedService: { id: 'ss-notify', name: 'notify' },
+    }
+
+    it('returns nothing and skips the second lookup when the group has no other service roles', async () => {
+      const qb = createQueryBuilder({ getMany: [] })
+      manager.createQueryBuilder.mockReturnValueOnce(qb)
+
+      await expect(
+        repo.getNewRolesFromOtherServices(input, asManager(manager)),
+      ).resolves.toEqual([])
+      expect(qb.andWhere).toHaveBeenCalledWith('ss.id != :callingServiceId', {
+        callingServiceId: 'ss-chefs',
+      })
+      expect(qb.andWhere).toHaveBeenCalledWith(
+        '(ssr.allowedIdentityProviders IS NULL OR :idpType = ANY(ssr.allowedIdentityProviders))',
+        { idpType: 'idir' },
+      )
+      expect(manager.createQueryBuilder).toHaveBeenCalledTimes(1)
+    })
+
+    it('leaves out roles the person already has from other groups', async () => {
+      manager.createQueryBuilder
+        .mockReturnValueOnce(
+          createQueryBuilder({
+            getMany: [
+              { sharedServiceRole: notifyAdmin },
+              { sharedServiceRole: notifySender },
+            ],
+          }),
+        )
+        .mockReturnValueOnce(
+          createQueryBuilder({ getRawMany: [{ roleId: 'r-admin' }] }),
+        )
+
+      await expect(
+        repo.getNewRolesFromOtherServices(input, asManager(manager)),
+      ).resolves.toEqual([notifySender])
     })
   })
 

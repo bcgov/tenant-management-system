@@ -205,7 +205,7 @@ export class Routes {
     app
       .route(RoutesConstants.ADD_GROUP_USER)
       .post(
-        checkJwt(),
+        checkJwt({ headlessAccess: true }),
         validate(validator.addGroupUser, {}, {}),
         checkTenantAccess([TMSConstants.TENANT_OWNER, TMSConstants.USER_ADMIN]),
         (req: Request, res: Response) => groupController.addGroupUser(req, res),

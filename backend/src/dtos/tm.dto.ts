@@ -21,6 +21,14 @@ export interface AddGroupUserInputDto {
   updatedBy: string
 }
 
+export interface GetNewRolesFromOtherServicesInputDto {
+  tenantId: string
+  groupId: string
+  callingServiceId: string
+  ssoUserId: string
+  idpType: string
+}
+
 export interface AddGroupUserResultDto {
   id: string
   user: {
