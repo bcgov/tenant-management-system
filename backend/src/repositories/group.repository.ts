@@ -71,10 +71,15 @@ export class GroupRepository {
       )
     }
 
-    if (tenantUserId) {
-      if (!(await this.checkIfTenantUserExists(tenantUserId, manager))) {
-        throw new NotFoundError(`Tenant user not found: ${tenantUserId}`)
-      }
+    if (
+      tenantUserId &&
+      !(await tenantRepository.checkIfTenantUserExistsForTenant(
+        tenantId,
+        tenantUserId,
+        manager,
+      ))
+    ) {
+      throw new NotFoundError(`Tenant user not found: ${tenantUserId}`)
     }
 
     const group = new Group()
@@ -165,17 +170,6 @@ export class GroupRepository {
       .getOne()
 
     return existingGroup
-  }
-
-  public async checkIfTenantUserExists(
-    tenantUserId: string,
-    manager?: EntityManager,
-  ) {
-    const em = manager ?? getManager()
-    const tenantUser = await em.findOne(TenantUser, {
-      where: { id: tenantUserId, isDeleted: false },
-    })
-    return !!tenantUser
   }
 
   public async getTenantGroups(

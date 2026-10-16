@@ -11,6 +11,7 @@ jest.mock('../../common/db.connection', () => ({
 jest.mock('../../repositories/tenant.repository', () => ({
   tenantRepository: {
     getTenantUserBySsoId: jest.fn(),
+    checkIfTenantUserExistsForTenant: jest.fn(),
   },
 }))
 
@@ -131,13 +132,18 @@ describe('GroupRepository', () => {
         .mockReturnValueOnce(
           createQueryBuilder({ getOne: { id: 'group-1', users: [] } }),
         )
-      manager.findOne.mockResolvedValueOnce({ id: 'tu-1', isDeleted: false })
+      mockTenantRepository.checkIfTenantUserExistsForTenant.mockResolvedValueOnce(
+        true,
+      )
 
       await repo.saveGroup(
         { ...input, tenantUserId: 'tu-1' },
         asManager(manager),
       )
 
+      expect(
+        mockTenantRepository.checkIfTenantUserExistsForTenant,
+      ).toHaveBeenCalledWith('tenant-1', 'tu-1', asManager(manager))
       expect(manager.save).toHaveBeenCalledWith(
         expect.objectContaining({
           tenantUser: { id: 'tu-1' },
@@ -161,7 +167,9 @@ describe('GroupRepository', () => {
       manager.createQueryBuilder.mockReturnValueOnce(
         createQueryBuilder({ getOne: null }),
       )
-      manager.findOne.mockResolvedValueOnce(null)
+      mockTenantRepository.checkIfTenantUserExistsForTenant.mockResolvedValueOnce(
+        false,
+      )
 
       await expect(
         repo.saveGroup(
@@ -169,6 +177,40 @@ describe('GroupRepository', () => {
           asManager(manager),
         ),
       ).rejects.toThrow(NotFoundError)
+    })
+
+    it('refuses a first member from another tenant and creates no group', async () => {
+      manager.createQueryBuilder.mockReturnValueOnce(
+        createQueryBuilder({ getOne: null }),
+      )
+      mockTenantRepository.checkIfTenantUserExistsForTenant.mockResolvedValueOnce(
+        false,
+      )
+
+      await expect(
+        repo.saveGroup(
+          { ...input, tenantUserId: 'tu-from-tenant-2' },
+          asManager(manager),
+        ),
+      ).rejects.toThrow(NotFoundError)
+      expect(
+        mockTenantRepository.checkIfTenantUserExistsForTenant,
+      ).toHaveBeenCalledWith('tenant-1', 'tu-from-tenant-2', asManager(manager))
+      expect(manager.save).not.toHaveBeenCalled()
+    })
+
+    it('does not look up a first member when none is given', async () => {
+      manager.createQueryBuilder
+        .mockReturnValueOnce(createQueryBuilder({ getOne: null }))
+        .mockReturnValueOnce(
+          createQueryBuilder({ getOne: { id: 'group-1', users: [] } }),
+        )
+
+      await repo.saveGroup(input, asManager(manager))
+
+      expect(
+        mockTenantRepository.checkIfTenantUserExistsForTenant,
+      ).not.toHaveBeenCalled()
     })
   })
 
