@@ -12,6 +12,7 @@ import { checkJwt, jwtErrorHandler } from '../common/auth.mw'
 import { checkTenantAccess } from '../common/tenant-access.mw'
 import { TMSConstants } from '../common/tms.constants'
 import { checkOperationsAdmin } from '../common/operations-admin.mw'
+import { prepareHeadlessTenantUser } from '../common/headless-tenant-user.mw'
 import { sendErrorResponse } from '../common/error.handler'
 import logger from '../common/logger'
 
@@ -44,7 +45,8 @@ export class Routes {
     app
       .route(RoutesConstants.ADD_TENANT_USERS)
       .post(
-        checkJwt(),
+        checkJwt({ headlessAccess: true }),
+        prepareHeadlessTenantUser,
         validate(validator.addTenantUser, {}, {}),
         checkTenantAccess([TMSConstants.TENANT_OWNER, TMSConstants.USER_ADMIN]),
         (req: Request, res: Response) =>

@@ -20,6 +20,10 @@ export class TMSConstants {
     'This operation cannot be performed from a connected service. Log in to the CSTAR web app to do this.'
   public static HEADLESS_IDIR_ONLY =
     'Only IDIR users can manage a tenant from a connected service.'
+  public static HEADLESS_SERVICE_USER_ROLE_ONLY =
+    'People added from a connected service can only be given the Service User role. Use the CSTAR web app to give the Tenant Owner or User Admin role.'
+  public static HEADLESS_ADD_GROUPS_SEPARATELY =
+    'When adding someone from a connected service, add them to groups one at a time using the add group member route.'
   public static HEADLESS_TENANT_MEMBER_REQUIRED =
     'You must be a member of this tenant to do this.'
 }

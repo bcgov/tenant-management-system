@@ -380,4 +380,29 @@ describe('Routes middleware wiring', () => {
       expect(GroupController.prototype.addGroupUser).toHaveBeenCalled()
     })
   })
+
+  describe('tenant users open to connected services', () => {
+    const tenantId = '123e4567-e89b-12d3-a456-426614174000'
+
+    it('lets a connected service add a tenant user', async () => {
+      const response = await request(app)
+        .post(`/v1/tenants/${tenantId}/users`)
+        .set('Authorization', 'Bearer connected-service')
+        .set('x-tenant-access', 'allow')
+        .send({
+          user: {
+            firstName: 'Sam',
+            lastName: 'Lee',
+            displayName: 'Sam Lee',
+            ssoUserId: 'F45AFBBD68C4466F956BA3A1D91878AD',
+            email: 'sam.lee@gov.bc.ca',
+            idpType: 'idir',
+          },
+          roles: ['123e4567-e89b-12d3-a456-426614174002'],
+        })
+
+      expect(response.status).toBe(201)
+      expect(TenantController.prototype.addTenantUser).toHaveBeenCalled()
+    })
+  })
 })

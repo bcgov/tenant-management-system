@@ -171,9 +171,11 @@ paths:
     post:
       summary: Add a user to a tenant
       description: |
-        Authentication: CSTAR audience token required.
+        Authentication: CSTAR audience token or headless shared service token allowed.
 
         Adds a new user to an existing tenant. Supports IDIR and Business BCeID users. For IDIR users, roles are required. For Business BCeID users, roles are optional and will be overridden with SERVICE_USER role. Optionally adds the user to groups. Requires JWT authentication and TENANT_OWNER or USER_ADMIN role.
+
+        With a shared service token, roles are optional and the user is always given the SERVICE_USER role, and groups are not accepted. Add the user to groups with the add group member route.
       security:
         - bearerAuth: []
       parameters:
@@ -244,7 +246,7 @@ paths:
                                   $ref: '#/components/schemas/Group'
                                 description: Groups the user was added to (if groups were provided in request)
         '400':
-          description: Invalid input - IDIR users must provide roles, Business BCeID users roles are optional
+          description: Invalid input - IDIR users must provide roles, Business BCeID users roles are optional, or groups were sent with a shared service token
           content:
             application/json:
               schema:
@@ -256,7 +258,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/UnauthorizedErrorResponse'
         '403':
-          description: Forbidden - User does not have required roles (TENANT_OWNER or USER_ADMIN)
+          description: Forbidden - User does not have required roles (TENANT_OWNER or USER_ADMIN), headless access is not allowed, or a role other than SERVICE_USER was requested with a shared service token
           content:
             application/json:
               schema:
