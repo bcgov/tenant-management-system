@@ -55,7 +55,7 @@ export class Routes {
     app
       .route(RoutesConstants.REMOVE_TENANT_USER)
       .delete(
-        checkJwt(),
+        checkJwt({ headlessAccess: true }),
         validate(validator.removeTenantUser, {}, {}),
         checkTenantAccess([TMSConstants.TENANT_OWNER, TMSConstants.USER_ADMIN]),
         (req: Request, res: Response) =>

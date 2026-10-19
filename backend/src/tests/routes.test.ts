@@ -404,5 +404,17 @@ describe('Routes middleware wiring', () => {
       expect(response.status).toBe(201)
       expect(TenantController.prototype.addTenantUser).toHaveBeenCalled()
     })
+
+    it('lets a connected service remove a tenant user', async () => {
+      const response = await request(app)
+        .delete(
+          `/v1/tenants/${tenantId}/users/123e4567-e89b-12d3-a456-426614174001`,
+        )
+        .set('Authorization', 'Bearer connected-service')
+        .set('x-tenant-access', 'allow')
+
+      expect(response.status).toBe(204)
+      expect(TenantController.prototype.removeTenantUser).toHaveBeenCalled()
+    })
   })
 })

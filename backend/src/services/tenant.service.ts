@@ -27,6 +27,8 @@ import {
 } from '../dtos/tms.dto'
 import { config } from '../services/config.service'
 import { notificationService } from './notification.service'
+import { TMSConstants } from '../common/tms.constants'
+import { ForbiddenError } from '../errors/ForbiddenError'
 
 export class TenantService {
   mapper: TMSMapper
@@ -384,11 +386,30 @@ export class TenantService {
     }
   }
 
+  private async ensureOnlyServiceUserRole(
+    tenantId: string,
+    tenantUserId: string,
+  ) {
+    const roles = await tenantRepository.getRolesForUser(tenantId, tenantUserId)
+    const hasAdminRole = roles.some(
+      (role) =>
+        role.name === TMSConstants.TENANT_OWNER ||
+        role.name === TMSConstants.USER_ADMIN,
+    )
+    if (hasAdminRole) {
+      throw new ForbiddenError(TMSConstants.HEADLESS_SERVICE_USERS_ONLY_REMOVED)
+    }
+  }
+
   public async removeTenantUser(req: Request) {
     const input: RemoveTenantUserInputDto = {
       tenantId: req.params.tenantId as string,
       tenantUserId: req.params.tenantUserId as string,
       deletedBy: req.decodedJwt?.idir_user_guid || 'system',
+    }
+
+    if (req.isHeadlessAccess) {
+      await this.ensureOnlyServiceUserRole(input.tenantId, input.tenantUserId)
     }
 
     await connection.manager.transaction(async (transactionEntityManager) => {
