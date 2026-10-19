@@ -4,6 +4,7 @@ import { Routes } from '../routes/routes'
 import { TenantController } from '../controllers/tenant.controller'
 import { GroupController } from '../controllers/group.controller'
 import { SharedServiceController } from '../controllers/shared-service.controller'
+import { SSOSearchController } from '../controllers/sso-search.controller'
 import { checkJwt } from '../common/auth.mw'
 import { checkTenantAccess } from '../common/tenant-access.mw'
 
@@ -165,6 +166,11 @@ describe('Routes middleware wiring', () => {
       .spyOn(GroupController.prototype, 'removeGroupUser')
       .mockImplementation(async (_req, res) => {
         res.status(204).send()
+      })
+    jest
+      .spyOn(SSOSearchController.prototype, 'searchBCGOVSSOUsers')
+      .mockImplementation(async (_req, res) => {
+        res.status(200).send({ ok: true })
       })
     jest
       .spyOn(GroupController.prototype, 'addGroupUser')
@@ -415,6 +421,31 @@ describe('Routes middleware wiring', () => {
 
       expect(response.status).toBe(204)
       expect(TenantController.prototype.removeTenantUser).toHaveBeenCalled()
+    })
+  })
+
+  describe('search open to connected services', () => {
+    it('lets a connected service search with a tenant', async () => {
+      const response = await request(app)
+        .get('/v1/users/bcgovssousers/idir/search')
+        .query({
+          email: 'sam@gov.bc.ca',
+          tenantId: '123e4567-e89b-12d3-a456-426614174000',
+        })
+        .set('Authorization', 'Bearer connected-service')
+        .set('x-tenant-access', 'allow')
+
+      expect(response.status).toBe(200)
+      expect(
+        SSOSearchController.prototype.searchBCGOVSSOUsers,
+      ).toHaveBeenCalled()
+    })
+
+    it('sets up the tenant check for connected services only, from the query', () => {
+      expect(mockedCheckTenantAccess).toHaveBeenCalledWith(
+        ['TMS.TENANT_OWNER', 'TMS.USER_ADMIN'],
+        { headlessOnly: true, tenantIdFromQuery: true },
+      )
     })
   })
 })

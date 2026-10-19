@@ -145,6 +145,7 @@ export default {
       lastName: Joi.string().min(2),
       email: Joi.string(),
       guid: Joi.string(),
+      tenantId: Joi.string().guid().optional(),
     }).or('firstName', 'lastName', 'email', 'guid'),
   },
 
@@ -155,6 +156,7 @@ export default {
       displayName: Joi.string(),
       username: Joi.string(),
       email: Joi.string(),
+      tenantId: Joi.string().guid().optional(),
     }).or('guid', 'displayName', 'username', 'email'),
   },
 

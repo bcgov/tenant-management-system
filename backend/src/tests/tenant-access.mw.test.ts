@@ -236,4 +236,93 @@ describe('checkTenantAccess', () => {
     ).not.toHaveBeenCalled()
     expect(next).toHaveBeenCalledWith()
   })
+
+  describe('for search, which only checks connected services', () => {
+    const searchOptions = { headlessOnly: true, tenantIdFromQuery: true }
+    const adminRoles = ['TMS.TENANT_OWNER', 'TMS.USER_ADMIN']
+    const headlessSearch = (query: Record<string, string>) =>
+      ({
+        params: {},
+        query,
+        decodedJwt: { idir_user_guid: 'user-1', aud: 'chefs-client' },
+        isHeadlessAccess: true,
+        headlessService: {
+          id: 'ss-1',
+          name: 'chefs',
+          displayName: 'CHEFS',
+          clientIdentifier: 'chefs-client',
+        },
+      }) as unknown as Request
+
+    it('lets web app searches through without any check', async () => {
+      const req = {
+        params: {},
+        query: { email: 'sam@gov.bc.ca' },
+        decodedJwt: { idir_user_guid: 'user-1' },
+      } as unknown as Request
+
+      await checkTenantAccess(adminRoles, searchOptions)(req, res, next)
+
+      expect(next).toHaveBeenCalledWith()
+      expect(mockRepository.checkUserTenantAccess).not.toHaveBeenCalled()
+    })
+
+    it('asks a connected service for a tenant when none is sent', async () => {
+      await checkTenantAccess(adminRoles, searchOptions)(
+        headlessSearch({ email: 'sam@gov.bc.ca' }),
+        res,
+        next,
+      )
+
+      expect(res.status).toHaveBeenCalledWith(400)
+      expect(res.json).toHaveBeenCalledWith({
+        name: 'Bad Request',
+        message:
+          'Searching from a connected service needs a tenant. Add tenantId to the request.',
+        httpResponseCode: 400,
+        errorMessage: 'Bad Request',
+      })
+      expect(next).not.toHaveBeenCalled()
+    })
+
+    it('checks the tenant from the query for a connected service', async () => {
+      mockRepository.checkIfTenantHasSharedServiceAccess.mockResolvedValue(true)
+      mockRepository.checkUserTenantAccess.mockResolvedValue(true)
+
+      await checkTenantAccess(adminRoles, searchOptions)(
+        headlessSearch({ email: 'sam@gov.bc.ca', tenantId: 'tenant-1' }),
+        res,
+        next,
+      )
+
+      expect(
+        mockRepository.checkIfTenantHasSharedServiceAccess,
+      ).toHaveBeenCalledWith('tenant-1', 'chefs-client')
+      expect(mockRepository.checkUserTenantAccess).toHaveBeenCalledWith(
+        'tenant-1',
+        'user-1',
+        adminRoles,
+      )
+      expect(next).toHaveBeenCalledWith()
+    })
+
+    it('refuses a plain member searching through a connected service', async () => {
+      mockRepository.checkIfTenantHasSharedServiceAccess.mockResolvedValue(true)
+      mockRepository.checkUserTenantAccess.mockResolvedValue(false)
+
+      await checkTenantAccess(adminRoles, searchOptions)(
+        headlessSearch({ email: 'sam@gov.bc.ca', tenantId: 'tenant-1' }),
+        res,
+        next,
+      )
+
+      expect(res.status).toHaveBeenCalledWith(403)
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message:
+            'You need the Tenant Owner or User Admin role in this tenant to do this.',
+        }),
+      )
+    })
+  })
 })

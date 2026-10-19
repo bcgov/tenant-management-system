@@ -715,7 +715,7 @@ paths:
     get:
       summary: Search BC Gov SSO IDIR users
       description: |
-        Authentication: CSTAR audience token required.
+        Authentication: CSTAR audience token or headless shared service token allowed.
 
         Searches IDIR users through the BC Gov SSO API and returns the upstream response.
         At least one search parameter must be provided. Duplicate records with the same
@@ -723,6 +723,13 @@ paths:
       security:
         - bearerAuth: []
       parameters:
+        - name: tenantId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+          description: The unique identifier of the tenant. Required with a headless shared service token.
         - name: firstName
           in: query
           required: false
@@ -774,7 +781,7 @@ paths:
                           idir_username: ['JSMITH']
                           display_name: ['Smith, Jordan CITZ:EX']
         '400':
-          description: Invalid input or BC Gov SSO bad request
+          description: Invalid input, BC Gov SSO bad request, or missing tenantId with a headless shared service token
           content:
             application/json:
               schema:
@@ -786,7 +793,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/UnauthorizedErrorResponse'
         '403':
-          description: Forbidden - CSTAR audience token required
+          description: Forbidden - User does not have required roles (TENANT_OWNER or USER_ADMIN), or headless access is not allowed
           content:
             application/json:
               schema:
@@ -802,7 +809,7 @@ paths:
     get:
       summary: Search BC Gov SSO BCeID users
       description: |
-        Authentication: CSTAR audience token required.
+        Authentication: CSTAR audience token or headless shared service token allowed.
 
         Searches Business BCeID users through the BC Gov SSO API. CSTAR queries
         the upstream API with `bceidType=both` because Business BCeID records are
@@ -814,6 +821,13 @@ paths:
       security:
         - bearerAuth: []
       parameters:
+        - name: tenantId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+          description: The unique identifier of the tenant. Required with a headless shared service token.
         - name: bceidType
           in: query
           required: false
@@ -874,7 +888,7 @@ paths:
                           bceid_username: ['businessuser1']
                           display_name: ['Morgan Business']
         '400':
-          description: Invalid input or BC Gov SSO BCeID bad request
+          description: Invalid input, BC Gov SSO BCeID bad request, or missing tenantId with a headless shared service token
           content:
             application/json:
               schema:
@@ -886,7 +900,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/UnauthorizedErrorResponse'
         '403':
-          description: Forbidden - CSTAR audience token required
+          description: Forbidden - User does not have required roles (TENANT_OWNER or USER_ADMIN), or headless access is not allowed
           content:
             application/json:
               schema:

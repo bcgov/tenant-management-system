@@ -20,6 +20,25 @@ describe('SSOSearchService', () => {
   })
 
   describe('searchBCGOVSSOUsers', () => {
+    it('does not send the tenant id to the SSO API', async () => {
+      mockedAxios.post.mockResolvedValue({
+        data: { access_token: 'mock-access-token' },
+      })
+      mockedAxios.get.mockResolvedValue({ data: { data: [] } })
+      const query = {
+        email: 'john.doe@gov.bc.ca',
+        tenantId: '123e4567-e89b-12d3-a456-426614174000',
+      }
+
+      await service.searchBCGOVSSOUsers(asRequest(query))
+
+      expect(mockedAxios.get).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({ params: { email: 'john.doe@gov.bc.ca' } }),
+      )
+      expect(query.tenantId).toBe('123e4567-e89b-12d3-a456-426614174000')
+    })
+
     it('fetches a token then searches and returns the raw payload', async () => {
       mockedAxios.post.mockResolvedValue({
         data: { access_token: 'mock-access-token' },
@@ -153,6 +172,27 @@ describe('SSOSearchService', () => {
   })
 
   describe('searchBCGOVSSOBceidUsers', () => {
+    it('does not send the tenant id to the SSO API', async () => {
+      mockedAxios.post.mockResolvedValue({
+        data: { access_token: 'mock-access-token' },
+      })
+      mockedAxios.get.mockResolvedValue({ data: { data: [] } })
+
+      await service.searchBCGOVSSOBceidUsers(
+        asRequest({
+          username: 'business.user',
+          tenantId: '123e4567-e89b-12d3-a456-426614174000',
+        }),
+      )
+
+      expect(mockedAxios.get).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({
+          params: { bceidType: 'business', username: 'business.user' },
+        }),
+      )
+    })
+
     it('forces bceidType to business, filters, and returns the payload', async () => {
       mockedAxios.post.mockResolvedValue({
         data: { access_token: 'mock-access-token' },

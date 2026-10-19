@@ -122,16 +122,24 @@ export class Routes {
     app
       .route(RoutesConstants.SEARCH_BC_GOV_IDIR_USERS)
       .get(
-        checkJwt(),
+        checkJwt({ headlessAccess: true }),
         validate(validator.searchBCGOVSSOUsers, {}, {}),
+        checkTenantAccess(
+          [TMSConstants.TENANT_OWNER, TMSConstants.USER_ADMIN],
+          { headlessOnly: true, tenantIdFromQuery: true },
+        ),
         (req: Request, res: Response) =>
           ssoSearchController.searchBCGOVSSOUsers(req, res),
       )
     app
       .route(RoutesConstants.SEARCH_BC_GOV_BCEID_USERS)
       .get(
-        checkJwt(),
+        checkJwt({ headlessAccess: true }),
         validate(validator.searchBCGOVSSOBceidUsers, {}, {}),
+        checkTenantAccess(
+          [TMSConstants.TENANT_OWNER, TMSConstants.USER_ADMIN],
+          { headlessOnly: true, tenantIdFromQuery: true },
+        ),
         (req: Request, res: Response) =>
           ssoSearchController.searchBCGOVSSOBceidUsers(req, res),
       )

@@ -38,11 +38,35 @@ const ensureTenantUsesService = async (
   }
 }
 
-export const checkTenantAccess = (requiredRoles?: string[]) => {
-  return async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const tenantId: string = req.params.tenantId as string
+interface CheckTenantAccessOptions {
+  headlessOnly?: boolean
+  tenantIdFromQuery?: boolean
+}
 
+export const checkTenantAccess = (
+  requiredRoles?: string[],
+  options: CheckTenantAccessOptions = {},
+) => {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    if (options.headlessOnly && !req.isHeadlessAccess) {
+      return next()
+    }
+
+    const tenantId = (
+      options.tenantIdFromQuery ? req.query.tenantId : req.params.tenantId
+    ) as string
+
+    if (options.tenantIdFromQuery && !tenantId) {
+      return sendErrorResponse(
+        res,
+        'Bad Request',
+        TMSConstants.HEADLESS_SEARCH_TENANT_REQUIRED,
+        400,
+        'Bad Request',
+      )
+    }
+
+    try {
       if (req.isHeadlessAccess && req.headlessService) {
         if (!tenantId) {
           throw new ForbiddenError('Missing tenant ID or user ID')

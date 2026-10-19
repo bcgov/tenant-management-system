@@ -26,6 +26,8 @@ export class TMSConstants {
     'Only Service Users can be removed from a connected service. To remove a Tenant Owner or User Admin, use the CSTAR web app.'
   public static HEADLESS_ADD_GROUPS_SEPARATELY =
     'When adding someone from a connected service, add them to groups one at a time using the add group member route.'
+  public static HEADLESS_SEARCH_TENANT_REQUIRED =
+    'Searching from a connected service needs a tenant. Add tenantId to the request.'
   public static HEADLESS_TENANT_MEMBER_REQUIRED =
     'You must be a member of this tenant to do this.'
 }
