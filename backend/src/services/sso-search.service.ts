@@ -6,6 +6,12 @@ import { BadRequestError } from '../errors/BadRequestError'
 import { getErrorMessage } from '../common/error.handler'
 import { config } from './config.service'
 
+const withoutTenantId = (query: Request['query']) => {
+  const searchParams = { ...query }
+  delete searchParams.tenantId
+  return searchParams
+}
+
 export class SSOSearchService {
   private getIdirGuid(user: unknown): string | undefined {
     if (!user || typeof user !== 'object') {
@@ -274,7 +280,7 @@ export class SSOSearchService {
       const token: string = await this.getToken()
       const response = await axios.get(config.bcgovSsoApi.url, {
         headers: { Authorization: `Bearer ${token}` },
-        params: req.query,
+        params: withoutTenantId(req.query),
       })
 
       return this.dedupIdirSearchResults(response.data)
@@ -311,7 +317,7 @@ export class SSOSearchService {
     try {
       const token: string = await this.getToken()
       const params = {
-        ...req.query,
+        ...withoutTenantId(req.query),
         bceidType: 'business',
       }
       const response = await axios.get(config.bcgovSsoApi.urlBceid, {

@@ -4,6 +4,7 @@ import { checkJwt, extractOidcSub, jwtErrorHandler } from '../common/auth.mw'
 import logger from '../common/logger'
 import { UnauthorizedError } from '../errors/UnauthorizedError'
 import { config } from '../services/config.service'
+import { sharedServiceRepository } from '../repositories/shared-service.repository'
 
 type JwtMiddleware = (
   req: express.Request,
@@ -42,13 +43,21 @@ jest.mock('../common/logger', () => ({
   },
 }))
 
+jest.mock('../repositories/shared-service.repository', () => ({
+  sharedServiceRepository: {
+    findSharedServiceByClientIdentifier: jest.fn(),
+  },
+}))
+
 const mockLoggerError = logger.error as jest.Mock
+const mockFindSharedService =
+  sharedServiceRepository.findSharedServiceByClientIdentifier as jest.Mock
 
 const MY_USER_ID = 'F45AFBBD68C51D6F956BA3A1DE1878A2'
 
 function signedInAs(decodedJwt: Record<string, unknown>) {
   mockJwtBehaviour = (req, _res, next) => {
-    req.decodedJwt = decodedJwt
+    req.decodedJwt = { aud: config.oidc.tmsAudience, ...decodedJwt }
     next()
   }
 }
@@ -63,8 +72,22 @@ function createApp(
 ): express.Application {
   const app = express()
   app.get(path, checkJwt(options), (req, res) => {
-    res.status(200).send({ idpType: req.idpType })
+    res.status(200).send({
+      idpType: req.idpType,
+      isHeadlessAccess: req.isHeadlessAccess,
+      headlessService: req.headlessService,
+    })
   })
+  app.use(
+    (
+      _err: unknown,
+      _req: express.Request,
+      res: express.Response,
+      _next: express.NextFunction,
+    ) => {
+      res.status(500).send({ error: 'server error' })
+    },
+  )
   return app
 }
 
@@ -269,17 +292,263 @@ describe('when another service calls us', () => {
   })
 })
 
-describe('how the token check is set up', () => {
-  it('only accepts tokens meant for CSTAR', () => {
-    createApp('/tenants')
+describe('when a connected service calls a headless route', () => {
+  const headless = { headlessAccess: true }
+  const chefs = {
+    id: 'ss-1',
+    name: 'chefs',
+    displayName: 'CHEFS',
+    clientIdentifier: 'chefs-client',
+    isActive: true,
+    allowHeadlessOps: true,
+  }
 
-    expect(mockJwtOptions.audience).toBe(config.oidc.tmsAudience)
+  const callHeadless = () =>
+    request(createApp('/tenants', headless)).get('/tenants')
+
+  it('lets the CSTAR web app in as usual', async () => {
+    signedInAs({ aud: config.oidc.tmsAudience, idp: 'idir' })
+
+    const response = await callHeadless()
+
+    expect(response.status).toBe(200)
+    expect(response.body.idpType).toBe('idir')
+    expect(response.body.isHeadlessAccess).toBeUndefined()
+    expect(mockFindSharedService).not.toHaveBeenCalled()
   })
 
-  it('accepts tokens from other services too', () => {
-    createApp('/tenants', { sharedServiceAccess: true })
+  it('turns away a CSTAR web app user who is not IDIR', async () => {
+    signedInAs({ aud: config.oidc.tmsAudience, idp: 'bceidbusiness' })
+
+    const response = await callHeadless()
+
+    expect(response.status).toBe(401)
+    expect(response.body.message).toBe(
+      'TMS endpoints require IDIR or Azure IDIR access',
+    )
+  })
+
+  it.each(['idir', 'azureidir'])(
+    'lets a %s user in through a service that is switched on',
+    async (provider) => {
+      signedInAs({ aud: 'chefs-client', idp: provider })
+      mockFindSharedService.mockResolvedValueOnce(chefs)
+
+      const response = await callHeadless()
+
+      expect(response.status).toBe(200)
+      expect(mockFindSharedService).toHaveBeenCalledWith('chefs-client')
+      expect(response.body).toEqual({
+        idpType: 'idir',
+        isHeadlessAccess: true,
+        headlessService: {
+          id: 'ss-1',
+          name: 'chefs',
+          displayName: 'CHEFS',
+          clientIdentifier: 'chefs-client',
+        },
+      })
+    },
+  )
+
+  it.each([
+    ['is not switched on', { ...chefs, allowHeadlessOps: false }],
+    ['is inactive', { ...chefs, isActive: false }],
+  ])('turns away a service that %s', async (_case, sharedService) => {
+    signedInAs({ aud: 'chefs-client', idp: 'idir' })
+    mockFindSharedService.mockResolvedValueOnce(sharedService)
+
+    const response = await callHeadless()
+
+    expect(response.status).toBe(403)
+    expect(response.body).toEqual({
+      name: 'Authorization Failure',
+      message:
+        'This connected service is not allowed to call CSTAR directly. Ask a CSTAR operations admin to enable it.',
+      httpResponseCode: 403,
+      errorMessage: 'Forbidden',
+    })
+    expect(mockLoggerError).toHaveBeenCalledWith(
+      'Connected service is not allowed headless access',
+      expect.objectContaining({ reason: 'headless_not_allowed' }),
+    )
+  })
+
+  it('gives an app that is not registered the same 401 as other routes', async () => {
+    signedInAs({ aud: 'some-other-app', idp: 'idir' })
+    mockFindSharedService.mockResolvedValueOnce(null)
+
+    const response = await callHeadless()
+
+    expect(response.status).toBe(401)
+    expect(response.body.message).toBe('Error occurred during authentication')
+    expect(mockLoggerError).toHaveBeenCalledWith(
+      'JWT validation failed',
+      expect.objectContaining({ reason: 'invalid_audience' }),
+    )
+  })
+
+  it('gives a token that names no app a 401 without a lookup', async () => {
+    signedInAs({ aud: undefined, idp: 'idir' })
+
+    const response = await callHeadless()
+
+    expect(response.status).toBe(401)
+    expect(mockFindSharedService).not.toHaveBeenCalled()
+  })
+
+  it('turns away a BCeID user calling through a service', async () => {
+    signedInAs({ aud: 'chefs-client', idp: 'bceidbusiness' })
+    mockFindSharedService.mockResolvedValueOnce(chefs)
+
+    const response = await callHeadless()
+
+    expect(response.status).toBe(403)
+    expect(response.body.message).toBe(
+      'Only IDIR users can manage a tenant from a connected service.',
+    )
+  })
+
+  it('still blocks you from looking at someone else', async () => {
+    signedInAs({ aud: 'chefs-client', idir_user_guid: MY_USER_ID, idp: 'idir' })
+
+    const response = await request(
+      createApp('/users/:ssoUserId/tenants', headless),
+    ).get('/users/SOMEONE-ELSE/tenants')
+
+    expect(response.status).toBe(403)
+    expect(mockFindSharedService).not.toHaveBeenCalled()
+  })
+
+  it('passes a failed service lookup on as a server error', async () => {
+    signedInAs({ aud: 'chefs-client', idp: 'idir' })
+    mockFindSharedService.mockRejectedValueOnce(new Error('db down'))
+
+    const response = await callHeadless()
+
+    expect(response.status).toBe(500)
+  })
+})
+
+describe('when a service calls a web app only route', () => {
+  const chefs = {
+    id: 'ss-1',
+    name: 'chefs',
+    displayName: 'CHEFS',
+    clientIdentifier: 'chefs-client',
+    isActive: true,
+    allowHeadlessOps: true,
+  }
+
+  const callWebAppOnly = () => request(createApp('/tenants')).get('/tenants')
+
+  it('does not look up a service for the CSTAR web app', async () => {
+    const response = await callWebAppOnly()
+
+    expect(response.status).toBe(200)
+    expect(mockFindSharedService).not.toHaveBeenCalled()
+  })
+
+  it('tells a switched on service to use the web app', async () => {
+    signedInAs({ aud: 'chefs-client', idp: 'idir' })
+    mockFindSharedService.mockResolvedValueOnce(chefs)
+
+    const response = await callWebAppOnly()
+
+    expect(response.status).toBe(403)
+    expect(response.body).toEqual({
+      name: 'Authorization Failure',
+      message:
+        'This operation cannot be performed from a connected service. Log in to the CSTAR web app to do this.',
+      httpResponseCode: 403,
+      errorMessage: 'Forbidden',
+    })
+    expect(mockLoggerError).toHaveBeenCalledWith(
+      'Connected service called a route it cannot use',
+      { reason: 'web_app_only', audience: 'chefs-client' },
+    )
+  })
+
+  it.each([
+    ['is not switched on', { ...chefs, allowHeadlessOps: false }],
+    ['is inactive', { ...chefs, isActive: false }],
+  ])('tells a service that %s it is not allowed', async (_case, service) => {
+    signedInAs({ aud: 'chefs-client', idp: 'idir' })
+    mockFindSharedService.mockResolvedValueOnce(service)
+
+    const response = await callWebAppOnly()
+
+    expect(response.status).toBe(403)
+    expect(response.body.message).toBe(
+      'This connected service is not allowed to call CSTAR directly. Ask a CSTAR operations admin to enable it.',
+    )
+  })
+
+  it('gives an unregistered app the same 401 as before', async () => {
+    signedInAs({ aud: 'some-other-app', idp: 'idir' })
+    mockFindSharedService.mockResolvedValueOnce(null)
+
+    const response = await callWebAppOnly()
+
+    expect(response.status).toBe(401)
+    expect(response.body.message).toBe('Error occurred during authentication')
+    expect(mockLoggerError).toHaveBeenCalledWith(
+      'JWT validation failed',
+      expect.objectContaining({ reason: 'invalid_audience' }),
+    )
+  })
+
+  it.each([
+    ['no audience', undefined],
+    ['a list of audiences', ['chefs-client', 'other']],
+  ])('gives a token with %s a 401 without a lookup', async (_case, aud) => {
+    signedInAs({ aud, idp: 'idir' })
+
+    const response = await callWebAppOnly()
+
+    expect(response.status).toBe(401)
+    expect(mockFindSharedService).not.toHaveBeenCalled()
+  })
+
+  it('checks the app before the user in the URL', async () => {
+    signedInAs({ aud: 'some-other-app', idir_user_guid: MY_USER_ID })
+    mockFindSharedService.mockResolvedValueOnce(null)
+
+    const response = await request(createApp('/users/:ssoUserId/tenants')).get(
+      '/users/SOMEONE-ELSE/tenants',
+    )
+
+    expect(response.status).toBe(401)
+  })
+
+  it('passes a failed service lookup on as a server error', async () => {
+    signedInAs({ aud: 'chefs-client', idp: 'idir' })
+    mockFindSharedService.mockRejectedValueOnce(new Error('db down'))
+
+    const response = await callWebAppOnly()
+
+    expect(response.status).toBe(500)
+  })
+
+  it('leaves existing service routes alone', async () => {
+    signedInAs({ aud: 'chefs-client', idp: 'idir' })
+
+    const response = await request(
+      createApp('/tenants', { sharedServiceAccess: true }),
+    ).get('/tenants')
+
+    expect(response.status).toBe(200)
+    expect(mockFindSharedService).not.toHaveBeenCalled()
+  })
+})
+
+describe('how the token check is set up', () => {
+  it('checks the token audience in our own code', () => {
+    createApp('/tenants')
 
     expect(mockJwtOptions.audience).toBeUndefined()
+    expect(mockJwtOptions.issuer).toBe(config.oidc.issuer)
+    expect(mockJwtOptions.algorithms).toEqual(['RS256'])
   })
 
   describe('pulling the token out of the request', () => {

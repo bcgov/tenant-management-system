@@ -11,6 +11,7 @@ jest.mock('../../common/db.connection', () => ({
 jest.mock('../../repositories/tenant.repository', () => ({
   tenantRepository: {
     getTenantUserBySsoId: jest.fn(),
+    checkIfTenantUserExistsForTenant: jest.fn(),
   },
 }))
 
@@ -24,6 +25,8 @@ type MockQueryBuilder = {
   innerJoin: jest.Mock
   leftJoin: jest.Mock
   leftJoinAndSelect: jest.Mock
+  innerJoinAndSelect: jest.Mock
+  select: jest.Mock
   addSelect: jest.Mock
   setParameter: jest.Mock
   orderBy: jest.Mock
@@ -35,6 +38,7 @@ type MockQueryBuilder = {
   getMany: jest.Mock
   getExists: jest.Mock
   getRawAndEntities: jest.Mock
+  getRawMany: jest.Mock
   execute: jest.Mock
 }
 
@@ -44,6 +48,7 @@ function createQueryBuilder(
     getMany?: unknown[]
     getExists?: boolean
     getRawAndEntities?: { entities: unknown[]; raw: unknown[] }
+    getRawMany?: unknown[]
   } = {},
 ): MockQueryBuilder {
   const qb = {} as MockQueryBuilder
@@ -53,6 +58,8 @@ function createQueryBuilder(
     'innerJoin',
     'leftJoin',
     'leftJoinAndSelect',
+    'innerJoinAndSelect',
+    'select',
     'addSelect',
     'setParameter',
     'orderBy',
@@ -70,6 +77,7 @@ function createQueryBuilder(
   qb.getRawAndEntities = jest
     .fn()
     .mockResolvedValue(overrides.getRawAndEntities ?? { entities: [], raw: [] })
+  qb.getRawMany = jest.fn().mockResolvedValue(overrides.getRawMany ?? [])
   qb.execute = jest.fn().mockResolvedValue(undefined)
   return qb
 }
@@ -131,13 +139,18 @@ describe('GroupRepository', () => {
         .mockReturnValueOnce(
           createQueryBuilder({ getOne: { id: 'group-1', users: [] } }),
         )
-      manager.findOne.mockResolvedValueOnce({ id: 'tu-1', isDeleted: false })
+      mockTenantRepository.checkIfTenantUserExistsForTenant.mockResolvedValueOnce(
+        true,
+      )
 
       await repo.saveGroup(
         { ...input, tenantUserId: 'tu-1' },
         asManager(manager),
       )
 
+      expect(
+        mockTenantRepository.checkIfTenantUserExistsForTenant,
+      ).toHaveBeenCalledWith('tenant-1', 'tu-1', asManager(manager))
       expect(manager.save).toHaveBeenCalledWith(
         expect.objectContaining({
           tenantUser: { id: 'tu-1' },
@@ -161,7 +174,9 @@ describe('GroupRepository', () => {
       manager.createQueryBuilder.mockReturnValueOnce(
         createQueryBuilder({ getOne: null }),
       )
-      manager.findOne.mockResolvedValueOnce(null)
+      mockTenantRepository.checkIfTenantUserExistsForTenant.mockResolvedValueOnce(
+        false,
+      )
 
       await expect(
         repo.saveGroup(
@@ -169,6 +184,40 @@ describe('GroupRepository', () => {
           asManager(manager),
         ),
       ).rejects.toThrow(NotFoundError)
+    })
+
+    it('refuses a first member from another tenant and creates no group', async () => {
+      manager.createQueryBuilder.mockReturnValueOnce(
+        createQueryBuilder({ getOne: null }),
+      )
+      mockTenantRepository.checkIfTenantUserExistsForTenant.mockResolvedValueOnce(
+        false,
+      )
+
+      await expect(
+        repo.saveGroup(
+          { ...input, tenantUserId: 'tu-from-tenant-2' },
+          asManager(manager),
+        ),
+      ).rejects.toThrow(NotFoundError)
+      expect(
+        mockTenantRepository.checkIfTenantUserExistsForTenant,
+      ).toHaveBeenCalledWith('tenant-1', 'tu-from-tenant-2', asManager(manager))
+      expect(manager.save).not.toHaveBeenCalled()
+    })
+
+    it('does not look up a first member when none is given', async () => {
+      manager.createQueryBuilder
+        .mockReturnValueOnce(createQueryBuilder({ getOne: null }))
+        .mockReturnValueOnce(
+          createQueryBuilder({ getOne: { id: 'group-1', users: [] } }),
+        )
+
+      await repo.saveGroup(input, asManager(manager))
+
+      expect(
+        mockTenantRepository.checkIfTenantUserExistsForTenant,
+      ).not.toHaveBeenCalled()
     })
   })
 
@@ -344,6 +393,62 @@ describe('GroupRepository', () => {
       )
 
       expect(result).toBeNull()
+    })
+  })
+
+  describe('getNewRolesFromOtherServices', () => {
+    const input = {
+      tenantId: 'tenant-1',
+      groupId: 'group-1',
+      callingServiceId: 'ss-chefs',
+      ssoUserId: 'SAM-GUID',
+      idpType: 'idir',
+    }
+    const notifyAdmin = {
+      id: 'r-admin',
+      name: 'Admin',
+      sharedService: { id: 'ss-notify', name: 'notify' },
+    }
+    const notifySender = {
+      id: 'r-sender',
+      name: 'Sender',
+      sharedService: { id: 'ss-notify', name: 'notify' },
+    }
+
+    it('returns nothing and skips the second lookup when the group has no other service roles', async () => {
+      const qb = createQueryBuilder({ getMany: [] })
+      manager.createQueryBuilder.mockReturnValueOnce(qb)
+
+      await expect(
+        repo.getNewRolesFromOtherServices(input, asManager(manager)),
+      ).resolves.toEqual([])
+      expect(qb.andWhere).toHaveBeenCalledWith('ss.id != :callingServiceId', {
+        callingServiceId: 'ss-chefs',
+      })
+      expect(qb.andWhere).toHaveBeenCalledWith(
+        '(ssr.allowedIdentityProviders IS NULL OR :idpType = ANY(ssr.allowedIdentityProviders))',
+        { idpType: 'idir' },
+      )
+      expect(manager.createQueryBuilder).toHaveBeenCalledTimes(1)
+    })
+
+    it('leaves out roles the person already has from other groups', async () => {
+      manager.createQueryBuilder
+        .mockReturnValueOnce(
+          createQueryBuilder({
+            getMany: [
+              { sharedServiceRole: notifyAdmin },
+              { sharedServiceRole: notifySender },
+            ],
+          }),
+        )
+        .mockReturnValueOnce(
+          createQueryBuilder({ getRawMany: [{ roleId: 'r-admin' }] }),
+        )
+
+      await expect(
+        repo.getNewRolesFromOtherServices(input, asManager(manager)),
+      ).resolves.toEqual([notifySender])
     })
   })
 

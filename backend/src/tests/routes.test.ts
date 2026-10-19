@@ -3,6 +3,8 @@ import express from 'express'
 import { Routes } from '../routes/routes'
 import { TenantController } from '../controllers/tenant.controller'
 import { GroupController } from '../controllers/group.controller'
+import { SharedServiceController } from '../controllers/shared-service.controller'
+import { SSOSearchController } from '../controllers/sso-search.controller'
 import { checkJwt } from '../common/auth.mw'
 import { checkTenantAccess } from '../common/tenant-access.mw'
 
@@ -21,14 +23,19 @@ jest.mock('../common/db.connection', () => ({
 }))
 
 jest.mock('../common/auth.mw', () => ({
-  checkJwt: jest.fn((options?: unknown) => {
-    void options
+  checkJwt: jest.fn((options?: { headlessAccess?: boolean }) => {
     return (
       req: express.Request,
       res: express.Response,
       next: express.NextFunction,
     ) => {
       if (req.headers.authorization === 'Bearer ok') {
+        return next()
+      }
+      if (
+        req.headers.authorization === 'Bearer connected-service' &&
+        options?.headlessAccess
+      ) {
         return next()
       }
       return res.status(401).json({ error: 'Unauthorized' })
@@ -115,6 +122,61 @@ describe('Routes middleware wiring', () => {
       .mockImplementation(async (_req, res) => {
         res.status(200).send({ ok: true })
       })
+    jest
+      .spyOn(TenantController.prototype, 'getTenant')
+      .mockImplementation(async (_req, res) => {
+        res.status(200).send({ ok: true })
+      })
+    jest
+      .spyOn(TenantController.prototype, 'getTenantUser')
+      .mockImplementation(async (_req, res) => {
+        res.status(200).send({ ok: true })
+      })
+    jest
+      .spyOn(GroupController.prototype, 'getGroup')
+      .mockImplementation(async (_req, res) => {
+        res.status(200).send({ ok: true })
+      })
+    jest
+      .spyOn(SharedServiceController.prototype, 'getSharedServicesForTenant')
+      .mockImplementation(async (_req, res) => {
+        res.status(200).send({ ok: true })
+      })
+    jest
+      .spyOn(TenantController.prototype, 'updateTenant')
+      .mockImplementation(async (_req, res) => {
+        res.status(200).send({ ok: true })
+      })
+    jest
+      .spyOn(GroupController.prototype, 'createGroup')
+      .mockImplementation(async (_req, res) => {
+        res.status(201).send({ ok: true })
+      })
+    jest
+      .spyOn(GroupController.prototype, 'updateGroup')
+      .mockImplementation(async (_req, res) => {
+        res.status(200).send({ ok: true })
+      })
+    jest
+      .spyOn(GroupController.prototype, 'updateSharedServiceRolesForGroup')
+      .mockImplementation(async (_req, res) => {
+        res.status(200).send({ ok: true })
+      })
+    jest
+      .spyOn(GroupController.prototype, 'removeGroupUser')
+      .mockImplementation(async (_req, res) => {
+        res.status(204).send()
+      })
+    jest
+      .spyOn(SSOSearchController.prototype, 'searchBCGOVSSOUsers')
+      .mockImplementation(async (_req, res) => {
+        res.status(200).send({ ok: true })
+      })
+    jest
+      .spyOn(GroupController.prototype, 'addGroupUser')
+      .mockImplementation(async (_req, res) => {
+        res.status(201).send({ ok: true })
+      })
 
     new Routes().routes(app)
   })
@@ -179,5 +241,211 @@ describe('Routes middleware wiring', () => {
   it('should configure shared service JWT mode for get tenant users', () => {
     expect(mockedCheckJwt).toHaveBeenCalledWith({ sharedServiceAccess: true })
     expect(mockedCheckTenantAccess).toHaveBeenCalledWith([])
+  })
+
+  describe('read routes open to connected services', () => {
+    const tenantId = '123e4567-e89b-12d3-a456-426614174000'
+    const otherId = '123e4567-e89b-12d3-a456-426614174001'
+
+    it.each([
+      ['get tenant', `/v1/tenants/${tenantId}`],
+      ['get group', `/v1/tenants/${tenantId}/groups/${otherId}`],
+      ['get tenant services', `/v1/tenants/${tenantId}/shared-services`],
+      ['get tenant user', `/v1/tenants/${tenantId}/users/${otherId}`],
+      ['get user roles', `/v1/tenants/${tenantId}/users/${otherId}/roles`],
+    ])('lets a connected service call %s', async (_name, path) => {
+      const response = await request(app)
+        .get(path)
+        .set('Authorization', 'Bearer connected-service')
+        .set('x-tenant-access', 'allow')
+
+      expect(response.status).toBe(200)
+    })
+
+    it('still keeps update tenant to the web app', async () => {
+      const response = await request(app)
+        .put(`/v1/tenants/${tenantId}`)
+        .set('Authorization', 'Bearer connected-service')
+        .set('x-tenant-access', 'allow')
+        .send({ name: 'New Name' })
+
+      expect(response.status).toBe(401)
+      expect(TenantController.prototype.updateTenant).not.toHaveBeenCalled()
+    })
+
+    it('checks tenant access after a connected service is let in', async () => {
+      const response = await request(app)
+        .get(`/v1/tenants/${tenantId}/users/${otherId}`)
+        .set('Authorization', 'Bearer connected-service')
+
+      expect(response.status).toBe(403)
+      expect(TenantController.prototype.getTenantUser).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('group changes open to connected services', () => {
+    const tenantId = '123e4567-e89b-12d3-a456-426614174000'
+    const groupId = '123e4567-e89b-12d3-a456-426614174001'
+
+    it('lets a connected service create a group', async () => {
+      const response = await request(app)
+        .post(`/v1/tenants/${tenantId}/groups`)
+        .set('Authorization', 'Bearer connected-service')
+        .set('x-tenant-access', 'allow')
+        .send({ name: 'Reviewers' })
+
+      expect(response.status).toBe(201)
+      expect(GroupController.prototype.createGroup).toHaveBeenCalled()
+    })
+
+    it('lets a connected service update a group', async () => {
+      const response = await request(app)
+        .put(`/v1/tenants/${tenantId}/groups/${groupId}`)
+        .set('Authorization', 'Bearer connected-service')
+        .set('x-tenant-access', 'allow')
+        .send({ name: 'Senior Reviewers' })
+
+      expect(response.status).toBe(200)
+      expect(GroupController.prototype.updateGroup).toHaveBeenCalled()
+    })
+
+    it('still checks tenant access before creating a group', async () => {
+      const response = await request(app)
+        .post(`/v1/tenants/${tenantId}/groups`)
+        .set('Authorization', 'Bearer connected-service')
+        .send({ name: 'Reviewers' })
+
+      expect(response.status).toBe(403)
+      expect(GroupController.prototype.createGroup).not.toHaveBeenCalled()
+    })
+
+    it('lets a connected service set roles on a group', async () => {
+      const response = await request(app)
+        .put(
+          `/v1/tenants/${tenantId}/groups/${groupId}/shared-services/shared-service-roles`,
+        )
+        .set('Authorization', 'Bearer connected-service')
+        .set('x-tenant-access', 'allow')
+        .send({
+          sharedServices: [
+            {
+              id: '123e4567-e89b-12d3-a456-426614174002',
+              sharedServiceRoles: [
+                { id: '123e4567-e89b-12d3-a456-426614174003', enabled: true },
+              ],
+            },
+          ],
+        })
+
+      expect(response.status).toBe(200)
+      expect(
+        GroupController.prototype.updateSharedServiceRolesForGroup,
+      ).toHaveBeenCalled()
+    })
+
+    it('lets a connected service remove a group member', async () => {
+      const response = await request(app)
+        .delete(
+          `/v1/tenants/${tenantId}/groups/${groupId}/users/123e4567-e89b-12d3-a456-426614174004`,
+        )
+        .set('Authorization', 'Bearer connected-service')
+        .set('x-tenant-access', 'allow')
+
+      expect(response.status).toBe(204)
+      expect(GroupController.prototype.removeGroupUser).toHaveBeenCalled()
+    })
+
+    it('still checks tenant access before removing a group member', async () => {
+      const response = await request(app)
+        .delete(
+          `/v1/tenants/${tenantId}/groups/${groupId}/users/123e4567-e89b-12d3-a456-426614174004`,
+        )
+        .set('Authorization', 'Bearer connected-service')
+
+      expect(response.status).toBe(403)
+      expect(GroupController.prototype.removeGroupUser).not.toHaveBeenCalled()
+    })
+
+    it('lets a connected service add a group member', async () => {
+      const response = await request(app)
+        .post(`/v1/tenants/${tenantId}/groups/${groupId}/users`)
+        .set('Authorization', 'Bearer connected-service')
+        .set('x-tenant-access', 'allow')
+        .send({
+          user: {
+            firstName: 'Sam',
+            lastName: 'Lee',
+            displayName: 'Sam Lee',
+            ssoUserId: 'F45AFBBD68C4466F956BA3A1D91878AD',
+            idpType: 'idir',
+          },
+          confirmOtherServices: ['notify'],
+        })
+
+      expect(response.status).toBe(201)
+      expect(GroupController.prototype.addGroupUser).toHaveBeenCalled()
+    })
+  })
+
+  describe('tenant users open to connected services', () => {
+    const tenantId = '123e4567-e89b-12d3-a456-426614174000'
+
+    it('lets a connected service add a tenant user', async () => {
+      const response = await request(app)
+        .post(`/v1/tenants/${tenantId}/users`)
+        .set('Authorization', 'Bearer connected-service')
+        .set('x-tenant-access', 'allow')
+        .send({
+          user: {
+            firstName: 'Sam',
+            lastName: 'Lee',
+            displayName: 'Sam Lee',
+            ssoUserId: 'F45AFBBD68C4466F956BA3A1D91878AD',
+            email: 'sam.lee@gov.bc.ca',
+            idpType: 'idir',
+          },
+          roles: ['123e4567-e89b-12d3-a456-426614174002'],
+        })
+
+      expect(response.status).toBe(201)
+      expect(TenantController.prototype.addTenantUser).toHaveBeenCalled()
+    })
+
+    it('lets a connected service remove a tenant user', async () => {
+      const response = await request(app)
+        .delete(
+          `/v1/tenants/${tenantId}/users/123e4567-e89b-12d3-a456-426614174001`,
+        )
+        .set('Authorization', 'Bearer connected-service')
+        .set('x-tenant-access', 'allow')
+
+      expect(response.status).toBe(204)
+      expect(TenantController.prototype.removeTenantUser).toHaveBeenCalled()
+    })
+  })
+
+  describe('search open to connected services', () => {
+    it('lets a connected service search with a tenant', async () => {
+      const response = await request(app)
+        .get('/v1/users/bcgovssousers/idir/search')
+        .query({
+          email: 'sam@gov.bc.ca',
+          tenantId: '123e4567-e89b-12d3-a456-426614174000',
+        })
+        .set('Authorization', 'Bearer connected-service')
+        .set('x-tenant-access', 'allow')
+
+      expect(response.status).toBe(200)
+      expect(
+        SSOSearchController.prototype.searchBCGOVSSOUsers,
+      ).toHaveBeenCalled()
+    })
+
+    it('sets up the tenant check for connected services only, from the query', () => {
+      expect(mockedCheckTenantAccess).toHaveBeenCalledWith(
+        ['TMS.TENANT_OWNER', 'TMS.USER_ADMIN'],
+        { headlessOnly: true, tenantIdFromQuery: true },
+      )
+    })
   })
 })

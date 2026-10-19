@@ -170,9 +170,11 @@ describe('SharedServiceRepository', () => {
 
       const savedSharedService = manager.save.mock.calls[0][0] as {
         isActive: boolean
+        allowHeadlessOps: boolean
         description?: string
       }
       expect(savedSharedService.isActive).toBe(true)
+      expect(savedSharedService.allowHeadlessOps).toBe(false)
       expect(savedSharedService.description).toBeUndefined()
 
       const savedRoles = manager.save.mock.calls[1][0] as Array<{
@@ -181,6 +183,24 @@ describe('SharedServiceRepository', () => {
       }>
       expect(savedRoles[0].description).toBeUndefined()
       expect(savedRoles[0].allowedIdentityProviders).toBeNull()
+    })
+
+    it('saves allowHeadlessOps when it is provided', async () => {
+      manager.createQueryBuilder
+        .mockReturnValueOnce(createQueryBuilder({ getExists: false }))
+        .mockReturnValueOnce(createQueryBuilder({ getExists: false }))
+        .mockReturnValueOnce(createQueryBuilder({ getExists: false }))
+        .mockReturnValueOnce(createQueryBuilder({ getOne: { id: 'x' } }))
+
+      await repo.saveSharedService(
+        { ...validCreateInput, allowHeadlessOps: true },
+        asManager(manager),
+      )
+
+      expect(manager.save).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({ allowHeadlessOps: true }),
+      )
     })
 
     it('throws ConflictError when the name already exists', async () => {
@@ -253,6 +273,28 @@ describe('SharedServiceRepository', () => {
 
       expect(manager.save).toHaveBeenCalledWith(
         expect.objectContaining({ name: 'New Name', updatedBy: 'system' }),
+      )
+      expect(manager.save).toHaveBeenCalledWith(
+        expect.not.objectContaining({ allowHeadlessOps: expect.anything() }),
+      )
+    })
+
+    it('updates allowHeadlessOps when it is provided', async () => {
+      manager.createQueryBuilder
+        .mockReturnValueOnce(createQueryBuilder({ getOne: { ...existing } }))
+        .mockReturnValueOnce(createQueryBuilder({ getOne: { id: 'ss-1' } }))
+
+      await repo.updateSharedService(
+        {
+          sharedServiceId: 'ss-1',
+          allowHeadlessOps: true,
+          updatedBy: 'system',
+        },
+        asManager(manager),
+      )
+
+      expect(manager.save).toHaveBeenCalledWith(
+        expect.objectContaining({ allowHeadlessOps: true }),
       )
     })
 
@@ -783,6 +825,52 @@ describe('SharedServiceRepository', () => {
         expect(getManager).toHaveBeenCalledTimes(1)
       },
     )
+  })
+
+  describe('findSharedServiceByClientIdentifier', () => {
+    it('looks the service up by its client identifier', async () => {
+      const qb = createQueryBuilder({ getOne: { id: 'ss-1' } })
+      manager.createQueryBuilder.mockReturnValueOnce(qb)
+
+      await expect(
+        repo.findSharedServiceByClientIdentifier(
+          'client-a',
+          asManager(manager),
+        ),
+      ).resolves.toEqual({ id: 'ss-1' })
+      expect(qb.where).toHaveBeenCalledWith(
+        'ss.clientIdentifier = :clientIdentifier',
+        { clientIdentifier: 'client-a' },
+      )
+      expect(getManager).not.toHaveBeenCalled()
+    })
+
+    it('returns null when no service has that client identifier', async () => {
+      manager.createQueryBuilder.mockReturnValueOnce(
+        createQueryBuilder({ getOne: null }),
+      )
+
+      await expect(
+        repo.findSharedServiceByClientIdentifier('unknown', asManager(manager)),
+      ).resolves.toBeNull()
+    })
+  })
+
+  describe('findSharedServicesByIds', () => {
+    it('looks the services up by id', async () => {
+      const qb = createQueryBuilder({
+        getMany: [{ id: 'ss-1', displayName: 'Notify' }],
+      })
+      manager.createQueryBuilder.mockReturnValueOnce(qb)
+
+      await expect(
+        repo.findSharedServicesByIds(['ss-1'], asManager(manager)),
+      ).resolves.toEqual([{ id: 'ss-1', displayName: 'Notify' }])
+      expect(qb.where).toHaveBeenCalledWith('ss.id IN (:...sharedServiceIds)', {
+        sharedServiceIds: ['ss-1'],
+      })
+      expect(getManager).not.toHaveBeenCalled()
+    })
   })
 
   describe('checkIfTenantHasSharedServiceAccess', () => {

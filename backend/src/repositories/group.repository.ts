@@ -20,6 +20,7 @@ import {
   GetEffectiveSharedServiceRolesInputDto,
   GetGroupInputDto,
   GetGroupResultDto,
+  GetNewRolesFromOtherServicesInputDto,
   GetSharedServiceForGroupResultDto,
   GetSharedServiceRolesForGroupInputDto,
   GetTenantGroupsInputDto,
@@ -71,10 +72,15 @@ export class GroupRepository {
       )
     }
 
-    if (tenantUserId) {
-      if (!(await this.checkIfTenantUserExists(tenantUserId, manager))) {
-        throw new NotFoundError(`Tenant user not found: ${tenantUserId}`)
-      }
+    if (
+      tenantUserId &&
+      !(await tenantRepository.checkIfTenantUserExistsForTenant(
+        tenantId,
+        tenantUserId,
+        manager,
+      ))
+    ) {
+      throw new NotFoundError(`Tenant user not found: ${tenantUserId}`)
     }
 
     const group = new Group()
@@ -165,17 +171,6 @@ export class GroupRepository {
       .getOne()
 
     return existingGroup
-  }
-
-  public async checkIfTenantUserExists(
-    tenantUserId: string,
-    manager?: EntityManager,
-  ) {
-    const em = manager ?? getManager()
-    const tenantUser = await em.findOne(TenantUser, {
-      where: { id: tenantUserId, isDeleted: false },
-    })
-    return !!tenantUser
   }
 
   public async getTenantGroups(
@@ -686,6 +681,59 @@ export class GroupRepository {
       .leftJoinAndSelect('tenantUser.ssoUser', 'ssoUser')
       .where('groupUser.id = :groupUserId', { groupUserId })
       .getOne()
+  }
+
+  public async getNewRolesFromOtherServices(
+    input: GetNewRolesFromOtherServicesInputDto,
+    manager?: EntityManager,
+  ) {
+    const em = manager ?? getManager()
+    const { tenantId, groupId, callingServiceId, ssoUserId, idpType } = input
+
+    const groupRoles = await em
+      .createQueryBuilder(GroupSharedServiceRole, 'gssr')
+      .innerJoinAndSelect('gssr.sharedServiceRole', 'ssr')
+      .innerJoinAndSelect('ssr.sharedService', 'ss')
+      .innerJoin(TenantSharedService, 'tss', 'tss.sharedService.id = ss.id')
+      .where('gssr.group.id = :groupId', { groupId })
+      .andWhere('gssr.isDeleted = :gssrDeleted', { gssrDeleted: false })
+      .andWhere('ssr.isDeleted = :ssrDeleted', { ssrDeleted: false })
+      .andWhere('ss.isActive = :ssActive', { ssActive: true })
+      .andWhere('ss.id != :callingServiceId', { callingServiceId })
+      .andWhere('tss.tenant.id = :tenantId', { tenantId })
+      .andWhere('tss.isDeleted = :tssDeleted', { tssDeleted: false })
+      .andWhere(
+        '(ssr.allowedIdentityProviders IS NULL OR :idpType = ANY(ssr.allowedIdentityProviders))',
+        { idpType },
+      )
+      .getMany()
+
+    if (groupRoles.length === 0) {
+      return []
+    }
+
+    const roleIds = groupRoles.map((gssr) => gssr.sharedServiceRole.id)
+    const heldRoles: Array<{ roleId: string }> = await em
+      .createQueryBuilder(GroupSharedServiceRole, 'gssr')
+      .innerJoin('gssr.sharedServiceRole', 'ssr')
+      .innerJoin('gssr.group', 'group')
+      .innerJoin('group.users', 'gu')
+      .innerJoin('gu.tenantUser', 'tu')
+      .innerJoin('tu.ssoUser', 'su')
+      .select('ssr.id', 'roleId')
+      .where('ssr.id IN (:...roleIds)', { roleIds })
+      .andWhere('group.id != :groupId', { groupId })
+      .andWhere('tu.tenant.id = :tenantId', { tenantId })
+      .andWhere('su.ssoUserId = :ssoUserId', { ssoUserId })
+      .andWhere('gssr.isDeleted = :gssrDeleted', { gssrDeleted: false })
+      .andWhere('gu.isDeleted = :guDeleted', { guDeleted: false })
+      .andWhere('tu.isDeleted = :tuDeleted', { tuDeleted: false })
+      .getRawMany()
+
+    const heldRoleIds = new Set(heldRoles.map((held) => held.roleId))
+    return groupRoles
+      .map((gssr) => gssr.sharedServiceRole)
+      .filter((role) => !heldRoleIds.has(role.id))
   }
 
   public async removeGroupUser(

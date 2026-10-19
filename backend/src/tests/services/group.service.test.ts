@@ -6,13 +6,23 @@ import { tenantRepository } from '../../repositories/tenant.repository'
 import { connection } from '../../common/db.connection'
 import logger from '../../common/logger'
 import { notificationService } from '../../services/notification.service'
+import { config } from '../../services/config.service'
+import { sharedServiceRepository } from '../../repositories/shared-service.repository'
+import { ForbiddenError } from '../../errors/ForbiddenError'
 
 jest.mock('../../repositories/group.repository')
 jest.mock('../../repositories/tenant.repository', () => ({
   tenantRepository: {
+    checkUserTenantAccess: jest.fn(),
     ensureTenantUserExists: jest.fn(),
     getTenantUserBySsoId: jest.fn(),
     getTenantUserWithRelations: jest.fn(),
+  },
+}))
+jest.mock('../../repositories/shared-service.repository', () => ({
+  sharedServiceRepository: {
+    findSharedServicesByIds: jest.fn(),
+    findSharedServiceByClientIdentifier: jest.fn(),
   },
 }))
 jest.mock('../../services/notification.service', () => ({
@@ -38,6 +48,9 @@ const mockTenantRepository = tenantRepository as jest.Mocked<
   typeof tenantRepository
 >
 const mockTransaction = connection.manager.transaction as jest.Mock
+const mockSharedServiceRepository = sharedServiceRepository as jest.Mocked<
+  typeof sharedServiceRepository
+>
 const mockNotifyAdded = notificationService.notifyUserAddedToTenant as jest.Mock
 const mockNotifyGroupAdded =
   notificationService.notifyUserAddedToGroup as jest.Mock
@@ -137,6 +150,128 @@ describe('GroupService', () => {
       params: { tenantId: 'tenant-1', groupId: 'group-1' },
       body: { user: { ssoUserId: 'sso-1' } },
       decodedJwt: { idir_user_guid: 'admin-1' },
+    })
+
+    describe('when a connected service adds someone', () => {
+      const sam = {
+        ssoUserId: 'SAM-GUID',
+        displayName: 'Sam Lee',
+        idpType: 'idir',
+      }
+      const notify = { id: 'ss-notify', name: 'notify', displayName: 'Notify' }
+      const forms = { id: 'ss-forms', name: 'forms', displayName: 'Forms' }
+      const headlessRequest = (confirmOtherServices?: string[]) =>
+        asRequest({
+          params: { tenantId: 'tenant-1', groupId: 'group-1' },
+          body: { user: sam, confirmOtherServices },
+          decodedJwt: { idir_user_guid: 'admin-1', aud: 'chefs-client' },
+          isHeadlessAccess: true,
+          headlessService: {
+            id: 'ss-chefs',
+            name: 'chefs',
+            displayName: 'CHEFS',
+            clientIdentifier: 'chefs-client',
+          },
+        })
+
+      beforeEach(() => {
+        mockTenantRepository.ensureTenantUserExists.mockResolvedValue({
+          id: 'tu-1',
+        } as never)
+        mockRepository.addGroupUser.mockResolvedValue({ id: 'gu-1' } as never)
+      })
+
+      it('adds them when the group gives nothing new in other services', async () => {
+        mockRepository.getNewRolesFromOtherServices.mockResolvedValueOnce([])
+
+        await service.addGroupUser(headlessRequest())
+
+        expect(
+          mockRepository.getNewRolesFromOtherServices,
+        ).toHaveBeenCalledWith({
+          tenantId: 'tenant-1',
+          groupId: 'group-1',
+          callingServiceId: 'ss-chefs',
+          ssoUserId: 'SAM-GUID',
+          idpType: 'idir',
+        })
+        expect(mockRepository.addGroupUser).toHaveBeenCalled()
+      })
+
+      it('refuses and lists the other services when they are not confirmed', async () => {
+        mockRepository.getNewRolesFromOtherServices.mockResolvedValueOnce([
+          { id: 'r-1', name: 'Admin', sharedService: notify },
+          { id: 'r-2', name: 'Sender', sharedService: notify },
+          { id: 'r-3', name: 'Reviewer', sharedService: forms },
+        ] as never)
+
+        const attempt = service.addGroupUser(headlessRequest())
+
+        await expect(attempt).rejects.toThrow(
+          'Adding Sam Lee to this group would also give them access to Notify (Admin, Sender) and Forms (Reviewer). To go ahead, list these services in confirmOtherServices, or add them in the CSTAR web app.',
+        )
+        await expect(attempt).rejects.toBeInstanceOf(ForbiddenError)
+        await expect(attempt).rejects.toMatchObject({
+          code: 'OTHER_SERVICES_NOT_CONFIRMED',
+          details: {
+            otherServices: [
+              {
+                name: 'notify',
+                displayName: 'Notify',
+                roles: ['Admin', 'Sender'],
+              },
+              { name: 'forms', displayName: 'Forms', roles: ['Reviewer'] },
+            ],
+          },
+        })
+        expect(mockTransaction).not.toHaveBeenCalled()
+        expect(mockRepository.addGroupUser).not.toHaveBeenCalled()
+      })
+
+      it('adds them once every other service is confirmed', async () => {
+        mockRepository.getNewRolesFromOtherServices.mockResolvedValueOnce([
+          { id: 'r-1', name: 'Admin', sharedService: notify },
+          { id: 'r-3', name: 'Reviewer', sharedService: forms },
+        ] as never)
+
+        await service.addGroupUser(headlessRequest(['Notify ', 'forms']))
+
+        expect(mockRepository.addGroupUser).toHaveBeenCalled()
+      })
+
+      it('refuses when only some of the other services are confirmed', async () => {
+        mockRepository.getNewRolesFromOtherServices.mockResolvedValueOnce([
+          { id: 'r-1', name: 'Admin', sharedService: notify },
+          { id: 'r-3', name: 'Reviewer', sharedService: forms },
+        ] as never)
+
+        await expect(
+          service.addGroupUser(headlessRequest(['notify'])),
+        ).rejects.toMatchObject({ code: 'OTHER_SERVICES_NOT_CONFIRMED' })
+        expect(mockRepository.addGroupUser).not.toHaveBeenCalled()
+      })
+
+      it('ignores extra services that were confirmed but not needed', async () => {
+        mockRepository.getNewRolesFromOtherServices.mockResolvedValueOnce([
+          { id: 'r-1', name: 'Admin', sharedService: notify },
+        ] as never)
+
+        await service.addGroupUser(headlessRequest(['notify', 'cdogs']))
+
+        expect(mockRepository.addGroupUser).toHaveBeenCalled()
+      })
+    })
+
+    it('does not run the check for the web app', async () => {
+      mockTenantRepository.ensureTenantUserExists.mockResolvedValue({
+        id: 'tu-1',
+      } as never)
+      mockRepository.addGroupUser.mockResolvedValue({ id: 'gu-1' } as never)
+
+      await service.addGroupUser(req)
+
+      expect(mockRepository.getNewRolesFromOtherServices).not.toHaveBeenCalled()
+      expect(mockRepository.addGroupUser).toHaveBeenCalled()
     })
 
     it('ensures the tenant user exists then adds them to the group', async () => {
@@ -636,28 +771,316 @@ describe('GroupService', () => {
       )
       expect(mockTransaction).not.toHaveBeenCalled()
     })
+
+    describe('when a connected service asks', () => {
+      const serviceRequest = (idpType: 'idir' | 'bceidbusiness') =>
+        asRequest({
+          params: { tenantId: 'tenant-1' },
+          decodedJwt: { idir_user_guid: 'sso-1', aud: 'chefs-client' },
+          idpType,
+        })
+      const chefs = {
+        id: 'ss-chefs',
+        clientIdentifier: 'chefs-client',
+        isActive: true,
+        allowHeadlessOps: true,
+      }
+
+      beforeEach(() => {
+        mockRepository.getTenantGroups.mockResolvedValue([] as never)
+      })
+
+      it('shows every group when the service has headless switched on', async () => {
+        mockSharedServiceRepository.findSharedServiceByClientIdentifier.mockResolvedValueOnce(
+          chefs as never,
+        )
+
+        await service.getTenantGroups(serviceRequest('idir'))
+
+        expect(
+          mockSharedServiceRepository.findSharedServiceByClientIdentifier,
+        ).toHaveBeenCalledWith('chefs-client')
+        expect(mockRepository.getTenantGroups).toHaveBeenCalledWith(
+          expect.objectContaining({ jwtAudience: config.oidc.tmsAudience }),
+        )
+      })
+
+      it.each([
+        ['is not switched on', { ...chefs, allowHeadlessOps: false }],
+        ['is inactive', { ...chefs, isActive: false }],
+        ['is not registered', null],
+      ])(
+        'keeps the filtered list when the service %s',
+        async (_case, sharedService) => {
+          mockSharedServiceRepository.findSharedServiceByClientIdentifier.mockResolvedValueOnce(
+            sharedService as never,
+          )
+
+          await service.getTenantGroups(serviceRequest('idir'))
+
+          expect(mockRepository.getTenantGroups).toHaveBeenCalledWith(
+            expect.objectContaining({ jwtAudience: 'chefs-client' }),
+          )
+        },
+      )
+
+      it('keeps the filtered list for a BCeID user', async () => {
+        await service.getTenantGroups(serviceRequest('bceidbusiness'))
+
+        expect(
+          mockSharedServiceRepository.findSharedServiceByClientIdentifier,
+        ).not.toHaveBeenCalled()
+        expect(mockRepository.getTenantGroups).toHaveBeenCalledWith(
+          expect.objectContaining({ jwtAudience: 'chefs-client' }),
+        )
+      })
+    })
+
+    it('does not look up a service for the web app', async () => {
+      mockRepository.getTenantGroups.mockResolvedValue([] as never)
+
+      await service.getTenantGroups(
+        asRequest({
+          params: { tenantId: 'tenant-1' },
+          decodedJwt: { idir_user_guid: 'sso-1', aud: config.oidc.tmsAudience },
+          idpType: 'idir',
+        }),
+      )
+
+      expect(
+        mockSharedServiceRepository.findSharedServiceByClientIdentifier,
+      ).not.toHaveBeenCalled()
+      expect(mockRepository.getTenantGroups).toHaveBeenCalledWith(
+        expect.objectContaining({ jwtAudience: config.oidc.tmsAudience }),
+      )
+    })
   })
 
   describe('getSharedServiceRolesForGroup', () => {
-    it("returns a group's shared service roles", async () => {
-      mockRepository.getSharedServiceRolesForGroup.mockResolvedValue([
-        { id: 'ss-1' },
-      ] as never)
+    const chefs = { id: 'ss-1', clientIdentifier: 'chefs-client' }
+    const notify = { id: 'ss-2', clientIdentifier: 'notify-client' }
+    const params = { tenantId: 'tenant-1', groupId: 'group-1' }
 
+    beforeEach(() => {
+      mockRepository.getSharedServiceRolesForGroup.mockResolvedValue([
+        chefs,
+        notify,
+      ] as never)
+    })
+
+    it('shows every service to the CSTAR web app', async () => {
       const result = await service.getSharedServiceRolesForGroup(
         asRequest({
-          params: { tenantId: 'tenant-1', groupId: 'group-1' },
+          params,
+          decodedJwt: { aud: config.oidc.tmsAudience, idir_user_guid: 'sso-1' },
         }),
       )
 
       expect(mockRepository.getSharedServiceRolesForGroup).toHaveBeenCalledWith(
-        expect.objectContaining({ tenantId: 'tenant-1', groupId: 'group-1' }),
+        expect.objectContaining(params),
       )
-      expect(result).toEqual({ data: { sharedServices: [{ id: 'ss-1' }] } })
+      expect(result).toEqual({ data: { sharedServices: [chefs, notify] } })
+      expect(mockTenantRepository.checkUserTenantAccess).not.toHaveBeenCalled()
+    })
+
+    it('shows every service to an owner or user admin calling through a service', async () => {
+      mockTenantRepository.checkUserTenantAccess.mockResolvedValueOnce(true)
+
+      const result = await service.getSharedServiceRolesForGroup(
+        asRequest({
+          params,
+          decodedJwt: { aud: 'chefs-client', idir_user_guid: 'sso-1' },
+        }),
+      )
+
+      expect(mockTenantRepository.checkUserTenantAccess).toHaveBeenCalledWith(
+        'tenant-1',
+        'sso-1',
+        ['TMS.TENANT_OWNER', 'TMS.USER_ADMIN'],
+      )
+      expect(result).toEqual({ data: { sharedServices: [chefs, notify] } })
+    })
+
+    it('shows only the calling service to anyone else', async () => {
+      mockTenantRepository.checkUserTenantAccess.mockResolvedValueOnce(false)
+
+      const result = await service.getSharedServiceRolesForGroup(
+        asRequest({
+          params,
+          decodedJwt: { aud: 'chefs-client', idir_user_guid: 'sso-1' },
+        }),
+      )
+
+      expect(result).toEqual({ data: { sharedServices: [chefs] } })
+    })
+
+    it('checks a BCeID user the same way', async () => {
+      mockTenantRepository.checkUserTenantAccess.mockResolvedValueOnce(false)
+
+      const result = await service.getSharedServiceRolesForGroup(
+        asRequest({
+          params,
+          decodedJwt: { aud: 'chefs-client', bceid_user_guid: 'bceid-1' },
+        }),
+      )
+
+      expect(mockTenantRepository.checkUserTenantAccess).toHaveBeenCalledWith(
+        'tenant-1',
+        'bceid-1',
+        ['TMS.TENANT_OWNER', 'TMS.USER_ADMIN'],
+      )
+      expect(result).toEqual({ data: { sharedServices: [chefs] } })
+    })
+
+    it('shows nothing when the group has none of the calling service roles', async () => {
+      mockTenantRepository.checkUserTenantAccess.mockResolvedValueOnce(false)
+
+      const result = await service.getSharedServiceRolesForGroup(
+        asRequest({
+          params,
+          decodedJwt: { aud: 'forms-client', idir_user_guid: 'sso-1' },
+        }),
+      )
+
+      expect(result).toEqual({ data: { sharedServices: [] } })
+    })
+
+    it('shows nothing when the token names no app and no user', async () => {
+      const result = await service.getSharedServiceRolesForGroup(
+        asRequest({ params, decodedJwt: {} }),
+      )
+
+      expect(result).toEqual({ data: { sharedServices: [] } })
+      expect(mockTenantRepository.checkUserTenantAccess).not.toHaveBeenCalled()
     })
   })
 
   describe('updateSharedServiceRolesForGroup', () => {
+    describe('when a connected service calls', () => {
+      const chefs = {
+        id: 'ss-chefs',
+        name: 'chefs',
+        displayName: 'CHEFS',
+        clientIdentifier: 'chefs-client',
+      }
+      const headlessRequest = (sharedServices: unknown[]) =>
+        asRequest({
+          params: { tenantId: 'tenant-1', groupId: 'group-1' },
+          body: { sharedServices },
+          decodedJwt: { idir_user_guid: 'sso-1', aud: 'chefs-client' },
+          isHeadlessAccess: true,
+          headlessService: chefs,
+        })
+      const role = (id: string) => ({ id, enabled: true })
+
+      it('saves changes to its own roles', async () => {
+        mockRepository.updateSharedServiceRolesForGroup.mockResolvedValue(
+          [] as never,
+        )
+
+        await service.updateSharedServiceRolesForGroup(
+          headlessRequest([
+            { id: 'ss-chefs', sharedServiceRoles: [role('r-1')] },
+          ]),
+        )
+
+        expect(
+          mockSharedServiceRepository.findSharedServicesByIds,
+        ).not.toHaveBeenCalled()
+        expect(mockTransaction).toHaveBeenCalledTimes(1)
+      })
+
+      it('refuses changes to another service and saves nothing', async () => {
+        mockSharedServiceRepository.findSharedServicesByIds.mockResolvedValueOnce(
+          [{ id: 'ss-notify', displayName: 'Notify' }] as never,
+        )
+
+        await expect(
+          service.updateSharedServiceRolesForGroup(
+            headlessRequest([
+              { id: 'ss-chefs', sharedServiceRoles: [role('r-1')] },
+              { id: 'ss-notify', sharedServiceRoles: [role('r-2')] },
+            ]),
+          ),
+        ).rejects.toThrow(
+          new ForbiddenError(
+            'CHEFS can only change its own roles. Roles for Notify can only be changed in the CSTAR web app.',
+          ),
+        )
+        expect(
+          mockSharedServiceRepository.findSharedServicesByIds,
+        ).toHaveBeenCalledWith(['ss-notify'])
+        expect(mockTransaction).not.toHaveBeenCalled()
+      })
+
+      it('names every other service in a readable list', async () => {
+        mockSharedServiceRepository.findSharedServicesByIds.mockResolvedValueOnce(
+          [
+            { id: 'ss-notify', displayName: 'Notify' },
+            { id: 'ss-forms', displayName: 'Forms' },
+            { id: 'ss-docs', displayName: 'CDOGS' },
+          ] as never,
+        )
+
+        await expect(
+          service.updateSharedServiceRolesForGroup(
+            headlessRequest([
+              { id: 'ss-notify', sharedServiceRoles: [role('r-2')] },
+              { id: 'ss-forms', sharedServiceRoles: [role('r-3')] },
+              { id: 'ss-docs', sharedServiceRoles: [role('r-4')] },
+              { id: 'ss-notify', sharedServiceRoles: [role('r-5')] },
+            ]),
+          ),
+        ).rejects.toThrow(
+          'Roles for Notify, Forms and CDOGS can only be changed in the CSTAR web app.',
+        )
+        expect(
+          mockSharedServiceRepository.findSharedServicesByIds,
+        ).toHaveBeenCalledWith(['ss-notify', 'ss-forms', 'ss-docs'])
+      })
+
+      it('still refuses when the other service cannot be found', async () => {
+        mockSharedServiceRepository.findSharedServicesByIds.mockResolvedValueOnce(
+          [] as never,
+        )
+
+        await expect(
+          service.updateSharedServiceRolesForGroup(
+            headlessRequest([
+              { id: 'ss-unknown', sharedServiceRoles: [role('r-9')] },
+            ]),
+          ),
+        ).rejects.toThrow(
+          'CHEFS can only change its own roles. Roles for other services can only be changed in the CSTAR web app.',
+        )
+        expect(mockTransaction).not.toHaveBeenCalled()
+      })
+    })
+
+    it('lets the web app change several services at once', async () => {
+      mockRepository.updateSharedServiceRolesForGroup.mockResolvedValue(
+        [] as never,
+      )
+
+      await service.updateSharedServiceRolesForGroup(
+        asRequest({
+          params: { tenantId: 'tenant-1', groupId: 'group-1' },
+          body: {
+            sharedServices: [
+              { id: 'ss-chefs', sharedServiceRoles: [] },
+              { id: 'ss-notify', sharedServiceRoles: [] },
+            ],
+          },
+          decodedJwt: { idir_user_guid: 'sso-1' },
+        }),
+      )
+
+      expect(
+        mockSharedServiceRepository.findSharedServicesByIds,
+      ).not.toHaveBeenCalled()
+      expect(mockTransaction).toHaveBeenCalledTimes(1)
+    })
+
     it('threads the transaction manager', async () => {
       mockRepository.updateSharedServiceRolesForGroup.mockResolvedValue(
         [] as never,
