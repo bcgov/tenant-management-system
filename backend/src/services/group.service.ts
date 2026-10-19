@@ -345,13 +345,13 @@ export class GroupService {
   }
 
   public async getTenantGroups(req: Request) {
+    const audience =
+      req.decodedJwt?.aud || req.decodedJwt?.audience || config.oidc.tmsAudience
+    const showAllGroups = await this.isHeadlessIdirCall(audience, req)
     const input: GetTenantGroupsInputDto = {
       tenantId: req.params.tenantId as string,
       ssoUserId: req.decodedJwt?.idir_user_guid,
-      jwtAudience:
-        req.decodedJwt?.aud ||
-        req.decodedJwt?.audience ||
-        config.oidc.tmsAudience,
+      jwtAudience: showAllGroups ? config.oidc.tmsAudience : audience,
       tmsAudience: config.oidc.tmsAudience,
     }
     const groups = await groupRepository.getTenantGroups(input)
@@ -361,6 +361,17 @@ export class GroupService {
         groups: groups,
       },
     }
+  }
+
+  private async isHeadlessIdirCall(audience: string, req: Request) {
+    if (audience === config.oidc.tmsAudience || req.idpType !== 'idir') {
+      return false
+    }
+    const sharedService =
+      await sharedServiceRepository.findSharedServiceByClientIdentifier(
+        audience,
+      )
+    return Boolean(sharedService?.isActive && sharedService.allowHeadlessOps)
   }
 
   public async getSharedServiceRolesForGroup(req: Request) {

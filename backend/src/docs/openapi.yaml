@@ -2341,7 +2341,7 @@ paths:
         **TMS Users**: Returns ALL groups in the tenant.
 
         **External Services**: Returns ONLY groups that have at least one enabled 
-        shared service role belonging to the requesting service.
+        shared service role belonging to the requesting service. With allowHeadlessOps enabled and an IDIR user, returns ALL groups in the tenant.
 
         Requires JWT authentication and tenant access.
       security:

@@ -22,6 +22,7 @@ jest.mock('../../repositories/tenant.repository', () => ({
 jest.mock('../../repositories/shared-service.repository', () => ({
   sharedServiceRepository: {
     findSharedServicesByIds: jest.fn(),
+    findSharedServiceByClientIdentifier: jest.fn(),
   },
 }))
 jest.mock('../../services/notification.service', () => ({
@@ -769,6 +770,89 @@ describe('GroupService', () => {
         expect.objectContaining({ tenantId: 'tenant-1' }),
       )
       expect(mockTransaction).not.toHaveBeenCalled()
+    })
+
+    describe('when a connected service asks', () => {
+      const serviceRequest = (idpType: 'idir' | 'bceidbusiness') =>
+        asRequest({
+          params: { tenantId: 'tenant-1' },
+          decodedJwt: { idir_user_guid: 'sso-1', aud: 'chefs-client' },
+          idpType,
+        })
+      const chefs = {
+        id: 'ss-chefs',
+        clientIdentifier: 'chefs-client',
+        isActive: true,
+        allowHeadlessOps: true,
+      }
+
+      beforeEach(() => {
+        mockRepository.getTenantGroups.mockResolvedValue([] as never)
+      })
+
+      it('shows every group when the service has headless switched on', async () => {
+        mockSharedServiceRepository.findSharedServiceByClientIdentifier.mockResolvedValueOnce(
+          chefs as never,
+        )
+
+        await service.getTenantGroups(serviceRequest('idir'))
+
+        expect(
+          mockSharedServiceRepository.findSharedServiceByClientIdentifier,
+        ).toHaveBeenCalledWith('chefs-client')
+        expect(mockRepository.getTenantGroups).toHaveBeenCalledWith(
+          expect.objectContaining({ jwtAudience: config.oidc.tmsAudience }),
+        )
+      })
+
+      it.each([
+        ['is not switched on', { ...chefs, allowHeadlessOps: false }],
+        ['is inactive', { ...chefs, isActive: false }],
+        ['is not registered', null],
+      ])(
+        'keeps the filtered list when the service %s',
+        async (_case, sharedService) => {
+          mockSharedServiceRepository.findSharedServiceByClientIdentifier.mockResolvedValueOnce(
+            sharedService as never,
+          )
+
+          await service.getTenantGroups(serviceRequest('idir'))
+
+          expect(mockRepository.getTenantGroups).toHaveBeenCalledWith(
+            expect.objectContaining({ jwtAudience: 'chefs-client' }),
+          )
+        },
+      )
+
+      it('keeps the filtered list for a BCeID user', async () => {
+        await service.getTenantGroups(serviceRequest('bceidbusiness'))
+
+        expect(
+          mockSharedServiceRepository.findSharedServiceByClientIdentifier,
+        ).not.toHaveBeenCalled()
+        expect(mockRepository.getTenantGroups).toHaveBeenCalledWith(
+          expect.objectContaining({ jwtAudience: 'chefs-client' }),
+        )
+      })
+    })
+
+    it('does not look up a service for the web app', async () => {
+      mockRepository.getTenantGroups.mockResolvedValue([] as never)
+
+      await service.getTenantGroups(
+        asRequest({
+          params: { tenantId: 'tenant-1' },
+          decodedJwt: { idir_user_guid: 'sso-1', aud: config.oidc.tmsAudience },
+          idpType: 'idir',
+        }),
+      )
+
+      expect(
+        mockSharedServiceRepository.findSharedServiceByClientIdentifier,
+      ).not.toHaveBeenCalled()
+      expect(mockRepository.getTenantGroups).toHaveBeenCalledWith(
+        expect.objectContaining({ jwtAudience: config.oidc.tmsAudience }),
+      )
     })
   })
 
