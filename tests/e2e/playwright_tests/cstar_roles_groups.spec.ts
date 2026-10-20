@@ -3,6 +3,7 @@ import {
   test,
   expect,
   openTenantsPage,
+  openTenantUsersPage,
   submitIdirSearch,
 } from '../support/tenant.fixture'
 
@@ -26,6 +27,10 @@ test.afterAll(async () => {
 
 test.describe.serial('Landing page tests', () => {
   test('Verify role updation', async ({ getOrCreateApprovedTenant }) => {
+    test.skip(
+      authMode !== 'idir',
+      'This test requires the IDIR test account and data',
+    )
     const approvedTenantName = await getOrCreateApprovedTenant(sharedPage)
     await sharedPage
       .getByRole('link', { name: 'All tenants', exact: true })
@@ -40,9 +45,7 @@ test.describe.serial('Landing page tests', () => {
         exact: true,
       }),
     ).toBeVisible()
-    await sharedPage
-      .getByRole('link', { name: 'Tenant users', exact: true })
-      .click()
+    await openTenantUsersPage(sharedPage)
     await expect(sharedPage).toHaveURL(/\/tenants\/[^/]+\/users$/, {
       timeout: 30_000,
     })

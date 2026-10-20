@@ -1,4 +1,10 @@
-import { expect, test as base, type Page, type Request } from '@playwright/test'
+import {
+  expect,
+  test as base,
+  type Locator,
+  type Page,
+  type Request,
+} from '@playwright/test'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { MINISTRIES } from '../../../frontend/src/utils/constants'
@@ -37,13 +43,35 @@ export async function openTenantsPage(page: Page): Promise<void> {
   ) {
     return
   }
+  await openAppPage(page, '/tenants', requestTenantButton)
+}
+
+export async function openTenantUsersPage(page: Page): Promise<void> {
+  const usersPath = await page
+    .getByRole('link', { name: 'Tenant users', exact: true })
+    .getAttribute('href')
+  expect(usersPath).toMatch(/^\/tenants\/[^/]+\/users$/)
+  await openAppPage(
+    page,
+    usersPath!,
+    page.getByRole('heading', { name: 'Tenant users', exact: true }),
+  )
+}
+
+export async function openAppPage(
+  page: Page,
+  path: string,
+  ready: Locator,
+): Promise<void> {
   let startupNetworkFailed = false
   const trackStartupFailure = (request: Request) => {
     const url = new URL(request.url())
     if (
       url.origin === new URL(page.url()).origin &&
-      (url.pathname.startsWith('/assets/') ||
-        url.pathname === '/silent-check-sso.html') &&
+      request.method() === 'GET' &&
+      ['document', 'script', 'stylesheet', 'fetch', 'xhr'].includes(
+        request.resourceType(),
+      ) &&
       request.failure()?.errorText === 'net::ERR_EMPTY_RESPONSE'
     ) {
       startupNetworkFailed = true
@@ -55,11 +83,15 @@ export async function openTenantsPage(page: Page): Promise<void> {
     for (let attempt = 0; attempt < 3; attempt++) {
       startupNetworkFailed = false
       try {
-        await page.goto('/tenants')
-        await expect(requestTenantButton).toBeVisible({ timeout: 15_000 })
+        await page.goto(path)
+        await expect(ready).toBeVisible({ timeout: 15_000 })
+        // A page can render after catching a failed data load (such as roles).
+        // Reload only read requests; never replay form submissions.
+        if (startupNetworkFailed)
+          throw new Error(`A startup request failed while opening ${path}`)
         return
       } catch (error) {
-        // Retry only failed startup downloads, before creating any data.
+        // Retry only connection failures while opening a page, before any writes.
         const navigationFailed =
           error instanceof Error &&
           error.message.includes('net::ERR_EMPTY_RESPONSE')

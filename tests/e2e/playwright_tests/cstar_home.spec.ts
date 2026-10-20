@@ -3,6 +3,7 @@ import {
   test,
   expect,
   openTenantsPage,
+  openTenantUsersPage,
   submitIdirSearch,
 } from '../support/tenant.fixture'
 
@@ -60,9 +61,7 @@ test.describe.serial('Landing page tests', () => {
       authMode !== 'idir',
       'This test requires the IDIR test account and data',
     )
-    await sharedPage
-      .getByRole('link', { name: 'Tenant users', exact: true })
-      .click()
+    await openTenantUsersPage(sharedPage)
     await expect(sharedPage).toHaveURL(/\/tenants\/[^/]+\/users$/, {
       timeout: 30_000,
     })
