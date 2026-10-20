@@ -86,7 +86,9 @@ watchEffect(() => {
 
       <v-col class="mt-12 mt-lg-0" cols="12" lg="3" offset-lg="1">
         <v-card>
-          <v-card-title class="bg-surface-light-blue px-8 py-0 text-wrap">
+          <v-card-title
+            class="bg-surface-light-blue-custom px-8 py-0 text-wrap"
+          >
             <h4>What you can do in CSTAR</h4>
           </v-card-title>
           <v-card-text class="p-large px-8">

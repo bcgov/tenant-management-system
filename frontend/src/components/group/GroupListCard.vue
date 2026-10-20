@@ -25,7 +25,7 @@ const { group, tenant } = defineProps<{
     :to="`/tenants/${tenant.id}/groups/${group.id}/members`"
     class="card-link"
   >
-    <v-card class="card pb-4 pt-2" color="surface-light-gray">
+    <v-card class="card pb-4 pt-2">
       <v-card-title class="card-link-title">
         {{ group.name }}
       </v-card-title>

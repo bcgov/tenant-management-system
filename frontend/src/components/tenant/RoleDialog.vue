@@ -103,7 +103,7 @@ const handleSave = () => {
 
 <template>
   <v-dialog v-model="dialogVisible" max-width="627" scrollable>
-    <v-card class="pa-6">
+    <v-card class="pa-6" color="background">
       <v-card-title class="d-flex align-center justify-space-between">
         Edit tenant roles
       </v-card-title>
@@ -122,9 +122,7 @@ const handleSave = () => {
         </p>
 
         <v-data-table
-          :header-props="{
-            class: 'bg-surface-light font-weight-bold text-body-medium',
-          }"
+          :header-props="{ class: 'bg-surface-light font-weight-bold' }"
           :headers="[
             { title: 'Role', value: 'role' },
             { title: 'Description', value: 'description' },

@@ -169,9 +169,7 @@ describe('GroupRoleContainer.vue', () => {
     it('renders the heading and each service', () => {
       renderComponent()
 
-      expect(
-        screen.getByText('Adding connected services roles'),
-      ).toBeInTheDocument()
+      expect(screen.getByText('Connected service roles')).toBeInTheDocument()
       expect(screen.getByText('Service One')).toBeInTheDocument()
       expect(screen.getByText('Service Two')).toBeInTheDocument()
     })
