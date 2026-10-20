@@ -4,6 +4,7 @@ import { computed, ref } from 'vue'
 import LoginContainer from '@/components/auth/LoginContainer.vue'
 import TenantList from '@/components/tenant/TenantList.vue'
 import TenantRequestDialog from '@/components/tenantrequest/TenantRequestDialog.vue'
+import TenantRequestList from '@/components/tenantrequest/TenantRequestList.vue'
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import LoadingWrapper from '@/components/ui/LoadingWrapper.vue'
 import { useNotification } from '@/composables/useNotification'
@@ -28,6 +29,9 @@ const isDuplicateName = ref(false)
 
 // --- Computed Values ---------------------------------------------------------
 
+const pendingTenantRequests = computed(
+  () => tenantRequestStore.pendingTenantRequests,
+)
 const tenants = computed(() => tenantStore.tenants)
 
 // --- Component Methods -------------------------------------------------------
@@ -76,11 +80,21 @@ const initialized = ref(false)
 // shows a spinner if needed. In the future use <Suspense> once it is no longer
 // experimental.
 const init = async () => {
-  try {
-    await tenantStore.fetchTenants(
-      authStore.authenticatedUser.ssoUser.ssoUserId,
-    )
-  } catch {
+  const [pendingTenantRequestsResult, tenantsResult] = await Promise.allSettled(
+    [
+      tenantRequestStore.fetchPendingTenantRequests(
+        authStore.authenticatedUser.ssoUser.ssoUserId,
+      ),
+
+      tenantStore.fetchTenants(authStore.authenticatedUser.ssoUser.ssoUserId),
+    ],
+  )
+
+  if (pendingTenantRequestsResult.status === 'rejected') {
+    notification.error('Failed to load pending tenant requests')
+  }
+
+  if (tenantsResult.status === 'rejected') {
     notification.error('Failed to load tenants')
   }
 
@@ -100,7 +114,10 @@ init() // NOSONAR
     >
       <h1>All tenants</h1>
 
-      <v-container v-if="tenants.length === 0" class="fill-height">
+      <v-container
+        v-if="tenants.length === 0 && pendingTenantRequests.length === 0"
+        class="fill-height"
+      >
         <v-row class="center-align justify-center">
           <v-col class="align-center d-flex flex-column" cols="auto">
             <h2>No tenants yet</h2>
@@ -121,12 +138,21 @@ init() // NOSONAR
         </v-row>
       </v-container>
       <template v-else>
-        <v-row class="mb-8 mt-12">
+        <v-row class="mb-12 mt-12">
           <v-col cols="12">
             <ButtonPrimary text="Request a tenant" @click="dialogOpen" />
           </v-col>
         </v-row>
-        <TenantList :tenants="tenants" />
+
+        <template v-if="tenants.length > 0">
+          <h3>Your tenants</h3>
+          <TenantList :tenants="tenants" />
+        </template>
+
+        <template v-if="pendingTenantRequests.length > 0">
+          <h3 class="mt-12">Pending tenant requests</h3>
+          <TenantRequestList :tenant-requests="pendingTenantRequests" />
+        </template>
       </template>
     </LoadingWrapper>
   </LoginContainer>

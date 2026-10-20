@@ -26,11 +26,11 @@ const emit = defineEmits<{
 
 <style scoped>
 .cstar-button-primary:disabled {
-  background-color: rgb(var(--v-theme-primary-disabled)) !important;
-  color: rgb(var(--v-theme-on-surface)) !important;
+  background-color: rgb(var(--v-theme-primary-disabled-custom));
+  color: rgb(var(--v-theme-on-surface));
 }
 
 .cstar-button-primary:hover:not(:disabled) {
-  background-color: rgb(var(--v-theme-primary-hover)) !important;
+  background-color: rgb(var(--v-theme-primary-hover-custom));
 }
 </style>

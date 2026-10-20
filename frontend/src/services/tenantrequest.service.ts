@@ -1,4 +1,3 @@
-import { authenticatedAxios } from '@/services/authenticated.axios'
 import {
   isDuplicateEntityError,
   isValidationError,
@@ -6,14 +5,20 @@ import {
 } from '@/services/utils'
 import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
 import { ValidationError } from '@/errors/domain/ValidationError'
-import { type TenantRequestApiData } from '@/mappers/tenantrequest.mapper'
+import {
+  type TenantRequestApiData,
+  type TenantRequestApiEnvelope,
+  type TenantRequestListApiEnvelope,
+} from '@/mappers/tenantrequest.mapper'
+import type { SsoUserId } from '@/models/ssouser.model'
 import {
   type TenantRequestDetailFields,
   type TenantRequestId,
 } from '@/models/tenantrequest.model'
 import { type User } from '@/models/user.model'
+import { authenticatedFetch } from '@/services/api'
 
-const api = authenticatedAxios()
+const api = authenticatedFetch()
 
 export const tenantRequestService = {
   /**
@@ -26,7 +31,7 @@ export const tenantRequestService = {
   async createTenantRequest(
     tenantRequestDetails: TenantRequestDetailFields,
     user: User,
-  ): Promise<void> {
+  ): Promise<TenantRequestApiData> {
     try {
       const requestBody = {
         description: tenantRequestDetails.description,
@@ -42,13 +47,18 @@ export const tenantRequestService = {
         },
       }
 
-      await api.post(`/tenant-requests`, requestBody)
+      const response = await api.post<TenantRequestApiEnvelope>(
+        `/tenant-requests`,
+        requestBody,
+      )
+
+      return response.data.tenantRequest
     } catch (error: unknown) {
       logApiError('Error creating tenant request', error)
 
       // Handle HTTP 400 Bad Request (validation)
       if (isValidationError(error)) {
-        const messageArray = error.response.data.details.body.map(
+        const messageArray = error.data.details.body.map(
           (item: { message: string }) => item.message,
         )
 
@@ -57,10 +67,32 @@ export const tenantRequestService = {
 
       // Handle HTTP 409 Conflict (duplicate)
       if (isDuplicateEntityError(error)) {
-        throw new DuplicateEntityError(error.response.data.message)
+        throw new DuplicateEntityError(error.data.message)
       }
 
       // Re-throw all other errors
+      throw error
+    }
+  },
+
+  /**
+   * Retrieves all the pending tenant requests for a user.
+   *
+   * @param ssoUserId - The ID of the SSO user.
+   * @throws Will throw an error if the API request fails.
+   */
+  async getPendingTenantRequests(
+    ssoUserId: SsoUserId,
+  ): Promise<TenantRequestApiData[]> {
+    try {
+      const response = await api.get<TenantRequestListApiEnvelope>(
+        `/users/${ssoUserId}/tenant-requests`,
+      )
+
+      return response.data.tenantRequests
+    } catch (error) {
+      logApiError('Error getting tenant requests', error)
+
       throw error
     }
   },
@@ -72,9 +104,10 @@ export const tenantRequestService = {
    */
   async getTenantRequests(): Promise<TenantRequestApiData[]> {
     try {
-      const response = await api.get('/tenant-requests')
+      const response =
+        await api.get<TenantRequestListApiEnvelope>('/tenant-requests')
 
-      return response.data.data.tenantRequests
+      return response.data.tenantRequests
     } catch (error) {
       logApiError('Error getting tenant requests', error)
 
@@ -121,7 +154,7 @@ export const tenantRequestService = {
 
       // Handle HTTP 400 Bad Request (validation)
       if (isValidationError(error)) {
-        const messageArray = error.response.data.details.body.map(
+        const messageArray = error.data.details.body.map(
           (item: { message: string }) => item.message,
         )
 
@@ -130,7 +163,7 @@ export const tenantRequestService = {
 
       // Handle HTTP 409 Conflict (duplicate)
       if (isDuplicateEntityError(error)) {
-        throw new DuplicateEntityError(error.response.data.message)
+        throw new DuplicateEntityError(error.data.message)
       }
 
       // Re-throw all other errors

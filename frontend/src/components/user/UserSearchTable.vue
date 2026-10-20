@@ -54,7 +54,7 @@ const onRowClick = (_event: Event, { item }: { item: User }) => {
 <template>
   <v-data-table
     v-model="selectedUser"
-    :header-props="{ class: 'bg-surface-light-blue font-weight-bold' }"
+    :header-props="{ class: 'bg-surface-light font-weight-bold' }"
     :headers="headers"
     :hide-default-footer="users.length === 0"
     :items="users"

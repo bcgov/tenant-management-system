@@ -11,7 +11,7 @@ const { service } = defineProps<{
 </script>
 
 <template>
-  <v-card color="surface-light-gray">
+  <v-card>
     <v-card-title>{{ service.displayName }}</v-card-title>
     <v-card-subtitle>{{ service.description }}</v-card-subtitle>
     <v-card-text>

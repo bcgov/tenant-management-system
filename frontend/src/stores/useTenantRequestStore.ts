@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
 import { tenantRequestMapper } from '@/mappers/tenantrequest.mapper'
+import { type SsoUserId } from '@/models/ssouser.model'
 import {
   TenantRequest,
   type TenantRequestDetailFields,
@@ -14,6 +15,7 @@ import { tenantRequestService } from '@/services/tenantrequest.service'
  * Pinia store for managing tenant requests and their statuses.
  */
 export const useTenantRequestStore = defineStore('tenantRequest', () => {
+  const pendingTenantRequests = ref<TenantRequest[]>([])
   const tenantRequests = ref<TenantRequest[]>([])
 
   // Private methods
@@ -43,7 +45,31 @@ export const useTenantRequestStore = defineStore('tenantRequest', () => {
     tenantRequestDetails: TenantRequestDetailFields,
     user: User,
   ): Promise<void> => {
-    await tenantRequestService.createTenantRequest(tenantRequestDetails, user)
+    const tenantRequestApiData = await tenantRequestService.createTenantRequest(
+      tenantRequestDetails,
+      user,
+    )
+    const tenantRequest = tenantRequestMapper.fromApiData(tenantRequestApiData)
+
+    pendingTenantRequests.value.push(tenantRequest)
+  }
+
+  /**
+   * Fetches all pending tenant requests for a user from the API and updates the
+   * store.
+   *
+   * @param ssoUserId - The ID of the SSO user.
+   * @returns A promise that resolves when the tenant requests are fetched and
+   *   the store is updated.
+   */
+  const fetchPendingTenantRequests = async (
+    ssoUserId: SsoUserId,
+  ): Promise<void> => {
+    const tenantRequestApiData =
+      await tenantRequestService.getPendingTenantRequests(ssoUserId)
+    pendingTenantRequests.value = tenantRequestApiData.map(
+      tenantRequestMapper.fromApiData,
+    )
   }
 
   /**
@@ -96,9 +122,11 @@ export const useTenantRequestStore = defineStore('tenantRequest', () => {
   }
 
   return {
+    pendingTenantRequests,
     tenantRequests,
 
     createTenantRequest,
+    fetchPendingTenantRequests,
     fetchTenantRequests,
     updateTenantRequestStatus,
   }
