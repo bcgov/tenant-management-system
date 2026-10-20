@@ -46,11 +46,7 @@ const tenantUsersCount = computed(() => tenant.users.length)
 </script>
 
 <template>
-  <v-sheet
-    class="mt-12 px-10 py-4"
-    color="surface-light-gray"
-    @click="showDetail = !showDetail"
-  >
+  <v-sheet class="mt-12 px-10 py-4" @click="showDetail = !showDetail">
     <v-row class="align-center">
       <v-col>
         <hgroup class="text-stack">

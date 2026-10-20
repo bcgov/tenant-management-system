@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
+import ButtonTertiary from '@/components/ui/ButtonTertiary.vue'
 import SimpleDialog, {
   type DialogButton,
 } from '@/components/ui/SimpleDialog.vue'
@@ -221,16 +222,16 @@ const undoChanges = () => {
   <v-container v-else class="ms-6">
     <v-row>
       <v-col cols="12">
-        <h4>Adding connected services roles</h4>
+        <h4>Connected service roles</h4>
         <p>
           Click 'Edit' to start assigning roles. Choose the roles you want to
-          add to your group from each available connected services, then click
+          add to your group from each available connected service, then click
           'Save' to apply your changes.
         </p>
       </v-col>
     </v-row>
 
-    <v-row class="darkened pa-4">
+    <v-row class="pa-4">
       <v-col cols="12">
         <ButtonPrimary
           v-if="!editing && isUserAdmin"
@@ -258,7 +259,7 @@ const undoChanges = () => {
                 :disabled="!editing || !isUserAdmin"
                 :label="role.name"
                 :model-value="editing ? draft.get(role.id) : role.isEnabled"
-                class="noBackground"
+                density="compact"
                 @update:model-value="
                   (val: boolean | null) => draft.set(role.id, val ?? false)
                 "
@@ -269,17 +270,15 @@ const undoChanges = () => {
       </v-col>
 
       <v-col v-if="isUserAdmin" class="text-right" cols="12">
-        <v-btn
+        <ButtonTertiary
           :disabled="!editing"
           class="mr-2"
-          variant="text"
+          text="Cancel"
           @click="cancelEditing"
-        >
-          Cancel
-        </v-btn>
+        />
 
         <v-btn
-          :class="`tms-button-secondary mr-2${editing ? ' text-error' : ''}`"
+          :class="`mr-2${editing ? ' text-error' : ''}`"
           :disabled="!editing"
           :variant="editing ? 'outlined' : 'flat'"
           base-color="secondary"
@@ -294,8 +293,7 @@ const undoChanges = () => {
           class="mr-2"
           text="Undo changes"
           @click="openDialog('undo')"
-        >
-        </ButtonSecondary>
+        />
 
         <ButtonPrimary :disabled="!editing" text="Save" @click="saveChanges" />
       </v-col>
@@ -315,17 +313,3 @@ const undoChanges = () => {
     />
   </v-container>
 </template>
-
-<style scoped>
-.darkened {
-  background: rgb(var(--v-theme-surface-light-gray));
-}
-
-.text-stack p {
-  margin: 0;
-}
-
-.tms-button-secondary:disabled {
-  background-color: rgb(var(--v-theme-secondary-disabled)) !important;
-}
-</style>

@@ -5,24 +5,29 @@ import 'vuetify/styles'
 
 // Define a custom Vuetify theme that uses the BC Government design tokens.
 const bcgovLight: ThemeDefinition = {
+  // Colours that use the design token. Keys with the "-custom" suffix are
+  // custom (non-Vuetify theme) colours.
   colors: {
-    // Set both the background and surface to the default white background from
-    // the design tokens. Vuetify uses 'background' for the app-level background
-    // and 'surface' for container-level elements like cards.
+    // Background is the white defined by the design system.
     background: tokens.bcdsSurfaceColorBackgroundWhite,
-    surface: tokens.bcdsSurfaceColorBackgroundWhite,
+    'on-background': tokens.bcdsTypographyColorPrimary,
+
+    // Surface are a choice from the design system: use light gray.
+    surface: tokens.bcdsSurfaceColorBackgroundLightGray,
     'on-surface': tokens.bcdsTypographyColorPrimary,
+    'surface-hover-custom': tokens.bcdsSurfaceColorSecondaryHover,
 
     // Colours for primary button.
-    primary: tokens.bcdsThemePrimaryBlue,
-    'primary-hover': tokens.bcdsSurfaceColorPrimaryButtonHover,
+    primary: tokens.bcdsSurfaceColorPrimaryDefault,
+    'primary-disabled-custom': tokens.bcdsSurfaceColorPrimaryDisabled,
+    'primary-hover-custom': tokens.bcdsSurfaceColorPrimaryButtonHover,
 
     // Colours for secondary button - note that these are overridden because the
     // BCGov design system conflicts with Vuetify's secondary button styles.
     secondary: tokens.bcdsSurfaceColorSecondaryDefault,
     'on-secondary': tokens.bcdsTypographyColorSecondary,
-    'secondary-disabled': tokens.bcdsSurfaceColorSecondaryButtonDisabled,
-    'secondary-hover': tokens.bcdsSurfaceColorSecondaryButtonHover,
+    'secondary-disabled-custom': tokens.bcdsSurfaceColorSecondaryButtonDisabled,
+    'secondary-hover-custom': tokens.bcdsSurfaceColorSecondaryButtonHover,
 
     // Colours for application notifications.
     error: tokens.bcdsSupportBorderColorDanger,
@@ -30,17 +35,18 @@ const bcgovLight: ThemeDefinition = {
     success: tokens.bcdsSupportBorderColorSuccess,
     warning: tokens.bcdsSupportBorderColorWarning,
 
-    // Custom colours.
-    'surface-input-disabled': tokens.bcdsSurfaceColorFormsDisabled,
-    'surface-light-blue': tokens.bcdsSurfaceColorBackgroundLightBlue,
-    'surface-light-gray': tokens.bcdsSurfaceColorBackgroundLightGray,
-    'surface-light-gray-hover': tokens.bcdsSurfaceColorSecondaryHover,
-    'typography-input-disabled': tokens.bcdsTypographyColorDisabled,
-    'typography-link-color': tokens.bcdsTypographyColorLink,
-    'typography-link-color-hover': tokens.bcdsSurfaceColorBorderActive,
+    // Other custom colour from the BCDS.
+    'surface-gold-10-custom': tokens.bcdsThemeGold10,
+    'surface-light-blue-custom': tokens.bcdsSurfaceColorBackgroundLightBlue,
+    'surface-input-disabled-custom': tokens.bcdsSurfaceColorFormsDisabled,
+    'typography-link-color-custom': tokens.bcdsTypographyColorLink,
   },
 
   dark: false,
+
+  variables: {
+    'high-emphasis-opacity': 1,
+  },
 }
 
 // Create a Vuetify instance with custom settings.

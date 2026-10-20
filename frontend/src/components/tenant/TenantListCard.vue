@@ -20,8 +20,8 @@ const { tenant } = defineProps<{
 
 <template>
   <router-link :to="`/tenants/${tenant.id}/services`" class="card-link">
-    <v-card class="card pb-4 pt-2" color="surface-light-gray">
-      <v-card-title class="card-title">
+    <v-card class="card pb-4 pt-2">
+      <v-card-title class="card-link-title">
         {{ tenant.name }}
       </v-card-title>
       <v-card-subtitle class="card-subtitle">

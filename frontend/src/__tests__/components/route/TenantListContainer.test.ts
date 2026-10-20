@@ -1,11 +1,18 @@
-import { flushPromises, mount } from '@vue/test-utils'
+import { render, screen, waitFor } from '@testing-library/vue'
+import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { makeTenant, makeUser } from '@/__tests__/__factories__'
+import {
+  makeSsoUser,
+  makeTenant,
+  makeTenantRequest,
+  makeUser,
+} from '@/__tests__/__factories__'
 import { createMockAuthStore } from '@/__tests__/__helpers__/useAuthStore.mock'
 import {
   mockTenantRequestStore,
   mockTenantRequestStoreCreateTenantRequest,
+  mockTenantRequestStoreFetchPendingTenantRequests,
   mockTenantRequestStoreError,
 } from '@/__tests__/__helpers__/useTenantRequestStore.mock'
 import {
@@ -15,23 +22,16 @@ import {
 } from '@/__tests__/__helpers__/useTenantStore.mock'
 
 import TenantListContainer from '@/components/route/TenantListContainer.vue'
-import { useNotification } from '@/composables/useNotification'
-import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
-import vuetify from '@/plugins/vuetify'
 import { DomainError } from '@/errors/domain/DomainError'
+import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
+import { toSsoUserId } from '@/models/ssouser.model'
+import vuetify from '@/plugins/vuetify'
 
 let currentAuthStore = createMockAuthStore()
 
 vi.mock('@/stores/useAuthStore', () => ({
   useAuthStore: () => currentAuthStore,
 }))
-
-beforeEach(() => {
-  currentAuthStore = createMockAuthStore()
-  mockTenantRequestStore()
-  mockTenantStore()
-  vi.clearAllMocks()
-})
 
 const mockError = vi.fn()
 const mockSuccess = vi.fn()
@@ -43,239 +43,217 @@ vi.mock('@/composables/useNotification', () => ({
   }),
 }))
 
-const buttonPrimaryStub = {
-  emits: ['click'],
-  name: 'ButtonPrimary',
-  template: `
-    <button @click="$emit('click')">
-      Request a Tenant
-    </button>
-  `,
-}
+beforeEach(() => {
+  currentAuthStore = createMockAuthStore()
+  mockTenantRequestStore()
+  mockTenantStore()
+  vi.clearAllMocks()
+})
 
-const tenantListStub = {
-  name: 'TenantList',
-  props: ['tenants'],
-  template: '<div/>',
+const requestDetails = {
+  description: 'description',
+  ministryName: 'ministryName',
+  name: 'name',
 }
 
 const tenantRequestDialogStub = {
+  data: () => ({ details: requestDetails }),
   emits: ['clear-duplicate-error', 'submit', 'update:modelValue'],
   name: 'TenantRequestDialog',
   props: ['isDuplicateName', 'modelValue'],
   template: `
-    <div>
-      <button @click="$emit('submit', {})">
-        submit
-      </button>
-      <button @click="$emit('update:modelValue', false)">
-        close
-      </button>
-      <button @click="$emit('clear-duplicate-error')">
-        clear
-      </button>
+    <div role="dialog" v-show="modelValue">
+      <p v-if="isDuplicateName">Duplicate name</p>
+      <button @click="$emit('clear-duplicate-error')">clear</button>
+      <button @click="$emit('submit', details)">submit</button>
+      <button @click="$emit('update:modelValue', false)">close</button>
     </div>
   `,
 }
 
-const mountComponent = () =>
-  mount(TenantListContainer, {
+const renderComponent = () => {
+  const user = userEvent.setup()
+
+  render(TenantListContainer, {
     global: {
       plugins: [vuetify],
       stubs: {
-        ButtonPrimary: buttonPrimaryStub,
         LoadingWrapper: { template: '<div><slot /></div>' },
         LoginContainer: { template: '<div><slot /></div>' },
-        TenantList: tenantListStub,
         TenantRequestDialog: tenantRequestDialogStub,
       },
     },
   })
 
-// --- Tests -------------------------------------------------------------------
+  return { user }
+}
 
 describe('TenantListContainer.vue', () => {
   describe('onMounted', () => {
     it('fetches tenants on mount', async () => {
-      const user = makeUser()
+      const user = makeUser({
+        ssoUser: makeSsoUser({
+          ssoUserId: toSsoUserId('user.ssoUser.ssoUserId'),
+        }),
+      })
       currentAuthStore = createMockAuthStore({ user })
 
-      mountComponent()
-      await flushPromises()
+      renderComponent()
 
-      expect(mockTenantStoreFetchTenants).toHaveBeenCalledWith(
-        user.ssoUser.ssoUserId,
+      await waitFor(() =>
+        expect(mockTenantStoreFetchTenants).toHaveBeenCalledWith(
+          'user.ssoUser.ssoUserId',
+        ),
+      )
+    })
+
+    it('fetches pending tenant requests on mount', async () => {
+      const user = makeUser({
+        ssoUser: makeSsoUser({
+          ssoUserId: toSsoUserId('user.ssoUser.ssoUserId'),
+        }),
+      })
+      currentAuthStore = createMockAuthStore({ user })
+
+      renderComponent()
+
+      await waitFor(() =>
+        expect(
+          mockTenantRequestStoreFetchPendingTenantRequests,
+        ).toHaveBeenCalledWith('user.ssoUser.ssoUserId'),
       )
     })
 
     it('shows an error notification if fetching tenants fails', async () => {
       mockTenantStoreFetchError(new Error('message'))
-      mountComponent()
-      await flushPromises()
 
-      expect(mockError).toHaveBeenCalledWith('Failed to load tenants')
+      renderComponent()
+
+      await waitFor(() =>
+        expect(mockError).toHaveBeenCalledWith('Failed to load tenants'),
+      )
     })
 
-    it('shows the tenant list when tenants exist', async () => {
-      mockTenantStore([makeTenant()])
-      const wrapper = mountComponent()
+    it('shows an error notification if fetching pending tenant requests fails', async () => {
+      mockTenantRequestStoreError(new Error('message'))
 
-      await flushPromises()
+      renderComponent()
 
-      expect(wrapper.findComponent({ name: 'TenantList' }).exists()).toBe(true)
+      await waitFor(() =>
+        expect(mockError).toHaveBeenCalledWith(
+          'Failed to load pending tenant requests',
+        ),
+      )
+    })
+
+    it('shows the tenant when tenants exist', async () => {
+      mockTenantStore([makeTenant({ name: 'tenantName' })])
+
+      renderComponent()
+
+      expect(await screen.findByText('tenantName')).toBeInTheDocument()
+    })
+
+    it('shows the pending tenant request when exists', async () => {
+      mockTenantRequestStore([makeTenantRequest({ name: 'tenantRequestName' })])
+
+      renderComponent()
+
+      expect(await screen.findByText('tenantRequestName')).toBeInTheDocument()
     })
   })
 
   describe('dialog', () => {
     it('opens the dialog when the button is clicked', async () => {
-      const wrapper = mountComponent()
+      const { user } = renderComponent()
 
-      await wrapper.findComponent({ name: 'ButtonPrimary' }).trigger('click')
-      await flushPromises()
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
 
-      expect(
-        wrapper
-          .findComponent({ name: 'TenantRequestDialog' })
-          .props('modelValue'),
-      ).toBe(true)
+      await user.click(screen.getByRole('button', { name: 'Request a tenant' }))
+
+      expect(screen.getByRole('dialog')).toBeVisible()
     })
 
-    it('closes the dialog when update:modelValue is emitted', async () => {
-      const wrapper = mountComponent()
+    it('closes the dialog when the dialog requests it', async () => {
+      const { user } = renderComponent()
 
-      await wrapper.findComponent({ name: 'ButtonPrimary' }).trigger('click')
-      await flushPromises()
+      await user.click(screen.getByRole('button', { name: 'Request a tenant' }))
 
-      expect(
-        wrapper
-          .findComponent({ name: 'TenantRequestDialog' })
-          .props('modelValue'),
-      ).toBe(true)
+      expect(screen.getByRole('dialog')).toBeVisible()
 
-      await wrapper
-        .findComponent({ name: 'TenantRequestDialog' })
-        .vm.$emit('update:modelValue', false)
-      await flushPromises()
+      await user.click(screen.getByRole('button', { name: 'close' }))
 
-      expect(
-        wrapper
-          .findComponent({ name: 'TenantRequestDialog' })
-          .props('modelValue'),
-      ).toBe(false)
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     })
 
     it('submits a tenant request and closes the dialog', async () => {
-      mockTenantRequestStore()
-      const user = makeUser()
-      currentAuthStore = createMockAuthStore({ user })
-      const notification = useNotification()
-      const wrapper = mountComponent()
-      const details = { name: 'New Tenant', description: '', ministryName: '' }
+      const testUser = makeUser()
+      currentAuthStore = createMockAuthStore({ user: testUser })
+      const { user } = renderComponent()
 
-      await wrapper
-        .findComponent({ name: 'TenantRequestDialog' })
-        .vm.$emit('submit', details)
-      await flushPromises()
+      await user.click(screen.getByRole('button', { name: 'Request a tenant' }))
+      await user.click(screen.getByRole('button', { name: 'submit' }))
 
-      expect(mockTenantRequestStoreCreateTenantRequest).toHaveBeenCalledWith(
-        details,
-        user,
+      await waitFor(() =>
+        expect(mockTenantRequestStoreCreateTenantRequest).toHaveBeenCalledWith(
+          requestDetails,
+          testUser,
+        ),
       )
-      expect(notification.success).toHaveBeenCalledWith(
-        'Tenant request submitted',
+      expect(mockSuccess).toHaveBeenCalledWith('Tenant request submitted')
+      await waitFor(() =>
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
       )
-      expect(
-        wrapper
-          .findComponent({ name: 'TenantRequestDialog' })
-          .props('modelValue'),
-      ).toBe(false)
     })
 
-    it('sets isDuplicateName when a DuplicateEntityError is thrown', async () => {
+    it('flags a duplicate name when a DuplicateEntityError is thrown', async () => {
       mockTenantRequestStoreError(new DuplicateEntityError('oops'))
-      const wrapper = mountComponent()
-      const details = {
-        description: 'description',
-        ministryName: 'ministryName',
-        name: 'name',
-      }
+      const { user } = renderComponent()
 
-      await wrapper
-        .findComponent({ name: 'TenantRequestDialog' })
-        .vm.$emit('submit', details)
-      await flushPromises()
+      await user.click(screen.getByRole('button', { name: 'Request a tenant' }))
+      await user.click(screen.getByRole('button', { name: 'submit' }))
 
-      expect(
-        wrapper
-          .findComponent({ name: 'TenantRequestDialog' })
-          .props('isDuplicateName'),
-      ).toBe(true)
+      expect(await screen.findByText('Duplicate name')).toBeInTheDocument()
     })
 
     it('clears the duplicate name error when requested by the dialog', async () => {
       mockTenantRequestStoreError(new DuplicateEntityError('oops'))
-      const wrapper = mountComponent()
-      const details = {
-        description: 'description',
-        ministryName: 'ministryName',
-        name: 'name',
-      }
+      const { user } = renderComponent()
 
-      await wrapper
-        .findComponent({ name: 'TenantRequestDialog' })
-        .vm.$emit('submit', details)
-      await flushPromises()
+      await user.click(screen.getByRole('button', { name: 'Request a tenant' }))
+      await user.click(screen.getByRole('button', { name: 'submit' }))
 
-      expect(
-        wrapper
-          .findComponent({ name: 'TenantRequestDialog' })
-          .props('isDuplicateName'),
-      ).toBe(true)
+      expect(await screen.findByText('Duplicate name')).toBeInTheDocument()
 
-      await wrapper
-        .findComponent({ name: 'TenantRequestDialog' })
-        .vm.$emit('clear-duplicate-error')
-      await flushPromises()
+      await user.click(screen.getByRole('button', { name: 'clear' }))
 
-      expect(
-        wrapper
-          .findComponent({ name: 'TenantRequestDialog' })
-          .props('isDuplicateName'),
-      ).toBe(false)
+      await waitFor(() =>
+        expect(screen.queryByText('Duplicate name')).not.toBeInTheDocument(),
+      )
     })
 
     it('shows an error notification on DomainError with userMessage', async () => {
       mockTenantRequestStoreError(new DomainError('message', 'userMessage'))
-      const wrapper = mountComponent()
-      const details = {
-        description: 'description',
-        ministryName: 'ministryName',
-        name: 'name',
-      }
+      const { user } = renderComponent()
 
-      await wrapper
-        .findComponent({ name: 'TenantRequestDialog' })
-        .vm.$emit('submit', details)
-      await flushPromises()
+      await user.click(screen.getByRole('button', { name: 'Request a tenant' }))
+      await user.click(screen.getByRole('button', { name: 'submit' }))
 
-      expect(mockError).toHaveBeenCalledWith('userMessage')
+      await waitFor(() => expect(mockError).toHaveBeenCalledWith('userMessage'))
     })
 
     it('shows an error notification on DomainError without userMessage', async () => {
       mockTenantRequestStoreError(new DomainError('message'))
-      const wrapper = mountComponent()
-      const details = {
-        description: 'description',
-        ministryName: 'ministryName',
-        name: 'name',
-      }
+      const { user } = renderComponent()
 
-      await wrapper
-        .findComponent({ name: 'TenantRequestDialog' })
-        .vm.$emit('submit', details)
-      await flushPromises()
+      await user.click(screen.getByRole('button', { name: 'Request a tenant' }))
+      await user.click(screen.getByRole('button', { name: 'submit' }))
 
-      expect(mockError).toHaveBeenCalledWith('Failed to create the new tenant')
+      await waitFor(() =>
+        expect(mockError).toHaveBeenCalledWith(
+          'Failed to create the new tenant',
+        ),
+      )
     })
   })
 })
