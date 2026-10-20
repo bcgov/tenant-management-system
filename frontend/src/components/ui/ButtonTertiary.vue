@@ -27,10 +27,10 @@ const emit = defineEmits<{
 
 <style scoped>
 .cstar-button-tertiary:disabled {
-  background-color: rgb(var(--v-theme-tertiary-disabled)) !important;
+  background-color: rgb(var(--v-theme-tertiary-disabled));
 }
 
 .cstar-button-tertiary:hover:not(:disabled) {
-  background-color: rgb(var(--v-theme-tertiary-hover)) !important;
+  background-color: rgb(var(--v-theme-tertiary-hover));
 }
 </style>

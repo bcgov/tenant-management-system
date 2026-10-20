@@ -110,7 +110,7 @@ defineExpose({ validate })
 </script>
 
 <template>
-  <v-card color="surface-light-gray">
+  <v-card>
     <v-card-title class="d-flex align-center justify-space-between">
       <span>
         {{ displayName }}

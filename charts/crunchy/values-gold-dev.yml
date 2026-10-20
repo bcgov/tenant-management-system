@@ -38,6 +38,7 @@ crunchy: # enable it for TEST and PROD, for PR based pipelines simply use single
     replicas: 3 # 2 or 3 for high availability in TEST and PROD.
     metadata:
       annotations:
+        opehshift.quckstart/forceupdate: 'true'
         prometheus.io/scrape: 'true'
         prometheus.io/port: '9187'
     dataVolumeClaimSpec:
