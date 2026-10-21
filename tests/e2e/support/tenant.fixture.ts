@@ -153,8 +153,25 @@ export const test = base.extend<TenantFixtures>({
       await page
         .getByLabel('Description of Tenant')
         .fill('Test Tenant Description')
-      await page.getByRole('button', { name: 'Create tenant request' }).click()
-      await page.getByRole('link', { name: /settings/i }).click()
+      const [createResponse] = await Promise.all([
+        page.waitForResponse(
+          (response) =>
+            response.request().method() === 'POST' &&
+            new URL(response.url()).pathname.endsWith('/tenant-requests'),
+          { timeout: 30_000 },
+        ),
+        page.getByRole('button', { name: 'Create tenant request' }).click(),
+      ])
+      expect(
+        createResponse.ok(),
+        `Create tenant request returned HTTP ${createResponse.status()}`,
+      ).toBeTruthy()
+      await expect(page.getByRole('dialog')).toBeHidden({ timeout: 15_000 })
+      await openAppPage(
+        page,
+        '/settings/requests',
+        page.getByRole('textbox', { name: 'Search', exact: true }),
+      )
       await page
         .getByRole('textbox', { name: 'Search', exact: true })
         .fill(tenantNameValue)
