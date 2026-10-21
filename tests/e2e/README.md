@@ -195,6 +195,19 @@ Then run the E2E tests:
 npm run test:e2e
 ```
 
+## Shared tenant for home and role/group tests
+
+`cstar_home.spec.ts` and `cstar_roles_groups.spec.ts` call
+`getOrCreateApprovedTenant` from `support/tenant.fixture.ts`. The first call
+submits and approves one request; later calls reuse that tenant. Its name is saved
+in `test-results/shared-tenant.json`, which Playwright clears before a new run.
+Each consuming test also records the tenant name as a report annotation.
+
+Keep `workers: 1` and `fullyParallel: false` when using this shared state. The
+home tests run before the role/group tests in the full suite. The role test
+restores the original roles after checking the update. The rejection spec creates
+its own request because it tests rejection rather than an approved tenant.
+
 ## Test Reports
 
 An HTML report is generated after each test run.
