@@ -144,9 +144,11 @@ export const test = base.extend<TenantFixtures>({
         .click()
       const options = page.locator('[role="listbox"] [role="option"]')
       await expect(options).toHaveCount(MINISTRIES.length)
-      for (const item of MINISTRIES) {
-        await expect(options.filter({ hasText: item })).toHaveCount(1)
-      }
+      await Promise.all(
+        MINISTRIES.map((item) =>
+          expect(options.filter({ hasText: item })).toHaveCount(1),
+        ),
+      )
       await options.filter({ hasText: 'Health' }).click()
       await page
         .getByLabel('Description of Tenant')
