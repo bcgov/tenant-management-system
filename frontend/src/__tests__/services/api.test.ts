@@ -2,8 +2,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { createMockAuthStore } from '@/__tests__/__helpers__/useAuthStore.mock'
 
+import { SessionExpiredError } from '@/errors/SessionExpiredError'
 import { ApiError, authenticatedFetch } from '@/services/api'
 import { config } from '@/services/config.service'
+import { logApiError } from '@/services/utils'
 
 let currentAuthStore = createMockAuthStore()
 
@@ -13,6 +15,10 @@ vi.mock('@/stores/useAuthStore', () => ({
 
 vi.mock('@/services/config.service', () => ({
   config: { api: { baseUrl: 'https://api.example.com' } },
+}))
+
+vi.mock('@/services/utils', () => ({
+  logApiError: vi.fn(),
 }))
 
 function mockFetchResponse(
@@ -391,5 +397,81 @@ describe('timeout', () => {
     vi.advanceTimersByTime(50)
 
     await expect(promise).resolves.toBeDefined()
+  })
+})
+
+describe('session expiry', () => {
+  it('throws SessionExpiredError without calling the API when the session is already expired', async () => {
+    currentAuthStore = createMockAuthStore({ isSessionExpired: true })
+    mockFetchResponse({ data: {} })
+
+    const promise = authenticatedFetch().get('/tenants/1')
+
+    // Swallowed, so it never settles. Wait for the log, then check.
+    await vi.waitFor(() => expect(logApiError).toHaveBeenCalled())
+
+    expect(fetch).not.toHaveBeenCalled()
+    expect(currentAuthStore.ensureFreshToken).not.toHaveBeenCalled()
+    expect(logApiError).toHaveBeenCalledWith(
+      'API request failed',
+      expect.any(SessionExpiredError),
+    )
+    void promise
+  })
+
+  it('does not call the API when the token refresh expires the session', async () => {
+    let expired = false
+    currentAuthStore = createMockAuthStore({
+      ensureFreshToken: vi.fn().mockImplementation(async () => {
+        expired = true
+      }),
+    })
+    Object.defineProperty(currentAuthStore, 'isSessionExpired', {
+      configurable: true,
+      get: () => expired,
+    })
+    mockFetchResponse({ data: {} })
+
+    const promise = authenticatedFetch().get('/tenants/1')
+
+    await vi.waitFor(() => expect(logApiError).toHaveBeenCalled())
+
+    expect(currentAuthStore.ensureFreshToken).toHaveBeenCalledOnce()
+    expect(fetch).not.toHaveBeenCalled()
+    expect(logApiError).toHaveBeenCalledWith(
+      'API request failed',
+      expect.any(SessionExpiredError),
+    )
+    void promise
+  })
+
+  it('returns a promise that never settles for a session expiry', async () => {
+    currentAuthStore = createMockAuthStore({ isSessionExpired: true })
+    mockFetchResponse({ data: {} })
+
+    let settled = false
+    authenticatedFetch()
+      .get('/tenants/1')
+      .then(
+        () => (settled = true),
+        () => (settled = true),
+      )
+
+    await vi.waitFor(() => expect(logApiError).toHaveBeenCalled())
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    expect(settled).toBe(false)
+  })
+
+  it('still sends the request when the session is valid after refresh', async () => {
+    currentAuthStore = createMockAuthStore({
+      getAccessToken: vi.fn().mockReturnValue('fresh-token'),
+    })
+    mockFetchResponse({ data: {} })
+
+    await authenticatedFetch().get('/tenants/1')
+
+    expect(fetch).toHaveBeenCalledOnce()
+    expect(logApiError).not.toHaveBeenCalled()
   })
 })
