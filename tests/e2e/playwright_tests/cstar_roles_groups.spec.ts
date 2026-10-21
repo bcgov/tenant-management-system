@@ -81,7 +81,7 @@ test.describe.serial('Landing page tests', () => {
     await expect(sharedPage.getByRole('dialog')).toBeHidden()
     await expect(tenantUserRow).toContainText(/User admin/i)
   })
-  test('Checks group creation && member addition', async () => {
+  test('Checks group creation && member addition && member removal', async () => {
     test.setTimeout(90_000)
     const page = sharedPage
     test.skip(
@@ -227,5 +227,44 @@ test.describe.serial('Landing page tests', () => {
     await expect(addedMemberRow).toBeVisible()
     await expect(addedMemberRow).toContainText('Nimya')
     await expect(addedMemberRow).toContainText('John')
+    // Remove the added member from this group.
+    const menuButton = addedMemberRow.getByRole('button', {
+      name: /^Open menu for Nimya John$/i,
+    })
+    await expect(menuButton).toBeEnabled()
+    await menuButton.click()
+    await page.getByText('Remove member', { exact: true }).click()
+    const removeDialog = page.getByRole('dialog')
+    await expect(
+      removeDialog.getByRole('heading', { name: 'Confirm remove member' }),
+    ).toBeVisible()
+    await expect(
+      removeDialog.getByRole('button', { name: 'Cancel', exact: true }),
+    ).toBeEnabled()
+    const removeButton = removeDialog.getByRole('button', {
+      name: 'Remove member',
+      exact: true,
+    })
+    await expect(removeButton).toBeEnabled()
+    const groupPath = new URL(page.url()).pathname.replace(/\/members$/, '')
+    const [removeResponse] = await Promise.all([
+      page.waitForResponse(
+        (response) =>
+          response.request().method() === 'DELETE' &&
+          new URL(response.url()).pathname.includes(`${groupPath}/users/`),
+        { timeout: 30_000 },
+      ),
+      removeButton.click(),
+    ])
+    expect(
+      removeResponse.ok(),
+      `Remove member returned HTTP ${removeResponse.status()}`,
+    ).toBeTruthy()
+    await expect(removeDialog).toBeHidden()
+    await expect(addedMemberRow).toHaveCount(0)
+    await expect(rows).toHaveCount(1)
+    await expect(rows.first()).toContainText('CHEFS')
+    await expect(rows.first()).toContainText('Testing')
+    await expect(rows.first()).toContainText('chefs.testing@gov.bc.ca')
   })
 })
