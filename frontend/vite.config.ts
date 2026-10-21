@@ -5,6 +5,9 @@ import vue from '@vitejs/plugin-vue'
 import vuetify from 'vite-plugin-vuetify'
 
 export default defineConfig({
+  optimizeDeps: {
+    exclude: ['vuetify'],
+  },
   plugins: [vue(), vuetify({ autoImport: true })],
   resolve: {
     alias: {
