@@ -189,6 +189,7 @@ jobs:
               --set-string backend.assertionKeyId=${{ vars.ASSERTION_KEY_ID }} \
               --set-string backend.assertionPublicKey="${{ vars.ASSERTION_PUBLIC_KEY }}" \
               --set-string backend.assertionPrivateKey="${{ secrets.ASSERTION_PRIVATE_KEY }}" \
+              --set-string backend.pocApiKey="${{ secrets.POC_API_KEY }}" \
               --set-string backend.tmsAudience=${{ vars.tms_audience }} \
               --set-string backend.bcgovSsoApiClientId=${{ secrets.bcgov_sso_api_client_id }} \
               --set-string backend.bcgovSsoApiClientSecret=${{ secrets.bcgov_sso_api_client_secret }} \
