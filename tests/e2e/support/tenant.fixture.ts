@@ -58,6 +58,27 @@ export async function openTenantUsersPage(page: Page): Promise<void> {
   )
 }
 
+export async function openTenantServicesPage(
+  page: Page,
+  tenantName: string,
+): Promise<void> {
+  await openTenantsPage(page)
+  const servicesPath = await page
+    .getByRole('link')
+    .filter({ has: page.getByText(tenantName, { exact: true }) })
+    .getAttribute('href')
+  expect(servicesPath).toMatch(/^\/tenants\/[^/]+\/services$/)
+  // The heading depends on the environment's services and the tenant's roles.
+  await openAppPage(
+    page,
+    servicesPath!,
+    page.getByRole('heading', {
+      name: /^(Connected services|Add your first connected service|No connected services have been added)$/,
+    }),
+  )
+  await expect(page).toHaveURL(/\/tenants\/[^/]+\/services$/)
+}
+
 export async function openAppPage(
   page: Page,
   path: string,
