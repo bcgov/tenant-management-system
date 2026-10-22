@@ -3,6 +3,7 @@ import {
   test,
   expect,
   openTenantsPage,
+  openTenantServicesPage,
   openTenantUsersPage,
   submitIdirSearch,
 } from '../support/tenant.fixture'
@@ -32,19 +33,7 @@ test.describe.serial('Landing page tests', () => {
       'This test requires the IDIR test account and data',
     )
     const approvedTenantName = await getOrCreateApprovedTenant(sharedPage)
-    await sharedPage
-      .getByRole('link', { name: 'All tenants', exact: true })
-      .click()
-    await sharedPage.getByRole('link', { name: approvedTenantName }).click()
-    await expect(sharedPage).toHaveURL(/\/tenants\/[^/]+\/services$/, {
-      timeout: 30_000,
-    })
-    await expect(
-      sharedPage.getByRole('heading', {
-        name: 'Connected services',
-        exact: true,
-      }),
-    ).toBeVisible()
+    await openTenantServicesPage(sharedPage, approvedTenantName)
     await openTenantUsersPage(sharedPage)
     await expect(sharedPage).toHaveURL(/\/tenants\/[^/]+\/users$/, {
       timeout: 30_000,
