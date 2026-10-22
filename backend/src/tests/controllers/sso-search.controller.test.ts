@@ -34,7 +34,7 @@ describe('SSOSearchController', () => {
       await controller.searchBCGOVSSOUsers(req, res)
 
       expect(res.status).toHaveBeenCalledWith(200)
-      expect(res.send).toHaveBeenCalledWith(results)
+      expect(res.json).toHaveBeenCalledWith(results)
     })
 
     it('maps BadRequestError to 400', async () => {
@@ -80,7 +80,7 @@ describe('SSOSearchController', () => {
       await controller.searchBCGOVSSOBceidUsers(req, res)
 
       expect(res.status).toHaveBeenCalledWith(200)
-      expect(res.send).toHaveBeenCalledWith(results)
+      expect(res.json).toHaveBeenCalledWith(results)
     })
 
     it('maps BadRequestError to 400', async () => {
