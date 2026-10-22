@@ -6,7 +6,7 @@ export class SSOSearchController {
   public async searchBCGOVSSOUsers(req: Request, res: Response) {
     try {
       const users = await ssoSearchService.searchBCGOVSSOUsers(req)
-      res.status(200).send(users)
+      res.status(200).json(users)
     } catch (error: unknown) {
       handleControllerError(res, error, 'Error occurred searching SSO users')
     }
@@ -15,7 +15,7 @@ export class SSOSearchController {
   public async searchBCGOVSSOBceidUsers(req: Request, res: Response) {
     try {
       const users = await ssoSearchService.searchBCGOVSSOBceidUsers(req)
-      res.status(200).send(users)
+      res.status(200).json(users)
     } catch (error: unknown) {
       handleControllerError(res, error, 'Error occurred searching BCEID users')
     }
