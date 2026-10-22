@@ -1,10 +1,20 @@
 import { Request } from 'express'
 import { URLSearchParams } from 'url'
-import axios from 'axios'
 import logger from '../common/logger'
 import { BadRequestError } from '../errors/BadRequestError'
 import { getErrorMessage } from '../common/error.handler'
+import { HttpError, requestJson } from '../common/http'
 import { config } from './config.service'
+
+const IDIR_USERS_PATH = /\/idir\/users\/?$/
+const AZURE_IDIR_USERS_PATH = '/azure-idir/users'
+const IDIR_API_NAME = 'BC GOV SSO API'
+const BCEID_API_NAME = 'BC GOV SSO BCEID API'
+
+const isQueryValue = (value: unknown): value is string | number | boolean =>
+  typeof value === 'string' ||
+  typeof value === 'number' ||
+  typeof value === 'boolean'
 
 export class SSOSearchService {
   private getIdirGuid(user: unknown): string | undefined {
@@ -250,104 +260,145 @@ export class SSOSearchService {
     )
   }
 
+  private withQuery(url: string, query: Record<string, unknown>) {
+    const params = new URLSearchParams()
+    for (const [key, value] of Object.entries(query)) {
+      for (const item of Array.isArray(value) ? value : [value]) {
+        if (isQueryValue(item)) {
+          params.append(key, `${item}`)
+        }
+      }
+    }
+    const search = params.toString()
+    return search ? `${url}?${search}` : url
+  }
+
+  private getUsers(url: string, token: string, query: Record<string, unknown>) {
+    return requestJson(this.withQuery(url, query), {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+  }
+
+  private toSearchError(error: unknown, apiName: string) {
+    if (error instanceof HttpError && error.status === 400) {
+      return new BadRequestError(
+        `${apiName} returned bad request: ${error.apiMessage ?? error.message}`,
+      )
+    }
+    return new Error(`Error invoking ${apiName}. ${getErrorMessage(error)}`)
+  }
+
   private async getToken() {
     try {
-      const response = await axios.post(
-        config.bcgovSsoApi.tokenUrl,
-        new URLSearchParams({
+      const body = await requestJson(config.bcgovSsoApi.tokenUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
           client_id: config.bcgovSsoApi.clientId,
           client_secret: config.bcgovSsoApi.clientSecret,
           grant_type: 'client_credentials',
         }),
-        { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } },
-      )
-      return response.data.access_token
+      })
+      return (body as { access_token: string }).access_token
     } catch (error: unknown) {
       throw new Error(
-        'Failed to obtain access token: ' + getErrorMessage(error),
+        `Failed to obtain access token: ${getErrorMessage(error)}`,
       )
     }
+  }
+
+  private getAzureIdirUrl(): string | undefined {
+    const idirUrl = config.bcgovSsoApi.url
+    if (!IDIR_USERS_PATH.test(idirUrl)) {
+      return undefined
+    }
+    return idirUrl.replace(IDIR_USERS_PATH, AZURE_IDIR_USERS_PATH)
+  }
+
+  private getSearchResultUsers(payload: unknown): unknown[] {
+    if (!payload || typeof payload !== 'object') {
+      return []
+    }
+    const data = (payload as { data?: unknown }).data
+    return Array.isArray(data) ? data : []
+  }
+
+  private async searchDirectory(
+    url: string,
+    token: string,
+    query: Request['query'],
+  ) {
+    try {
+      const payload = await this.getUsers(url, token, query)
+      return {
+        failed: false,
+        users: this.getSearchResultUsers(payload),
+        error: undefined as unknown,
+      }
+    } catch (error: unknown) {
+      return { failed: true, users: [] as unknown[], error }
+    }
+  }
+
+  private async searchIdirDirectories(token: string, query: Request['query']) {
+    const urls = [this.getAzureIdirUrl(), config.bcgovSsoApi.url].filter(
+      (url): url is string => Boolean(url),
+    )
+    const searches = urls.map((url) => this.searchDirectory(url, token, query))
+
+    const users: unknown[] = []
+    const errors: unknown[] = []
+    for (const search of searches) {
+      const result = await search
+      if (result.failed) {
+        errors.push(result.error)
+      } else {
+        users.push(...result.users)
+      }
+    }
+
+    if (errors.length === searches.length) {
+      throw errors.at(-1)
+    }
+    for (const error of errors) {
+      logger.warn('BC Gov SSO IDIR search failed for one directory', {
+        error: getErrorMessage(error),
+      })
+    }
+
+    return { data: users }
   }
 
   public async searchBCGOVSSOUsers(req: Request) {
     try {
       const token: string = await this.getToken()
-      const response = await axios.get(config.bcgovSsoApi.url, {
-        headers: { Authorization: `Bearer ${token}` },
-        params: req.query,
-      })
+      const payload = await this.searchIdirDirectories(token, req.query)
 
-      return this.dedupIdirSearchResults(response.data)
+      return this.dedupIdirSearchResults(payload)
     } catch (error: unknown) {
       logger.error('BC Gov SSO IDIR search failed', {
         error: getErrorMessage(error),
       })
-      if (
-        error &&
-        typeof error === 'object' &&
-        'response' in error &&
-        typeof (
-          error as {
-            response?: { status?: number; data?: { message?: string } }
-          }
-        ).response?.status === 'number'
-      ) {
-        const axiosError = error as {
-          response: { status: number; data?: { message?: string } }
-        }
-        if (axiosError.response.status === 400) {
-          throw new BadRequestError(
-            `BC GOV SSO API returned bad request: ${axiosError.response.data?.message || getErrorMessage(error)}`,
-          )
-        }
-      }
-      throw new Error(
-        'Error invoking BC GOV SSO API. ' + getErrorMessage(error),
-      )
+      throw this.toSearchError(error, IDIR_API_NAME)
     }
   }
 
   public async searchBCGOVSSOBceidUsers(req: Request) {
     try {
       const token: string = await this.getToken()
-      const params = {
+      const payload = await this.getUsers(config.bcgovSsoApi.urlBceid, token, {
         ...req.query,
         bceidType: 'business',
-      }
-      const response = await axios.get(config.bcgovSsoApi.urlBceid, {
-        headers: { Authorization: `Bearer ${token}` },
-        params,
       })
 
       return this.dedupBceidSearchResults(
-        this.filterBceidBusinessSearchResults(response.data),
+        this.filterBceidBusinessSearchResults(payload),
       )
     } catch (error: unknown) {
       logger.error('BC Gov SSO BCeID search failed', {
         error: getErrorMessage(error),
       })
-      if (
-        error &&
-        typeof error === 'object' &&
-        'response' in error &&
-        typeof (
-          error as {
-            response?: { status?: number; data?: { message?: string } }
-          }
-        ).response?.status === 'number'
-      ) {
-        const axiosError = error as {
-          response: { status: number; data?: { message?: string } }
-        }
-        if (axiosError.response.status === 400) {
-          throw new BadRequestError(
-            `BC GOV SSO BCEID API returned bad request: ${axiosError.response.data?.message || getErrorMessage(error)}`,
-          )
-        }
-      }
-      throw new Error(
-        'Error invoking BC GOV SSO BCEID API. ' + getErrorMessage(error),
-      )
+      throw this.toSearchError(error, BCEID_API_NAME)
     }
   }
 }

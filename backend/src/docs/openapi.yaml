@@ -708,9 +708,10 @@ paths:
       description: |
         Authentication: CSTAR audience token required.
 
-        Searches IDIR users through the BC Gov SSO API and returns the upstream response.
+        Searches IDIR and Azure IDIR users through the BC Gov SSO API.
         At least one search parameter must be provided. Duplicate records with the same
         `attributes.idir_user_guid[0]` are collapsed and the most complete record is retained.
+        If one search fails, results from the other are returned.
       security:
         - bearerAuth: []
       parameters:
