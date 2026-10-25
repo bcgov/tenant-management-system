@@ -72,7 +72,8 @@ env:
 jobs:
   vars:
     if: inputs.packages != ''
-    runs-on: ubuntu-24.04
+    runs-on:
+      group: Larger Runners - OpenShift Static-IP
     outputs:
       packages: ${{ steps.packages.outputs.packages }}
     steps:
@@ -92,7 +93,8 @@ jobs:
     name: Retags
     if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == inputs.merge_branch
     needs: vars
-    runs-on: ubuntu-24.04
+    runs-on:
+      group: Larger Runners - OpenShift Static-IP
     permissions:
       packages: write
     strategy:
@@ -112,7 +114,8 @@ jobs:
     name: OpenShift
     if: inputs.cleanup == 'helm' || inputs.cleanup == 'label'
     environment: ${{ inputs.environment }}
-    runs-on: ubuntu-24.04
+    runs-on:
+      group: Larger Runners - OpenShift Static-IP
     timeout-minutes: 10
     steps:
       - name: Helm Cleanup

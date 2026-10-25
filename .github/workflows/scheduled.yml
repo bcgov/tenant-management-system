@@ -17,7 +17,8 @@ jobs:
     env:
       # https://tecadmin.net/getting-yesterdays-date-in-bash/
       CUTOFF: '1 week ago'
-    runs-on: ubuntu-24.04
+    runs-on:
+      group: Larger Runners - OpenShift Static-IP
     timeout-minutes: 10
     steps:
       - name: Clean up Helm Releases
@@ -67,7 +68,8 @@ jobs:
     name: ZAP Scans
     permissions:
       issues: write
-    runs-on: ubuntu-24.04
+    runs-on:
+      group: Larger Runners - OpenShift Static-IP
     strategy:
       matrix:
         name: [backend, frontend]
