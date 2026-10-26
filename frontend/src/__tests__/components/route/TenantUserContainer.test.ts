@@ -28,11 +28,6 @@ vi.mock('@/composables/useNotification', () => ({
   useNotification: vi.fn(),
 }))
 
-const loginContainerStub = {
-  name: 'LoginContainer',
-  template: '<div><slot /></div>',
-}
-
 const loadingWrapperStub = {
   name: 'LoadingWrapper',
   props: ['loading', 'loadingMessage'],
@@ -49,7 +44,6 @@ const mountComponent = (tenantId = 'tenantId1') => {
       plugins: [vuetify],
       stubs: {
         LoadingWrapper: loadingWrapperStub,
-        LoginContainer: loginContainerStub,
         TenantUserManagement: true,
       },
     },
@@ -128,7 +122,6 @@ describe('TenantUserContainer', () => {
         global: {
           plugins: [vuetify],
           stubs: {
-            LoginContainer: loginContainerStub,
             TenantUserManagement: true,
           },
         },

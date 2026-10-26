@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 
-import LoginContainer from '@/components/auth/LoginContainer.vue'
 import TenantUserManagement from '@/components/tenant/TenantUserManagement.vue'
 import LoadingWrapper from '@/components/ui/LoadingWrapper.vue'
 import { useNotification } from '@/composables/useNotification'
@@ -174,24 +173,22 @@ init() // NOSONAR
 </script>
 
 <template>
-  <LoginContainer>
-    <LoadingWrapper
-      :loading="!initialized"
-      loading-message="Loading tenant users..."
-    >
-      <TenantUserManagement
-        :loading-search="isLoadingSearch"
-        :possible-roles="roles"
-        :search-results="searchResults"
-        :tenant="tenant"
-        @add="handleAddUser"
-        @cancel="searchResults = null"
-        @clear-search="handleClearSearch"
-        @remove-role="handleRemoveRole"
-        @remove-user="handleRemoveUser"
-        @roles-changed="handleRolesChanged"
-        @search="handleUserSearch"
-      />
-    </LoadingWrapper>
-  </LoginContainer>
+  <LoadingWrapper
+    :loading="!initialized"
+    loading-message="Loading tenant users..."
+  >
+    <TenantUserManagement
+      :loading-search="isLoadingSearch"
+      :possible-roles="roles"
+      :search-results="searchResults"
+      :tenant="tenant"
+      @add="handleAddUser"
+      @cancel="searchResults = null"
+      @clear-search="handleClearSearch"
+      @remove-role="handleRemoveRole"
+      @remove-user="handleRemoveUser"
+      @roles-changed="handleRolesChanged"
+      @search="handleUserSearch"
+    />
+  </LoadingWrapper>
 </template>

@@ -6,7 +6,7 @@ import App from '@/App.vue'
 import '@/assets/styles/global.css'
 import { useNotification } from '@/composables/useNotification'
 import vuetify from '@/plugins/vuetify'
-import router from '@/router'
+import { createAppRouter } from '@/router'
 import { ConfigError, loadConfig } from '@/services/config.service'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { logger } from '@/utils/logger'
@@ -17,7 +17,6 @@ export const initializeApp = async () => {
   const app = createApp(App)
 
   app.use(createPinia())
-  app.use(router)
   app.use(vuetify)
 
   app.config.errorHandler = (error) => {
@@ -32,6 +31,8 @@ export const initializeApp = async () => {
 
   const authStore = useAuthStore()
   await authStore.init()
+
+  app.use(createAppRouter())
 
   // User action causes a check of the JWT expiry, and a refresh when needed.
   globalThis.addEventListener('click', () => authStore.ensureFreshToken())

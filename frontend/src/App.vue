@@ -60,7 +60,6 @@ const user = computed(() => {
           </v-row>
         </div>
 
-        <!-- Router view for dynamic component rendering -->
         <router-view v-else :key="route.fullPath" />
       </v-container>
     </v-main>

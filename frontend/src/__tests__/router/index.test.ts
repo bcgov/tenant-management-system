@@ -1,8 +1,24 @@
 import { mount, VueWrapper } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { type ComponentPublicInstance } from 'vue'
+import { createMemoryHistory, type Router } from 'vue-router'
 
-import router from '@/router'
+import { createAppRouter } from '@/router'
+import { useAuthStore } from '@/stores/useAuthStore'
+import { isIdpIdir } from '@/utils/identityProvider'
+import {
+  currentUserIsBceid,
+  currentUserIsIdir,
+  currentUserIsOperationsAdmin,
+} from '@/utils/permissions'
+
+vi.mock('@/stores/useAuthStore', () => ({ useAuthStore: vi.fn() }))
+vi.mock('@/utils/identityProvider', () => ({ isIdpIdir: vi.fn() }))
+vi.mock('@/utils/permissions', () => ({
+  currentUserIsBceid: vi.fn(),
+  currentUserIsIdir: vi.fn(),
+  currentUserIsOperationsAdmin: vi.fn(),
+}))
 
 vi.mock('@/components/route/GroupHeaderContainer.vue', () => ({
   default: { template: `<div>GroupHeaderContainer<router-view /></div>` },
@@ -43,12 +59,41 @@ vi.mock('@/components/route/TenantUserContainer.vue', () => ({
 
 const TestApp = { template: '<router-view />' }
 
+interface TestUser {
+  admin?: boolean
+  authenticated: boolean
+  bceid?: boolean
+  idir?: boolean
+}
+
+const ANONYMOUS: TestUser = { authenticated: false }
+const IDIR_ADMIN: TestUser = { admin: true, authenticated: true, idir: true }
+
+const setUser = (user: TestUser) => {
+  vi.mocked(useAuthStore).mockReturnValue({
+    authenticatedUser: { ssoUser: { idpType: 'test-idp' } },
+    isAuthenticated: user.authenticated,
+  } as unknown as ReturnType<typeof useAuthStore>)
+
+  vi.mocked(isIdpIdir).mockReturnValue(!!user.idir)
+  vi.mocked(currentUserIsBceid).mockReturnValue(!!user.bceid)
+  vi.mocked(currentUserIsIdir).mockReturnValue(!!user.idir)
+  vi.mocked(currentUserIsOperationsAdmin).mockReturnValue(!!user.admin)
+}
+
+const createTestRouter = () => createAppRouter(createMemoryHistory())
+
 describe('Vue Router', () => {
   let wrapper: VueWrapper<ComponentPublicInstance>
+  let router: Router
 
   beforeEach(async () => {
+    vi.clearAllMocks()
+    setUser(IDIR_ADMIN)
+
+    router = createTestRouter()
     wrapper = mount(TestApp, { global: { plugins: [router] } })
-    await router.push('/')
+    await router.push('/tenants')
     await router.isReady()
   })
 
@@ -63,7 +108,12 @@ describe('Vue Router', () => {
     expect(wrapper.text()).toContain('LandingPageBceidContainer')
   })
 
-  it('loads landing page', async () => {
+  it('loads landing page for anonymous users', async () => {
+    setUser(ANONYMOUS)
+
+    await router.push('/')
+    await router.isReady()
+
     expect(router.currentRoute.value.path).toBe('/')
     expect(wrapper.text()).toContain('LandingPageContainer')
   })
@@ -85,66 +135,40 @@ describe('Vue Router', () => {
     },
   )
 
-  it('navigates to tenant with params', async () => {
-    await router.push('/tenants/123')
-    await router.isReady()
+  it.each([
+    ['/tenants/123', { tenantId: '123' }, 'TenantHeaderContainer'],
+    ['/tenants/123/groups', { tenantId: '123' }, 'GroupListContainer'],
+    [
+      '/tenants/123/groups/456',
+      { groupId: '456', tenantId: '123' },
+      'GroupHeaderContainer',
+    ],
+    [
+      '/tenants/123/groups/456/members',
+      { groupId: '456', tenantId: '123' },
+      'GroupMemberContainer',
+    ],
+    [
+      '/tenants/123/groups/456/roles',
+      { groupId: '456', tenantId: '123' },
+      'GroupRoleContainer',
+    ],
+    ['/tenants/123/services', { tenantId: '123' }, 'TenantServiceContainer'],
+    ['/tenants/123/users', { tenantId: '123' }, 'TenantUserContainer'],
+  ])(
+    'navigates to %s with params %o and renders %s',
+    async (path, params, component) => {
+      await router.push(path)
+      await router.isReady()
 
-    expect(router.currentRoute.value.params.tenantId).toBe('123')
-    expect(wrapper.text()).toContain('TenantHeaderContainer')
-  })
-
-  it('navigates to tenant groups', async () => {
-    await router.push('/tenants/123/groups')
-    await router.isReady()
-
-    expect(router.currentRoute.value.params.tenantId).toBe('123')
-    expect(wrapper.text()).toContain('GroupListContainer')
-  })
-
-  it('navigates to group', async () => {
-    await router.push('/tenants/123/groups/456')
-    await router.isReady()
-
-    expect(router.currentRoute.value.params.groupId).toBe('456')
-    expect(router.currentRoute.value.params.tenantId).toBe('123')
-    expect(wrapper.text()).toContain('GroupHeaderContainer')
-  })
-
-  it('navigates to group members', async () => {
-    await router.push('/tenants/123/groups/456/members')
-    await router.isReady()
-
-    expect(router.currentRoute.value.params.groupId).toBe('456')
-    expect(router.currentRoute.value.params.tenantId).toBe('123')
-    expect(wrapper.text()).toContain('GroupMemberContainer')
-  })
-
-  it('navigates to group roles', async () => {
-    await router.push('/tenants/123/groups/456/roles')
-    await router.isReady()
-
-    expect(router.currentRoute.value.params.groupId).toBe('456')
-    expect(router.currentRoute.value.params.tenantId).toBe('123')
-    expect(wrapper.text()).toContain('GroupRoleContainer')
-  })
-
-  it('navigates to tenant services', async () => {
-    await router.push('/tenants/123/services')
-    await router.isReady()
-
-    expect(router.currentRoute.value.params.tenantId).toBe('123')
-    expect(wrapper.text()).toContain('TenantServiceContainer')
-  })
-
-  it('navigates to tenant users', async () => {
-    await router.push('/tenants/123/users')
-    await router.isReady()
-
-    expect(router.currentRoute.value.params.tenantId).toBe('123')
-    expect(wrapper.text()).toContain('TenantUserContainer')
-  })
+      expect(router.currentRoute.value.params).toMatchObject(params)
+      expect(wrapper.text()).toContain(component)
+    },
+  )
 
   it('redirects unknown routes to home', async () => {
+    setUser(ANONYMOUS)
+
     await router.push('/this/does/not/exist')
     await router.isReady()
 
@@ -153,6 +177,8 @@ describe('Vue Router', () => {
 })
 
 describe('Route Configuration', () => {
+  const router = createTestRouter()
+
   it('has correct route definitions', () => {
     const paths = router.getRoutes().map((route) => route.path)
 
@@ -166,14 +192,45 @@ describe('Route Configuration', () => {
   })
 
   it('has props enabled for parameterized routes', () => {
-    const routes = router.getRoutes()
-    const tenantRoute = routes.find((r) => r.path === '/tenants/:tenantId')
-    const groupRoute = routes.find(
+    const routeList = router.getRoutes()
+    const tenantRoute = routeList.find((r) => r.path === '/tenants/:tenantId')
+    const groupRoute = routeList.find(
       (r) => r.path === '/tenants/:tenantId/groups/:groupId',
     )
 
-    // Vue Router transforms props: true into { default: true }
     expect(tenantRoute?.props).toEqual({ default: true })
     expect(groupRoute?.props).toEqual({ default: true })
+  })
+})
+
+describe('Router guard', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  const cases: [string, string, string, TestUser][] = [
+    ['anonymous', '/tenants', '/', ANONYMOUS],
+    ['anonymous', '/settings', '/', ANONYMOUS],
+    ['anonymous', '/bceid', '/bceid', ANONYMOUS],
+    ['bceid', '/tenants', '/bceid', { authenticated: true, bceid: true }],
+    ['bceid', '/', '/bceid', { authenticated: true, bceid: true }],
+    ['idir', '/', '/tenants', { authenticated: true, idir: true }],
+    ['idir', '/tenants', '/tenants', { authenticated: true, idir: true }],
+    [
+      'idir non-admin',
+      '/settings',
+      '/tenants',
+      { authenticated: true, idir: true },
+    ],
+    ['idir admin', '/settings', '/settings/requests', IDIR_ADMIN],
+  ]
+
+  it.each(cases)('%s visiting %s ends at %s', async (_name, from, to, user) => {
+    setUser(user)
+    const router = createTestRouter()
+
+    await router.push(from)
+
+    expect(router.currentRoute.value.path).toBe(to)
   })
 })

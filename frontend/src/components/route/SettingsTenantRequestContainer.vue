@@ -2,8 +2,6 @@
 import { mdiMagnify } from '@mdi/js'
 import { computed, ref, type Ref } from 'vue'
 
-import AdministratorContainer from '@/components/auth/AdministratorContainer.vue'
-import LoginContainer from '@/components/auth/LoginContainer.vue'
 import TenantRequestDisplay from '@/components/tenantrequest/TenantRequestDisplay.vue'
 import LoadingWrapper from '@/components/ui/LoadingWrapper.vue'
 import { useNotification } from '@/composables/useNotification'
@@ -142,138 +140,132 @@ init() // NOSONAR
 </script>
 
 <template>
-  <LoginContainer>
-    <AdministratorContainer>
-      <LoadingWrapper
-        :loading="!initialized"
-        loading-message="Loading tenant requests..."
-      >
-        <v-container>
-          <template v-if="selectedTenantRequest">
-            <TenantRequestDisplay
-              :is-duplicate-name="isDuplicateName"
-              :tenant-request="selectedTenantRequest"
-              @approved="(name) => handleApproved(selectedTenantRequest!, name)"
-              @cancel="handleCancel"
-              @clear-duplicate-error="isDuplicateName = false"
-              @rejected="
-                (notes) => handleRejected(selectedTenantRequest!, notes)
+  <LoadingWrapper
+    :loading="!initialized"
+    loading-message="Loading tenant requests..."
+  >
+    <v-container>
+      <template v-if="selectedTenantRequest">
+        <TenantRequestDisplay
+          :is-duplicate-name="isDuplicateName"
+          :tenant-request="selectedTenantRequest"
+          @approved="(name) => handleApproved(selectedTenantRequest!, name)"
+          @cancel="handleCancel"
+          @clear-duplicate-error="isDuplicateName = false"
+          @rejected="(notes) => handleRejected(selectedTenantRequest!, notes)"
+        />
+      </template>
+
+      <template v-else>
+        <v-row>
+          <v-col cols="12">
+            <h1 class="mb-6 mt-12">Tenant requests</h1>
+            <p class="mb-8">
+              Select a request to review details and approve or reject it.
+            </p>
+          </v-col>
+        </v-row>
+
+        <v-row>
+          <v-col cols="4">
+            <v-text-field
+              v-if="tenantRequests.length > 0"
+              v-model="search"
+              :append-inner-icon="mdiMagnify"
+              label="Search"
+              variant="outlined"
+              clearable
+              hide-details
+              single-line
+            ></v-text-field>
+          </v-col>
+        </v-row>
+
+        <v-row>
+          <v-col cols="12">
+            <v-data-table
+              :cell-props="getCellProps"
+              :header-props="{ class: 'bg-surface-light font-weight-bold' }"
+              :headers="[
+                {
+                  key: 'createdDate',
+                  title: 'Date of request',
+                },
+                {
+                  key: 'createdBy',
+                  sortable: false,
+                  title: 'Requested by',
+                },
+                {
+                  key: 'ministryName',
+                  title: 'Ministry / organization',
+                },
+                {
+                  key: 'name',
+                  sortable: false,
+                  title: 'Requested tenant name',
+                },
+                {
+                  align: 'end',
+                  key: 'status',
+                  title: 'Status',
+                },
+              ]"
+              :hide-default-footer="tenantRequests.length === 0"
+              :items="tenantRequests"
+              :row-props="
+                ({ item }) => ({
+                  tabindex: 0,
+                  onkeydown: (event: KeyboardEvent) => {
+                    if (event.key === 'Enter') {
+                      event.preventDefault()
+                      handleRowClick(event, { item })
+                    }
+                  },
+                })
               "
-            />
-          </template>
-
-          <template v-else>
-            <v-row>
-              <v-col cols="12">
-                <h1 class="mb-6 mt-12">Tenant requests</h1>
-                <p class="mb-8">
-                  Select a request to review details and approve or reject it.
-                </p>
-              </v-col>
-            </v-row>
-
-            <v-row>
-              <v-col cols="4">
-                <v-text-field
-                  v-if="tenantRequests.length > 0"
-                  v-model="search"
-                  :append-inner-icon="mdiMagnify"
-                  label="Search"
-                  variant="outlined"
-                  clearable
-                  hide-details
-                  single-line
-                ></v-text-field>
-              </v-col>
-            </v-row>
-
-            <v-row>
-              <v-col cols="12">
-                <v-data-table
-                  :cell-props="getCellProps"
-                  :header-props="{ class: 'bg-surface-light font-weight-bold' }"
-                  :headers="[
-                    {
-                      key: 'createdDate',
-                      title: 'Date of request',
-                    },
-                    {
-                      key: 'createdBy',
-                      sortable: false,
-                      title: 'Requested by',
-                    },
-                    {
-                      key: 'ministryName',
-                      title: 'Ministry / organization',
-                    },
-                    {
-                      key: 'name',
-                      sortable: false,
-                      title: 'Requested tenant name',
-                    },
-                    {
-                      align: 'end',
-                      key: 'status',
-                      title: 'Status',
-                    },
-                  ]"
-                  :hide-default-footer="tenantRequests.length === 0"
-                  :items="tenantRequests"
-                  :row-props="
-                    ({ item }) => ({
-                      tabindex: 0,
-                      onkeydown: (event: KeyboardEvent) => {
-                        if (event.key === 'Enter') {
-                          event.preventDefault()
-                          handleRowClick(event, { item })
-                        }
-                      },
-                    })
-                  "
-                  :search="search"
-                  :sort-by="[{ key: 'createdDate', order: 'desc' }]"
-                  item-value="id"
-                  striped="even"
-                  fixed-header
-                  hover
-                  @click:row="handleRowClick"
+              :search="search"
+              :sort-by="[{ key: 'createdDate', order: 'desc' }]"
+              item-value="id"
+              striped="even"
+              fixed-header
+              hover
+              @click:row="handleRowClick"
+            >
+              <template #no-data>
+                <v-sheet v-if="search">
+                  <h5 class="mb-2">No matching tenant requests</h5>
+                  <p class="mt-0">
+                    Change your search criteria to match tenant requests
+                  </p>
+                </v-sheet>
+                <v-sheet v-else>
+                  <h5 class="mb-2">No tenant requests yet</h5>
+                  <p class="mt-0">
+                    Tenant requests submitted by users will appear here
+                  </p>
+                </v-sheet>
+              </template>
+              <template #[`item.status`]="{ item }">
+                <div
+                  class="d-flex flex-wrap justify-end"
+                  style="gap: 8px; margin-block: 4px"
                 >
-                  <template #no-data>
-                    <v-sheet v-if="search">
-                      <h5 class="mb-2">No matching tenant requests</h5>
-                      <p class="mt-0">
-                        Change your search criteria to match tenant requests
-                      </p>
-                    </v-sheet>
-                    <v-sheet v-else>
-                      <h5 class="mb-2">No tenant requests yet</h5>
-                      <p class="mt-0">
-                        Tenant requests submitted by users will appear here
-                      </p>
-                    </v-sheet>
-                  </template>
-                  <template #[`item.status`]="{ item }">
-                    <div
-                      class="d-flex flex-wrap justify-end"
-                      style="gap: 8px; margin-block: 4px"
-                    >
-                      <v-chip
-                        :aria-label="`Status: ${item.status}`"
-                        :color="getStatusColor(item.status)"
-                        class="align-center d-inline-flex"
-                      >
-                        {{ item.status }}
-                      </v-chip>
-                    </div>
-                  </template>
-                </v-data-table>
-              </v-col>
-            </v-row>
-          </template>
-        </v-container>
-      </LoadingWrapper>
-    </AdministratorContainer>
-  </LoginContainer>
+                  <v-chip
+                    :aria-label="`Status: ${item.status}`"
+                    :color="getStatusColor(item.status)"
+                    class="align-center d-inline-flex"
+                  >
+                    {{ item.status }}
+                  </v-chip>
+                </div>
+              </template>
+            </v-data-table>
+          </v-col>
+        </v-row>
+      </template>
+    </v-container>
+  </LoadingWrapper>
 </template>
 
 <style lang="css" scoped>

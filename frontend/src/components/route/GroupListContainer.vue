@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 
-import LoginContainer from '@/components/auth/LoginContainer.vue'
 import GroupCreateDialog from '@/components/group/GroupCreateDialog.vue'
 import GroupList from '@/components/group/GroupList.vue'
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
@@ -128,49 +127,47 @@ const handleGroupCreate = async (
 </script>
 
 <template>
-  <LoginContainer>
-    <v-container class="ms-6">
-      <template v-if="groups.length > 0">
-        <h4>Groups</h4>
+  <v-container class="ms-6">
+    <template v-if="groups.length > 0">
+      <h4>Groups</h4>
 
-        <ButtonPrimary
-          v-if="isUserAdmin"
-          class="mb-12"
-          text="Create a group"
-          @click="dialogOpen"
-        />
+      <ButtonPrimary
+        v-if="isUserAdmin"
+        class="mb-12"
+        text="Create a group"
+        @click="dialogOpen"
+      />
 
-        <GroupList :groups="groups" :tenant="tenant" />
-      </template>
-      <v-container v-else class="fill-height">
-        <v-row class="center-align justify-center">
-          <v-col class="align-center d-flex flex-column" cols="auto">
-            <h1>No groups yet</h1>
-            <p class="p-large">
-              No groups have been created for this tenant yet.
-              <span v-if="isUserAdmin">
-                Create your first group to get started.
-              </span>
-            </p>
-
-            <p v-if="isUserAdmin">
-              <ButtonPrimary text="Create a group" @click="dialogOpen" />
-            </p>
-
-            <span class="mt-12 p-small">
-              Groups help you manage access for multiple users at once and keep
-              role assignments consistent.
+      <GroupList :groups="groups" :tenant="tenant" />
+    </template>
+    <v-container v-else class="fill-height">
+      <v-row class="center-align justify-center">
+        <v-col class="align-center d-flex flex-column" cols="auto">
+          <h1>No groups yet</h1>
+          <p class="p-large">
+            No groups have been created for this tenant yet.
+            <span v-if="isUserAdmin">
+              Create your first group to get started.
             </span>
-          </v-col>
-        </v-row>
-      </v-container>
-    </v-container>
+          </p>
 
-    <GroupCreateDialog
-      v-model="dialogVisible"
-      :is-duplicate-name="isDuplicateName"
-      @clear-duplicate-error="isDuplicateName = false"
-      @submit="handleGroupCreate"
-    />
-  </LoginContainer>
+          <p v-if="isUserAdmin">
+            <ButtonPrimary text="Create a group" @click="dialogOpen" />
+          </p>
+
+          <span class="mt-12 p-small">
+            Groups help you manage access for multiple users at once and keep
+            role assignments consistent.
+          </span>
+        </v-col>
+      </v-row>
+    </v-container>
+  </v-container>
+
+  <GroupCreateDialog
+    v-model="dialogVisible"
+    :is-duplicate-name="isDuplicateName"
+    @clear-duplicate-error="isDuplicateName = false"
+    @submit="handleGroupCreate"
+  />
 </template>
