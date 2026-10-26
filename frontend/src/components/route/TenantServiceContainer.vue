@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 
-import LoginContainer from '@/components/auth/LoginContainer.vue'
 import ServiceManagement from '@/components/service/ServiceManagement.vue'
 import LoadingWrapper from '@/components/ui/LoadingWrapper.vue'
 import { useNotification } from '@/composables/useNotification'
@@ -87,17 +86,15 @@ init() // NOSONAR
 </script>
 
 <template>
-  <LoginContainer>
-    <LoadingWrapper
-      :loading="!initialized"
-      loading-message="Loading connected services..."
-    >
-      <ServiceManagement
-        :services="services"
-        :tenant="tenant!"
-        :tenant-services="tenantServices"
-        @add-service="handleAddService"
-      />
-    </LoadingWrapper>
-  </LoginContainer>
+  <LoadingWrapper
+    :loading="!initialized"
+    loading-message="Loading connected services..."
+  >
+    <ServiceManagement
+      :services="services"
+      :tenant="tenant!"
+      :tenant-services="tenantServices"
+      @add-service="handleAddService"
+    />
+  </LoadingWrapper>
 </template>

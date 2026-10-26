@@ -49,7 +49,6 @@ const mountComponent = () =>
       plugins: [router],
       stubs: {
         LoadingWrapper: { template: '<div><slot /></div>' },
-        LoginContainer: { template: '<div><slot /></div>' },
         TenantHeader: true,
       },
     },

@@ -36,7 +36,6 @@ const mountComponent = (groupId = 'groupId1', tenantId = 'tenantId1') => {
       plugins: [vuetify],
       stubs: {
         GroupMemberManagement: true,
-        LoginContainer: { template: '<div><slot /></div>' },
       },
     },
     props: { groupId: toGroupId(groupId), tenantId: toTenantId(tenantId) },

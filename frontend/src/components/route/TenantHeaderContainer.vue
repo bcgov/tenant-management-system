@@ -2,7 +2,6 @@
 import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
 
-import LoginContainer from '@/components/auth/LoginContainer.vue'
 import TenantHeader from '@/components/tenant/TenantHeader.vue'
 import LoadingWrapper from '@/components/ui/LoadingWrapper.vue'
 import { useNotification } from '@/composables/useNotification'
@@ -59,14 +58,12 @@ init() // NOSONAR
 </script>
 
 <template>
-  <LoginContainer>
-    <LoadingWrapper :loading="!initialized" loading-message="Loading tenant...">
-      <TenantHeader
-        v-if="!route.params.groupId"
-        :groups="groups!"
-        :tenant="tenant!"
-      />
-      <router-view />
-    </LoadingWrapper>
-  </LoginContainer>
+  <LoadingWrapper :loading="!initialized" loading-message="Loading tenant...">
+    <TenantHeader
+      v-if="!route.params.groupId"
+      :groups="groups!"
+      :tenant="tenant!"
+    />
+    <router-view />
+  </LoadingWrapper>
 </template>
