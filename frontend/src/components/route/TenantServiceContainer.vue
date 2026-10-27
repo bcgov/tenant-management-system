@@ -90,11 +90,13 @@ init() // NOSONAR
     :loading="!initialized"
     loading-message="Loading connected services..."
   >
-    <ServiceManagement
-      :services="services"
-      :tenant="tenant!"
-      :tenant-services="tenantServices"
-      @add-service="handleAddService"
-    />
+    <v-container class="px-10">
+      <ServiceManagement
+        :services="services"
+        :tenant="tenant!"
+        :tenant-services="tenantServices"
+        @add-service="handleAddService"
+      />
+    </v-container>
   </LoadingWrapper>
 </template>

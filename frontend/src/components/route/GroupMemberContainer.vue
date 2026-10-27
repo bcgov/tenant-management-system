@@ -91,15 +91,17 @@ const handleMemberSearch = async (
 </script>
 
 <template>
-  <GroupMemberManagement
-    :group="group!"
-    :loading-search="isLoadingSearch"
-    :search-results="searchResults"
-    :tenant="tenant!"
-    @add="handleAddMember"
-    @cancel="searchResults = null"
-    @clear-search="handleClearSearch"
-    @delete="handleDeleteMember"
-    @search="handleMemberSearch"
-  />
+  <v-container class="px-10">
+    <GroupMemberManagement
+      :group="group!"
+      :loading-search="isLoadingSearch"
+      :search-results="searchResults"
+      :tenant="tenant!"
+      @add="handleAddMember"
+      @cancel="searchResults = null"
+      @clear-search="handleClearSearch"
+      @delete="handleDeleteMember"
+      @search="handleMemberSearch"
+    />
+  </v-container>
 </template>
