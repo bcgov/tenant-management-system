@@ -54,21 +54,35 @@ test.describe.serial('Landing page tests', () => {
     await menuButton.click()
     await sharedPage.getByText('Edit tenant roles', { exact: true }).click()
     //Remove user admin role
-    await expect(
-      sharedPage.getByLabel('User admin', { exact: true }),
-    ).toBeChecked()
-    await sharedPage.getByLabel('User admin', { exact: true }).uncheck()
+    const userAdminRole = sharedPage.getByRole('checkbox', {
+      name: 'User admin role',
+      exact: true,
+    })
+    await expect(userAdminRole).toBeChecked()
+    await userAdminRole.uncheck()
     await sharedPage.getByRole('button', { name: 'Save roles' }).click()
     await expect(sharedPage.getByRole('dialog')).toBeHidden()
     await expect(tenantUserRow).not.toContainText(/User admin/i)
+    const snackbarUserAdminRemoved = sharedPage
+      .getByRole('alert')
+      .filter({ hasText: /tenant roles updated/i })
+    await expect(snackbarUserAdminRemoved).toBeVisible()
+    await snackbarUserAdminRemoved.getByText(/tenant roles updated/i).click()
+    await expect(snackbarUserAdminRemoved).toBeHidden()
 
     // Restore the shared tenant's initial roles for other tests and reruns.
     await menuButton.click()
     await sharedPage.getByText('Edit tenant roles', { exact: true }).click()
-    await sharedPage.getByLabel('User admin', { exact: true }).check()
+    await userAdminRole.check()
     await sharedPage.getByRole('button', { name: 'Save roles' }).click()
     await expect(sharedPage.getByRole('dialog')).toBeHidden()
     await expect(tenantUserRow).toContainText(/User admin/i)
+    const snackbarUserAdminAdded = sharedPage
+      .getByRole('alert')
+      .filter({ hasText: /tenant roles updated/i })
+    await expect(snackbarUserAdminAdded).toBeVisible()
+    await snackbarUserAdminAdded.getByText(/tenant roles updated/i).click()
+    await expect(snackbarUserAdminAdded).toBeHidden()
   })
   test('Checks group creation && member addition && member removal', async () => {
     test.setTimeout(90_000)

@@ -400,12 +400,18 @@ export const makeUserApiData = (
   }
 }
 
-export const makeUserBceidBusiness = (): User => {
-  return makeUser({ ssoUser: makeSsoUser({ idpType: 'bceidbusiness' }) })
+export const makeUserBceidBusiness = (overrides: Partial<User> = {}): User => {
+  return makeUser({
+    ...overrides,
+    ssoUser: makeSsoUser({ idpType: 'bceidbusiness' }),
+  })
 }
 
-export const makeUserIdir = (): User => {
-  return makeUser({ ssoUser: makeSsoUser({ idpType: 'idir' }) })
+export const makeUserIdir = (overrides: Partial<User> = {}): User => {
+  return makeUser({
+    ...overrides,
+    ssoUser: makeSsoUser({ ...overrides.ssoUser, idpType: 'idir' }),
+  })
 }
 
 export const makeUserOperationsAdmin = (): User => {
