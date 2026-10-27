@@ -63,20 +63,20 @@ export async function openTenantServicesPage(
   tenantName: string,
 ): Promise<void> {
   await openTenantsPage(page)
-  const servicesPath = await page
+  const servicesLink = page
     .getByRole('link')
     .filter({ has: page.getByText(tenantName, { exact: true }) })
-    .getAttribute('href')
+  const servicesPath = await servicesLink.getAttribute('href')
   expect(servicesPath).toMatch(/^\/tenants\/[^/]+\/services$/)
+  // Follow the app's router links instead of reloading tenant deep URLs.
+  await servicesLink.click()
+  await expect(page).toHaveURL(new URL(servicesPath!, page.url()).href)
   // The heading depends on the environment's services and the tenant's roles.
-  await openAppPage(
-    page,
-    servicesPath!,
+  await expect(
     page.getByRole('heading', {
       name: /^(Connected services|Add your first connected service|No connected services have been added)$/,
     }),
-  )
-  await expect(page).toHaveURL(/\/tenants\/[^/]+\/services$/)
+  ).toBeVisible({ timeout: 15_000 })
 }
 
 export async function openAppPage(
