@@ -177,18 +177,20 @@ init() // NOSONAR
     :loading="!initialized"
     loading-message="Loading tenant users..."
   >
-    <TenantUserManagement
-      :loading-search="isLoadingSearch"
-      :possible-roles="roles"
-      :search-results="searchResults"
-      :tenant="tenant"
-      @add="handleAddUser"
-      @cancel="searchResults = null"
-      @clear-search="handleClearSearch"
-      @remove-role="handleRemoveRole"
-      @remove-user="handleRemoveUser"
-      @roles-changed="handleRolesChanged"
-      @search="handleUserSearch"
-    />
+    <v-container class="px-10">
+      <TenantUserManagement
+        :loading-search="isLoadingSearch"
+        :possible-roles="roles"
+        :search-results="searchResults"
+        :tenant="tenant"
+        @add="handleAddUser"
+        @cancel="searchResults = null"
+        @clear-search="handleClearSearch"
+        @remove-role="handleRemoveRole"
+        @remove-user="handleRemoveUser"
+        @roles-changed="handleRolesChanged"
+        @search="handleUserSearch"
+      />
+    </v-container>
   </LoadingWrapper>
 </template>

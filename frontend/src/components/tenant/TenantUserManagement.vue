@@ -158,127 +158,117 @@ const toggleSearch = () => {
 </script>
 
 <template>
-  <v-container class="ms-6">
-    <v-row>
-      <v-col cols="12">
-        <h4>Tenant users</h4>
-      </v-col>
-    </v-row>
+  <h1>Tenant users</h1>
 
-    <v-row>
-      <v-col cols="12">
-        <TenantUserTable
-          :roles="roles"
-          :tenant="tenant"
-          :users="tenant.users"
-          @remove-role="handleRemoveRole"
-          @remove-user="handleRemoveUser"
-          @roles-changed="handleRolesChanged"
-        />
-      </v-col>
-    </v-row>
+  <TenantUserTable
+    :roles="roles"
+    :tenant="tenant"
+    :users="tenant.users"
+    @remove-role="handleRemoveRole"
+    @remove-user="handleRemoveUser"
+    @roles-changed="handleRolesChanged"
+  />
 
-    <v-row v-if="isUserAdmin && !showSearch" class="mt-4">
-      <v-col class="d-flex justify-start" cols="12">
-        <ButtonPrimary
-          :prepend-icon="mdiPlus"
-          text="Add user to tenant"
-          @click="toggleSearch"
-        />
-      </v-col>
-    </v-row>
+  <v-row v-if="isUserAdmin && !showSearch">
+    <v-col class="d-flex justify-start mt-12" cols="12">
+      <ButtonPrimary
+        :prepend-icon="mdiPlus"
+        text="Add user to tenant"
+        @click="toggleSearch"
+      />
+    </v-col>
+  </v-row>
 
-    <v-expand-transition>
-      <div v-if="showSearch">
-        <v-divider class="my-12" />
+  <v-expand-transition>
+    <div v-if="showSearch">
+      <v-divider class="my-12" />
 
-        <h4 class="mb-4">Add a user to this tenant</h4>
+      <h4 class="mb-4">Add a user to this tenant</h4>
 
-        <p class="mb-2 mt-8">
-          1. Search for a user based on the selection criteria below:
-        </p>
+      <p class="mb-2 mt-8">
+        1. Search for a user based on the selection criteria below:
+      </p>
 
-        <UserSearch
-          :current-users="tenant.users"
-          :loading="loadingSearch"
-          :search-results="searchResults"
-          :tenant="tenant"
-          @clear-search="handleClearSearch"
-          @search="handleSearch"
-          @select="handleUserSelected"
-        />
+      <UserSearch
+        :current-users="tenant.users"
+        :loading="loadingSearch"
+        :search-results="searchResults"
+        :tenant="tenant"
+        @clear-search="handleClearSearch"
+        @search="handleSearch"
+        @select="handleUserSelected"
+      />
 
-        <v-row v-if="selectedUser" class="mt-4">
-          <v-col cols="12">
-            <p class="mb-2">2. Assign role(s) to this user:</p>
-          </v-col>
-          <v-col cols="6">
-            <p class="mb-2 text-body-medium">Available roles:</p>
-          </v-col>
-          <v-col cols="12">
+      <v-row v-if="selectedUser" class="mt-4">
+        <v-col cols="12">
+          <p class="mb-2">2. Assign role(s) to this user:</p>
+        </v-col>
+        <v-col cols="6">
+          <p class="mb-2 text-body-medium">Available roles:</p>
+        </v-col>
+        <v-col cols="12">
+          <v-checkbox
+            v-model="selectAllRoles"
+            class="d-sm-inline-block"
+            label="Select all"
+          />
+          <div
+            v-for="(role, index) in roles"
+            :key="`role-${index}`"
+            class="d-sm-inline-block"
+          >
             <v-checkbox
-              v-model="selectAllRoles"
-              class="d-sm-inline-block"
-              label="Select all"
-            />
-            <div
-              v-for="(role, index) in roles"
-              :key="`role-${index}`"
-              class="d-sm-inline-block"
-            >
-              <v-checkbox
-                v-if="selectedUser?.ssoUser?.idpType === 'idir' || index === 0"
-                v-model="selectedRoles"
-                :label="role.description"
-                :value="role"
-                class="d-sm-inline-block"
-              />
-            </div>
-          </v-col>
-        </v-row>
-
-        <v-row
-          v-if="
-            selectedUser &&
-            groupStore.groups.length &&
-            groupStore.groups.length > 0
-          "
-          class="mt-4"
-        >
-          <v-col cols="12">
-            <p class="mb-2">3. Assign group(s) to this user:</p>
-          </v-col>
-          <v-col cols="12">
-            <v-checkbox
-              v-model="selectAllGroups"
-              class="d-sm-inline-block"
-              label="Select all"
-            />
-            <v-checkbox
-              v-for="(group, index) in groupStore.groups"
-              :key="group.id"
-              v-model="addGroups[index]"
-              :label="group.name"
+              v-if="selectedUser?.ssoUser?.idpType === 'idir' || index === 0"
+              v-model="selectedRoles"
+              :label="role.description"
+              :value="role"
               class="d-sm-inline-block"
             />
-          </v-col>
-        </v-row>
+          </div>
+        </v-col>
+      </v-row>
 
-        <v-row class="mt-8">
-          <v-col class="d-flex justify-start" cols="12">
-            <ButtonSecondary class="me-4" text="Cancel" @click="handleCancel" />
+      <v-row
+        v-if="
+          selectedUser &&
+          groupStore.groups.length &&
+          groupStore.groups.length > 0
+        "
+        class="mt-4"
+      >
+        <v-col cols="12">
+          <p class="mb-2">3. Assign group(s) to this user:</p>
+        </v-col>
+        <v-col cols="12">
+          <v-checkbox
+            v-model="selectAllGroups"
+            class="d-sm-inline-block"
+            label="Select all"
+          />
+          <v-checkbox
+            v-for="(group, index) in groupStore.groups"
+            :key="group.id"
+            v-model="addGroups[index]"
+            :label="group.name"
+            class="d-sm-inline-block"
+          />
+        </v-col>
+      </v-row>
 
-            <ButtonPrimary
-              v-if="selectedUser"
-              :disabled="selectedRoles.length === 0"
-              text="Add user"
-              @click="handleAddUser"
-            />
-          </v-col>
-        </v-row>
-      </div>
-    </v-expand-transition>
+      <v-row class="mt-8">
+        <v-col class="d-flex justify-start" cols="12">
+          <ButtonSecondary class="me-4" text="Cancel" @click="handleCancel" />
 
-    <v-divider class="my-12" />
-  </v-container>
+          <ButtonPrimary
+            v-if="selectedUser"
+            :disabled="selectedRoles.length === 0"
+            text="Add user"
+            @click="handleAddUser"
+          />
+        </v-col>
+      </v-row>
+    </div>
+  </v-expand-transition>
+
+  <v-divider class="my-12" />
 </template>

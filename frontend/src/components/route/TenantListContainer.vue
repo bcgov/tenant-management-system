@@ -133,19 +133,19 @@ init() // NOSONAR
       </v-row>
     </v-container>
     <template v-else>
-      <v-row class="mb-12 mt-12">
+      <v-row class="mb-12">
         <v-col cols="12">
           <ButtonPrimary text="Request a tenant" @click="dialogOpen" />
         </v-col>
       </v-row>
 
       <template v-if="tenants.length > 0">
-        <h3>Your tenants</h3>
+        <h2>Your tenants</h2>
         <TenantList :tenants="tenants" />
       </template>
 
       <template v-if="pendingTenantRequests.length > 0">
-        <h3 class="mt-12">Pending tenant requests</h3>
+        <h2 class="mt-12">Pending tenant requests</h2>
         <TenantRequestList :tenant-requests="pendingTenantRequests" />
       </template>
     </template>

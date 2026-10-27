@@ -127,9 +127,9 @@ const handleGroupCreate = async (
 </script>
 
 <template>
-  <v-container class="ms-6">
+  <v-container class="px-10">
     <template v-if="groups.length > 0">
-      <h4>Groups</h4>
+      <h1>Groups</h1>
 
       <ButtonPrimary
         v-if="isUserAdmin"
