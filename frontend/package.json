@@ -28,7 +28,7 @@
   },
   "devDependencies": {
     "@testing-library/jest-dom": "6.9.1",
-    "@testing-library/user-event": "14.6.6",
+    "@testing-library/user-event": "14.6.8",
     "@testing-library/vue": "8.1.0",
     "@tsconfig/node24": "24.0.5",
     "@types/jsdom": "21.1.7",
