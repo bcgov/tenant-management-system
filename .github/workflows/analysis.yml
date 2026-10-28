@@ -18,7 +18,7 @@ permissions: {}
 jobs:
   backend-tests:
     name: Backend Tests
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 5
     services:
       postgres:
@@ -51,7 +51,7 @@ jobs:
 
   frontend-tests:
     name: Frontend Tests
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 5
     steps:
       - uses: bcgov/action-test-and-analyse@87f88c90526b8b05cea760492ff33db4ba6e271b # v1.6.0
@@ -73,7 +73,7 @@ jobs:
   sonar-analysis:
     name: SonarCloud Analysis
     needs: [backend-tests, frontend-tests]
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -126,7 +126,7 @@ jobs:
     continue-on-error: true
     permissions:
       security-events: write
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 1
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -149,7 +149,7 @@ jobs:
   results:
     name: Analysis Results
     needs: [backend-tests, frontend-tests, sonar-analysis, trivy]
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - if: contains(needs.*.result, 'failure')||contains(needs.*.result, 'canceled')
         run: echo "At least one job has failed." && exit 1
