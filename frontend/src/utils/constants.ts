@@ -125,7 +125,7 @@ export const ROLES = Object.freeze({
    * services.
    */
   SERVICE_USER: {
-    description: 'Accesses services via groups',
+    description: 'Access connected services',
     title: 'Service user',
     value: 'TMS.SERVICE_USER',
   },
@@ -135,7 +135,7 @@ export const ROLES = Object.freeze({
    * services, and roles.
    */
   TENANT_OWNER: {
-    description: 'Creates and manages tenants',
+    description: 'Full tenant administration',
     title: 'Tenant owner',
     value: 'TMS.TENANT_OWNER',
   },
@@ -144,7 +144,7 @@ export const ROLES = Object.freeze({
    * Administrative role for managing users within a tenant.
    */
   USER_ADMIN: {
-    description: 'Manages groups and users',
+    description: 'Manages users, groups, and roles',
     title: 'User admin',
     value: 'TMS.USER_ADMIN',
   },

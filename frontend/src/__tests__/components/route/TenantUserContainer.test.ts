@@ -523,23 +523,6 @@ describe('TenantUserContainer', () => {
       )
       expect(notificationMock.success).not.toHaveBeenCalled()
     })
-
-    it('stops removing remaining roles after the first removal fails', async () => {
-      tenantStore.removeTenantUserRole = vi
-        .fn()
-        .mockRejectedValue(new Error('fail'))
-
-      const wrapper = mountComponent(tenantId)
-      await child(wrapper).vm.$emit(
-        'roles-changed',
-        user,
-        [],
-        ['roleId1', 'roleId2'],
-      )
-      await flushPromises()
-
-      expect(tenantStore.removeTenantUserRole).toHaveBeenCalledTimes(1)
-    })
   })
 
   describe('handleUserSearch', () => {

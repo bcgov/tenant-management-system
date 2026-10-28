@@ -83,17 +83,17 @@ describe('ROLES', () => {
       value: 'TMS.OPERATIONS_ADMIN',
     })
     expect(ROLES.SERVICE_USER).toEqual({
-      description: 'Accesses services via groups',
+      description: 'Access connected services',
       title: 'Service user',
       value: 'TMS.SERVICE_USER',
     })
     expect(ROLES.TENANT_OWNER).toEqual({
-      description: 'Creates and manages tenants',
+      description: 'Full tenant administration',
       title: 'Tenant owner',
       value: 'TMS.TENANT_OWNER',
     })
     expect(ROLES.USER_ADMIN).toEqual({
-      description: 'Manages groups and users',
+      description: 'Manages users, groups, and roles',
       title: 'User admin',
       value: 'TMS.USER_ADMIN',
     })

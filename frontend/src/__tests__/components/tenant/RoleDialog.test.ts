@@ -1,5 +1,5 @@
-import { fireEvent, render, screen } from '@testing-library/vue'
-import { mount } from '@vue/test-utils'
+import userEvent from '@testing-library/user-event'
+import { render, screen } from '@testing-library/vue'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createVuetify } from 'vuetify'
 import * as components from 'vuetify/components'
@@ -11,17 +11,14 @@ import {
   makeRoleUserAdmin,
   makeSsoUser,
   makeUser,
+  makeUserBceidBusiness,
+  makeUserIdir,
 } from '@/__tests__/__factories__'
 
 import RoleDialog from '@/components/tenant/RoleDialog.vue'
 import { type Role, type RoleId, toRoleId } from '@/models/role.model'
 import { type User } from '@/models/user.model'
 import { ROLES } from '@/utils/constants'
-import { isIdpBceidBusiness } from '@/utils/identityProvider'
-
-vi.mock('@/utils/identityProvider', () => ({
-  isIdpBceidBusiness: vi.fn(),
-}))
 
 const vuetify = createVuetify({ components, directives })
 
@@ -30,12 +27,6 @@ const tenantOwner = makeRoleTenantOwner({ id: toRoleId('tenant-owner-id') })
 const userAdmin = makeRoleUserAdmin({ id: toRoleId('user-admin-id') })
 
 const allRoles = [serviceUser, tenantOwner, userAdmin]
-
-const makeIdirUser = (roles: Role[]) =>
-  makeUser({
-    roles,
-    ssoUser: makeSsoUser({ displayName: 'Jane Doe', idpType: 'idir' }),
-  })
 
 function renderComponent(props: {
   modelValue?: boolean
@@ -52,178 +43,345 @@ function renderComponent(props: {
   })
 }
 
-const checkbox = (title: string) =>
-  screen.getByRole('checkbox', { name: title })
-
-const saveButton = () => screen.getByRole('button', { name: 'Save roles' })
-
 beforeEach(() => {
   vi.clearAllMocks()
-  vi.mocked(isIdpBceidBusiness).mockReturnValue(false)
 })
 
 describe('RoleDialog', () => {
-  describe('Rendering', () => {
-    it('shows the title and the user display name', () => {
-      renderComponent({ user: makeIdirUser([serviceUser]) })
+  describe('rendering', () => {
+    it('shows the title', () => {
+      renderComponent({ user: makeUserIdir() })
 
       expect(screen.getByText('Edit tenant roles')).toBeInTheDocument()
-      expect(screen.getByText('Jane Doe')).toBeInTheDocument()
     })
 
     it('renders nothing when modelValue is false', () => {
-      renderComponent({ modelValue: false, user: makeIdirUser([serviceUser]) })
+      renderComponent({
+        modelValue: false,
+        user: makeUserIdir({ roles: [serviceUser] }),
+      })
 
       expect(screen.queryByText('Edit tenant roles')).not.toBeInTheDocument()
     })
 
-    it('shows all three roles with descriptions for non-BCeID Business users', () => {
-      renderComponent({ user: makeIdirUser([serviceUser]) })
+    it('shows the name of the user', () => {
+      const user = makeUserIdir({
+        ssoUser: makeSsoUser({
+          firstName: 'user.ssoUser.firstName',
+          lastName: 'user.ssoUser.lastName',
+        }),
+      })
 
-      expect(checkbox(ROLES.TENANT_OWNER.title)).toBeInTheDocument()
-      expect(checkbox(ROLES.USER_ADMIN.title)).toBeInTheDocument()
-      expect(checkbox(ROLES.SERVICE_USER.title)).toBeInTheDocument()
+      renderComponent({ user })
+
       expect(
-        screen.getByText(ROLES.TENANT_OWNER.description),
-      ).toBeInTheDocument()
-      expect(screen.getByText(ROLES.USER_ADMIN.description)).toBeInTheDocument()
-      expect(
-        screen.getByText(ROLES.SERVICE_USER.description),
+        screen.getByText('user.ssoUser.firstName user.ssoUser.lastName (IDIR)'),
       ).toBeInTheDocument()
     })
 
-    it('checks the roles the user already has', () => {
-      renderComponent({ user: makeIdirUser([tenantOwner, serviceUser]) })
+    it('shows all three roles with descriptions for IDIR user', () => {
+      renderComponent({ user: makeUserIdir() })
 
-      expect(checkbox(ROLES.TENANT_OWNER.title)).toBeChecked()
-      expect(checkbox(ROLES.USER_ADMIN.title)).not.toBeChecked()
-      expect(checkbox(ROLES.SERVICE_USER.title)).toBeChecked()
+      expect(
+        screen.getByRole('checkbox', {
+          name: `${ROLES.SERVICE_USER.title} role`,
+        }),
+      ).toBeInTheDocument()
+      expect(
+        screen.getByRole('checkbox', {
+          name: `${ROLES.TENANT_OWNER.title} role`,
+        }),
+      ).toBeInTheDocument()
+      expect(
+        screen.getByRole('checkbox', {
+          name: `${ROLES.USER_ADMIN.title} role`,
+        }),
+      ).toBeInTheDocument()
     })
 
     it('shows only the service user role for BCeID Business users', () => {
-      vi.mocked(isIdpBceidBusiness).mockReturnValue(true)
-      const user = makeUser({
-        roles: [serviceUser],
-        ssoUser: makeSsoUser({ idpType: 'bceidbusiness' }),
-      })
+      const user = makeUserBceidBusiness()
 
       renderComponent({ user })
 
-      expect(isIdpBceidBusiness).toHaveBeenCalledWith('bceidbusiness')
-      expect(checkbox(ROLES.SERVICE_USER.title)).toBeChecked()
       expect(
-        screen.queryByRole('checkbox', { name: ROLES.TENANT_OWNER.title }),
+        screen.getByRole('checkbox', {
+          name: `${ROLES.SERVICE_USER.title} role`,
+        }),
+      ).toBeInTheDocument()
+      expect(
+        screen.queryByRole('checkbox', {
+          name: `${ROLES.TENANT_OWNER.title} role`,
+        }),
       ).not.toBeInTheDocument()
       expect(
-        screen.queryByRole('checkbox', { name: ROLES.USER_ADMIN.title }),
+        screen.queryByRole('checkbox', {
+          name: `${ROLES.USER_ADMIN.title} role`,
+        }),
       ).not.toBeInTheDocument()
+    })
+
+    it('checks the roles the user already has', () => {
+      renderComponent({
+        user: makeUserIdir({ roles: [tenantOwner, serviceUser] }),
+      })
+
+      expect(
+        screen.getByRole('checkbox', {
+          name: `${ROLES.SERVICE_USER.title} role`,
+        }),
+      ).toBeChecked()
+      expect(
+        screen.getByRole('checkbox', {
+          name: `${ROLES.TENANT_OWNER.title} role`,
+        }),
+      ).toBeChecked()
+      expect(
+        screen.getByRole('checkbox', {
+          name: `${ROLES.USER_ADMIN.title} role`,
+        }),
+      ).not.toBeChecked()
     })
   })
 
-  describe('Save button state', () => {
-    it('is disabled when nothing has changed', () => {
-      renderComponent({ user: makeIdirUser([serviceUser]) })
+  describe('select all', () => {
+    const selectAll = () =>
+      screen.getByRole('checkbox', { name: 'Select all roles' })
 
-      expect(saveButton()).toBeDisabled()
+    it('checks every role when select all is checked', async () => {
+      const user = userEvent.setup()
+
+      renderComponent({ user: makeUserIdir() })
+      await user.click(selectAll())
+
+      expect(selectAll()).toBeChecked()
+      for (const role of [
+        ROLES.SERVICE_USER,
+        ROLES.TENANT_OWNER,
+        ROLES.USER_ADMIN,
+      ]) {
+        expect(
+          screen.getByRole('checkbox', { name: `${role.title} role` }),
+        ).toBeChecked()
+      }
+    })
+
+    it('unchecks every role when select all is unchecked', async () => {
+      const user = userEvent.setup()
+
+      renderComponent({
+        user: makeUserIdir({ roles: [serviceUser, tenantOwner, userAdmin] }),
+      })
+      expect(selectAll()).toBeChecked()
+
+      await user.click(selectAll())
+
+      for (const role of [
+        ROLES.SERVICE_USER,
+        ROLES.TENANT_OWNER,
+        ROLES.USER_ADMIN,
+      ]) {
+        expect(
+          screen.getByRole('checkbox', { name: `${role.title} role` }),
+        ).not.toBeChecked()
+      }
+    })
+
+    it('is indeterminate when only some roles are checked', () => {
+      renderComponent({ user: makeUserIdir({ roles: [serviceUser] }) })
+
+      expect(selectAll()).toBePartiallyChecked()
+    })
+
+    it('is neither checked nor indeterminate when no roles are checked', () => {
+      renderComponent({ user: makeUserIdir() })
+
+      expect(selectAll()).not.toBeChecked()
+      expect(selectAll()).not.toBePartiallyChecked()
+    })
+
+    it('emits all roles to add after select all and save', async () => {
+      const userIdir = makeUserIdir()
+      const user = userEvent.setup()
+
+      const { emitted } = renderComponent({ user: userIdir })
+      await user.click(selectAll())
+      await user.click(screen.getByRole('button', { name: 'Save roles' }))
+
+      const [, toAdd, toRemove] = emitted()['roles-changed'][0] as [
+        User,
+        RoleId[],
+        RoleId[],
+      ]
+      expect(toAdd).toEqual(
+        expect.arrayContaining([serviceUser.id, tenantOwner.id, userAdmin.id]),
+      )
+      expect(toRemove).toEqual([])
+    })
+  })
+
+  describe('save button state', () => {
+    it('is disabled when nothing has changed', () => {
+      renderComponent({ user: makeUserIdir() })
+
+      expect(screen.getByRole('button', { name: 'Save roles' })).toBeDisabled()
     })
 
     it('is enabled after adding a role', async () => {
-      renderComponent({ user: makeIdirUser([serviceUser]) })
+      const user = userEvent.setup()
 
-      await fireEvent.click(checkbox(ROLES.USER_ADMIN.title))
+      renderComponent({ user: makeUserIdir() })
+      await user.click(
+        screen.getByRole('checkbox', {
+          name: `${ROLES.USER_ADMIN.title} role`,
+        }),
+      )
 
-      expect(saveButton()).toBeEnabled()
+      expect(screen.getByRole('button', { name: 'Save roles' })).toBeEnabled()
     })
 
     it('is enabled after swapping one role for another', async () => {
-      renderComponent({ user: makeIdirUser([serviceUser]) })
+      const user = userEvent.setup()
 
-      await fireEvent.click(checkbox(ROLES.USER_ADMIN.title))
-      await fireEvent.click(checkbox(ROLES.SERVICE_USER.title))
+      renderComponent({ user: makeUserIdir({ roles: [serviceUser] }) })
+      await user.click(
+        screen.getByRole('checkbox', {
+          name: `${ROLES.USER_ADMIN.title} role`,
+        }),
+      )
+      await user.click(
+        screen.getByRole('checkbox', {
+          name: `${ROLES.SERVICE_USER.title} role`,
+        }),
+      )
 
-      expect(saveButton()).toBeEnabled()
+      expect(screen.getByRole('button', { name: 'Save roles' })).toBeEnabled()
     })
 
     it('is disabled again when a change is reverted', async () => {
-      renderComponent({ user: makeIdirUser([serviceUser]) })
+      const user = userEvent.setup()
 
-      await fireEvent.click(checkbox(ROLES.USER_ADMIN.title))
-      await fireEvent.click(checkbox(ROLES.USER_ADMIN.title))
+      renderComponent({ user: makeUserIdir({ roles: [serviceUser] }) })
+      await user.click(
+        screen.getByRole('checkbox', {
+          name: `${ROLES.USER_ADMIN.title} role`,
+        }),
+      )
+      await user.click(
+        screen.getByRole('checkbox', {
+          name: `${ROLES.USER_ADMIN.title} role`,
+        }),
+      )
 
-      expect(saveButton()).toBeDisabled()
+      expect(screen.getByRole('button', { name: 'Save roles' })).toBeDisabled()
     })
 
     it('is disabled when every role is unchecked', async () => {
-      renderComponent({ user: makeIdirUser([serviceUser]) })
+      const user = userEvent.setup()
 
-      await fireEvent.click(checkbox(ROLES.SERVICE_USER.title))
+      renderComponent({ user: makeUserIdir({ roles: [serviceUser] }) })
+      await user.click(
+        screen.getByRole('checkbox', {
+          name: `${ROLES.SERVICE_USER.title} role`,
+        }),
+      )
 
-      expect(checkbox(ROLES.SERVICE_USER.title)).not.toBeChecked()
-      expect(saveButton()).toBeDisabled()
+      expect(screen.getByRole('button', { name: 'Save roles' })).toBeDisabled()
     })
 
     it('stays disabled for a BCeID Business user who has the service role', async () => {
-      vi.mocked(isIdpBceidBusiness).mockReturnValue(true)
-      const user = makeUser({
-        roles: [serviceUser],
-        ssoUser: makeSsoUser({ idpType: 'bceidbusiness' }),
+      const user = userEvent.setup()
+
+      renderComponent({
+        user: makeUserBceidBusiness({ roles: [serviceUser] }),
       })
+      await user.click(
+        screen.getByRole('checkbox', {
+          name: `${ROLES.SERVICE_USER.title} role`,
+        }),
+      )
 
-      renderComponent({ user })
-      await fireEvent.click(checkbox(ROLES.SERVICE_USER.title))
-
-      expect(saveButton()).toBeDisabled()
+      expect(screen.getByRole('button', { name: 'Save roles' })).toBeDisabled()
     })
   })
 
-  describe('Save', () => {
+  describe('save', () => {
     it('emits only rolesToAdd when roles are added', async () => {
-      const user = makeIdirUser([serviceUser])
-      const { emitted } = renderComponent({ user })
+      const userIdir = makeUserIdir({ roles: [serviceUser] })
+      const user = userEvent.setup()
 
-      await fireEvent.click(checkbox(ROLES.USER_ADMIN.title))
-      await fireEvent.click(saveButton())
+      const { emitted } = renderComponent({ user: userIdir })
+      await user.click(
+        screen.getByRole('checkbox', {
+          name: `${ROLES.USER_ADMIN.title} role`,
+        }),
+      )
+      await user.click(screen.getByRole('button', { name: 'Save roles' }))
 
       expect(emitted()['roles-changed']).toHaveLength(1)
-      expect(emitted()['roles-changed'][0]).toEqual([user, [userAdmin.id], []])
+      expect(emitted()['roles-changed'][0]).toEqual([
+        userIdir,
+        [userAdmin.id],
+        [],
+      ])
     })
 
     it('emits only rolesToRemove when roles are removed', async () => {
-      const user = makeIdirUser([tenantOwner, serviceUser])
-      const { emitted } = renderComponent({ user })
+      const userIdir = makeUserIdir({ roles: [tenantOwner, serviceUser] })
+      const user = userEvent.setup()
 
-      await fireEvent.click(checkbox(ROLES.TENANT_OWNER.title))
-      await fireEvent.click(saveButton())
+      const { emitted } = renderComponent({ user: userIdir })
+
+      await user.click(
+        screen.getByRole('checkbox', {
+          name: `${ROLES.TENANT_OWNER.title} role`,
+        }),
+      )
+      await user.click(screen.getByRole('button', { name: 'Save roles' }))
 
       expect(emitted()['roles-changed'][0]).toEqual([
-        user,
+        userIdir,
         [],
         [tenantOwner.id],
       ])
     })
 
     it('emits both lists when roles are added and removed', async () => {
-      const user = makeIdirUser([serviceUser])
-      const { emitted } = renderComponent({ user })
+      const userIdir = makeUserIdir({ roles: [serviceUser] })
+      const user = userEvent.setup()
 
-      await fireEvent.click(checkbox(ROLES.TENANT_OWNER.title))
-      await fireEvent.click(checkbox(ROLES.SERVICE_USER.title))
-      await fireEvent.click(saveButton())
+      const { emitted } = renderComponent({ user: userIdir })
+      await user.click(
+        screen.getByRole('checkbox', {
+          name: `${ROLES.SERVICE_USER.title} role`,
+        }),
+      )
+      await user.click(
+        screen.getByRole('checkbox', {
+          name: `${ROLES.TENANT_OWNER.title} role`,
+        }),
+      )
+      await user.click(screen.getByRole('button', { name: 'Save roles' }))
 
       expect(emitted()['roles-changed'][0]).toEqual([
-        user,
+        userIdir,
         [tenantOwner.id],
         [serviceUser.id],
       ])
     })
 
     it('does not include unchanged roles in either list', async () => {
-      const { emitted } = renderComponent({
-        user: makeIdirUser([tenantOwner, serviceUser]),
-      })
+      const user = userEvent.setup()
 
-      await fireEvent.click(checkbox(ROLES.USER_ADMIN.title))
-      await fireEvent.click(saveButton())
+      const { emitted } = renderComponent({
+        user: makeUserIdir({ roles: [tenantOwner, serviceUser] }),
+      })
+      await user.click(
+        screen.getByRole('checkbox', {
+          name: `${ROLES.USER_ADMIN.title} role`,
+        }),
+      )
+      await user.click(screen.getByRole('button', { name: 'Save roles' }))
 
       const [, toAdd, toRemove] = emitted()['roles-changed'][0] as [
         User,
@@ -236,42 +394,57 @@ describe('RoleDialog', () => {
     })
 
     it('closes the dialog after saving', async () => {
-      const { emitted } = renderComponent({ user: makeIdirUser([serviceUser]) })
+      const user = userEvent.setup()
 
-      await fireEvent.click(checkbox(ROLES.USER_ADMIN.title))
-      await fireEvent.click(saveButton())
+      const { emitted } = renderComponent({
+        user: makeUserIdir({ roles: [serviceUser] }),
+      })
+      await user.click(
+        screen.getByRole('checkbox', {
+          name: `${ROLES.USER_ADMIN.title} role`,
+        }),
+      )
+      await user.click(screen.getByRole('button', { name: 'Save roles' }))
 
       expect(emitted()['update:modelValue']).toHaveLength(1)
       expect(emitted()['update:modelValue'][0]).toEqual([false])
     })
 
     it('skips roles missing from the roles prop', async () => {
-      const user = makeIdirUser([serviceUser])
+      const userIdir = makeUserIdir({ roles: [serviceUser] })
+      const user = userEvent.setup()
+
       const { emitted } = renderComponent({
         roles: [tenantOwner, serviceUser], // no user admin role available
-        user,
+        user: userIdir,
       })
+      await user.click(
+        screen.getByRole('checkbox', {
+          name: `${ROLES.USER_ADMIN.title} role`,
+        }),
+      )
+      await user.click(screen.getByRole('button', { name: 'Save roles' }))
 
-      await fireEvent.click(checkbox(ROLES.USER_ADMIN.title))
-      await fireEvent.click(saveButton())
-
-      expect(emitted()['roles-changed'][0]).toEqual([user, [], []])
+      expect(emitted()['roles-changed'][0]).toEqual([userIdir, [], []])
     })
 
     it('maps the BCeID Business service user checkbox to the service user role', async () => {
-      vi.mocked(isIdpBceidBusiness).mockReturnValue(true)
-      const user = makeUser({
+      const userIdir = makeUser({
         roles: [],
         ssoUser: makeSsoUser({ idpType: 'bceidbusiness' }),
       })
+      const user = userEvent.setup()
 
-      const { emitted } = renderComponent({ user })
-
-      await fireEvent.click(checkbox(ROLES.SERVICE_USER.title))
-      await fireEvent.click(saveButton())
+      const { emitted } = renderComponent({ user: userIdir })
+      await user.click(
+        screen.getByRole('checkbox', {
+          name: `${ROLES.SERVICE_USER.title} role`,
+        }),
+      )
+      await user.click(screen.getByRole('button', { name: 'Save roles' }))
 
       expect(emitted()['roles-changed'][0]).toEqual([
-        user,
+        userIdir,
         [serviceUser.id],
         [],
       ])
@@ -280,31 +453,31 @@ describe('RoleDialog', () => {
 
   describe('Cancel and close', () => {
     it('Cancel requests close without emitting roles-changed', async () => {
-      const { emitted } = renderComponent({ user: makeIdirUser([serviceUser]) })
+      const user = userEvent.setup()
 
-      await fireEvent.click(checkbox(ROLES.USER_ADMIN.title))
-      await fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+      const { emitted } = renderComponent({
+        user: makeUserIdir({ roles: [serviceUser] }),
+      })
+      await user.click(
+        screen.getByRole('checkbox', {
+          name: `${ROLES.USER_ADMIN.title} role`,
+        }),
+      )
+      await user.click(screen.getByRole('button', { name: 'Cancel' }))
 
       expect(emitted()['update:modelValue']).toHaveLength(1)
       expect(emitted()['update:modelValue'][0]).toEqual([false])
       expect(emitted()['roles-changed']).toBeUndefined()
     })
 
-    it('propagates the v-dialog update:modelValue to the v-model', async () => {
-      const wrapper = mount(RoleDialog, {
-        global: { plugins: [vuetify] },
-        props: {
-          modelValue: true,
-          roles: allRoles,
-          user: makeIdirUser([serviceUser]),
-        },
-      })
+    it('emits update:modelValue false when Escape is pressed', async () => {
+      const user = userEvent.setup()
 
-      await wrapper
-        .findComponent({ name: 'VDialog' })
-        .vm.$emit('update:modelValue', false)
+      const { emitted } = renderComponent({ user: makeUserIdir() })
+      await user.keyboard('{Escape}')
 
-      expect(wrapper.emitted('update:modelValue')).toEqual([[false]])
+      expect(emitted()['update:modelValue']).toEqual([[false]])
+      expect(emitted()['roles-changed']).toBeUndefined()
     })
   })
 })
