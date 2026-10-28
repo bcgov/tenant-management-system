@@ -55,7 +55,7 @@ services:
       retries: 5
       test: ['CMD-SHELL', 'pg_isready -U tms']
       timeout: 5s
-    image: postgres:17.7
+    image: postgres:17.10
     ports:
       - '7003:5432'
     volumes:
