@@ -18,7 +18,7 @@
     "format": "prettier --write src/"
   },
   "dependencies": {
-    "@bcgov/design-tokens": "4.0.0",
+    "@bcgov/design-tokens": "5.1.0",
     "@mdi/js": "7.4.47",
     "keycloak-js": "26.2.4",
     "pinia": "4.1.0",
