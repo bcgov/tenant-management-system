@@ -37,7 +37,7 @@ jobs:
         uses: bcgov/action-get-pr@bfa713a9ab410c0f0c13126c35983934fc80d15b # v0.1.1
       - name: PR Number
         id: pr
-        run: echo pr=${{ steps.pr_no.outputs.pr || inputs.pr}} >> $GITHUB_OUTPUT
+        run: echo "pr=${{ steps.pr_no.outputs.pr || inputs.tag }}" >> "$GITHUB_OUTPUT"
 
   deploys-gold-dev:
     name: Deploys Gold Dev - (${{ needs.vars.outputs.pr }})
