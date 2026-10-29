@@ -116,7 +116,7 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         name: Setup Node
         with:
-          node-version: 24
+          node-version-file: '.nvmrc'
           cache: 'npm'
           cache-dependency-path: tests/e2e/package-lock.json
       - name: Install dependencies
