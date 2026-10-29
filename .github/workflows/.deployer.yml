@@ -106,7 +106,7 @@ jobs:
       # Variables
       - if: inputs.tag  == ''
         id: pr
-        uses: bcgov/actions/image-tracker@091f1da89c669d36bf4899830381e5b12d2c889a # v0.11.0
+        uses: bcgov/action-get-pr@bfa713a9ab410c0f0c13126c35983934fc80d15b # v0.1.1
 
       - id: vars
         run: |

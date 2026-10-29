@@ -15,7 +15,7 @@ jobs:
     name: Validate PR
     permissions:
       pull-requests: write
-    uses: bcgov/actions/pr-validate@091f1da89c669d36bf4899830381e5b12d2c889a # v0.11.0
+    uses: bcgov/quickstart-openshift-helpers/.github/workflows/.pr-validate.yml@ca6579bdadf383a2513397081f963889b92823a4 # v1.1.0
     with:
       markdown_links: |
         - [Frontend](https://cstar-${{ github.event.number }}.apps.gold.devops.gov.bc.ca)
