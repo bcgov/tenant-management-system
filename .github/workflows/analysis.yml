@@ -33,15 +33,15 @@ jobs:
         ports:
           - 5432:5432
     steps:
-      - uses: bcgov/action-test-and-analyse@87f88c90526b8b05cea760492ff33db4ba6e271b # v1.6.0
+      - uses: bcgov/actions/test-and-analyse@091f1da89c669d36bf4899830381e5b12d2c889a # v0.11.0
         with:
           commands: |
             npm ci
             npm run lint
             npm run test:cov
-          dir: backend
-          node_version: '22'
+          node_version: '24'
           supply_scan: true
+          working_directory: backend
 
       - name: Upload backend coverage
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -54,15 +54,15 @@ jobs:
     runs-on: ubuntu-26.04
     timeout-minutes: 5
     steps:
-      - uses: bcgov/action-test-and-analyse@87f88c90526b8b05cea760492ff33db4ba6e271b # v1.6.0
+      - uses: bcgov/actions/test-and-analyse@091f1da89c669d36bf4899830381e5b12d2c889a # v0.11.0
         with:
           commands: |
             npm ci
             npm run lint
             npm run test:cov
-          dir: frontend
-          node_version: '22'
+          node_version: '24'
           supply_scan: true
+          working_directory: frontend
 
       - name: Upload frontend coverage
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
