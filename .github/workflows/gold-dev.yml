@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       dr_enabled:
-        description: 'Deploy to golddr'  # Disable for sandboxing as standy cannot be setup easily to mirror
+        description: 'Deploy to golddr' # Disable for sandboxing as standy cannot be setup easily to mirror
         required: false
         type: boolean
         default: true
@@ -23,10 +23,10 @@ on:
         type: string
         default: 'latest'
       db_user:
-        description: "database user; e.g. PR number or approxy"
+        description: 'database user; e.g. PR number or approxy'
         required: false
         type: string
-        default: "appproxy"
+        default: 'appproxy'
       params:
         description: Extra parameters to pass to helm upgrade
         required: false
@@ -34,7 +34,7 @@ on:
   workflow_call:
     inputs:
       dr_enabled:
-        description: 'Deploy to golddr'  # Disable for sandboxing as standy cannot be setup easily to mirror
+        description: 'Deploy to golddr' # Disable for sandboxing as standy cannot be setup easily to mirror
         required: false
         type: boolean
         default: true
@@ -53,14 +53,19 @@ on:
         type: string
         default: 'latest'
       db_user:
-        description: "database user; e.g. PR number or appproxy"
+        description: 'database user; e.g. PR number or appproxy'
         required: false
         type: string
-        default: "appproxy"
+        default: 'appproxy'
       params:
         description: Extra parameters to pass to helm upgrade
         required: false
         type: string
+    outputs:
+      triggered:
+        description: 'Has a deployment been triggered?'
+        value: ${{ jobs.deploy-gold-dev.outputs.triggered }}
+
 jobs:
   deploy-gold-dev:
     name: Deploys Dev (Gold)
@@ -71,7 +76,7 @@ jobs:
       environment: gold-dev
       db_user: ${{ inputs.db_user }} # appproxy is the user which works with pgbouncer.
       db_triggers: ('charts/crunchy/')
-      params: 
+      params: >-
         --set global.autoscaling=${{ inputs.autoscaling }}
         --set frontend.autoscaling.enabled=${{ inputs.autoscaling }}
         --set frontend.autoscaling.minReplicas=2
@@ -90,7 +95,7 @@ jobs:
       tag: ${{ inputs.tag }}
 
   deploy-golddr-dev:
-    if:  inputs.dr_enabled == true
+    if: inputs.dr_enabled == true
     name: Deploys Dev (Golddr)
     uses: ./.github/workflows/.deployer.yml
     secrets: inherit
@@ -99,7 +104,7 @@ jobs:
       environment: golddr-dev
       db_user: ${{ inputs.db_user }} # appproxy is the user which works with pgbouncer.
       db_triggers: ('charts/crunchy/')
-      params: 
+      params: >-
         --set global.autoscaling=${{ inputs.autoscaling }}
         --set frontend.autoscaling.enabled=${{ inputs.autoscaling }}
         --set frontend.autoscaling.minReplicas=2
