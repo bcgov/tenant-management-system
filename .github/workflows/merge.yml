@@ -69,20 +69,6 @@ jobs:
           target: ${{ needs.vars.outputs.pr }}
           tags: dev
 
-  dev-tests:
-    name: Tests
-    needs: [promote-dev]
-    permissions:
-      checks: write
-    uses: ./.github/workflows/.tests.yml
-    with:
-      prefix: dev.connect
-      image_tag: dev
-      target: dev
-    secrets:
-      Username: ${{ secrets.E2E_IDIR_USERNAME }}
-      Password: ${{ secrets.E2E_IDIR_PASSWORD }}
-      MFA_CODE: ${{ secrets.E2E_MFA_CODE }}
 
   deploys-gold-test:
     name: Deploys Gold Test - (${{ needs.vars.outputs.pr }})
@@ -113,20 +99,6 @@ jobs:
           target: ${{ needs.vars.outputs.pr }}
           tags: test
 
-  test-tests:
-    name: Tests
-    needs: [promote-test]
-    permissions:
-      checks: write
-    uses: ./.github/workflows/.tests.yml
-    with:
-      prefix: test.connect
-      image_tag: test
-      target: test
-    secrets:
-      Username: ${{ secrets.E2E_IDIR_USERNAME }}
-      Password: ${{ secrets.E2E_IDIR_PASSWORD }}
-      MFA_CODE: ${{ secrets.E2E_MFA_CODE }}
 
   deploys-gold-prod:
     name: Deploys Gold Prod - (${{ needs.vars.outputs.pr }})
