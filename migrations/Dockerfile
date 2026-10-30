@@ -1,4 +1,4 @@
-FROM flyway/flyway:10-alpine
+FROM flyway/flyway:12-alpine
 
 # Copy migrations to the expected Flyway location
 COPY ./sql /flyway/sql
