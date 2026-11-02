@@ -688,14 +688,18 @@ export class GroupRepository {
     manager?: EntityManager,
   ) {
     const em = manager ?? getManager()
-    const { tenantId, groupId, callingServiceId, ssoUserId, idpType } = input
+    const { tenantId, groupId, callingServiceId, ssoUserId } = input
+    const storedUser = await this.getSsoUser(ssoUserId, em)
+    const idpType = storedUser?.idpType ?? input.idpType
 
     const groupRoles = await em
       .createQueryBuilder(GroupSharedServiceRole, 'gssr')
       .innerJoinAndSelect('gssr.sharedServiceRole', 'ssr')
       .innerJoinAndSelect('ssr.sharedService', 'ss')
+      .innerJoin('gssr.group', 'group')
       .innerJoin(TenantSharedService, 'tss', 'tss.sharedService.id = ss.id')
-      .where('gssr.group.id = :groupId', { groupId })
+      .where('group.id = :groupId', { groupId })
+      .andWhere('group.tenant.id = :tenantId', { tenantId })
       .andWhere('gssr.isDeleted = :gssrDeleted', { gssrDeleted: false })
       .andWhere('ssr.isDeleted = :ssrDeleted', { ssrDeleted: false })
       .andWhere('ss.isActive = :ssActive', { ssActive: true })
@@ -722,7 +726,6 @@ export class GroupRepository {
       .innerJoin('tu.ssoUser', 'su')
       .select('ssr.id', 'roleId')
       .where('ssr.id IN (:...roleIds)', { roleIds })
-      .andWhere('group.id != :groupId', { groupId })
       .andWhere('tu.tenant.id = :tenantId', { tenantId })
       .andWhere('su.ssoUserId = :ssoUserId', { ssoUserId })
       .andWhere('gssr.isDeleted = :gssrDeleted', { gssrDeleted: false })

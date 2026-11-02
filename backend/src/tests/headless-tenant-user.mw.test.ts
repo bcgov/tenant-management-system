@@ -61,6 +61,15 @@ describe('prepareHeadlessTenantUser', () => {
     expect(next).toHaveBeenCalledWith()
   })
 
+  it('treats a missing body as empty so the validator can turn it away', async () => {
+    const req = { isHeadlessAccess: true } as unknown as Request
+
+    await prepareHeadlessTenantUser(req, res, next)
+
+    expect(req.body).toEqual({ roles: ['service-user-role'] })
+    expect(next).toHaveBeenCalledWith()
+  })
+
   it('accepts a request that asks for the Service User role', async () => {
     const req = headlessRequest({ user, roles: ['service-user-role'] })
 

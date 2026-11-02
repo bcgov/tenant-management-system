@@ -222,93 +222,131 @@ const createJwtMiddleware = () => {
   }).unless({ path: [RoutesConstants.HEALTH, RoutesConstants.JWKS] })
 }
 
+const tokenUserMatchesUrl = (req: Request) => {
+  const tokenUserId: string | undefined =
+    req.decodedJwt?.idir_user_guid || req.decodedJwt?.bceid_user_guid
+  return tokenUserId === req.params.ssoUserId
+}
+
+const refuseUserMismatch = (req: Request, res: Response) => {
+  logger.error('JWT user does not match requested user', {
+    reason: 'user_mismatch',
+    route: req.route?.path,
+  })
+
+  return res.status(403).json({
+    error: 'Forbidden',
+    message: 'Access denied - the requested user does not match the token user',
+    statusCode: 403,
+  })
+}
+
+const allowBceidBothUser = (
+  req: Request,
+  res: Response,
+  provider: string,
+): boolean => {
+  if (req.decodedJwt?.bceid_business_guid) {
+    req.idpType = 'bceidbusiness'
+    logger.debug('Identity provider resolved', { provider: 'bceidbusiness' })
+    return true
+  }
+
+  logger.error('Unsupported identity provider', {
+    reason: 'unsupported_identity_provider',
+    provider,
+  })
+  sendUnauthorized(res, 'Unsupported identity provider')
+  return false
+}
+
+const allowSharedServiceUser = (req: Request, res: Response): boolean => {
+  req.isSharedServiceAccess = true
+  const provider = getProvider(req.decodedJwt)
+
+  if (!provider) {
+    return true
+  }
+  if (provider === TMSConstants.BCEID_BOTH_PROVIDER) {
+    return allowBceidBothUser(req, res, provider)
+  }
+  if (provider === TMSConstants.BUSINESS_BCEID_PROVIDER) {
+    req.idpType = 'bceidbusiness'
+    return true
+  }
+  if (isIdirProvider(provider)) {
+    req.idpType = 'idir'
+    return true
+  }
+
+  logger.error('Invalid provider for shared service access', {
+    reason: 'unsupported_identity_provider',
+    provider,
+  })
+  sendUnauthorized(res, 'Unsupported identity provider')
+  return false
+}
+
+const isNonTmsTokenOnWebAppRoute = (req: Request, options: CheckJwtOptions) =>
+  !options.sharedServiceAccess &&
+  !options.headlessAccess &&
+  Boolean(req.decodedJwt) &&
+  !isTmsAudience(getAudience(req.decodedJwt))
+
+const isOtherUserInUrl = (req: Request, options: CheckJwtOptions) =>
+  Boolean(req.params.ssoUserId) &&
+  !options.skipSsoUserParamMatch &&
+  !tokenUserMatchesUrl(req)
+
+const handleVerifiedToken = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+  options: CheckJwtOptions,
+) => {
+  if (isNonTmsTokenOnWebAppRoute(req, options)) {
+    void runOrPassError(next, () => refuseNonTmsToken(req, res))
+    return
+  }
+
+  if (isOtherUserInUrl(req, options)) {
+    refuseUserMismatch(req, res)
+    return
+  }
+
+  if (options.headlessAccess) {
+    void runOrPassError(next, () => resolveHeadlessAccess(req, res, next))
+    return
+  }
+
+  const allowed = options.sharedServiceAccess
+    ? allowSharedServiceUser(req, res)
+    : !req.decodedJwt || allowTmsIdirUser(req, res)
+
+  if (allowed) {
+    next()
+  }
+}
+
 export const checkJwt = (options: CheckJwtOptions = {}) => {
   const middleware = createJwtMiddleware()
-  const isWebAppOnly = !options.sharedServiceAccess && !options.headlessAccess
 
   return (req: Request, res: Response, next: NextFunction) => {
-    middleware(req, res, async (err) => {
+    middleware(req, res, (err) => {
       if (err) {
         logJwtValidationError(
           'JWT validation failed',
           err as JwtValidationError,
         )
-
-        return sendUnauthorized(res, 'Error occurred during authentication')
-      }
-
-      if (
-        isWebAppOnly &&
-        req.decodedJwt &&
-        !isTmsAudience(getAudience(req.decodedJwt))
-      ) {
-        return runOrPassError(next, () => refuseNonTmsToken(req, res))
-      }
-
-      if (req.params.ssoUserId && !options.skipSsoUserParamMatch) {
-        const tokenUserId: string | undefined =
-          req.decodedJwt?.idir_user_guid || req.decodedJwt?.bceid_user_guid
-        const requestedUserId: string = req.params.ssoUserId as string
-
-        if (tokenUserId !== requestedUserId) {
-          logger.error('JWT user does not match requested user', {
-            reason: 'user_mismatch',
-            route: req.route?.path,
-          })
-
-          return res.status(403).json({
-            error: 'Forbidden',
-            message:
-              'Access denied - the requested user does not match the token user',
-            statusCode: 403,
-          })
-        }
-      }
-
-      if (options.headlessAccess) {
-        return runOrPassError(next, () => resolveHeadlessAccess(req, res, next))
-      }
-
-      if (options.sharedServiceAccess) {
-        req.isSharedServiceAccess = true
-
-        if (req.decodedJwt) {
-          const provider =
-            req.decodedJwt.idp || req.decodedJwt.identity_provider
-
-          if (provider === TMSConstants.BCEID_BOTH_PROVIDER) {
-            if (req.decodedJwt.bceid_business_guid) {
-              req.idpType = 'bceidbusiness'
-              logger.debug('Identity provider resolved', {
-                provider: 'bceidbusiness',
-              })
-            } else {
-              logger.error('Unsupported identity provider', {
-                reason: 'unsupported_identity_provider',
-                provider,
-              })
-              return sendUnauthorized(res, 'Unsupported identity provider')
-            }
-          } else if (provider === TMSConstants.BUSINESS_BCEID_PROVIDER) {
-            req.idpType = 'bceidbusiness'
-          } else if (
-            provider === TMSConstants.IDIR_PROVIDER ||
-            provider === TMSConstants.AZURE_IDIR_PROVIDER
-          ) {
-            req.idpType = 'idir'
-          } else if (provider) {
-            logger.error('Invalid provider for shared service access', {
-              reason: 'unsupported_identity_provider',
-              provider,
-            })
-            return sendUnauthorized(res, 'Unsupported identity provider')
-          }
-        }
-      } else if (req.decodedJwt && !allowTmsIdirUser(req, res)) {
+        sendUnauthorized(res, 'Error occurred during authentication')
         return
       }
 
-      next()
+      try {
+        handleVerifiedToken(req, res, next, options)
+      } catch (error: unknown) {
+        next(error)
+      }
     })
   }
 }

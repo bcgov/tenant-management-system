@@ -239,6 +239,24 @@ describe('GroupService', () => {
         expect(mockRepository.addGroupUser).toHaveBeenCalled()
       })
 
+      it('accepts the name shown in the message as confirmation', async () => {
+        mockRepository.getNewRolesFromOtherServices.mockResolvedValueOnce([
+          {
+            id: 'r-4',
+            name: 'Submitter',
+            sharedService: {
+              id: 'ss-chf',
+              name: 'chf',
+              displayName: 'Common Hosted Forms',
+            },
+          },
+        ] as never)
+
+        await service.addGroupUser(headlessRequest(['common hostedforms']))
+
+        expect(mockRepository.addGroupUser).toHaveBeenCalled()
+      })
+
       it('refuses when only some of the other services are confirmed', async () => {
         mockRepository.getNewRolesFromOtherServices.mockResolvedValueOnce([
           { id: 'r-1', name: 'Admin', sharedService: notify },

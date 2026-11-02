@@ -43,6 +43,87 @@ interface CheckTenantAccessOptions {
   tenantIdFromQuery?: boolean
 }
 
+const getTenantId = (req: Request, options: CheckTenantAccessOptions) =>
+  (options.tenantIdFromQuery
+    ? req.query.tenantId
+    : req.params.tenantId) as string
+
+const ensureCallingServiceLinked = async (req: Request, tenantId: string) => {
+  if (req.isHeadlessAccess && req.headlessService) {
+    if (!tenantId) {
+      throw new ForbiddenError('Missing tenant ID or user ID')
+    }
+    await ensureTenantUsesService(
+      tenantId,
+      req.headlessService.clientIdentifier,
+      serviceNotUsedByTenantMessage(req.headlessService.displayName),
+    )
+    return
+  }
+
+  if (!req.isSharedServiceAccess) {
+    return
+  }
+
+  const clientIdentifier = req.decodedJwt?.aud
+  if (!tenantId || !clientIdentifier) {
+    throw new ForbiddenError('Missing tenant ID or client identifier')
+  }
+  if (clientIdentifier !== config.oidc.tmsAudience) {
+    await ensureTenantUsesService(
+      tenantId,
+      clientIdentifier,
+      'Shared service not authorized for this tenant',
+    )
+  }
+}
+
+const ensureUserHasRoles = async (
+  req: Request,
+  tenantId: string,
+  requiredRoles?: string[],
+) => {
+  const ssoUserId =
+    req.decodedJwt?.idir_user_guid || req.decodedJwt?.bceid_user_guid
+  if (!tenantId || !ssoUserId) {
+    throw new ForbiddenError('Missing tenant ID or user ID')
+  }
+
+  const hasAccess: boolean = await tenantRepository.checkUserTenantAccess(
+    tenantId,
+    ssoUserId,
+    requiredRoles,
+  )
+  if (!hasAccess) {
+    throw new ForbiddenError(
+      req.isHeadlessAccess
+        ? requiredRolesMessage(requiredRoles)
+        : `Access denied: User does not have required roles for tenant: ${tenantId}`,
+    )
+  }
+}
+
+const handleAccessError = (
+  error: unknown,
+  res: Response,
+  next: NextFunction,
+) => {
+  logger.error('Tenant access check failed:', {
+    error: getErrorMessage(error),
+  })
+  if (error instanceof ForbiddenError) {
+    sendErrorResponse(
+      res,
+      'Authorization Failure',
+      error.message,
+      error.statusCode,
+      'Forbidden',
+    )
+    return
+  }
+  next(error)
+}
+
 export const checkTenantAccess = (
   requiredRoles?: string[],
   options: CheckTenantAccessOptions = {},
@@ -52,10 +133,7 @@ export const checkTenantAccess = (
       return next()
     }
 
-    const tenantId = (
-      options.tenantIdFromQuery ? req.query.tenantId : req.params.tenantId
-    ) as string
-
+    const tenantId = getTenantId(req, options)
     if (options.tenantIdFromQuery && !tenantId) {
       return sendErrorResponse(
         res,
@@ -67,65 +145,11 @@ export const checkTenantAccess = (
     }
 
     try {
-      if (req.isHeadlessAccess && req.headlessService) {
-        if (!tenantId) {
-          throw new ForbiddenError('Missing tenant ID or user ID')
-        }
-        await ensureTenantUsesService(
-          tenantId,
-          req.headlessService.clientIdentifier,
-          serviceNotUsedByTenantMessage(req.headlessService.displayName),
-        )
-      } else if (req.isSharedServiceAccess) {
-        const clientIdentifier = req.decodedJwt?.aud
-        if (!tenantId || !clientIdentifier) {
-          throw new ForbiddenError('Missing tenant ID or client identifier')
-        }
-
-        if (clientIdentifier !== config.oidc.tmsAudience) {
-          await ensureTenantUsesService(
-            tenantId,
-            clientIdentifier,
-            'Shared service not authorized for this tenant',
-          )
-        }
-      }
-
-      const ssoUserId =
-        req.decodedJwt?.idir_user_guid || req.decodedJwt?.bceid_user_guid
-      if (!tenantId || !ssoUserId) {
-        throw new ForbiddenError('Missing tenant ID or user ID')
-      }
-
-      const hasAccess: boolean = await tenantRepository.checkUserTenantAccess(
-        tenantId,
-        ssoUserId,
-        requiredRoles,
-      )
-      if (!hasAccess) {
-        throw new ForbiddenError(
-          req.isHeadlessAccess
-            ? requiredRolesMessage(requiredRoles)
-            : `Access denied: User does not have required roles for tenant: ${tenantId}`,
-        )
-      }
-
+      await ensureCallingServiceLinked(req, tenantId)
+      await ensureUserHasRoles(req, tenantId, requiredRoles)
       next()
     } catch (error: unknown) {
-      logger.error('Tenant access check failed:', {
-        error: getErrorMessage(error),
-      })
-      if (error instanceof ForbiddenError) {
-        sendErrorResponse(
-          res,
-          'Authorization Failure',
-          error.message,
-          error.statusCode,
-          'Forbidden',
-        )
-      } else {
-        next(error)
-      }
+      handleAccessError(error, res, next)
     }
   }
 }

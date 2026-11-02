@@ -422,6 +422,9 @@ describe('GroupRepository', () => {
       await expect(
         repo.getNewRolesFromOtherServices(input, asManager(manager)),
       ).resolves.toEqual([])
+      expect(qb.andWhere).toHaveBeenCalledWith('group.tenant.id = :tenantId', {
+        tenantId: 'tenant-1',
+      })
       expect(qb.andWhere).toHaveBeenCalledWith('ss.id != :callingServiceId', {
         callingServiceId: 'ss-chefs',
       })
@@ -432,7 +435,21 @@ describe('GroupRepository', () => {
       expect(manager.createQueryBuilder).toHaveBeenCalledTimes(1)
     })
 
-    it('leaves out roles the person already has from other groups', async () => {
+    it('uses the identity type saved for someone already in CSTAR', async () => {
+      manager.findOne.mockResolvedValueOnce({ idpType: 'bceidbusiness' })
+      const qb = createQueryBuilder({ getMany: [] })
+      manager.createQueryBuilder.mockReturnValueOnce(qb)
+
+      await repo.getNewRolesFromOtherServices(input, asManager(manager))
+
+      expect(qb.andWhere).toHaveBeenCalledWith(
+        '(ssr.allowedIdentityProviders IS NULL OR :idpType = ANY(ssr.allowedIdentityProviders))',
+        { idpType: 'bceidbusiness' },
+      )
+    })
+
+    it('leaves out roles the person already has from any group, including this one', async () => {
+      const heldQb = createQueryBuilder({ getRawMany: [{ roleId: 'r-admin' }] })
       manager.createQueryBuilder
         .mockReturnValueOnce(
           createQueryBuilder({
@@ -442,13 +459,15 @@ describe('GroupRepository', () => {
             ],
           }),
         )
-        .mockReturnValueOnce(
-          createQueryBuilder({ getRawMany: [{ roleId: 'r-admin' }] }),
-        )
+        .mockReturnValueOnce(heldQb)
 
       await expect(
         repo.getNewRolesFromOtherServices(input, asManager(manager)),
       ).resolves.toEqual([notifySender])
+      expect(heldQb.andWhere).not.toHaveBeenCalledWith(
+        'group.id != :groupId',
+        expect.anything(),
+      )
     })
   })
 

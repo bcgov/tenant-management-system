@@ -12,7 +12,9 @@ export const prepareHeadlessTenantUser = async (
     return next()
   }
 
-  if (req.body?.groups !== undefined) {
+  req.body ??= {}
+
+  if (req.body.groups !== undefined) {
     return sendErrorResponse(
       res,
       'Bad Request',
@@ -27,7 +29,7 @@ export const prepareHeadlessTenantUser = async (
       [TMSConstants.SERVICE_USER],
       null,
     )
-    const roles = req.body?.roles
+    const roles = req.body.roles
 
     if (roles === undefined) {
       req.body.roles = [serviceUserRole.id]

@@ -38,6 +38,8 @@ const joinNames = (names: string[]) =>
     ? `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`
     : names[0]
 
+const toServiceKey = (name: string) => name.replaceAll(/\s/g, '').toLowerCase()
+
 const groupRolesByService = (roles: SharedServiceRole[]) => {
   const services = new Map<string, OtherServiceAccess>()
   for (const role of roles) {
@@ -450,9 +452,7 @@ export class GroupService {
   ) {
     const { user } = req.body
     const confirmed = new Set(
-      ((req.body.confirmOtherServices ?? []) as string[]).map((name) =>
-        name.trim().toLowerCase(),
-      ),
+      ((req.body.confirmOtherServices ?? []) as string[]).map(toServiceKey),
     )
 
     const newRoles = await groupRepository.getNewRolesFromOtherServices({
@@ -464,8 +464,10 @@ export class GroupService {
     })
 
     const otherServices = groupRolesByService(newRoles)
-    const allConfirmed = otherServices.every((service) =>
-      confirmed.has(service.name.trim().toLowerCase()),
+    const allConfirmed = otherServices.every(
+      (service) =>
+        confirmed.has(toServiceKey(service.name)) ||
+        confirmed.has(toServiceKey(service.displayName)),
     )
     if (allConfirmed) {
       return

@@ -218,6 +218,21 @@ describe('signing in to CSTAR', () => {
 
     expect(response.status).toBe(200)
   })
+
+  it('passes an unexpected error on as a server error', async () => {
+    mockJwtBehaviour = (req, _res, next) => {
+      req.decodedJwt = {
+        get aud(): string {
+          throw new Error('token could not be read')
+        },
+      } as Express.DecodedJwt
+      next()
+    }
+
+    const response = await request(createApp('/tenants')).get('/tenants')
+
+    expect(response.status).toBe(500)
+  })
 })
 
 describe('when another service calls us', () => {

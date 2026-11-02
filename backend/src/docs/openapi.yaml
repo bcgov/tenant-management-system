@@ -3028,7 +3028,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/UnauthorizedErrorResponse'
         '403':
-          description: Forbidden - User does not have required roles (TENANT_OWNER or USER_ADMIN), headless access is not allowed, or the request changes another shared service's roles
+          description: Forbidden - User does not have required roles (TENANT_OWNER or USER_ADMIN), headless access is not allowed, or the request includes a shared service other than the calling service
           content:
             application/json:
               schema:
