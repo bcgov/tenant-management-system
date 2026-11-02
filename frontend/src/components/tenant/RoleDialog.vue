@@ -6,7 +6,10 @@ import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
 import { Role, type RoleId } from '@/models/role.model'
 import { type User } from '@/models/user.model'
 import { ROLES } from '@/utils/constants'
-import { isIdpBceidBusiness } from '@/utils/identityProvider'
+import {
+  identityProviderToDisplay,
+  isIdpBceidBusiness,
+} from '@/utils/identityProvider'
 
 // --- Component Interface -----------------------------------------------------
 
@@ -73,6 +76,10 @@ const hasChanges = computed(() =>
   items.value.some((item) => item.value !== item.valueInitial),
 )
 
+const userIdP = computed(() => identityProviderToDisplay(user.ssoUser.idpType))
+
+const userName = computed(() => user.getName())
+
 // --- Component Methods -------------------------------------------------------
 
 const handleSave = () => {
@@ -103,44 +110,63 @@ const handleSave = () => {
 
 <template>
   <v-dialog v-model="dialogVisible" max-width="627" scrollable>
-    <v-card class="pa-6" color="background">
-      <v-card-title class="d-flex align-center justify-space-between">
+    <v-card color="background">
+      <v-card-title class="align-center d-flex justify-space-between pa-6">
         Edit tenant roles
       </v-card-title>
 
-      <v-card-text>
-        <h3 class="my-4 font-weight-bold">{{ user.ssoUser.displayName }}</h3>
-        <p class="mb-4 text-body-medium">
-          Tenant roles define what a user can see and do within a tenant. Each
-          role provides a different level of access, from full management to
-          limited use.
+      <v-card-text class="px-6 py-0">
+        <p class="p-label my-0">User</p>
+        <p class="mt-0">
+          <strong>{{ userName }} ({{ userIdP }})</strong>
         </p>
-        <p class="mb-12 text-body-medium">
-          Below are the available tenant roles you can assign to a user. A
-          checkmark shows roles currently assigned to this user. Select
-          additional role(s) to update their permissions.
+
+        <p class="mb-4 text-body-medium">
+          Select the tenant roles this user should have.
         </p>
 
         <v-data-table
           :header-props="{ class: 'bg-surface-light font-weight-bold' }"
           :headers="[
+            { title: '', value: 'selected', sortable: false, width: '60px' },
             { title: 'Role', value: 'role' },
             { title: 'Description', value: 'description' },
           ]"
           :items="items"
           hide-default-footer
         >
-          <template #[`item.role`]="{ item }">
-            <v-checkbox v-model="item.value" density="compact" hide-details>
-              <template #label>
-                <span class="text-body-medium">{{ item.role }}</span>
-              </template>
-            </v-checkbox>
+          <template #[`header.selected`]>
+            <v-checkbox
+              :indeterminate="
+                items.some((item) => item.value) &&
+                !items.every((item) => item.value)
+              "
+              :model-value="items.every((item) => item.value)"
+              aria-label="Select all roles"
+              density="compact"
+              hide-details
+              @update:model-value="
+                (value) => {
+                  items.forEach((item) => {
+                    item.value = !!value
+                  })
+                }
+              "
+            />
+          </template>
+
+          <template #[`item.selected`]="{ item }">
+            <v-checkbox
+              v-model="item.value"
+              :aria-label="`${item.role} role`"
+              density="compact"
+              hide-details
+            />
           </template>
         </v-data-table>
       </v-card-text>
 
-      <v-card-actions class="justify-end">
+      <v-card-actions class="justify-end pa-6">
         <ButtonSecondary
           class="me-4"
           text="Cancel"

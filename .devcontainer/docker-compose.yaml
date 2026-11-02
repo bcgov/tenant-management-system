@@ -32,7 +32,7 @@ services:
       retries: 5
       test: ['CMD-SHELL', 'pg_isready -U tms -d tmsdb']
       timeout: 5s
-    image: postgres:17.0-bookworm
+    image: postgres:17.10-bookworm
     networks:
       - cstar-net
     ports:

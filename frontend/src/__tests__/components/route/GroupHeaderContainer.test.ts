@@ -32,7 +32,6 @@ const mountComponent = () =>
       stubs: {
         GroupHeader: true,
         LoadingWrapper: { template: '<div><slot /></div>' },
-        LoginContainer: { template: '<div><slot /></div>' },
         RouterView: { template: '<div data-testid="router-view" />' },
       },
     },

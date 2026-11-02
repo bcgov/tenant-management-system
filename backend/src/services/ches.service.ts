@@ -1,6 +1,6 @@
-import axios from 'axios'
 import { URLSearchParams } from 'url'
 import { getErrorMessage } from '../common/error.handler'
+import { requestJson } from '../common/http'
 import { config } from './config.service'
 
 const REQUEST_TIMEOUT_MS = 5000
@@ -16,6 +16,16 @@ export interface ChesEmail {
 
 export interface ChesSendResult {
   msgId?: string
+  txId?: string
+}
+
+interface ChesTokenResponse {
+  access_token: string
+  expires_in?: number
+}
+
+interface ChesEmailResponse {
+  messages?: { msgId?: string }[]
   txId?: string
 }
 
@@ -38,21 +48,19 @@ export class ChesService {
     }
 
     try {
-      const response = await axios.post(
-        config.ches.tokenUrl as string,
-        new URLSearchParams({
+      const response = (await requestJson(config.ches.tokenUrl as string, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
           client_id: config.ches.clientId as string,
           client_secret: config.ches.clientSecret as string,
           grant_type: 'client_credentials',
         }),
-        {
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          timeout: REQUEST_TIMEOUT_MS,
-        },
-      )
+        timeoutMs: REQUEST_TIMEOUT_MS,
+      })) as ChesTokenResponse
 
-      const token: string = response.data.access_token
-      const expiresInMs: number = (response.data.expires_in || 0) * 1000
+      const token: string = response.access_token
+      const expiresInMs: number = (response.expires_in ?? 0) * 1000
 
       this.cachedToken = token
       this.cachedTokenExpiresAt =
@@ -63,7 +71,7 @@ export class ChesService {
       this.cachedToken = null
       this.cachedTokenExpiresAt = 0
       throw new Error(
-        'Failed to obtain CHES access token: ' + getErrorMessage(error),
+        `Failed to obtain CHES access token: ${getErrorMessage(error)}`,
       )
     }
   }
@@ -71,9 +79,13 @@ export class ChesService {
   public async sendEmail(email: ChesEmail) {
     const token: string = await this.getToken()
 
-    const response = await axios.post(
-      config.ches.apiUrl as string,
-      {
+    const response = (await requestJson(config.ches.apiUrl as string, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
         bodyType: 'text',
         body: email.body,
         from: NOTIFICATION_FROM_EMAIL,
@@ -81,16 +93,13 @@ export class ChesService {
         to: email.to,
         encoding: 'utf-8',
         priority: 'normal',
-      },
-      {
-        headers: { Authorization: `Bearer ${token}` },
-        timeout: REQUEST_TIMEOUT_MS,
-      },
-    )
+      }),
+      timeoutMs: REQUEST_TIMEOUT_MS,
+    })) as ChesEmailResponse | null
 
     const result: ChesSendResult = {
-      msgId: response.data?.messages?.[0]?.msgId,
-      txId: response.data?.txId,
+      msgId: response?.messages?.[0]?.msgId,
+      txId: response?.txId,
     }
 
     return result

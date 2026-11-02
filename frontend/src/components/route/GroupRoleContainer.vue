@@ -183,7 +183,7 @@ const undoChanges = () => {
 </script>
 
 <template>
-  <v-container v-if="groupServices.length === 0" class="fill-height">
+  <v-container v-if="groupServices.length === 0" class="fill-height px-10">
     <v-row class="center-align justify-center">
       <v-col class="align-center d-flex flex-column" cols="auto">
         <template v-if="isUserAdmin">
@@ -219,10 +219,10 @@ const undoChanges = () => {
       </v-col>
     </v-row>
   </v-container>
-  <v-container v-else class="ms-6">
+  <v-container v-else class="px-10">
     <v-row>
       <v-col cols="12">
-        <h4>Connected service roles</h4>
+        <h1>Connected service roles</h1>
         <p>
           Click 'Edit' to start assigning roles. Choose the roles you want to
           add to your group from each available connected service, then click

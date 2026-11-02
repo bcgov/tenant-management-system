@@ -1,13 +1,20 @@
-import { test, expect, Page, Browser } from '@playwright/test'
+import { test, expect, type Page, type BrowserContext } from '@playwright/test'
+import { openAppPage, openTenantsPage } from '../support/tenant.fixture'
 
 let sharedPage: Page
+let sharedContext: BrowserContext
 
-test.beforeAll(async ({ browser }: { browser: Browser }) => {
-  const context = await browser.newContext({
+test.beforeAll(async ({ browser }) => {
+  test.setTimeout(90_000)
+  sharedContext = await browser.newContext({
     storageState: 'support/user.json',
   })
-  sharedPage = await context.newPage()
-  await sharedPage.goto('/tenants')
+  sharedPage = await sharedContext.newPage()
+  await openTenantsPage(sharedPage)
+})
+
+test.afterAll(async () => {
+  await sharedContext?.close()
 })
 
 test.describe.serial('Landing page tests', () => {
@@ -23,6 +30,7 @@ test.describe.serial('Landing page tests', () => {
   })
 
   test('Submit tenant request under a Ministry', async () => {
+    test.setTimeout(120_000)
     await sharedPage.getByText('Request a Tenant').click()
 
     const tenantName = sharedPage.getByLabel('Name of Tenant')
@@ -64,19 +72,18 @@ test.describe.serial('Landing page tests', () => {
       .click()
     await expect(snackbarTenantRequestSubmitted).toBeHidden()
 
-    await sharedPage.getByText('settings').click()
-
-    const combobox = sharedPage.getByRole('combobox', {
-      name: /items per page/i,
-    })
-    await combobox.focus()
-    await combobox.press('ArrowDown')
-    await expect(combobox).toHaveAttribute('aria-expanded', 'true')
-    await sharedPage.getByRole('option', { name: 'All', exact: true }).click()
+    await openAppPage(
+      sharedPage,
+      '/settings/requests',
+      sharedPage.getByRole('heading', { name: 'Tenant requests', exact: true }),
+    )
+    await sharedPage
+      .getByRole('textbox', { name: 'Search', exact: true })
+      .fill(tenantNameValue)
 
     await sharedPage
-      .locator('td', { hasText: tenantNameValue })
-      .locator('xpath=following-sibling::td[1]')
+      .getByRole('row')
+      .filter({ hasText: tenantNameValue })
       .getByText('NEW', { exact: true })
       .click()
 

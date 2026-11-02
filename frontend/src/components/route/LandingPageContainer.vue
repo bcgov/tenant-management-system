@@ -1,36 +1,19 @@
 <script setup lang="ts">
 import { mdiOpenInNew } from '@mdi/js'
-import { computed, watchEffect } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed } from 'vue'
 
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import { config } from '@/services/config.service'
 import { useAuthStore } from '@/stores/useAuthStore'
-import { isIdpIdir } from '@/utils/identityProvider'
 
 // --- Store and Composable Setup ----------------------------------------------
 
 const authStore = useAuthStore()
-const router = useRouter()
 
 // --- Computed Values ---------------------------------------------------------
 
 const hintBceidBusiness = computed(() => config.oidc.hintBceidBusiness)
 const hintIdir = computed(() => config.oidc.hintIdir)
-
-// --- Watchers and Effects ----------------------------------------------------
-
-watchEffect(() => {
-  if (authStore.isAuthenticated) {
-    if (isIdpIdir(authStore.authenticatedUser.ssoUser.idpType)) {
-      router.push('/tenants')
-
-      return
-    }
-
-    router.push('/bceid')
-  }
-})
 </script>
 
 <template>

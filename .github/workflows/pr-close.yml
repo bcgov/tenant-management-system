@@ -46,10 +46,10 @@ jobs:
     with:
       cleanup: helm
       cleanup_name: cstar
-      environment: gold-dev 
+      environment: gold-dev
       packages: backend frontend migrations
       target: ${{ github.event.number || inputs.target }}
-  
+
   cleanup-golddr-dev:
     name: Cleanup and Image Promotion - Golddr
     uses: ./.github/workflows/.pr-close.yml
@@ -62,14 +62,14 @@ jobs:
     with:
       cleanup: helm
       cleanup_name: cstar
-      environment: golddr-dev 
+      environment: golddr-dev
       packages: backend frontend migrations
       target: ${{ github.event.number || inputs.target }}
 
   cleanup-db-gold-dev: # TODO move it off to another action later.
     name: Remove DB User from Crunchy
     environment: gold-dev
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     env:
       oc_namespace: ${{ secrets.OC_NAMESPACE }}
       oc_token: ${{ secrets.OC_TOKEN }}
@@ -84,11 +84,11 @@ jobs:
           oc_namespace: ${{ env.oc_namespace }}
           oc_token: ${{ env.oc_token }}
           oc_server: ${{ env.oc_server }}
-  
+
   cleanup-db-golddr-dev: # TODO move it off to another action later.
     name: Remove DB User from Crunchy
     environment: golddr-dev
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     env:
       oc_namespace: ${{ secrets.OC_NAMESPACE }}
       oc_token: ${{ secrets.OC_TOKEN }}

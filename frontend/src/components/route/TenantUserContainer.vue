@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 
-import LoginContainer from '@/components/auth/LoginContainer.vue'
 import TenantUserManagement from '@/components/tenant/TenantUserManagement.vue'
 import LoadingWrapper from '@/components/ui/LoadingWrapper.vue'
 import { useNotification } from '@/composables/useNotification'
@@ -74,9 +73,12 @@ const handleAddUser = async (user: User, groups: Group[]) => {
   }
 
   try {
+    const apiCalls: Promise<unknown>[] = []
     for (const group of groups) {
-      await groupStore.addGroupUser(tenantId, group.id, user)
+      apiCalls.push(groupStore.addGroupUser(tenantId, group.id, user))
     }
+
+    await Promise.all(apiCalls)
 
     // Only show alert if user was added to at least one group.
     if (groups.length > 0) {
@@ -122,9 +124,14 @@ const handleRolesChanged = async (
       await tenantStore.assignTenantUserRoles(tenant.value, user.id, rolesToAdd)
     }
 
+    const apiCalls: Promise<unknown>[] = []
     for (const roleId of rolesToRemove) {
-      await tenantStore.removeTenantUserRole(tenantId, user.id, roleId)
+      apiCalls.push(tenantStore.removeTenantUserRole(tenantId, user.id, roleId))
     }
+
+    await Promise.all(apiCalls)
+
+    notification.success('Tenant roles updated')
   } catch {
     notification.error('Failed to update user roles')
   }
@@ -174,11 +181,11 @@ init() // NOSONAR
 </script>
 
 <template>
-  <LoginContainer>
-    <LoadingWrapper
-      :loading="!initialized"
-      loading-message="Loading tenant users..."
-    >
+  <LoadingWrapper
+    :loading="!initialized"
+    loading-message="Loading tenant users..."
+  >
+    <v-container class="px-10">
       <TenantUserManagement
         :loading-search="isLoadingSearch"
         :possible-roles="roles"
@@ -192,6 +199,6 @@ init() // NOSONAR
         @roles-changed="handleRolesChanged"
         @search="handleUserSearch"
       />
-    </LoadingWrapper>
-  </LoginContainer>
+    </v-container>
+  </LoadingWrapper>
 </template>

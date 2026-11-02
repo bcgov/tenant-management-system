@@ -131,110 +131,110 @@ const handleUpdateServiceRole = (
 </script>
 
 <template>
-  <v-container class="ms-6">
-    <v-form ref="form" v-model="isFormValid">
-      <h4>1. Add a connected service</h4>
+  <h1>Connected services</h1>
 
-      <v-row>
-        <v-col cols="12" md="6">
-          <v-text-field
-            v-model="formData.name"
-            :maxlength="30"
-            :rules="[rules.required, rules.maxLength(30), rules.notDuplicated]"
-            required
-          >
-            <template #label>Name <span class="text-error">*</span></template>
-          </v-text-field>
-        </v-col>
-        <v-col cols="12" md="6">
-          <v-text-field
-            v-model="formData.displayName"
-            :maxlength="100"
-            :rules="[rules.required, rules.maxLength(100)]"
-            required
-          >
-            <template #label>
-              Display name
-              <span class="text-error">*</span>
-            </template>
-          </v-text-field>
-        </v-col>
-      </v-row>
+  <v-form ref="form" v-model="isFormValid" class="pa-0">
+    <h2>1. Add a connected service</h2>
 
-      <v-row>
-        <v-col cols="12" md="6">
-          <v-textarea
-            v-model="formData.description"
-            :rules="[rules.required, rules.maxLength(500)]"
-            counter="500"
-            rows="1"
-            auto-grow
-            required
-          >
-            <template #label>
-              Description <span class="text-error">*</span>
-            </template>
-          </v-textarea>
-        </v-col>
-        <v-col cols="12" md="6">
-          <v-text-field
-            v-model="formData.clientIdentifier"
-            :maxlength="55"
-            :rules="[rules.required, rules.maxLength(55)]"
-            required
-          >
-            <template #label>
-              Client identifier
-              <span class="text-error">*</span>
-            </template>
-          </v-text-field>
-        </v-col>
-      </v-row>
+    <v-row>
+      <v-col cols="12" md="6">
+        <v-text-field
+          v-model="formData.name"
+          :maxlength="30"
+          :rules="[rules.required, rules.maxLength(30), rules.notDuplicated]"
+          required
+        >
+          <template #label>Name <span class="text-error">*</span></template>
+        </v-text-field>
+      </v-col>
+      <v-col cols="12" md="6">
+        <v-text-field
+          v-model="formData.displayName"
+          :maxlength="100"
+          :rules="[rules.required, rules.maxLength(100)]"
+          required
+        >
+          <template #label>
+            Display name
+            <span class="text-error">*</span>
+          </template>
+        </v-text-field>
+      </v-col>
+    </v-row>
 
-      <v-row>
-        <v-col cols="12" md="6">
-          <v-text-field
-            v-model="formData.landingPageUrl"
-            :maxlength="500"
-            :rules="[rules.required, rules.maxLength(500), rules.validUrl]"
-            required
-          >
-            <template #label>
-              Landing page URL
-              <span class="text-error">*</span>
-            </template>
-          </v-text-field>
-        </v-col>
-      </v-row>
+    <v-row>
+      <v-col cols="12" md="6">
+        <v-textarea
+          v-model="formData.description"
+          :rules="[rules.required, rules.maxLength(500)]"
+          counter="500"
+          rows="1"
+          auto-grow
+          required
+        >
+          <template #label>
+            Description <span class="text-error">*</span>
+          </template>
+        </v-textarea>
+      </v-col>
+      <v-col cols="12" md="6">
+        <v-text-field
+          v-model="formData.clientIdentifier"
+          :maxlength="55"
+          :rules="[rules.required, rules.maxLength(55)]"
+          required
+        >
+          <template #label>
+            Client identifier
+            <span class="text-error">*</span>
+          </template>
+        </v-text-field>
+      </v-col>
+    </v-row>
 
-      <v-divider class="my-12" />
+    <v-row>
+      <v-col cols="12" md="6">
+        <v-text-field
+          v-model="formData.landingPageUrl"
+          :maxlength="500"
+          :rules="[rules.required, rules.maxLength(500), rules.validUrl]"
+          required
+        >
+          <template #label>
+            Landing page URL
+            <span class="text-error">*</span>
+          </template>
+        </v-text-field>
+      </v-col>
+    </v-row>
 
-      <h4>2. Add connected service roles</h4>
+    <v-divider class="my-12" />
 
-      <p>
-        Define roles for this service. Roles control what users can access. Add
-        each role manually to match the roles configured in your application.
-      </p>
+    <h2>2. Add connected service roles</h2>
 
-      <v-input
-        ref="missingRolesError"
-        :model-value="formData.roles"
-        :rules="[rules.roleRequired]"
-        hide-details="auto"
-      />
-      <ServiceRoleList
-        ref="serviceRoleList"
-        :service-roles="formData.roles"
-        class="mt-12"
-        @add-service-role="handleAddServiceRole"
-        @remove-service-role="handleRemoveServiceRole"
-        @update-service-role="handleUpdateServiceRole"
-      />
+    <p>
+      Define roles for this service. Roles control what users can access. Add
+      each role manually to match the roles configured in your application.
+    </p>
 
-      <v-divider class="my-12" />
+    <v-input
+      ref="missingRolesError"
+      :model-value="formData.roles"
+      :rules="[rules.roleRequired]"
+      hide-details="auto"
+    />
+    <ServiceRoleList
+      ref="serviceRoleList"
+      :service-roles="formData.roles"
+      class="mt-12"
+      @add-service-role="handleAddServiceRole"
+      @remove-service-role="handleRemoveServiceRole"
+      @update-service-role="handleUpdateServiceRole"
+    />
 
-      <ButtonPrimary text="Create connected service" @click="handleSubmit" />
-      <p>Once created, this service will be available to all tenants.</p>
-    </v-form>
-  </v-container>
+    <v-divider class="my-12" />
+
+    <ButtonPrimary text="Create connected service" @click="handleSubmit" />
+    <p>Once created, this service will be available to all tenants.</p>
+  </v-form>
 </template>

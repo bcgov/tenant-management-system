@@ -28,7 +28,9 @@ export default defineConfig({
   fullyParallel: false,
   workers: 1,
 
-  reporter: [['html', { open: 'never' }]],
+  reporter: process.env.CI
+    ? [['github'], ['line'], ['html', { open: 'never' }]]
+    : [['html', { open: 'never' }]],
   outputDir: './test-results',
 
   webServer: isLocalRun
@@ -73,7 +75,7 @@ export default defineConfig({
         storageState: 'support/user.json',
         video: 'retain-on-failure',
         screenshot: 'only-on-failure',
-        trace: 'on-first-retry',
+        trace: 'retain-on-failure',
         ignoreHTTPSErrors: true,
       },
       dependencies: ['setup'],

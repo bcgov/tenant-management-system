@@ -1,4 +1,6 @@
+import { SessionExpiredError } from '@/errors/SessionExpiredError'
 import { config } from '@/services/config.service'
+import { logApiError } from '@/services/utils'
 import { useAuthStore } from '@/stores/useAuthStore'
 
 export type ApiEnvelope<K extends string, T> = { data: Record<K, T> }
@@ -43,15 +45,28 @@ async function parseBody(response: Response): Promise<unknown> {
 }
 
 async function buildHeaders(hasBody: boolean): Promise<HeadersInit> {
+  const authStore = useAuthStore()
+
+  // If the user session is already expired, do not make the request.
+  if (authStore.isSessionExpired) {
+    throw new SessionExpiredError()
+  }
+
   const headers: Record<string, string> = {}
 
   if (hasBody) {
     headers['Content-Type'] = 'application/json'
   }
 
-  const authStore = useAuthStore()
   if (authStore.isAuthenticated) {
     await authStore.ensureFreshToken()
+
+    // If the refresh failed due to an expired refresh token, do not make the
+    // request.
+    if (authStore.isSessionExpired) {
+      throw new SessionExpiredError()
+    }
+
     headers['Authorization'] = `Bearer ${authStore.getAccessToken()}`
   }
 
@@ -92,6 +107,14 @@ async function request<T>(
 
     return data as T
   } catch (error) {
+    // Swallow session expiration, as the app handles it globally by redirecting
+    // to the expired session page.
+    if (error instanceof SessionExpiredError) {
+      logApiError('API request failed', error)
+
+      return new Promise<T>(() => {})
+    }
+
     if (error instanceof DOMException && error.name === 'AbortError') {
       throw new Error(`Request timed out after ${timeout}ms`, { cause: error })
     }

@@ -72,7 +72,7 @@ env:
 jobs:
   vars:
     if: inputs.packages != ''
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     outputs:
       packages: ${{ steps.packages.outputs.packages }}
     steps:
@@ -92,7 +92,7 @@ jobs:
     name: Retags
     if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == inputs.merge_branch
     needs: vars
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       packages: write
     strategy:
@@ -100,7 +100,7 @@ jobs:
         package: ${{ fromJson(needs.vars.outputs.packages) }}
     timeout-minutes: 1
     steps:
-      - uses: shrink/actions-docker-registry-tag@f04afd0559f66b288586792eb150f45136a927fa # v4.0.0
+      - uses: shrink/actions-docker-registry-tag@e6aaef25c595b6e0edd18bf4c7dbfea3abd43299 # v5.0.0
         with:
           registry: ghcr.io
           repository: ${{ inputs.organization }}/${{ inputs.repository }}/${{ matrix.package }}
@@ -112,14 +112,14 @@ jobs:
     name: OpenShift
     if: inputs.cleanup == 'helm' || inputs.cleanup == 'label'
     environment: ${{ inputs.environment }}
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 10
     steps:
       - name: Helm Cleanup
         env:
           release: ${{ inputs.cleanup_name }}-${{ inputs.target }}
         if: inputs.cleanup == 'helm'
-        uses: bcgov/action-oc-runner@d2fc921aaa9d70684c186dbb7754e6985d44d86f # v1.4.1
+        uses: bcgov/actions-openshift/oc-runner@46f2614322f7ba1a5ad88a7e4e1b98569c80dcf7 # v0.6.0
         with:
           oc_namespace: ${{ secrets.oc_namespace }}
           oc_token: ${{ secrets.oc_token }}
@@ -133,7 +133,7 @@ jobs:
 
       - name: OC Template (label) Cleanup
         if: inputs.cleanup == 'label'
-        uses: bcgov/action-oc-runner@d2fc921aaa9d70684c186dbb7754e6985d44d86f # v1.4.1
+        uses: bcgov/actions-openshift/oc-runner@46f2614322f7ba1a5ad88a7e4e1b98569c80dcf7 # v0.6.0
         with:
           oc_namespace: ${{ secrets.oc_namespace }}
           oc_token: ${{ secrets.oc_token }}
@@ -146,7 +146,7 @@ jobs:
 
       - name: Remove PVCs
         if: inputs.remove_pvc
-        uses: bcgov/action-oc-runner@d2fc921aaa9d70684c186dbb7754e6985d44d86f # v1.4.1
+        uses: bcgov/actions-openshift/oc-runner@46f2614322f7ba1a5ad88a7e4e1b98569c80dcf7 # v0.6.0
         with:
           oc_namespace: ${{ secrets.oc_namespace }}
           oc_token: ${{ secrets.oc_token }}

@@ -87,69 +87,59 @@ const toggleSearch = () => {
 </script>
 
 <template>
-  <v-container class="ms-6">
-    <v-row>
-      <v-col :cols="12">
-        <h4>Group members</h4>
-        <GroupMemberTable
-          :group-members="group.groupUsers"
-          :tenant="tenant"
-          @add-member="toggleSearch"
-          @remove-member="handleRemoveMember"
-        />
-      </v-col>
-    </v-row>
+  <h1>Group members</h1>
 
-    <v-row
-      v-if="isUserAdmin && !showSearch && group?.groupUsers?.length > 0"
-      class="mt-4"
-    >
-      <v-col class="d-flex justify-start" cols="12">
-        <ButtonPrimary
-          :prepend-icon="mdiPlus"
-          text="Add member to group"
-          @click="toggleSearch"
-        />
-      </v-col>
-    </v-row>
+  <GroupMemberTable
+    :group-members="group.groupUsers"
+    :tenant="tenant"
+    @add-member="toggleSearch"
+    @remove-member="handleRemoveMember"
+  />
 
-    <v-expand-transition>
-      <div v-if="showSearch">
-        <v-divider class="my-12" />
+  <ButtonPrimary
+    v-if="isUserAdmin && !showSearch && group?.groupUsers?.length > 0"
+    :prepend-icon="mdiPlus"
+    class="mt-12"
+    text="Add member to group"
+    @click="toggleSearch"
+  />
 
-        <h4 class="mb-4">Add a member to this group</h4>
+  <v-expand-transition>
+    <div v-if="showSearch">
+      <v-divider class="my-12" />
 
-        <p class="mb-2 mt-0">
-          <strong>Note:</strong> Adding a member to a group also adds them to
-          this tenant as a service user.
-        </p>
+      <h4 class="mb-4">Add a member to this group</h4>
 
-        <p class="mb-2 mt-8">
-          1. Search for a member based on the selection criteria below:
-        </p>
+      <p class="mb-2 mt-0">
+        <strong>Note:</strong> Adding a member to a group also adds them to this
+        tenant as a service user.
+      </p>
 
-        <UserSearch
-          :current-members="group.groupUsers"
-          :loading="loadingSearch"
-          :search-results="searchResults"
-          :tenant="tenant"
-          @clear-search="handleClearSearch"
-          @search="handleSearch"
-          @select="handleMemberSelected"
-        />
+      <p class="mb-2 mt-8">
+        1. Search for a member based on the selection criteria below:
+      </p>
 
-        <v-row class="mt-8">
-          <v-col :cols="12" class="d-flex justify-start">
-            <ButtonSecondary class="me-4" text="Cancel" @click="handleCancel" />
+      <UserSearch
+        :current-members="group.groupUsers"
+        :loading="loadingSearch"
+        :search-results="searchResults"
+        :tenant="tenant"
+        @clear-search="handleClearSearch"
+        @search="handleSearch"
+        @select="handleMemberSelected"
+      />
 
-            <ButtonPrimary
-              :disabled="!selectedMember"
-              text="Add member"
-              @click="handleAddMember"
-            />
-          </v-col>
-        </v-row>
-      </div>
-    </v-expand-transition>
-  </v-container>
+      <v-row class="mt-8">
+        <v-col :cols="12" class="d-flex justify-start">
+          <ButtonSecondary class="me-4" text="Cancel" @click="handleCancel" />
+
+          <ButtonPrimary
+            :disabled="!selectedMember"
+            text="Add member"
+            @click="handleAddMember"
+          />
+        </v-col>
+      </v-row>
+    </div>
+  </v-expand-transition>
 </template>

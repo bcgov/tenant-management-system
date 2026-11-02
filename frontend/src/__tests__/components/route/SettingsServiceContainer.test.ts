@@ -41,8 +41,6 @@ function renderComponent() {
     global: {
       plugins: [vuetify],
       stubs: {
-        LoginContainer: { template: '<div><slot /></div>' },
-        AdministratorContainer: { template: '<div><slot /></div>' },
         ServiceForm: serviceFormStub,
       },
     },

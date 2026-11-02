@@ -3,6 +3,7 @@
     "emitDecoratorMetadata": true,
     "esModuleInterop": true,
     "experimentalDecorators": true,
+    "isolatedModules": true,
     "outDir": "./dist",
     "resolveJsonModule": true,
     "skipLibCheck": true,
