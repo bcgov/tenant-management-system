@@ -111,11 +111,13 @@ const handleSave = () => {
 <template>
   <v-dialog v-model="dialogVisible" max-width="627" scrollable>
     <v-card color="background">
-      <v-card-title class="align-center d-flex justify-space-between pa-6">
-        Edit tenant roles
+      <v-card-title
+        class="align-center d-flex justify-space-between pb-3 pt-6 px-6"
+      >
+        <h4 class="ma-0">Edit tenant roles</h4>
       </v-card-title>
 
-      <v-card-text class="px-6 py-0">
+      <v-card-text class="px-6 py-3">
         <p class="p-label my-0">User</p>
         <p class="mt-0">
           <strong>{{ userName }} ({{ userIdP }})</strong>
@@ -166,12 +168,8 @@ const handleSave = () => {
         </v-data-table>
       </v-card-text>
 
-      <v-card-actions class="justify-end pa-6">
-        <ButtonSecondary
-          class="me-4"
-          text="Cancel"
-          @click="dialogVisible = false"
-        />
+      <v-card-actions class="ga-4 justify-end pb-6 pt-3 px-6">
+        <ButtonSecondary text="Cancel" @click="dialogVisible = false" />
         <ButtonPrimary
           :disabled="!hasChanges || !atLeastOneRole"
           text="Save roles"
