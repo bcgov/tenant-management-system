@@ -110,12 +110,14 @@ const rules = {
 
 <template>
   <v-dialog v-model="dialogVisible" max-width="800px">
-    <v-card class="pa-6" color="background">
-      <v-card-title class="align-center d-flex justify-space-between">
-        Request new tenant
+    <v-card color="background">
+      <v-card-title
+        class="align-center d-flex justify-space-between pb-3 pt-6 px-6"
+      >
+        <h4 class="ma-0">Request new tenant</h4>
       </v-card-title>
 
-      <v-card-text>
+      <v-card-text class="px-6 py-3">
         <v-form ref="form" v-model="isFormValid">
           <v-text-field
             v-model="formData.name"
@@ -156,8 +158,8 @@ const rules = {
         </v-form>
       </v-card-text>
 
-      <v-card-actions class="d-flex justify-end">
-        <ButtonSecondary class="me-4" text="Cancel" @click="dialogClose" />
+      <v-card-actions class="ga-4 justify-end pb-6 pt-3 px-6">
+        <ButtonSecondary text="Cancel" @click="dialogClose" />
         <ButtonPrimary text="Create tenant request" @click="handleSubmit" />
       </v-card-actions>
     </v-card>
