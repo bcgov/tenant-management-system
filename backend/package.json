@@ -3,13 +3,13 @@
   "version": "1.0.0",
   "description": "Tenancy Management System API for BC Gov",
   "devDependencies": {
-    "@tsconfig/node24": "^24.0.5",
+    "@tsconfig/node26": "^26.0.1",
     "@types/cors": "^2.8.10",
     "@types/express": "^5.0.6",
     "@types/jest": "^30.0.0",
     "@types/js-yaml": "^4.0.9",
     "@types/jsonwebtoken": "^9.0.10",
-    "@types/node": "^24.1.0",
+    "@types/node": "^26.6.6",
     "@types/supertest": "^2.0.11",
     "@types/swagger-ui-express": "^4.1.2",
     "@typescript-eslint/eslint-plugin": "^8.57.1",
@@ -65,7 +65,7 @@
     "test:watch": "jest --watch"
   },
   "engines": {
-    "node": "24",
+    "node": "26",
     "npm": "11"
   }
 }

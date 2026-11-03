@@ -38,9 +38,9 @@ Dependabot is no longer recommended as an alternative to Renovate for generating
 
 ### A Note on Node
 
-Node is used in many places for builds, running tests, and product runtimes. The most recent LTS version of Node is used, as soon as it becomes available.
+Node is used in many places for builds, running tests, and product runtimes. The most recent LTS version of Node is used, and the update is done as soon as it becomes available.
 
-When updating the Node version, all locations should be updated in the same PR. It is very important to update the `.nvmrc` as it is used by the Actions.
+When updating the Node version, all locations should be updated in the same PR. It is also very important to update the `.nvmrc` as it is used by the Actions. Renovate creates the initial PR, but it's important to make sure that the same version is everywhere and that all occurrences are updated.
 
 | Use                 | Location                                                 |
 | ------------------- | -------------------------------------------------------- |
@@ -50,6 +50,14 @@ When updating the Node version, all locations should be updated in the same PR. 
 | Backend runtime     | [Dockerfile](/backend/Dockerfile#L19)                    |
 | Frontend build      | [Dockerfile](/frontend/Dockerfile#L1)                    |
 | Integration tests   | [Dockerfile](/tests/integration/mock-jwks/Dockerfile#L1) |
+
+When major version changes happen it is also necessary to update the backend for:
+
+| Use               | Location                                    |
+| ----------------- | ------------------------------------------- |
+| @tsconfig/nodeXX  | [package.json](/backend/package.json)       |
+| @types/node       | [package.json](/backend/package.json)       |
+| TypeScript config | [tsconfig.json](/backend/tsconfig.json#L14) |
 
 ## Repository Configuration
 
