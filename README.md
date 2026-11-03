@@ -30,24 +30,26 @@ Dependabot and Mend Renovate can both provide dependency updates using pull requ
 
 ### Renovate
 
-A config file (`renovate.json`) is included with this template. It can source config from our [renovate repository](https://github.com/bcgov/renovate-config). Renovate can be [self-hosted](https://github.com/renovatebot/github-action) or run using the GitHub App managed at the organization level. For BC Government the OCIO controls this application, so please opt in with them using a GitHub issue.
-
-To opt-in:
-
-- Visit the [Renovate GitHub App](https://github.com/apps/renovate/)
-- Click `Configure` and set up your repository
-- Visit [BCDevOps Requests](https://github.com/BCDevOps/devops-requests)
-- Select [Issues](https://github.com/BCDevOps/devops-requests/issues)
-- Select [New Issue](https://github.com/BCDevOps/devops-requests/issues/new/choose)
-- Select [Request for integrating a GitHub App](https://github.com/BCDevOps/devops-requests/issues/new?assignees=MonicaG%2C+oomIRL%2C+SHIHO-I&labels=github-app%2C+pending&projects=&template=github_integration_request.md&title=)
-- Create a meaningful title, e.g. `Request to add X repo to Renovate App`
-- Fill out the description providing a repository name
-- Select "Submit new issue"
-- Wait for Renovate to start sending pull requests to your repository
+A config file (`renovate.json`) is used by this repository. It sources config from the [renovate repository](https://github.com/bcgov/renovate-config). Renovate is run using the GitHub App managed at the organization level.
 
 ### Dependabot
 
-Dependabot is no longer recommended as an alternative to Renovate for generating security, vulnerability and dependency pull requests. It can still be used to generate warnings under the GitHub Security tab, which is only viewable by repository administrators.
+Dependabot is no longer recommended as an alternative to Renovate for generating security, vulnerability and dependency pull requests. It is still used to generate warnings under the GitHub Security tab, which is only viewable by repository administrators.
+
+### A Note on Node
+
+Node is used in many places for builds, running tests, and product runtimes. The most recent LTS version of Node is used, as soon as it becomes available.
+
+When updating the Node version, all locations should be updated in the same PR. It is very important to update the `.nvmrc` as it is used by the Actions.
+
+| Use                 | Location                                                 |
+| ------------------- | -------------------------------------------------------- |
+| .nvmrc              | [.nvmrc](/.nvmrc#L1)                                     |
+| VSCode devcontainer | [Dockerfile](/.devcontainer/Dockerfile#L1)               |
+| Backend build       | [Dockerfile](/backend/Dockerfile#L1)                     |
+| Backend runtime     | [Dockerfile](/backend/Dockerfile#L19)                    |
+| Frontend build      | [Dockerfile](/frontend/Dockerfile#L1)                    |
+| Integration tests   | [Dockerfile](/tests/integration/mock-jwks/Dockerfile#L1) |
 
 ## Repository Configuration
 
