@@ -45,16 +45,13 @@ const handleButtonClick = (action: string) => {
   <v-dialog
     :max-width="maxWidth ? maxWidth : 500"
     :model-value="modelValue"
-    data-testid="dialog"
     @update:model-value="$emit('update:modelValue', $event)"
   >
     <v-card color="background">
-      <v-card-item class="pa-6">
-        <v-card-title class="text-wrap" data-testid="title">
-          <h4 class="ma-0">{{ title }}</h4>
-        </v-card-title>
-      </v-card-item>
-      <v-card-text>
+      <v-card-title class="pb-3 pt-6 px-6 text-wrap" data-testid="title">
+        <h4 class="ma-0">{{ title }}</h4>
+      </v-card-title>
+      <v-card-text class="px-6 py-3">
         <div data-testid="message">
           <p class="ma-0">{{ message }}</p>
         </div>
@@ -62,7 +59,7 @@ const handleButtonClick = (action: string) => {
           <slot />
         </div>
       </v-card-text>
-      <v-card-actions class="ga-4 justify-end pb-6 pt-0 px-6">
+      <v-card-actions class="ga-4 justify-end pb-6 pt-3 px-6">
         <component
           :is="btn.type === 'primary' ? ButtonPrimary : ButtonSecondary"
           v-for="btn in buttons"
