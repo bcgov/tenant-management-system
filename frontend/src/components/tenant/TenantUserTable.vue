@@ -51,7 +51,6 @@ const removeRoleDialog = ref({
     { action: 'cancel', text: 'Cancel', type: 'secondary' as const },
     { action: 'remove', text: 'Remove role', type: 'primary' as const },
   ],
-  message: 'Are you sure you want to remove this role from the user?',
   title: 'Confirm role removal',
   visible: false,
 })
@@ -139,6 +138,17 @@ const isUserAdmin = computed(() => {
 
 const moreThanOneTenantOwner = computed(() => {
   return tenant.getOwners().length > 1
+})
+
+const removeRoleMessage = computed(() => {
+  if (!selectedRole.value || !selectedUser.value) {
+    return ''
+  }
+
+  return (
+    `Are you sure you want to remove the ${selectedRole.value.description} ` +
+    `role from ${selectedUser.value.getName()}?`
+  )
 })
 
 // --- Component Methods -------------------------------------------------------
@@ -328,7 +338,7 @@ const showRemoveUserDialog = (user: User) => {
   <SimpleDialog
     v-model="removeRoleDialog.visible"
     :buttons="removeRoleDialog.buttons"
-    :message="removeRoleDialog.message"
+    :message="removeRoleMessage"
     :title="removeRoleDialog.title"
     @button-click="handleRemoveRoleButtonClick"
   />
