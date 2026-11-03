@@ -1,4 +1,4 @@
-FROM node:26.12.0-trixie
+FROM node:26.12.1-trixie
 
 # Install some extras such as vim for interactive rebases. Also some
 # Cypress prerequisites for running in Debian containers:
