@@ -20,11 +20,11 @@
   "dependencies": {
     "@bcgov/design-tokens": "5.1.0",
     "@mdi/js": "7.4.47",
-    "keycloak-js": "26.2.4",
+    "keycloak-js": "26.2.5",
     "pinia": "4.1.0",
     "vue": "3.5.44",
     "vue-router": "5.4.0",
-    "vuetify": "4.3.0"
+    "vuetify": "4.3.1"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "7.0.1",
