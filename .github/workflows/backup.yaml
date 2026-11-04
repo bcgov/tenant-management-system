@@ -1,6 +1,9 @@
 name: Backup
 
 on:
+  push:
+    branches:
+      - feat/CCP-6279
   workflow_dispatch:
       environment:
         description: "Backup environment - dev/test/prod"
