@@ -1,5 +1,10 @@
 <script setup lang="ts">
-import { mdiDeleteOutline, mdiDotsVertical, mdiMagnify } from '@mdi/js'
+import {
+  mdiClose,
+  mdiDeleteOutline,
+  mdiDotsVertical,
+  mdiMagnify,
+} from '@mdi/js'
 import { computed, ref } from 'vue'
 
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
@@ -25,7 +30,7 @@ type TableHeaderItem = {
 
 const { groupMembers, tenant } = defineProps<{
   groupMembers: GroupUser[]
-  tenant: Tenant
+  tenant: Tenant // TODO: this is only used to check perms. Remove?
 }>()
 
 const emit = defineEmits<{
@@ -38,6 +43,8 @@ const emit = defineEmits<{
 const groupUserToRemove = ref<GroupUser | null>(null)
 
 const memberFilter = ref('')
+
+const memberFilterField = ref<{ focus: () => void } | null>(null)
 
 const showRemoveDialog = ref(false)
 
@@ -107,6 +114,11 @@ const removeDialogButtons = computed<DialogButton[]>(() => [
 
 // --- Component Methods -------------------------------------------------------
 
+const handleMemberFilterClear = () => {
+  memberFilter.value = ''
+  memberFilterField.value?.focus()
+}
+
 const handleRemoveDialogAction = (action: string) => {
   if (action === 'remove' && groupUserToRemove.value) {
     emit('remove-member', groupUserToRemove.value)
@@ -126,6 +138,7 @@ const handleRemoveMemberButton = (groupUser: GroupUser) => {
   <v-row v-if="groupMembers.length > 0" class="mb-6">
     <v-col cols="12" sm="4">
       <v-text-field
+        ref="memberFilterField"
         v-model="memberFilter"
         :append-inner-icon="mdiMagnify"
         label="Search"
@@ -133,7 +146,18 @@ const handleRemoveMemberButton = (groupUser: GroupUser) => {
         clearable
         hide-details
         single-line
-      ></v-text-field>
+      >
+        <template #clear>
+          <v-btn
+            :icon="mdiClose"
+            aria-label="Clear search"
+            density="comfortable"
+            size="small"
+            variant="text"
+            @click="handleMemberFilterClear"
+          />
+        </template>
+      </v-text-field>
     </v-col>
   </v-row>
 

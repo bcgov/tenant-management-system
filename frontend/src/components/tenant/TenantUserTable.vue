@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import {
+  mdiClose,
   mdiDeleteOutline,
   mdiDotsVertical,
   mdiMagnify,
@@ -30,7 +31,7 @@ type TableHeaderItem = {
 const { tenant, users } = defineProps<{
   roles: Role[]
   tenant: Tenant
-  users: User[]
+  users: User[] // TODO: this is just tenant.users, remove?
 }>()
 
 const emit = defineEmits<{
@@ -78,6 +79,8 @@ const selectedRole = ref<Role | null>(null)
 const selectedUser = ref<User | null>(null)
 
 const userFilter = ref('')
+
+const userFilterField = ref<{ focus: () => void } | null>(null)
 
 // --- Computed Values ---------------------------------------------------------
 
@@ -209,6 +212,11 @@ const handleRolesChanged = (
   emit('roles-changed', user, rolesToAdd, rolesToRemove)
 }
 
+const handleUserFilterClear = () => {
+  userFilter.value = ''
+  userFilterField.value?.focus()
+}
+
 const showEditRolesDialog = (user: User) => {
   modifyingUser.value = user
   editRolesDialogVisible.value = true
@@ -230,6 +238,7 @@ const showRemoveUserDialog = (user: User) => {
   <v-row class="mb-6">
     <v-col cols="12" sm="4">
       <v-text-field
+        ref="userFilterField"
         v-model="userFilter"
         :append-inner-icon="mdiMagnify"
         label="Search"
@@ -237,7 +246,18 @@ const showRemoveUserDialog = (user: User) => {
         clearable
         hide-details
         single-line
-      ></v-text-field>
+      >
+        <template #clear>
+          <v-btn
+            :icon="mdiClose"
+            aria-label="Clear search"
+            density="comfortable"
+            size="small"
+            variant="text"
+            @click="handleUserFilterClear"
+          />
+        </template>
+      </v-text-field>
     </v-col>
   </v-row>
 
