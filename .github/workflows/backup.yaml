@@ -1,0 +1,27 @@
+name: Backup
+
+on:
+  workflow_dispatch:
+      environment:
+        description: "Backup environment - dev/test/prod"
+        required: true
+        type: choice
+        options: ["dev","test","prod"]
+        default: "dev"
+
+jobs:
+  backup:
+    name: Backup
+    environment:
+      name: gold-${{ inputs.environment || 'dev' }}
+    runs-on: ubuntu-26.04
+    steps:
+      - name: Backup
+        id: deploy
+        uses: bcgov/actions-openshift/oc-runner@46f2614322f7ba1a5ad88a7e4e1b98569c80dcf7 # v0.6.0
+        with:
+          oc_namespace: ${{ secrets.oc_namespace }}
+          oc_token: ${{ secrets.oc_token }}
+          oc_server: ${{ vars.oc_server }}
+          commands: |
+            oc annotate postgrescluster cstar-db-crunchy --overwrite postgres-operator.crunchydata.com/pgbackrest-backup="$(date)"
