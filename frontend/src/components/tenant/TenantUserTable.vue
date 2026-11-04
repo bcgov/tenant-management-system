@@ -11,11 +11,9 @@ import { computed, ref } from 'vue'
 import RoleDialog from '@/components/tenant/RoleDialog.vue'
 import SimpleDialog from '@/components/ui/SimpleDialog.vue'
 import { type Role, type RoleId } from '@/models/role.model'
-import { type Tenant } from '@/models/tenant.model'
 import { type User } from '@/models/user.model'
 import { ROLES } from '@/utils/constants'
 import { identityProviderToDisplay } from '@/utils/identityProvider'
-import { currentUserHasRole } from '@/utils/permissions'
 
 // --- Types & Interfaces ------------------------------------------------------
 
@@ -28,10 +26,10 @@ type TableHeaderItem = {
 
 // --- Component Interface -----------------------------------------------------
 
-const { tenant, users } = defineProps<{
+const { isUserAdmin, roles, users } = defineProps<{
+  isUserAdmin: boolean
   roles: Role[]
-  tenant: Tenant
-  users: User[] // TODO: this is just tenant.users, remove?
+  users: User[]
 }>()
 
 const emit = defineEmits<{
@@ -47,30 +45,9 @@ const editRolesDialogVisible = ref(false)
 
 const modifyingUser = ref<User | null>(null)
 
-const removeRoleDialog = ref({
-  buttons: [
-    { action: 'cancel', text: 'Cancel', type: 'secondary' as const },
-    { action: 'remove', text: 'Remove role', type: 'primary' as const },
-  ],
-  title: 'Confirm role removal',
-  visible: false,
-})
+const removeRoleDialogVisible = ref(false)
 
-const removeUserDialog = ref({
-  buttons: [
-    { action: 'cancel', text: 'Cancel', type: 'secondary' as const },
-    {
-      action: 'remove',
-      text: 'Remove user',
-      type: 'primary' as const,
-    },
-  ],
-  message:
-    "This action will remove this user's tenant and group memberships. They " +
-    'will no longer have access to any systems using CSTAR.',
-  title: 'Confirm user removal',
-  visible: false,
-})
+const removeUserDialogVisible = ref(false)
 
 // The tenant user role that is selected for removal.
 const selectedRole = ref<Role | null>(null)
@@ -118,7 +95,7 @@ const headers = computed(() => {
     },
   ]
 
-  if (isUserAdmin.value) {
+  if (isUserAdmin) {
     tableHeaderItems.push({
       align: 'center',
       key: 'actions',
@@ -130,17 +107,12 @@ const headers = computed(() => {
   return tableHeaderItems
 })
 
-const isUserAdmin = computed(() => {
-  // A tenant owner, by default, is also a user admin - even if they don't have
-  // the USER_ADMIN role.
-  return (
-    currentUserHasRole(tenant, ROLES.TENANT_OWNER.value) ||
-    currentUserHasRole(tenant, ROLES.USER_ADMIN.value)
-  )
-})
-
 const moreThanOneTenantOwner = computed(() => {
-  return tenant.getOwners().length > 1
+  return (
+    users.filter((user) =>
+      user.roles.some((role) => role.name === ROLES.TENANT_OWNER.value),
+    ).length > 1
+  )
 })
 
 const removeRoleMessage = computed(() => {
@@ -161,7 +133,7 @@ const canRemoveRole = (item: User, role: Role): boolean => {
     return false
   }
 
-  if (!isUserAdmin.value) {
+  if (!isUserAdmin) {
     return false
   }
 
@@ -225,12 +197,12 @@ const showEditRolesDialog = (user: User) => {
 const showRemoveRoleDialog = (user: User, role: Role) => {
   selectedRole.value = role
   selectedUser.value = user
-  removeRoleDialog.value.visible = true
+  removeRoleDialogVisible.value = true
 }
 
 const showRemoveUserDialog = (user: User) => {
   selectedUser.value = user
-  removeUserDialog.value.visible = true
+  removeUserDialogVisible.value = true
 }
 </script>
 
@@ -356,18 +328,25 @@ const showRemoveUserDialog = (user: User) => {
   />
 
   <SimpleDialog
-    v-model="removeRoleDialog.visible"
-    :buttons="removeRoleDialog.buttons"
+    v-model="removeRoleDialogVisible"
+    :buttons="[
+      { action: 'cancel', text: 'Cancel', type: 'secondary' as const },
+      { action: 'remove', text: 'Remove role', type: 'primary' as const },
+    ]"
     :message="removeRoleMessage"
-    :title="removeRoleDialog.title"
+    title="Confirm role removal"
     @button-click="handleRemoveRoleButtonClick"
   />
 
   <SimpleDialog
-    v-model="removeUserDialog.visible"
-    :buttons="removeUserDialog.buttons"
-    :message="removeUserDialog.message"
-    :title="removeUserDialog.title"
+    v-model="removeUserDialogVisible"
+    :buttons="[
+      { action: 'cancel', text: 'Cancel', type: 'secondary' as const },
+      { action: 'remove', text: 'Remove user', type: 'primary' as const },
+    ]"
+    message="This action will remove this user's tenant and group memberships.
+      They will no longer have access to any systems using CSTAR."
+    title="Confirm user removal"
     @button-click="handleRemoveUserButtonClick"
   />
 </template>
