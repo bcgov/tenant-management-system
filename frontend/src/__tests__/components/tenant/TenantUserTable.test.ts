@@ -13,6 +13,7 @@ import {
   makeSsoUser,
   makeTenant,
   makeUser,
+  makeUserIdir,
 } from '@/__tests__/__factories__'
 import { createMockAuthStore } from '@/__tests__/__helpers__/useAuthStore.mock'
 import { isVuetifyDisabled } from '@/__tests__/__helpers__/vuetify'
@@ -69,7 +70,7 @@ beforeEach(() => {
 describe('TenantUserTable', () => {
   describe('Actions column', () => {
     it('is displayed for tenant owner', () => {
-      const currentUser = makeUser({
+      const currentUser = makeUserIdir({
         roles: [makeRoleTenantOwner()],
         ssoUser: makeSsoUser({ firstName: 'firstName', lastName: 'lastName' }),
       })
@@ -89,7 +90,7 @@ describe('TenantUserTable', () => {
     })
 
     it('is displayed for user admin', () => {
-      const currentUser = makeUser({
+      const currentUser = makeUserIdir({
         roles: [makeRoleUserAdmin()],
         ssoUser: makeSsoUser({ firstName: 'firstName', lastName: 'lastName' }),
       })
@@ -109,7 +110,7 @@ describe('TenantUserTable', () => {
     })
 
     it('is not displayed for service user', () => {
-      const currentUser = makeUser({
+      const currentUser = makeUserIdir({
         roles: [makeRoleServiceUser()],
         ssoUser: makeSsoUser({ firstName: 'firstName', lastName: 'lastName' }),
       })
@@ -272,11 +273,10 @@ describe('TenantUserTable', () => {
       const roleTenantOwner = makeRoleTenantOwner()
       const currentUser = makeUser({ roles: [roleTenantOwner] })
       currentAuthStore = createMockAuthStore({ user: currentUser })
-      const otherOwner = makeUser({
+      const otherOwner = makeUserIdir({
         roles: [roleTenantOwner, makeRoleServiceUser()],
         ssoUser: makeSsoUser({
           firstName: 'firstName',
-          idpType: 'azureidir',
           lastName: 'lastName',
         }),
       })
@@ -295,11 +295,10 @@ describe('TenantUserTable', () => {
       const roleTenantOwner = makeRoleTenantOwner()
       const currentUser = makeUser({ roles: [roleTenantOwner] })
       currentAuthStore = createMockAuthStore({ user: currentUser })
-      const otherOwner = makeUser({
+      const otherOwner = makeUserIdir({
         roles: [roleTenantOwner, makeRoleServiceUser()],
         ssoUser: makeSsoUser({
           firstName: 'firstName',
-          idpType: 'azureidir',
           lastName: 'lastName',
         }),
       })
@@ -318,19 +317,17 @@ describe('TenantUserTable', () => {
       const roleTenantOwner = makeRoleTenantOwner()
       const currentUser = makeUser({ roles: [makeRoleServiceUser()] })
       currentAuthStore = createMockAuthStore({ user: currentUser })
-      const otherOwnerA = makeUser({
+      const otherOwnerA = makeUserIdir({
         roles: [roleTenantOwner, makeRoleServiceUser()],
         ssoUser: makeSsoUser({
           firstName: 'firstNameA',
-          idpType: 'azureidir',
           lastName: 'lastNameA',
         }),
       })
-      const otherOwnerB = makeUser({
+      const otherOwnerB = makeUserIdir({
         roles: [roleTenantOwner, makeRoleServiceUser()],
         ssoUser: makeSsoUser({
           firstName: 'firstNameB',
-          idpType: 'azureidir',
           lastName: 'lastNameB',
         }),
       })
@@ -349,11 +346,10 @@ describe('TenantUserTable', () => {
 
     it('has no remove icon when only one tenant owner', () => {
       const roleTenantOwner = makeRoleTenantOwner()
-      const currentUser = makeUser({
+      const currentUser = makeUserIdir({
         roles: [makeRoleServiceUser(), roleTenantOwner],
         ssoUser: makeSsoUser({
           firstName: 'firstName',
-          idpType: 'azureidir',
           lastName: 'lastName',
         }),
       })
@@ -376,11 +372,10 @@ describe('TenantUserTable', () => {
       const currentUser = makeUser({ roles: [makeRoleTenantOwner()] })
       currentAuthStore = createMockAuthStore({ user: currentUser })
       const role = makeRoleServiceUser()
-      const tenantUser = makeUser({
+      const tenantUser = makeUserIdir({
         roles: [role, makeRoleUserAdmin()],
         ssoUser: makeSsoUser({
           firstName: 'firstName',
-          idpType: 'azureidir',
           lastName: 'lastName',
         }),
       })
@@ -406,11 +401,10 @@ describe('TenantUserTable', () => {
       const currentUser = makeUser({ roles: [makeRoleTenantOwner()] })
       currentAuthStore = createMockAuthStore({ user: currentUser })
       const role = makeRoleServiceUser()
-      const tenantUser = makeUser({
+      const tenantUser = makeUserIdir({
         roles: [role, makeRoleUserAdmin()],
         ssoUser: makeSsoUser({
           firstName: 'firstName',
-          idpType: 'azureidir',
           lastName: 'lastName',
         }),
       })
@@ -434,19 +428,17 @@ describe('TenantUserTable', () => {
       const user = userEvent.setup()
       const currentUser = makeUser({ roles: [makeRoleTenantOwner()] })
       currentAuthStore = createMockAuthStore({ user: currentUser })
-      const tenantUserA = makeUser({
+      const tenantUserA = makeUserIdir({
         roles: [makeRoleTenantOwner()],
         ssoUser: makeSsoUser({
           firstName: 'firstNameA',
-          idpType: 'azureidir',
           lastName: 'lastNameA',
         }),
       })
-      const tenantUserB = makeUser({
+      const tenantUserB = makeUserIdir({
         roles: [makeRoleTenantOwner()],
         ssoUser: makeSsoUser({
           firstName: 'firstNameB',
-          idpType: 'azureidir',
           lastName: 'lastNameB',
         }),
       })
@@ -467,11 +459,10 @@ describe('TenantUserTable', () => {
 
     it('is disabled when the user is the sole tenant owner', async () => {
       const user = userEvent.setup()
-      const currentUser = makeUser({
+      const currentUser = makeUserIdir({
         roles: [makeRoleTenantOwner()],
         ssoUser: makeSsoUser({
           firstName: 'firstName',
-          idpType: 'azureidir',
           lastName: 'lastName',
         }),
       })
@@ -491,7 +482,7 @@ describe('TenantUserTable', () => {
       const user = userEvent.setup()
       const currentUser = makeUser({ roles: [makeRoleTenantOwner()] })
       currentAuthStore = createMockAuthStore({ user: currentUser })
-      const tenantUser = makeUser({
+      const tenantUser = makeUserIdir({
         roles: [makeRoleUserAdmin()],
         ssoUser: makeSsoUser({ firstName: 'firstName', lastName: 'lastName' }),
       })
@@ -512,13 +503,9 @@ describe('TenantUserTable', () => {
       const user = userEvent.setup()
       const currentUser = makeUser({ roles: [makeRoleTenantOwner()] })
       currentAuthStore = createMockAuthStore({ user: currentUser })
-      const tenantUser = makeUser({
+      const tenantUser = makeUserIdir({
         roles: [makeRoleUserAdmin()],
-        ssoUser: makeSsoUser({
-          firstName: 'firstName',
-          idpType: 'azureidir',
-          lastName: 'lastName',
-        }),
+        ssoUser: makeSsoUser({ firstName: 'firstName', lastName: 'lastName' }),
       })
       const tenant = makeTenant({ users: [currentUser, tenantUser] })
 
@@ -538,19 +525,17 @@ describe('TenantUserTable', () => {
       const user = userEvent.setup()
       const currentUser = makeUser({ roles: [makeRoleTenantOwner()] })
       currentAuthStore = createMockAuthStore({ user: currentUser })
-      const tenantUserA = makeUser({
+      const tenantUserA = makeUserIdir({
         roles: [makeRoleTenantOwner()],
         ssoUser: makeSsoUser({
           firstName: 'firstNameA',
-          idpType: 'azureidir',
           lastName: 'lastNameA',
         }),
       })
-      const tenantUserB = makeUser({
+      const tenantUserB = makeUserIdir({
         roles: [makeRoleUserAdmin()],
         ssoUser: makeSsoUser({
           firstName: 'firstNameB',
-          idpType: 'azureidir',
           lastName: 'lastNameB',
         }),
       })
@@ -575,14 +560,14 @@ describe('TenantUserTable', () => {
       const user = userEvent.setup()
       const currentUser = makeUser({ roles: [makeRoleTenantOwner()] })
       currentAuthStore = createMockAuthStore({ user: currentUser })
-      const tenantUserA = makeUser({
+      const tenantUserA = makeUserIdir({
         roles: [makeRoleTenantOwner()],
         ssoUser: makeSsoUser({
           firstName: 'firstNameA',
           lastName: 'lastNameA',
         }),
       })
-      const tenantUserB = makeUser({
+      const tenantUserB = makeUserIdir({
         roles: [makeRoleUserAdmin()],
         ssoUser: makeSsoUser({
           firstName: 'firstNameB',
@@ -621,7 +606,7 @@ describe('TenantUserTable', () => {
       const user = userEvent.setup()
       const currentUser = makeUser({ roles: [makeRoleTenantOwner()] })
       currentAuthStore = createMockAuthStore({ user: currentUser })
-      const tenantUser = makeUser({
+      const tenantUser = makeUserIdir({
         roles: [makeRoleTenantOwner()],
         ssoUser: makeSsoUser({ firstName: 'firstName', lastName: 'lastName' }),
       })
@@ -644,14 +629,14 @@ describe('TenantUserTable', () => {
       const user = userEvent.setup()
       const currentUser = makeUser({ roles: [makeRoleTenantOwner()] })
       currentAuthStore = createMockAuthStore({ user: currentUser })
-      const tenantUserA = makeUser({
+      const tenantUserA = makeUserIdir({
         roles: [makeRoleTenantOwner()],
         ssoUser: makeSsoUser({
           firstName: 'firstNameA',
           lastName: 'lastNameA',
         }),
       })
-      const tenantUserB = makeUser({
+      const tenantUserB = makeUserIdir({
         id: toUserId('b'),
         roles: [makeRoleUserAdmin()],
         ssoUser: makeSsoUser({
@@ -684,7 +669,7 @@ describe('TenantUserTable', () => {
       const user = userEvent.setup()
       const currentUser = makeUser({ roles: [makeRoleTenantOwner()] })
       currentAuthStore = createMockAuthStore({ user: currentUser })
-      const tenantUser = makeUser({
+      const tenantUser = makeUserIdir({
         roles: [makeRoleUserAdmin()],
         ssoUser: makeSsoUser({ firstName: 'firstName', lastName: 'lastName' }),
       })

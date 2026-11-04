@@ -304,7 +304,7 @@ const showRemoveUserDialog = (user: User) => {
       <v-menu>
         <template #activator="{ props: activatorProps }">
           <v-btn
-            :aria-label="`Open menu for ${item.ssoUser.firstName} ${item.ssoUser.lastName}`"
+            :aria-label="`Open menu for ${item.getName()}`"
             :icon="mdiDotsVertical"
             variant="text"
             v-bind="activatorProps"
@@ -313,7 +313,7 @@ const showRemoveUserDialog = (user: User) => {
 
         <v-list>
           <v-list-item
-            :aria-label="`Edit tenant roles for ${item.ssoUser.firstName} ${item.ssoUser.lastName}`"
+            :aria-label="`Edit tenant roles for ${item.getName()}`"
             @click="showEditRolesDialog(item)"
           >
             <v-list-item-title>
@@ -330,7 +330,7 @@ const showRemoveUserDialog = (user: User) => {
             <template #activator="{ props: tooltipProps }">
               <span v-bind="tooltipProps">
                 <v-list-item
-                  :aria-label="`Remove user ${item.ssoUser.firstName} ${item.ssoUser.lastName}`"
+                  :aria-label="`Remove user ${item.getName()}`"
                   :disabled="!canRemoveUser(item)"
                   @click="showRemoveUserDialog(item)"
                 >

@@ -410,7 +410,7 @@ export const makeUserBceidBusiness = (overrides: Partial<User> = {}): User => {
 export const makeUserIdir = (overrides: Partial<User> = {}): User => {
   return makeUser({
     ...overrides,
-    ssoUser: makeSsoUser({ ...overrides.ssoUser, idpType: 'idir' }),
+    ssoUser: makeSsoUser({ ...overrides.ssoUser, idpType: 'azureidir' }),
   })
 }
 
