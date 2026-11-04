@@ -12,10 +12,7 @@ import SimpleDialog, {
   type DialogButton,
 } from '@/components/ui/SimpleDialog.vue'
 import { type GroupUser } from '@/models/groupuser.model'
-import { type Tenant } from '@/models/tenant.model'
-import { ROLES } from '@/utils/constants'
 import { identityProviderToDisplay } from '@/utils/identityProvider'
-import { currentUserHasRole } from '@/utils/permissions'
 
 // --- Types & Interfaces ------------------------------------------------------
 
@@ -28,9 +25,9 @@ type TableHeaderItem = {
 
 // --- Component Interface -----------------------------------------------------
 
-const { groupMembers, tenant } = defineProps<{
+const { isUserAdmin, groupMembers } = defineProps<{
+  isUserAdmin: boolean
   groupMembers: GroupUser[]
-  tenant: Tenant // TODO: this is only used to check perms. Remove?
 }>()
 
 const emit = defineEmits<{
@@ -78,7 +75,7 @@ const headers = computed(() => {
     },
   ]
 
-  if (isUserAdmin.value) {
+  if (isUserAdmin) {
     tableHeaderItems.push({
       align: 'center',
       key: 'actions',
@@ -88,15 +85,6 @@ const headers = computed(() => {
   }
 
   return tableHeaderItems
-})
-
-const isUserAdmin = computed(() => {
-  // A tenant owner, by default, is also a user admin - even if they don't have
-  // the USER_ADMIN role.
-  return (
-    currentUserHasRole(tenant, ROLES.TENANT_OWNER.value) ||
-    currentUserHasRole(tenant, ROLES.USER_ADMIN.value)
-  )
 })
 
 const removeDialogButtons = computed<DialogButton[]>(() => [

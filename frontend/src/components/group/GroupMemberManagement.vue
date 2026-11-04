@@ -91,7 +91,7 @@ const toggleSearch = () => {
 
   <GroupMemberTable
     :group-members="group.groupUsers"
-    :tenant="tenant"
+    :is-user-admin="isUserAdmin"
     @add-member="toggleSearch"
     @remove-member="handleRemoveMember"
   />
