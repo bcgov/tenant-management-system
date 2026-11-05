@@ -32,12 +32,12 @@ const { isUserAdmin, groupMembers } = defineProps<{
 
 const emit = defineEmits<{
   'add-member': []
-  'remove-member': [groupUser: GroupUser]
+  'remove-member': [GroupUser]
 }>()
 
 // --- Component State ---------------------------------------------------------
 
-const groupUserToRemove = ref<GroupUser | null>(null)
+const groupMemberToRemove = ref<GroupUser | null>(null)
 
 const memberFilter = ref('')
 
@@ -108,16 +108,16 @@ const handleMemberFilterClear = () => {
 }
 
 const handleRemoveDialogAction = (action: string) => {
-  if (action === 'remove' && groupUserToRemove.value) {
-    emit('remove-member', groupUserToRemove.value)
+  if (action === 'remove' && groupMemberToRemove.value) {
+    emit('remove-member', groupMemberToRemove.value)
   }
 
-  groupUserToRemove.value = null
+  groupMemberToRemove.value = null
   showRemoveDialog.value = false
 }
 
-const handleRemoveMemberButton = (groupUser: GroupUser) => {
-  groupUserToRemove.value = groupUser
+const handleRemoveMemberButton = (groupMember: GroupUser) => {
+  groupMemberToRemove.value = groupMember
   showRemoveDialog.value = true
 }
 </script>
