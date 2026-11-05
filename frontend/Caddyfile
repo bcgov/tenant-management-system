@@ -15,6 +15,7 @@
             "api": {
                 "baseUrl": "/api/v1"
             },
+            "contactUsUrl": "https://submit.digital.gov.bc.ca/app/form/submit?f=24a08e40-315e-4cfa-a1d4-e5d7a220dacb",
             "oidc": {
                 "clientId": "{$LOGIN_PROXY_CLIENT_ID}",
                 "hintBceidBusiness": "bceidbusiness",

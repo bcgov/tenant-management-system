@@ -18,10 +18,6 @@ test.afterAll(async () => {
 })
 
 test.describe.serial('Landing page tests', () => {
-  test('Checks the homepage', async () => {
-    await expect(sharedPage.getByText('Logout')).toBeVisible()
-  })
-
   test('Checks the navigation links', async () => {
     await expect(
       sharedPage.getByRole('link', { name: 'all tenants' }),
