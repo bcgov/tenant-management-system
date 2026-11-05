@@ -10,11 +10,12 @@ on:
         options: ["dev","test","prod"]
         default: "dev"
 
+permissions: {}
+
 jobs:
   backup:
-    permissions: {}
-    contents: read
-    pull-requests: write
+    permissions:
+      packages: write
     name: Backup
     environment:
       name: gold-${{ inputs.environment || 'dev' }}
