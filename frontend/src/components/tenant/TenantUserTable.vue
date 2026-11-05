@@ -115,17 +115,6 @@ const moreThanOneTenantOwner = computed(() => {
   )
 })
 
-const removeRoleMessage = computed(() => {
-  if (!selectedRole.value || !selectedUser.value) {
-    return ''
-  }
-
-  return (
-    `Are you sure you want to remove the ${selectedRole.value.description} ` +
-    `role from ${selectedUser.value.getName()}?`
-  )
-})
-
 // --- Component Methods -------------------------------------------------------
 
 const canRemoveRole = (item: User, role: Role): boolean => {
@@ -152,6 +141,10 @@ const canRemoveUser = (user: User): boolean => {
     !user.roles.some((r: Role) => r.name === ROLES.TENANT_OWNER.value)
   )
 }
+
+const getRemoveRoleMessage = (user: User, role: Role) =>
+  `Are you sure you want to remove the ${role.description} role from ` +
+  `${user.getName()}?`
 
 const handleRemoveRoleButtonClick = (action: string) => {
   // When the action is "remove" the selectedRole.value and selectedUser.value
@@ -328,12 +321,13 @@ const showRemoveUserDialog = (user: User) => {
   />
 
   <SimpleDialog
+    v-if="selectedUser && selectedRole"
     v-model="removeRoleDialogVisible"
     :buttons="[
       { action: 'cancel', text: 'Cancel', type: 'secondary' as const },
       { action: 'remove', text: 'Remove role', type: 'primary' as const },
     ]"
-    :message="removeRoleMessage"
+    :message="getRemoveRoleMessage(selectedUser, selectedRole)"
     title="Confirm role removal"
     @button-click="handleRemoveRoleButtonClick"
   />
