@@ -2,6 +2,7 @@ name: Backup
 
 on:
   workflow_dispatch:
+    inputs:
       environment:
         description: "Backup environment - dev/test/prod"
         required: true
