@@ -32,7 +32,7 @@ const vuetify = createVuetify({ components, directives })
 const tenantUserTableStub = {
   emits: ['remove-role', 'remove-user'],
   name: 'TenantUserTable',
-  props: ['tenant', 'users'],
+  props: ['isUserAdmin', 'roles', 'users'],
   template: `
     <div>
       <button @click="$emit('remove-role', users[0], { id: 'role-1' })">
