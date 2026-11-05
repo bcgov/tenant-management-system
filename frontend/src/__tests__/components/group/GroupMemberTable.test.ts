@@ -5,7 +5,12 @@ import { createVuetify } from 'vuetify'
 import * as components from 'vuetify/components'
 import * as directives from 'vuetify/directives'
 
-import { makeGroupUser, makeSsoUser, makeUser } from '@/__tests__/__factories__'
+import {
+  makeGroupUser,
+  makeSsoUser,
+  makeUser,
+  makeUserIdir,
+} from '@/__tests__/__factories__'
 import { createMockAuthStore } from '@/__tests__/__helpers__/useAuthStore.mock'
 
 import GroupMemberTable from '@/components/group/GroupMemberTable.vue'
@@ -40,7 +45,7 @@ describe('GroupMemberTable', () => {
     it('is displayed for user admin', () => {
       const groupMembers = [
         makeGroupUser({
-          user: makeUser({
+          user: makeUserIdir({
             ssoUser: makeSsoUser({
               firstName: 'firstName',
               lastName: 'lastName',
@@ -281,7 +286,7 @@ describe('GroupMemberTable', () => {
       const user = userEvent.setup()
       const groupMembers = [
         makeGroupUser({
-          user: makeUser({
+          user: makeUserIdir({
             ssoUser: makeSsoUser({
               firstName: 'firstName',
               lastName: 'lastName',
@@ -305,7 +310,7 @@ describe('GroupMemberTable', () => {
       const user = userEvent.setup()
       const groupMembers = [
         makeGroupUser({
-          user: makeUser({
+          user: makeUserIdir({
             ssoUser: makeSsoUser({
               firstName: 'firstName',
               lastName: 'lastName',

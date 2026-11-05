@@ -185,7 +185,7 @@ const handleRemoveMemberButton = (groupMember: GroupUser) => {
       <v-menu>
         <template #activator="{ props: activatorProps }">
           <v-btn
-            :aria-label="`Open menu for ${item.user.ssoUser.firstName} ${item.user.ssoUser.lastName}`"
+            :aria-label="`Open menu for ${item.user.getName()}`"
             :icon="mdiDotsVertical"
             variant="text"
             v-bind="activatorProps"
