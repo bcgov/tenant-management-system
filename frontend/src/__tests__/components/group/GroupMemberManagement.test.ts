@@ -22,7 +22,7 @@ const vuetify = createVuetify({ components, directives })
 const groupMemberTableStub = {
   emits: ['add-member', 'remove-member'],
   name: 'GroupMemberTable',
-  props: ['groupMembers', 'tenant'],
+  props: ['isUserAdmin', 'groupMembers'],
   template: `
     <div>
       <button @click="$emit('add-member')">stub-add-member</button>

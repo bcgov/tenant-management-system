@@ -1,4 +1,5 @@
-import { fireEvent, render, screen } from '@testing-library/vue'
+import userEvent from '@testing-library/user-event'
+import { render, screen } from '@testing-library/vue'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createVuetify } from 'vuetify'
 import * as components from 'vuetify/components'
@@ -7,26 +8,25 @@ import * as directives from 'vuetify/directives'
 import {
   makeGroupUser,
   makeSsoUser,
-  makeTenant,
   makeUser,
+  makeUserIdir,
 } from '@/__tests__/__factories__'
+import { createMockAuthStore } from '@/__tests__/__helpers__/useAuthStore.mock'
 
 import GroupMemberTable from '@/components/group/GroupMemberTable.vue'
 import { type GroupUser } from '@/models/groupuser.model'
-import { type Tenant } from '@/models/tenant.model'
-import { currentUserHasRole } from '@/utils/permissions'
 
-vi.mock('@/utils/identityProvider', () => ({
-  identityProviderToDisplay: vi.fn((idpType: string) => idpType),
-}))
-
-vi.mock('@/utils/permissions', () => ({
-  currentUserHasRole: vi.fn(),
+let currentAuthStore = createMockAuthStore()
+vi.mock('@/stores/useAuthStore', () => ({
+  useAuthStore: () => currentAuthStore,
 }))
 
 const vuetify = createVuetify({ components, directives })
 
-function renderComponent(props: { groupMembers: GroupUser[]; tenant: Tenant }) {
+function renderComponent(props: {
+  isUserAdmin: boolean
+  groupMembers: GroupUser[]
+}) {
   return render(GroupMemberTable, {
     global: {
       plugins: [vuetify],
@@ -37,58 +37,63 @@ function renderComponent(props: { groupMembers: GroupUser[]; tenant: Tenant }) {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  currentAuthStore = createMockAuthStore()
 })
 
 describe('GroupMemberTable', () => {
   describe('Actions column', () => {
-    it('is displayed for admins', () => {
-      vi.mocked(currentUserHasRole).mockReturnValue(true)
-
-      const groupUser = makeGroupUser({
-        user: makeUser({
-          ssoUser: makeSsoUser({
-            firstName: 'firstName',
-            lastName: 'lastName',
+    it('is displayed for user admin', () => {
+      const groupMembers = [
+        makeGroupUser({
+          user: makeUserIdir({
+            ssoUser: makeSsoUser({
+              firstName: 'firstName',
+              lastName: 'lastName',
+            }),
           }),
         }),
-      })
-      renderComponent({ groupMembers: [groupUser], tenant: makeTenant() })
+      ]
+
+      renderComponent({ groupMembers, isUserAdmin: true })
 
       expect(
         screen.getByRole('columnheader', { name: 'Actions' }),
       ).toBeInTheDocument()
       expect(
-        screen.getByLabelText('Open menu for firstName lastName'),
+        screen.getByRole('button', {
+          name: 'Open menu for firstName lastName',
+        }),
       ).toBeInTheDocument()
     })
 
-    it('is not displayed for non-admins', () => {
-      vi.mocked(currentUserHasRole).mockReturnValue(false)
-
-      const groupUser = makeGroupUser({
-        user: makeUser({
-          ssoUser: makeSsoUser({
-            firstName: 'firstName',
-            lastName: 'lastName',
+    it('is not displayed for non-user admin', () => {
+      const groupMembers = [
+        makeGroupUser({
+          user: makeUser({
+            ssoUser: makeSsoUser({
+              firstName: 'firstName',
+              lastName: 'lastName',
+            }),
           }),
         }),
-      })
-      renderComponent({ groupMembers: [groupUser], tenant: makeTenant() })
+      ]
+
+      renderComponent({ groupMembers, isUserAdmin: false })
 
       expect(
         screen.queryByRole('columnheader', { name: 'Actions' }),
       ).not.toBeInTheDocument()
       expect(
-        screen.queryByLabelText('Open menu for firstName lastName'),
+        screen.queryByRole('button', {
+          name: 'Open menu for firstName lastName',
+        }),
       ).not.toBeInTheDocument()
     })
   })
 
   describe('Empty state', () => {
-    it('is displayed with button for admins', () => {
-      vi.mocked(currentUserHasRole).mockReturnValue(true)
-
-      renderComponent({ groupMembers: [], tenant: makeTenant() })
+    it('is displayed with button for user admin', () => {
+      renderComponent({ groupMembers: [], isUserAdmin: true })
 
       expect(
         screen.getByRole('button', { name: 'Add group member' }),
@@ -99,10 +104,8 @@ describe('GroupMemberTable', () => {
       ).toBeInTheDocument()
     })
 
-    it('is displayed without button for non-admins', () => {
-      vi.mocked(currentUserHasRole).mockReturnValue(false)
-
-      renderComponent({ groupMembers: [], tenant: makeTenant() })
+    it('is displayed without button for non-user admin', () => {
+      renderComponent({ groupMembers: [], isUserAdmin: false })
 
       expect(
         screen.queryByRole('button', { name: 'Add group member' }),
@@ -116,8 +119,6 @@ describe('GroupMemberTable', () => {
 
   describe('Table data', () => {
     it("renders a row with each user's details", () => {
-      vi.mocked(currentUserHasRole).mockReturnValue(false)
-
       const groupMembers = [
         makeGroupUser({
           user: makeUser({
@@ -139,22 +140,21 @@ describe('GroupMemberTable', () => {
         }),
       ]
 
-      renderComponent({ groupMembers, tenant: makeTenant() })
+      renderComponent({ groupMembers, isUserAdmin: true })
 
       expect(screen.getByText('firstName1')).toBeInTheDocument()
       expect(screen.getByText('lastName1')).toBeInTheDocument()
       expect(screen.getByText('email1')).toBeInTheDocument()
-
       expect(screen.getByText('firstName2')).toBeInTheDocument()
       expect(screen.getByText('lastName2')).toBeInTheDocument()
       expect(screen.getByText('email2')).toBeInTheDocument()
-
       expect(
         screen.queryByText('No group members added yet'),
       ).not.toBeInTheDocument()
     })
 
     it('filters rows based on the search input', async () => {
+      const user = userEvent.setup()
       const groupUsers = [
         makeGroupUser({
           user: makeUser({
@@ -175,104 +175,156 @@ describe('GroupMemberTable', () => {
           }),
         }),
       ]
-      vi.mocked(currentUserHasRole).mockReturnValue(false)
 
-      renderComponent({ groupMembers: groupUsers, tenant: makeTenant() })
-      await fireEvent.update(screen.getByLabelText('Search'), 'Alice')
+      renderComponent({ groupMembers: groupUsers, isUserAdmin: true })
 
-      expect(screen.getByText('Alice')).toBeInTheDocument()
-      expect(screen.queryByText('Bob')).not.toBeInTheDocument()
+      expect(screen.getByText('Anderson')).toBeInTheDocument()
+      expect(screen.getByText('Barker')).toBeInTheDocument()
+
+      await user.type(screen.getByLabelText('Search'), 'Alice')
+
+      expect(screen.getByText('Anderson')).toBeInTheDocument()
+      expect(screen.queryByText('Barker')).not.toBeInTheDocument()
     })
 
     it('shows a no-data message when the search filter matches no users', async () => {
-      const groupMember = makeGroupUser({
-        user: makeUser({
-          ssoUser: makeSsoUser({
-            email: 'firstName.lastName@gov.bc.ca',
-            firstName: 'firstName',
-            lastName: 'lastName',
+      const user = userEvent.setup()
+      const groupMembers = [
+        makeGroupUser({
+          user: makeUser({
+            ssoUser: makeSsoUser({
+              email: 'firstName.lastName@gov.bc.ca',
+              firstName: 'firstName',
+              lastName: 'lastName',
+            }),
           }),
         }),
-      })
-      vi.mocked(currentUserHasRole).mockReturnValue(false)
+      ]
 
-      renderComponent({ groupMembers: [groupMember], tenant: makeTenant() })
-      await fireEvent.update(screen.getByLabelText('Search'), 'no-such-user')
+      renderComponent({ groupMembers, isUserAdmin: true })
+
+      expect(screen.getByText('firstName')).toBeInTheDocument()
+
+      await user.type(screen.getByLabelText('Search'), 'no-such-user')
 
       expect(
         screen.getByText('No members match your search criteria'),
       ).toBeInTheDocument()
       expect(screen.queryByText('firstName')).not.toBeInTheDocument()
     })
+
+    it('clears the search when clear button is clicked', async () => {
+      const user = userEvent.setup()
+      const groupMembers = [
+        makeGroupUser({
+          user: makeUser({
+            ssoUser: makeSsoUser({
+              email: 'firstName.lastName@gov.bc.ca',
+              firstName: 'firstName',
+              lastName: 'lastName',
+            }),
+          }),
+        }),
+      ]
+
+      renderComponent({ groupMembers, isUserAdmin: true })
+      const searchInput = screen.getByLabelText('Search')
+      await user.type(searchInput, 'no-such-user')
+
+      expect(
+        screen.getByText('No members match your search criteria'),
+      ).toBeInTheDocument()
+
+      await user.click(screen.getByRole('button', { name: 'Clear search' }))
+
+      expect(
+        screen.queryByText('No members match your search criteria'),
+      ).not.toBeInTheDocument()
+      expect(searchInput).toHaveValue('')
+      expect(searchInput).toHaveFocus()
+    })
   })
 
   describe('Add member event', () => {
-    it('is emitted when the button is clicked', async () => {
-      vi.mocked(currentUserHasRole).mockReturnValue(true)
+    it('is emitted when the button is clicked by tenant owner', async () => {
+      const user = userEvent.setup()
+
       const { emitted } = renderComponent({
         groupMembers: [],
-        tenant: makeTenant(),
+        isUserAdmin: true,
       })
-
-      await fireEvent.click(
-        screen.getByRole('button', { name: 'Add group member' }),
-      )
+      await user.click(screen.getByRole('button', { name: 'Add group member' }))
 
       expect(emitted()['add-member']).toHaveLength(1)
       expect(emitted()['add-member'][0]).toEqual([])
+    })
+
+    it('is emitted when the button is clicked by user admin', async () => {
+      const user = userEvent.setup()
+
+      const { emitted } = renderComponent({
+        groupMembers: [],
+        isUserAdmin: true,
+      })
+      await user.click(screen.getByRole('button', { name: 'Add group member' }))
+
+      expect(emitted()['add-member']).toHaveLength(1)
+      expect(emitted()['add-member'][0]).toEqual([])
+    })
+
+    it('is not possible since no button for service user', async () => {
+      renderComponent({ groupMembers: [], isUserAdmin: false })
+
+      expect(
+        screen.queryByRole('button', { name: 'Add group member' }),
+      ).not.toBeInTheDocument()
     })
   })
 
   describe('Remove member event', () => {
     it('is emitted after confirming', async () => {
-      vi.mocked(currentUserHasRole).mockReturnValue(true)
-
-      const groupUser = makeGroupUser({
-        user: makeUser({
-          ssoUser: makeSsoUser({
-            firstName: 'firstName',
-            lastName: 'lastName',
+      const user = userEvent.setup()
+      const groupMembers = [
+        makeGroupUser({
+          user: makeUserIdir({
+            ssoUser: makeSsoUser({
+              firstName: 'firstName',
+              lastName: 'lastName',
+            }),
           }),
         }),
-      })
-      const { emitted } = renderComponent({
-        tenant: makeTenant(),
-        groupMembers: [groupUser],
-      })
+      ]
 
-      await fireEvent.click(
+      const { emitted } = renderComponent({ groupMembers, isUserAdmin: true })
+      await user.click(
         screen.getByLabelText('Open menu for firstName lastName'),
       )
-      await fireEvent.click(await screen.findByText('Remove member'))
-      await fireEvent.click(
-        screen.getByRole('button', { name: 'Remove member' }),
-      )
+      await user.click(await screen.findByText('Remove member'))
+      await user.click(screen.getByRole('button', { name: 'Remove member' }))
 
       expect(emitted()['remove-member']).toHaveLength(1)
-      expect(emitted()['remove-member'][0]).toEqual([groupUser])
+      expect(emitted()['remove-member'][0]).toEqual(groupMembers)
     })
 
     it('is not emitted after cancelling', async () => {
-      vi.mocked(currentUserHasRole).mockReturnValue(true)
-
-      const groupUser = makeGroupUser({
-        user: makeUser({
-          ssoUser: makeSsoUser({
-            firstName: 'firstName',
-            lastName: 'lastName',
+      const user = userEvent.setup()
+      const groupMembers = [
+        makeGroupUser({
+          user: makeUserIdir({
+            ssoUser: makeSsoUser({
+              firstName: 'firstName',
+              lastName: 'lastName',
+            }),
           }),
         }),
-      })
-      const { emitted } = renderComponent({
-        groupMembers: [groupUser],
-        tenant: makeTenant(),
-      })
+      ]
 
-      await fireEvent.click(
+      const { emitted } = renderComponent({ groupMembers, isUserAdmin: true })
+      await user.click(
         screen.getByLabelText('Open menu for firstName lastName'),
       )
-      await fireEvent.click(await screen.findByText('Remove member'))
-      await fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+      await user.click(await screen.findByText('Remove member'))
+      await user.click(screen.getByRole('button', { name: 'Cancel' }))
 
       expect(emitted()['remove-member']).toBeUndefined()
     })

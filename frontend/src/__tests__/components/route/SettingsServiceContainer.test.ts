@@ -1,4 +1,5 @@
-import { fireEvent, render, screen, within } from '@testing-library/vue'
+import userEvent from '@testing-library/user-event'
+import { render, screen, within } from '@testing-library/vue'
 import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
@@ -47,7 +48,7 @@ function renderComponent() {
   })
 }
 
-describe('ServiceContainer', () => {
+describe('SettingsServiceContainer', () => {
   let serviceStore: ReturnType<typeof useServiceStore>
   let notificationMock: ReturnType<typeof useNotification>
 
@@ -80,10 +81,15 @@ describe('ServiceContainer', () => {
 
       renderComponent()
 
-      expect(screen.queryByText('Connected services')).not.toBeInTheDocument()
+      expect(
+        screen.queryByRole('heading', { name: 'Connected services' }),
+      ).not.toBeInTheDocument()
 
       resolveFetch()
-      await screen.findByText('Connected services')
+
+      expect(
+        await screen.findByRole('heading', { name: 'Connected services' }),
+      ).toBeInTheDocument()
     })
 
     it('shows error notification when fetchServices fails', async () => {
@@ -133,36 +139,62 @@ describe('ServiceContainer', () => {
 
   describe('search', () => {
     it('filters the table and shows a no-match message when the search term does not match', async () => {
+      const user = userEvent.setup()
       serviceStore.services = [makeService({ displayName: 'displayName' })]
 
       renderComponent()
+
       await screen.findByText('Connected services')
 
       const searchInput = screen.getByLabelText('Search')
-      await fireEvent.update(searchInput, 'nonexistent')
+      await user.type(searchInput, 'nonexistent')
 
       expect(
         await screen.findByText('No matching services'),
       ).toBeInTheDocument()
       expect(screen.queryByText('displayName')).not.toBeInTheDocument()
     })
+
+    it('clears the search when clear button is clicked', async () => {
+      const user = userEvent.setup()
+      serviceStore.services = [makeService({ displayName: 'displayName' })]
+
+      renderComponent()
+
+      await screen.findByText('Connected services')
+
+      const searchInput = screen.getByLabelText('Search')
+      await user.type(searchInput, 'nonexistent')
+
+      expect(
+        await screen.findByText('No matching services'),
+      ).toBeInTheDocument()
+      expect(screen.queryByText('displayName')).not.toBeInTheDocument()
+
+      await user.click(screen.getByRole('button', { name: 'Clear search' }))
+
+      expect(screen.queryByText('No matching services')).not.toBeInTheDocument()
+      expect(searchInput).toHaveValue('')
+      expect(searchInput).toHaveFocus()
+    })
   })
 
   describe('handleAddService / handleCancel', () => {
     it('shows ServiceForm when add is clicked and hides it again on cancel', async () => {
+      const user = userEvent.setup()
       serviceStore.services = [makeService({ displayName: 'displayName' })]
 
       renderComponent()
       await screen.findByText('Connected services')
 
-      await fireEvent.click(
+      await user.click(
         screen.getByRole('button', { name: 'Add connected service' }),
       )
 
       expect(screen.getByTestId('is-duplicate-name')).toBeInTheDocument()
       expect(screen.queryByText('Connected services')).not.toBeInTheDocument()
 
-      await fireEvent.click(screen.getByRole('button', { name: 'stub-cancel' }))
+      await user.click(screen.getByRole('button', { name: 'stub-cancel' }))
 
       expect(await screen.findByText('Connected services')).toBeInTheDocument()
     })
@@ -170,15 +202,16 @@ describe('ServiceContainer', () => {
 
   describe('handleSubmit', () => {
     it('creates the service, notifies success, and returns to the table on success', async () => {
+      const user = userEvent.setup()
       serviceStore.createService = vi.fn().mockResolvedValue(undefined)
       serviceStore.services = [makeService({ displayName: 'displayName' })]
 
       renderComponent()
       await screen.findByText('Connected services')
-      await fireEvent.click(
+      await user.click(
         screen.getByRole('button', { name: 'Add connected service' }),
       )
-      await fireEvent.click(screen.getByRole('button', { name: 'stub-submit' }))
+      await user.click(screen.getByRole('button', { name: 'stub-submit' }))
 
       expect(serviceStore.createService).toHaveBeenCalledWith({
         displayName: 'New Service',
@@ -188,47 +221,50 @@ describe('ServiceContainer', () => {
     })
 
     it('flags a duplicate name and keeps the form open on DuplicateEntityError', async () => {
+      const user = userEvent.setup()
       serviceStore.createService = vi
         .fn()
         .mockRejectedValue(new DuplicateEntityError())
 
       renderComponent()
       await screen.findByText('Connected services')
-      await fireEvent.click(
+      await user.click(
         screen.getByRole('button', { name: 'Add connected service' }),
       )
-      await fireEvent.click(screen.getByRole('button', { name: 'stub-submit' }))
+      await user.click(screen.getByRole('button', { name: 'stub-submit' }))
 
       expect(screen.getByTestId('is-duplicate-name')).toHaveTextContent('true')
       expect(notificationMock.error).not.toHaveBeenCalled()
     })
 
     it('shows the API user message for a DomainError with userMessage', async () => {
+      const user = userEvent.setup()
       serviceStore.createService = vi
         .fn()
         .mockRejectedValue(new DomainError('message', 'userMessage'))
 
       renderComponent()
       await screen.findByText('Connected services')
-      await fireEvent.click(
+      await user.click(
         screen.getByRole('button', { name: 'Add connected service' }),
       )
-      await fireEvent.click(screen.getByRole('button', { name: 'stub-submit' }))
+      await user.click(screen.getByRole('button', { name: 'stub-submit' }))
 
       expect(notificationMock.error).toHaveBeenCalledWith('userMessage')
     })
 
     it('shows a generic error notification for an unexpected error', async () => {
+      const user = userEvent.setup()
       serviceStore.createService = vi
         .fn()
         .mockRejectedValue(new Error('message'))
 
       renderComponent()
       await screen.findByText('Connected services')
-      await fireEvent.click(
+      await user.click(
         screen.getByRole('button', { name: 'Add connected service' }),
       )
-      await fireEvent.click(screen.getByRole('button', { name: 'stub-submit' }))
+      await user.click(screen.getByRole('button', { name: 'stub-submit' }))
 
       expect(notificationMock.error).toHaveBeenCalledWith(
         'Failed to create service',
@@ -236,19 +272,20 @@ describe('ServiceContainer', () => {
     })
 
     it('clears the duplicate flag when clear-duplicate-error is emitted', async () => {
+      const user = userEvent.setup()
       serviceStore.createService = vi
         .fn()
         .mockRejectedValue(new DuplicateEntityError())
 
       renderComponent()
       await screen.findByText('Connected services')
-      await fireEvent.click(
+      await user.click(
         screen.getByRole('button', { name: 'Add connected service' }),
       )
-      await fireEvent.click(screen.getByRole('button', { name: 'stub-submit' }))
+      await user.click(screen.getByRole('button', { name: 'stub-submit' }))
       expect(screen.getByTestId('is-duplicate-name')).toHaveTextContent('true')
 
-      await fireEvent.click(
+      await user.click(
         screen.getByRole('button', { name: 'stub-clear-duplicate-error' }),
       )
 
