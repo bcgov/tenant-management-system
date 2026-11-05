@@ -8,9 +8,7 @@ import {
 import { computed, ref } from 'vue'
 
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
-import SimpleDialog, {
-  type DialogButton,
-} from '@/components/ui/SimpleDialog.vue'
+import SimpleDialog from '@/components/ui/SimpleDialog.vue'
 import { type GroupUser } from '@/models/groupuser.model'
 import { identityProviderToDisplay } from '@/utils/identityProvider'
 
@@ -86,19 +84,6 @@ const headers = computed(() => {
 
   return tableHeaderItems
 })
-
-const removeDialogButtons = computed<DialogButton[]>(() => [
-  {
-    action: 'cancel',
-    text: 'Cancel',
-    type: 'secondary',
-  },
-  {
-    action: 'remove',
-    text: 'Remove member',
-    type: 'primary',
-  },
-])
 
 // --- Component Methods -------------------------------------------------------
 
@@ -209,7 +194,18 @@ const handleRemoveMemberButton = (groupMember: GroupUser) => {
 
   <SimpleDialog
     v-model="showRemoveDialog"
-    :buttons="removeDialogButtons"
+    :buttons="[
+      {
+        action: 'cancel',
+        text: 'Cancel',
+        type: 'secondary',
+      },
+      {
+        action: 'remove',
+        text: 'Remove member',
+        type: 'primary',
+      },
+    ]"
     :max-width="650"
     message="This will remove the member from this group only. This action can't
       be undone."
