@@ -161,8 +161,8 @@ const toggleSearch = () => {
   <h1>Tenant users</h1>
 
   <TenantUserTable
+    :is-user-admin="isUserAdmin"
     :roles="roles"
-    :tenant="tenant"
     :users="tenant.users"
     @remove-role="handleRemoveRole"
     @remove-user="handleRemoveUser"

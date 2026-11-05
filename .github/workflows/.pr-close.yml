@@ -79,7 +79,7 @@ jobs:
       - id: packages
         run: |
           # Convert packages to JSON array for job matrix
-          echo "packages=$(jq -cn '$ARGS.positional' --args ${{ inputs.packages }})" >> $GITHUB_OUTPUT
+          echo "packages=$(jq -cn '$ARGS.positional' --args ${{ inputs.packages }})" >> "$GITHUB_OUTPUT"
 
       - run: |
           # Diagnostic vars
