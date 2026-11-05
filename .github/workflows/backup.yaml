@@ -1,9 +1,6 @@
 name: Backup
 
 on:
-  push:
-    branches:
-      - feat/CCP-6279
   workflow_dispatch:
       environment:
         description: "Backup environment - dev/test/prod"
@@ -14,6 +11,9 @@ on:
 
 jobs:
   backup:
+    permissions:
+    contents: read
+    pull-requests: write
     name: Backup
     environment:
       name: gold-${{ inputs.environment || 'dev' }}
