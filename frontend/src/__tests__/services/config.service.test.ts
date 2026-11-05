@@ -16,6 +16,7 @@ const mockFetch = (body: string, ok = true) => {
 
 const setValidEnv = () => {
   import.meta.env.VITE_API_BASE_URL = 'https://api.example.com'
+  import.meta.env.VITE_CONTACT_US_URL = 'https://contact-us.example.com'
   import.meta.env.VITE_DISABLE_RUNTIME_CONFIG = 'true'
   import.meta.env.VITE_KEYCLOAK_CLIENT_ID = 'client-id'
   import.meta.env.VITE_KEYCLOAK_HINT_BCEID_BUSINESS = 'business-bceid'
@@ -35,6 +36,7 @@ describe('loadConfig', () => {
       await loadConfig()
 
       expect(config.api.baseUrl).toBe('https://api.example.com')
+      expect(config.contactUsUrl).toBe('https://contact-us.example.com')
       expect(config.oidc.clientId).toBe('client-id')
       expect(config.oidc.hintBceidBusiness).toBe('business-bceid')
       expect(config.oidc.hintIdir).toBe('idir')
@@ -67,6 +69,7 @@ describe('loadConfig', () => {
   describe('fetch path', () => {
     const validFetchConfig = {
       api: { baseUrl: 'https://api.example.com' },
+      contactUsUrl: 'https://contact-us.example.com',
       oidc: {
         clientId: 'client-id',
         hintBceidBusiness: 'business-bceid',
@@ -88,6 +91,7 @@ describe('loadConfig', () => {
       await loadConfig()
 
       expect(config.api.baseUrl).toBe('https://api.example.com')
+      expect(config.contactUsUrl).toBe('https://contact-us.example.com')
       expect(config.oidc.clientId).toBe('client-id')
       expect(config.oidc.hintBceidBusiness).toBe('business-bceid')
       expect(config.oidc.hintIdir).toBe('idir')
