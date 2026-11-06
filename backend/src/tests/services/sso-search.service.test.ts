@@ -74,6 +74,22 @@ describe('SSOSearchService', () => {
       config.bcgovSsoApi.url = originalUrl
     })
 
+    it('does not send the tenant id to the SSO API', async () => {
+      mockSso({})
+      const query = {
+        email: 'john.doe@gov.bc.ca',
+        tenantId: '123e4567-e89b-12d3-a456-426614174000',
+      }
+
+      await service.searchBCGOVSSOUsers(asRequest(query))
+
+      expect(searchCalls().map(([url]) => url)).toEqual([
+        `${AZURE_IDIR_URL}?email=john.doe%40gov.bc.ca`,
+        `${IDIR_URL}?email=john.doe%40gov.bc.ca`,
+      ])
+      expect(query.tenantId).toBe('123e4567-e89b-12d3-a456-426614174000')
+    })
+
     it('fetches a token then searches and returns the raw payload', async () => {
       const mockSearchResults = {
         data: [
@@ -359,6 +375,21 @@ describe('SSOSearchService', () => {
   })
 
   describe('searchBCGOVSSOBceidUsers', () => {
+    it('does not send the tenant id to the SSO API', async () => {
+      mockSso({})
+
+      await service.searchBCGOVSSOBceidUsers(
+        asRequest({
+          username: 'business.user',
+          tenantId: '123e4567-e89b-12d3-a456-426614174000',
+        }),
+      )
+
+      expect(searchCalls().map(([url]) => url)).toEqual([
+        `${config.bcgovSsoApi.urlBceid}?username=business.user&bceidType=business`,
+      ])
+    })
+
     it('forces bceidType to business, filters, and returns the payload', async () => {
       const mockSearchResults = {
         data: [

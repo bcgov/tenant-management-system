@@ -6,6 +6,7 @@ import { groupRepository } from '../../repositories/group.repository'
 import { connection } from '../../common/db.connection'
 import logger from '../../common/logger'
 import { notificationService } from '../../services/notification.service'
+import { ForbiddenError } from '../../errors/ForbiddenError'
 
 jest.mock('../../repositories/tenant.repository')
 jest.mock('../../repositories/group.repository')
@@ -409,6 +410,69 @@ describe('TenantService', () => {
     const req = asRequest({
       params: { tenantId: 'tenant-1', tenantUserId: 'tu-1' },
       decodedJwt: { idir_user_guid: 'admin-1' },
+    })
+
+    describe('when a connected service removes someone', () => {
+      const headlessRequest = asRequest({
+        params: { tenantId: 'tenant-1', tenantUserId: 'tu-1' },
+        decodedJwt: { idir_user_guid: 'admin-1', aud: 'chefs-client' },
+        isHeadlessAccess: true,
+      })
+
+      it('removes a Service User', async () => {
+        mockRepository.getRolesForUser.mockResolvedValueOnce([
+          { name: 'TMS.SERVICE_USER' },
+        ] as never)
+        mockRepository.removeTenantUser.mockResolvedValue(undefined as never)
+
+        await service.removeTenantUser(headlessRequest)
+
+        expect(mockRepository.getRolesForUser).toHaveBeenCalledWith(
+          'tenant-1',
+          'tu-1',
+        )
+        expect(mockRepository.removeTenantUser).toHaveBeenCalled()
+      })
+
+      it.each(['TMS.TENANT_OWNER', 'TMS.USER_ADMIN'])(
+        'refuses to remove someone with %s and changes nothing',
+        async (roleName) => {
+          mockRepository.getRolesForUser.mockResolvedValueOnce([
+            { name: 'TMS.SERVICE_USER' },
+            { name: roleName },
+          ] as never)
+
+          await expect(
+            service.removeTenantUser(headlessRequest),
+          ).rejects.toThrow(
+            new ForbiddenError(
+              'Only Service Users can be removed from a connected service. To remove a Tenant Owner or User Admin, use the CSTAR web app.',
+            ),
+          )
+          expect(mockTransaction).not.toHaveBeenCalled()
+          expect(mockRepository.removeTenantUser).not.toHaveBeenCalled()
+        },
+      )
+
+      it('carries on to the usual not found error for someone not in the tenant', async () => {
+        mockRepository.getRolesForUser.mockResolvedValueOnce([] as never)
+        mockRepository.removeTenantUser.mockRejectedValueOnce(
+          new Error('Tenant user not found or already deleted: tu-1'),
+        )
+
+        await expect(service.removeTenantUser(headlessRequest)).rejects.toThrow(
+          'Tenant user not found or already deleted: tu-1',
+        )
+      })
+    })
+
+    it('does not check roles when the web app removes someone', async () => {
+      mockRepository.removeTenantUser.mockResolvedValue(undefined as never)
+
+      await service.removeTenantUser(req)
+
+      expect(mockRepository.getRolesForUser).not.toHaveBeenCalled()
+      expect(mockRepository.removeTenantUser).toHaveBeenCalled()
     })
 
     it('notifies the removed user once the removal succeeds', async () => {

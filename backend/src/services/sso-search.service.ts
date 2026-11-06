@@ -16,6 +16,12 @@ const isQueryValue = (value: unknown): value is string | number | boolean =>
   typeof value === 'number' ||
   typeof value === 'boolean'
 
+const withoutTenantId = (query: Request['query']) => {
+  const searchParams = { ...query }
+  delete searchParams.tenantId
+  return searchParams
+}
+
 export class SSOSearchService {
   private getIdirGuid(user: unknown): string | undefined {
     if (!user || typeof user !== 'object') {
@@ -372,7 +378,10 @@ export class SSOSearchService {
   public async searchBCGOVSSOUsers(req: Request) {
     try {
       const token: string = await this.getToken()
-      const payload = await this.searchIdirDirectories(token, req.query)
+      const payload = await this.searchIdirDirectories(
+        token,
+        withoutTenantId(req.query),
+      )
 
       return this.dedupIdirSearchResults(payload)
     } catch (error: unknown) {
@@ -387,7 +396,7 @@ export class SSOSearchService {
     try {
       const token: string = await this.getToken()
       const payload = await this.getUsers(config.bcgovSsoApi.urlBceid, token, {
-        ...req.query,
+        ...withoutTenantId(req.query),
         bceidType: 'business',
       })
 
