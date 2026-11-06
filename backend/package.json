@@ -59,7 +59,7 @@
     "migrate:down": "node --env-file=.env --require ts-node/register ./node_modules/typeorm/cli.js migration:revert -d src/common/db.connection.ts",
     "build": "tsc",
     "prod:migrate": "typeorm migration:run -d dist/common/db.connection.js",
-    "prod:start": "npm run prod:migrate && node dist/index.js",
+    "prod:start": "if [ \"$RUN_MIGRATIONS\" != \"false\" ]; then npm run prod:migrate; fi && node dist/index.js",
     "test": "node ./node_modules/jest/bin/jest.js --config jest.config.js --detectOpenHandles --forceExit --runInBand",
     "test:cov": "jest --config jest.config.js --coverage --detectOpenHandles --forceExit",
     "test:watch": "jest --watch"

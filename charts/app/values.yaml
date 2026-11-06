@@ -63,6 +63,8 @@ backend:
   enabled: true
   #-- log level for the backend
   logLevel: 'info'
+  #-- run database migrations on startup
+  runMigrations: true
   #-- the number of replicas when autoscaling is disabled
   replicaCount: 1
   #-- the deployment strategy, can be "Recreate" or "RollingUpdate"

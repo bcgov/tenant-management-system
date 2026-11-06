@@ -115,6 +115,8 @@ spec:
               value: "{{ .Values.backend.adminNotificationEmail }}"
             - name: APP_BASE_URL
               value: "{{ .Values.backend.appBaseUrl }}"
+            - name: RUN_MIGRATIONS
+              value: "{{ .Values.backend.runMigrations }}"
           ports:
             - name: http
               containerPort: {{ .Values.backend.service.targetPort }}
