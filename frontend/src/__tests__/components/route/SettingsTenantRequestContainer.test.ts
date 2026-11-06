@@ -1,4 +1,5 @@
-import { fireEvent, render, screen, within } from '@testing-library/vue'
+import userEvent from '@testing-library/user-event'
+import { render, screen, within } from '@testing-library/vue'
 import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
@@ -44,8 +45,6 @@ function renderComponent() {
     global: {
       plugins: [vuetify],
       stubs: {
-        LoginContainer: { template: '<div><slot /></div>' },
-        AdministratorContainer: { template: '<div><slot /></div>' },
         TenantRequestDisplay: tenantRequestDisplayStub,
       },
     },
@@ -158,6 +157,7 @@ describe('TenantRequestContainer', () => {
 
   describe('search', () => {
     it('shows a no-match message when the search term does not match', async () => {
+      const user = userEvent.setup()
       tenantRequestStore.tenantRequests = [
         makeTenantRequest({ name: 'tenantName' }),
       ]
@@ -165,24 +165,51 @@ describe('TenantRequestContainer', () => {
       renderComponent()
       await screen.findByRole('heading', { name: 'Tenant requests' })
 
-      await fireEvent.update(screen.getByLabelText('Search'), 'nonexistent')
+      await user.type(screen.getByLabelText('Search'), 'nonexistent')
 
       expect(
         await screen.findByText('No matching tenant requests'),
       ).toBeInTheDocument()
       expect(screen.queryByText('tenantName')).not.toBeInTheDocument()
     })
+
+    it('clears the search when clear button is clicked', async () => {
+      const user = userEvent.setup()
+      tenantRequestStore.tenantRequests = [
+        makeTenantRequest({ name: 'tenantName' }),
+      ]
+
+      renderComponent()
+      await screen.findByRole('heading', { name: 'Tenant requests' })
+
+      const searchInput = screen.getByLabelText('Search')
+      await user.type(searchInput, 'nonexistent')
+
+      expect(
+        await screen.findByText('No matching tenant requests'),
+      ).toBeInTheDocument()
+      expect(screen.queryByText('tenantName')).not.toBeInTheDocument()
+
+      await user.click(screen.getByRole('button', { name: 'Clear search' }))
+
+      expect(
+        screen.queryByText('No matching tenant requests'),
+      ).not.toBeInTheDocument()
+      expect(searchInput).toHaveValue('')
+      expect(searchInput).toHaveFocus()
+    })
   })
 
   describe('handleRowClick', () => {
     it('selects the tenant request and shows TenantRequestDisplay', async () => {
+      const user = userEvent.setup()
       const tenantRequest = makeTenantRequest({ name: 'tenantName' })
       tenantRequestStore.tenantRequests = [tenantRequest]
 
       renderComponent()
       await screen.findByRole('heading', { name: 'Tenant requests' })
 
-      await fireEvent.click(screen.getByText('tenantName'))
+      await user.click(screen.getByText('tenantName'))
 
       expect(screen.getByTestId('selected-request-id')).toHaveTextContent(
         tenantRequest.id,
@@ -193,6 +220,7 @@ describe('TenantRequestContainer', () => {
     })
 
     it('selects the tenant request when its row is activated with Enter', async () => {
+      const user = userEvent.setup()
       const tenantRequest = makeTenantRequest({ name: 'tenantName' })
       tenantRequestStore.tenantRequests = [tenantRequest]
 
@@ -200,8 +228,8 @@ describe('TenantRequestContainer', () => {
       await screen.findByRole('heading', { name: 'Tenant requests' })
 
       const row = screen.getByRole('row', { name: /tenantName/i })
-
-      await fireEvent.keyDown(row, { key: 'Enter' })
+      row.focus()
+      await user.keyboard('{enter}')
 
       expect(screen.getByTestId('selected-request-id')).toHaveTextContent(
         tenantRequest.id,
@@ -212,15 +240,15 @@ describe('TenantRequestContainer', () => {
     })
 
     it('does not select the tenant request for other keys', async () => {
+      const user = userEvent.setup()
       const tenantRequest = makeTenantRequest({ name: 'tenantName' })
       tenantRequestStore.tenantRequests = [tenantRequest]
 
       renderComponent()
       await screen.findByRole('heading', { name: 'Tenant requests' })
-
       const row = screen.getByRole('row', { name: /tenantName/i })
-
-      await fireEvent.keyDown(row, { key: 'Escape' })
+      row.focus()
+      await user.keyboard('{space}')
 
       expect(
         screen.queryByTestId('selected-request-id'),
@@ -230,15 +258,16 @@ describe('TenantRequestContainer', () => {
 
   describe('handleCancel', () => {
     it('returns to the table when cancel is emitted', async () => {
+      const user = userEvent.setup()
       tenantRequestStore.tenantRequests = [
         makeTenantRequest({ name: 'tenantName' }),
       ]
 
       renderComponent()
       await screen.findByRole('heading', { name: 'Tenant requests' })
-      await fireEvent.click(screen.getByText('tenantName'))
+      await user.click(screen.getByText('tenantName'))
 
-      await fireEvent.click(screen.getByRole('button', { name: 'stub-cancel' }))
+      await user.click(screen.getByRole('button', { name: 'stub-cancel' }))
 
       expect(
         await screen.findByRole('heading', { name: 'Tenant requests' }),
@@ -248,25 +277,25 @@ describe('TenantRequestContainer', () => {
 
   describe('handleApproved', () => {
     const selectRequest = async () => {
+      const user = userEvent.setup()
       const tenantRequest = makeTenantRequest({ name: 'tenantName' })
       tenantRequestStore.tenantRequests = [tenantRequest]
 
       renderComponent()
       await screen.findByRole('heading', { name: 'Tenant requests' })
-      await fireEvent.click(screen.getByText('tenantName'))
+      await user.click(screen.getByText('tenantName'))
 
       return tenantRequest
     }
 
     it('updates status, notifies success, and returns to the table', async () => {
+      const user = userEvent.setup()
       tenantRequestStore.updateTenantRequestStatus = vi
         .fn()
         .mockResolvedValue(undefined)
 
       const tenantRequest = await selectRequest()
-      await fireEvent.click(
-        screen.getByRole('button', { name: 'stub-approve' }),
-      )
+      await user.click(screen.getByRole('button', { name: 'stub-approve' }))
 
       expect(tenantRequestStore.updateTenantRequestStatus).toHaveBeenCalledWith(
         tenantRequest.id,
@@ -281,20 +310,20 @@ describe('TenantRequestContainer', () => {
     })
 
     it('flags a duplicate name on a generic DuplicateEntityError', async () => {
+      const user = userEvent.setup()
       tenantRequestStore.updateTenantRequestStatus = vi
         .fn()
         .mockRejectedValue(new DuplicateEntityError())
 
       await selectRequest()
-      await fireEvent.click(
-        screen.getByRole('button', { name: 'stub-approve' }),
-      )
+      await user.click(screen.getByRole('button', { name: 'stub-approve' }))
 
       expect(screen.getByTestId('is-duplicate-name')).toHaveTextContent('true')
       expect(notificationMock.error).not.toHaveBeenCalled()
     })
 
     it('shows a specific message when the request status has already changed', async () => {
+      const user = userEvent.setup()
       const error = new DuplicateEntityError()
       error.userMessage = 'Cannot update tenant request with status APPROVED'
       tenantRequestStore.updateTenantRequestStatus = vi
@@ -302,9 +331,7 @@ describe('TenantRequestContainer', () => {
         .mockRejectedValue(error)
 
       await selectRequest()
-      await fireEvent.click(
-        screen.getByRole('button', { name: 'stub-approve' }),
-      )
+      await user.click(screen.getByRole('button', { name: 'stub-approve' }))
 
       expect(notificationMock.error).toHaveBeenCalledWith(
         'Requests can only have a status change from "new". Start a new ' +
@@ -314,27 +341,25 @@ describe('TenantRequestContainer', () => {
     })
 
     it('shows the API user message for a DomainError with userMessage', async () => {
+      const user = userEvent.setup()
       tenantRequestStore.updateTenantRequestStatus = vi
         .fn()
         .mockRejectedValue(new DomainError('message', 'userMessage'))
 
       await selectRequest()
-      await fireEvent.click(
-        screen.getByRole('button', { name: 'stub-approve' }),
-      )
+      await user.click(screen.getByRole('button', { name: 'stub-approve' }))
 
       expect(notificationMock.error).toHaveBeenCalledWith('userMessage')
     })
 
     it('shows a generic error notification for an unexpected error', async () => {
+      const user = userEvent.setup()
       tenantRequestStore.updateTenantRequestStatus = vi
         .fn()
         .mockRejectedValue(new Error('message'))
 
       await selectRequest()
-      await fireEvent.click(
-        screen.getByRole('button', { name: 'stub-approve' }),
-      )
+      await user.click(screen.getByRole('button', { name: 'stub-approve' }))
 
       expect(notificationMock.error).toHaveBeenCalledWith(
         'Failed to update tenant request',
@@ -342,17 +367,16 @@ describe('TenantRequestContainer', () => {
     })
 
     it('clears the duplicate flag when clear-duplicate-error is emitted', async () => {
+      const user = userEvent.setup()
       tenantRequestStore.updateTenantRequestStatus = vi
         .fn()
         .mockRejectedValue(new DuplicateEntityError())
 
       await selectRequest()
-      await fireEvent.click(
-        screen.getByRole('button', { name: 'stub-approve' }),
-      )
+      await user.click(screen.getByRole('button', { name: 'stub-approve' }))
       expect(screen.getByTestId('is-duplicate-name')).toHaveTextContent('true')
 
-      await fireEvent.click(
+      await user.click(
         screen.getByRole('button', { name: 'stub-clear-duplicate-error' }),
       )
 
@@ -362,6 +386,7 @@ describe('TenantRequestContainer', () => {
 
   describe('handleRejected', () => {
     it('updates status with notes, notifies success, and returns to the table', async () => {
+      const user = userEvent.setup()
       tenantRequestStore.updateTenantRequestStatus = vi
         .fn()
         .mockResolvedValue(undefined)
@@ -370,9 +395,9 @@ describe('TenantRequestContainer', () => {
 
       renderComponent()
       await screen.findByRole('heading', { name: 'Tenant requests' })
-      await fireEvent.click(screen.getByText('name'))
+      await user.click(screen.getByText('name'))
 
-      await fireEvent.click(screen.getByRole('button', { name: 'stub-reject' }))
+      await user.click(screen.getByRole('button', { name: 'stub-reject' }))
 
       expect(tenantRequestStore.updateTenantRequestStatus).toHaveBeenCalledWith(
         tenantRequest.id,
@@ -386,6 +411,7 @@ describe('TenantRequestContainer', () => {
     })
 
     it('shows a generic error notification when the update fails', async () => {
+      const user = userEvent.setup()
       tenantRequestStore.updateTenantRequestStatus = vi
         .fn()
         .mockRejectedValue(new Error('fail'))
@@ -393,9 +419,9 @@ describe('TenantRequestContainer', () => {
 
       renderComponent()
       await screen.findByRole('heading', { name: 'Tenant requests' })
-      await fireEvent.click(screen.getByText('name'))
+      await user.click(screen.getByText('name'))
 
-      await fireEvent.click(screen.getByRole('button', { name: 'stub-reject' }))
+      await user.click(screen.getByRole('button', { name: 'stub-reject' }))
 
       expect(notificationMock.error).toHaveBeenCalledWith(
         'Failed to update tenant request',

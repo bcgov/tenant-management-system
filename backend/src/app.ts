@@ -7,7 +7,8 @@ import { requestLoggingMiddleware } from './common/logger.mw'
 import { addRequestIdHeader } from './common/request-id-header.mw'
 import logger from './common/logger'
 import swaggerUi from 'swagger-ui-express'
-import YAML from 'yamljs'
+import { load } from 'js-yaml'
+import fs from 'fs'
 import path from 'path'
 
 export default class App {
@@ -45,9 +46,9 @@ export default class App {
 
     this.config()
 
-    const swaggerDocument = YAML.load(
-      path.join(__dirname, 'docs', 'openapi.yaml'),
-    )
+    const swaggerDocument = load(
+      fs.readFileSync(path.join(__dirname, 'docs', 'openapi.yaml'), 'utf8'),
+    ) as swaggerUi.JsonObject
     this.app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument))
 
     this.routes.routes(this.app)

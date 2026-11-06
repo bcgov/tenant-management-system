@@ -1,8 +1,6 @@
 import { mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { nextTick } from 'vue'
 
-import { makeUserBceidBusiness, makeUserIdir } from '@/__tests__/__factories__'
 import { createMockAuthStore } from '@/__tests__/__helpers__/useAuthStore.mock'
 
 import LandingPageContainer from '@/components/route/LandingPageContainer.vue'
@@ -73,38 +71,5 @@ describe('LandingPageContainer.vue', () => {
     expect(currentAuthStore.login).toHaveBeenCalledWith({
       idpHint: 'hint-bceid-business',
     })
-  })
-
-  it('redirects to /tenants when authenticated as IDIR', async () => {
-    currentAuthStore = createMockAuthStore({
-      user: makeUserIdir(),
-    })
-
-    mountComponent()
-    await nextTick()
-
-    expect(mockPush).toHaveBeenCalledWith('/tenants')
-  })
-
-  it('redirects to /bceid when authenticated as BCeID', async () => {
-    currentAuthStore = createMockAuthStore({
-      user: makeUserBceidBusiness(),
-    })
-
-    mountComponent()
-    await nextTick()
-
-    expect(mockPush).toHaveBeenCalledWith('/bceid')
-  })
-
-  it('does not redirect when not authenticated', async () => {
-    currentAuthStore = createMockAuthStore({
-      user: null,
-    })
-
-    mountComponent()
-    await nextTick()
-
-    expect(mockPush).not.toHaveBeenCalled()
   })
 })

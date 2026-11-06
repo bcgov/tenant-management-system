@@ -79,7 +79,6 @@ const renderComponent = () => {
       plugins: [vuetify],
       stubs: {
         LoadingWrapper: { template: '<div><slot /></div>' },
-        LoginContainer: { template: '<div><slot /></div>' },
         TenantRequestDialog: tenantRequestDialogStub,
       },
     },

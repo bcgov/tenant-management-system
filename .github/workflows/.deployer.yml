@@ -58,6 +58,11 @@ on:
         description: 'Release name to use if defined'
         required: false
         type: string
+      crunchy_release_name:
+        default: cstar-db
+        description: 'Release name to use if defined'
+        required: false
+        type: string
       timeout-minutes:
         description: 'Timeout minutes'
         default: 10
@@ -81,8 +86,8 @@ jobs:
     name: Stack
     environment:
       name: ${{ inputs.environment || 'dev' }}
-      url: "https://${{ steps.vars.outputs.release }}.${{ steps.vars.outputs.domain }}"
-    runs-on: ubuntu-24.04
+      url: 'https://${{ steps.vars.outputs.release }}.${{ steps.vars.outputs.domain }}'
+    runs-on: ubuntu-26.04
     outputs:
       tag: ${{ inputs.tag || steps.pr.outputs.pr }}
       triggered: ${{ steps.deploy.outputs.triggered }}
@@ -94,7 +99,7 @@ jobs:
           oc_namespace: ${{ secrets.OC_NAMESPACE }}
           oc_token: ${{ secrets.OC_TOKEN }}
           oc_server: ${{ vars.OC_SERVER }}
-          release_name: cstar-db
+          release_name: ${{ inputs.crunchy_release_name }}
           environment: ${{ inputs.environment }}
           values_file: charts/crunchy/values-${{ inputs.environment || 'dev' }}.yml
           triggers: ${{ inputs.db_triggers }}
@@ -129,21 +134,23 @@ jobs:
           server=${{ vars.OC_SERVER }}
           domain=$(echo "$server" | sed -E 's#https?://##; s#:[0-9]+##; s#^api\.#apps.#')
 
-            # Summary
+          # Summary
           echo "tag=${tag}"
           echo "release=${release}"
           echo "version=${version}"
           echo "domain=${domain}"
 
           # Output
-          echo "tag=${tag}" >> $GITHUB_OUTPUT
-          echo "release=${release}" >> $GITHUB_OUTPUT
-          echo "version=${version}" >> $GITHUB_OUTPUT
-          echo "domain=${domain}" >> $GITHUB_OUTPUT
+          {
+            echo "tag=${tag}"
+            echo "release=${release}"
+            echo "version=${version}"
+            echo "domain=${domain}"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Stop pre-existing deployments on PRs (status = pending-upgrade)
         if: github.event_name == 'pull_request'
-        uses: bcgov/action-oc-runner@d2fc921aaa9d70684c186dbb7754e6985d44d86f # v1.4.1
+        uses: bcgov/actions-openshift/oc-runner@46f2614322f7ba1a5ad88a7e4e1b98569c80dcf7 # v0.6.0
         with:
           oc_namespace: ${{ secrets.oc_namespace }}
           oc_token: ${{ secrets.oc_token }}
@@ -158,14 +165,14 @@ jobs:
                 helm uninstall ${{ steps.vars.outputs.release }}
             fi
 
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Debug Values File
         if: inputs.debug == 'true'
         run: ls -l charts/crunchy/values.yml
 
       - name: Helm Deploy
         id: deploy
-        uses: bcgov/action-oc-runner@d2fc921aaa9d70684c186dbb7754e6985d44d86f # v1.4.1
+        uses: bcgov/actions-openshift/oc-runner@46f2614322f7ba1a5ad88a7e4e1b98569c80dcf7 # v0.6.0
         with:
           oc_namespace: ${{ secrets.oc_namespace }}
           oc_token: ${{ secrets.oc_token }}

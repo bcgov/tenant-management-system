@@ -17,6 +17,7 @@ export function sendErrorResponse(
   httpResponseCode: number,
   errorMessage: string,
   code?: string,
+  details?: Record<string, unknown>,
 ): void {
   const responseBody: {
     name: string
@@ -30,7 +31,7 @@ export function sendErrorResponse(
     responseBody.code = code
   }
 
-  res.status(httpResponseCode).json(responseBody)
+  res.status(httpResponseCode).json({ ...responseBody, ...details })
 }
 
 export class ErrorHandler {
@@ -41,10 +42,19 @@ export class ErrorHandler {
     httpResponseCode: number,
     errorMessage: string,
     code?: string,
+    details?: Record<string, unknown>,
   ) {
     logger.error(name, { message, httpResponseCode, errorMessage })
 
-    sendErrorResponse(res, name, message, httpResponseCode, errorMessage, code)
+    sendErrorResponse(
+      res,
+      name,
+      message,
+      httpResponseCode,
+      errorMessage,
+      code,
+      details,
+    )
   }
 }
 
@@ -73,7 +83,15 @@ export function handleControllerError(
       'Unauthorized',
     )
   } else if (error instanceof ForbiddenError) {
-    errorHandler.generalError(res, context, msg, error.statusCode, 'Forbidden')
+    errorHandler.generalError(
+      res,
+      context,
+      msg,
+      error.statusCode,
+      'Forbidden',
+      error.code,
+      error.details,
+    )
   } else if (error instanceof NotFoundError) {
     errorHandler.generalError(res, context, msg, error.statusCode, 'Not Found')
   } else if (error instanceof ConflictError) {

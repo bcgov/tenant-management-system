@@ -62,9 +62,6 @@ const mountComponent = () =>
           props: ['groups', 'tenant'],
           template: '<div />',
         },
-        LoginContainer: {
-          template: '<div><slot /></div>',
-        },
         'v-col': {
           template: '<div><slot /></div>',
         },

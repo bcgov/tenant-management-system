@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 
-import LoginContainer from '@/components/auth/LoginContainer.vue'
 import GroupHeader from '@/components/group/GroupHeader.vue'
 import LoadingWrapper from '@/components/ui/LoadingWrapper.vue'
 import { useNotification } from '@/composables/useNotification'
@@ -109,19 +108,17 @@ init() // NOSONAR
 </script>
 
 <template>
-  <LoginContainer>
-    <LoadingWrapper :loading="!initialized" loading-message="Loading group...">
-      <GroupHeader
-        v-model:dialog-visible="dialogVisible"
-        :enabled-roles-count="enabledRolesCount"
-        :enabled-service-count="enabledServiceCount"
-        :group="group!"
-        :is-duplicate-name="isDuplicateName"
-        :tenant="tenant!"
-        @clear-duplicate-error="isDuplicateName = false"
-        @submit="handleGroupEdit"
-      />
-      <router-view />
-    </LoadingWrapper>
-  </LoginContainer>
+  <LoadingWrapper :loading="!initialized" loading-message="Loading group...">
+    <GroupHeader
+      v-model:dialog-visible="dialogVisible"
+      :enabled-roles-count="enabledRolesCount"
+      :enabled-service-count="enabledServiceCount"
+      :group="group!"
+      :is-duplicate-name="isDuplicateName"
+      :tenant="tenant!"
+      @clear-duplicate-error="isDuplicateName = false"
+      @submit="handleGroupEdit"
+    />
+    <router-view />
+  </LoadingWrapper>
 </template>

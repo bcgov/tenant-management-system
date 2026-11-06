@@ -7,13 +7,25 @@ import { RoutesConstants } from './routes.constants'
 import { TMSConstants } from './tms.constants'
 import { config } from '../services/config.service'
 import { sendErrorResponse } from './error.handler'
+import { sharedServiceRepository } from '../repositories/shared-service.repository'
 
 const sendUnauthorized = (res: Response, message: string) => {
   return sendErrorResponse(res, 'Unauthorized', message, 401, 'Unauthorized')
 }
 
+const sendForbidden = (res: Response, message: string) => {
+  return sendErrorResponse(
+    res,
+    'Authorization Failure',
+    message,
+    403,
+    'Forbidden',
+  )
+}
+
 interface CheckJwtOptions {
   sharedServiceAccess?: boolean
+  headlessAccess?: boolean
   skipSsoUserParamMatch?: boolean
 }
 
@@ -54,9 +66,135 @@ const logJwtValidationError = (message: string, error: JwtValidationError) => {
   })
 }
 
-const createJwtMiddleware = (options: CheckJwtOptions = {}) => {
-  const { sharedServiceAccess = false } = options
+const getProvider = (decodedJwt?: Express.DecodedJwt) =>
+  decodedJwt?.idp || decodedJwt?.identity_provider
 
+const isIdirProvider = (provider: unknown) =>
+  provider === TMSConstants.IDIR_PROVIDER ||
+  provider === TMSConstants.AZURE_IDIR_PROVIDER
+
+const allowTmsIdirUser = (req: Request, res: Response): boolean => {
+  const provider = getProvider(req.decodedJwt)
+
+  if (!isIdirProvider(provider)) {
+    logger.error('Invalid provider - TMS endpoints require IDIR access', {
+      reason: 'unsupported_identity_provider',
+      provider,
+      expectedProvider: [
+        TMSConstants.IDIR_PROVIDER,
+        TMSConstants.AZURE_IDIR_PROVIDER,
+      ],
+    })
+    sendUnauthorized(res, 'TMS endpoints require IDIR or Azure IDIR access')
+    return false
+  }
+
+  req.idpType = 'idir'
+  return true
+}
+
+const getAudience = (decodedJwt?: Express.DecodedJwt) =>
+  typeof decodedJwt?.aud === 'string' ? decodedJwt.aud : undefined
+
+const isTmsAudience = (audience?: string) =>
+  Boolean(audience) && audience === config.oidc.tmsAudience
+
+const findServiceForAudience = async (audience?: string) =>
+  audience
+    ? sharedServiceRepository.findSharedServiceByClientIdentifier(audience)
+    : null
+
+const runOrPassError = async (
+  next: NextFunction,
+  action: () => Promise<unknown>,
+) => {
+  try {
+    await action()
+  } catch (error: unknown) {
+    next(error)
+  }
+}
+
+const refuseUnregisteredApp = (res: Response) => {
+  logger.error('JWT validation failed', {
+    reason: 'invalid_audience',
+    code: 'invalid_token',
+    error: 'jwt audience invalid',
+  })
+  return sendUnauthorized(res, 'Error occurred during authentication')
+}
+
+const refuseNonTmsToken = async (req: Request, res: Response) => {
+  const audience = getAudience(req.decodedJwt)
+  const sharedService = await findServiceForAudience(audience)
+
+  if (!sharedService) {
+    return refuseUnregisteredApp(res)
+  }
+
+  const canUseHeadless =
+    sharedService.isActive && sharedService.allowHeadlessOps
+  logger.error('Connected service called a route it cannot use', {
+    reason: canUseHeadless ? 'web_app_only' : 'headless_not_allowed',
+    audience,
+  })
+  return sendForbidden(
+    res,
+    canUseHeadless
+      ? TMSConstants.HEADLESS_WEB_APP_ONLY
+      : TMSConstants.HEADLESS_SERVICE_NOT_ALLOWED,
+  )
+}
+
+const resolveHeadlessAccess = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  const audience = getAudience(req.decodedJwt)
+
+  if (isTmsAudience(audience)) {
+    if (allowTmsIdirUser(req, res)) {
+      next()
+    }
+    return
+  }
+
+  const sharedService = await findServiceForAudience(audience)
+
+  if (!sharedService) {
+    return refuseUnregisteredApp(res)
+  }
+
+  if (!sharedService.isActive || !sharedService.allowHeadlessOps) {
+    logger.error('Connected service is not allowed headless access', {
+      reason: 'headless_not_allowed',
+      audience,
+    })
+    return sendForbidden(res, TMSConstants.HEADLESS_SERVICE_NOT_ALLOWED)
+  }
+
+  const provider = getProvider(req.decodedJwt)
+  if (!isIdirProvider(provider)) {
+    logger.error('Headless access requires an IDIR user', {
+      reason: 'unsupported_identity_provider',
+      provider,
+    })
+    return sendForbidden(res, TMSConstants.HEADLESS_IDIR_ONLY)
+  }
+
+  req.isHeadlessAccess = true
+  req.headlessService = {
+    id: sharedService.id,
+    name: sharedService.name,
+    displayName: sharedService.displayName,
+    clientIdentifier: sharedService.clientIdentifier,
+  }
+  req.idpType = 'idir'
+  next()
+}
+
+const createJwtMiddleware = () => {
   return jwt({
     secret: jwksRsa.expressJwtSecret({
       cache: true,
@@ -71,7 +209,6 @@ const createJwtMiddleware = (options: CheckJwtOptions = {}) => {
       },
     }),
     issuer: config.oidc.issuer,
-    audience: sharedServiceAccess ? undefined : config.oidc.tmsAudience,
     algorithms: ['RS256'],
     requestProperty: 'decodedJwt',
     getToken: function fromHeaderOrQuerystring(req) {
@@ -85,8 +222,114 @@ const createJwtMiddleware = (options: CheckJwtOptions = {}) => {
   }).unless({ path: [RoutesConstants.HEALTH, RoutesConstants.JWKS] })
 }
 
+const tokenUserMatchesUrl = (req: Request) => {
+  const tokenUserId: string | undefined =
+    req.decodedJwt?.idir_user_guid || req.decodedJwt?.bceid_user_guid
+  return tokenUserId === req.params.ssoUserId
+}
+
+const refuseUserMismatch = (req: Request, res: Response) => {
+  logger.error('JWT user does not match requested user', {
+    reason: 'user_mismatch',
+    route: req.route?.path,
+  })
+
+  return res.status(403).json({
+    error: 'Forbidden',
+    message: 'Access denied - the requested user does not match the token user',
+    statusCode: 403,
+  })
+}
+
+const allowBceidBothUser = (
+  req: Request,
+  res: Response,
+  provider: string,
+): boolean => {
+  if (req.decodedJwt?.bceid_business_guid) {
+    req.idpType = 'bceidbusiness'
+    logger.debug('Identity provider resolved', { provider: 'bceidbusiness' })
+    return true
+  }
+
+  logger.error('Unsupported identity provider', {
+    reason: 'unsupported_identity_provider',
+    provider,
+  })
+  sendUnauthorized(res, 'Unsupported identity provider')
+  return false
+}
+
+const allowSharedServiceUser = (req: Request, res: Response): boolean => {
+  req.isSharedServiceAccess = true
+  const provider = getProvider(req.decodedJwt)
+
+  if (!provider) {
+    return true
+  }
+  if (provider === TMSConstants.BCEID_BOTH_PROVIDER) {
+    return allowBceidBothUser(req, res, provider)
+  }
+  if (provider === TMSConstants.BUSINESS_BCEID_PROVIDER) {
+    req.idpType = 'bceidbusiness'
+    return true
+  }
+  if (isIdirProvider(provider)) {
+    req.idpType = 'idir'
+    return true
+  }
+
+  logger.error('Invalid provider for shared service access', {
+    reason: 'unsupported_identity_provider',
+    provider,
+  })
+  sendUnauthorized(res, 'Unsupported identity provider')
+  return false
+}
+
+const isNonTmsTokenOnWebAppRoute = (req: Request, options: CheckJwtOptions) =>
+  !options.sharedServiceAccess &&
+  !options.headlessAccess &&
+  Boolean(req.decodedJwt) &&
+  !isTmsAudience(getAudience(req.decodedJwt))
+
+const isOtherUserInUrl = (req: Request, options: CheckJwtOptions) =>
+  Boolean(req.params.ssoUserId) &&
+  !options.skipSsoUserParamMatch &&
+  !tokenUserMatchesUrl(req)
+
+const handleVerifiedToken = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+  options: CheckJwtOptions,
+) => {
+  if (isNonTmsTokenOnWebAppRoute(req, options)) {
+    void runOrPassError(next, () => refuseNonTmsToken(req, res))
+    return
+  }
+
+  if (isOtherUserInUrl(req, options)) {
+    refuseUserMismatch(req, res)
+    return
+  }
+
+  if (options.headlessAccess) {
+    void runOrPassError(next, () => resolveHeadlessAccess(req, res, next))
+    return
+  }
+
+  const allowed = options.sharedServiceAccess
+    ? allowSharedServiceUser(req, res)
+    : !req.decodedJwt || allowTmsIdirUser(req, res)
+
+  if (allowed) {
+    next()
+  }
+}
+
 export const checkJwt = (options: CheckJwtOptions = {}) => {
-  const middleware = createJwtMiddleware(options)
+  const middleware = createJwtMiddleware()
 
   return (req: Request, res: Response, next: NextFunction) => {
     middleware(req, res, (err) => {
@@ -95,89 +338,15 @@ export const checkJwt = (options: CheckJwtOptions = {}) => {
           'JWT validation failed',
           err as JwtValidationError,
         )
-
-        return sendUnauthorized(res, 'Error occurred during authentication')
+        sendUnauthorized(res, 'Error occurred during authentication')
+        return
       }
 
-      if (req.params.ssoUserId && !options.skipSsoUserParamMatch) {
-        const tokenUserId: string | undefined =
-          req.decodedJwt?.idir_user_guid || req.decodedJwt?.bceid_user_guid
-        const requestedUserId: string = req.params.ssoUserId as string
-
-        if (tokenUserId !== requestedUserId) {
-          logger.error('JWT user does not match requested user', {
-            reason: 'user_mismatch',
-            route: req.route?.path,
-          })
-
-          return res.status(403).json({
-            error: 'Forbidden',
-            message:
-              'Access denied - the requested user does not match the token user',
-            statusCode: 403,
-          })
-        }
+      try {
+        handleVerifiedToken(req, res, next, options)
+      } catch (error: unknown) {
+        next(error)
       }
-
-      if (options.sharedServiceAccess) {
-        req.isSharedServiceAccess = true
-
-        if (req.decodedJwt) {
-          const provider =
-            req.decodedJwt.idp || req.decodedJwt.identity_provider
-
-          if (provider === TMSConstants.BCEID_BOTH_PROVIDER) {
-            if (req.decodedJwt.bceid_business_guid) {
-              req.idpType = 'bceidbusiness'
-              logger.debug('Identity provider resolved', {
-                provider: 'bceidbusiness',
-              })
-            } else {
-              logger.error('Unsupported identity provider', {
-                reason: 'unsupported_identity_provider',
-                provider,
-              })
-              return sendUnauthorized(res, 'Unsupported identity provider')
-            }
-          } else if (provider === TMSConstants.BUSINESS_BCEID_PROVIDER) {
-            req.idpType = 'bceidbusiness'
-          } else if (
-            provider === TMSConstants.IDIR_PROVIDER ||
-            provider === TMSConstants.AZURE_IDIR_PROVIDER
-          ) {
-            req.idpType = 'idir'
-          } else if (provider) {
-            logger.error('Invalid provider for shared service access', {
-              reason: 'unsupported_identity_provider',
-              provider,
-            })
-            return sendUnauthorized(res, 'Unsupported identity provider')
-          }
-        }
-      } else if (req.decodedJwt) {
-        const provider = req.decodedJwt.idp || req.decodedJwt.identity_provider
-
-        if (
-          provider !== TMSConstants.IDIR_PROVIDER &&
-          provider !== TMSConstants.AZURE_IDIR_PROVIDER
-        ) {
-          logger.error('Invalid provider - TMS endpoints require IDIR access', {
-            reason: 'unsupported_identity_provider',
-            provider,
-            expectedProvider: [
-              TMSConstants.IDIR_PROVIDER,
-              TMSConstants.AZURE_IDIR_PROVIDER,
-            ],
-          })
-          return sendUnauthorized(
-            res,
-            'TMS endpoints require IDIR or Azure IDIR access',
-          )
-        }
-        req.idpType = 'idir'
-      }
-
-      next()
     })
   }
 }

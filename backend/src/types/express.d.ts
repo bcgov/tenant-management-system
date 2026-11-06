@@ -20,9 +20,18 @@ declare namespace Express {
     [key: string]: unknown
   }
 
+  interface HeadlessService {
+    id: string
+    name: string
+    displayName: string
+    clientIdentifier: string
+  }
+
   interface Request {
     decodedJwt?: DecodedJwt
     isSharedServiceAccess?: boolean
+    isHeadlessAccess?: boolean
+    headlessService?: HeadlessService
     idpType?: 'idir' | 'bceidbusiness'
   }
 }

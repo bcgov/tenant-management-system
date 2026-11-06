@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 
-import LoginContainer from '@/components/auth/LoginContainer.vue'
 import GroupMemberManagement from '@/components/group/GroupMemberManagement.vue'
 import { useNotification } from '@/composables/useNotification'
 import { DuplicateEntityError } from '@/errors/domain/DuplicateEntityError'
@@ -92,7 +91,7 @@ const handleMemberSearch = async (
 </script>
 
 <template>
-  <LoginContainer>
+  <v-container class="px-10">
     <GroupMemberManagement
       :group="group!"
       :loading-search="isLoadingSearch"
@@ -104,5 +103,5 @@ const handleMemberSearch = async (
       @delete="handleDeleteMember"
       @search="handleMemberSearch"
     />
-  </LoginContainer>
+  </v-container>
 </template>
