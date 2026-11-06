@@ -15,6 +15,7 @@ import { checkOperationsAdmin } from '../common/operations-admin.mw'
 import { prepareHeadlessTenantUser } from '../common/headless-tenant-user.mw'
 import { sendErrorResponse } from '../common/error.handler'
 import logger from '../common/logger'
+import { registerPocRoutes } from '../poc/poc.routes'
 
 export class Routes {
   public routes(app: Application) {
@@ -381,6 +382,8 @@ export class Routes {
         (req: Request, res: Response) =>
           assertionController.verifyAssertion(req, res),
       )
+
+    registerPocRoutes(app)
 
     app.use(jwtErrorHandler)
 
