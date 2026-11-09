@@ -59,6 +59,7 @@ const hintIdir = computed(() => config.oidc.hintIdir)
           <a
             class="d-inline-flex align-center"
             href="https://submit.digital.gov.bc.ca/app/form/submit?f=24a08e40-315e-4cfa-a1d4-e5d7a220dacb"
+            rel="noopener noreferrer"
             target="_blank"
           >
             Contact us

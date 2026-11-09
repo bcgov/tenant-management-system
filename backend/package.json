@@ -23,7 +23,8 @@
     "supertest": "^7.2.2",
     "ts-jest": "^29.4.15",
     "ts-node": "^10.9.2",
-    "typescript": "^5.9.3"
+    "typescript": "6.0.3",
+    "typescript-7": "npm:typescript@7.0.2"
   },
   "dependencies": {
     "@types/express-jwt": "^6.0.4",
@@ -57,9 +58,9 @@
     "typeorm": "node --env-file=.env --require ts-node/register ./node_modules/typeorm/cli.js",
     "migrate": "node --env-file=.env --require ts-node/register ./node_modules/typeorm/cli.js migration:run -d src/common/db.connection.ts",
     "migrate:down": "node --env-file=.env --require ts-node/register ./node_modules/typeorm/cli.js migration:revert -d src/common/db.connection.ts",
-    "build": "tsc",
+    "build": "node node_modules/typescript-7/bin/tsc",
     "prod:migrate": "typeorm migration:run -d dist/common/db.connection.js",
-    "prod:start": "npm run prod:migrate && node dist/index.js",
+    "prod:start": "if [ \"$RUN_MIGRATIONS\" != \"false\" ]; then npm run prod:migrate; fi && node dist/index.js",
     "test": "node ./node_modules/jest/bin/jest.js --config jest.config.js --detectOpenHandles --forceExit --runInBand",
     "test:cov": "jest --config jest.config.js --coverage --detectOpenHandles --forceExit",
     "test:watch": "jest --watch"

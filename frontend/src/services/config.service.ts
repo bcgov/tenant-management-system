@@ -11,6 +11,7 @@ export interface AppConfig {
   api: {
     baseUrl: string
   }
+  contactUsUrl: string
   oidc: {
     clientId: string
     hintBceidBusiness: string
@@ -41,6 +42,7 @@ const validateConfig = (raw: unknown): AppConfig => {
 
   const required: [string, unknown][] = [
     ['api.baseUrl', api?.baseUrl],
+    ['contactUsUrl', config.contactUsUrl],
     ['oidc.clientId', oidc?.clientId],
     ['oidc.hintBceidBusiness', oidc?.hintBceidBusiness],
     ['oidc.hintIdir', oidc?.hintIdir],
@@ -70,6 +72,7 @@ export async function loadConfig(): Promise<void> {
       api: {
         baseUrl: import.meta.env.VITE_API_BASE_URL,
       },
+      contactUsUrl: import.meta.env.VITE_CONTACT_US_URL,
       oidc: {
         clientId: import.meta.env.VITE_KEYCLOAK_CLIENT_ID,
         hintBceidBusiness: import.meta.env.VITE_KEYCLOAK_HINT_BCEID_BUSINESS,
