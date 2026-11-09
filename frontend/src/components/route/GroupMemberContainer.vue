@@ -57,7 +57,7 @@ const handleAddMember = async (user: User) => {
   }
 }
 
-const handleClearSearch = async () => {
+const handleClearSearch = () => {
   searchResults.value = null
 }
 
