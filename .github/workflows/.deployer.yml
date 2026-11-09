@@ -208,6 +208,11 @@ jobs:
               --set-string backend.chesApiUrl=${{ vars.CHES_API_URL }} \
               --set-string backend.adminNotificationEmail=${{ vars.ADMIN_NOTIFICATION_EMAIL }} \
               --set-string backend.appBaseUrl=${{ vars.APP_BASE_URL }} \
+              --set-string frontend.link.contactUs=${{ vars.LINK_CONTACT_US }} \
+              --set-string frontend.link.documentation=${{ vars.LINK_DOCUMENTATION }} \
+              --set-string frontend.link.notify=${{ vars.LINK_NOTIFY }} \
+              --set-string frontend.link.submit=${{ vars.LINK_SUBMIT }} \
+              --set-string frontend.link.workflow=${{ vars.LINK_WORKFLOW }} \
               --set-string global.repository=${{ github.repository }} \
               --set-string global.tag=${{ steps.vars.outputs.tag }} \
               --set-string global.config.databaseUser=${{ inputs.db_user }} \
