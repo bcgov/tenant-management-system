@@ -32,7 +32,7 @@ const services = computed(() => serviceStore.services)
 
 // --- Component Methods -------------------------------------------------------
 
-const handleAddService = async () => {
+const handleAddService = () => {
   isAdding.value = true
 }
 
