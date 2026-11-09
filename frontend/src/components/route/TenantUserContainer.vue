@@ -13,7 +13,8 @@ import { useGroupStore } from '@/stores/useGroupStore'
 import { useRoleStore } from '@/stores/useRoleStore'
 import { useTenantStore } from '@/stores/useTenantStore'
 import { useUserSearchStore } from '@/stores/useUserSearchStore'
-import { type IdirSearchType } from '@/utils/constants'
+import { type IdirSearchType, ROLES } from '@/utils/constants'
+import { currentUserHasRole } from '@/utils/permissions'
 
 // --- Component Interface -----------------------------------------------------
 
@@ -35,6 +36,17 @@ const isLoadingSearch = ref(false)
 const searchResults = ref<User[] | null>(null)
 
 // --- Computed Values ---------------------------------------------------------
+
+const groups = computed(() => groupStore.groups)
+
+const isUserAdmin = computed(() => {
+  // A tenant owner, by default, is also a user admin - even if they don't have
+  // the USER_ADMIN role.
+  return (
+    currentUserHasRole(tenant.value, ROLES.TENANT_OWNER.value) ||
+    currentUserHasRole(tenant.value, ROLES.USER_ADMIN.value)
+  )
+})
 
 const roles = computed(() => roleStore.roles)
 
@@ -89,7 +101,7 @@ const handleAddUser = async (user: User, groups: Group[]) => {
   }
 }
 
-const handleClearSearch = async () => {
+const handleClearSearch = () => {
   searchResults.value = null
 }
 
@@ -166,9 +178,16 @@ const initialized = ref(false)
 // shows a spinner if needed. In the future use <Suspense> once it is no longer
 // experimental.
 const init = async () => {
-  try {
-    await roleStore.fetchRoles()
-  } catch {
+  const [groupsResult, rolesResult] = await Promise.allSettled([
+    groupStore.fetchGroups(tenantId),
+    roleStore.fetchRoles(),
+  ])
+
+  if (groupsResult.status === 'rejected') {
+    notification.error('Failed to load groups')
+  }
+
+  if (rolesResult.status === 'rejected') {
     notification.error('Failed to load roles')
   }
 
@@ -187,8 +206,10 @@ init() // NOSONAR
   >
     <v-container class="px-10">
       <TenantUserManagement
+        :all-groups="groups"
+        :all-roles="roles"
+        :is-user-admin="isUserAdmin"
         :loading-search="isLoadingSearch"
-        :possible-roles="roles"
         :search-results="searchResults"
         :tenant="tenant"
         @add="handleAddUser"
