@@ -153,6 +153,7 @@ jobs:
 
   load-tests:
     name: Load
+    needs: [e2e-tests]
     runs-on: ubuntu-26.04
     strategy:
       matrix:
