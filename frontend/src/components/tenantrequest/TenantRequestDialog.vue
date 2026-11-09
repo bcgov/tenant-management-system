@@ -48,7 +48,7 @@ watch(
 // should be empty.
 watch(
   () => dialogVisible.value,
-  async (newVal) => {
+  (newVal) => {
     if (newVal) {
       formData.value = {
         description: '',
