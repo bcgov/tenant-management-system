@@ -1,16 +1,12 @@
 import { fireEvent, render, screen } from '@testing-library/vue'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { nextTick, ref } from 'vue'
+import { h, nextTick, ref } from 'vue'
 import { createRouter, createWebHistory, useRoute } from 'vue-router'
 import { useDisplay } from 'vuetify'
 import { VLayout } from 'vuetify/components'
 
 import AppNavigation from '@/components/layout/AppNavigation.vue'
 import vuetify from '@/plugins/vuetify'
-import {
-  currentUserIsIdir,
-  currentUserIsOperationsAdmin,
-} from '@/utils/permissions'
 
 vi.mock('vue-router', async (importOriginal) => {
   const actual = await importOriginal<typeof import('vue-router')>()
@@ -28,21 +24,10 @@ const router = createRouter({
 
 vi.mock('vuetify', async (importOriginal) => {
   const actual = await importOriginal<typeof import('vuetify')>()
-  return {
-    ...actual,
-    useDisplay: vi.fn(),
-  }
+
+  return { ...actual, useDisplay: vi.fn() }
 })
 const mockedUseDisplay = vi.mocked(useDisplay)
-
-vi.mock('@/utils/permissions', () => ({
-  currentUserIsIdir: vi.fn(),
-  currentUserIsOperationsAdmin: vi.fn(),
-}))
-const mockedCurrentUserIsIdir = vi.mocked(currentUserIsIdir)
-const mockedCurrentUserIsOperationsAdmin = vi.mocked(
-  currentUserIsOperationsAdmin,
-)
 
 const createRoute = (
   overrides: Partial<ReturnType<typeof useRoute>> = {},
@@ -58,68 +43,55 @@ const createDisplay = (mobile = false): ReturnType<typeof useDisplay> => {
   return { mobile: ref(mobile) } as unknown as ReturnType<typeof useDisplay>
 }
 
-const renderComponent = () => {
-  return render(VLayout, {
-    global: {
-      plugins: [router, vuetify],
-    },
-    slots: {
-      default: AppNavigation,
-    },
-  })
+const renderComponent = (props: {
+  showDrawer?: boolean
+  showSettings?: boolean
+}) => {
+  const componentProps = { showDrawer: false, showSettings: false, ...props }
+
+  return render(
+    { render: () => h(VLayout, () => h(AppNavigation, componentProps)) },
+    { global: { plugins: [router, vuetify] } },
+  )
 }
 
 describe('AppNavigation', () => {
   beforeEach(() => {
-    mockedCurrentUserIsIdir.mockReturnValue(false)
-    mockedCurrentUserIsOperationsAdmin.mockReturnValue(false)
     mockedUseDisplay.mockReturnValue(createDisplay())
     mockedUseRoute.mockReturnValue(createRoute())
   })
 
   describe('drawer visibility', () => {
     it('does not render the drawer for non-IDIR users', () => {
-      mockedCurrentUserIsIdir.mockReturnValue(false)
-      renderComponent()
+      renderComponent({ showDrawer: false })
 
       expect(screen.queryByText('All tenants')).not.toBeInTheDocument()
     })
 
     it('renders the drawer for IDIR users', () => {
-      mockedCurrentUserIsIdir.mockReturnValue(true)
-      renderComponent()
+      renderComponent({ showDrawer: true })
 
       expect(screen.getByText('All tenants')).toBeInTheDocument()
     })
   })
 
   describe('always visible nav items', () => {
-    beforeEach(() => {
-      mockedCurrentUserIsIdir.mockReturnValue(true)
-    })
-
     it('renders the All Tenants nav item', () => {
-      renderComponent()
+      renderComponent({ showDrawer: true })
 
       expect(screen.getByText('All tenants')).toBeInTheDocument()
     })
   })
 
   describe('administrator nav items', () => {
-    beforeEach(() => {
-      mockedCurrentUserIsIdir.mockReturnValue(true)
-    })
-
     it('does not render Settings for non-administrators', () => {
-      mockedCurrentUserIsOperationsAdmin.mockReturnValue(false)
-      renderComponent()
+      renderComponent({ showDrawer: true, showSettings: false })
 
       expect(screen.queryByText('Settings')).not.toBeInTheDocument()
     })
 
     it('renders Settings for administrators', () => {
-      mockedCurrentUserIsOperationsAdmin.mockReturnValue(true)
-      renderComponent()
+      renderComponent({ showDrawer: true, showSettings: true })
 
       expect(screen.getByText('Settings')).toBeInTheDocument()
     })
@@ -127,27 +99,26 @@ describe('AppNavigation', () => {
 
   describe('settings route', () => {
     beforeEach(() => {
-      mockedCurrentUserIsIdir.mockReturnValue(true)
       mockedUseRoute.mockReturnValue(
         createRoute({ path: '/settings/requests' }),
       )
     })
 
     it('renders Tenant Requests nav item', () => {
-      renderComponent()
+      renderComponent({ showDrawer: true })
 
       expect(screen.getByText('Tenant requests')).toBeInTheDocument()
     })
 
     it('renders Services nav item', () => {
-      renderComponent()
+      renderComponent({ showDrawer: true })
 
       expect(screen.getByText('Services')).toBeInTheDocument()
     })
 
     it('does not render settings sub-items on non-settings routes', () => {
       mockedUseRoute.mockReturnValue(createRoute({ path: '/tenants' }))
-      renderComponent()
+      renderComponent({ showDrawer: true })
 
       expect(screen.queryByText('Tenant requests')).not.toBeInTheDocument()
       expect(screen.queryByText('Services')).not.toBeInTheDocument()
@@ -156,7 +127,6 @@ describe('AppNavigation', () => {
 
   describe('tenant route', () => {
     beforeEach(() => {
-      mockedCurrentUserIsIdir.mockReturnValue(true)
       mockedUseRoute.mockReturnValue(
         createRoute({
           params: { tenantId: 'tenantId' },
@@ -165,7 +135,7 @@ describe('AppNavigation', () => {
     })
 
     it('renders tenant nav items when on a tenant route', () => {
-      renderComponent()
+      renderComponent({ showDrawer: true })
 
       expect(screen.getByText('Tenant users')).toBeInTheDocument()
       expect(screen.getByText('Groups')).toBeInTheDocument()
@@ -173,7 +143,7 @@ describe('AppNavigation', () => {
     })
 
     it('links to the correct tenant routes', () => {
-      renderComponent()
+      renderComponent({ showDrawer: true })
 
       expect(
         screen.getByRole('link', { name: /tenant users/i }),
@@ -189,7 +159,7 @@ describe('AppNavigation', () => {
 
     it('does not render tenant nav items when not on a tenant route', () => {
       mockedUseRoute.mockReturnValue(createRoute({ params: {} }))
-      renderComponent()
+      renderComponent({ showDrawer: true })
 
       expect(screen.queryByText('Tenant users')).not.toBeInTheDocument()
       expect(screen.queryByText('Groups')).not.toBeInTheDocument()
@@ -198,7 +168,6 @@ describe('AppNavigation', () => {
 
   describe('group route', () => {
     beforeEach(() => {
-      mockedCurrentUserIsIdir.mockReturnValue(true)
       mockedUseRoute.mockReturnValue(
         createRoute({
           params: { tenantId: 'tenantId', groupId: 'groupId' },
@@ -207,14 +176,14 @@ describe('AppNavigation', () => {
     })
 
     it('renders group nav items when on a group route', () => {
-      renderComponent()
+      renderComponent({ showDrawer: true })
 
       expect(screen.getByText('Members')).toBeInTheDocument()
       expect(screen.getByText('Service roles')).toBeInTheDocument()
     })
 
     it('links to the correct group routes', () => {
-      renderComponent()
+      renderComponent({ showDrawer: true })
 
       expect(screen.getByRole('link', { name: /members/i })).toHaveAttribute(
         'href',
@@ -231,7 +200,7 @@ describe('AppNavigation', () => {
           params: { tenantId: 'tenantId' },
         }),
       )
-      renderComponent()
+      renderComponent({ showDrawer: true })
 
       expect(screen.queryByText('Members')).not.toBeInTheDocument()
       expect(screen.queryByText('Service roles')).not.toBeInTheDocument()
@@ -239,13 +208,9 @@ describe('AppNavigation', () => {
   })
 
   describe('rail mode', () => {
-    beforeEach(() => {
-      mockedCurrentUserIsIdir.mockReturnValue(true)
-    })
-
     it('is in rail mode on mobile', () => {
       mockedUseDisplay.mockReturnValue(createDisplay(true))
-      renderComponent()
+      renderComponent({ showDrawer: true })
 
       expect(screen.getByRole('navigation')).toHaveClass(
         'v-navigation-drawer--rail',
@@ -254,7 +219,7 @@ describe('AppNavigation', () => {
 
     it('is not in rail mode on desktop', () => {
       mockedUseDisplay.mockReturnValue(createDisplay(false))
-      renderComponent()
+      renderComponent({ showDrawer: true })
 
       expect(screen.getByRole('navigation')).not.toHaveClass(
         'v-navigation-drawer--rail',
@@ -267,7 +232,7 @@ describe('AppNavigation', () => {
         typeof useDisplay
       >)
 
-      renderComponent()
+      renderComponent({ showDrawer: true })
 
       const toggleButton = screen.getByLabelText('Collapse navigation')
       await fireEvent.click(toggleButton)
