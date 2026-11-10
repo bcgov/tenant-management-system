@@ -9,11 +9,8 @@ import { useDisplay } from 'vuetify'
 
 import { type User } from '@/models/user.model'
 import { config } from '@/services/config.service'
-import { useAuthStore } from '@/stores/useAuthStore'
 
 // --- Store and Composable Setup ----------------------------------------------
-
-const authStore = useAuthStore()
 
 const { smAndUp, mdAndUp } = useDisplay()
 
@@ -21,6 +18,10 @@ const { smAndUp, mdAndUp } = useDisplay()
 
 const { user } = defineProps<{
   user: User | null
+}>()
+
+const emit = defineEmits<{
+  logout: []
 }>()
 
 // --- Component State ---------------------------------------------------------
@@ -82,7 +83,7 @@ const title = computed(() => {
           <v-list-item
             :prepend-icon="mdiLogout"
             title="Logout"
-            @click="authStore.logout()"
+            @click="emit('logout')"
           />
         </v-list>
       </v-menu>

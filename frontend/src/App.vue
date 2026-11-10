@@ -24,12 +24,18 @@ const loggedOut = computed(() => authStore.isSessionExpired)
 const user = computed(() => {
   return authStore.isAuthenticated ? authStore.authenticatedUser : null
 })
+
+// --- Component Methods -------------------------------------------------------
+
+const handleLogout = async () => {
+  await authStore.logout()
+}
 </script>
 
 <template>
   <v-app>
     <AppNotifications />
-    <AppHeader :user="user" />
+    <AppHeader :user="user" @logout="handleLogout" />
     <AppNavigation />
 
     <v-main>
