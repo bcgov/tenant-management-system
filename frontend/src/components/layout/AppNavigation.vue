@@ -16,10 +16,12 @@ import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useDisplay } from 'vuetify'
 
-import {
-  currentUserIsIdir,
-  currentUserIsOperationsAdmin,
-} from '@/utils/permissions'
+// --- Component Interface -----------------------------------------------------
+
+const { showDrawer, showSettings } = defineProps<{
+  showDrawer: boolean
+  showSettings: boolean
+}>()
 
 // --- Store and Composable Setup ----------------------------------------------
 
@@ -32,9 +34,6 @@ const railManual = ref<boolean | null>(null)
 
 // --- Computed Values ---------------------------------------------------------
 
-// Only administrators see the settings menu item.
-const isAdministrator = computed(() => currentUserIsOperationsAdmin())
-
 const isRouteGroup = computed(() => !!routeGroupId.value)
 const isRouteSettings = computed(() => route.path.startsWith('/settings'))
 const isRouteTenant = computed(() => !!routeTenantId.value)
@@ -43,10 +42,6 @@ const rail = computed(() => railManual.value ?? mobile.value)
 
 const routeGroupId = computed(() => route.params.groupId)
 const routeTenantId = computed(() => route.params.tenantId)
-
-// Only show the drawer if the user is an IDIR user. Hide for not logged in or
-// BCeID users.
-const showDrawer = computed(() => currentUserIsIdir())
 
 // --- Watchers and Effects ----------------------------------------------------
 
@@ -60,7 +55,7 @@ watch(mobile, () => {
   <v-navigation-drawer v-if="showDrawer" :rail="rail" permanent>
     <v-list nav>
       <v-list-item
-        v-if="isAdministrator"
+        v-if="showSettings"
         :prepend-icon="mdiCogOutline"
         class="mt-2"
         title="Settings"
@@ -81,8 +76,7 @@ watch(mobile, () => {
           to="/settings/services"
         />
       </template>
-
-      <v-divider v-if="isAdministrator" class="my-2" />
+      <v-divider v-if="showSettings" class="my-2" />
 
       <v-list-item
         :prepend-icon="mdiHomeCircleOutline"

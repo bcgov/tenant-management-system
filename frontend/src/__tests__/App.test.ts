@@ -1,6 +1,6 @@
-import { mount } from '@vue/test-utils'
+import userEvent from '@testing-library/user-event'
+import { render, screen } from '@testing-library/vue'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { nextTick } from 'vue'
 import { createVuetify } from 'vuetify'
 
 import { makeUser } from '@/__tests__/__factories__'
@@ -18,6 +18,9 @@ vi.mock('vue-router', () => ({
 
 vi.mock('@/services/config.service', () => ({
   config: {
+    link: {
+      contactUs: 'http://contact-us',
+    },
     oidc: {
       clientId: 'test',
       hintBceidBusiness: 'business-bceid',
@@ -32,14 +35,14 @@ vi.mock('@/stores/useAuthStore', () => ({
   useAuthStore: () => currentAuthStore,
 }))
 
-const mountApp = () =>
-  mount(App, {
+const renderApp = () =>
+  render(App, {
     global: {
       plugins: [vuetify],
       stubs: {
-        AppHeader: true,
         AppNavigation: true,
         AppNotifications: true,
+        'router-link': { template: '<a><slot /></a>' },
         'router-view': { template: '<div data-testid="router-view" />' },
       },
     },
@@ -51,82 +54,107 @@ describe('App.vue', () => {
     currentAuthStore = createMockAuthStore()
   })
 
-  it('does not show login buttons when session is not expired', async () => {
-    const wrapper = mountApp()
-    await nextTick()
+  describe('session timeout', () => {
+    it('does not show login buttons when session is not expired', () => {
+      renderApp()
 
-    expect(wrapper.find('[data-testid="buttonIdir"]').exists()).toBe(false)
-    expect(wrapper.find('[data-testid="buttonBceidBusiness"]').exists()).toBe(
-      false,
-    )
-  })
+      expect(
+        screen.queryByRole('button', { name: 'Log in with IDIR' }),
+      ).not.toBeInTheDocument()
+      expect(
+        screen.queryByRole('button', { name: 'Log in with Business BCeID' }),
+      ).not.toBeInTheDocument()
+    })
 
-  it('shows login buttons when session is expired', async () => {
-    currentAuthStore = createMockAuthStore({ isSessionExpired: true })
+    it('shows login buttons when session is expired', () => {
+      currentAuthStore = createMockAuthStore({ isSessionExpired: true })
 
-    const wrapper = mountApp()
-    await nextTick()
+      renderApp()
 
-    expect(wrapper.find('[data-testid="buttonIdir"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="buttonBceidBusiness"]').exists()).toBe(
-      true,
-    )
-  })
+      expect(
+        screen.getByRole('button', { name: 'Log in with IDIR' }),
+      ).toBeInTheDocument()
+      expect(
+        screen.getByRole('button', { name: 'Log in with Business BCeID' }),
+      ).toBeInTheDocument()
+    })
 
-  it('calls login with idir hint when IDIR button is clicked', async () => {
-    currentAuthStore = createMockAuthStore({ isSessionExpired: true })
+    it('calls login with idir hint when IDIR button is clicked', async () => {
+      currentAuthStore = createMockAuthStore({ isSessionExpired: true })
+      const user = userEvent.setup()
 
-    const wrapper = mountApp()
-    await nextTick()
+      renderApp()
 
-    await wrapper.find('[data-testid="buttonIdir"]').trigger('click')
+      await user.click(screen.getByRole('button', { name: 'Log in with IDIR' }))
 
-    expect(currentAuthStore.login).toHaveBeenCalledWith({ idpHint: 'idir' })
-  })
+      expect(currentAuthStore.login).toHaveBeenCalledWith({ idpHint: 'idir' })
+    })
 
-  it('calls login with business bceid hint when Business BCeID button is clicked', async () => {
-    currentAuthStore = createMockAuthStore({ isSessionExpired: true })
+    it('calls login with business bceid hint when Business BCeID button is clicked', async () => {
+      currentAuthStore = createMockAuthStore({ isSessionExpired: true })
+      const user = userEvent.setup()
 
-    const wrapper = mountApp()
-    await nextTick()
+      renderApp()
 
-    await wrapper.find('[data-testid="buttonBceidBusiness"]').trigger('click')
+      await user.click(
+        screen.getByRole('button', { name: 'Log in with Business BCeID' }),
+      )
 
-    expect(currentAuthStore.login).toHaveBeenCalledWith({
-      idpHint: 'business-bceid',
+      expect(currentAuthStore.login).toHaveBeenCalledWith({
+        idpHint: 'business-bceid',
+      })
     })
   })
 
-  it('shows router view when not session expired', async () => {
-    const wrapper = mountApp()
-    await nextTick()
+  describe('routing', () => {
+    it('shows router view when session is not expired', () => {
+      renderApp()
 
-    expect(wrapper.find('[data-testid="router-view"]').exists()).toBe(true)
-  })
-
-  it('passes null user to AppHeader when not authenticated', async () => {
-    currentAuthStore = createMockAuthStore({
-      user: null,
+      expect(screen.getByTestId('router-view')).toBeInTheDocument()
     })
 
-    const wrapper = mountApp()
-    await nextTick()
+    it('hides router view when session is expired', () => {
+      currentAuthStore = createMockAuthStore({ isSessionExpired: true })
 
-    expect(wrapper.findComponent({ name: 'AppHeader' }).exists()).toBe(true)
-    expect(
-      wrapper.findComponent({ name: 'AppHeader' }).props('user'),
-    ).toBeNull()
+      renderApp()
+
+      expect(screen.queryByTestId('router-view')).not.toBeInTheDocument()
+    })
   })
 
-  it('passes user to AppHeader when authenticated', async () => {
-    const user = makeUser()
-    currentAuthStore = createMockAuthStore({ user })
+  describe('header', () => {
+    it('does not show the user menu when not authenticated', () => {
+      currentAuthStore = createMockAuthStore({ user: null })
 
-    const wrapper = mountApp()
-    await nextTick()
+      renderApp()
 
-    expect(wrapper.findComponent({ name: 'AppHeader' }).props('user')).toEqual(
-      user,
-    )
+      expect(
+        screen.queryByRole('button', { name: 'User menu' }),
+      ).not.toBeInTheDocument()
+    })
+
+    it('shows the authenticated user in the user menu', async () => {
+      const testUser = makeUser()
+      currentAuthStore = createMockAuthStore({ user: testUser })
+      const user = userEvent.setup()
+
+      renderApp()
+
+      await user.click(screen.getByRole('button', { name: 'User menu' }))
+
+      expect(await screen.findByText(testUser.getName())).toBeInTheDocument()
+    })
+
+    it('calls logout when Logout is selected from the user menu', async () => {
+      currentAuthStore = createMockAuthStore({ user: makeUser() })
+      const user = userEvent.setup()
+
+      renderApp()
+
+      await user.click(screen.getByRole('button', { name: 'User menu' }))
+      await user.click(await screen.findByText('Logout'))
+
+      expect(currentAuthStore.logout).toHaveBeenCalledOnce()
+    })
   })
 })

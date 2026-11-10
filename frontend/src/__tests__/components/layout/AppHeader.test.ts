@@ -6,7 +6,6 @@ import * as components from 'vuetify/components'
 import * as directives from 'vuetify/directives'
 
 import { makeSsoUser, makeUser, makeUserIdir } from '@/__tests__/__factories__'
-import { createMockAuthStore } from '@/__tests__/__helpers__/useAuthStore.mock'
 
 import AppHeader from '@/components/layout/AppHeader.vue'
 import { type User } from '@/models/user.model'
@@ -29,12 +28,7 @@ vi.mock('@/services/config.service', () => ({
   },
 }))
 
-let currentAuthStore = createMockAuthStore()
-vi.mock('@/stores/useAuthStore', () => ({
-  useAuthStore: () => currentAuthStore,
-}))
-
-const renderHeader = (user: User | null = null) =>
+const renderComponent = (user: User | null = null) =>
   render(AppHeader, {
     props: { user },
     global: {
@@ -50,12 +44,10 @@ describe('AppHeader.vue', () => {
   beforeEach(() => {
     display.mdAndUp.value = true
     display.smAndUp.value = true
-
-    currentAuthStore = createMockAuthStore()
   })
 
   it('shows the full title on medium screens and up', () => {
-    renderHeader()
+    renderComponent()
 
     expect(
       screen.getByText('Connected Services, Team Access, and Roles (CSTAR)'),
@@ -65,7 +57,7 @@ describe('AppHeader.vue', () => {
   it('shows the short title on small screens', () => {
     display.mdAndUp.value = false
 
-    renderHeader()
+    renderComponent()
 
     expect(screen.getByText('CSTAR')).toBeInTheDocument()
     expect(
@@ -77,7 +69,7 @@ describe('AppHeader.vue', () => {
     display.mdAndUp.value = false
     display.smAndUp.value = false
 
-    renderHeader()
+    renderComponent()
 
     expect(screen.queryByText('CSTAR')).not.toBeInTheDocument()
     expect(
@@ -86,7 +78,7 @@ describe('AppHeader.vue', () => {
   })
 
   it('shows no help link or user menu when there is no user', () => {
-    renderHeader(null)
+    renderComponent(null)
 
     expect(
       screen.queryByRole('link', { name: 'Help - Contact Us' }),
@@ -97,7 +89,7 @@ describe('AppHeader.vue', () => {
   })
 
   it('shows a help link to the contact page when there is a user', () => {
-    renderHeader(makeUser())
+    renderComponent(makeUser())
 
     const helpLink = screen.getByRole('link', { name: 'Help - Contact Us' })
     expect(helpLink).toHaveAttribute('href', 'https://contact-us.example.com')
@@ -105,7 +97,7 @@ describe('AppHeader.vue', () => {
   })
 
   it('keeps the user menu closed until the menu button is clicked', () => {
-    renderHeader(makeUser())
+    renderComponent(makeUser())
 
     expect(screen.queryByText('Logout')).not.toBeInTheDocument()
   })
@@ -118,7 +110,7 @@ describe('AppHeader.vue', () => {
       }),
     })
 
-    renderHeader(user)
+    renderComponent(user)
     await userEvent.click(screen.getByRole('button', { name: 'User menu' }))
 
     expect(
@@ -126,11 +118,11 @@ describe('AppHeader.vue', () => {
     ).toBeInTheDocument()
   })
 
-  it('logs out when Logout is clicked in the user menu', async () => {
-    renderHeader(makeUser())
+  it('emits when Logout is clicked in the user menu', async () => {
+    const { emitted } = renderComponent(makeUser())
     await userEvent.click(screen.getByRole('button', { name: 'User menu' }))
     await userEvent.click(await screen.findByText('Logout'))
 
-    expect(currentAuthStore.logout).toHaveBeenCalledTimes(1)
+    expect(emitted('logout')).toBeTruthy()
   })
 })
