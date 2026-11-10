@@ -22,7 +22,11 @@ vi.mock('vuetify', async (importOriginal) => ({
 }))
 
 vi.mock('@/services/config.service', () => ({
-  config: { contactUsUrl: 'https://example.com/contact' },
+  config: {
+    link: {
+      contactUs: 'https://contact-us.example.com',
+    },
+  },
 }))
 
 let currentAuthStore = createMockAuthStore()
@@ -96,7 +100,7 @@ describe('AppHeader.vue', () => {
     renderHeader(makeUser())
 
     const helpLink = screen.getByRole('link', { name: 'Help - Contact Us' })
-    expect(helpLink).toHaveAttribute('href', 'https://example.com/contact')
+    expect(helpLink).toHaveAttribute('href', 'https://contact-us.example.com')
     expect(helpLink).toHaveAttribute('target', '_blank')
   })
 
