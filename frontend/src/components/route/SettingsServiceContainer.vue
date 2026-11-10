@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { mdiCircle, mdiMagnify } from '@mdi/js'
+import { mdiCircle, mdiClose, mdiMagnify } from '@mdi/js'
 import { computed, ref } from 'vue'
 
 import ServiceForm from '@/components/service/ServiceForm.vue'
@@ -19,8 +19,12 @@ const serviceStore = useServiceStore()
 // --- Component State ---------------------------------------------------------
 
 const isAdding = ref(false)
+
 const isDuplicateName = ref(false)
-const search = ref('')
+
+const serviceFilter = ref('')
+
+const serviceFilterField = ref<{ focus: () => void } | null>(null)
 
 // --- Computed Values ---------------------------------------------------------
 
@@ -28,13 +32,18 @@ const services = computed(() => serviceStore.services)
 
 // --- Component Methods -------------------------------------------------------
 
-const handleAddService = async () => {
+const handleAddService = () => {
   isAdding.value = true
 }
 
 const handleCancel = () => {
   isAdding.value = false
   isDuplicateName.value = false
+}
+
+const handleServiceFilterClear = () => {
+  serviceFilter.value = ''
+  serviceFilterField.value?.focus()
 }
 
 const handleSubmit = async (serviceDetails: ServiceDetailFields) => {
@@ -102,14 +111,26 @@ init() // NOSONAR
         <v-col cols="4">
           <v-text-field
             v-if="services.length > 0"
-            v-model="search"
+            ref="serviceFilterField"
+            v-model="serviceFilter"
             :append-inner-icon="mdiMagnify"
             label="Search"
             variant="outlined"
             clearable
             hide-details
             single-line
-          ></v-text-field>
+          >
+            <template #clear>
+              <v-btn
+                :icon="mdiClose"
+                aria-label="Clear search"
+                density="comfortable"
+                size="small"
+                variant="text"
+                @click="handleServiceFilterClear"
+              />
+            </template>
+          </v-text-field>
         </v-col>
       </v-row>
 
@@ -133,14 +154,14 @@ init() // NOSONAR
             ]"
             :hide-default-footer="services.length === 0"
             :items="services"
-            :search="search"
+            :search="serviceFilter"
             :sort-by="[{ key: 'displayName', order: 'asc' }]"
             item-value="id"
             striped="even"
             fixed-header
           >
             <template #no-data>
-              <v-sheet v-if="search" class="mb-6" color="surface-white">
+              <v-sheet v-if="serviceFilter" class="mb-6" color="surface-white">
                 <h5 class="mb-2">No matching services</h5>
                 <p class="mt-0">
                   Change your search criteria to match services

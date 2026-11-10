@@ -133,6 +133,20 @@ describe('group validators', () => {
         .send({})
       expect(response.status).toBe(400)
     })
+
+    it('accepts a list of confirmed services', async () => {
+      const response = await request(app)
+        .post(`/${VALID_UUID}/groups/${VALID_UUID}/users`)
+        .send({ user: validUser, confirmOtherServices: ['notify', 'forms'] })
+      expect(response.status).toBe(200)
+    })
+
+    it('rejects confirmed services that are not a list of names', async () => {
+      const response = await request(app)
+        .post(`/${VALID_UUID}/groups/${VALID_UUID}/users`)
+        .send({ user: validUser, confirmOtherServices: 'notify' })
+      expect(response.status).toBe(400)
+    })
   })
 
   describe('removeGroupUser', () => {

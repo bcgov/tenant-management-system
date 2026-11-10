@@ -1,4 +1,5 @@
-import { fireEvent, render, screen } from '@testing-library/vue'
+import userEvent from '@testing-library/user-event'
+import { render, screen } from '@testing-library/vue'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createVuetify } from 'vuetify'
 import * as components from 'vuetify/components'
@@ -10,34 +11,22 @@ import {
   makeRoleTenantOwner,
   makeRoleUserAdmin,
   makeSsoUser,
-  makeTenant,
   makeUser,
+  makeUserIdir,
 } from '@/__tests__/__factories__'
 import { isVuetifyDisabled } from '@/__tests__/__helpers__/vuetify'
 
 import TenantUserTable from '@/components/tenant/TenantUserTable.vue'
-import { type Tenant } from '@/models/tenant.model'
 import { toUserId, type User } from '@/models/user.model'
-import { isIdpIdir } from '@/utils/identityProvider'
-import { currentUserHasRole } from '@/utils/permissions'
-
-vi.mock('@/utils/identityProvider', () => ({
-  identityProviderToDisplay: vi.fn((idpType: string) => idpType),
-  isIdpIdir: vi.fn(),
-}))
-
-vi.mock('@/utils/permissions', () => ({
-  currentUserHasRole: vi.fn(),
-}))
 
 vi.mock('@/components/tenant/RoleDialog.vue', () => ({
   default: {
-    emits: ['update:open-dialog'],
+    emits: ['update:modelValue', 'roles-changed'],
     name: 'RoleDialog',
     props: ['modelValue', 'roles', 'user'],
     template:
       '<div v-if="modelValue" data-testid="role-dialog">' +
-      'Editing user: {{ user.ssoUser.displayName }}' +
+      '{{ user.ssoUser.firstName }} {{ user.ssoUser.lastName }}' +
       '<button data-testid="close-role-dialog" ' +
       '@click="$emit(\'update:modelValue\', false)">Close</button>' +
       '<button data-testid="change-roles-dialog" ' +
@@ -49,7 +38,7 @@ vi.mock('@/components/tenant/RoleDialog.vue', () => ({
 
 const vuetify = createVuetify({ components, directives })
 
-function renderComponent(props: { tenant: Tenant; users: User[] }) {
+function renderComponent(props: { isUserAdmin: boolean; users: User[] }) {
   return render(TenantUserTable, {
     global: {
       plugins: [vuetify],
@@ -71,45 +60,53 @@ beforeEach(() => {
 
 describe('TenantUserTable', () => {
   describe('Actions column', () => {
-    it('is displayed for admins', () => {
-      const user = makeUser({
-        ssoUser: makeSsoUser({ firstName: 'firstName', lastName: 'lastName' }),
-      })
-      const tenant = makeTenant({ users: [user] })
-      vi.mocked(currentUserHasRole).mockReturnValue(true)
+    it('is displayed for user admin', () => {
+      const users = [
+        makeUserIdir({
+          ssoUser: makeSsoUser({
+            firstName: 'firstName',
+            lastName: 'lastName',
+          }),
+        }),
+      ]
 
-      renderComponent({ tenant, users: [user] })
+      renderComponent({ isUserAdmin: true, users })
 
       expect(
         screen.getByRole('columnheader', { name: 'Actions' }),
       ).toBeInTheDocument()
       expect(
-        screen.getByLabelText('Open menu for firstName lastName'),
+        screen.getByRole('button', {
+          name: 'Open menu for firstName lastName',
+        }),
       ).toBeInTheDocument()
     })
 
-    it('is not displayed for non-admins', () => {
-      const user = makeUser({
-        ssoUser: makeSsoUser({ firstName: 'firstName', lastName: 'lastName' }),
-      })
-      const tenant = makeTenant({ users: [user] })
-      vi.mocked(currentUserHasRole).mockReturnValue(false)
+    it('is not displayed for not user admin', () => {
+      const users = [
+        makeUserIdir({
+          ssoUser: makeSsoUser({
+            firstName: 'firstName',
+            lastName: 'lastName',
+          }),
+        }),
+      ]
 
-      renderComponent({ tenant, users: [user] })
+      renderComponent({ isUserAdmin: false, users })
 
       expect(
         screen.queryByRole('columnheader', { name: 'Actions' }),
       ).not.toBeInTheDocument()
       expect(
-        screen.queryByLabelText('Open menu for firstName lastName'),
+        screen.queryByRole('button', {
+          name: 'Open menu for firstName lastName',
+        }),
       ).not.toBeInTheDocument()
     })
   })
 
   describe('Table data', () => {
     it("renders a row with each user's details", () => {
-      vi.mocked(currentUserHasRole).mockReturnValue(false)
-
       const users = [
         makeUser({
           roles: [makeRoleServiceUser()],
@@ -130,15 +127,13 @@ describe('TenantUserTable', () => {
           }),
         }),
       ]
-      const tenant = makeTenant({ users })
 
-      renderComponent({ tenant, users })
+      renderComponent({ isUserAdmin: false, users })
 
       expect(screen.getByText('email1')).toBeInTheDocument()
       expect(screen.getByText('firstName1')).toBeInTheDocument()
       expect(screen.getByText('idp1')).toBeInTheDocument()
       expect(screen.getByText('lastName1')).toBeInTheDocument()
-
       expect(screen.getByText('email2')).toBeInTheDocument()
       expect(screen.getByText('firstName2')).toBeInTheDocument()
       expect(screen.getByText('idp2')).toBeInTheDocument()
@@ -146,6 +141,7 @@ describe('TenantUserTable', () => {
     })
 
     it('filters rows based on the search input', async () => {
+      const user = userEvent.setup()
       const users = [
         makeUser({
           ssoUser: makeSsoUser({
@@ -162,180 +158,215 @@ describe('TenantUserTable', () => {
           }),
         }),
       ]
-      const tenant = makeTenant({ users })
-      vi.mocked(currentUserHasRole).mockReturnValue(false)
 
-      renderComponent({ tenant, users })
-      await fireEvent.update(screen.getByLabelText('Search'), 'Alice')
+      renderComponent({ isUserAdmin: false, users })
 
-      expect(screen.getByText('Alice')).toBeInTheDocument()
-      expect(screen.queryByText('Bob')).not.toBeInTheDocument()
+      expect(screen.getByText('Anderson')).toBeInTheDocument()
+      expect(screen.getByText('Barker')).toBeInTheDocument()
+
+      await user.type(screen.getByLabelText('Search'), 'Alice')
+
+      expect(screen.getByText('Anderson')).toBeInTheDocument()
+      expect(screen.queryByText('Barker')).not.toBeInTheDocument()
     })
 
     it('shows a no-data message when the search filter matches no users', async () => {
-      const user = makeUser({
-        ssoUser: makeSsoUser({
-          email: 'firstName.lastName@gov.bc.ca',
-          firstName: 'firstName',
-          lastName: 'lastName',
+      const user = userEvent.setup()
+      const users = [
+        makeUser({
+          ssoUser: makeSsoUser({
+            firstName: 'firstName',
+            lastName: 'lastName',
+          }),
         }),
-      })
-      const tenant = makeTenant({ users: [user] })
-      vi.mocked(currentUserHasRole).mockReturnValue(false)
+      ]
 
-      renderComponent({ tenant, users: [user] })
-      await fireEvent.update(screen.getByLabelText('Search'), 'no-such-user')
+      renderComponent({ isUserAdmin: false, users })
+
+      expect(screen.getByText('firstName')).toBeInTheDocument()
+
+      await user.type(screen.getByLabelText('Search'), 'no-such-user')
 
       expect(
         screen.getByText('No users match your search criteria'),
       ).toBeInTheDocument()
       expect(screen.queryByText('firstName')).not.toBeInTheDocument()
     })
+
+    it('clears the search when clear button is clicked', async () => {
+      const user = userEvent.setup()
+      const users = [
+        makeUser({
+          ssoUser: makeSsoUser({
+            firstName: 'firstName',
+            lastName: 'lastName',
+          }),
+        }),
+      ]
+
+      renderComponent({ isUserAdmin: false, users })
+      const searchInput = screen.getByLabelText('Search')
+      await user.type(searchInput, 'no-such-user')
+
+      expect(
+        screen.getByText('No users match your search criteria'),
+      ).toBeInTheDocument()
+
+      await user.click(screen.getByRole('button', { name: 'Clear search' }))
+
+      expect(
+        screen.queryByText('No users match your search criteria'),
+      ).not.toBeInTheDocument()
+      expect(searchInput).toHaveValue('')
+      expect(searchInput).toHaveFocus()
+    })
   })
 
   describe('Tenant Roles column', () => {
     it('renders a chip per role, sorted by description', () => {
-      const user = makeUser({
-        roles: [
-          makeRole({ description: 'User Role' }),
-          makeRole({ description: 'Admin Role' }),
-        ],
-      })
-      const tenant = makeTenant({ users: [user] })
-      vi.mocked(currentUserHasRole).mockReturnValue(false)
+      const users = [
+        makeUser({
+          roles: [
+            makeRole({ description: 'User Role' }),
+            makeRole({ description: 'Admin Role' }),
+          ],
+        }),
+      ]
 
-      renderComponent({ tenant, users: [user] })
+      renderComponent({ isUserAdmin: false, users })
 
-      const chips = screen.getAllByText(/Role$/)
-      expect(chips.map((el) => el.textContent?.trim())).toEqual([
-        'Admin Role',
-        'User Role',
-      ])
+      expect(screen.getByText('Admin Role')).toBeInTheDocument()
+      expect(screen.getByText('User Role')).toBeInTheDocument()
     })
 
-    it('has no remove icon for non-admins', () => {
-      const user = makeUser({
-        roles: [makeRoleServiceUser()],
-      })
-      const tenant = makeTenant({ users: [user] })
-      vi.mocked(currentUserHasRole).mockReturnValue(false)
+    it('has remove owner icon for user admin when multiple owners', () => {
+      const roleTenantOwner = makeRoleTenantOwner()
+      const users = [
+        makeUserIdir({
+          roles: [roleTenantOwner, makeRoleServiceUser()],
+          ssoUser: makeSsoUser({
+            firstName: 'firstNameA',
+            lastName: 'lastNameA',
+          }),
+        }),
+        makeUserIdir({
+          roles: [roleTenantOwner, makeRoleServiceUser()],
+          ssoUser: makeSsoUser({
+            firstName: 'firstNameB',
+            lastName: 'lastNameB',
+          }),
+        }),
+      ]
 
-      renderComponent({ tenant, users: [user] })
+      renderComponent({ isUserAdmin: true, users })
 
-      expect(screen.queryByLabelText(/Remove role/)).not.toBeInTheDocument()
-    })
-
-    it('has no remove icon when only one role', () => {
-      const user = makeUser({
-        roles: [makeRoleServiceUser()],
-      })
-      const tenant = makeTenant({ users: [user] })
-      vi.mocked(currentUserHasRole).mockReturnValue(true)
-
-      renderComponent({ tenant, users: [user] })
-
-      expect(screen.queryByLabelText(/Remove role/)).not.toBeInTheDocument()
-    })
-
-    it('has no remove icon when only one tenant owner', () => {
-      const owner = makeRoleTenantOwner()
-      const service = makeRoleServiceUser()
-      const user = makeUser({
-        roles: [service, owner],
-        ssoUser: makeSsoUser({ firstName: 'firstName', lastName: 'lastName' }),
-      })
-      const tenant = makeTenant({ users: [user] })
-      vi.mocked(currentUserHasRole).mockReturnValue(true)
-      vi.mocked(isIdpIdir).mockReturnValue(true)
-
-      renderComponent({ tenant, users: [user] })
-
-      expect(
-        screen.queryByLabelText(
-          `Remove role ${owner.description} for firstName lastName`,
-        ),
-      ).not.toBeInTheDocument()
       expect(
         screen.getByLabelText(
-          `Remove role ${service.description} for firstName lastName`,
+          `Remove role ${roleTenantOwner.description} for firstNameA lastNameA`,
         ),
       ).toBeInTheDocument()
     })
 
-    it('has remove icon when multiple tenant owners', () => {
-      const owner = makeRoleTenantOwner()
-      const userA = makeUser({
-        roles: [owner, makeRoleServiceUser()],
-        ssoUser: makeSsoUser({
-          firstName: 'firstName1',
-          lastName: 'lastName1',
+    it('has no remove owner icon non-user admin when multiple owners', () => {
+      const roleTenantOwner = makeRoleTenantOwner()
+      const users = [
+        makeUserIdir({
+          roles: [roleTenantOwner, makeRoleServiceUser()],
+          ssoUser: makeSsoUser({
+            firstName: 'firstNameA',
+            lastName: 'lastNameA',
+          }),
         }),
-      })
-      const userB = makeUser({
-        roles: [owner],
-        ssoUser: makeSsoUser({
-          firstName: 'firstName2',
-          lastName: 'lastName2',
+        makeUserIdir({
+          roles: [roleTenantOwner, makeRoleServiceUser()],
+          ssoUser: makeSsoUser({
+            firstName: 'firstNameB',
+            lastName: 'lastNameB',
+          }),
         }),
-      })
-      const tenant = makeTenant({ users: [userA, userB] })
-      vi.mocked(currentUserHasRole).mockReturnValue(true)
-      vi.mocked(isIdpIdir).mockReturnValue(true)
+      ]
 
-      renderComponent({ tenant, users: [userA, userB] })
+      renderComponent({ isUserAdmin: false, users })
 
       expect(
-        screen.getAllByLabelText(
-          `Remove role ${owner.description} for firstName1 lastName1`,
+        screen.queryByLabelText(
+          `Remove role ${roleTenantOwner.description} for firstNameA lastNameA`,
         ),
-      ).toHaveLength(1)
+      ).not.toBeInTheDocument()
+    })
+
+    it('has no remove icon when only one tenant owner', () => {
+      const roleTenantOwner = makeRoleTenantOwner()
+      const users = [
+        makeUserIdir({
+          roles: [roleTenantOwner, makeRoleServiceUser()],
+          ssoUser: makeSsoUser({
+            firstName: 'firstName',
+            lastName: 'lastName',
+          }),
+        }),
+      ]
+
+      renderComponent({ isUserAdmin: false, users })
+
+      expect(
+        screen.queryByLabelText(
+          `Remove role ${roleTenantOwner.description} for firstName lastName`,
+        ),
+      ).not.toBeInTheDocument()
     })
   })
 
   describe('Remove role event', () => {
     it('is emitted after confirming', async () => {
+      const user = userEvent.setup()
       const role = makeRoleServiceUser()
-      const user = makeUser({
-        roles: [role, makeRoleUserAdmin()],
-        ssoUser: makeSsoUser({ firstName: 'firstName', lastName: 'lastName' }),
-      })
-      const tenant = makeTenant({ users: [user] })
-      vi.mocked(currentUserHasRole).mockReturnValue(true)
-      vi.mocked(isIdpIdir).mockReturnValue(true)
+      const users = [
+        makeUserIdir({
+          roles: [role, makeRoleUserAdmin()],
+          ssoUser: makeSsoUser({
+            firstName: 'firstName',
+            lastName: 'lastName',
+          }),
+        }),
+      ]
 
-      const { emitted } = renderComponent({ tenant, users: [user] })
-
-      await fireEvent.click(
+      const { emitted } = renderComponent({ isUserAdmin: true, users })
+      await user.click(
         screen.getByLabelText(
           `Remove role ${role.description} for firstName lastName`,
         ),
       )
+
       expect(screen.getByText('Confirm role removal')).toBeInTheDocument()
 
-      await fireEvent.click(screen.getByRole('button', { name: 'Remove role' }))
+      await user.click(screen.getByRole('button', { name: 'Remove role' }))
 
       expect(emitted()['remove-role']).toHaveLength(1)
-      expect(emitted()['remove-role'][0]).toEqual([user, role])
+      expect(emitted()['remove-role'][0]).toEqual([users[0], role])
     })
 
     it('is not emitted after cancelling', async () => {
+      const user = userEvent.setup()
       const role = makeRoleServiceUser()
-      const user = makeUser({
-        roles: [role, makeRoleUserAdmin()],
-        ssoUser: makeSsoUser({ firstName: 'firstName', lastName: 'lastName' }),
-      })
-      const tenant = makeTenant({ users: [user] })
-      vi.mocked(currentUserHasRole).mockReturnValue(true)
-      vi.mocked(isIdpIdir).mockReturnValue(true)
+      const users = [
+        makeUserIdir({
+          roles: [role, makeRoleUserAdmin()],
+          ssoUser: makeSsoUser({
+            firstName: 'firstName',
+            lastName: 'lastName',
+          }),
+        }),
+      ]
 
-      const { emitted } = renderComponent({ tenant, users: [user] })
+      const { emitted } = renderComponent({ isUserAdmin: true, users })
 
-      await fireEvent.click(
+      await user.click(
         screen.getByLabelText(
           `Remove role ${role.description} for firstName lastName`,
         ),
       )
-      await fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+      await user.click(screen.getByRole('button', { name: 'Cancel' }))
 
       expect(emitted()['remove-role']).toBeUndefined()
     })
@@ -343,25 +374,26 @@ describe('TenantUserTable', () => {
 
   describe('Remove user action', () => {
     it('is enabled when there are multiple tenant owners', async () => {
-      const userA = makeUser({
-        roles: [makeRoleTenantOwner()],
-        ssoUser: makeSsoUser({
-          firstName: 'firstNameA',
-          lastName: 'lastNameA',
+      const user = userEvent.setup()
+      const users = [
+        makeUserIdir({
+          roles: [makeRoleTenantOwner()],
+          ssoUser: makeSsoUser({
+            firstName: 'firstNameA',
+            lastName: 'lastNameA',
+          }),
         }),
-      })
-      const userB = makeUser({
-        roles: [makeRoleTenantOwner()],
-        ssoUser: makeSsoUser({
-          firstName: 'firstNameB',
-          lastName: 'lastNameB',
+        makeUserIdir({
+          roles: [makeRoleTenantOwner()],
+          ssoUser: makeSsoUser({
+            firstName: 'firstNameB',
+            lastName: 'lastNameB',
+          }),
         }),
-      })
-      const tenant = makeTenant({ users: [userA, userB] })
-      vi.mocked(currentUserHasRole).mockReturnValue(true)
+      ]
 
-      renderComponent({ tenant, users: [userA, userB] })
-      await fireEvent.click(
+      renderComponent({ isUserAdmin: true, users: users })
+      await user.click(
         screen.getByLabelText('Open menu for firstNameA lastNameA'),
       )
 
@@ -372,18 +404,19 @@ describe('TenantUserTable', () => {
     })
 
     it('is disabled when the user is the sole tenant owner', async () => {
-      const user = makeUser({
-        roles: [makeRoleTenantOwner()],
-        ssoUser: makeSsoUser({
-          firstName: 'firstName',
-          lastName: 'lastName',
+      const user = userEvent.setup()
+      const users = [
+        makeUserIdir({
+          roles: [makeRoleTenantOwner()],
+          ssoUser: makeSsoUser({
+            firstName: 'firstName',
+            lastName: 'lastName',
+          }),
         }),
-      })
-      const tenant = makeTenant({ users: [user] })
-      vi.mocked(currentUserHasRole).mockReturnValue(true)
+      ]
 
-      renderComponent({ tenant, users: [user] })
-      await fireEvent.click(
+      renderComponent({ isUserAdmin: true, users })
+      await user.click(
         screen.getByLabelText('Open menu for firstName lastName'),
       )
 
@@ -392,43 +425,46 @@ describe('TenantUserTable', () => {
     })
 
     it('emits remove-user after confirming', async () => {
-      vi.mocked(currentUserHasRole).mockReturnValue(true)
+      const user = userEvent.setup()
+      const users = [
+        makeUserIdir({
+          roles: [makeRoleUserAdmin()],
+          ssoUser: makeSsoUser({
+            firstName: 'firstName',
+            lastName: 'lastName',
+          }),
+        }),
+      ]
 
-      const user = makeUser({
-        roles: [makeRoleUserAdmin()],
-        ssoUser: makeSsoUser({ firstName: 'firstName', lastName: 'lastName' }),
-      })
-      const tenant = makeTenant({ users: [user] })
-
-      const { emitted } = renderComponent({ tenant, users: [user] })
-
-      await fireEvent.click(
+      const { emitted } = renderComponent({ isUserAdmin: true, users })
+      await user.click(
         screen.getByLabelText('Open menu for firstName lastName'),
       )
-      await fireEvent.click(await screen.findByText('Remove user'))
-
-      await fireEvent.click(screen.getByRole('button', { name: 'Remove user' }))
+      await user.click(await screen.findByText('Remove user'))
+      await user.click(screen.getByRole('button', { name: 'Remove user' }))
 
       expect(emitted()['remove-user']).toHaveLength(1)
-      expect(emitted()['remove-user'][0]).toEqual([user])
+      expect(emitted()['remove-user'][0]).toEqual(users)
     })
 
     it('does not emit remove-user after cancelling', async () => {
-      vi.mocked(currentUserHasRole).mockReturnValue(true)
+      const user = userEvent.setup()
+      const users = [
+        makeUserIdir({
+          roles: [makeRoleUserAdmin()],
+          ssoUser: makeSsoUser({
+            firstName: 'firstName',
+            lastName: 'lastName',
+          }),
+        }),
+      ]
 
-      const user = makeUser({
-        roles: [makeRoleUserAdmin()],
-        ssoUser: makeSsoUser({ firstName: 'firstName', lastName: 'lastName' }),
-      })
-      const tenant = makeTenant({ users: [user] })
-
-      const { emitted } = renderComponent({ tenant, users: [user] })
-
-      await fireEvent.click(
+      const { emitted } = renderComponent({ isUserAdmin: true, users })
+      await user.click(
         screen.getByLabelText('Open menu for firstName lastName'),
       )
-      await fireEvent.click(await screen.findByText('Remove user'))
-      await fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+      await user.click(await screen.findByText('Remove user'))
+      await user.click(screen.getByRole('button', { name: 'Cancel' }))
 
       expect(emitted()['remove-user']).toBeUndefined()
     })
@@ -436,158 +472,161 @@ describe('TenantUserTable', () => {
 
   describe('Edit Tenant Roles action', () => {
     it('opens the RoleDialog for the selected user', async () => {
-      const userA = makeUser({
-        id: toUserId('a'),
-        roles: [makeRoleTenantOwner()],
-        ssoUser: makeSsoUser({
-          firstName: 'firstNameA',
-          lastName: 'lastNameA',
+      const user = userEvent.setup()
+      const users = [
+        makeUserIdir({
+          roles: [makeRoleTenantOwner()],
+          ssoUser: makeSsoUser({
+            firstName: 'firstNameA',
+            lastName: 'lastNameA',
+          }),
         }),
-      })
-      const userB = makeUser({
-        id: toUserId('b'),
-        roles: [makeRoleUserAdmin()],
-        ssoUser: makeSsoUser({
-          firstName: 'firstNameB',
-          lastName: 'lastNameB',
+        makeUserIdir({
+          roles: [makeRoleUserAdmin()],
+          ssoUser: makeSsoUser({
+            firstName: 'firstNameB',
+            lastName: 'lastNameB',
+          }),
         }),
-      })
-      const tenant = makeTenant({ users: [userA, userB] })
-      vi.mocked(currentUserHasRole).mockReturnValue(true)
+      ]
 
-      renderComponent({ tenant, users: [userA, userB] })
-      await fireEvent.click(
+      renderComponent({ isUserAdmin: true, users })
+      await user.click(
         screen.getByLabelText('Open menu for firstNameB lastNameB'),
       )
-      await fireEvent.click(
+      await user.click(
         screen.getByLabelText('Edit tenant roles for firstNameB lastNameB'),
       )
 
       expect(screen.getByTestId('role-dialog')).toHaveTextContent(
-        `Editing user: ${userB.ssoUser.displayName}`,
+        'firstNameB lastNameB',
       )
     })
 
     it('closes the dialog and changes the modifying user', async () => {
-      const userA = makeUser({
-        id: toUserId('user-a'),
-        roles: [makeRoleTenantOwner()],
-        ssoUser: makeSsoUser({
-          firstName: 'firstNameA',
-          lastName: 'lastNameA',
+      const user = userEvent.setup()
+      const users = [
+        makeUserIdir({
+          roles: [makeRoleTenantOwner()],
+          ssoUser: makeSsoUser({
+            firstName: 'firstNameA',
+            lastName: 'lastNameA',
+          }),
         }),
-      })
-      const userB = makeUser({
-        id: toUserId('user-b'),
-        roles: [makeRoleUserAdmin()],
-        ssoUser: makeSsoUser({
-          firstName: 'firstNameB',
-          lastName: 'lastNameB',
+        makeUserIdir({
+          roles: [makeRoleUserAdmin()],
+          ssoUser: makeSsoUser({
+            firstName: 'firstNameB',
+            lastName: 'lastNameB',
+          }),
         }),
-      })
-      const tenant = makeTenant({ users: [userA, userB] })
-      vi.mocked(currentUserHasRole).mockReturnValue(true)
+      ]
 
-      renderComponent({ tenant, users: [userA, userB] })
+      renderComponent({ isUserAdmin: true, users })
 
-      await fireEvent.click(
+      await user.click(
         screen.getByLabelText('Open menu for firstNameB lastNameB'),
       )
-      await fireEvent.click(
+      await user.click(
         screen.getByLabelText('Edit tenant roles for firstNameB lastNameB'),
       )
       expect(screen.getByTestId('role-dialog')).toHaveTextContent(
-        `Editing user: ${userB.ssoUser.displayName}`,
+        'firstNameB lastNameB',
       )
 
-      await fireEvent.click(screen.getByTestId('close-role-dialog'))
+      await user.click(screen.getByTestId('close-role-dialog'))
       expect(screen.queryByTestId('role-dialog')).not.toBeInTheDocument()
 
-      await fireEvent.click(
+      await user.click(
         screen.getByLabelText('Open menu for firstNameA lastNameA'),
       )
-      await fireEvent.click(
+      await user.click(
         screen.getByLabelText('Edit tenant roles for firstNameA lastNameA'),
       )
       expect(screen.getByTestId('role-dialog')).toHaveTextContent(
-        `Editing user: ${userA.ssoUser.displayName}`,
+        'firstNameA lastNameA',
       )
     })
 
     it('closes via v-model when the dialog dismisses itself', async () => {
-      vi.mocked(currentUserHasRole).mockReturnValue(true)
+      const user = userEvent.setup()
+      const users = [
+        makeUserIdir({
+          roles: [makeRoleTenantOwner()],
+          ssoUser: makeSsoUser({
+            firstName: 'firstName',
+            lastName: 'lastName',
+          }),
+        }),
+      ]
 
-      const user = makeUser({
-        roles: [makeRoleTenantOwner()],
-        ssoUser: makeSsoUser({ firstName: 'firstName', lastName: 'lastName' }),
-      })
-      const tenant = makeTenant({ users: [user] })
-
-      renderComponent({ tenant, users: [user] })
-
-      await fireEvent.click(
+      renderComponent({ isUserAdmin: true, users })
+      await user.click(
         screen.getByLabelText('Open menu for firstName lastName'),
       )
-      await fireEvent.click(await screen.findByText('Edit tenant roles'))
+      await user.click(await screen.findByText('Edit tenant roles'))
+
       expect(screen.getByTestId('role-dialog')).toBeInTheDocument()
 
-      await fireEvent.click(screen.getByTestId('close-role-dialog'))
+      await user.click(screen.getByTestId('close-role-dialog'))
 
       expect(screen.queryByTestId('role-dialog')).not.toBeInTheDocument()
     })
 
     it('emits roles-changed with the edited user and both role lists', async () => {
-      const userA = makeUser({
-        id: toUserId('a'),
-        roles: [makeRoleTenantOwner()],
-        ssoUser: makeSsoUser({
-          firstName: 'firstNameA',
-          lastName: 'lastNameA',
+      const user = userEvent.setup()
+      const users = [
+        makeUserIdir({
+          roles: [makeRoleTenantOwner()],
+          ssoUser: makeSsoUser({
+            firstName: 'firstNameA',
+            lastName: 'lastNameA',
+          }),
         }),
-      })
-      const userB = makeUser({
-        id: toUserId('b'),
-        roles: [makeRoleUserAdmin()],
-        ssoUser: makeSsoUser({
-          firstName: 'firstNameB',
-          lastName: 'lastNameB',
+        makeUserIdir({
+          id: toUserId('b'),
+          roles: [makeRoleUserAdmin()],
+          ssoUser: makeSsoUser({
+            firstName: 'firstNameB',
+            lastName: 'lastNameB',
+          }),
         }),
-      })
-      const tenant = makeTenant({ users: [userA, userB] })
-      vi.mocked(currentUserHasRole).mockReturnValue(true)
+      ]
 
-      const { emitted } = renderComponent({ tenant, users: [userA, userB] })
-
-      await fireEvent.click(
+      const { emitted } = renderComponent({ isUserAdmin: true, users })
+      await user.click(
         screen.getByLabelText('Open menu for firstNameB lastNameB'),
       )
-      await fireEvent.click(
+      await user.click(
         screen.getByLabelText('Edit tenant roles for firstNameB lastNameB'),
       )
-      await fireEvent.click(screen.getByTestId('change-roles-dialog'))
+      await user.click(screen.getByTestId('change-roles-dialog'))
 
       expect(emitted()['roles-changed']).toHaveLength(1)
       expect(emitted()['roles-changed'][0]).toEqual([
-        userB,
+        users[1],
         ['role-2', 'role-3'],
         ['role-1'],
       ])
     })
 
     it('does not emit roles-changed just by opening the dialog', async () => {
-      const user = makeUser({
-        roles: [makeRoleUserAdmin()],
-        ssoUser: makeSsoUser({ firstName: 'firstName', lastName: 'lastName' }),
-      })
-      const tenant = makeTenant({ users: [user] })
-      vi.mocked(currentUserHasRole).mockReturnValue(true)
+      const user = userEvent.setup()
+      const users = [
+        makeUserIdir({
+          roles: [makeRoleUserAdmin()],
+          ssoUser: makeSsoUser({
+            firstName: 'firstName',
+            lastName: 'lastName',
+          }),
+        }),
+      ]
 
-      const { emitted } = renderComponent({ tenant, users: [user] })
-
-      await fireEvent.click(
+      const { emitted } = renderComponent({ isUserAdmin: true, users })
+      await user.click(
         screen.getByLabelText('Open menu for firstName lastName'),
       )
-      await fireEvent.click(
+      await user.click(
         screen.getByLabelText('Edit tenant roles for firstName lastName'),
       )
 

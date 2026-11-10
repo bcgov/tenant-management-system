@@ -19,6 +19,13 @@ vi.mock('vue-router', () => ({
 
 vi.mock('@/services/config.service', () => ({
   config: {
+    link: {
+      contactUs: 'https://contact-us.example.com',
+      documentation: 'https://documentation.example.com',
+      notify: 'https://notify.example.com',
+      submit: 'https://submit.example.com',
+      workflow: 'https://workflow.example.com',
+    },
     oidc: {
       hintBceidBusiness: 'hint-bceid-business',
       hintIdir: 'hint-idir',
@@ -46,7 +53,7 @@ describe('LandingPageContainer.vue', () => {
     currentAuthStore = createMockAuthStore()
   })
 
-  it('renders all three login buttons', () => {
+  it('renders both login buttons', () => {
     const wrapper = mountComponent()
     const buttons = wrapper.findAll('button')
 

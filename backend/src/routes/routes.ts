@@ -12,6 +12,7 @@ import { checkJwt, jwtErrorHandler } from '../common/auth.mw'
 import { checkTenantAccess } from '../common/tenant-access.mw'
 import { TMSConstants } from '../common/tms.constants'
 import { checkOperationsAdmin } from '../common/operations-admin.mw'
+import { prepareHeadlessTenantUser } from '../common/headless-tenant-user.mw'
 import { sendErrorResponse } from '../common/error.handler'
 import logger from '../common/logger'
 
@@ -44,7 +45,8 @@ export class Routes {
     app
       .route(RoutesConstants.ADD_TENANT_USERS)
       .post(
-        checkJwt(),
+        checkJwt({ headlessAccess: true }),
+        prepareHeadlessTenantUser,
         validate(validator.addTenantUser, {}, {}),
         checkTenantAccess([TMSConstants.TENANT_OWNER, TMSConstants.USER_ADMIN]),
         (req: Request, res: Response) =>
@@ -53,7 +55,7 @@ export class Routes {
     app
       .route(RoutesConstants.REMOVE_TENANT_USER)
       .delete(
-        checkJwt(),
+        checkJwt({ headlessAccess: true }),
         validate(validator.removeTenantUser, {}, {}),
         checkTenantAccess([TMSConstants.TENANT_OWNER, TMSConstants.USER_ADMIN]),
         (req: Request, res: Response) =>
@@ -102,7 +104,7 @@ export class Routes {
     app
       .route(RoutesConstants.GET_USER_ROLES)
       .get(
-        checkJwt(),
+        checkJwt({ headlessAccess: true }),
         validate(validator.getUserRoles, {}, {}),
         checkTenantAccess([]),
         (req: Request, res: Response) =>
@@ -120,23 +122,31 @@ export class Routes {
     app
       .route(RoutesConstants.SEARCH_BC_GOV_IDIR_USERS)
       .get(
-        checkJwt(),
+        checkJwt({ headlessAccess: true }),
         validate(validator.searchBCGOVSSOUsers, {}, {}),
+        checkTenantAccess(
+          [TMSConstants.TENANT_OWNER, TMSConstants.USER_ADMIN],
+          { headlessOnly: true, tenantIdFromQuery: true },
+        ),
         (req: Request, res: Response) =>
           ssoSearchController.searchBCGOVSSOUsers(req, res),
       )
     app
       .route(RoutesConstants.SEARCH_BC_GOV_BCEID_USERS)
       .get(
-        checkJwt(),
+        checkJwt({ headlessAccess: true }),
         validate(validator.searchBCGOVSSOBceidUsers, {}, {}),
+        checkTenantAccess(
+          [TMSConstants.TENANT_OWNER, TMSConstants.USER_ADMIN],
+          { headlessOnly: true, tenantIdFromQuery: true },
+        ),
         (req: Request, res: Response) =>
           ssoSearchController.searchBCGOVSSOBceidUsers(req, res),
       )
     app
       .route(RoutesConstants.GET_TENANT)
       .get(
-        checkJwt(),
+        checkJwt({ headlessAccess: true }),
         validate(validator.getTenant, {}, {}),
         checkTenantAccess([]),
         (req: Request, res: Response) => tenantController.getTenant(req, res),
@@ -189,7 +199,7 @@ export class Routes {
     app
       .route(RoutesConstants.CREATE_GROUP)
       .post(
-        checkJwt(),
+        checkJwt({ headlessAccess: true }),
         validate(validator.createGroup, {}, {}),
         checkTenantAccess([TMSConstants.TENANT_OWNER, TMSConstants.USER_ADMIN]),
         (req: Request, res: Response) => groupController.createGroup(req, res),
@@ -197,7 +207,7 @@ export class Routes {
     app
       .route(RoutesConstants.UPDATE_GROUP)
       .put(
-        checkJwt(),
+        checkJwt({ headlessAccess: true }),
         validate(validator.updateGroup, {}, {}),
         checkTenantAccess([TMSConstants.TENANT_OWNER, TMSConstants.USER_ADMIN]),
         (req: Request, res: Response) => groupController.updateGroup(req, res),
@@ -205,7 +215,7 @@ export class Routes {
     app
       .route(RoutesConstants.ADD_GROUP_USER)
       .post(
-        checkJwt(),
+        checkJwt({ headlessAccess: true }),
         validate(validator.addGroupUser, {}, {}),
         checkTenantAccess([TMSConstants.TENANT_OWNER, TMSConstants.USER_ADMIN]),
         (req: Request, res: Response) => groupController.addGroupUser(req, res),
@@ -213,7 +223,7 @@ export class Routes {
     app
       .route(RoutesConstants.REMOVE_GROUP_USER)
       .delete(
-        checkJwt(),
+        checkJwt({ headlessAccess: true }),
         validate(validator.removeGroupUser, {}, {}),
         checkTenantAccess([TMSConstants.TENANT_OWNER, TMSConstants.USER_ADMIN]),
         (req: Request, res: Response) =>
@@ -222,7 +232,7 @@ export class Routes {
     app
       .route(RoutesConstants.GET_GROUP)
       .get(
-        checkJwt(),
+        checkJwt({ headlessAccess: true }),
         validate(validator.getGroup, {}, {}),
         checkTenantAccess([]),
         (req: Request, res: Response) => groupController.getGroup(req, res),
@@ -299,7 +309,7 @@ export class Routes {
     app
       .route(RoutesConstants.UPDATE_SHARED_SERVICE_ROLES_FOR_GROUP)
       .put(
-        checkJwt(),
+        checkJwt({ headlessAccess: true }),
         validate(validator.updateSharedServiceRolesForGroup, {}, {}),
         checkTenantAccess([TMSConstants.TENANT_OWNER, TMSConstants.USER_ADMIN]),
         (req: Request, res: Response) =>
@@ -317,7 +327,7 @@ export class Routes {
     app
       .route(RoutesConstants.GET_SHARED_SERVICES_FOR_TENANT)
       .get(
-        checkJwt(),
+        checkJwt({ headlessAccess: true }),
         validate(validator.getSharedServicesForTenant, {}, {}),
         checkTenantAccess([]),
         (req: Request, res: Response) =>
@@ -344,7 +354,7 @@ export class Routes {
     app
       .route(RoutesConstants.GET_TENANT_USER)
       .get(
-        checkJwt(),
+        checkJwt({ headlessAccess: true }),
         validate(validator.getTenantUser, {}, {}),
         checkTenantAccess([TMSConstants.TENANT_OWNER, TMSConstants.USER_ADMIN]),
         (req: Request, res: Response) =>

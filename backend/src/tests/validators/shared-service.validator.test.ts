@@ -57,6 +57,20 @@ describe('shared-service validators', () => {
         .send({ ...validBody, roles: [] })
       expect(response.status).toBe(400)
     })
+
+    it('accepts allowHeadlessOps as a boolean', async () => {
+      const response = await request(app)
+        .post('/')
+        .send({ ...validBody, allowHeadlessOps: true })
+      expect(response.status).toBe(200)
+    })
+
+    it('rejects allowHeadlessOps that is not a boolean', async () => {
+      const response = await request(app)
+        .post('/')
+        .send({ ...validBody, allowHeadlessOps: 'yes' })
+      expect(response.status).toBe(400)
+    })
   })
 
   describe('updateSharedService', () => {
@@ -82,6 +96,20 @@ describe('shared-service validators', () => {
 
     it('rejects a body with no update fields', async () => {
       const response = await request(app).put(`/${VALID_UUID}`).send({})
+      expect(response.status).toBe(400)
+    })
+
+    it('accepts allowHeadlessOps on its own', async () => {
+      const response = await request(app)
+        .put(`/${VALID_UUID}`)
+        .send({ allowHeadlessOps: false })
+      expect(response.status).toBe(200)
+    })
+
+    it('rejects allowHeadlessOps that is not a boolean', async () => {
+      const response = await request(app)
+        .put(`/${VALID_UUID}`)
+        .send({ allowHeadlessOps: 'no' })
       expect(response.status).toBe(400)
     })
   })

@@ -50,7 +50,7 @@ watch(
 // should be empty.
 watch(
   () => dialogVisible.value,
-  async (newVal) => {
+  (newVal) => {
     if (newVal) {
       addUser.value = false
       formData.value = {
@@ -73,10 +73,10 @@ watch(
 
 const dialogClose = () => (dialogVisible.value = false)
 
-const handleCreate = () => {
-  form.value?.validate()
+const handleCreate = async () => {
+  const result = await form.value?.validate()
 
-  if (isFormValid.value) {
+  if (result?.valid) {
     formData.value.name = formData.value.name.trim()
     formData.value.description = formData.value.description.trim()
 

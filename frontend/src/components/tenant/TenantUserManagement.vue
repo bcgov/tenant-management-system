@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { mdiPlus } from '@mdi/js'
-import { computed, ref, watch } from 'vue'
+import { ref, watch } from 'vue'
 
 import TenantUserTable from '@/components/tenant/TenantUserTable.vue'
 import UserSearch from '@/components/tenant/UserSearch.vue'
@@ -10,18 +10,20 @@ import { type Group } from '@/models/group.model'
 import { type Role, type RoleId } from '@/models/role.model'
 import { type Tenant } from '@/models/tenant.model'
 import { type User, type UserId } from '@/models/user.model'
-import { useGroupStore } from '@/stores/useGroupStore'
-import { type IdirSearchType, ROLES } from '@/utils/constants'
-import { currentUserHasRole } from '@/utils/permissions'
+import { type IdirSearchType } from '@/utils/constants'
+import { isIdpIdir } from '@/utils/identityProvider'
 
 // --- Component Interface -----------------------------------------------------
 
-const props = defineProps<{
-  loadingSearch: boolean
-  possibleRoles?: Role[]
-  searchResults: User[] | null
-  tenant: Tenant
-}>()
+const { allGroups, allRoles, loadingSearch, searchResults, tenant } =
+  defineProps<{
+    allGroups: Group[]
+    allRoles: Role[]
+    isUserAdmin: boolean
+    loadingSearch: boolean
+    searchResults: User[] | null
+    tenant: Tenant
+  }>()
 
 const emit = defineEmits<{
   add: [User, Group[]]
@@ -32,13 +34,6 @@ const emit = defineEmits<{
   'roles-changed': [User, RoleId[], RoleId[]]
   search: [IdirSearchType, string]
 }>()
-
-// --- Store and Composable Setup ----------------------------------------------
-
-// TODO: non-container components should not directly use stores - they should
-// emit events and let the parent container handle the store interactions.
-// Refactor this component to follow that pattern.
-const groupStore = useGroupStore()
 
 // --- Component State ---------------------------------------------------------
 
@@ -52,58 +47,29 @@ const showSearch = ref(false)
 
 // --- Watchers and Effects ----------------------------------------------------
 
-watch(groupStore.groups, (newGroups) => {
-  addGroups.value = []
-  for (const _ of newGroups) {
-    addGroups.value.push(selectAllGroups.value)
-  }
-})
-
 watch(selectAllGroups, () => {
   addGroups.value = []
-  for (const _ of groupStore.groups) {
+  for (const _ of allGroups) {
     addGroups.value.push(selectAllGroups.value)
   }
 })
 
 watch(selectAllRoles, () => {
   selectedRoles.value = []
-  for (const role of roles.value) {
+  for (const role of allRoles) {
     if (selectAllRoles.value) {
       selectedRoles.value.push(role)
     }
   }
 })
 
-// --- Computed Values ---------------------------------------------------------
-
-const isUserAdmin = computed(() => {
-  // A tenant owner, by default, is also a user admin - even if they don't have
-  // the USER_ADMIN role.
-  return (
-    currentUserHasRole(props.tenant, ROLES.TENANT_OWNER.value) ||
-    currentUserHasRole(props.tenant, ROLES.USER_ADMIN.value)
-  )
-})
-
-const roles = computed(() => props.possibleRoles ?? [])
-
 // --- Component Methods -------------------------------------------------------
 
-const handleAddUser = () => {
-  if (!selectedUser.value || selectedRoles.value.length === 0) {
-    return
-  }
+const handleAddUser = (user: User, rolesToAdd: Role[]) => {
+  user.roles = [...rolesToAdd]
+  const selectedGroups = allGroups.filter((_, i) => addGroups.value[i])
 
-  selectedUser.value.roles = [...selectedRoles.value]
-  const selectedGroups: Group[] = []
-  for (let i = 0; i < addGroups.value.length; i++) {
-    if (addGroups.value[i]) {
-      const group = groupStore.groups[i]
-      selectedGroups.push(group)
-    }
-  }
-  emit('add', selectedUser.value, selectedGroups)
+  emit('add', user, selectedGroups)
   selectAllGroups.value = false
   selectAllRoles.value = false
   toggleSearch()
@@ -161,8 +127,8 @@ const toggleSearch = () => {
   <h1>Tenant users</h1>
 
   <TenantUserTable
-    :roles="roles"
-    :tenant="tenant"
+    :is-user-admin="isUserAdmin"
+    :roles="allRoles"
     :users="tenant.users"
     @remove-role="handleRemoveRole"
     @remove-user="handleRemoveUser"
@@ -213,12 +179,12 @@ const toggleSearch = () => {
             label="Select all"
           />
           <div
-            v-for="(role, index) in roles"
+            v-for="(role, index) in allRoles"
             :key="`role-${index}`"
             class="d-sm-inline-block"
           >
             <v-checkbox
-              v-if="selectedUser?.ssoUser?.idpType === 'idir' || index === 0"
+              v-if="isIdpIdir(selectedUser.ssoUser.idpType) || index === 0"
               v-model="selectedRoles"
               :label="role.description"
               :value="role"
@@ -228,14 +194,7 @@ const toggleSearch = () => {
         </v-col>
       </v-row>
 
-      <v-row
-        v-if="
-          selectedUser &&
-          groupStore.groups.length &&
-          groupStore.groups.length > 0
-        "
-        class="mt-4"
-      >
+      <v-row v-if="selectedUser && allGroups.length > 0" class="mt-4">
         <v-col cols="12">
           <p class="mb-2">3. Assign group(s) to this user:</p>
         </v-col>
@@ -246,7 +205,7 @@ const toggleSearch = () => {
             label="Select all"
           />
           <v-checkbox
-            v-for="(group, index) in groupStore.groups"
+            v-for="(group, index) in allGroups"
             :key="group.id"
             v-model="addGroups[index]"
             :label="group.name"
@@ -263,7 +222,7 @@ const toggleSearch = () => {
             v-if="selectedUser"
             :disabled="selectedRoles.length === 0"
             text="Add user"
-            @click="handleAddUser"
+            @click="handleAddUser(selectedUser, selectedRoles)"
           />
         </v-col>
       </v-row>

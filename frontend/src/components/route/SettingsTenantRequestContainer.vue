@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { mdiMagnify } from '@mdi/js'
+import { mdiClose, mdiMagnify } from '@mdi/js'
 import { computed, ref, type Ref } from 'vue'
 
 import TenantRequestDisplay from '@/components/tenantrequest/TenantRequestDisplay.vue'
@@ -19,8 +19,12 @@ const tenantRequestStore = useTenantRequestStore()
 // --- Component State ---------------------------------------------------------
 
 const isDuplicateName = ref(false)
-const search = ref('')
+
 const selectedTenantRequest: Ref<TenantRequest | null> = ref(null)
+
+const tenantRequestFilter = ref('')
+
+const tenantRequestFilterField = ref<{ focus: () => void } | null>(null)
 
 // --- Computed Values ---------------------------------------------------------
 
@@ -115,6 +119,11 @@ const handleRowClick = (_event: Event, { item }: { item: TenantRequest }) => {
   selectedTenantRequest.value = item
 }
 
+const handleTenantRequestFilterClear = () => {
+  tenantRequestFilter.value = ''
+  tenantRequestFilterField.value?.focus()
+}
+
 // --- Component Lifecycle -----------------------------------------------------
 
 const initialized = ref(false)
@@ -166,14 +175,26 @@ init() // NOSONAR
         <v-col cols="4">
           <v-text-field
             v-if="tenantRequests.length > 0"
-            v-model="search"
+            ref="tenantRequestFilterField"
+            v-model="tenantRequestFilter"
             :append-inner-icon="mdiMagnify"
             label="Search"
             variant="outlined"
             clearable
             hide-details
             single-line
-          ></v-text-field>
+          >
+            <template #clear>
+              <v-btn
+                :icon="mdiClose"
+                aria-label="Clear search"
+                density="comfortable"
+                size="small"
+                variant="text"
+                @click="handleTenantRequestFilterClear"
+              />
+            </template>
+          </v-text-field>
         </v-col>
       </v-row>
 
@@ -220,7 +241,7 @@ init() // NOSONAR
                 },
               })
             "
-            :search="search"
+            :search="tenantRequestFilter"
             :sort-by="[{ key: 'createdDate', order: 'desc' }]"
             item-value="id"
             striped="even"
@@ -229,7 +250,7 @@ init() // NOSONAR
             @click:row="handleRowClick"
           >
             <template #no-data>
-              <v-sheet v-if="search">
+              <v-sheet v-if="tenantRequestFilter">
                 <h5 class="mb-2">No matching tenant requests</h5>
                 <p class="mt-0">
                   Change your search criteria to match tenant requests
