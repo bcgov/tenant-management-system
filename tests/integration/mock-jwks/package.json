@@ -2,7 +2,7 @@
   "description": "Mock JWKS server for local and CI testing",
   "devDependencies": {
     "express": "5.3.0",
-    "jose": "6.2.13"
+    "jose": "6.2.15"
   },
   "main": "server.js",
   "name": "mock-jwks",
