@@ -10,6 +10,7 @@ import {
   type TenantListApiEnvelope,
 } from '@/mappers/tenant.mapper'
 import {
+  type TenantUserApiEnvelope,
   type UserApiData,
   type UserApiEnvelope,
   type UserListApiEnvelope,
@@ -182,6 +183,28 @@ export const tenantService = {
       return response.data.tenants
     } catch (error) {
       logApiError('Error getting users tenants', error)
+
+      throw error
+    }
+  },
+
+  /**
+   * Retrieves a specific user associated with a specified tenant.
+   *
+   * @param tenantId - The unique identifier of the tenant.
+   * @param userId - The unique identifier of the tenant user.
+   * @throws Will throw an error if the API request fails.
+   */
+  async getUser(tenantId: TenantId, userId: UserId): Promise<UserApiData> {
+    try {
+      const response = await api.get<TenantUserApiEnvelope>(
+        `/tenants/${tenantId}/users/${userId}` +
+          '?expand=groups,groupSharedServices,roles',
+      )
+
+      return response.data.tenantUser
+    } catch (error) {
+      logApiError('Error getting tenant users', error)
 
       throw error
     }

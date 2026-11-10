@@ -56,6 +56,9 @@ vi.mock('@/components/route/TenantServiceContainer.vue', () => ({
 vi.mock('@/components/route/TenantUserContainer.vue', () => ({
   default: { template: `<div>TenantUserContainer</div>` },
 }))
+vi.mock('@/components/route/TenantUserDetailsContainer.vue', () => ({
+  default: { template: `<div>TenantUserDetailsContainer</div>` },
+}))
 
 const TestApp = { template: '<router-view />' }
 
@@ -136,25 +139,42 @@ describe('Vue Router', () => {
   )
 
   it.each([
-    ['/tenants/123', { tenantId: '123' }, 'TenantHeaderContainer'],
-    ['/tenants/123/groups', { tenantId: '123' }, 'GroupListContainer'],
+    ['/tenants/tenantId', { tenantId: 'tenantId' }, 'TenantHeaderContainer'],
     [
-      '/tenants/123/groups/456',
-      { groupId: '456', tenantId: '123' },
+      '/tenants/tenantId/groups',
+      { tenantId: 'tenantId' },
+      'GroupListContainer',
+    ],
+    [
+      '/tenants/tenantId/groups/groupId',
+      { groupId: 'groupId', tenantId: 'tenantId' },
       'GroupHeaderContainer',
     ],
     [
-      '/tenants/123/groups/456/members',
-      { groupId: '456', tenantId: '123' },
+      '/tenants/tenantId/groups/groupId/members',
+      { groupId: 'groupId', tenantId: 'tenantId' },
       'GroupMemberContainer',
     ],
     [
-      '/tenants/123/groups/456/roles',
-      { groupId: '456', tenantId: '123' },
+      '/tenants/tenantId/groups/groupId/roles',
+      { groupId: 'groupId', tenantId: 'tenantId' },
       'GroupRoleContainer',
     ],
-    ['/tenants/123/services', { tenantId: '123' }, 'TenantServiceContainer'],
-    ['/tenants/123/users', { tenantId: '123' }, 'TenantUserContainer'],
+    [
+      '/tenants/tenantId/services',
+      { tenantId: 'tenantId' },
+      'TenantServiceContainer',
+    ],
+    [
+      '/tenants/tenantId/users',
+      { tenantId: 'tenantId' },
+      'TenantUserContainer',
+    ],
+    [
+      '/tenants/tenantId/users/userId',
+      { tenantId: 'tenantId', userId: 'userId' },
+      'TenantUserDetailsContainer',
+    ],
   ])(
     'navigates to %s with params %o and renders %s',
     async (path, params, component) => {
@@ -189,17 +209,22 @@ describe('Route Configuration', () => {
     expect(paths).toContain('/tenants')
     expect(paths).toContain('/tenants/:tenantId')
     expect(paths).toContain('/tenants/:tenantId/groups/:groupId')
+    expect(paths).toContain('/tenants/:tenantId/users/:userId')
   })
 
   it('has props enabled for parameterized routes', () => {
     const routeList = router.getRoutes()
-    const tenantRoute = routeList.find((r) => r.path === '/tenants/:tenantId')
     const groupRoute = routeList.find(
       (r) => r.path === '/tenants/:tenantId/groups/:groupId',
     )
+    const tenantRoute = routeList.find((r) => r.path === '/tenants/:tenantId')
+    const tenantUserRoute = routeList.find(
+      (r) => r.path === '/tenants/:tenantId/users/:userId',
+    )
 
-    expect(tenantRoute?.props).toEqual({ default: true })
     expect(groupRoute?.props).toEqual({ default: true })
+    expect(tenantRoute?.props).toEqual({ default: true })
+    expect(tenantUserRoute?.props).toEqual({ default: true })
   })
 })
 

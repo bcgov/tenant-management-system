@@ -39,6 +39,24 @@ export const useTenantStore = defineStore('tenant', () => {
     return tenant
   }
 
+  /**
+   * Inserts or updates a tenant user in the store.
+   *
+   * @param tenant - The tenant to insert or update.
+   * @param user - The tenant user to insert or update.
+   * @returns The inserted or updated tenant.
+   */
+  const upsertTenantUser = (tenant: Tenant, user: User): Tenant => {
+    const index = tenant.users.findIndex((u) => u.id === user.id)
+    if (index === -1) {
+      tenant.users.push(user)
+    } else {
+      tenant.users[index] = user
+    }
+
+    return upsertTenant(tenant)
+  }
+
   // Exported Methods
 
   /**
@@ -99,6 +117,30 @@ export const useTenantStore = defineStore('tenant', () => {
     const tenant = tenantMapper.fromApiData(tenantApiData)
 
     return upsertTenant(tenant)
+  }
+
+  /**
+   * Fetches a tenant user by ID from the API and updates the store.
+   *
+   * @param tenantId - The ID of the tenant.
+   * @param tenantUserId - The ID of the tenant user.
+   * @returns A promise that resolves to the fetched tenant user.
+   */
+  const fetchTenantUser = async (
+    tenantId: TenantId,
+    userId: UserId,
+  ): Promise<User> => {
+    const tenant = getTenant(tenantId)
+    if (!tenant) {
+      throw new Error(`Unknown tenantId: ${tenantId}`)
+    }
+
+    const userApiData = await tenantService.getUser(tenantId, userId)
+    const user = userMapper.fromApiData(userApiData)
+
+    upsertTenantUser(tenant, user)
+
+    return user
   }
 
   /**
@@ -206,6 +248,7 @@ export const useTenantStore = defineStore('tenant', () => {
     assignTenantUserRoles,
     fetchTenant,
     fetchTenants,
+    fetchTenantUser,
     getTenant,
     removeTenantUser,
     removeTenantUserRole,

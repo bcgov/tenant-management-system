@@ -1,3 +1,4 @@
+import { GroupService } from '@/models/groupservice.model'
 import { GroupUser } from '@/models/groupuser.model'
 
 export type GroupId = string & { readonly __brand: 'GroupId' }
@@ -16,9 +17,10 @@ export type GroupConfig = {
   createdBy: string
   createdDate: string
   description: string
+  groupServices: GroupService[]
+  groupUsers: GroupUser[]
   id: GroupId
   name: string
-  groupUsers: GroupUser[]
 }
 
 /**
@@ -43,6 +45,16 @@ export class Group {
   description: string
 
   /**
+   * The array of group services associated with this group.
+   */
+  groupServices: GroupService[]
+
+  /**
+   * The array of group users associated with this group.
+   */
+  groupUsers: GroupUser[]
+
+  /**
    * The unique identifier for the group.
    */
   id: GroupId
@@ -51,11 +63,6 @@ export class Group {
    * The name of the group.
    */
   name: string
-
-  /**
-   * The array of group users associated with this group.
-   */
-  groupUsers: GroupUser[]
 
   /**
    * Creates a new Group instance.
@@ -67,8 +74,9 @@ export class Group {
     this.createdBy = config.createdBy
     this.createdDate = config.createdDate
     this.description = config.description
-    this.id = config.id
+    this.groupServices = config.groupServices
     this.groupUsers = config.groupUsers
+    this.id = config.id
     this.name = config.name
   }
 }

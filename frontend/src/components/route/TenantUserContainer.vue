@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { useRouter } from 'vue-router'
 
 import TenantUserManagement from '@/components/tenant/TenantUserManagement.vue'
 import LoadingWrapper from '@/components/ui/LoadingWrapper.vue'
@@ -27,6 +28,7 @@ const { tenantId } = defineProps<{
 const groupStore = useGroupStore()
 const notification = useNotification()
 const roleStore = useRoleStore()
+const router = useRouter()
 const tenantStore = useTenantStore()
 const userSearchStore = useUserSearchStore()
 
@@ -149,6 +151,10 @@ const handleRolesChanged = async (
   }
 }
 
+const handleShowUserDetails = (userId: UserId) => {
+  void router.push(`/tenants/${tenantId}/users/${userId}`)
+}
+
 const handleUserSearch = async (
   searchType: IdirSearchType,
   searchText: string,
@@ -219,6 +225,7 @@ init() // NOSONAR
         @remove-user="handleRemoveUser"
         @roles-changed="handleRolesChanged"
         @search="handleUserSearch"
+        @show-user-details="handleShowUserDetails"
       />
     </v-container>
   </LoadingWrapper>

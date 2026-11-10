@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { assert, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 
 import { makeRole, makeTenant, makeUser } from '@/__tests__/__factories__'
@@ -23,6 +23,7 @@ vi.mock('@/services/tenant.service', () => ({
   tenantService: {
     addUser: vi.fn(),
     getTenant: vi.fn(),
+    getUser: vi.fn(),
     getUserTenants: vi.fn(),
     removeUser: vi.fn(),
     removeUserRole: vi.fn(),
@@ -168,6 +169,127 @@ describe('useTenantStore', () => {
       expect(store.tenants[0].name).toBe(mockTenantApiData.name)
       expect(store.tenants[1].name).toBe(secondTenant.name)
       expect(store.tenants[1]).toBeInstanceOf(Tenant)
+    })
+  })
+
+  describe('fetchTenantUser', () => {
+    it('errors if the tenant does not exist, without calling the API', async () => {
+      const store = useTenantStore()
+
+      await expect(
+        store.fetchTenantUser(toTenantId('fake-id'), toUserId('user-123')),
+      ).rejects.toThrow('Unknown tenantId: fake-id')
+
+      expect(tenantService.getUser).not.toHaveBeenCalled()
+    })
+
+    it('calls the service with the tenant and user IDs', async () => {
+      const store = useTenantStore()
+      const tenant = makeTenant({ id: toTenantId('tenant-1'), users: [] })
+      store.tenants = [tenant]
+      vi.mocked(tenantService.getUser).mockResolvedValue(mockUserData)
+
+      await store.fetchTenantUser(tenant.id, mockUserData.id)
+
+      expect(tenantService.getUser).toHaveBeenCalledTimes(1)
+      expect(tenantService.getUser).toHaveBeenCalledWith(
+        tenant.id,
+        mockUserData.id,
+      )
+    })
+
+    it('returns the mapped user', async () => {
+      const store = useTenantStore()
+      const tenant = makeTenant({ id: toTenantId('tenant-1'), users: [] })
+      store.tenants = [tenant]
+      vi.mocked(tenantService.getUser).mockResolvedValue(mockUserData)
+
+      const result = await store.fetchTenantUser(tenant.id, mockUserData.id)
+
+      expect(result).toBeInstanceOf(User)
+      expect(result.id).toBe(mockUserData.id)
+    })
+
+    describe('upsertTenantUser (helper)', () => {
+      it('inserts the user when not already in the tenant, keeping existing users', async () => {
+        const store = useTenantStore()
+        const existingUser = makeUser({ id: toUserId('user-existing') })
+        const tenant = makeTenant({
+          id: toTenantId('tenant-1'),
+          users: [existingUser],
+        })
+        store.tenants = [tenant]
+        vi.mocked(tenantService.getUser).mockResolvedValue(mockUserData)
+
+        await store.fetchTenantUser(tenant.id, mockUserData.id)
+
+        const fetchedTenant = store.getTenant(tenant.id)
+        assert(fetchedTenant, 'tenant should be in the store')
+        const users = fetchedTenant.users
+        expect(users).toHaveLength(2)
+        expect(users[0].id).toBe(existingUser.id)
+        expect(users[1].id).toBe(mockUserData.id)
+        expect(users[1]).toBeInstanceOf(User)
+      })
+
+      it('replaces the user in place when already in the tenant', async () => {
+        const store = useTenantStore()
+        const otherUser = makeUser({ id: toUserId('user-other') })
+        const staleUser = makeUser({ id: mockUserData.id, roles: [] })
+        const tenant = makeTenant({
+          id: toTenantId('tenant-1'),
+          users: [otherUser, staleUser],
+        })
+        store.tenants = [tenant]
+        vi.mocked(tenantService.getUser).mockResolvedValue(mockUserData)
+
+        await store.fetchTenantUser(tenant.id, mockUserData.id)
+
+        const fetchedTenant = store.getTenant(tenant.id)
+        assert(fetchedTenant, 'tenant should be in the store')
+        const users = fetchedTenant.users
+        expect(users).toHaveLength(2)
+        expect(users[0].id).toBe(otherUser.id)
+        expect(users[1].id).toBe(mockUserData.id)
+        expect(users[1]).not.toBe(staleUser)
+        expect(users[1].roles).toHaveLength(1)
+        expect(users[1].roles[0].id).toBe(toRoleId('role-1'))
+      })
+
+      it('keeps the tenant in the store without duplicating it', async () => {
+        const store = useTenantStore()
+        const tenant = makeTenant({ id: toTenantId('tenant-1'), users: [] })
+        const otherTenant = makeTenant({ id: toTenantId('tenant-2') })
+        store.tenants = [tenant, otherTenant]
+        vi.mocked(tenantService.getUser).mockResolvedValue(mockUserData)
+
+        await store.fetchTenantUser(tenant.id, mockUserData.id)
+
+        expect(store.tenants).toHaveLength(2)
+        expect(store.getTenant(tenant.id)).toBeDefined()
+        expect(store.getTenant(otherTenant.id)).toBeDefined()
+      })
+    })
+
+    it('propagates service errors and leaves tenant users unchanged', async () => {
+      const store = useTenantStore()
+      const existingUser = makeUser({ id: toUserId('user-existing') })
+      const tenant = makeTenant({
+        id: toTenantId('tenant-1'),
+        users: [existingUser],
+      })
+      store.tenants = [tenant]
+      vi.mocked(tenantService.getUser).mockRejectedValue(new Error('API down'))
+
+      await expect(
+        store.fetchTenantUser(tenant.id, mockUserData.id),
+      ).rejects.toThrow('API down')
+
+      const fetchedTenant = store.getTenant(tenant.id)
+      assert(fetchedTenant, 'tenant should be in the store')
+      const users = fetchedTenant.users
+      expect(users).toHaveLength(1)
+      expect(users[0].id).toBe(existingUser.id)
     })
   })
 

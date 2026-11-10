@@ -26,6 +26,34 @@ describe('User model', () => {
     })
   })
 
+  describe('getIdentityProvider', () => {
+    it('returns the correct value for bceid', () => {
+      const ssoUser = makeSsoUser({
+        idpType: 'bceidbusiness',
+      })
+      const user = new User({
+        id: toUserId('id'),
+        roles: [],
+        ssoUser,
+      })
+
+      expect(user.getIdentityProvider()).toBe('Business BCeID')
+    })
+
+    it('returns the correct value for idir', () => {
+      const ssoUser = makeSsoUser({
+        idpType: 'idir',
+      })
+      const user = new User({
+        id: toUserId('id'),
+        roles: [],
+        ssoUser,
+      })
+
+      expect(user.getIdentityProvider()).toBe('IDIR')
+    })
+  })
+
   describe('getName', () => {
     it('returns first and last name for an IDIR user', () => {
       const ssoUser = makeSsoUser({

@@ -1,14 +1,20 @@
 import { describe, expect, it } from 'vitest'
 
-import { makeGroupUserApiData } from '@/__tests__/__factories__'
+import {
+  makeGroupServiceApiData,
+  makeGroupUserApiData,
+} from '@/__tests__/__factories__'
 
 import { type GroupApiData, groupMapper } from '@/mappers/group.mapper'
 import { Group, toGroupId } from '@/models/group.model'
+import { groupServiceMapper } from '@/mappers/groupservice.mapper'
 import { groupUserMapper } from '@/mappers/groupuser.mapper'
 
 describe('Group mapper', () => {
   describe('fromApiData', () => {
     it('creates instance', () => {
+      const groupServiceApiData = makeGroupServiceApiData()
+      const groupService = groupServiceMapper.fromApiData(groupServiceApiData)
       const groupUserApiData = makeGroupUserApiData()
       const groupUser = groupUserMapper.fromApiData(groupUserApiData)
       const apiData: GroupApiData = {
@@ -17,6 +23,7 @@ describe('Group mapper', () => {
         description: 'description',
         id: toGroupId('id'),
         name: 'name',
+        sharedServices: [groupServiceApiData],
         users: [groupUserApiData],
       }
 
@@ -26,6 +33,8 @@ describe('Group mapper', () => {
       expect(group.createdBy).toBe('createdBy')
       expect(group.createdDate).toBe('createdDateTime')
       expect(group.description).toBe('description')
+      expect(group.groupServices).toHaveLength(1)
+      expect(group.groupServices[0]).toEqual(groupService)
       expect(group.groupUsers).toHaveLength(1)
       expect(group.groupUsers[0]).toEqual(groupUser)
       expect(group.id).toBe('id')
@@ -40,6 +49,7 @@ describe('Group mapper', () => {
         description: 'description',
         id: toGroupId('id'),
         name: 'name',
+        sharedServices: [makeGroupServiceApiData()],
         users: [makeGroupUserApiData()],
       }
 

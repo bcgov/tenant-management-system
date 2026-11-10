@@ -40,7 +40,7 @@ describe('Tenant model', () => {
 
   describe('findUser', () => {
     it('returns the matching user', () => {
-      const ssoUserId = toSsoUserId('sso1')
+      const ssoUserId = toSsoUserId('ssoUserId')
       const user = makeUser({ ssoUser: makeSsoUser({ ssoUserId: ssoUserId }) })
       const tenant = makeTenant({ users: [user] })
 
@@ -48,11 +48,27 @@ describe('Tenant model', () => {
     })
 
     it('returns not defined when not found', () => {
-      const ssoUserId = toSsoUserId('sso1')
+      const ssoUserId = toSsoUserId('ssoUserId')
       const user = makeUser({ ssoUser: makeSsoUser({ ssoUserId: ssoUserId }) })
       const tenant = makeTenant({ users: [user] })
 
       expect(tenant.findUser(toSsoUserId('not-found'))).toBeUndefined()
+    })
+  })
+
+  describe('findUserById', () => {
+    it('returns the matching user', () => {
+      const user = makeUser({ id: toUserId('userId') })
+      const tenant = makeTenant({ users: [user] })
+
+      expect(tenant.findUserById(toUserId('userId'))).toEqual(user)
+    })
+
+    it('returns not defined when not found', () => {
+      const user = makeUser({ id: toUserId('userId') })
+      const tenant = makeTenant({ users: [user] })
+
+      expect(tenant.findUserById(toUserId('not-found'))).toBeUndefined()
     })
   })
 

@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createApp } from 'vue'
 
 import { handleInitError, initializeApp } from '@/main'
+import { NotFoundError } from '@/errors/domain/NotFoundError'
 import { ConfigError, loadConfig } from '@/services/config.service'
 
 const mockApp = {
@@ -100,7 +101,24 @@ describe('app error handler', () => {
     await initializeApp()
   })
 
-  it('logs and notifies for unexpected errors', () => {
+  it('renders a generic error for NotFoundError', () => {
+    handleInitError(new NotFoundError('message', 'userMessage'))
+    expect(document.body.innerHTML).toContain('Application Error')
+  })
+
+  it('logs and notifies for not found errors', () => {
+    const handler = mockApp.config.errorHandler as Function
+
+    handler(new NotFoundError('message', 'userMessage'))
+
+    expect(mockLogger.error).toHaveBeenCalledWith(
+      'Not Found Error',
+      expect.any(NotFoundError),
+    )
+    expect(mockNotification.error).toHaveBeenCalledWith('userMessage')
+  })
+
+  it('logs and notifies for other errors', () => {
     const handler = mockApp.config.errorHandler as Function
 
     handler(new Error('something broke'))
