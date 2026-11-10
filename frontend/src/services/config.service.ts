@@ -11,7 +11,13 @@ export interface AppConfig {
   api: {
     baseUrl: string
   }
-  contactUsUrl: string
+  link: {
+    contactUs: string
+    documentation: string
+    notify: string
+    submit: string
+    workflow: string
+  }
   oidc: {
     clientId: string
     hintBceidBusiness: string
@@ -38,11 +44,16 @@ const validateConfig = (raw: unknown): AppConfig => {
 
   const config = raw as Record<string, unknown>
   const api = config.api as Record<string, unknown> | undefined
+  const link = config.link as Record<string, unknown> | undefined
   const oidc = config.oidc as Record<string, unknown> | undefined
 
   const required: [string, unknown][] = [
     ['api.baseUrl', api?.baseUrl],
-    ['contactUsUrl', config.contactUsUrl],
+    ['link.contactUs', link?.contactUs],
+    ['link.documentation', link?.documentation],
+    ['link.notify', link?.notify],
+    ['link.submit', link?.submit],
+    ['link.workflow', link?.workflow],
     ['oidc.clientId', oidc?.clientId],
     ['oidc.hintBceidBusiness', oidc?.hintBceidBusiness],
     ['oidc.hintIdir', oidc?.hintIdir],
@@ -72,7 +83,13 @@ export async function loadConfig(): Promise<void> {
       api: {
         baseUrl: import.meta.env.VITE_API_BASE_URL,
       },
-      contactUsUrl: import.meta.env.VITE_CONTACT_US_URL,
+      link: {
+        contactUs: import.meta.env.VITE_LINK_CONTACT_US,
+        documentation: import.meta.env.VITE_LINK_DOCUMENTATION,
+        notify: import.meta.env.VITE_LINK_NOTIFY,
+        submit: import.meta.env.VITE_LINK_SUBMIT,
+        workflow: import.meta.env.VITE_LINK_WORKFLOW,
+      },
       oidc: {
         clientId: import.meta.env.VITE_KEYCLOAK_CLIENT_ID,
         hintBceidBusiness: import.meta.env.VITE_KEYCLOAK_HINT_BCEID_BUSINESS,

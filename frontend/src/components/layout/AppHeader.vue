@@ -25,7 +25,7 @@ const { user } = defineProps<{
 
 // --- Component State ---------------------------------------------------------
 
-const contactUsUrl = config.contactUsUrl
+const linkContactUs = config.link.contactUs
 
 // --- Computed Values ---------------------------------------------------------
 
@@ -54,7 +54,7 @@ const title = computed(() => {
 
     <div v-if="user" class="d-flex align-center user-info">
       <v-btn
-        :href="contactUsUrl"
+        :href="linkContactUs"
         :icon="mdiCommentQuestionOutline"
         aria-label="Help - Contact Us"
         class="header-help-btn me-2"
