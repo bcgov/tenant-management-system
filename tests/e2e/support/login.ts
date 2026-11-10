@@ -66,18 +66,21 @@ export async function loginE2E(page: Page) {
   await expect(usernameField).toBeVisible({ timeout: 30000 })
   await usernameField.fill(username)
 
-  const nextButton = page
-    .getByRole('button', { name: /next|sign in|continue/i })
-    .first()
-  if (await nextButton.isVisible().catch(() => false)) {
-    await nextButton.click()
-  }
-
   const passwordField = page
     .locator(
       'input[name="password"], input[name="passwd"], input[type="password"], #password',
     )
     .first()
+
+  const nextButton = page
+    .getByRole('button', { name: /next|sign in|continue/i })
+    .first()
+  if (
+    !(await passwordField.isVisible()) &&
+    (await nextButton.isVisible().catch(() => false))
+  ) {
+    await nextButton.click()
+  }
 
   await expect(passwordField).toBeVisible({ timeout: 30000 })
   await passwordField.fill(password)

@@ -85,7 +85,7 @@
       "type": "shell"
     },
     {
-      "args": ["run", "test:e2e"],
+      "args": ["run", "test:e2e:docker"],
       "command": "npm",
       "group": "test",
       "label": "Playwright - E2E Tests",

@@ -1,3 +1,4 @@
+import { idirTestUser, mockIdirSearch } from '../support/idir-search.mock'
 import { type BrowserContext, type Page } from '@playwright/test'
 import {
   test,
@@ -8,8 +9,6 @@ import {
   submitIdirSearch,
 } from '../support/tenant.fixture'
 
-const authMode = process.env.E2E_AUTH_MODE ?? 'keycloak'
-
 let sharedPage: Page
 let sharedContext: BrowserContext
 
@@ -18,6 +17,7 @@ test.beforeAll(async ({ browser }) => {
   sharedContext = await browser.newContext({
     storageState: 'support/user.json',
   })
+  await mockIdirSearch(sharedContext)
   sharedPage = await sharedContext.newPage()
   await openTenantsPage(sharedPage)
 })
@@ -28,10 +28,6 @@ test.afterAll(async () => {
 
 test.describe.serial('Landing page tests', () => {
   test('Verify role updation', async ({ getOrCreateApprovedTenant }) => {
-    test.skip(
-      authMode !== 'idir',
-      'This test requires the IDIR test account and data',
-    )
     const approvedTenantName = await getOrCreateApprovedTenant(sharedPage)
     await openTenantServicesPage(sharedPage, approvedTenantName)
     await openTenantUsersPage(sharedPage)
@@ -87,10 +83,6 @@ test.describe.serial('Landing page tests', () => {
   test('Checks group creation && member addition && member removal', async () => {
     test.setTimeout(90_000)
     const page = sharedPage
-    test.skip(
-      authMode !== 'idir',
-      'This test requires the IDIR test account and data',
-    )
     await sharedPage.getByRole('link', { name: 'Groups', exact: true }).click()
     await expect(sharedPage).toHaveURL(/\/tenants\/[^/]+\/groups$/, {
       timeout: 30_000,
@@ -156,7 +148,7 @@ test.describe.serial('Landing page tests', () => {
         exact: true,
       }),
     ).toBeVisible()
-    await page.getByLabel('Search text').fill('NIMYA')
+    await page.getByLabel('Search text').fill(idirTestUser.firstName)
     await expect(
       page.getByRole('button', {
         name: 'Search',
@@ -179,13 +171,13 @@ test.describe.serial('Landing page tests', () => {
     const secondTable = page.locator('table').nth(1)
     const row = secondTable.getByRole('row').filter({
       has: page.getByRole('cell', {
-        name: 'nimya.1.john@gov.bc.ca',
+        name: idirTestUser.email,
         exact: true,
       }),
     })
-    await expect(row.locator('td').nth(1)).toHaveText('Nimya')
-    await expect(row.locator('td').nth(2)).toHaveText('John')
-    await expect(row.locator('td').nth(3)).toHaveText('nimya.1.john@gov.bc.ca')
+    await expect(row.locator('td').nth(1)).toHaveText(idirTestUser.firstName)
+    await expect(row.locator('td').nth(2)).toHaveText(idirTestUser.lastName)
+    await expect(row.locator('td').nth(3)).toHaveText(idirTestUser.email)
     await expect(row.locator('td').nth(4)).toHaveText('IDIR')
     await expect(
       page.getByRole('button', {
@@ -223,16 +215,16 @@ test.describe.serial('Landing page tests', () => {
       .getByRole('row')
       .filter({
         has: page.getByRole('cell', {
-          name: 'nimya.1.john@gov.bc.ca',
+          name: idirTestUser.email,
           exact: true,
         }),
       })
     await expect(addedMemberRow).toBeVisible()
-    await expect(addedMemberRow).toContainText('Nimya')
-    await expect(addedMemberRow).toContainText('John')
+    await expect(addedMemberRow).toContainText(idirTestUser.firstName)
+    await expect(addedMemberRow).toContainText(idirTestUser.lastName)
     // Remove the added member from this group.
     const menuButton = addedMemberRow.getByRole('button', {
-      name: /^Open menu for Nimya John$/i,
+      name: `Open menu for ${idirTestUser.attributes.display_name[0]}`,
     })
     await expect(menuButton).toBeEnabled()
     await menuButton.click()

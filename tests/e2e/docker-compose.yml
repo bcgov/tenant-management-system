@@ -1,0 +1,71 @@
+name: cstar-e2e
+
+services:
+  postgres:
+    image: postgres:17.10-bookworm
+    environment:
+      POSTGRES_DB: cstar_e2e
+      POSTGRES_USER: cstar_e2e
+      POSTGRES_PASSWORD: e2e-only-password
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U cstar_e2e -d cstar_e2e']
+      interval: 2s
+      timeout: 5s
+      retries: 30
+    # Disposable test data; never mount the development database volume.
+    tmpfs:
+      - /var/lib/postgresql/data
+    volumes:
+      - ./initdb:/docker-entrypoint-initdb.d:ro
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.3.3
+    command: ['start-dev', '--import-realm']
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+    volumes:
+      - ./keycloak/cstar-e2e-realm.json:/opt/keycloak/data/import/standard-realm.json:ro
+
+  playwright:
+    build:
+      context: ../..
+      dockerfile: tests/e2e/Dockerfile
+    init: true
+    shm_size: '1gb'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
+    environment:
+      BASE_URL: http://localhost:5173/
+      E2E_ISOLATED: 'true'
+      E2E_AUTH_MODE: keycloak
+      E2E_KEYCLOAK_URL: http://keycloak:8080
+      E2E_KEYCLOAK_USERNAME: CHEFS.Testing@gov.bc.ca
+      E2E_KEYCLOAK_PASSWORD: e2euser
+      ALLOWED_ORIGINS: http://localhost:5173
+      APP_BASE_URL: http://localhost:5173
+      ASSERTION_ISSUER: http://localhost:4144
+      ASSERTION_KEY_ID: e2e-only-key
+      ISSUER: http://keycloak:8080/realms/standard
+      JWKS_URI: http://keycloak:8080/realms/standard/protocol/openid-connect/certs
+      TMS_AUDIENCE: cstar-e2e
+      PORT: '4144'
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: '5432'
+      POSTGRES_DATABASE: cstar_e2e
+      POSTGRES_USER: cstar_e2e
+      POSTGRES_PASSWORD: e2e-only-password
+      VITE_API_BASE_URL: http://localhost:4144/v1
+      VITE_DISABLE_RUNTIME_CONFIG: 'true'
+      VITE_KEYCLOAK_URL: http://keycloak:8080
+      VITE_KEYCLOAK_REALM: standard
+      VITE_KEYCLOAK_CLIENT_ID: cstar-e2e
+      VITE_KEYCLOAK_HINT_IDIR: idir
+      VITE_KEYCLOAK_HINT_BCEID_BUSINESS: bceidbusiness
+      VITE_KEYCLOAK_LOGOUT_URL: http://keycloak:8080/realms/standard/protocol/openid-connect/logout
+    volumes:
+      - ./playwright-report:/app/tests/e2e/playwright-report
+      - ./test-results:/app/tests/e2e/test-results

@@ -1,3 +1,4 @@
+import { idirTestUser, mockIdirSearch } from '../support/idir-search.mock'
 import { type Page, type BrowserContext } from '@playwright/test'
 import {
   test,
@@ -8,8 +9,6 @@ import {
   submitIdirSearch,
 } from '../support/tenant.fixture'
 
-const authMode = process.env.E2E_AUTH_MODE ?? 'keycloak'
-
 let sharedPage: Page
 let sharedContext: BrowserContext
 
@@ -18,6 +17,7 @@ test.beforeAll(async ({ browser }) => {
   sharedContext = await browser.newContext({
     storageState: 'support/user.json',
   })
+  await mockIdirSearch(sharedContext)
   sharedPage = await sharedContext.newPage()
   await openTenantsPage(sharedPage)
 })
@@ -46,10 +46,6 @@ test.describe.serial('Landing page tests', () => {
   })
   test('Checks the tenant users page', async () => {
     test.setTimeout(60_000)
-    test.skip(
-      authMode !== 'idir',
-      'This test requires the IDIR test account and data',
-    )
     await openTenantUsersPage(sharedPage)
     await expect(sharedPage).toHaveURL(/\/tenants\/[^/]+\/users$/, {
       timeout: 30_000,
@@ -109,10 +105,6 @@ test.describe.serial('Landing page tests', () => {
   })
   test('Checks the IDIR User search', async () => {
     test.setTimeout(60_000)
-    test.skip(
-      authMode !== 'idir',
-      'This test requires the IDIR test account and data',
-    )
     await sharedPage
       .locator('.v-field')
       .filter({ hasText: 'Search by' })
@@ -149,7 +141,7 @@ test.describe.serial('Landing page tests', () => {
         exact: true,
       }),
     ).toBeVisible()
-    await sharedPage.getByLabel('Search text').fill('NIMYA')
+    await sharedPage.getByLabel('Search text').fill(idirTestUser.firstName)
     await expect(
       sharedPage.getByRole('button', {
         name: 'Search',
@@ -172,13 +164,13 @@ test.describe.serial('Landing page tests', () => {
     const secondTable = sharedPage.locator('table').nth(1)
     const row = secondTable.getByRole('row').filter({
       has: sharedPage.getByRole('cell', {
-        name: 'nimya.1.john@gov.bc.ca',
+        name: idirTestUser.email,
         exact: true,
       }),
     })
-    await expect(row.locator('td').nth(1)).toHaveText('Nimya')
-    await expect(row.locator('td').nth(2)).toHaveText('John')
-    await expect(row.locator('td').nth(3)).toHaveText('nimya.1.john@gov.bc.ca')
+    await expect(row.locator('td').nth(1)).toHaveText(idirTestUser.firstName)
+    await expect(row.locator('td').nth(2)).toHaveText(idirTestUser.lastName)
+    await expect(row.locator('td').nth(3)).toHaveText(idirTestUser.email)
     await expect(row.locator('td').nth(4)).toHaveText('IDIR')
     await row.getByRole('checkbox', { name: 'Select row', exact: true }).check()
     const expectedRoles = [
@@ -220,10 +212,6 @@ test.describe.serial('Landing page tests', () => {
   })
   test('Checks add/remove IDIR user', async () => {
     test.setTimeout(90_000)
-    test.skip(
-      authMode !== 'idir',
-      'This test requires the IDIR test account and data',
-    )
     const [addResponse] = await Promise.all([
       sharedPage.waitForResponse(
         (response) =>
@@ -245,21 +233,23 @@ test.describe.serial('Landing page tests', () => {
     await expect(tenantRows).toHaveCount(2)
     const tenantRow = tenantRows.filter({
       has: sharedPage.getByRole('cell', {
-        name: 'nimya.1.john@gov.bc.ca',
+        name: idirTestUser.email,
         exact: true,
       }),
     })
-    await expect(tenantRow.locator('td').nth(0)).toHaveText('Nimya')
-    await expect(tenantRow.locator('td').nth(1)).toHaveText('John')
-    await expect(tenantRow.locator('td').nth(2)).toHaveText(
-      'nimya.1.john@gov.bc.ca',
+    await expect(tenantRow.locator('td').nth(0)).toHaveText(
+      idirTestUser.firstName,
     )
+    await expect(tenantRow.locator('td').nth(1)).toHaveText(
+      idirTestUser.lastName,
+    )
+    await expect(tenantRow.locator('td').nth(2)).toHaveText(idirTestUser.email)
     await expect(tenantRow.locator('td').nth(3)).toContainText('IDIR')
     const rolesCell = tenantRow.locator('td').nth(4)
     await expect(rolesCell).toContainText(/Service user/i)
     // Remove added user
     const menuButton = sharedPage.getByRole('button', {
-      name: /^Open menu for Nimya John$/i,
+      name: `Open menu for ${idirTestUser.attributes.display_name[0]}`,
     })
     await expect(menuButton).toBeEnabled()
     await menuButton.click()

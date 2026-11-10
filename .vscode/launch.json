@@ -50,7 +50,7 @@
       "cwd": "${workspaceFolder}/tests/e2e",
       "name": "CSTAR Playwright",
       "request": "launch",
-      "runtimeArgs": ["run", "test:e2e"],
+      "runtimeArgs": ["run", "test:e2e:docker"],
       "runtimeExecutable": "npm",
       "type": "node"
     }
