@@ -133,8 +133,8 @@ const handleDialogButtonClick = (action: string) => {
   promptAction.value = null
 }
 
-const navigateToServices = () => {
-  router.push(`/tenants/${tenantId}/services`)
+const navigateToServices = async () => {
+  await router.push(`/tenants/${tenantId}/services`)
 }
 
 const openDialog = (action: 'undo' | 'clear') => {

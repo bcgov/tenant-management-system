@@ -1,79 +1,128 @@
-import { mount } from '@vue/test-utils'
+import userEvent from '@testing-library/user-event'
+import { render, screen } from '@testing-library/vue'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { createVuetify } from 'vuetify'
+import * as components from 'vuetify/components'
+import * as directives from 'vuetify/directives'
 
-import { makeSsoUser, makeUser } from '@/__tests__/__factories__'
-import { createMockAuthStore } from '@/__tests__/__helpers__/useAuthStore.mock'
+import { makeSsoUser, makeUser, makeUserIdir } from '@/__tests__/__factories__'
 
 import AppHeader from '@/components/layout/AppHeader.vue'
 import { type User } from '@/models/user.model'
 
-let currentAuthStore = createMockAuthStore()
-
-vi.mock('@/stores/useAuthStore', () => ({
-  useAuthStore: () => currentAuthStore,
+const display = vi.hoisted(() => ({
+  mdAndUp: { value: true },
+  smAndUp: { value: true },
 }))
 
-const mountComponent = (user: User | null = null) =>
-  mount(AppHeader, {
+vi.mock('vuetify', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('vuetify')>()),
+  useDisplay: () => display,
+}))
+
+vi.mock('@/services/config.service', () => ({
+  config: {
+    link: {
+      contactUs: 'https://contact-us.example.com',
+    },
+  },
+}))
+
+const renderComponent = (user: User | null = null) =>
+  render(AppHeader, {
     props: { user },
     global: {
+      plugins: [createVuetify({ components, directives })],
       stubs: {
+        RouterLink: { template: '<a><slot /></a>' },
         'v-app-bar': { template: '<header><slot /></header>' },
-        'v-toolbar-title': { template: '<div><slot /></div>' },
-        'v-btn': {
-          template: '<button @click="$emit(\'click\')"><slot /></button>',
-        },
-        'v-icon': { template: '<span />' },
       },
     },
   })
 
 describe('AppHeader.vue', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-    currentAuthStore = createMockAuthStore()
+    display.mdAndUp.value = true
+    display.smAndUp.value = true
   })
 
-  it('renders the app title', () => {
-    const wrapper = mountComponent()
+  it('shows the full title on medium screens and up', () => {
+    renderComponent()
 
-    expect(wrapper.text()).toContain(
-      'Connected Services, Team Access, and Roles (CSTAR)',
-    )
+    expect(
+      screen.getByText('Connected Services, Team Access, and Roles (CSTAR)'),
+    ).toBeInTheDocument()
   })
 
-  it('does not render user info when user is null', () => {
-    const wrapper = mountComponent(null)
+  it('shows the short title on small screens', () => {
+    display.mdAndUp.value = false
 
-    expect(wrapper.find('.user-info').exists()).toBe(false)
+    renderComponent()
+
+    expect(screen.getByText('CSTAR')).toBeInTheDocument()
+    expect(
+      screen.queryByText('Connected Services, Team Access, and Roles (CSTAR)'),
+    ).not.toBeInTheDocument()
   })
 
-  it('renders user display name when user is provided', () => {
-    const user = makeUser({
-      ssoUser: makeSsoUser({ displayName: 'Ulysses Updike' }),
+  it('shows no title on extra small screens', () => {
+    display.mdAndUp.value = false
+    display.smAndUp.value = false
+
+    renderComponent()
+
+    expect(screen.queryByText('CSTAR')).not.toBeInTheDocument()
+    expect(
+      screen.queryByText('Connected Services, Team Access, and Roles (CSTAR)'),
+    ).not.toBeInTheDocument()
+  })
+
+  it('shows no help link or user menu when there is no user', () => {
+    renderComponent(null)
+
+    expect(
+      screen.queryByRole('link', { name: 'Help - Contact Us' }),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'User menu' }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('shows a help link to the contact page when there is a user', () => {
+    renderComponent(makeUser())
+
+    const helpLink = screen.getByRole('link', { name: 'Help - Contact Us' })
+    expect(helpLink).toHaveAttribute('href', 'https://contact-us.example.com')
+    expect(helpLink).toHaveAttribute('target', '_blank')
+  })
+
+  it('keeps the user menu closed until the menu button is clicked', () => {
+    renderComponent(makeUser())
+
+    expect(screen.queryByText('Logout')).not.toBeInTheDocument()
+  })
+
+  it('shows the user name when the user menu is opened', async () => {
+    const user = makeUserIdir({
+      ssoUser: makeSsoUser({
+        firstName: 'userSsoUserFirstName',
+        lastName: 'userSsoUserLastName',
+      }),
     })
-    const wrapper = mountComponent(user)
 
-    expect(wrapper.text()).toContain('Ulysses Updike')
+    renderComponent(user)
+    await userEvent.click(screen.getByRole('button', { name: 'User menu' }))
+
+    expect(
+      await screen.findByText('userSsoUserFirstName userSsoUserLastName'),
+    ).toBeInTheDocument()
   })
 
-  it('renders the logout button when user is provided', () => {
-    const wrapper = mountComponent(makeUser())
+  it('emits when Logout is clicked in the user menu', async () => {
+    const { emitted } = renderComponent(makeUser())
+    await userEvent.click(screen.getByRole('button', { name: 'User menu' }))
+    await userEvent.click(await screen.findByText('Logout'))
 
-    expect(wrapper.find('.logout-btn').exists()).toBe(true)
-  })
-
-  it('does not render the logout button when user is null', () => {
-    const wrapper = mountComponent(null)
-
-    expect(wrapper.find('.logout-btn').exists()).toBe(false)
-  })
-
-  it('calls logout when the logout button is clicked', async () => {
-    const wrapper = mountComponent(makeUser())
-
-    await wrapper.find('.logout-btn').trigger('click')
-
-    expect(currentAuthStore.logout).toHaveBeenCalled()
+    expect(emitted('logout')).toBeTruthy()
   })
 })

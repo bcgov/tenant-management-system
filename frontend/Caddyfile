@@ -15,6 +15,13 @@
             "api": {
                 "baseUrl": "/api/v1"
             },
+            "link": {
+                "contactUs": "{$LINK_CONTACT_US}",
+                "documentation": "{$LINK_DOCUMENTATION}",
+                "notify": "{$LINK_NOTIFY}",
+                "submit": "{$LINK_SUBMIT}",
+                "workflow": "{$LINK_WORKFLOW}"
+            },
             "oidc": {
                 "clientId": "{$LOGIN_PROXY_CLIENT_ID}",
                 "hintBceidBusiness": "bceidbusiness",

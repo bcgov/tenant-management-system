@@ -45,6 +45,16 @@ spec:
           env:
             - name: BACKEND_URL
               value: "http://{{ .Release.Name }}-backend"
+            - name: LINK_CONTACT_US
+              value: "{{ .Values.frontend.link.contactUs }}"
+            - name: LINK_DOCUMENTATION
+              value: "{{ .Values.frontend.link.documentation }}"
+            - name: LINK_NOTIFY
+              value: "{{ .Values.frontend.link.notify }}"
+            - name: LINK_SUBMIT
+              value: "{{ .Values.frontend.link.submit }}"
+            - name: LINK_WORKFLOW
+              value: "{{ .Values.frontend.link.workflow }}"
             - name: LOGIN_PROXY_CLIENT_ID
               value: "{{ .Values.global.loginProxy.clientId }}"
             - name: LOGIN_PROXY_HOST_NAME

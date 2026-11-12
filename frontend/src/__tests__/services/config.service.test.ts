@@ -23,6 +23,11 @@ const setValidEnv = () => {
   import.meta.env.VITE_KEYCLOAK_LOGOUT_URL = 'https://logout.example.com'
   import.meta.env.VITE_KEYCLOAK_REALM = 'myrealm'
   import.meta.env.VITE_KEYCLOAK_URL = 'https://auth.example.com'
+  import.meta.env.VITE_LINK_CONTACT_US = 'https://contact-us.example.com'
+  import.meta.env.VITE_LINK_DOCUMENTATION = 'https://documentation.example.com'
+  import.meta.env.VITE_LINK_NOTIFY = 'https://notify.example.com'
+  import.meta.env.VITE_LINK_SUBMIT = 'https://submit.example.com'
+  import.meta.env.VITE_LINK_WORKFLOW = 'https://workflow.example.com'
 }
 
 describe('loadConfig', () => {
@@ -35,6 +40,13 @@ describe('loadConfig', () => {
       await loadConfig()
 
       expect(config.api.baseUrl).toBe('https://api.example.com')
+      expect(config.link.contactUs).toBe('https://contact-us.example.com')
+      expect(config.link.documentation).toBe(
+        'https://documentation.example.com',
+      )
+      expect(config.link.notify).toBe('https://notify.example.com')
+      expect(config.link.submit).toBe('https://submit.example.com')
+      expect(config.link.workflow).toBe('https://workflow.example.com')
       expect(config.oidc.clientId).toBe('client-id')
       expect(config.oidc.hintBceidBusiness).toBe('business-bceid')
       expect(config.oidc.hintIdir).toBe('idir')
@@ -67,6 +79,13 @@ describe('loadConfig', () => {
   describe('fetch path', () => {
     const validFetchConfig = {
       api: { baseUrl: 'https://api.example.com' },
+      link: {
+        contactUs: 'https://contact-us.example.com',
+        documentation: 'https://documentation.example.com',
+        notify: 'https://notify.example.com',
+        submit: 'https://submit.example.com',
+        workflow: 'https://workflow.example.com',
+      },
       oidc: {
         clientId: 'client-id',
         hintBceidBusiness: 'business-bceid',
@@ -88,6 +107,13 @@ describe('loadConfig', () => {
       await loadConfig()
 
       expect(config.api.baseUrl).toBe('https://api.example.com')
+      expect(config.link.contactUs).toBe('https://contact-us.example.com')
+      expect(config.link.documentation).toBe(
+        'https://documentation.example.com',
+      )
+      expect(config.link.notify).toBe('https://notify.example.com')
+      expect(config.link.submit).toBe('https://submit.example.com')
+      expect(config.link.workflow).toBe('https://workflow.example.com')
       expect(config.oidc.clientId).toBe('client-id')
       expect(config.oidc.hintBceidBusiness).toBe('business-bceid')
       expect(config.oidc.hintIdir).toBe('idir')

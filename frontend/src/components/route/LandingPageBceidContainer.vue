@@ -21,9 +21,7 @@ const authStore = useAuthStore()
           need to do in CSTAR, and you may log out at any time.
         </p>
 
-        <v-btn class="logout-btn mt-4" @click="authStore.logout()">
-          Log out
-        </v-btn>
+        <v-btn class="mt-4" @click="authStore.logout()">Log out</v-btn>
       </div>
     </v-row>
   </v-container>
