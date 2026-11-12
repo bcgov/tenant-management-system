@@ -60,6 +60,11 @@ services:
       POSTGRES_PASSWORD: e2e-only-password
       VITE_API_BASE_URL: http://localhost:4144/v1
       VITE_DISABLE_RUNTIME_CONFIG: 'true'
+      VITE_LINK_CONTACT_US: http://localhost:5173/help
+      VITE_LINK_DOCUMENTATION: http://localhost:5173/documentation
+      VITE_LINK_NOTIFY: http://localhost:5173/notify
+      VITE_LINK_SUBMIT: http://localhost:5173/submit
+      VITE_LINK_WORKFLOW: http://localhost:5173/workflow
       VITE_KEYCLOAK_URL: http://keycloak:8080
       VITE_KEYCLOAK_REALM: standard
       VITE_KEYCLOAK_CLIENT_ID: cstar-e2e
