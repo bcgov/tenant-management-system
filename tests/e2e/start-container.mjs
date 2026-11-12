@@ -16,21 +16,21 @@ process.env.ASSERTION_PUBLIC_KEY = publicKey
 
 const discoveryURL = `${process.env.ISSUER}/.well-known/openid-configuration`
 const deadline = Date.now() + 120_000
-let ready = false
-while (Date.now() < deadline) {
+async function waitForKeycloak() {
+  if (Date.now() >= deadline) return false
+
   try {
     const response = await fetch(discoveryURL, {
       signal: AbortSignal.timeout(5_000),
     })
-    if (response.ok) {
-      ready = true
-      break
-    }
+    if (response.ok) return true
   } catch {
     // Keycloak can accept connections before the imported realm is ready.
   }
   await setTimeout(2_000)
+  return waitForKeycloak()
 }
+const ready = await waitForKeycloak()
 if (!ready) {
   console.error('E2E Keycloak realm did not become ready within 120 seconds.')
   process.exit(1)
