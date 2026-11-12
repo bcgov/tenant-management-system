@@ -1,4 +1,4 @@
-import { idirTestUser, mockIdirSearch } from '../support/idir-search.mock'
+import { idirTestUser, configureSsoSearch } from '../support/sso-search'
 import { type BrowserContext, type Page } from '@playwright/test'
 import {
   test,
@@ -17,7 +17,7 @@ test.beforeAll(async ({ browser }) => {
   sharedContext = await browser.newContext({
     storageState: 'support/user.json',
   })
-  await mockIdirSearch(sharedContext)
+  await configureSsoSearch(sharedContext)
   sharedPage = await sharedContext.newPage()
   await openTenantsPage(sharedPage)
 })

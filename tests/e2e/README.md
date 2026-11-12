@@ -4,11 +4,22 @@ Playwright-based end-to-end tests for CSTAR.
 
 ## Isolated local tests (recommended)
 
-Run from `tests/e2e` with Docker and Node 24 available:
+Open a terminal in the repository root, either inside the Dev Container or on
+your local machine. Inside the Dev Container, Docker in Docker must be available.
+On your local machine, Docker Desktop must be running and Node 24/npm must be
+installed. Run:
 
 ```bash
+cd tests/e2e
 npm run test:e2e:docker
 ```
+
+If your terminal is already in `tests/e2e`, run only the npm command. It builds
+the test image, starts the separate test stack, runs all Playwright tests, and
+stops the containers afterward. No separate `docker compose up`, image rebuild,
+database setup, Keycloak startup, or `.env` configuration is needed. The first
+run takes longer while Docker downloads images and installs dependencies;
+later runs reuse cached build layers where possible.
 
 No host-side npm install or external SSO API credentials are needed for the
 Docker runner. IDIR searches are intercepted in the browser by
@@ -34,7 +45,7 @@ are generated for each test run. The local test credentials are
 `CHEFS.Testing@gov.bc.ca` / `e2euser` (no leading space in the username).
 This is a local Keycloak account with the CHEFS Testing profile, a disposable
 local GUID, and operations administrator role. It does not authenticate against
-the real IDIR account or reuse its password. All 12 tests run locally, including
+the real IDIR account or reuse its password. The full suite runs locally, including
 tenant users, role changes, directory search, and group membership changes.
 All tenant and group writes go to the isolated database. Browser search mocks
 do not exercise backend SSO token acquisition, directory merging, or deduplication;
@@ -52,7 +63,24 @@ Remove the stopped test containers and network with:
 npm run test:e2e:docker:down
 ```
 
-For direct Compose commands, pass Playwright options by starting the
+### Why both Dockerfile and Docker Compose?
+
+The files work together and have different responsibilities:
+
+- `Dockerfile` builds the test runner image with Node.js, backend and frontend
+  dependencies, Playwright, and Chromium. Its entrypoint runs migrations and tests;
+  Playwright starts the backend and frontend.
+- `docker-compose.yml` runs that image alongside separate PostgreSQL and Keycloak
+  containers. It defines their settings, startup dependencies, private network,
+  disposable database storage, and report mounts.
+
+Keeping the image build separate from the stack configuration lets PostgreSQL
+and Keycloak use their own images and lifecycles. Developers still run just
+`npm run test:e2e:docker`; they do not need to manage either file manually.
+
+### Advanced: direct Compose commands
+
+To pass Playwright options with direct Compose commands, start the
 dependencies and running the test service:
 
 ```bash
@@ -127,10 +155,24 @@ IDIR mode rejects localhost. These tests create and modify tenant data, so use
 a test environment. GitHub Actions runs against the deployed environment with
 `E2E_AUTH_MODE=idir` and credentials injected from repository secrets.
 
-The same tests run with local Keycloak and deployed IDIR login. Both use the
-same synthetic IDIR search results. Local runs do not connect to the email
-service. Authentication is separate from directory search and still uses the
-selected login mode.
+The same tests run with local Keycloak and deployed IDIR login. Direct CI/CD
+runs (`CI=true`) use real IDIR and BCeID directory searches through the deployed
+backend; no browser search mocks are installed. The deployed backend must have
+working SSO API credentials and directory access. Search failures fail the tests;
+there is no fallback to synthetic results.
+
+CI/CD searches for the existing directory test account `Nimya John`
+(`nimya.1.john@gov.bc.ca`). No workflow changes are required: GitHub Actions
+already sets `CI=true`. To use another account, pass these environment
+variables to the Playwright process together: `E2E_SSO_TEST_FIRST_NAME`,
+`E2E_SSO_TEST_LAST_NAME`, `E2E_SSO_TEST_EMAIL`, and
+`E2E_SSO_TEST_DISPLAY_NAME`. Choose an IDIR account other than the login account,
+because the tests add and remove it from their test tenant and group.
+
+Non-CI runs use synthetic search results. Isolated Docker runs
+(`E2E_ISOLATED=true`) always use synthetic results, even if launched from CI.
+Local isolated runs do not connect to the email service. Authentication is
+separate from directory search and still uses the selected login mode.
 
 ## Authentication, shared data, and reports
 
