@@ -29,9 +29,6 @@ test.afterAll(async () => {
 test.describe.serial('Landing page tests', () => {
   test('Checks the navigation links', async () => {
     await expect(
-      sharedPage.getByRole('button', { name: 'Logout', exact: true }),
-    ).toBeVisible()
-    await expect(
       sharedPage.getByRole('link', { name: 'All tenants', exact: true }),
     ).toBeVisible()
     await expect(

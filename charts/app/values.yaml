@@ -63,6 +63,8 @@ backend:
   enabled: true
   #-- log level for the backend
   logLevel: 'info'
+  #-- run database migrations on startup
+  runMigrations: true
   #-- the number of replicas when autoscaling is disabled
   replicaCount: 1
   #-- the deployment strategy, can be "Recreate" or "RollingUpdate"
@@ -109,6 +111,18 @@ backend:
 frontend:
   # -- enable or disable a component deployment.
   enabled: true
+  #-- the external links used in the application.
+  link:
+    #-- The "Contact Us" form in Submit.
+    contactUs: ~
+    #-- The URL for the Connect documentation.
+    documentation: ~
+    #-- The environment-specific URL for Notify.
+    notify: ~
+    #-- The environment-specific URL for Submit.
+    submit: ~
+    #-- The environment-specific URL for Workflow.
+    workflow: ~
   #-- the number of replicas when autoscaling is disabled
   replicaCount: 1
   # -- the deployment strategy, can be "Recreate" or "RollingUpdate"

@@ -80,6 +80,7 @@ describe('TenantUserContainer', () => {
     vi.mocked(useNotification).mockReturnValue(notificationMock)
 
     // Default no-op for onMounted fetchRoles
+    groupStore.fetchGroups = vi.fn().mockResolvedValue(undefined)
     roleStore.fetchRoles = vi.fn().mockResolvedValue(undefined)
   })
 
@@ -90,11 +91,29 @@ describe('TenantUserContainer', () => {
       expect(() => mountComponent()).toThrow('Tenant tenantId1 not found')
     })
 
+    it('calls fetchGroups on mount', async () => {
+      mountComponent()
+      await flushPromises()
+
+      expect(groupStore.fetchGroups).toHaveBeenCalled()
+    })
+
     it('calls fetchRoles on mount', async () => {
       mountComponent()
       await flushPromises()
 
       expect(roleStore.fetchRoles).toHaveBeenCalled()
+    })
+
+    it('shows error notification when fetchGroups fails', async () => {
+      groupStore.fetchGroups = vi.fn().mockRejectedValue(new Error('fail'))
+
+      mountComponent()
+      await flushPromises()
+
+      expect(notificationMock.error).toHaveBeenCalledWith(
+        'Failed to load groups',
+      )
     })
 
     it('shows error notification when fetchRoles fails', async () => {
@@ -110,7 +129,7 @@ describe('TenantUserContainer', () => {
   })
 
   describe('loading computed', () => {
-    it('does not render TenantUserManagement until roles are loaded', async () => {
+    it('does not render TenantUserManagement until loads complete', async () => {
       let resolveRoles!: () => void
       roleStore.fetchRoles = vi.fn(
         () =>
@@ -141,6 +160,18 @@ describe('TenantUserContainer', () => {
     })
   })
 
+  describe('group computed', () => {
+    it('passes groupStore.groups down as possible-groups prop', async () => {
+      const groups = [makeGroup()]
+      groupStore.groups = groups
+
+      const wrapper = mountComponent()
+      await flushPromises()
+
+      expect(child(wrapper).props('allGroups')).toEqual(groups)
+    })
+  })
+
   describe('roles computed', () => {
     it('passes roleStore.roles down as possible-roles prop', async () => {
       const roles = [makeRole()]
@@ -149,7 +180,7 @@ describe('TenantUserContainer', () => {
       const wrapper = mountComponent()
       await flushPromises()
 
-      expect(child(wrapper).props('possibleRoles')).toEqual(roles)
+      expect(child(wrapper).props('allRoles')).toEqual(roles)
     })
   })
 

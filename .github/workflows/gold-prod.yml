@@ -103,5 +103,6 @@ jobs:
         --set backend.pdb.enabled=true
         --set backend.pdb.minAvailable=1
         --set global.domain="apps.golddr.devops.gov.bc.ca"
+        --set backend.runMigrations=false
         ${{ inputs.params }}
       tag: ${{ inputs.tag }}

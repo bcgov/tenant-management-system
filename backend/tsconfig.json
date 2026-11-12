@@ -5,6 +5,7 @@
     "experimentalDecorators": true,
     "isolatedModules": true,
     "outDir": "./dist",
+    "rootDir": "./src",
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "sourceMap": true,
