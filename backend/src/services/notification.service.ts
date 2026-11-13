@@ -67,14 +67,38 @@ interface NotificationRequest {
   email: EmailContent
 }
 
-function formatDate(value: Date | string | undefined): string {
+const PACIFIC_TIME_ZONE = 'America/Vancouver'
+
+const pacificDateFormat = new Intl.DateTimeFormat('en-CA', {
+  timeZone: PACIFIC_TIME_ZONE,
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+})
+
+const pacificTimeFormat = new Intl.DateTimeFormat('en-US', {
+  timeZone: PACIFIC_TIME_ZONE,
+  hour: 'numeric',
+  minute: '2-digit',
+  timeZoneName: 'short',
+})
+
+function hasTime(value: Date | string): boolean {
+  return value instanceof Date || value.includes('T')
+}
+
+function formatEventTime(value: Date | string | undefined): string {
   if (!value) {
     return 'Not recorded'
   }
 
-  const isoString = value instanceof Date ? value.toISOString() : String(value)
+  const date = hasTime(value) ? new Date(value) : new Date()
 
-  return isoString.split('T')[0]
+  if (Number.isNaN(date.getTime())) {
+    return 'Not recorded'
+  }
+
+  return `${pacificDateFormat.format(date)} ${pacificTimeFormat.format(date)}`
 }
 
 function formatDetails(details: EmailDetail[]): string {
@@ -128,7 +152,10 @@ export class NotificationService {
         label: 'Decisioned by',
         value: tenantRequest.decisionedBy?.displayName || 'Unknown',
       },
-      { label: 'Decisioned at', value: formatDate(tenantRequest.decisionedAt) },
+      {
+        label: 'Decisioned at',
+        value: formatEventTime(tenantRequest.decisionedAt),
+      },
     ]
 
     if (tenantRequest.rejectionReason) {
@@ -158,7 +185,7 @@ export class NotificationService {
           },
           {
             label: 'Requested at',
-            value: formatDate(tenantRequest.requestedAt),
+            value: formatEventTime(tenantRequest.requestedAt),
           },
         ]),
         `Review tenant requests in CSTAR:\n${getCstarUrl('/settings/requests')}`,
@@ -205,7 +232,7 @@ export class NotificationService {
         label: 'Ministry name',
         value: tenantUser.tenant?.ministryName || '',
       },
-      { label: 'Added at', value: formatDate(tenantUser.createdDateTime) },
+      { label: 'Added at', value: formatEventTime(tenantUser.createdDateTime) },
       { label: 'Roles granted', value: formatRoles(roleAssignments) },
     ]
 
@@ -243,7 +270,7 @@ export class NotificationService {
           },
           {
             label: 'Removed at',
-            value: formatDate(tenantUser.updatedDateTime),
+            value: formatEventTime(tenantUser.updatedDateTime),
           },
           { label: 'Removed by', value: removedByDisplayName || 'Unknown' },
         ]),
@@ -267,7 +294,10 @@ export class NotificationService {
         formatDetails([
           { label: 'Group name', value: groupName },
           { label: 'Tenant name', value: groupUser.group?.tenant?.name || '' },
-          { label: 'Added at', value: formatDate(groupUser.createdDateTime) },
+          {
+            label: 'Added at',
+            value: formatEventTime(groupUser.createdDateTime),
+          },
           { label: 'Added by', value: addedByDisplayName || 'Unknown' },
         ]),
         `Sign in to CSTAR to see this group:\n${getCstarUrl(`/tenants/${tenantId}/groups/${groupId}/members`)}`,
@@ -288,7 +318,10 @@ export class NotificationService {
         formatDetails([
           { label: 'Group name', value: groupName },
           { label: 'Tenant name', value: groupUser.group?.tenant?.name || '' },
-          { label: 'Removed at', value: formatDate(groupUser.updatedDateTime) },
+          {
+            label: 'Removed at',
+            value: formatEventTime(groupUser.updatedDateTime),
+          },
           { label: 'Removed by', value: removedByDisplayName || 'Unknown' },
         ]),
         `Sign in to CSTAR:\n${getCstarUrl()}`,

@@ -30,7 +30,7 @@ function buildTenantRequest(): TenantRequest {
     name: 'My Tenant',
     ministryName: 'BC Elections',
     description: 'A new tenant for elections work',
-    requestedAt: '2026-07-30',
+    requestedAt: '2026-07-30T18:00:00Z',
     requestedBy: { displayName: 'Falk, Barrett CITZ:EX' },
   } as unknown as TenantRequest
 }
@@ -157,7 +157,7 @@ describe('notifyTenantRequestCreated', () => {
     expect(body).not.toMatch(/<[a-z]/i)
     expect(body).toContain('Name: My Tenant')
     expect(body).toContain('Ministry name: BC Elections')
-    expect(body).toContain('Requested at: 2026-07-30')
+    expect(body).toContain('Requested at: 2026-07-30 11:00 AM PDT')
   })
 
   it('leaves the tenant name unaltered, as plain text needs no escaping', async () => {
@@ -182,7 +182,7 @@ function buildDecisionedRequest(
     ministryName: 'BC Elections',
     description: 'A new tenant for elections work',
     status,
-    decisionedAt: '2026-08-02',
+    decisionedAt: '2026-08-02T18:00:00Z',
     rejectionReason: rejectionReason ?? null,
     requestedBy: {
       displayName: 'Falk, Barrett CITZ:EX',
@@ -235,8 +235,57 @@ describe('notifyTenantRequestDecisioned', () => {
     expect(email.body).toContain('Description: A new tenant for elections work')
     expect(email.body).toContain('Status: APPROVED')
     expect(email.body).toContain('Decisioned by: Sethuraman, Shankar JEG:EX')
-    expect(email.body).toContain('Decisioned at: 2026-08-02')
+    expect(email.body).toContain('Decisioned at: 2026-08-02 11:00 AM PDT')
     expect(email.body).toContain('https://cstar.example')
+  })
+
+  it('shows an evening decision on the Pacific date, not the next UTC day', async () => {
+    const request = buildDecisionedRequest('APPROVED')
+    request.decisionedAt = new Date('2026-09-09T00:23:00Z') as unknown as string
+
+    await service.notifyTenantRequestDecisioned(request)
+
+    expect(mockChes.sendEmail.mock.calls[0][0].body).toContain(
+      'Decisioned at: 2026-09-08 5:23 PM PDT',
+    )
+  })
+
+  it('labels winter times as standard time', async () => {
+    const request = buildDecisionedRequest('APPROVED')
+    request.decisionedAt = '2026-01-15T01:05:00Z'
+
+    await service.notifyTenantRequestDecisioned(request)
+
+    expect(mockChes.sendEmail.mock.calls[0][0].body).toContain(
+      'Decisioned at: 2026-01-14 5:05 PM PST',
+    )
+  })
+
+  it('uses the send time when only a date was stored', async () => {
+    jest.useFakeTimers({ now: new Date('2026-09-09T00:01:00Z') })
+    const request = buildDecisionedRequest('APPROVED')
+    request.decisionedAt = '2026-09-09'
+
+    try {
+      await service.notifyTenantRequestDecisioned(request)
+    } finally {
+      jest.useRealTimers()
+    }
+
+    expect(mockChes.sendEmail.mock.calls[0][0].body).toContain(
+      'Decisioned at: 2026-09-08 5:01 PM PDT',
+    )
+  })
+
+  it('reports the time as not recorded when it cannot be read', async () => {
+    const request = buildDecisionedRequest('APPROVED')
+    request.decisionedAt = 'not-a-dateT00'
+
+    await service.notifyTenantRequestDecisioned(request)
+
+    expect(mockChes.sendEmail.mock.calls[0][0].body).toContain(
+      'Decisioned at: Not recorded',
+    )
   })
 
   it('includes the rejection reason when the request was rejected', async () => {
@@ -315,7 +364,7 @@ describe('notifyTenantRequestDecisioned', () => {
 
 function buildAddedUser() {
   return {
-    createdDateTime: '2026-08-05',
+    createdDateTime: '2026-08-05T18:00:00Z',
     ssoUser: { email: 'barrett.falk@gov.bc.ca' },
     tenant: {
       id: 'tenant-1',
@@ -374,7 +423,7 @@ describe('notifyUserAddedToTenant', () => {
     )
     expect(email.body).toContain('Tenant name: My Tenant')
     expect(email.body).toContain('Ministry name: BC Elections')
-    expect(email.body).toContain('Added at: 2026-08-05')
+    expect(email.body).toContain('Added at: 2026-08-05 11:00 AM PDT')
     expect(email.body).toContain('Roles granted: Service User, User Admin')
     expect(email.body).toContain('https://cstar.example/tenants/tenant-1/users')
   })
@@ -479,7 +528,7 @@ describe('notifyUserAddedToTenant', () => {
 
 function buildRemovedUser() {
   return {
-    updatedDateTime: '2026-08-21',
+    updatedDateTime: '2026-08-21T18:00:00Z',
     ssoUser: { email: 'test.user@example.com' },
     tenant: {
       id: 'tenant-1',
@@ -525,7 +574,7 @@ describe('notifyUserRemovedFromTenant', () => {
     )
     expect(email.body).toContain('Tenant name: My Tenant')
     expect(email.body).toContain('Ministry name: BC Elections')
-    expect(email.body).toContain('Removed at: 2026-08-21')
+    expect(email.body).toContain('Removed at: 2026-08-21 11:00 AM PDT')
     expect(email.body).toContain('Removed by: Test Admin')
     expect(email.body).toContain('https://cstar.example')
   })
@@ -592,7 +641,7 @@ describe('notifyUserRemovedFromTenant', () => {
 
 function buildRemovedGroupUser() {
   return {
-    updatedDateTime: '2026-08-21',
+    updatedDateTime: '2026-08-21T18:00:00Z',
     group: {
       name: 'Elections Support Team',
       tenant: { id: 'tenant-1', name: 'My Tenant' },
@@ -642,7 +691,7 @@ describe('notifyUserRemovedFromGroup', () => {
     )
     expect(email.body).toContain('Group name: Elections Support Team')
     expect(email.body).toContain('Tenant name: My Tenant')
-    expect(email.body).toContain('Removed at: 2026-08-21')
+    expect(email.body).toContain('Removed at: 2026-08-21 11:00 AM PDT')
     expect(email.body).toContain('Removed by: Test Admin')
     expect(email.body).toContain('https://cstar.example')
   })
@@ -702,7 +751,7 @@ describe('notifyUserRemovedFromGroup', () => {
 
 function buildAddedGroupUser() {
   return {
-    createdDateTime: '2026-08-21',
+    createdDateTime: '2026-08-21T18:00:00Z',
     group: {
       id: 'group-1',
       name: 'Elections Support Team',
@@ -750,7 +799,7 @@ describe('notifyUserAddedToGroup', () => {
     )
     expect(email.body).toContain('Group name: Elections Support Team')
     expect(email.body).toContain('Tenant name: My Tenant')
-    expect(email.body).toContain('Added at: 2026-08-21')
+    expect(email.body).toContain('Added at: 2026-08-21 11:00 AM PDT')
     expect(email.body).toContain('Added by: Test Admin')
   })
 
