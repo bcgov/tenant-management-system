@@ -2,19 +2,124 @@
 
 Playwright-based end-to-end tests for CSTAR.
 
-## Environment Configuration
+## Isolated local tests (recommended)
 
-Before running the Playwright tests locally, make sure the `tests/e2e/.env` file is configured with the required environment values.
-
-For local runs, start the dedicated E2E Keycloak realm from `tests/e2e`:
+Open a terminal in the repository root, either inside the Dev Container or on
+your local machine. Inside the Dev Container, Docker in Docker must be available.
+On your local machine, Docker Desktop must be running and Node 24/npm must be
+installed. Run:
 
 ```bash
-docker compose -f keycloak/docker-compose.yml up -d
+cd tests/e2e
+npm run test:e2e:docker
 ```
 
-It listens on port `8082`, separate from the devcontainer Keycloak on port `8081`. The imported `standard` realm contains the `cstar-e2e` client, test user, `TMS.OPERATIONS_ADMIN` role, and `client_roles` token mapper. The local-only test credentials are `cstar-e2e-user` / `e2euser`.
+If your terminal is already in `tests/e2e`, run only the npm command. It builds
+the test image, starts the separate test stack, runs all Playwright tests, and
+stops the containers afterward. No separate `docker compose up`, image rebuild,
+database setup, Keycloak startup, or `.env` configuration is needed. The first
+run takes longer while Docker downloads images and installs dependencies;
+later runs reuse cached build layers where possible.
 
-Point the local frontend at this realm in `frontend/.env` (do not commit this local override):
+No host-side npm install or external SSO API credentials are needed for the
+Docker runner. IDIR searches are intercepted in the browser by
+`support/idir-search.mock.ts` and return the synthetic `E2E User` account
+(`e2e.user@example.com`). First name, last name, and email searches use
+case-insensitive partial matching; unmatched searches return an empty list.
+The UI also searches BCeID in parallel; that request is mocked with an empty list.
+Tenant/user/group writes still use the real backend and isolated database.
+Backend SSO settings use unused local placeholders so an unmocked search fails
+locally instead of contacting the external directory.
+
+The stack uses the separate `cstar-e2e` Compose project and network. It starts:
+
+- A PostgreSQL container with its own `cstar_e2e` database in temporary storage.
+- A Keycloak container importing the local `standard` realm and test user.
+- A container running backend migrations, the backend, frontend, Chromium, and Playwright.
+
+No ports are published, so the development app, PostgreSQL, and Keycloak can
+keep running. The test container uses container-local app ports and the internal
+Keycloak address; no changes to development `.env` files are needed. Developer
+env files and saved authentication are excluded from the image. Signing keys
+are generated for each test run. The local test credentials are
+`CHEFS.Testing@gov.bc.ca` / `e2euser` (no leading space in the username).
+This is a local Keycloak account with the CHEFS Testing profile, a disposable
+local GUID, and operations administrator role. It does not authenticate against
+the real IDIR account or reuse its password. The full suite runs locally, including
+tenant users, role changes, directory search, and group membership changes.
+All tenant and group writes go to the isolated database. Browser search mocks
+do not exercise backend SSO token acquisition, directory merging, or deduplication;
+those remain covered by the backend service unit tests.
+
+Playwright waits for Keycloak, database initialization, migrations, and both app
+readiness URLs. Isolated runs always start their own app processes. The command
+returns Playwright's exit code and stops the stack when the tests finish.
+PostgreSQL data is discarded when its container stops. Reports and failure
+artifacts remain in `tests/e2e/playwright-report` and `tests/e2e/test-results`.
+
+Remove the stopped test containers and network with:
+
+```bash
+npm run test:e2e:docker:down
+```
+
+### Why both Dockerfile and Docker Compose?
+
+The files work together and have different responsibilities:
+
+- `Dockerfile` builds the test runner image with Node.js, backend and frontend
+  dependencies, Playwright, and Chromium. Its entrypoint runs migrations and tests;
+  Playwright starts the backend and frontend.
+- `docker-compose.yml` runs that image alongside separate PostgreSQL and Keycloak
+  containers. It defines their settings, startup dependencies, private network,
+  disposable database storage, and report mounts.
+
+Keeping the image build separate from the stack configuration lets PostgreSQL
+and Keycloak use their own images and lifecycles. Developers still run just
+`npm run test:e2e:docker`; they do not need to manage either file manually.
+
+### Advanced: direct Compose commands
+
+To pass Playwright options with direct Compose commands, start the
+dependencies and running the test service:
+
+```bash
+docker compose up -d postgres keycloak
+docker compose run --build --rm playwright --project=chromium
+# Stop the dependencies after the run:
+docker compose down
+```
+
+These commands run from `tests/e2e`. The database remains available between
+`compose run` commands until the dependencies are stopped. Use `compose down`
+before a run when a fresh database is needed. Container runs are headless.
+
+## VS Code and the Dev Container
+
+**Run and Debug > CSTAR Playwright** and **Terminal > Run Task > Playwright -
+E2E Tests** use the isolated Docker stack. Docker must be running; the Dev
+Container provides Docker in Docker. No separate Keycloak startup or frontend
+env override is required for this workflow.
+
+The Dev Container also installs host-side Playwright dependencies and Chromium
+through `post-install.sh`. Those are only needed for direct runs and viewing
+reports, not for the isolated Docker command.
+
+## Direct local runs (uses the configured development database)
+
+For debugging with a headed browser, the existing direct runner is available:
+
+```bash
+cd tests/e2e
+npm ci --ignore-scripts
+npx playwright install chromium
+# Copy .env.sample to .env and configure it before running.
+docker compose -f keycloak/docker-compose.yml up -d
+npm run test:e2e:mode -- keycloak --headed
+```
+
+This workflow starts or reuses the development backend and frontend. Initialize
+their configured database first. Set the frontend's local env values to:
 
 ```dotenv
 VITE_DISABLE_RUNTIME_CONFIG=true
@@ -24,208 +129,64 @@ VITE_KEYCLOAK_CLIENT_ID=cstar-e2e
 VITE_KEYCLOAK_LOGOUT_URL=http://localhost:8082/realms/standard/protocol/openid-connect/logout
 ```
 
-Playwright starts or reuses the local backend and frontend. It derives the
-backend issuer, JWKS URI, and audience from `E2E_KEYCLOAK_URL` and
-`E2E_KEYCLOAK_REALM`; there is no need to start either app manually for a local
-Playwright run. The database must be running and initialized before the tests
-start.
+Use the same Keycloak URL in `tests/e2e/.env` as `E2E_KEYCLOAK_URL`. When running
+the browser in the Dev Container against Keycloak published on the Windows
+host, use `http://host.docker.internal:8082` consistently instead. Keep
+`BASE_URL=http://localhost:5173/` when the frontend runs alongside Playwright.
+Playwright derives backend issuer and JWKS settings from the E2E Keycloak URL.
+Stop this standalone Keycloak with
+`docker compose -f keycloak/docker-compose.yml down`.
 
-Configure `tests/e2e/.env`:
+Do not commit `.env` files or real credentials. In the Dev Container, use
+`playwright install chromium` without `--with-deps`; system dependencies are
+already installed by the Dev Container image.
 
-```dotenv
-BASE_URL=http://localhost:5173/
-E2E_AUTH_MODE=keycloak
-E2E_KEYCLOAK_URL=http://localhost:8082
-E2E_KEYCLOAK_USERNAME=cstar-e2e-user
-E2E_KEYCLOAK_PASSWORD=e2euser
-```
+## IDIR and GitHub Actions
 
-These credentials are disposable local-test credentials, not real IDIR credentials. To stop the isolated E2E Keycloak, run `docker compose -f keycloak/docker-compose.yml down` from `tests/e2e`.
-
-### Keycloak URL from the Host or Dev Container
-
-Use the Keycloak address reachable from the machine running the Playwright browser:
-
-| Playwright runs on | Keycloak URL                       |
-| ------------------ | ---------------------------------- |
-| Windows host       | `http://localhost:8082`            |
-| Dev Container      | `http://host.docker.internal:8082` |
-
-Use the same host consistently in `VITE_KEYCLOAK_URL`, `VITE_KEYCLOAK_LOGOUT_URL`, the backend `ISSUER` and `JWKS_URI`, and `E2E_KEYCLOAK_URL`. The Dev Container's `localhost` refers to the container itself, so it cannot reach a Keycloak port published on Windows via `localhost`. Keep the frontend `BASE_URL`, Keycloak redirect URI, and web origin as `http://localhost:5173`; those refer to the browser-facing frontend.
-
-**Important:**
-
-- The `.env` file is for local use only and is excluded from Git through `.gitignore`.
-- Do not commit `.env` or any credentials/sensitive values to the repository.
-- The actual IDIR credentials used by GitHub Actions are stored securely as GitHub Repository Secrets.
-- GitHub Actions injects these secrets into the Playwright workflow at runtime.
-
-## Initial Setup
-
-Playwright dependencies and the Chromium browser are installed automatically by `post-install.sh` when the Dev Container is created.
-
-No additional Playwright installation is normally required.
-
-> **Note:** Do not use `npx playwright install --with-deps chromium` in the Dev Container. The `--with-deps` option attempts to install operating-system dependencies and may trigger a `sudo` password prompt in the current Dev Container setup. The required system dependencies are provided by the Dev Container, so `playwright install chromium` is used by `post-install.sh`.
-
-If Playwright is not available after creating or rebuilding the Dev Container, run the `post-install.sh` setup again or rebuild the Dev Container.
-
-## Running in VS Code
-
-Start the E2E Keycloak realm and ensure the database is available, then run
-**CSTAR Playwright** from **Run and Debug**. Playwright starts or reuses the
-backend and frontend and waits for the backend health endpoint and frontend
-URL before running tests.
-
-You can also run the tests from:
-
-**Terminal → Run Task → Playwright - E2E Tests**
-
-## Running from the Command Line
-
-From the Playwright directory:
+IDIR runs require a deployed test environment and real IDIR/MFA credentials.
+Set `IDIR_BASE_URL`, `E2E_IDIR_USERNAME`, `E2E_IDIR_PASSWORD`, and `E2E_MFA_CODE`
+in the ignored `tests/e2e/.env`, then run:
 
 ```bash
-cd /workspaces/tenant-management-system/tests/e2e
-npm run test:e2e
-```
-
-To choose the authentication mode explicitly, use the mode runner:
-
-```bash
-npm run test:e2e:mode -- keycloak
 npm run test:e2e:mode -- idir
 ```
 
-`keycloak` runs against the local E2E realm and local application. `idir` uses
-the real IDIR/MFA login and requires `IDIR_BASE_URL` to point to an IDIR-enabled
-deployed environment; it will not run against localhost. Set `IDIR_BASE_URL` in
-the ignored `tests/e2e/.env` file to keep it separate from the local `BASE_URL`.
-The IDIR workflow creates and rejects tenant requests, so use a test
-environment. The runner loads credentials from `.env` without displaying them.
-Playwright options can be added after the mode, for example
-`npm run test:e2e:mode -- keycloak --headed`.
+IDIR mode rejects localhost. These tests create and modify tenant data, so use
+a test environment. GitHub Actions runs against the deployed environment with
+`E2E_AUTH_MODE=idir` and credentials injected from repository secrets.
 
-For a one-off IDIR run in PowerShell:
+The same tests run with local Keycloak and deployed IDIR login. Direct CI/CD
+runs (`CI=true`) use real IDIR and BCeID directory searches through the deployed
+backend; no browser search mocks are installed. The deployed backend must have
+working SSO API credentials and directory access. Search failures fail the tests;
+there is no fallback to synthetic results.
 
-```powershell
-$env:IDIR_BASE_URL = 'https://<deployed-test-environment>/'
-npm run test:e2e:mode -- idir
-```
+CI/CD searches for the existing directory test account `Nimya John`
+(`nimya.1.john@gov.bc.ca`). No workflow changes are required: GitHub Actions
+already sets `CI=true`. To use another account, pass these environment
+variables to the Playwright process together: `E2E_SSO_TEST_FIRST_NAME`,
+`E2E_SSO_TEST_LAST_NAME`, `E2E_SSO_TEST_EMAIL`, and
+`E2E_SSO_TEST_DISPLAY_NAME`. Choose an IDIR account other than the login account,
+because the tests add and remove it from their test tenant and group.
 
-For a one-off IDIR run in Bash:
+Non-CI runs use synthetic search results. Isolated Docker runs
+(`E2E_ISOLATED=true`) always use synthetic results, even if launched from CI.
+Local isolated runs do not connect to the email service. Authentication is
+separate from directory search and still uses the selected login mode.
 
-```bash
-IDIR_BASE_URL=https://<deployed-test-environment>/ npm run test:e2e:mode -- idir
-```
+## Authentication, shared data, and reports
 
-The `test:e2e` script uses Node's `--env-file=.env` option to load the required
-environment variables. For local runs, Playwright starts or reuses the backend
-and frontend, waiting for `http://localhost:4144/v1/health` and `BASE_URL` to
-respond before running tests. It runs the setup project first to log in through
-local Keycloak, saves `support/user.json`, and then reuses that state for the
-E2E tests.
+The setup project logs in and saves `support/user.json`; the Chromium project
+depends on setup and reuses that state. Container authentication stays inside
+the test container. Keep `workers: 1` and `fullyParallel: false`: home and
+role/group tests share the approved tenant recorded in
+`test-results/shared-tenant.json`, which Playwright clears at the next run.
+The rejection test creates its own request.
 
-### Run in Headed Mode
-
-To see the browser while the tests are running:
-
-```bash
-npm run test:e2e -- --headed
-```
-
-## Running inside the Dev Container
-
-The Playwright tests should run inside the Dev Container because the repository is mounted at:
-
-```text
-/workspaces/tenant-management-system
-```
-
-The Dev Container starts PostgreSQL and applies backend migrations during
-`post-install.sh`. Start the dedicated E2E Keycloak realm from `tests/e2e`:
-
-```bash
-docker compose -f keycloak/docker-compose.yml up -d
-```
-
-Playwright starts or reuses the backend and frontend, and waits for their
-readiness URLs. The backend health endpoint is `http://localhost:4144/v1/health`;
-the frontend defaults to `http://localhost:5173/`.
-
-If you are already using the Dev Container terminal, run:
-
-```bash
-cd /workspaces/tenant-management-system/tests/e2e
-npm run test:e2e
-```
-
-This runs the full Playwright suite: the `setup` project authenticates first, then all Chromium E2E specs run with the saved state.
-
-If you are running the command from a local Windows PowerShell terminal, you can execute Playwright inside the running Dev Container with:
-
-```bash
-docker exec -it -e E2E_KEYCLOAK_URL=http://host.docker.internal:8082 devcontainer-devcontainer-1 bash -lc "cd /workspaces/tenant-management-system/tests/e2e && npm run test:e2e"
-```
-
-The npm script uses Node's `--env-file=.env` to load the remaining E2E settings
-and credentials. The `docker exec -e` value overrides `E2E_KEYCLOAK_URL` for
-this run so Playwright can reach Keycloak published on the Windows host. When
-the frontend runs inside the Dev Container, set its Keycloak URL and logout URL
-to `host.docker.internal`; Playwright derives the backend issuer and JWKS URL
-from `E2E_KEYCLOAK_URL`. Keep `BASE_URL` at `http://localhost:5173` when the
-frontend also runs inside the Dev Container.
-
-Chromium is installed automatically by `post-install.sh`, so it does not need to be installed before every test run.
-
-## Authentication
-
-Playwright uses a saved authentication state so that tests can reuse an authenticated session instead of logging in for every test.
-
-If the saved authentication state needs to be refreshed, run the setup project:
-
-```bash
-cd /workspaces/tenant-management-system/tests/e2e
-node --env-file=.env ./node_modules/@playwright/test/cli.js test --project=setup
-```
-
-Then run the E2E tests:
-
-```bash
-npm run test:e2e
-```
-
-## Shared tenant for home and role/group tests
-
-`cstar_home.spec.ts` and `cstar_roles_groups.spec.ts` call
-`getOrCreateApprovedTenant` from `support/tenant.fixture.ts`. The first call
-submits and approves one request; later calls reuse that tenant. Its name is saved
-in `test-results/shared-tenant.json`, which Playwright clears before a new run.
-Each consuming test also records the tenant name as a report annotation.
-
-Keep `workers: 1` and `fullyParallel: false` when using this shared state. The
-home tests run before the role/group tests in the full suite. The role test
-restores the original roles after checking the update. The rejection spec creates
-its own request because it tests rejection rather than an approved tenant.
-
-## Test Reports
-
-An HTML report is generated after each test run.
-
-To view the report:
+View the HTML report from `tests/e2e` with installed Playwright dependencies:
 
 ```bash
 npx playwright show-report
 ```
 
-Screenshots, videos, and traces may also be available for failed tests depending on the Playwright configuration.
-
-## Running in GitHub Actions
-
-Playwright tests run against the deployed application environment as part of the GitHub Actions workflow.
-
-For pull requests and deployment test workflows, the tests run against the corresponding deployed environment and use the real IDIR login with MFA.
-
-The workflow sets `E2E_AUTH_MODE=idir` and provides the IDIR username, password, and TOTP secret through GitHub Actions secrets. The setup project generates the one-time code at runtime and saves the authenticated state for the rest of the suite. Sensitive credentials are not stored in the repository.
-
-The application environment and URL are configured by the GitHub Actions workflow.
+Failed tests retain screenshots, videos, and traces in `test-results`.

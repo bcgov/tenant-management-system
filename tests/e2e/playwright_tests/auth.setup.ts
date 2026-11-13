@@ -31,5 +31,10 @@ setup('authenticate', async ({ page }) => {
     throw new Error(`Unsupported E2E_AUTH_MODE: ${authMode}`)
   }
 
+  // The authenticated header exposes Logout inside the user menu.
+  // Wait for its activator before saving the completed OIDC session.
+  await expect(
+    page.getByRole('button', { name: 'User menu', exact: true }),
+  ).toBeVisible({ timeout: 60_000 })
   await page.context().storageState({ path: authFile })
 })
