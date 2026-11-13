@@ -1492,12 +1492,12 @@ paths:
                       description: 'Tenant for managing road infrastructure'
                       status: 'NEW'
                       requestedBy: 'John Smith: ENV: EX'
-                      requestedAt: '2024-03-15'
+                      requestedAt: '2024-03-15T18:30:00Z'
                       decisionedBy: null
                       decisionedAt: null
                       rejectionReason: null
-                      createdDateTime: '2024-03-15'
-                      updatedDateTime: '2024-03-15'
+                      createdDateTime: '2024-03-15T18:30:00Z'
+                      updatedDateTime: '2024-03-15T18:30:00Z'
                       createdBy: '123e4567e89b12d3a456426614174000'
                       updatedBy: '123e4567e89b12d3a456426614174000'
                     - id: '456f7890-f12c-23d4-e567-537725285111'
@@ -1506,12 +1506,12 @@ paths:
                       description: 'Tenant for health services portal'
                       status: 'APPROVED'
                       requestedBy: 'Jane Doe: HLTH: EX'
-                      requestedAt: '2024-03-10'
+                      requestedAt: '2024-03-10T18:30:00Z'
                       decisionedBy: 'Admin User'
-                      decisionedAt: '2024-03-12'
+                      decisionedAt: '2024-03-12T18:30:00Z'
                       rejectionReason: null
-                      createdDateTime: '2024-03-10'
-                      updatedDateTime: '2024-03-12'
+                      createdDateTime: '2024-03-10T18:30:00Z'
+                      updatedDateTime: '2024-03-12T18:30:00Z'
                       createdBy: '456f7890f12c23d4e567537725285111'
                       updatedBy: 'admin-user-guid'
         '400':
@@ -4168,15 +4168,15 @@ components:
           example: 'John Smith: ENV'
         requestedAt:
           type: string
-          format: date
-          example: '2024-03-15'
+          format: date-time
+          example: '2024-03-15T18:30:00Z'
         decisionedBy:
           type: string
           nullable: true
           example: null
         decisionedAt:
           type: string
-          format: date
+          format: date-time
           nullable: true
           example: null
         rejectionReason:
@@ -4185,12 +4185,12 @@ components:
           example: null
         createdDateTime:
           type: string
-          format: date
-          example: '2024-03-15'
+          format: date-time
+          example: '2024-03-15T18:30:00Z'
         updatedDateTime:
           type: string
-          format: date
-          example: '2024-03-15'
+          format: date-time
+          example: '2024-03-15T18:30:00Z'
         createdBy:
           type: string
           description: SSO user ID of the user who created the request
