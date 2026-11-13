@@ -1,29 +1,62 @@
----
-sidebar_position: 2
----
-
 # Tenant users
 
-A tenant user is a user who belongs to a tenant in CSTAR.
+This page describes how people are added to and removed from a tenant. It is intended for tenant owners and user admins.
 
-CSTAR stores tenant membership separately from the user's identity provider account. A user may authenticate through a supported BC Government identity system, but they still need to be added to a tenant before CSTAR can manage tenant access for them.
+## Eligibility
 
-## Adding users to a tenant
+**A tenant user must have an IDIR or BCeID Business account.**
 
-A user must be added to a tenant before they can be added to groups or receive connected-service roles through those groups.
+Basic BCeID is not supported. The identity provider determines which CSTAR roles a user can hold.
 
-## CSTAR roles for tenant users
+| Identity provider | CSTAR roles available | Can sign in to the CSTAR web app |
+| --- | --- | --- |
+| IDIR | Tenant owner, user admin, service user | Yes |
+| BCeID Business | Service user only | No |
 
-Tenant users can have CSTAR roles such as tenant owner, user admin, or service user.
+**Signing in does not make a person a tenant user.**
 
-These roles control what the user can do in CSTAR. They do not define what the user can do inside a connected service.
+A person who signs in to CSTAR or to a connected service has no access to a tenant until a tenant owner or user admin adds them.
 
-## Groups and service roles
+## Adding a user
 
-Tenant users can be added to groups. Connected-service roles are assigned to groups, not directly to individual users.
+**Tenant owners and user admins add users to the tenant.**
 
-## Removing users
+The person is found in the BC Gov SSO directory. IDIR users can be found by first name, last name or email. BCeID Business users can be found by display name or username.
 
-When a user no longer needs access to a tenant, they can be removed from the tenant.
+- An IDIR user must be given at least one CSTAR role when they are added.
+- A BCeID Business user always receives the service user role.
+- The user can be added to one or more groups in the same step.
 
-Removing a user also removes their active access through tenant groups and role assignments.
+**Adding a person to a group also adds them to the tenant.**
+
+If the person is not yet a tenant user, they are added to the tenant with the service user role.
+
+The person receives an email listing the tenant, their CSTAR roles and any groups. See [Email notifications](./email-notifications.md).
+
+## Changing CSTAR roles
+
+**Tenant owners and user admins can assign and remove CSTAR roles at any time.**
+
+CSTAR refuses to remove the tenant owner role from the last tenant owner.
+
+**CSTAR roles do not affect access to connected services.**
+
+Access to a connected service is changed through group membership. See [Groups](./groups.md).
+
+## Removing a user
+
+**Tenant owners and user admins can remove a user from the tenant.**
+
+Removing a user:
+
+- removes them from every group in the tenant
+- removes all of their access to the tenant's connected services
+- sends them an email confirming the removal
+
+CSTAR refuses to remove the last tenant owner. A removed user can be added to the tenant again later.
+
+## Related pages
+
+- [Groups](./groups.md)
+- [CSTAR roles](../overview/cstar-roles.md)
+- [Identity providers](../security/identity-providers.md)

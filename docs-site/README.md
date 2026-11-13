@@ -1,71 +1,98 @@
 # CSTAR Documentation Site
 
-This folder contains the Docusaurus documentation site for CSTAR.
+This folder contains the Docusaurus site for the CSTAR documentation. The pages are written in Markdown under `docs-site/docs` and published to GitHub Pages.
 
-The documentation content is written in Markdown under `docs-site/docs`. Docusaurus builds the Markdown into static files that can be hosted by GitHub Pages.
+Published site: https://bcgov.github.io/tenant-management-system/
 
-## Local preview
-
-From the repository root:
-
-```powershell
-cd docs-site
-npm install
-npm run start
-```
-
-Open:
-
-```text
-http://localhost:4150
-```
-
-## Build for GitHub Pages
-
-For this repository, build with the GitHub Pages base path:
-
-```powershell
-cd docs-site
-npm ci
-$env:DOCS_URL = 'https://bcgov.github.io'
-$env:DOCS_BASE_URL = '/tenant-management-system/'
-npm run build
-```
-
-The generated site is written to:
-
-```text
-docs-site/build
-```
-
-## Preview the built site
-
-```powershell
-npm run serve
-```
-
-## Deploy to GitHub Pages
-
-GitHub Pages should publish the contents of:
-
-```text
-docs-site/build
-```
-
-The GitHub Actions job only needs to:
+## Run locally
 
 ```bash
 cd docs-site
 npm ci
+npm run start
+```
+
+The site opens at http://localhost:4150 and reloads as pages are edited.
+
+Search results appear only in a production build (`npm run build`, then `npm run serve`). After a package is added or removed, stop the local server and run `npm run clear` before starting it again.
+
+## Check before committing
+
+```bash
+npm run lint
+```
+
+This runs the TypeScript check and a full production build. The build fails on any broken link between pages.
+
+## Publishing
+
+The `gh-pages` workflow (`.github/workflows/gh-pages.yml`) builds and publishes the site on every push to `main`. It can also be run manually from the Actions tab. No manual deployment step is required.
+
+To reproduce the published build locally:
+
+```bash
 DOCS_URL="https://bcgov.github.io" DOCS_BASE_URL="/tenant-management-system/" npm run build
+npm run serve
 ```
 
-Then upload `docs-site/build` as the Pages artifact.
+## Adding a page
 
-Expected site URL:
+1. Create the Markdown file in the matching folder under `docs/`.
+2. Add the page to `sidebars.ts`. Pages that are not listed there do not appear in the navigation.
+3. Run `npm run lint`.
 
-```text
-https://bcgov.github.io/tenant-management-system/
-```
+Existing pages should not be renamed or moved. Other teams link to them, and a changed path breaks those links.
 
-Reference: Docusaurus builds static files into `build`, and GitHub Pages can host those static files.
+## Design
+
+The site follows the BC Government Design System.
+
+| Element | Value |
+| --- | --- |
+| Typeface | BC Sans, from the `@bcgov/bc-sans` package |
+| Primary colour | `#013366` |
+| Link colour | `#255A90` |
+| Accent colour | `#FCBA19`, used only for the line under the navigation bar and the homepage header |
+
+Colours are defined in `src/css/custom.css`. New components should use those variables rather than fixed colour values, so that they also work in dark mode.
+
+## Writing style
+
+All pages follow the same style, so that the site reads as one document.
+
+### Tone
+
+- Formal and neutral, in the style of government technical documentation.
+- Refer to the reader's system as "the connected service" or "the service". Use "you" only inside numbered steps.
+- Do not use contractions. Write "does not", not "doesn't".
+- Do not use casual phrases, rhetorical questions or filler openers such as "It is important to note" or "Simply".
+
+### Sentences
+
+- Keep sentences short, with one idea in each.
+- Use the present tense and the active voice: "CSTAR returns the roles", not "the roles will be returned".
+- State exactly what happens. Use "usually" or "may" only when the behaviour does vary.
+
+### Page structure
+
+- Open each page with one or two sentences that state what the page covers and who it is for.
+- Use plain noun phrases for headings, such as "Prerequisites", "Request" or "Errors".
+- Where a section states a rule, open it with the rule as a single bold sentence. Follow it with the reason, where the reason is not obvious, and then the details.
+- Use numbered steps for procedures, bullet points for lists of facts and tables for information the reader looks up.
+- Use bold only for a section's opening rule or for a term on its first mention. Do not use bold for emphasis.
+- End the page with a "Related pages" list instead of a closing paragraph.
+- Check every statement about behaviour against the backend code before publishing it.
+
+### Terms
+
+Use these terms in the same way on every page.
+
+| Use | Do not use |
+| --- | --- |
+| connected service | shared service, app, application |
+| connected-service role | service role, app role |
+| CSTAR role | tenant role, admin role |
+| tenant owner, user admin, service user, operations admin (lower case) | Tenant Owner, ops admin |
+| associated with a tenant | linked to, enabled for, turned on for |
+
+Write API paths, field names and values in `code` style.

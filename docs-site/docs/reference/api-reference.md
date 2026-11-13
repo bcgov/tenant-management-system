@@ -1,33 +1,35 @@
----
-sidebar_position: 1
----
-
 # API reference
 
-CSTAR API details are documented in the OpenAPI specification.
+This page explains where to find the full CSTAR API specification. It is intended for developers integrating a connected service.
 
-Use the API reference for endpoint paths, request bodies, response shapes, and authentication requirements.
+## Specification
 
-## Local API docs
+**The CSTAR API is defined by its OpenAPI specification.**
 
-When the backend is running locally, the Swagger UI is available at:
+The specification gives the exact path, parameters, request body, response and errors for every request. This documentation site explains concepts, rules and integration steps, and links to the specification for detail.
 
-```text
-http://localhost:4144/docs
-```
+## Interactive API documentation
 
-## Lower environment API docs
+**Each environment publishes the specification as interactive documentation.**
 
-DEV:
+| Environment | Address |
+| --- | --- |
+| Production | [https://connect.digital.gov.bc.ca/docs/](https://connect.digital.gov.bc.ca/docs/) |
+| Development | [https://dev.connect.digital.gov.bc.ca/docs/](https://dev.connect.digital.gov.bc.ca/docs/) |
+| Test | [https://test.connect.digital.gov.bc.ca/docs/](https://test.connect.digital.gov.bc.ca/docs/) |
+| Local | `http://localhost:4144/docs` when the backend is running locally |
 
-```text
-https://cstar-dev.apps.gold.devops.gov.bc.ca/docs/
-```
+## Request format
 
-TEST:
+**All requests and responses use JSON.**
 
-```text
-https://cstar-test.apps.gold.devops.gov.bc.ca/docs/
-```
+- Every request except the health check and signing keys requires a bearer token. See [Authentication](../connected-service-integration/authentication.md).
+- Successful responses wrap their content in a `data` object.
+- Errors use the standard format described in [Troubleshooting access](../connected-service-integration/troubleshooting-access.md).
+- Dates and times are returned in UTC, in ISO 8601 format.
 
-Use the API docs for exact endpoint details. Use this documentation site for concepts, workflows, and integration notes.
+## Related pages
+
+- [Authentication](../connected-service-integration/authentication.md)
+- [Check a user's roles](../connected-service-integration/check-user-roles.md)
+- [Glossary](./glossary.md)
