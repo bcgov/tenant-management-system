@@ -38,7 +38,7 @@ The error for a mismatched user ID currently uses a different format: `{ "error"
 | 403 | The caller is identified but not allowed to do this. | See [403 Forbidden](#403-forbidden). |
 | 404 | The tenant, user, group or role was not found. | The ID is wrong, belongs to another tenant, or the item was removed. |
 | 409 | The request conflicts with existing data. | The item already exists, or the change would break a rule such as leaving a tenant without a tenant owner. |
-| 500 | CSTAR failed unexpectedly. | Retry once. If it persists, contact the CSTAR team with the time of the request. |
+| 500 | CSTAR failed unexpectedly. | Retry once. If it persists, contact the [CSTAR team](../reference/support.md#reporting-an-error) with the time of the request. |
 
 ## 403 Forbidden
 
@@ -49,7 +49,7 @@ The error for a mismatched user ID currently uses a different format: `{ "error"
 | `the requested user does not match the token user` | The user ID in the path is not the token's user. | Take the user ID from the token. |
 | `not allowed to call CSTAR directly` | The service has not been allowed to manage access. | See [Managing access from a connected service](./managing-access.md). |
 | `cannot be performed from a connected service` | The action is available in the CSTAR web app only. | Perform the action in the CSTAR web app. |
-| `required role: TMS.OPERATIONS_ADMIN` | The action is for operations admins only. | Contact the CSTAR team. |
+| `required role: TMS.OPERATIONS_ADMIN` | The action is for operations admins only. | Contact the [CSTAR team](../reference/support.md). |
 
 ## A user has no roles
 

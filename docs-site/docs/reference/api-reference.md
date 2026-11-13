@@ -14,8 +14,9 @@ The specification gives the exact path, parameters, request body, response and e
 
 | Environment | Address |
 | --- | --- |
-| Development | [https://cstar-dev.apps.gold.devops.gov.bc.ca/docs/](https://cstar-dev.apps.gold.devops.gov.bc.ca/docs/) |
-| Test | [https://cstar-test.apps.gold.devops.gov.bc.ca/docs/](https://cstar-test.apps.gold.devops.gov.bc.ca/docs/) |
+| Production | [https://connect.digital.gov.bc.ca/docs/](https://connect.digital.gov.bc.ca/docs/) |
+| Development | [https://dev.connect.digital.gov.bc.ca/docs/](https://dev.connect.digital.gov.bc.ca/docs/) |
+| Test | [https://test.connect.digital.gov.bc.ca/docs/](https://test.connect.digital.gov.bc.ca/docs/) |
 | Local | `http://localhost:4144/docs` when the backend is running locally |
 
 ## Request format

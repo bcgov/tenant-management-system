@@ -117,6 +117,10 @@ const config: Config = {
               label: 'API reference',
               to: '/docs/reference/api-reference',
             },
+            {
+              label: 'Support',
+              to: '/docs/reference/support',
+            },
           ],
         },
         {
