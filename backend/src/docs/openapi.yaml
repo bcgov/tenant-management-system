@@ -1813,6 +1813,18 @@ paths:
                   default: false
                   description: Allows the shared service to call CSTAR APIs on behalf of its users (headless access).
                   example: false
+                allowServiceAccounts:
+                  type: boolean
+                  default: false
+                  description: Allows the shared service to call CSTAR with a service account token. Headless access must also be enabled.
+                  example: false
+                serviceAccountClientIdentifier:
+                  type: string
+                  minLength: 1
+                  maxLength: 55
+                  pattern: '^\S.*\S$'
+                  description: Client identifier of the shared service's service account SSO integration. Must differ from every other client identifier.
+                  example: 'notify-cstar-integration-6738'
                 roles:
                   type: array
                   minItems: 1
@@ -1982,6 +1994,18 @@ paths:
                   type: boolean
                   description: Allows the shared service to call CSTAR APIs on behalf of its users (headless access).
                   example: true
+                allowServiceAccounts:
+                  type: boolean
+                  description: Allows the shared service to call CSTAR with a service account token. Headless access must also be enabled.
+                  example: false
+                serviceAccountClientIdentifier:
+                  type: string
+                  minLength: 1
+                  maxLength: 55
+                  pattern: '^\S.*\S$'
+                  nullable: true
+                  description: Client identifier of the shared service's service account SSO integration. Must differ from every other client identifier.
+                  example: 'notify-cstar-integration-6738'
       responses:
         '200':
           description: Shared service successfully updated
@@ -4416,6 +4440,15 @@ components:
           type: boolean
           default: false
           example: false
+        allowServiceAccounts:
+          type: boolean
+          default: false
+          example: false
+        serviceAccountClientIdentifier:
+          type: string
+          maxLength: 55
+          nullable: true
+          example: 'notify-cstar-integration-6738'
         roles:
           type: array
           minItems: 1
@@ -4476,6 +4509,15 @@ components:
           type: boolean
           default: false
           example: false
+        allowServiceAccounts:
+          type: boolean
+          default: false
+          example: false
+        serviceAccountClientIdentifier:
+          type: string
+          maxLength: 55
+          nullable: true
+          example: 'notify-cstar-integration-6738'
         createdDateTime:
           type: string
           format: date-time

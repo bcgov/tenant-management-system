@@ -48,6 +48,8 @@ describe('SharedServiceService', () => {
         description: 'Description',
         isActive: true,
         allowHeadlessOps: true,
+        allowServiceAccounts: true,
+        serviceAccountClientIdentifier: 'test-service-account',
         roles: [{ name: 'Admin' }],
       },
       decodedJwt: { idir_user_guid: 'user-1' },
@@ -71,6 +73,8 @@ describe('SharedServiceService', () => {
           description: 'Description',
           isActive: true,
           allowHeadlessOps: true,
+          allowServiceAccounts: true,
+          serviceAccountClientIdentifier: 'test-service-account',
           roles: [{ name: 'Admin' }],
           updatedBy: 'user-1',
         }),
@@ -107,7 +111,12 @@ describe('SharedServiceService', () => {
   describe('updateSharedService', () => {
     const req = asRequest({
       params: { sharedServiceId: 'ss-1' },
-      body: { name: 'Updated Name', allowHeadlessOps: false },
+      body: {
+        name: 'Updated Name',
+        allowHeadlessOps: false,
+        allowServiceAccounts: false,
+        serviceAccountClientIdentifier: null,
+      },
       decodedJwt: { idir_user_guid: 'user-1' },
     })
 
@@ -122,6 +131,8 @@ describe('SharedServiceService', () => {
           sharedServiceId: 'ss-1',
           name: 'Updated Name',
           allowHeadlessOps: false,
+          allowServiceAccounts: false,
+          serviceAccountClientIdentifier: null,
           updatedBy: 'user-1',
         }),
         FAKE_TX,

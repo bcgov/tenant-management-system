@@ -175,6 +175,12 @@ describe('SharedServiceRepository', () => {
       }
       expect(savedSharedService.isActive).toBe(true)
       expect(savedSharedService.allowHeadlessOps).toBe(false)
+      expect(savedSharedService).toEqual(
+        expect.objectContaining({
+          allowServiceAccounts: false,
+          serviceAccountClientIdentifier: null,
+        }),
+      )
       expect(savedSharedService.description).toBeUndefined()
 
       const savedRoles = manager.save.mock.calls[1][0] as Array<{
@@ -201,6 +207,81 @@ describe('SharedServiceRepository', () => {
         1,
         expect.objectContaining({ allowHeadlessOps: true }),
       )
+    })
+
+    it('saves the service account settings when they are provided', async () => {
+      manager.createQueryBuilder
+        .mockReturnValueOnce(createQueryBuilder({ getExists: false }))
+        .mockReturnValueOnce(createQueryBuilder({ getExists: false }))
+        .mockReturnValueOnce(createQueryBuilder({ getExists: false }))
+        .mockReturnValueOnce(createQueryBuilder({ getExists: false }))
+        .mockReturnValueOnce(createQueryBuilder({ getOne: { id: 'x' } }))
+
+      await repo.saveSharedService(
+        {
+          ...validCreateInput,
+          allowServiceAccounts: true,
+          serviceAccountClientIdentifier: 'test-service-account',
+        },
+        asManager(manager),
+      )
+
+      expect(manager.save).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({
+          allowServiceAccounts: true,
+          serviceAccountClientIdentifier: 'test-service-account',
+        }),
+      )
+    })
+
+    it('refuses a service account client identifier reserved for CSTAR', async () => {
+      await expect(
+        repo.saveSharedService(
+          {
+            ...validCreateInput,
+            serviceAccountClientIdentifier: config.oidc.tmsAudience,
+          },
+          asManager(manager),
+        ),
+      ).rejects.toThrow(BadRequestError)
+      expect(manager.createQueryBuilder).not.toHaveBeenCalled()
+    })
+
+    it('refuses a service account client identifier equal to the client identifier', async () => {
+      await expect(
+        repo.saveSharedService(
+          {
+            ...validCreateInput,
+            serviceAccountClientIdentifier: validCreateInput.clientIdentifier,
+          },
+          asManager(manager),
+        ),
+      ).rejects.toThrow(
+        "The service account client identifier must be different from the client identifier 'test-service-client'. Use the client ID of the service account's own SSO integration.",
+      )
+      expect(manager.save).not.toHaveBeenCalled()
+    })
+
+    it('throws ConflictError when the service account client identifier is in use', async () => {
+      manager.createQueryBuilder
+        .mockReturnValueOnce(createQueryBuilder({ getExists: false }))
+        .mockReturnValueOnce(createQueryBuilder({ getExists: false }))
+        .mockReturnValueOnce(createQueryBuilder({ getExists: false }))
+        .mockReturnValueOnce(createQueryBuilder({ getExists: true }))
+
+      await expect(
+        repo.saveSharedService(
+          {
+            ...validCreateInput,
+            serviceAccountClientIdentifier: 'taken-client',
+          },
+          asManager(manager),
+        ),
+      ).rejects.toThrow(
+        "Client identifier 'taken-client' is already used by another shared service. Each client identifier can belong to one shared service only.",
+      )
+      expect(manager.save).not.toHaveBeenCalled()
     })
 
     it('throws ConflictError when the name already exists', async () => {
@@ -371,6 +452,116 @@ describe('SharedServiceRepository', () => {
           asManager(manager),
         ),
       ).rejects.toThrow(ConflictError)
+    })
+
+    it('updates the service account settings when they are provided', async () => {
+      manager.createQueryBuilder
+        .mockReturnValueOnce(createQueryBuilder({ getOne: { ...existing } }))
+        .mockReturnValueOnce(createQueryBuilder({ getExists: false }))
+        .mockReturnValueOnce(createQueryBuilder({ getOne: { id: 'ss-1' } }))
+
+      await repo.updateSharedService(
+        {
+          sharedServiceId: 'ss-1',
+          allowServiceAccounts: true,
+          serviceAccountClientIdentifier: 'new-service-account',
+          updatedBy: 'system',
+        },
+        asManager(manager),
+      )
+
+      expect(manager.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          allowServiceAccounts: true,
+          serviceAccountClientIdentifier: 'new-service-account',
+        }),
+      )
+    })
+
+    it('clears the service account client identifier with null without a uniqueness check', async () => {
+      manager.createQueryBuilder
+        .mockReturnValueOnce(
+          createQueryBuilder({
+            getOne: {
+              ...existing,
+              serviceAccountClientIdentifier: 'old-service-account',
+            },
+          }),
+        )
+        .mockReturnValueOnce(createQueryBuilder({ getOne: { id: 'ss-1' } }))
+
+      await repo.updateSharedService(
+        {
+          sharedServiceId: 'ss-1',
+          serviceAccountClientIdentifier: null,
+          updatedBy: 'system',
+        },
+        asManager(manager),
+      )
+
+      expect(manager.createQueryBuilder).toHaveBeenCalledTimes(2)
+      expect(manager.save).toHaveBeenCalledWith(
+        expect.objectContaining({ serviceAccountClientIdentifier: null }),
+      )
+    })
+
+    it('refuses a service account client identifier equal to the current client identifier', async () => {
+      manager.createQueryBuilder.mockReturnValueOnce(
+        createQueryBuilder({ getOne: { ...existing } }),
+      )
+
+      await expect(
+        repo.updateSharedService(
+          {
+            sharedServiceId: 'ss-1',
+            serviceAccountClientIdentifier: existing.clientIdentifier,
+            updatedBy: 'system',
+          },
+          asManager(manager),
+        ),
+      ).rejects.toThrow(BadRequestError)
+      expect(manager.save).not.toHaveBeenCalled()
+    })
+
+    it('refuses a new client identifier equal to the stored service account client identifier', async () => {
+      manager.createQueryBuilder.mockReturnValueOnce(
+        createQueryBuilder({
+          getOne: {
+            ...existing,
+            serviceAccountClientIdentifier: 'stored-service-account',
+          },
+        }),
+      )
+
+      await expect(
+        repo.updateSharedService(
+          {
+            sharedServiceId: 'ss-1',
+            clientIdentifier: 'stored-service-account',
+            updatedBy: 'system',
+          },
+          asManager(manager),
+        ),
+      ).rejects.toThrow(BadRequestError)
+      expect(manager.save).not.toHaveBeenCalled()
+    })
+
+    it('throws ConflictError when the new service account client identifier is taken', async () => {
+      manager.createQueryBuilder
+        .mockReturnValueOnce(createQueryBuilder({ getOne: { ...existing } }))
+        .mockReturnValueOnce(createQueryBuilder({ getExists: true }))
+
+      await expect(
+        repo.updateSharedService(
+          {
+            sharedServiceId: 'ss-1',
+            serviceAccountClientIdentifier: 'taken-client',
+            updatedBy: 'system',
+          },
+          asManager(manager),
+        ),
+      ).rejects.toThrow(ConflictError)
+      expect(manager.save).not.toHaveBeenCalled()
     })
 
     it('does not run a uniqueness check when the value is unchanged', async () => {
@@ -825,6 +1016,42 @@ describe('SharedServiceRepository', () => {
         expect(getManager).toHaveBeenCalledTimes(1)
       },
     )
+  })
+
+  describe('checkIfSharedServiceClientIdentifierExists', () => {
+    it('checks both client identifier columns and excludes the given service', async () => {
+      const qb = createQueryBuilder({ getExists: true })
+      manager.createQueryBuilder.mockReturnValueOnce(qb)
+
+      await expect(
+        repo.checkIfSharedServiceClientIdentifierExists(
+          'some-client',
+          asManager(manager),
+          'ss-1',
+        ),
+      ).resolves.toBe(true)
+
+      expect(qb.where).toHaveBeenCalledWith(
+        '(ss.clientIdentifier = :clientIdentifier OR ss.serviceAccountClientIdentifier = :clientIdentifier)',
+        { clientIdentifier: 'some-client' },
+      )
+      expect(qb.andWhere).toHaveBeenCalledWith(
+        'ss.id != :excludeSharedServiceId',
+        { excludeSharedServiceId: 'ss-1' },
+      )
+    })
+
+    it('does not exclude any service when no id is given', async () => {
+      const qb = createQueryBuilder({ getExists: false })
+      manager.createQueryBuilder.mockReturnValueOnce(qb)
+
+      await repo.checkIfSharedServiceClientIdentifierExists(
+        'some-client',
+        asManager(manager),
+      )
+
+      expect(qb.andWhere).not.toHaveBeenCalled()
+    })
   })
 
   describe('findSharedServiceByClientIdentifier', () => {

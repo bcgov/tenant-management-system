@@ -19,12 +19,164 @@ import {
   UpdateSharedServiceStatusInputDto,
 } from '../dtos/tms.dto'
 
+type UpdatableSharedServiceField =
+  | 'name'
+  | 'displayName'
+  | 'clientIdentifier'
+  | 'landingPageUrl'
+  | 'description'
+  | 'allowHeadlessOps'
+  | 'allowServiceAccounts'
+  | 'serviceAccountClientIdentifier'
+
+const UPDATABLE_SHARED_SERVICE_FIELDS: UpdatableSharedServiceField[] = [
+  'name',
+  'displayName',
+  'clientIdentifier',
+  'landingPageUrl',
+  'description',
+  'allowHeadlessOps',
+  'allowServiceAccounts',
+  'serviceAccountClientIdentifier',
+]
+
+const UNIQUE_FIELD_CONDITIONS = {
+  name: 'ss.name = :value',
+  displayName: 'ss.displayName = :value',
+} as const
+
+const isChanged = <T>(
+  value: T | null | undefined,
+  current: T | null | undefined,
+): value is T => value !== undefined && value !== null && value !== current
+
 export class SharedServiceRepository {
   private ensureClientIdentifierIsNotReserved(clientIdentifier: string) {
     if (clientIdentifier === config.oidc.tmsAudience) {
       throw new BadRequestError(
         `Client identifier '${clientIdentifier}' is reserved for CSTAR`,
       )
+    }
+  }
+
+  private ensureServiceAccountClientIdentifierIsDistinct(
+    serviceAccountClientIdentifier: string | null | undefined,
+    clientIdentifier: string,
+  ) {
+    if (!serviceAccountClientIdentifier) {
+      return
+    }
+    this.ensureClientIdentifierIsNotReserved(serviceAccountClientIdentifier)
+    if (serviceAccountClientIdentifier === clientIdentifier) {
+      throw new BadRequestError(
+        `The service account client identifier must be different from the client identifier '${clientIdentifier}'. Use the client ID of the service account's own SSO integration.`,
+      )
+    }
+  }
+
+  private async ensureClientIdentifierIsFree(
+    clientIdentifier: string,
+    manager: EntityManager,
+    excludeSharedServiceId?: string,
+  ) {
+    if (
+      await this.checkIfSharedServiceClientIdentifierExists(
+        clientIdentifier,
+        manager,
+        excludeSharedServiceId,
+      )
+    ) {
+      throw new ConflictError(
+        `Client identifier '${clientIdentifier}' is already used by another shared service. Each client identifier can belong to one shared service only.`,
+      )
+    }
+  }
+
+  private async isTakenByAnotherSharedService(
+    field: keyof typeof UNIQUE_FIELD_CONDITIONS,
+    value: string,
+    sharedServiceId: string,
+    manager: EntityManager,
+  ) {
+    return manager
+      .createQueryBuilder()
+      .from(SharedService, 'ss')
+      .where(UNIQUE_FIELD_CONDITIONS[field], { value })
+      .andWhere('ss.id != :sharedServiceId', { sharedServiceId })
+      .getExists()
+  }
+
+  private async ensureUpdatedValuesAreFree(
+    input: UpdateSharedServiceInputDto,
+    sharedService: SharedService,
+    manager: EntityManager,
+  ) {
+    const {
+      sharedServiceId,
+      name,
+      displayName,
+      clientIdentifier,
+      serviceAccountClientIdentifier,
+    } = input
+
+    if (
+      isChanged(name, sharedService.name) &&
+      (await this.isTakenByAnotherSharedService(
+        'name',
+        name,
+        sharedServiceId,
+        manager,
+      ))
+    ) {
+      throw new ConflictError(
+        `A shared service with name '${name}' already exists`,
+      )
+    }
+
+    if (
+      isChanged(displayName, sharedService.displayName) &&
+      (await this.isTakenByAnotherSharedService(
+        'displayName',
+        displayName,
+        sharedServiceId,
+        manager,
+      ))
+    ) {
+      throw new ConflictError(
+        `A shared service with display name '${displayName}' already exists`,
+      )
+    }
+
+    if (isChanged(clientIdentifier, sharedService.clientIdentifier)) {
+      await this.ensureClientIdentifierIsFree(
+        clientIdentifier,
+        manager,
+        sharedServiceId,
+      )
+    }
+
+    if (
+      isChanged(
+        serviceAccountClientIdentifier,
+        sharedService.serviceAccountClientIdentifier,
+      )
+    ) {
+      await this.ensureClientIdentifierIsFree(
+        serviceAccountClientIdentifier,
+        manager,
+        sharedServiceId,
+      )
+    }
+  }
+
+  private applySharedServiceUpdates(
+    sharedService: SharedService,
+    input: UpdateSharedServiceInputDto,
+  ) {
+    for (const field of UPDATABLE_SHARED_SERVICE_FIELDS) {
+      if (input[field] !== undefined) {
+        Object.assign(sharedService, { [field]: input[field] })
+      }
     }
   }
 
@@ -40,11 +192,17 @@ export class SharedServiceRepository {
       description,
       isActive,
       allowHeadlessOps,
+      allowServiceAccounts,
+      serviceAccountClientIdentifier,
       roles,
       updatedBy,
     } = input
 
     this.ensureClientIdentifierIsNotReserved(clientIdentifier)
+    this.ensureServiceAccountClientIdentifierIsDistinct(
+      serviceAccountClientIdentifier,
+      clientIdentifier,
+    )
 
     if (await this.checkIfSharedServiceNameExists(name, manager)) {
       throw new ConflictError(
@@ -60,14 +218,12 @@ export class SharedServiceRepository {
       )
     }
 
-    if (
-      await this.checkIfSharedServiceClientIdentifierExists(
-        clientIdentifier,
+    await this.ensureClientIdentifierIsFree(clientIdentifier, manager)
+
+    if (serviceAccountClientIdentifier) {
+      await this.ensureClientIdentifierIsFree(
+        serviceAccountClientIdentifier,
         manager,
-      )
-    ) {
-      throw new ConflictError(
-        `A shared service with client identifier '${clientIdentifier}' already exists`,
       )
     }
 
@@ -81,6 +237,9 @@ export class SharedServiceRepository {
     }
     sharedService.isActive = isActive ?? true
     sharedService.allowHeadlessOps = allowHeadlessOps ?? false
+    sharedService.allowServiceAccounts = allowServiceAccounts ?? false
+    sharedService.serviceAccountClientIdentifier =
+      serviceAccountClientIdentifier ?? null
     sharedService.createdBy = updatedBy
     sharedService.updatedBy = updatedBy
 
@@ -109,12 +268,8 @@ export class SharedServiceRepository {
   ) {
     const {
       sharedServiceId,
-      name,
-      displayName,
       clientIdentifier,
-      landingPageUrl,
-      description,
-      allowHeadlessOps,
+      serviceAccountClientIdentifier,
       updatedBy,
     } = input
 
@@ -131,69 +286,16 @@ export class SharedServiceRepository {
       throw new NotFoundError(`Shared service not found: ${sharedServiceId}`)
     }
 
-    if (
-      name !== undefined &&
-      name !== sharedService.name &&
-      (await manager
-        .createQueryBuilder()
-        .from(SharedService, 'ss')
-        .where('ss.name = :name', { name })
-        .andWhere('ss.id != :sharedServiceId', { sharedServiceId })
-        .getExists())
-    ) {
-      throw new ConflictError(
-        `A shared service with name '${name}' already exists`,
-      )
-    }
+    this.ensureServiceAccountClientIdentifierIsDistinct(
+      serviceAccountClientIdentifier === undefined
+        ? sharedService.serviceAccountClientIdentifier
+        : serviceAccountClientIdentifier,
+      clientIdentifier ?? sharedService.clientIdentifier,
+    )
 
-    if (
-      displayName !== undefined &&
-      displayName !== sharedService.displayName &&
-      (await manager
-        .createQueryBuilder()
-        .from(SharedService, 'ss')
-        .where('ss.displayName = :displayName', { displayName })
-        .andWhere('ss.id != :sharedServiceId', { sharedServiceId })
-        .getExists())
-    ) {
-      throw new ConflictError(
-        `A shared service with display name '${displayName}' already exists`,
-      )
-    }
+    await this.ensureUpdatedValuesAreFree(input, sharedService, manager)
 
-    if (
-      clientIdentifier !== undefined &&
-      clientIdentifier !== sharedService.clientIdentifier &&
-      (await manager
-        .createQueryBuilder()
-        .from(SharedService, 'ss')
-        .where('ss.clientIdentifier = :clientIdentifier', { clientIdentifier })
-        .andWhere('ss.id != :sharedServiceId', { sharedServiceId })
-        .getExists())
-    ) {
-      throw new ConflictError(
-        `A shared service with client identifier '${clientIdentifier}' already exists`,
-      )
-    }
-
-    if (name !== undefined) {
-      sharedService.name = name
-    }
-    if (displayName !== undefined) {
-      sharedService.displayName = displayName
-    }
-    if (clientIdentifier !== undefined) {
-      sharedService.clientIdentifier = clientIdentifier
-    }
-    if (landingPageUrl !== undefined) {
-      sharedService.landingPageUrl = landingPageUrl
-    }
-    if (description !== undefined) {
-      sharedService.description = description
-    }
-    if (allowHeadlessOps !== undefined) {
-      sharedService.allowHeadlessOps = allowHeadlessOps
-    }
+    this.applySharedServiceUpdates(sharedService, input)
     sharedService.updatedBy = updatedBy
 
     await manager.save(sharedService)
@@ -493,13 +595,22 @@ export class SharedServiceRepository {
   public async checkIfSharedServiceClientIdentifierExists(
     clientIdentifier: string,
     manager?: EntityManager,
+    excludeSharedServiceId?: string,
   ) {
     const em = manager ?? getManager()
-    return em
+    const query = em
       .createQueryBuilder()
       .from(SharedService, 'ss')
-      .where('ss.clientIdentifier = :clientIdentifier', { clientIdentifier })
-      .getExists()
+      .where(
+        '(ss.clientIdentifier = :clientIdentifier OR ss.serviceAccountClientIdentifier = :clientIdentifier)',
+        { clientIdentifier },
+      )
+    if (excludeSharedServiceId) {
+      query.andWhere('ss.id != :excludeSharedServiceId', {
+        excludeSharedServiceId,
+      })
+    }
+    return query.getExists()
   }
 
   public async findSharedServiceByClientIdentifier(

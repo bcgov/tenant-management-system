@@ -348,6 +348,12 @@ export default {
       description: Joi.string().min(1).max(500).optional(),
       isActive: Joi.boolean().optional(),
       allowHeadlessOps: Joi.boolean().optional(),
+      allowServiceAccounts: Joi.boolean().optional(),
+      serviceAccountClientIdentifier: Joi.string()
+        .min(1)
+        .max(55)
+        .pattern(/^\S.*\S$/)
+        .optional(),
       roles: Joi.array()
         .items(
           Joi.object().keys({
@@ -392,6 +398,13 @@ export default {
       landingPageUrl: Joi.string().uri().max(500).optional(),
       description: Joi.string().min(1).max(500).allow(null).optional(),
       allowHeadlessOps: Joi.boolean().optional(),
+      allowServiceAccounts: Joi.boolean().optional(),
+      serviceAccountClientIdentifier: Joi.string()
+        .min(1)
+        .max(55)
+        .pattern(/^\S.*\S$/)
+        .allow(null)
+        .optional(),
     })
       .or(
         'name',
@@ -400,6 +413,8 @@ export default {
         'landingPageUrl',
         'description',
         'allowHeadlessOps',
+        'allowServiceAccounts',
+        'serviceAccountClientIdentifier',
       )
       .options({ abortEarly: false, convert: false }),
   },

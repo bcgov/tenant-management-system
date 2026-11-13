@@ -23,6 +23,8 @@ export class SharedServiceService {
       description: req.body.description,
       isActive: req.body.isActive,
       allowHeadlessOps: req.body.allowHeadlessOps,
+      allowServiceAccounts: req.body.allowServiceAccounts,
+      serviceAccountClientIdentifier: req.body.serviceAccountClientIdentifier,
       roles: req.body.roles,
       updatedBy: req.decodedJwt?.idir_user_guid || 'system',
     }
@@ -55,6 +57,8 @@ export class SharedServiceService {
       landingPageUrl: req.body.landingPageUrl,
       description: req.body.description,
       allowHeadlessOps: req.body.allowHeadlessOps,
+      allowServiceAccounts: req.body.allowServiceAccounts,
+      serviceAccountClientIdentifier: req.body.serviceAccountClientIdentifier,
       updatedBy: req.decodedJwt?.idir_user_guid || 'system',
     }
     const updatedSharedService = await connection.manager.transaction((tx) =>

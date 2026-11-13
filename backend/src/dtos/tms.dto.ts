@@ -40,6 +40,8 @@ export interface CreateSharedServiceInputDto {
   description?: string
   isActive?: boolean
   allowHeadlessOps?: boolean
+  allowServiceAccounts?: boolean
+  serviceAccountClientIdentifier?: string
   roles: Array<{
     name: string
     description?: string
@@ -58,6 +60,8 @@ export interface UpdateSharedServiceInputDto {
   landingPageUrl?: string
   description?: string | null
   allowHeadlessOps?: boolean
+  allowServiceAccounts?: boolean
+  serviceAccountClientIdentifier?: string | null
   updatedBy: string
 }
 
