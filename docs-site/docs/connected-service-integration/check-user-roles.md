@@ -8,7 +8,7 @@ This page describes how a connected service retrieves the roles a user holds in 
 
 ## Prerequisites
 
-The request succeeds only when all of the following are in place.
+**The request succeeds only when all of the following are in place.**
 
 - The connected service is set up in CSTAR and is active. See [Connected service setup](./connected-service-setup.md).
 - The tenant is associated with the connected service. See [Tenant association](./tenant-association.md).
@@ -26,9 +26,11 @@ Authorization: Bearer <the user's access token>
 | `tenantId` | The tenant the user is working in. |
 | `ssoUserId` | The `idir_user_guid` or `bceid_user_guid` claim from the same token. |
 
-The `ssoUserId` must belong to the user who owns the token. A connected service cannot request another user's roles.
+**The `ssoUserId` must belong to the user who owns the token.**
 
-To let the user choose a tenant, the service can first request `GET /v1/users/{ssoUserId}/tenants`. It returns the user's tenants that are associated with the service.
+A connected service cannot request another user's roles.
+
+To let the user choose a tenant, the service can first request `GET /v1/users/{ssoUserId}/tenants`. The response lists the user's tenants that are associated with the service.
 
 ## Response
 
@@ -57,25 +59,35 @@ To let the user choose a tenant, the service can first request `GET /v1/users/{s
 | `allowedIdentityProviders` | The identity providers the role is limited to, or `null` if it is not limited. |
 | `groups` | Every group that gives the user this role. |
 
-The response follows these rules:
+**The response contains only the calling service's roles.**
 
-- **Only the calling service's roles.** Roles the user holds in other connected services are not included.
-- **Each role once.** A role granted by more than one group appears once, with all of those groups listed.
-- **Identity provider limits applied.** A role limited to IDIR users is not returned for a BCeID Business user, even if they are in a group that holds it.
+Roles the user holds in other connected services are not included.
 
-What each role allows is decided by the connected service. CSTAR does not interpret role names.
+**Each role appears once.**
+
+A role granted by more than one group appears once, with all of those groups listed.
+
+**Identity provider limits are applied.**
+
+A role limited to IDIR users is not returned for a BCeID Business user, even if they belong to a group that holds it.
+
+**The connected service determines what each role permits.**
+
+CSTAR does not interpret role names.
 
 ## Empty response
 
-An empty `sharedServiceRoles` list is a valid response. It indicates that the user is a member of the tenant but does not belong to any group that holds a role for the calling service.
+**An empty `sharedServiceRoles` list is a valid response.**
 
-The connected service should treat the user as having no access, and should tell them how to obtain it. For example: "You do not have access to this service in this tenant. Ask a tenant owner or user admin to add you to a group."
+It indicates that the user is a member of the tenant but does not belong to any group that holds a role for the calling service.
+
+The connected service should treat the user as having no access, and should state how access is obtained. For example: "You do not have access to this service in this tenant. Ask a tenant owner or user admin to add you to a group."
 
 ## Errors
 
 | Status | Message | Cause | Resolution |
 | --- | --- | --- | --- |
-| 401 | `Error occurred during authentication` | The token is missing, expired or not issued by BC Gov SSO, or its `aud` is not a single value. | Obtain a new token. Confirm the `aud` claim. |
+| 401 | `Error occurred during authentication` | The token is missing, expired or not issued by BC Gov SSO. | Obtain a new token. |
 | 403 | `Shared service not authorized for this tenant` | The tenant is not associated with the calling service. | A tenant owner associates the service with the tenant. |
 | 403 | `Access denied: User does not have required roles for tenant: {tenantId}` | The user is not a member of the tenant. | Confirm the tenant ID. A tenant owner or user admin adds the user. |
 | 403 | `Access denied - the requested user does not match the token user` | The `ssoUserId` in the path is not the token's user. | Take `ssoUserId` from the token. |
@@ -84,7 +96,9 @@ See [Troubleshooting access](./troubleshooting-access.md) for other errors.
 
 ## Caching
 
-A connected service can cache the response to avoid a request on every page. A change made in CSTAR, such as removing a user from a group, does not reach the service until it requests the roles again. The cache period should therefore be short, such as the length of the user's session or a few minutes.
+**A cached response should be kept for a short period only.**
+
+A connected service can cache the response to avoid a request on every page. A change made in CSTAR, such as removing a user from a group, does not reach the service until it requests the roles again. The cache period should not exceed the length of the user's session, and should be a few minutes where removed access must stop promptly.
 
 ## Related pages
 

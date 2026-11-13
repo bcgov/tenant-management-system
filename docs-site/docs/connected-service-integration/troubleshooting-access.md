@@ -4,7 +4,7 @@ This page explains the errors CSTAR returns and how to resolve them. It is inten
 
 ## Error response format
 
-CSTAR returns errors in the following format.
+**CSTAR returns errors in a standard format.**
 
 ```json
 {
@@ -23,7 +23,9 @@ CSTAR returns errors in the following format.
 | `errorMessage` | The standard name of the HTTP status. |
 | `code` | Present on some errors. A fixed value the connected service can test for, such as `OTHER_SERVICES_NOT_CONFIRMED`. |
 
-A connected service should test `code` rather than the wording of `message`, which can change.
+**A connected service should test `code`, not the wording of `message`.**
+
+The wording of `message` can change. The value of `code` does not.
 
 The error for a mismatched user ID currently uses a different format: `{ "error", "message", "statusCode" }`.
 
@@ -32,7 +34,7 @@ The error for a mismatched user ID currently uses a different format: `{ "error"
 | Status | Meaning | Common causes |
 | --- | --- | --- |
 | 400 | The request is not valid. | A required field is missing, a value is too long, or an ID is not in the expected format. The `message` names the field. |
-| 401 | CSTAR did not accept the token. | The token is missing or expired, was not issued by BC Gov SSO, or its `aud` claim is a list or does not match a known client. |
+| 401 | CSTAR did not accept the token. | The token is missing or expired, or was not issued by BC Gov SSO. On some requests, an `aud` claim that does not match a known client also returns 401. |
 | 403 | The caller is identified but not allowed to do this. | See [403 Forbidden](#403-forbidden). |
 | 404 | The tenant, user, group or role was not found. | The ID is wrong, belongs to another tenant, or the item was removed. |
 | 409 | The request conflicts with existing data. | The item already exists, or the change would break a rule such as leaving a tenant without a tenant owner. |
@@ -51,7 +53,7 @@ The error for a mismatched user ID currently uses a different format: `{ "error"
 
 ## A user has no roles
 
-When a connected service receives an empty list of roles for a user, check the following in order.
+**When a connected service receives an empty list of roles, check the following in order.**
 
 1. **Tenant.** The service is asking about the tenant the user expects.
 2. **Membership.** The user is a member of that tenant.
@@ -63,9 +65,13 @@ When a connected service receives an empty list of roles for a user, check the f
 
 ## A change has not taken effect
 
-CSTAR applies changes immediately. If a user's access in a connected service does not reflect a recent change, the connected service is most likely using a cached copy of the user's roles. The connected service team can confirm how long roles are cached and how to refresh them.
+**CSTAR applies changes immediately.**
+
+If a user's access in a connected service does not reflect a recent change, check whether the connected service caches the user's roles. The connected service team can confirm how long roles are cached and how to refresh them.
 
 ## Client identifier problems
+
+**Most client identifier problems are caused by one of the following.**
 
 - The `aud` claim must exactly match the client identifier set up in CSTAR. Client IDs differ between environments.
 - The `aud` claim must be a single value. Tokens with several audiences are refused.

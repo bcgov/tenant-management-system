@@ -6,13 +6,13 @@ title: Tenant requests
 
 This page describes how a new tenant is requested and approved. It is intended for people requesting a tenant and for operations admins who review requests.
 
-## Who can request a tenant
+## Eligibility
 
-Any IDIR user who can sign in to the CSTAR web app can request a tenant. BCeID users cannot request a tenant.
+**Only IDIR users can request a tenant.**
+
+A tenant request is submitted in the CSTAR web app, which accepts IDIR sign-in only.
 
 ## Submitting a request
-
-The requester provides the following details in the CSTAR web app.
 
 | Field | Required | Limit |
 | --- | --- | --- |
@@ -20,9 +20,13 @@ The requester provides the following details in the CSTAR web app.
 | Ministry name | Yes | 100 characters |
 | Description | No | 500 characters |
 
-CSTAR refuses the request if a tenant with the same name already exists in the same ministry.
+**The tenant name must not already be in use in the same ministry.**
 
-When the request is submitted, the CSTAR operations team receives an email asking them to review it. See [Email notifications](./email-notifications.md).
+CSTAR refuses the request if a tenant with the same name and ministry name already exists.
+
+**The CSTAR operations team is notified of each new request.**
+
+See [Email notifications](./email-notifications.md).
 
 ## Request statuses
 
@@ -32,16 +36,20 @@ When the request is submitted, the CSTAR operations team receives an email askin
 | `APPROVED` | Approved. The tenant has been created. |
 | `REJECTED` | Rejected. No tenant was created. |
 
-A decision is final. A request that is `APPROVED` or `REJECTED` cannot be changed. A requester whose request was rejected can submit a new one.
+**A decision is final.**
+
+A request that is `APPROVED` or `REJECTED` cannot be changed. A requester whose request was rejected can submit a new request.
 
 ## Reviewing a request
 
-An operations admin reviews each `NEW` request in the CSTAR web app and either approves or rejects it.
+**Operations admins approve or reject each new request.**
 
-- **Approving.** The operations admin can correct the tenant name before approving. CSTAR checks again that the name is not already in use in the same ministry.
-- **Rejecting.** The operations admin must give a reason. The reason is included in the email sent to the requester.
+- **Approval.** The operations admin can correct the tenant name before approving. CSTAR checks again that the name is not in use in the same ministry.
+- **Rejection.** The operations admin must give a reason. The reason is included in the email sent to the requester.
 
-## After approval
+## Approval
+
+**Approving a request creates the tenant and makes the requester its first tenant owner.**
 
 When a request is approved, CSTAR:
 
@@ -49,7 +57,7 @@ When a request is approved, CSTAR:
 2. adds the requester as a tenant user with the tenant owner, user admin and service user roles
 3. emails the requester to confirm the approval
 
-The new tenant owner can then sign in to CSTAR, associate connected services with the tenant, and add users and groups.
+The tenant owner can then associate connected services with the tenant and add users and groups.
 
 ## Related pages
 

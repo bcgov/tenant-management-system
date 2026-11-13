@@ -2,9 +2,11 @@
 
 This page describes how a tenant starts using a connected service. It is intended for tenant owners and connected service teams.
 
-## What association does
+## Definition
 
-A connected service is set up once in CSTAR, but it is not available to any tenant until a tenant owner associates it with their tenant. Association is the tenant's decision to use the service.
+**A connected service is not available to a tenant until a tenant owner associates it with the tenant.**
+
+A connected service is set up once in CSTAR. Association records each tenant's decision to use it.
 
 | Before association | After association |
 | --- | --- |
@@ -13,13 +15,15 @@ A connected service is set up once in CSTAR, but it is not available to any tena
 
 ## Associating a service
 
-A tenant owner associates a connected service with the tenant in the CSTAR web app. Only active connected services can be associated. User admins cannot associate a connected service.
+**Only a tenant owner can associate a connected service with a tenant.**
 
-A tenant can be associated with any number of connected services.
+Association is performed in the CSTAR web app. Only active connected services can be associated. A tenant can be associated with any number of connected services.
 
-## What the connected service can then see
+## Effect on the connected service
 
-Association lets the connected service read information about the tenant. It does not give the service access on its own. Each request the service makes is also checked against the signed-in user:
+**Association does not give a connected service access on its own.**
+
+Each request from the connected service is also checked against the signed-in user:
 
 - the user must be a member of the tenant
 - for any change, the user must hold the CSTAR role the change requires

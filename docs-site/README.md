@@ -63,7 +63,7 @@ All pages follow the same style so that the site reads as one document.
 - Open each page with one or two sentences that state what the page covers and who it is for.
 - Use plain noun phrases for headings, such as "Prerequisites", "Request" or "Errors".
 - Use numbered steps for procedures, bullet points for lists of facts and tables for information the reader looks up.
-- Use bold only for a term on its first mention, never for emphasis.
+- Use bold only for a term on its first mention, or for the opening statement of each principle on the Core principles page. Do not use bold for emphasis.
 - End the page with a "Related pages" list instead of a closing paragraph.
 - Check every statement about behaviour against the backend code before publishing it.
 

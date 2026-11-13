@@ -2,39 +2,60 @@
 
 This page describes how groups are used to give tenant users access to connected services. It is intended for tenant owners and user admins.
 
-## What a group is
+## Definition
 
-A **group** is a named set of tenant users within one tenant. Connected-service roles are assigned to groups, never directly to a user. Every member of a group holds every role assigned to that group.
+**A group is a named set of tenant users within one tenant.**
 
-A user can belong to any number of groups. Their effective roles are the combined roles of all their groups. A role granted by more than one group is counted once.
+Connected-service roles are assigned to groups, never directly to a user. Every member of a group holds every role assigned to that group.
 
-## Planning groups
+**A user's effective roles are the combined roles of all their groups.**
 
-Groups work best when they describe a job rather than a person. For example, a group named "Form designers" that holds the `form-designer` role is easier to maintain than a set of individual assignments.
+A user can belong to any number of groups. A role granted by more than one group is counted once.
 
-A single group can hold roles from more than one connected service. This is useful for giving a new team member everything they need in one step. It also means that adding someone to that group gives them access in every one of those services, so the members of such a group should be chosen with care.
+## Group design
+
+**A group should represent a job or function, not an individual.**
+
+A group defined by function, such as "Form designers", remains valid as people join and leave. Access can then be reviewed by group rather than by person.
+
+**A group can hold roles in more than one connected service.**
+
+Adding a user to such a group gives them access in every one of those connected services. Groups of this kind should be limited to people who require access in all of them.
 
 ## Creating a group
 
-A tenant owner or user admin creates a group with a name and an optional description of up to 500 characters. Group names must be unique within the tenant.
+**Tenant owners and user admins create groups.**
 
-## Managing members
+| Field | Required | Limit |
+| --- | --- | --- |
+| Name | Yes | 255 characters. Must be unique within the tenant, and must not start or end with a space. |
+| Description | No | 500 characters |
 
-A tenant owner or user admin can add and remove group members at any time.
+## Group membership
+
+**Tenant owners and user admins can add and remove group members at any time.**
 
 - Adding a person who is not yet a tenant user also adds them to the tenant, with the service user role.
 - Adding a user who is already a member is refused.
 - The person receives an email when they are added to or removed from a group. See [Email notifications](./email-notifications.md).
 
-Removing a user from a group removes only the roles that group provided. The user keeps any roles they hold through other groups, and remains a tenant user.
+**Removing a user from a group removes only the roles that group provided.**
 
-## Assigning connected-service roles
+The user keeps any roles they hold through other groups, and remains a tenant user.
 
-A tenant owner or user admin chooses which connected-service roles a group holds. Only roles from connected services associated with the tenant are available.
+## Connected-service roles
 
-Some roles are limited to certain identity providers. For example, a role limited to IDIR users does not apply to BCeID Business members of the group.
+**Tenant owners and user admins assign connected-service roles to groups.**
 
-A change to a group's roles applies to every member the next time a connected service requests their roles.
+Only roles from connected services associated with the tenant can be assigned.
+
+**Identity provider limits are applied to each member.**
+
+A role limited to IDIR users is not given to BCeID Business members of the group.
+
+**A change to a group's roles applies to every member.**
+
+The change takes effect the next time a connected service requests a member's roles.
 
 ## Related pages
 

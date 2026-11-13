@@ -71,8 +71,8 @@ const config: Config = {
               to: '/docs/overview/what-is-cstar',
             },
             {
-              label: 'Core concepts',
-              to: '/docs/overview/core-concepts',
+              label: 'Core principles',
+              to: '/docs/overview/core-principles',
             },
             {
               label: 'CSTAR roles',

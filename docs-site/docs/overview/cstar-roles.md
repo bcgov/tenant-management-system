@@ -1,21 +1,27 @@
 # CSTAR roles
 
-This page describes the CSTAR roles and what each one allows. It applies to tenant owners, user admins and anyone deciding which role to give a tenant user.
+This page describes the CSTAR roles and the actions each one permits. It is intended for tenant owners, user admins and anyone deciding which role to give a tenant user.
 
-CSTAR roles control access to CSTAR only. They do not give a user any role in a connected service. Access to a connected service comes from connected-service roles, which are assigned through groups.
+## Purpose of CSTAR roles
+
+**CSTAR roles control access to CSTAR only.**
+
+A CSTAR role does not give a user any role in a connected service. Access to a connected service comes from connected-service roles, which are assigned through groups.
 
 ## Roles
 
 | Role | Scope | Intended for |
 | --- | --- | --- |
-| Tenant owner | One tenant | The people accountable for the tenant. Every tenant has at least one. |
-| User admin | One tenant | People who manage users and groups day to day. |
-| Service user | One tenant | Everyone else in the tenant. Gives read-only access to the tenant in CSTAR. |
+| Tenant owner | One tenant | The people accountable for the tenant. |
+| User admin | One tenant | The people who manage users and groups day to day. |
+| Service user | One tenant | All other members of the tenant. Gives read-only access to the tenant in CSTAR. |
 | Operations admin | All of CSTAR | The CSTAR operations team. Not a tenant role. |
 
-A tenant user can hold more than one role. The person who requested the tenant receives all three tenant roles when the request is approved.
+**A tenant user can hold more than one CSTAR role.**
 
-## What each role allows
+The person who requested the tenant receives the tenant owner, user admin and service user roles when the request is approved.
+
+## Permitted actions
 
 | Action | Tenant owner | User admin | Service user | Operations admin |
 | --- | :---: | :---: | :---: | :---: |
@@ -32,16 +38,24 @@ A tenant user can hold more than one role. The person who requested the tenant r
 | Create a tenant without a tenant request | No | No | No | Yes |
 | Set up connected services and their roles | No | No | No | Yes |
 
-Operations admins have no access inside a tenant unless they are also a tenant user in that tenant.
+**Operations admins have no access inside a tenant unless they are also a member of it.**
 
 ## Rules
 
-- **At least one tenant owner.** CSTAR refuses to remove the tenant owner role from the last tenant owner, and refuses to remove the last tenant owner from the tenant.
-- **BCeID Business users.** A BCeID Business user can hold the service user role only. They cannot be a tenant owner or user admin.
-- **Operations admin.** This role is granted through the CSTAR client in BC Gov SSO, not in CSTAR. It applies only when the user signs in to the CSTAR web app.
+**Every tenant has at least one tenant owner.**
+
+CSTAR refuses to remove the tenant owner role from the last tenant owner, and refuses to remove the last tenant owner from the tenant.
+
+**BCeID Business users can hold the service user role only.**
+
+A BCeID Business user cannot be a tenant owner or user admin.
+
+**The operations admin role is granted outside CSTAR.**
+
+It is assigned through the CSTAR client in BC Gov SSO, and applies only when the user signs in to the CSTAR web app.
 
 ## Related pages
 
-- [Core concepts](./core-concepts.md)
+- [Core principles](./core-principles.md)
 - [Tenant users](../tenant-management/tenant-users.md)
 - [Authorization](../security/authorization.md)

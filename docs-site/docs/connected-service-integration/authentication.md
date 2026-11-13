@@ -4,7 +4,9 @@ This page describes the tokens CSTAR accepts and what each one can be used for. 
 
 ## Token requirements
 
-Every request to CSTAR, other than the health check and the public signing keys, must include a bearer token issued by BC Gov SSO.
+**Every request to CSTAR must include a bearer token issued by BC Gov SSO.**
+
+The health check and the public signing keys are the only exceptions.
 
 ```http
 Authorization: Bearer <access token>
@@ -19,22 +21,24 @@ CSTAR checks the token's signature, issuer and expiry. It then reads two things 
 
 ## Token types
 
-CSTAR treats a token differently depending on its `aud` claim.
+**CSTAR treats a token according to its `aud` claim.**
 
 | Token type | `aud` value | Who uses it | Identity providers |
 | --- | --- | --- | --- |
 | CSTAR token | The CSTAR web app's client ID | The CSTAR web app | IDIR only |
 | Connected-service token | The connected service's client ID | A connected service, on behalf of its signed-in user | IDIR and BCeID Business |
 
-A connected service sends the token it already holds for its signed-in user. It does not need to obtain a separate token for CSTAR.
+**A connected service sends the token it already holds for its signed-in user.**
 
-## What a connected-service token can do
+A separate token for CSTAR is not required.
 
-A connected-service token can read information about tenants that are associated with the calling service.
+## Connected-service token permissions
+
+**A connected-service token can read information about tenants associated with the calling service.**
 
 | Request | Purpose |
 | --- | --- |
-| `GET /v1/users/{ssoUserId}/tenants` | The user's tenants that use this service. Useful for a tenant picker. |
+| `GET /v1/users/{ssoUserId}/tenants` | The user's tenants that are associated with this service. Used to let the user choose a tenant. |
 | `GET /v1/tenants/{tenantId}/ssousers/{ssoUserId}/shared-service-roles` | The user's roles in this service. See [Check a user's roles](./check-user-roles.md). |
 | `GET /v1/tenants/{tenantId}/users/{ssoUserId}/groups/shared-service-roles` | The user's groups and the roles each group gives them in this service. |
 | `GET /v1/tenants/{tenantId}/ssousers/{ssoUserId}/roles` | The user's CSTAR roles in the tenant. |
@@ -42,13 +46,15 @@ A connected-service token can read information about tenants that are associated
 | `GET /v1/tenants/{tenantId}/groups` | The tenant's groups that hold a role in this service. |
 | `GET /v1/tenants/{tenantId}/groups/{groupId}/shared-services/shared-service-roles` | The roles a group holds in this service. |
 
-Requests that include `{ssoUserId}` can only ask about the user who owns the token.
+**Requests that include `{ssoUserId}` can only ask about the user who owns the token.**
 
-If the connected service has been allowed to manage access, the same token can also make changes. See [Managing access from a connected service](./managing-access.md).
+If an operations admin has permitted the connected service to manage access, the same token can also make changes. See [Managing access from a connected service](./managing-access.md).
 
 ## Checks on every request
 
-A valid token does not by itself give access to a tenant. For each tenant-specific request, CSTAR also checks that:
+**A valid token does not by itself give access to a tenant.**
+
+For each tenant-specific request, CSTAR also checks that:
 
 1. the calling service is associated with the tenant
 2. the signed-in user is a member of the tenant

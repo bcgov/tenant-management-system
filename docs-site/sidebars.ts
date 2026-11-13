@@ -7,7 +7,7 @@ const sidebars: SidebarsConfig = {
       label: 'Overview',
       items: [
         'overview/what-is-cstar',
-        'overview/core-concepts',
+        'overview/core-principles',
         'overview/how-cstar-works',
         'overview/cstar-roles',
       ],
@@ -45,7 +45,7 @@ const sidebars: SidebarsConfig = {
     {
       type: 'category',
       label: 'Reference',
-      items: ['reference/api-reference'],
+      items: ['reference/api-reference', 'reference/glossary'],
     },
   ],
 };

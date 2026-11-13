@@ -4,9 +4,13 @@ This page describes how a connected service can manage tenant users and groups o
 
 ## Overview
 
-A connected service normally reads from CSTAR only. When this capability is turned on, the service can also make changes, such as adding a user to the tenant or to a group. The service sends the signed-in user's own token, and CSTAR applies the same checks it applies in the CSTAR web app. A user who cannot make a change in the web app cannot make it through a connected service.
+**When this capability is turned on, a connected service can make changes in CSTAR on behalf of its signed-in user.**
 
-Some actions remain available in the CSTAR web app only. These are listed under [Web app only](#web-app-only).
+Without it, a connected service can only read from CSTAR. With it, the service can also make changes, such as adding a user to the tenant or to a group. The service sends the signed-in user's own token.
+
+**CSTAR applies the same checks as in the CSTAR web app.**
+
+A user who cannot make a change in the web app cannot make it through a connected service. Some actions remain available in the CSTAR web app only. These are listed under [Web app only](#web-app-only).
 
 ## Requirements
 
@@ -18,7 +22,9 @@ Some actions remain available in the CSTAR web app only. These are listed under 
 | Tenant association | The tenant must be associated with the calling service. |
 | CSTAR role | The user must hold the CSTAR role the action requires, as in the web app. See [CSTAR roles](../overview/cstar-roles.md). |
 
-CSTAR checks the service's setup on every request. Turning the capability off takes effect immediately.
+**Turning the capability off takes effect immediately.**
+
+CSTAR checks the connected service's setup on every request.
 
 ## Available actions
 
@@ -37,15 +43,19 @@ CSTAR checks the service's setup on every request. Turning the capability off ta
 | Remove a user from a group | `DELETE /v1/tenants/{tenantId}/groups/{groupId}/users/{groupUserId}` | Tenant owner or user admin. |
 | Set a group's roles | `PUT /v1/tenants/{tenantId}/groups/{groupId}/shared-services/shared-service-roles` | Tenant owner or user admin. Only the calling service's roles can be included. |
 
-When a user is added to the tenant through a connected service, groups cannot be included in the same request. The user is added to groups one at a time with the add group member request.
+**Groups cannot be included when a user is added to the tenant through a connected service.**
 
-Once the capability is turned on, `GET /v1/tenants/{tenantId}/groups` returns every group in the tenant for IDIR users, not only the groups that hold the calling service's roles. This lets the service offer the full list when adding a user to a group.
+The user is added to groups one at a time with the add group member request.
+
+**The group list includes every group in the tenant.**
+
+Once the capability is turned on, `GET /v1/tenants/{tenantId}/groups` returns every group in the tenant for IDIR users, not only the groups that hold the calling service's roles. The service can then offer the full list when adding a user to a group.
 
 ## Roles in other connected services
 
-A group can hold roles from several connected services. Adding a user to such a group gives them access in each of those services, not only in the calling service.
+**Adding a user to a group through a connected service must be confirmed if it gives them new roles in another connected service.**
 
-To prevent this from happening by accident, CSTAR refuses to add a user to a group through a connected service if the user would gain new roles in another connected service, unless the request confirms it.
+A group can hold roles from several connected services. Adding a user to such a group gives them access in each of those services, not only in the calling service. CSTAR refuses the request until the other services are confirmed.
 
 1. Send the add group member request.
 2. If the user would gain roles in other services, CSTAR responds with `403` and the code `OTHER_SERVICES_NOT_CONFIRMED`. The `otherServices` field lists each service and the roles the user would gain.
@@ -61,11 +71,15 @@ To prevent this from happening by accident, CSTAR refuses to add a user to a gro
 
 Names in `confirmOtherServices` are matched without regard to case or spaces. Roles the user already holds through another group do not need to be confirmed.
 
-Removing a user from a group never needs confirmation, even if they lose roles in other services as a result.
+**Removing a user from a group never requires confirmation.**
+
+This applies even if the user loses roles in other connected services as a result.
 
 ## Web app only
 
-The following actions are refused when requested through a connected service. CSTAR responds with `403` and directs the user to the CSTAR web app.
+**The following actions are refused when requested through a connected service.**
+
+CSTAR responds with `403` and directs the user to the CSTAR web app.
 
 - Requesting a tenant and reviewing tenant requests
 - Updating tenant details
@@ -94,7 +108,9 @@ The following actions are refused when requested through a connected service. CS
 
 ## Auditing
 
-Changes made through a connected service are recorded against the signed-in user, in the same way as changes made in the CSTAR web app. Users receive the same emails. See [Email notifications](../tenant-management/email-notifications.md).
+**Changes made through a connected service are recorded against the signed-in user.**
+
+They are recorded in the same way as changes made in the CSTAR web app, and users receive the same emails. See [Email notifications](../tenant-management/email-notifications.md).
 
 ## Related pages
 

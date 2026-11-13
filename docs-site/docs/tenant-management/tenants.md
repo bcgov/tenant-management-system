@@ -1,38 +1,50 @@
 # Tenants
 
-This page describes tenants and how they are managed. It is intended for tenant owners and for anyone deciding whether their team needs a tenant.
+This page describes tenants and the rules that govern them. It is intended for tenant owners and for anyone deciding whether their team requires a tenant.
 
-## What a tenant is
+## Definition
 
-A **tenant** is a team, program or business area whose access to connected services is managed together. Each tenant has its own users, groups and role assignments. Nothing in one tenant affects another.
+**A tenant is a team, program or business area whose access to connected services is managed together.**
 
-A team usually needs one tenant. Separate tenants are appropriate when two groups of people must be administered by different people, or must never see each other's users.
+Each tenant has its own users, groups and role assignments. Nothing in one tenant affects another.
+
+**A team normally requires one tenant.**
+
+Separate tenants are appropriate only when two groups of people must be administered by different people, or must not see each other's users.
 
 ## Tenant details
 
-| Field | Description |
-| --- | --- |
-| Name | The tenant's name, up to 255 characters. |
-| Ministry name | The ministry or organization the tenant belongs to, up to 100 characters. |
-| Description | Optional. Up to 500 characters. |
+| Field | Required | Limit |
+| --- | --- | --- |
+| Name | Yes | 255 characters |
+| Ministry name | Yes | 100 characters |
+| Description | No | 500 characters |
 
-The combination of name and ministry name must be unique. CSTAR refuses to create or rename a tenant if another tenant already has the same name in the same ministry.
+**The combination of name and ministry name must be unique.**
 
-Only a tenant owner can change the tenant details.
+CSTAR refuses to create or rename a tenant if another tenant has the same name in the same ministry.
 
-## Creating a tenant
+**Only a tenant owner can change the tenant details.**
 
-A tenant is created when an operations admin approves a tenant request. The person who submitted the request becomes the first tenant owner. See [Tenant requests](./tenant-approval-workflow.md).
+## Creation
+
+**A tenant is created when an operations admin approves a tenant request.**
+
+The person who submitted the request becomes the first tenant owner. See [Tenant requests](./tenant-approval-workflow.md).
 
 ## Tenant owners
 
-Every tenant has at least one tenant owner. CSTAR refuses any change that would leave a tenant without one, whether by removing the role or by removing the user from the tenant.
+**Every tenant has at least one tenant owner.**
 
-A tenant with more than one tenant owner is recommended, so that access can still be managed when one owner is unavailable.
+CSTAR refuses any change that would leave a tenant without a tenant owner, whether by removing the role or by removing the user from the tenant.
+
+Each tenant should have at least two tenant owners, so that the tenant can still be managed when one owner is unavailable.
 
 ## Connected services
 
-A tenant owner chooses which connected services the tenant uses by associating them with the tenant. Until a connected service is associated, its roles cannot be assigned to groups in the tenant. See [Tenant association](../connected-service-integration/tenant-association.md).
+**A tenant owner decides which connected services the tenant uses.**
+
+A connected service is made available to a tenant by associating it with the tenant. Until a connected service is associated, its roles cannot be assigned to groups in the tenant. See [Tenant association](../connected-service-integration/tenant-association.md).
 
 ## Related pages
 
