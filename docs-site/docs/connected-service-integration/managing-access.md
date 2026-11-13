@@ -57,6 +57,21 @@ Once the capability is turned on, `GET /v1/tenants/{tenantId}/groups` returns ev
 
 A group can hold roles from several connected services. Adding a user to such a group gives them access in each of those services, not only in the calling service. CSTAR refuses the request until the other services are confirmed.
 
+```mermaid
+sequenceDiagram
+    actor Admin as Tenant owner or user admin
+    participant Service as Connected service
+    participant CSTAR
+    Admin->>Service: Adds user to group
+    Service->>CSTAR: Add member
+    CSTAR-->>Service: 403, other services listed
+    Service-->>Admin: Asks to confirm
+    Admin->>Service: Confirms
+    Service->>CSTAR: Add member, confirmed
+    CSTAR-->>Service: 201 Created
+    Service-->>Admin: User added
+```
+
 1. Send the add group member request.
 2. If the user would gain roles in other services, CSTAR responds with `403` and the code `OTHER_SERVICES_NOT_CONFIRMED`. The `otherServices` field lists each service and the roles the user would gain.
 3. Show the list to the signed-in user and ask them to confirm.

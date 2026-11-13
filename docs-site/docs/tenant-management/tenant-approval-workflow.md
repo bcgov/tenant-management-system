@@ -12,6 +12,26 @@ This page describes how a new tenant is requested and approved. It is intended f
 
 A tenant request is submitted in the CSTAR web app, which accepts IDIR sign-in only.
 
+## Process
+
+**A tenant request passes from the requester to an operations admin, and the outcome is emailed to the requester.**
+
+```mermaid
+sequenceDiagram
+    actor Requester
+    participant CSTAR as CSTAR web app
+    actor Ops as Operations admin
+    Requester->>CSTAR: Submits request
+    CSTAR-->>Ops: Email: new request
+    Ops->>CSTAR: Approves or rejects
+    alt Approved
+        CSTAR->>CSTAR: Creates tenant
+        CSTAR-->>Requester: Email: approved
+    else Rejected
+        CSTAR-->>Requester: Email: rejected, with reason
+    end
+```
+
 ## Submitting a request
 
 | Field | Required | Limit |

@@ -12,6 +12,21 @@ A **tenant context assertion** is a short-lived token signed by CSTAR. It states
 
 ## Flow
 
+```mermaid
+sequenceDiagram
+    participant A as Calling service
+    participant CSTAR
+    participant B as Receiving service
+    A->>CSTAR: Requests assertion
+    CSTAR->>CSTAR: Checks tenant
+    CSTAR-->>A: Signed assertion
+    A->>B: Call with assertion
+    B->>CSTAR: Verifies assertion
+    CSTAR->>CSTAR: Checks again
+    CSTAR-->>B: Tenant, service, user
+    B-->>A: Response
+```
+
 1. The calling service requests an assertion from CSTAR for the tenant and the receiving service.
 2. CSTAR checks that both services are associated with the tenant, and that the user, if any, is a member of it. It then returns a signed assertion.
 3. The calling service sends the assertion to the receiving service in the `X-CSTAR-Assertion` header.

@@ -14,6 +14,27 @@ This page describes how a connected service retrieves the roles a user holds in 
 - The tenant is associated with the connected service. See [Tenant association](./tenant-association.md).
 - The user is a member of the tenant.
 
+## Sequence
+
+**The connected service requests the user's roles after sign-in, using the token it received from BC Gov SSO.**
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant Service as Connected service
+    participant SSO as BC Gov SSO
+    participant CSTAR
+    User->>Service: Opens the service
+    Service->>SSO: Sign-in
+    SSO-->>Service: Access token
+    User->>Service: Selects a tenant
+    Service->>CSTAR: Requests roles
+    CSTAR->>CSTAR: Checks access
+    CSTAR-->>Service: User's roles
+    Service->>Service: Applies the roles
+    Service-->>User: Shows permitted features
+```
+
 ## Request
 
 ```http

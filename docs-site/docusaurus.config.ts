@@ -23,6 +23,10 @@ const config: Config = {
     locales: ['en'],
   },
 
+  markdown: {
+    mermaid: true,
+  },
+
   presets: [
     [
       'classic',
@@ -41,6 +45,7 @@ const config: Config = {
   ],
 
   themes: [
+    '@docusaurus/theme-mermaid',
     [
       '@easyops-cn/docusaurus-search-local',
       {
@@ -56,6 +61,18 @@ const config: Config = {
   themeConfig: {
     colorMode: {
       respectPrefersColorScheme: true,
+    },
+    mermaid: {
+      theme: {light: 'neutral', dark: 'dark'},
+      options: {
+        fontFamily: "'BC Sans', 'Noto Sans', Verdana, Arial, sans-serif",
+        sequence: {
+          actorFontSize: 16,
+          messageFontSize: 16,
+          actorMargin: 40,
+          width: 130,
+        },
+      },
     },
     navbar: {
       title: 'CSTAR Documentation',
