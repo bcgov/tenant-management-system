@@ -1,10 +1,40 @@
+@import '@bcgov/bc-sans/css/BC_Sans.css';
+
 :root {
-  --ifm-color-primary: #003366;
-  --ifm-code-font-size: 95%;
+  --bcgov-blue: #013366;
+  --bcgov-link: #255a90;
+  --bcgov-gold: #fcba19;
+
+  --ifm-font-family-base: 'BC Sans', 'Noto Sans', Verdana, Arial, sans-serif;
+  --ifm-heading-font-family: var(--ifm-font-family-base);
   --ifm-background-color: #ffffff;
+  --ifm-code-font-size: 95%;
+
+  --ifm-color-primary: #013366;
+  --ifm-color-primary-dark: #012e5c;
+  --ifm-color-primary-darker: #012b57;
+  --ifm-color-primary-darkest: #012347;
+  --ifm-color-primary-light: #013870;
+  --ifm-color-primary-lighter: #023b75;
+  --ifm-color-primary-lightest: #024385;
+  --ifm-link-color: var(--bcgov-link);
+  --ifm-navbar-link-hover-color: var(--bcgov-link);
 }
 
 [data-theme='dark'] {
-  --ifm-color-primary: #78a9e6;
   --ifm-background-color: #1b1b1d;
+
+  --ifm-color-primary: #8db4e2;
+  --ifm-color-primary-dark: #74a4dc;
+  --ifm-color-primary-darker: #679cd8;
+  --ifm-color-primary-darkest: #4084cf;
+  --ifm-color-primary-light: #a6c4e8;
+  --ifm-color-primary-lighter: #b3ccec;
+  --ifm-color-primary-lightest: #d9e6f5;
+  --ifm-link-color: #a6c4e8;
+  --ifm-navbar-link-hover-color: #a6c4e8;
+}
+
+.navbar {
+  border-bottom: 2px solid var(--bcgov-gold);
 }

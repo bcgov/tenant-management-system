@@ -14,6 +14,8 @@ npm run start
 
 The site opens at http://localhost:4150 and reloads as pages are edited.
 
+Search results appear only in a production build (`npm run build`, then `npm run serve`). After a package is added or removed, stop the local server and run `npm run clear` before starting it again.
+
 ## Check before committing
 
 ```bash
@@ -39,11 +41,24 @@ npm run serve
 2. Add the page to `sidebars.ts`. Pages that are not listed there do not appear in the navigation.
 3. Run `npm run lint`.
 
-Avoid renaming or moving existing pages. Other teams link to them, and a changed path breaks those links.
+Existing pages should not be renamed or moved. Other teams link to them, and a changed path breaks those links.
+
+## Design
+
+The site follows the BC Government Design System.
+
+| Element | Value |
+| --- | --- |
+| Typeface | BC Sans, from the `@bcgov/bc-sans` package |
+| Primary colour | `#013366` |
+| Link colour | `#255A90` |
+| Accent colour | `#FCBA19`, used only for the line under the navigation bar and the homepage header |
+
+Colours are defined in `src/css/custom.css`. New components should use those variables rather than fixed colour values, so that they also work in dark mode.
 
 ## Writing style
 
-All pages follow the same style so that the site reads as one document.
+All pages follow the same style, so that the site reads as one document.
 
 ### Tone
 
@@ -62,8 +77,9 @@ All pages follow the same style so that the site reads as one document.
 
 - Open each page with one or two sentences that state what the page covers and who it is for.
 - Use plain noun phrases for headings, such as "Prerequisites", "Request" or "Errors".
+- Where a section states a rule, open it with the rule as a single bold sentence. Follow it with the reason, where the reason is not obvious, and then the details.
 - Use numbered steps for procedures, bullet points for lists of facts and tables for information the reader looks up.
-- Use bold only for a term on its first mention, or for the opening statement of each principle on the Core principles page. Do not use bold for emphasis.
+- Use bold only for a section's opening rule or for a term on its first mention. Do not use bold for emphasis.
 - End the page with a "Related pages" list instead of a closing paragraph.
 - Check every statement about behaviour against the backend code before publishing it.
 

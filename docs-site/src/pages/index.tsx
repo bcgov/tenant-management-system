@@ -12,12 +12,17 @@ type EntryPoint = {
   linkLabel: string;
 };
 
+type QuickLink = {
+  label: string;
+  description: string;
+  to: string;
+};
+
 const entryPoints: EntryPoint[] = [
   {
     title: 'Understand CSTAR',
     audience: 'For anyone new to CSTAR',
-    description:
-      'Tenants, groups, CSTAR roles and connected-service roles, and how they fit together.',
+    description: 'The access model, the core principles and the CSTAR roles.',
     to: '/docs/overview/what-is-cstar',
     linkLabel: 'Read the overview',
   },
@@ -25,7 +30,7 @@ const entryPoints: EntryPoint[] = [
     title: 'Manage a tenant',
     audience: 'For tenant owners and user admins',
     description:
-      'Request a tenant, add users, create groups and assign connected-service roles.',
+      'Tenant requests, tenant users, groups and the assignment of connected-service roles.',
     to: '/docs/tenant-management/tenants',
     linkLabel: 'Go to tenant management',
   },
@@ -33,9 +38,27 @@ const entryPoints: EntryPoint[] = [
     title: 'Integrate a connected service',
     audience: 'For connected service teams',
     description:
-      'Set up a connected service, authenticate with CSTAR and retrieve the roles a user holds.',
+      'Onboarding, authentication and the retrieval of a user’s roles.',
     to: '/docs/connected-service-integration/getting-started',
     linkLabel: 'Start integrating',
+  },
+];
+
+const quickLinks: QuickLink[] = [
+  {
+    label: 'Core principles',
+    description: 'The rules on which CSTAR is designed.',
+    to: '/docs/overview/core-principles',
+  },
+  {
+    label: 'Troubleshooting access',
+    description: 'Error responses and how to resolve them.',
+    to: '/docs/connected-service-integration/troubleshooting-access',
+  },
+  {
+    label: 'Support',
+    description: 'How to contact the CSTAR team.',
+    to: '/docs/reference/support',
   },
 ];
 
@@ -50,9 +73,10 @@ export default function Home(): ReactNode {
             CSTAR Documentation
           </Heading>
           <p className={styles.lead}>
-            Connected Services Team Access and Roles (CSTAR) manages who can
-            access BC Government connected services, and with which roles, for
-            each tenant.
+            Connected Services Team Access and Roles (CSTAR) manages access to
+            BC Government connected services. Tenant administrators decide who
+            belongs to their team and which roles each person holds. Connected
+            services retrieve those roles from CSTAR.
           </p>
         </div>
       </header>
@@ -73,6 +97,21 @@ export default function Home(): ReactNode {
             </div>
           ))}
         </div>
+        <section className={styles.quickLinks}>
+          <Heading as="h2" className={styles.quickLinksTitle}>
+            Frequently used pages
+          </Heading>
+          <ul className={styles.quickLinkList}>
+            {quickLinks.map((link) => (
+              <li key={link.label}>
+                <Link to={link.to} className={styles.quickLinkLabel}>
+                  {link.label}
+                </Link>
+                <span className={styles.quickLinkText}>{link.description}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
       </main>
     </Layout>
   );

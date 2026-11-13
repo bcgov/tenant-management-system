@@ -7,16 +7,16 @@ type Step = {
 };
 
 const steps: Step[] = [
-  {label: 'Tenant', detail: 'The team whose access is managed together'},
+  {label: 'Tenant', detail: 'A team whose access is managed together'},
   {label: 'Tenant users', detail: 'People added to the tenant'},
   {label: 'Groups', detail: 'Named sets of tenant users'},
   {
     label: 'Connected-service roles',
-    detail: 'Assigned to groups by a tenant owner or user admin',
+    detail: 'Assigned to groups by tenant owners and user admins',
   },
   {
     label: 'Effective roles',
-    detail: 'Returned to the connected service when the user signs in',
+    detail: 'Returned to the connected service for each user',
   },
 ];
 
@@ -32,9 +32,9 @@ export default function AccessModelDiagram(): ReactNode {
         ))}
       </ol>
       <figcaption className={styles.caption}>
-        Users belong to a tenant, groups are made up of tenant users, and
-        roles are assigned to groups. A user&apos;s effective roles come from
-        the groups they belong to.
+        Tenant users belong to a tenant. Groups contain tenant users, and
+        connected-service roles are assigned to groups. A user&apos;s
+        effective roles are the roles held by the groups they belong to.
       </figcaption>
     </figure>
   );
