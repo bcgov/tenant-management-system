@@ -1,36 +1,37 @@
----
-sidebar_position: 3
----
+import AccessModelDiagram from '@site/src/components/AccessModelDiagram';
 
 # How CSTAR works
 
-CSTAR manages access through tenants, users, groups, and connected-service roles.
+This page explains how CSTAR turns tenant membership and groups into the roles a connected service receives. It is a starting point for both tenant administrators and connected service teams.
 
-A user belongs to a tenant. Inside that tenant, the user can be added to one or more groups. Connected-service roles are assigned to those groups. When a connected service needs to know what access the user has, it can ask CSTAR for the user's effective roles.
+## Access model
 
-## Basic flow
+<AccessModelDiagram />
 
-1. A tenant is created in CSTAR.
-2. Users are added to the tenant.
-3. Groups are created inside the tenant.
-4. Users are added to groups.
-5. Connected-service roles are assigned to groups.
-6. A connected service checks CSTAR for the user's effective roles.
+Access is always granted through a group. A connected-service role is assigned to a group, and every member of that group holds the role. To give a user a role, add them to a group that holds it. To take it away, remove them from the group or remove the role from the group.
 
-## What CSTAR decides
+## Setting up access
 
-CSTAR stores tenant membership, group membership, CSTAR roles, connected-service roles, and the assignments between them.
+The steps below show the order in which access is set up. Steps 1 and 2 are performed once. The remaining steps are repeated as people join and leave.
 
-CSTAR can tell a connected service which roles a user has for a tenant. It does not decide what those roles mean inside the connected service.
+1. An operations admin sets up the connected service in CSTAR, together with its roles.
+2. A user requests a tenant, and an operations admin approves the request. The requester becomes the first tenant owner.
+3. A tenant owner associates the connected service with the tenant.
+4. A tenant owner or user admin adds users to the tenant.
+5. A tenant owner or user admin creates groups and adds users to them.
+6. A tenant owner or user admin assigns connected-service roles to the groups.
 
-## What the connected service decides
+## Checking access
 
-The connected service owns its application-specific authorization.
+When a user signs in to a connected service, the service asks CSTAR for the user's effective roles in the selected tenant. CSTAR looks at the user's groups in that tenant and returns the roles those groups hold for that connected service. Roles for other connected services are not returned.
 
-For example, CSTAR may tell a service that a user has an editor role. The connected service decides what an editor is allowed to do in that application.
+The connected service then decides what the user can do. CSTAR does not know what a role allows inside the service.
 
-## Groups and role assignment
+A change made in CSTAR, such as removing a user from a group, applies the next time the connected service asks CSTAR for the user's roles.
 
-Groups are the main way connected-service roles are assigned.
+## Related pages
 
-Instead of assigning a connected-service role directly to each user, a tenant owner / user admin can assign the role to a group. Users in that group receive the role through their group membership.
+- [Core concepts](./core-concepts.md)
+- [CSTAR roles](./cstar-roles.md)
+- [Groups](../tenant-management/groups.md)
+- [Getting started](../connected-service-integration/getting-started.md)

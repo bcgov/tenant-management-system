@@ -1,8 +1,10 @@
 :root {
   --ifm-color-primary: #003366;
   --ifm-code-font-size: 95%;
+  --ifm-background-color: #ffffff;
 }
 
 [data-theme='dark'] {
   --ifm-color-primary: #78a9e6;
+  --ifm-background-color: #1b1b1d;
 }

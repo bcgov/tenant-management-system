@@ -10,7 +10,6 @@ const sidebars: SidebarsConfig = {
         'overview/core-concepts',
         'overview/how-cstar-works',
         'overview/cstar-roles',
-        'overview/connected-services',
       ],
     },
     {
@@ -21,6 +20,7 @@ const sidebars: SidebarsConfig = {
         'tenant-management/tenant-users',
         'tenant-management/groups',
         'tenant-management/tenant-approval-workflow',
+        'tenant-management/email-notifications',
       ],
     },
     {
@@ -33,10 +33,12 @@ const sidebars: SidebarsConfig = {
       label: 'Connected service integration',
       items: [
         'connected-service-integration/getting-started',
-        'connected-service-integration/authentication',
-        'connected-service-integration/effective-roles',
         'connected-service-integration/connected-service-setup',
         'connected-service-integration/tenant-association',
+        'connected-service-integration/authentication',
+        'connected-service-integration/check-user-roles',
+        'connected-service-integration/managing-access',
+        'connected-service-integration/tenant-context-assertions',
         'connected-service-integration/troubleshooting-access',
       ],
     },

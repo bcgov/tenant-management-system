@@ -29,6 +29,8 @@ const config: Config = {
       {
         docs: {
           sidebarPath: './sidebars.ts',
+          editUrl:
+            'https://github.com/bcgov/tenant-management-system/tree/main/docs-site/',
         },
         blog: false,
         theme: {
@@ -51,21 +53,70 @@ const config: Config = {
           position: 'left',
           label: 'Docs',
         },
+        {
+          href: 'https://github.com/bcgov/tenant-management-system',
+          label: 'GitHub',
+          position: 'right',
+        },
       ],
     },
     footer: {
       style: 'dark',
       links: [
         {
-          title: 'Docs',
+          title: 'Learn',
           items: [
             {
-              label: 'What is CSTAR?',
+              label: 'What is CSTAR',
               to: '/docs/overview/what-is-cstar',
+            },
+            {
+              label: 'Core concepts',
+              to: '/docs/overview/core-concepts',
+            },
+            {
+              label: 'CSTAR roles',
+              to: '/docs/overview/cstar-roles',
+            },
+          ],
+        },
+        {
+          title: 'Manage a tenant',
+          items: [
+            {
+              label: 'Tenants',
+              to: '/docs/tenant-management/tenants',
+            },
+            {
+              label: 'Groups',
+              to: '/docs/tenant-management/groups',
+            },
+          ],
+        },
+        {
+          title: 'Integrate a service',
+          items: [
+            {
+              label: 'Getting started',
+              to: '/docs/connected-service-integration/getting-started',
+            },
+            {
+              label: 'API reference',
+              to: '/docs/reference/api-reference',
+            },
+          ],
+        },
+        {
+          title: 'Source',
+          items: [
+            {
+              label: 'GitHub',
+              href: 'https://github.com/bcgov/tenant-management-system',
             },
           ],
         },
       ],
+      copyright: 'Government of British Columbia',
     },
     prism: {
       theme: prismThemes.github,

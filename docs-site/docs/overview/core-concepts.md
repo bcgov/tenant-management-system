@@ -1,49 +1,52 @@
----
-sidebar_position: 2
----
-
 # Core concepts
 
-Following are some CSTAR specific terms that help clarify how CSTAR operates.
+This page defines the terms used throughout the CSTAR documentation. Each term is used with the same meaning on every page.
 
 ## Tenant
 
-A tenant is the access boundary in CSTAR.
+A **tenant** is a team, program or business area whose access is managed together. It is the boundary for everything else in CSTAR. Users, groups and role assignments in one tenant have no effect in another.
 
-It usually represents a program, organization, business area, or service context where users need to be managed separately from other users.
+A tenant is created when an operations admin approves a tenant request. See [Tenant requests](../tenant-management/tenant-approval-workflow.md).
 
 ## Tenant user
 
-A tenant user is a user who belongs to a tenant.
+A **tenant user** is a person who has been added to a tenant. A person signs in with a BC Government identity provider, but signing in alone does not give them access to any tenant. A tenant owner or user admin must add them first.
 
-Tenant users can have roles in CSTAR and can be added to groups inside the tenant.
+One person can be a tenant user in several tenants.
 
 ## CSTAR role
 
-A CSTAR role controls what a user can do in CSTAR.
+A **CSTAR role** controls what a tenant user can do in CSTAR itself. The CSTAR roles are tenant owner, user admin and service user. Operations admin is a separate role that applies to CSTAR as a whole rather than to one tenant.
 
-Examples include tenant owner, user admin, and service user. These roles are about managing access in CSTAR. They are not the same as roles inside a connected service.
+A CSTAR role has no meaning inside a connected service. See [CSTAR roles](./cstar-roles.md).
 
 ## Group
 
-A group is a collection of tenant users.
-
-Groups are used to manage access for more than one user at a time. A connected-service role can be assigned to a group, and users in that group receive that role for the connected service.
+A **group** is a named set of tenant users within one tenant. Groups exist so that access can be managed for many users at once. A user receives every connected-service role that is assigned to any group they belong to.
 
 ## Connected service
 
-A connected service is an application or service that uses CSTAR for tenant and role information.
+A **connected service** is an application that relies on CSTAR for its tenant and role information. An operations admin sets up each connected service in CSTAR, together with the roles it uses.
 
-The connected service still owns its own application behavior. CSTAR provides the tenant, group, and role data that the service can use when making access decisions.
+CSTAR supplies the roles a user holds. The connected service decides what each role allows the user to do.
 
 ## Connected-service role
 
-A connected-service role is a role defined by a connected service.
+A **connected-service role** is a role defined by a connected service, such as `viewer` or `form-designer`. Each connected service has its own set of roles. Connected-service roles are assigned to groups, never directly to a user.
 
-For example, a connected service may define roles such as viewer, editor, or administrator. CSTAR can assign those roles to tenant groups.
+A connected-service role can be limited to certain identity providers. For example, a role may be available to IDIR users only.
+
+## Tenant association
+
+A tenant is **associated with** a connected service when a tenant owner adds that service to the tenant. Until then, the service's roles cannot be assigned to groups in the tenant, and the service cannot read the tenant's information. See [Tenant association](../connected-service-integration/tenant-association.md).
 
 ## Effective roles
 
-Effective roles are the connected-service roles a user receives after CSTAR looks at the user's tenant, group membership, and the roles assigned to those groups.
+A user's **effective roles** are the connected-service roles they hold in one tenant for one connected service. CSTAR works them out from the groups the user belongs to and the roles assigned to those groups. A role granted by more than one group is counted once.
 
-Connected services use effective roles to understand what access a user should have in that service.
+Effective roles are what a connected service retrieves when a user signs in.
+
+## Related pages
+
+- [How CSTAR works](./how-cstar-works.md)
+- [CSTAR roles](./cstar-roles.md)

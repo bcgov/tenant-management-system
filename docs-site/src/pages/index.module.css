@@ -1,0 +1,54 @@
+.hero {
+  padding: 4rem 0 3rem;
+  background: var(--ifm-color-emphasis-100);
+  border-bottom: 1px solid var(--ifm-color-emphasis-200);
+}
+
+.title {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+.lead {
+  font-size: 1.2rem;
+  max-width: 40rem;
+  margin-bottom: 0;
+  color: var(--ifm-color-emphasis-800);
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 1.5rem;
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-top: 4px solid var(--ifm-color-primary);
+  border-radius: 0.5rem;
+  background: var(--ifm-background-surface-color);
+}
+
+.audience {
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.5rem;
+  color: var(--ifm-color-emphasis-700);
+}
+
+.cardTitle {
+  font-size: 1.35rem;
+  margin-bottom: 0.75rem;
+}
+
+.cardText {
+  flex-grow: 1;
+}
+
+.cardLink {
+  font-weight: 600;
+}
+
+.cardLink::after {
+  content: ' \2192';
+}
