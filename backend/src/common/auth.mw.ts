@@ -8,6 +8,7 @@ import { TMSConstants } from './tms.constants'
 import { config } from '../services/config.service'
 import { sendErrorResponse } from './error.handler'
 import { sharedServiceRepository } from '../repositories/shared-service.repository'
+import { SharedService } from '../entities/SharedService'
 
 const sendUnauthorized = (res: Response, message: string) => {
   return sendErrorResponse(res, 'Unauthorized', message, 401, 'Unauthorized')
@@ -26,6 +27,7 @@ const sendForbidden = (res: Response, message: string) => {
 interface CheckJwtOptions {
   sharedServiceAccess?: boolean
   headlessAccess?: boolean
+  serviceAccountAccess?: boolean
   skipSsoUserParamMatch?: boolean
 }
 
@@ -146,6 +148,15 @@ const refuseNonTmsToken = async (req: Request, res: Response) => {
   )
 }
 
+const toHeadlessService = (
+  sharedService: SharedService,
+): Express.HeadlessService => ({
+  id: sharedService.id,
+  name: sharedService.name,
+  displayName: sharedService.displayName,
+  clientIdentifier: sharedService.clientIdentifier,
+})
+
 const resolveHeadlessAccess = async (
   req: Request,
   res: Response,
@@ -184,12 +195,7 @@ const resolveHeadlessAccess = async (
   }
 
   req.isHeadlessAccess = true
-  req.headlessService = {
-    id: sharedService.id,
-    name: sharedService.name,
-    displayName: sharedService.displayName,
-    clientIdentifier: sharedService.clientIdentifier,
-  }
+  req.headlessService = toHeadlessService(sharedService)
   req.idpType = 'idir'
   next()
 }
@@ -298,7 +304,93 @@ const isOtherUserInUrl = (req: Request, options: CheckJwtOptions) =>
   !options.skipSsoUserParamMatch &&
   !tokenUserMatchesUrl(req)
 
-const handleVerifiedToken = (
+const getAzp = (decodedJwt?: Express.DecodedJwt) =>
+  typeof decodedJwt?.azp === 'string' && decodedJwt.azp
+    ? decodedJwt.azp
+    : undefined
+
+const isServiceAccountToken = (decodedJwt?: Express.DecodedJwt) =>
+  Boolean(decodedJwt) &&
+  !getProvider(decodedJwt) &&
+  !decodedJwt?.idir_user_guid &&
+  !decodedJwt?.bceid_user_guid
+
+const findServiceForAzp = async (clientIdentifier?: string) =>
+  clientIdentifier
+    ? sharedServiceRepository.findSharedServiceByServiceAccountClientIdentifier(
+        clientIdentifier,
+      )
+    : null
+
+const isServiceAccountAudience = (
+  decodedJwt: Express.DecodedJwt | undefined,
+  clientIdentifier: string | undefined,
+) => {
+  const audience = getAudience(decodedJwt)
+  return (
+    Boolean(audience) &&
+    (audience === clientIdentifier || isTmsAudience(audience))
+  )
+}
+
+const canUseServiceAccount = (sharedService: SharedService) =>
+  sharedService.isActive &&
+  sharedService.allowHeadlessOps &&
+  sharedService.allowServiceAccounts
+
+const refuseServiceAccount = (
+  res: Response,
+  logMessage: string,
+  reason: string,
+  clientIdentifier: string | undefined,
+  message: string,
+) => {
+  logger.error(logMessage, { reason, clientIdentifier })
+  return sendForbidden(res, message)
+}
+
+const resolveServiceAccountAccess = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+  sharedService: SharedService,
+) => {
+  const clientIdentifier = getAzp(req.decodedJwt)
+
+  if (!isServiceAccountAudience(req.decodedJwt, clientIdentifier)) {
+    logger.error('Service account token has the wrong audience', {
+      reason: 'invalid_audience',
+      clientIdentifier,
+    })
+    return sendUnauthorized(res, 'Error occurred during authentication')
+  }
+
+  if (!canUseServiceAccount(sharedService)) {
+    return refuseServiceAccount(
+      res,
+      'Connected service is not allowed service account access',
+      'service_account_not_allowed',
+      clientIdentifier,
+      TMSConstants.SERVICE_ACCOUNT_NOT_ALLOWED,
+    )
+  }
+
+  if (req.method !== 'GET') {
+    return refuseServiceAccount(
+      res,
+      'Service account access is read only',
+      'service_account_read_only',
+      clientIdentifier,
+      TMSConstants.SERVICE_ACCOUNT_READ_ONLY,
+    )
+  }
+
+  req.isServiceAccountAccess = true
+  req.headlessService = toHeadlessService(sharedService)
+  next()
+}
+
+const handleUserToken = (
   req: Request,
   res: Response,
   next: NextFunction,
@@ -326,6 +418,49 @@ const handleVerifiedToken = (
   if (allowed) {
     next()
   }
+}
+
+const handleServiceAccountToken = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+  options: CheckJwtOptions,
+) => {
+  const clientIdentifier = getAzp(req.decodedJwt)
+  const sharedService = await findServiceForAzp(clientIdentifier)
+
+  if (!sharedService) {
+    handleUserToken(req, res, next, options)
+    return
+  }
+
+  if (!options.serviceAccountAccess) {
+    return refuseServiceAccount(
+      res,
+      'Service account called a route it cannot use',
+      'service_account_route_not_allowed',
+      clientIdentifier,
+      TMSConstants.SERVICE_ACCOUNT_ROUTE_NOT_ALLOWED,
+    )
+  }
+
+  return resolveServiceAccountAccess(req, res, next, sharedService)
+}
+
+const handleVerifiedToken = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+  options: CheckJwtOptions,
+) => {
+  if (isServiceAccountToken(req.decodedJwt)) {
+    void runOrPassError(next, () =>
+      handleServiceAccountToken(req, res, next, options),
+    )
+    return
+  }
+
+  handleUserToken(req, res, next, options)
 }
 
 export const checkJwt = (options: CheckJwtOptions = {}) => {

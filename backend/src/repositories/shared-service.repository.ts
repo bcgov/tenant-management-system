@@ -624,6 +624,18 @@ export class SharedServiceRepository {
       .getOne()
   }
 
+  public async findSharedServiceByServiceAccountClientIdentifier(
+    serviceAccountClientIdentifier: string,
+  ) {
+    return getManager()
+      .createQueryBuilder(SharedService, 'ss')
+      .where(
+        'ss.serviceAccountClientIdentifier = :serviceAccountClientIdentifier',
+        { serviceAccountClientIdentifier },
+      )
+      .getOne()
+  }
+
   public async findSharedServicesByIds(
     sharedServiceIds: string[],
     manager?: EntityManager,

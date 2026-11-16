@@ -872,6 +872,55 @@ describe('GroupService', () => {
         expect.objectContaining({ jwtAudience: config.oidc.tmsAudience }),
       )
     })
+
+    it('shows a service account every group and logs the read', async () => {
+      mockRepository.getTenantGroups.mockResolvedValue([
+        { id: 'g-1' },
+        { id: 'g-2' },
+      ] as never)
+
+      await service.getTenantGroups(
+        asRequest({
+          params: { tenantId: 'tenant-1' },
+          decodedJwt: { azp: 'notify-sa-client', aud: 'notify-sa-client' },
+          isServiceAccountAccess: true,
+          headlessService: {
+            id: 'ss-2',
+            name: 'notify',
+            displayName: 'Notify',
+            clientIdentifier: 'notify-client',
+          },
+        }),
+      )
+
+      expect(
+        mockSharedServiceRepository.findSharedServiceByClientIdentifier,
+      ).not.toHaveBeenCalled()
+      expect(mockRepository.getTenantGroups).toHaveBeenCalledWith(
+        expect.objectContaining({ jwtAudience: config.oidc.tmsAudience }),
+      )
+      expect(logger.info).toHaveBeenCalledWith(
+        'Service account listed tenant groups',
+        { sharedService: 'notify', tenantId: 'tenant-1', groupCount: 2 },
+      )
+    })
+
+    it('does not log a read for a user call', async () => {
+      mockRepository.getTenantGroups.mockResolvedValue([] as never)
+
+      await service.getTenantGroups(
+        asRequest({
+          params: { tenantId: 'tenant-1' },
+          decodedJwt: { idir_user_guid: 'sso-1', aud: config.oidc.tmsAudience },
+          idpType: 'idir',
+        }),
+      )
+
+      expect(logger.info).not.toHaveBeenCalledWith(
+        'Service account listed tenant groups',
+        expect.anything(),
+      )
+    })
   })
 
   describe('getSharedServiceRolesForGroup', () => {

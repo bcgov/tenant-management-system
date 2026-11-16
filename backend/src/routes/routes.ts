@@ -240,7 +240,7 @@ export class Routes {
     app
       .route(RoutesConstants.GET_TENANT_GROUPS)
       .get(
-        checkJwt({ sharedServiceAccess: true }),
+        checkJwt({ sharedServiceAccess: true, serviceAccountAccess: true }),
         validate(validator.getTenantGroups, {}, {}),
         checkTenantAccess([]),
         (req: Request, res: Response) =>

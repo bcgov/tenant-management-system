@@ -243,6 +243,13 @@ describe('Routes middleware wiring', () => {
     expect(mockedCheckTenantAccess).toHaveBeenCalledWith([])
   })
 
+  it('opens the tenant groups list to service accounts', () => {
+    expect(mockedCheckJwt).toHaveBeenCalledWith({
+      sharedServiceAccess: true,
+      serviceAccountAccess: true,
+    })
+  })
+
   describe('read routes open to connected services', () => {
     const tenantId = '123e4567-e89b-12d3-a456-426614174000'
     const otherId = '123e4567-e89b-12d3-a456-426614174001'

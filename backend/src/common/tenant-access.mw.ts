@@ -48,8 +48,11 @@ const getTenantId = (req: Request, options: CheckTenantAccessOptions) =>
     ? req.query.tenantId
     : req.params.tenantId) as string
 
+const isCallFromService = (req: Request) =>
+  Boolean(req.isHeadlessAccess || req.isServiceAccountAccess)
+
 const ensureCallingServiceLinked = async (req: Request, tenantId: string) => {
-  if (req.isHeadlessAccess && req.headlessService) {
+  if (isCallFromService(req) && req.headlessService) {
     if (!tenantId) {
       throw new ForbiddenError('Missing tenant ID or user ID')
     }
@@ -83,6 +86,13 @@ const ensureUserHasRoles = async (
   tenantId: string,
   requiredRoles?: string[],
 ) => {
+  if (req.isServiceAccountAccess) {
+    if (requiredRoles?.length) {
+      throw new ForbiddenError(TMSConstants.SERVICE_ACCOUNT_ROUTE_NOT_ALLOWED)
+    }
+    return
+  }
+
   const ssoUserId =
     req.decodedJwt?.idir_user_guid || req.decodedJwt?.bceid_user_guid
   if (!tenantId || !ssoUserId) {

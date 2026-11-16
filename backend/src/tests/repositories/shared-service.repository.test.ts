@@ -1083,6 +1083,22 @@ describe('SharedServiceRepository', () => {
     })
   })
 
+  describe('findSharedServiceByServiceAccountClientIdentifier', () => {
+    it('looks the service up by its service account client identifier', async () => {
+      const qb = createQueryBuilder({ getOne: { id: 'ss-2' } })
+      manager.createQueryBuilder.mockReturnValueOnce(qb)
+      ;(getManager as jest.Mock).mockReturnValueOnce(asManager(manager))
+
+      await expect(
+        repo.findSharedServiceByServiceAccountClientIdentifier('notify-sa'),
+      ).resolves.toEqual({ id: 'ss-2' })
+      expect(qb.where).toHaveBeenCalledWith(
+        'ss.serviceAccountClientIdentifier = :serviceAccountClientIdentifier',
+        { serviceAccountClientIdentifier: 'notify-sa' },
+      )
+    })
+  })
+
   describe('findSharedServicesByIds', () => {
     it('looks the services up by id', async () => {
       const qb = createQueryBuilder({

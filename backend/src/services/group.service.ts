@@ -349,7 +349,9 @@ export class GroupService {
   public async getTenantGroups(req: Request) {
     const audience =
       req.decodedJwt?.aud || req.decodedJwt?.audience || config.oidc.tmsAudience
-    const showAllGroups = await this.isHeadlessIdirCall(audience, req)
+    const showAllGroups =
+      req.isServiceAccountAccess ||
+      (await this.isHeadlessIdirCall(audience, req))
     const input: GetTenantGroupsInputDto = {
       tenantId: req.params.tenantId as string,
       ssoUserId: req.decodedJwt?.idir_user_guid,
@@ -357,6 +359,14 @@ export class GroupService {
       tmsAudience: config.oidc.tmsAudience,
     }
     const groups = await groupRepository.getTenantGroups(input)
+
+    if (req.isServiceAccountAccess) {
+      logger.info('Service account listed tenant groups', {
+        sharedService: req.headlessService?.name,
+        tenantId: input.tenantId,
+        groupCount: groups.length,
+      })
+    }
 
     return {
       data: {
