@@ -110,8 +110,15 @@ jobs:
 
       # Variables
       - if: inputs.tag  == ''
-        id: pr
-        uses: bcgov/action-get-pr@bfa713a9ab410c0f0c13126c35983934fc80d15b # v0.1.1
+        uses: bcgov/actions/image-tracker@d209bb08aabe15e5e69aca53b24d338a7b2843d5 # v0.12.0
+        with:
+          max_depth: 100
+          packages: |
+            migrations
+            backend
+            frontend
+          tags: |
+            latest
 
       - id: vars
         run: |
