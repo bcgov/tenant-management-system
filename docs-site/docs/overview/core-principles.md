@@ -58,7 +58,7 @@ Each connected service is the authority on its own features and data. Keeping th
 A tenant decides which connected services may read its users and groups and receive role assignments.
 
 - A connected service's roles cannot be assigned to groups in a tenant that has not associated it.
-- Requests from a connected service about a tenant that has not associated it are refused.
+- Connected services cannot access information about tenants they are not associated with.
 - Only a tenant owner can associate a connected service with a tenant.
 
 ## 5. Service-scoped data
@@ -101,7 +101,7 @@ A user's permissions should not depend on the application they use to make a cha
 - A user cannot perform an action through a connected service that they cannot perform in the CSTAR web app.
 - Tenant administration tasks, such as assigning tenant owners and approving tenant requests, are available in the CSTAR web app only.
 
-## 9. Confirmation of cross-service access
+## 9. Preventing unintended access to other connected services
 
 **Adding a user to a group through a connected service requires confirmation when it would give the user new roles in other connected services. Removing access never requires confirmation.**
 
