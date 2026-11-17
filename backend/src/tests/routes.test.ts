@@ -243,6 +243,38 @@ describe('Routes middleware wiring', () => {
     expect(mockedCheckTenantAccess).toHaveBeenCalledWith([])
   })
 
+  it('opens the tenant groups list to service accounts', () => {
+    expect(mockedCheckJwt).toHaveBeenCalledWith({
+      sharedServiceAccess: true,
+      serviceAccountAccess: true,
+    })
+  })
+
+  it('keeps the group members list to service accounts only', () => {
+    expect(mockedCheckJwt).toHaveBeenCalledWith({
+      serviceAccountAccess: true,
+      serviceAccountOnly: true,
+    })
+  })
+
+  it('sends a group members request to the group controller', async () => {
+    const getGroupUsers = jest
+      .spyOn(GroupController.prototype, 'getGroupUsers')
+      .mockImplementation(async (_req, res) => {
+        res.status(200).send({ ok: true })
+      })
+
+    const response = await request(app)
+      .get(
+        '/v1/tenants/123e4567-e89b-12d3-a456-426614174000/groups/123e4567-e89b-12d3-a456-426614174001/users',
+      )
+      .set('Authorization', 'Bearer ok')
+      .set('x-tenant-access', 'allow')
+
+    expect(response.status).toBe(200)
+    expect(getGroupUsers).toHaveBeenCalled()
+  })
+
   describe('read routes open to connected services', () => {
     const tenantId = '123e4567-e89b-12d3-a456-426614174000'
     const otherId = '123e4567-e89b-12d3-a456-426614174001'

@@ -1813,6 +1813,18 @@ paths:
                   default: false
                   description: Allows the shared service to call CSTAR APIs on behalf of its users (headless access).
                   example: false
+                allowServiceAccounts:
+                  type: boolean
+                  default: false
+                  description: Allows the shared service to call CSTAR with a service account token. Headless access must also be enabled.
+                  example: false
+                serviceAccountClientIdentifier:
+                  type: string
+                  minLength: 1
+                  maxLength: 55
+                  pattern: '^\S.*\S$'
+                  description: Client identifier of the shared service's service account SSO integration. Must differ from every other client identifier.
+                  example: 'notify-cstar-integration-6738'
                 roles:
                   type: array
                   minItems: 1
@@ -1982,6 +1994,18 @@ paths:
                   type: boolean
                   description: Allows the shared service to call CSTAR APIs on behalf of its users (headless access).
                   example: true
+                allowServiceAccounts:
+                  type: boolean
+                  description: Allows the shared service to call CSTAR with a service account token. Headless access must also be enabled.
+                  example: false
+                serviceAccountClientIdentifier:
+                  type: string
+                  minLength: 1
+                  maxLength: 55
+                  pattern: '^\S.*\S$'
+                  nullable: true
+                  description: Client identifier of the shared service's service account SSO integration. Must differ from every other client identifier.
+                  example: 'notify-cstar-integration-6738'
       responses:
         '200':
           description: Shared service successfully updated
@@ -2335,14 +2359,16 @@ paths:
     get:
       summary: Get all groups for a tenant
       description: |
-        Authentication: Shared service audience token allowed.
+        Authentication: Shared service audience token or service account token allowed.
 
         Retrieves groups for a tenant with different behavior based on access type:
 
         **TMS Users**: Returns ALL groups in the tenant.
 
-        **External Services**: Returns ONLY groups that have at least one enabled 
+        **External Services**: Returns ONLY groups that have at least one enabled
         shared service role belonging to the requesting service. With allowHeadlessOps enabled and an IDIR user, returns ALL groups in the tenant.
+
+        **Service Accounts**: Returns ALL groups in the tenant. The service must have allowHeadlessOps and allowServiceAccounts enabled, the token azp must match its serviceAccountClientIdentifier, and the tenant must use the service. No tenant membership is required.
 
         Requires JWT authentication and tenant access.
       security:
@@ -2576,6 +2602,94 @@ paths:
                 $ref: '#/components/schemas/InternalServerErrorResponse'
 
   /v1/tenants/{tenantId}/groups/{groupId}/users:
+    get:
+      summary: Get the members of a group
+      description: |
+        Authentication: Service account token only.
+
+        Returns the active members of a group, sorted by display name. Users removed from the tenant are not returned.
+
+        The service must have allowHeadlessOps and allowServiceAccounts enabled, the token azp must match its serviceAccountClientIdentifier, and the tenant must use the service. User tokens are refused with 403.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: tenantId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The unique identifier of the tenant
+        - name: groupId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The unique identifier of the group
+      responses:
+        '200':
+          description: Members of the group
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      users:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            firstName:
+                              type: string
+                              example: 'Ada'
+                            lastName:
+                              type: string
+                              example: 'Lovelace'
+                            displayName:
+                              type: string
+                              example: 'Lovelace, Ada CITZ:EX'
+                            email:
+                              type: string
+                              nullable: true
+                              example: 'ada.lovelace@gov.bc.ca'
+                            idpType:
+                              type: string
+                              enum: [idir, bceidbusiness]
+                              example: 'idir'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        '403':
+          description: Forbidden - Not a service account, service not allowed, or tenant does not use the service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        '404':
+          description: Group not found in the tenant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
     post:
       summary: Add a user to a group
       description: |
@@ -4416,6 +4530,15 @@ components:
           type: boolean
           default: false
           example: false
+        allowServiceAccounts:
+          type: boolean
+          default: false
+          example: false
+        serviceAccountClientIdentifier:
+          type: string
+          maxLength: 55
+          nullable: true
+          example: 'notify-cstar-integration-6738'
         roles:
           type: array
           minItems: 1
@@ -4476,6 +4599,15 @@ components:
           type: boolean
           default: false
           example: false
+        allowServiceAccounts:
+          type: boolean
+          default: false
+          example: false
+        serviceAccountClientIdentifier:
+          type: string
+          maxLength: 55
+          nullable: true
+          example: 'notify-cstar-integration-6738'
         createdDateTime:
           type: string
           format: date-time

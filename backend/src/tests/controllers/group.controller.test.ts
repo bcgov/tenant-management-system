@@ -102,6 +102,12 @@ describe('GroupController', () => {
       successStatus: 200,
     },
     {
+      method: 'getGroupUsers',
+      context: 'Error occurred getting group users',
+      req: { params: { tenantId: 'tenant-1', groupId: 'group-1' } },
+      successStatus: 200,
+    },
+    {
       method: 'getSharedServiceRolesForGroup',
       context: 'Error occurred getting shared service roles for group',
       req: { params: { tenantId: 'tenant-1', groupId: 'group-1' } },

@@ -71,6 +71,41 @@ describe('shared-service validators', () => {
         .send({ ...validBody, allowHeadlessOps: 'yes' })
       expect(response.status).toBe(400)
     })
+
+    it('accepts the service account settings', async () => {
+      const response = await request(app)
+        .post('/')
+        .send({
+          ...validBody,
+          allowServiceAccounts: true,
+          serviceAccountClientIdentifier: 'notify-cstar-integration-6738',
+        })
+      expect(response.status).toBe(200)
+    })
+
+    it.each([
+      [
+        'allowServiceAccounts is not a boolean',
+        { allowServiceAccounts: 'yes' },
+      ],
+      [
+        'serviceAccountClientIdentifier is longer than 55 characters',
+        { serviceAccountClientIdentifier: 'a'.repeat(56) },
+      ],
+      [
+        'serviceAccountClientIdentifier has surrounding spaces',
+        { serviceAccountClientIdentifier: ' notify ' },
+      ],
+      [
+        'serviceAccountClientIdentifier is null',
+        { serviceAccountClientIdentifier: null },
+      ],
+    ])('rejects when %s', async (_label, extra) => {
+      const response = await request(app)
+        .post('/')
+        .send({ ...validBody, ...extra })
+      expect(response.status).toBe(400)
+    })
   })
 
   describe('updateSharedService', () => {
@@ -110,6 +145,28 @@ describe('shared-service validators', () => {
       const response = await request(app)
         .put(`/${VALID_UUID}`)
         .send({ allowHeadlessOps: 'no' })
+      expect(response.status).toBe(400)
+    })
+
+    it.each([
+      ['allowServiceAccounts on its own', { allowServiceAccounts: true }],
+      [
+        'serviceAccountClientIdentifier on its own',
+        { serviceAccountClientIdentifier: 'notify-cstar-integration-6738' },
+      ],
+      [
+        'clearing serviceAccountClientIdentifier with null',
+        { serviceAccountClientIdentifier: null },
+      ],
+    ])('accepts %s', async (_label, body) => {
+      const response = await request(app).put(`/${VALID_UUID}`).send(body)
+      expect(response.status).toBe(200)
+    })
+
+    it('rejects allowServiceAccounts that is not a boolean', async () => {
+      const response = await request(app)
+        .put(`/${VALID_UUID}`)
+        .send({ allowServiceAccounts: 'no' })
       expect(response.status).toBe(400)
     })
   })

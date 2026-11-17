@@ -18,15 +18,21 @@ CSTAR checks the token's signature, issuer and expiry. It then reads two things 
 | --- | --- |
 | `aud` | Identifying the caller. It must be a single value, not a list. |
 | `idir_user_guid` or `bceid_user_guid` | Identifying the signed-in user. |
+| `azp` | Identifying a service account, when the token names no user. |
 
 ## Token types
 
-**CSTAR treats a token according to its `aud` claim.**
+**CSTAR treats a token according to its `aud` claim, or its `azp` claim when the token names no user.**
 
-| Token type | `aud` value | Who uses it | Identity providers |
+| Token type | Identified by | Who uses it | Identity providers |
 | --- | --- | --- | --- |
-| CSTAR token | The CSTAR web app's client ID | The CSTAR web app | IDIR only |
-| Connected-service token | The connected service's client ID | A connected service, on behalf of its signed-in user | IDIR and BCeID Business |
+| CSTAR token | `aud` is the CSTAR web app's client ID | The CSTAR web app | IDIR only |
+| Connected-service token | `aud` is the connected service's client ID | A connected service, on behalf of its signed-in user | IDIR and BCeID Business |
+| Service account token | `azp` is the service account client ID recorded for the connected service | A connected service, with no signed-in user | None |
+
+**A service account token can only read a tenant's groups and their members.**
+
+See [Service accounts](./service-accounts.md).
 
 **A connected service sends the token it already holds for its signed-in user.**
 
@@ -59,6 +65,8 @@ For each tenant-specific request, CSTAR also checks that:
 1. the calling service is associated with the tenant
 2. the signed-in user is a member of the tenant
 3. for a change, the user holds the CSTAR role the change requires
+
+For a service account token, CSTAR checks the association only, because the token names no user.
 
 ## Related pages
 

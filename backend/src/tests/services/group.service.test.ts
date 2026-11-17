@@ -9,6 +9,7 @@ import { notificationService } from '../../services/notification.service'
 import { config } from '../../services/config.service'
 import { sharedServiceRepository } from '../../repositories/shared-service.repository'
 import { ForbiddenError } from '../../errors/ForbiddenError'
+import { NotFoundError } from '../../errors/NotFoundError'
 
 jest.mock('../../repositories/group.repository')
 jest.mock('../../repositories/tenant.repository', () => ({
@@ -773,6 +774,69 @@ describe('GroupService', () => {
     })
   })
 
+  describe('getGroupUsers', () => {
+    const serviceAccountRequest = () =>
+      asRequest({
+        params: { tenantId: 'tenant-1', groupId: 'group-1' },
+        isServiceAccountAccess: true,
+        headlessService: {
+          id: 'ss-2',
+          name: 'notify',
+          displayName: 'Notify',
+          clientIdentifier: 'notify-client',
+        },
+      })
+    const member = {
+      firstName: 'Ada',
+      lastName: 'Lovelace',
+      displayName: 'Lovelace, Ada',
+      email: 'ada@gov.bc.ca',
+      idpType: 'idir',
+    }
+
+    it('returns the members of the group and logs the read', async () => {
+      mockRepository.checkIfGroupExistsInTenant.mockResolvedValueOnce({
+        id: 'group-1',
+      } as never)
+      mockRepository.getGroupMembers.mockResolvedValueOnce([member])
+
+      await expect(
+        service.getGroupUsers(serviceAccountRequest()),
+      ).resolves.toEqual({ data: { users: [member] } })
+      expect(mockRepository.checkIfGroupExistsInTenant).toHaveBeenCalledWith(
+        'group-1',
+        'tenant-1',
+      )
+      expect(mockRepository.getGroupMembers).toHaveBeenCalledWith({
+        tenantId: 'tenant-1',
+        groupId: 'group-1',
+      })
+      expect(logger.info).toHaveBeenCalledWith(
+        'Service account listed group members',
+        {
+          sharedService: 'notify',
+          tenantId: 'tenant-1',
+          groupId: 'group-1',
+          memberCount: 1,
+        },
+      )
+      expect(mockTransaction).not.toHaveBeenCalled()
+    })
+
+    it('says the group does not exist when it is not in the tenant', async () => {
+      mockRepository.checkIfGroupExistsInTenant.mockResolvedValueOnce(null)
+
+      await expect(
+        service.getGroupUsers(serviceAccountRequest()),
+      ).rejects.toThrow(
+        new NotFoundError(
+          'This group does not exist in this tenant. Check the group ID and the tenant ID.',
+        ),
+      )
+      expect(mockRepository.getGroupMembers).not.toHaveBeenCalled()
+    })
+  })
+
   describe('getTenantGroups', () => {
     it('maps the request and does not open a transaction', async () => {
       mockRepository.getTenantGroups.mockResolvedValue([] as never)
@@ -870,6 +934,55 @@ describe('GroupService', () => {
       ).not.toHaveBeenCalled()
       expect(mockRepository.getTenantGroups).toHaveBeenCalledWith(
         expect.objectContaining({ jwtAudience: config.oidc.tmsAudience }),
+      )
+    })
+
+    it('shows a service account every group and logs the read', async () => {
+      mockRepository.getTenantGroups.mockResolvedValue([
+        { id: 'g-1' },
+        { id: 'g-2' },
+      ] as never)
+
+      await service.getTenantGroups(
+        asRequest({
+          params: { tenantId: 'tenant-1' },
+          decodedJwt: { azp: 'notify-sa-client', aud: 'notify-sa-client' },
+          isServiceAccountAccess: true,
+          headlessService: {
+            id: 'ss-2',
+            name: 'notify',
+            displayName: 'Notify',
+            clientIdentifier: 'notify-client',
+          },
+        }),
+      )
+
+      expect(
+        mockSharedServiceRepository.findSharedServiceByClientIdentifier,
+      ).not.toHaveBeenCalled()
+      expect(mockRepository.getTenantGroups).toHaveBeenCalledWith(
+        expect.objectContaining({ jwtAudience: config.oidc.tmsAudience }),
+      )
+      expect(logger.info).toHaveBeenCalledWith(
+        'Service account listed tenant groups',
+        { sharedService: 'notify', tenantId: 'tenant-1', groupCount: 2 },
+      )
+    })
+
+    it('does not log a read for a user call', async () => {
+      mockRepository.getTenantGroups.mockResolvedValue([] as never)
+
+      await service.getTenantGroups(
+        asRequest({
+          params: { tenantId: 'tenant-1' },
+          decodedJwt: { idir_user_guid: 'sso-1', aud: config.oidc.tmsAudience },
+          idpType: 'idir',
+        }),
+      )
+
+      expect(logger.info).not.toHaveBeenCalledWith(
+        'Service account listed tenant groups',
+        expect.anything(),
       )
     })
   })

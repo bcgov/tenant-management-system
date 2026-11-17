@@ -46,12 +46,15 @@ jest.mock('../common/logger', () => ({
 jest.mock('../repositories/shared-service.repository', () => ({
   sharedServiceRepository: {
     findSharedServiceByClientIdentifier: jest.fn(),
+    findSharedServiceByServiceAccountClientIdentifier: jest.fn(),
   },
 }))
 
 const mockLoggerError = logger.error as jest.Mock
 const mockFindSharedService =
   sharedServiceRepository.findSharedServiceByClientIdentifier as jest.Mock
+const mockFindServiceAccountService =
+  sharedServiceRepository.findSharedServiceByServiceAccountClientIdentifier as jest.Mock
 
 const MY_USER_ID = 'F45AFBBD68C51D6F956BA3A1DE1878A2'
 
@@ -71,10 +74,11 @@ function createApp(
   options?: Parameters<typeof checkJwt>[0],
 ): express.Application {
   const app = express()
-  app.get(path, checkJwt(options), (req, res) => {
+  app.all(path, checkJwt(options), (req, res) => {
     res.status(200).send({
       idpType: req.idpType,
       isHeadlessAccess: req.isHeadlessAccess,
+      isServiceAccountAccess: req.isServiceAccountAccess,
       headlessService: req.headlessService,
     })
   })
@@ -554,6 +558,256 @@ describe('when a service calls a web app only route', () => {
 
     expect(response.status).toBe(200)
     expect(mockFindSharedService).not.toHaveBeenCalled()
+  })
+})
+
+describe('when a service account calls us', () => {
+  const notify = {
+    id: 'ss-2',
+    name: 'notify',
+    displayName: 'Notify',
+    clientIdentifier: 'notify-client',
+    serviceAccountClientIdentifier: 'notify-sa-client',
+    isActive: true,
+    allowHeadlessOps: true,
+    allowServiceAccounts: true,
+  }
+  const serviceAccountRoute = {
+    headlessAccess: true,
+    serviceAccountAccess: true,
+  }
+  const serviceAccountToken = {
+    aud: 'notify-sa-client',
+    azp: 'notify-sa-client',
+    sub: 'service-account-notify-sa-client',
+  }
+
+  const callServiceAccountRoute = () =>
+    request(createApp('/tenants', serviceAccountRoute)).get('/tenants')
+
+  beforeEach(() => {
+    signedInAs(serviceAccountToken)
+    mockFindServiceAccountService.mockResolvedValue(notify)
+  })
+
+  it('lets a switched on service account through and marks the request', async () => {
+    const response = await callServiceAccountRoute()
+
+    expect(response.status).toBe(200)
+    expect(response.body).toEqual({
+      isServiceAccountAccess: true,
+      headlessService: {
+        id: 'ss-2',
+        name: 'notify',
+        displayName: 'Notify',
+        clientIdentifier: 'notify-client',
+      },
+    })
+    expect(mockFindServiceAccountService).toHaveBeenCalledWith(
+      'notify-sa-client',
+    )
+    expect(mockFindSharedService).not.toHaveBeenCalled()
+  })
+
+  it('accepts the CSTAR audience', async () => {
+    signedInAs({ ...serviceAccountToken, aud: config.oidc.tmsAudience })
+
+    const response = await callServiceAccountRoute()
+
+    expect(response.status).toBe(200)
+  })
+
+  it.each([
+    ['another audience', 'some-other-app'],
+    ['no audience', undefined],
+    ['a list of audiences', ['notify-sa-client', 'other']],
+  ])('turns away a token with %s', async (_case, aud) => {
+    signedInAs({ ...serviceAccountToken, aud })
+
+    const response = await callServiceAccountRoute()
+
+    expect(response.status).toBe(401)
+    expect(response.body.message).toBe('Error occurred during authentication')
+    expect(mockLoggerError).toHaveBeenCalledWith(
+      'Service account token has the wrong audience',
+      { reason: 'invalid_audience', clientIdentifier: 'notify-sa-client' },
+    )
+  })
+
+  it('handles a token with no client as before, without a lookup', async () => {
+    signedInAs({ aud: config.oidc.tmsAudience })
+
+    const response = await callServiceAccountRoute()
+
+    expect(response.status).toBe(401)
+    expect(response.body.message).toBe(
+      'TMS endpoints require IDIR or Azure IDIR access',
+    )
+    expect(mockFindServiceAccountService).not.toHaveBeenCalled()
+  })
+
+  it('handles a client that is not a registered service account as before', async () => {
+    mockFindServiceAccountService.mockResolvedValueOnce(null)
+
+    const response = await callServiceAccountRoute()
+
+    expect(response.status).toBe(401)
+    expect(mockFindSharedService).toHaveBeenCalledWith('notify-sa-client')
+    expect(mockLoggerError).not.toHaveBeenCalledWith(
+      expect.stringContaining('Service account'),
+      expect.anything(),
+    )
+  })
+
+  it('lets other tokens with no user through a route that also allows service accounts', async () => {
+    signedInAs({ aud: 'chefs-client', azp: 'chefs-client' })
+    mockFindServiceAccountService.mockResolvedValueOnce(null)
+
+    const response = await request(
+      createApp('/tenants', {
+        sharedServiceAccess: true,
+        serviceAccountAccess: true,
+      }),
+    ).get('/tenants')
+
+    expect(response.status).toBe(200)
+    expect(response.body.isServiceAccountAccess).toBeUndefined()
+  })
+
+  it.each([
+    ['service accounts are off', { ...notify, allowServiceAccounts: false }],
+    ['headless access is off', { ...notify, allowHeadlessOps: false }],
+    ['the service is inactive', { ...notify, isActive: false }],
+  ])('says it is not allowed when %s', async (_case, service) => {
+    mockFindServiceAccountService.mockResolvedValueOnce(service)
+
+    const response = await callServiceAccountRoute()
+
+    expect(response.status).toBe(403)
+    expect(response.body).toEqual({
+      name: 'Authorization Failure',
+      message:
+        'This connected service is not allowed to call CSTAR with a service account. Ask a CSTAR operations admin to turn on headless access and service accounts for it.',
+      httpResponseCode: 403,
+      errorMessage: 'Forbidden',
+    })
+    expect(mockLoggerError).toHaveBeenCalledWith(
+      'Connected service is not allowed service account access',
+      {
+        reason: 'service_account_not_allowed',
+        clientIdentifier: 'notify-sa-client',
+      },
+    )
+  })
+
+  it('only allows reads', async () => {
+    const response = await request(
+      createApp('/tenants', serviceAccountRoute),
+    ).post('/tenants')
+
+    expect(response.status).toBe(403)
+    expect(response.body.message).toBe(
+      'Service accounts can only read data from CSTAR. Use a token for a signed-in user to make changes.',
+    )
+    expect(mockLoggerError).toHaveBeenCalledWith(
+      'Service account access is read only',
+      {
+        reason: 'service_account_read_only',
+        clientIdentifier: 'notify-sa-client',
+      },
+    )
+  })
+
+  it.each([
+    ['a headless route', { headlessAccess: true }],
+    ['a service route', { sharedServiceAccess: true }],
+    ['a web app route', undefined],
+  ])(
+    'tells a known service account it cannot use %s',
+    async (_case, options) => {
+      const response = await request(createApp('/tenants', options)).get(
+        '/tenants',
+      )
+
+      expect(response.status).toBe(403)
+      expect(response.body.message).toBe(
+        "This request cannot be made with a service account. Service accounts can only list a tenant's groups and a group's members.",
+      )
+      expect(mockLoggerError).toHaveBeenCalledWith(
+        'Service account called a route it cannot use',
+        {
+          reason: 'service_account_route_not_allowed',
+          clientIdentifier: 'notify-sa-client',
+        },
+      )
+    },
+  )
+
+  it('leaves other tokens with no user as they were on service routes', async () => {
+    signedInAs({ azp: 'chefs-client' })
+    mockFindServiceAccountService.mockResolvedValueOnce(null)
+
+    const response = await request(
+      createApp('/tenants', { sharedServiceAccess: true }),
+    ).get('/tenants')
+
+    expect(response.status).toBe(200)
+  })
+
+  it('does not look up a service account for a user token', async () => {
+    signedInAs({ ...serviceAccountToken, idp: 'idir' })
+
+    const response = await callServiceAccountRoute()
+
+    expect(response.status).toBe(401)
+    expect(mockFindServiceAccountService).not.toHaveBeenCalled()
+  })
+
+  it('passes a failed lookup on as a server error', async () => {
+    mockFindServiceAccountService.mockRejectedValueOnce(new Error('db down'))
+
+    const response = await callServiceAccountRoute()
+
+    expect(response.status).toBe(500)
+  })
+
+  describe('on a route only for service accounts', () => {
+    const serviceAccountOnlyRoute = {
+      serviceAccountAccess: true,
+      serviceAccountOnly: true,
+    }
+    const callServiceAccountOnlyRoute = () =>
+      request(createApp('/members', serviceAccountOnlyRoute)).get('/members')
+
+    it('lets a switched on service account through', async () => {
+      const response = await callServiceAccountOnlyRoute()
+
+      expect(response.status).toBe(200)
+      expect(response.body.isServiceAccountAccess).toBe(true)
+    })
+
+    it.each([
+      ['a CSTAR web app user', { idir_user_guid: MY_USER_ID, idp: 'idir' }],
+      [
+        'a connected service user',
+        { aud: 'chefs-client', idir_user_guid: MY_USER_ID, idp: 'idir' },
+      ],
+      ['a token with no user that is not a service account', { aud: 'x' }],
+    ])('turns away %s', async (_case, token) => {
+      signedInAs(token)
+      mockFindServiceAccountService.mockResolvedValueOnce(null)
+
+      const response = await callServiceAccountOnlyRoute()
+
+      expect(response.status).toBe(403)
+      expect(response.body.message).toBe(
+        'Only service accounts can use this request. To see the members of a group as a signed-in user, get the group with expand=groupUsers.',
+      )
+      expect(mockLoggerError).toHaveBeenCalledWith(
+        'User token called a service account only route',
+        expect.objectContaining({ reason: 'service_account_only' }),
+      )
+    })
   })
 })
 

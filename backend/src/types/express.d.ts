@@ -4,6 +4,7 @@ declare namespace Express {
     bceid_user_guid?: string
     bceid_business_guid?: string
     aud?: string
+    azp?: string
     audience?: string
     client_roles?: string[]
     sub?: string
@@ -32,6 +33,7 @@ declare namespace Express {
     isSharedServiceAccess?: boolean
     isHeadlessAccess?: boolean
     headlessService?: HeadlessService
+    isServiceAccountAccess?: boolean
     idpType?: 'idir' | 'bceidbusiness'
   }
 }

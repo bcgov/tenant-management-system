@@ -32,4 +32,14 @@ export class TMSConstants {
     'Searching from a connected service needs a tenant. Add tenantId to the request.'
   public static readonly HEADLESS_TENANT_MEMBER_REQUIRED =
     'You must be a member of this tenant to do this.'
+  public static readonly SERVICE_ACCOUNT_NOT_ALLOWED =
+    'This connected service is not allowed to call CSTAR with a service account. Ask a CSTAR operations admin to turn on headless access and service accounts for it.'
+  public static readonly SERVICE_ACCOUNT_ROUTE_NOT_ALLOWED =
+    "This request cannot be made with a service account. Service accounts can only list a tenant's groups and a group's members."
+  public static readonly SERVICE_ACCOUNT_READ_ONLY =
+    'Service accounts can only read data from CSTAR. Use a token for a signed-in user to make changes.'
+  public static readonly SERVICE_ACCOUNT_ONLY =
+    'Only service accounts can use this request. To see the members of a group as a signed-in user, get the group with expand=groupUsers.'
+  public static readonly GROUP_NOT_IN_TENANT =
+    'This group does not exist in this tenant. Check the group ID and the tenant ID.'
 }

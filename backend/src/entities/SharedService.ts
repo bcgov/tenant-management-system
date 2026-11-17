@@ -39,6 +39,18 @@ export class SharedService {
   @Column({ type: 'boolean', name: 'allow_headless_ops', default: false })
   allowHeadlessOps!: boolean
 
+  @Column({ type: 'boolean', name: 'allow_service_accounts', default: false })
+  allowServiceAccounts!: boolean
+
+  @Column({
+    type: 'varchar',
+    length: 55,
+    name: 'service_account_client_identifier',
+    nullable: true,
+    unique: true,
+  })
+  serviceAccountClientIdentifier!: string | null
+
   @OneToMany(
     () => SharedServiceRole,
     (sharedServiceRole) => sharedServiceRole.sharedService,

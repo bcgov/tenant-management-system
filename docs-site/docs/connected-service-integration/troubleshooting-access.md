@@ -50,6 +50,10 @@ The error for a mismatched user ID currently uses a different format: `{ "error"
 | `not allowed to call CSTAR directly` | The service has not been allowed to manage access. | See [Managing access from a connected service](./managing-access.md). |
 | `cannot be performed from a connected service` | The action is available in the CSTAR web app only. | Perform the action in the CSTAR web app. |
 | `required role: TMS.OPERATIONS_ADMIN` | The action is for operations admins only. | Contact the [CSTAR team](../reference/support.md). |
+| `not allowed to call CSTAR with a service account` | The service has not been permitted to use service accounts, or is inactive. | See [Service accounts](./service-accounts.md). |
+| `cannot be made with a service account` | Service accounts cannot make this request. | Use one of the requests listed in [Service accounts](./service-accounts.md#available-requests). |
+| `Service accounts can only read data` | A service account attempted a change. | Make the change on behalf of a signed-in user. |
+| `Only service accounts can use this request` | The group members request was sent with a user token. | Get the group with `expand=groupUsers` instead. |
 
 ## A user has no roles
 
@@ -76,6 +80,7 @@ If a user's access in a connected service does not reflect a recent change, chec
 - The `aud` claim must exactly match the client identifier set up in CSTAR. Client IDs differ between environments.
 - The `aud` claim must be a single value. Tokens with several audiences are refused.
 - A connected service cannot be set up with the CSTAR web app's client ID.
+- For a service account, the `azp` claim must exactly match the service account client identifier, and it must differ from the service's client identifier.
 
 ## Related pages
 

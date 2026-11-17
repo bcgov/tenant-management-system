@@ -221,6 +221,15 @@ export class Routes {
         (req: Request, res: Response) => groupController.addGroupUser(req, res),
       )
     app
+      .route(RoutesConstants.GET_GROUP_USERS)
+      .get(
+        checkJwt({ serviceAccountAccess: true, serviceAccountOnly: true }),
+        validate(validator.getGroupUsers, {}, {}),
+        checkTenantAccess([]),
+        (req: Request, res: Response) =>
+          groupController.getGroupUsers(req, res),
+      )
+    app
       .route(RoutesConstants.REMOVE_GROUP_USER)
       .delete(
         checkJwt({ headlessAccess: true }),
@@ -240,7 +249,7 @@ export class Routes {
     app
       .route(RoutesConstants.GET_TENANT_GROUPS)
       .get(
-        checkJwt({ sharedServiceAccess: true }),
+        checkJwt({ sharedServiceAccess: true, serviceAccountAccess: true }),
         validate(validator.getTenantGroups, {}, {}),
         checkTenantAccess([]),
         (req: Request, res: Response) =>

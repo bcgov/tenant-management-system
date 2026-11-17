@@ -30,6 +30,10 @@ The service a person signs in with. CSTAR supports IDIR and BCeID Business. See 
 
 A member of the CSTAR operations team. Operations admins approve tenant requests and set up connected services. The role applies to CSTAR as a whole, not to one tenant.
 
+## Service account
+
+A BC Gov SSO client that a connected service uses to call CSTAR with no signed-in user. A service account can only read a tenant's groups and their members, in tenants associated with the service. See [Service accounts](../connected-service-integration/service-accounts.md).
+
 ## Service user
 
 A CSTAR role that gives read-only access to a tenant in CSTAR. BCeID Business users can only be service users.

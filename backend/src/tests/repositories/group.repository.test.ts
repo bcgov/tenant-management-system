@@ -4,6 +4,7 @@ import { tenantRepository } from '../../repositories/tenant.repository'
 import { ConflictError } from '../../errors/ConflictError'
 import { NotFoundError } from '../../errors/NotFoundError'
 import { getManager } from '../../common/db.connection'
+import { GroupUser } from '../../entities/GroupUser'
 
 jest.mock('../../common/db.connection', () => ({
   getManager: jest.fn(),
@@ -589,6 +590,78 @@ describe('GroupRepository', () => {
           user: expect.objectContaining({ id: 'tu-1' }),
         }),
       ])
+    })
+  })
+
+  describe('getGroupMembers', () => {
+    it('returns the five member fields for active members of the group', async () => {
+      const qb = createQueryBuilder({
+        getMany: [
+          {
+            id: 'sso-row-1',
+            firstName: 'Ada',
+            lastName: 'Lovelace',
+            displayName: 'Lovelace, Ada',
+            email: 'ada@gov.bc.ca',
+            idpType: 'idir',
+          },
+          {
+            id: 'sso-row-2',
+            firstName: 'Bo',
+            lastName: 'Lee',
+            displayName: 'Bo Lee',
+            email: undefined,
+            idpType: 'bceidbusiness',
+          },
+        ],
+      })
+      manager.createQueryBuilder.mockReturnValueOnce(qb)
+
+      const result = await repo.getGroupMembers(
+        { tenantId: 'tenant-1', groupId: 'group-1' },
+        asManager(manager),
+      )
+
+      expect(result).toEqual([
+        {
+          firstName: 'Ada',
+          lastName: 'Lovelace',
+          displayName: 'Lovelace, Ada',
+          email: 'ada@gov.bc.ca',
+          idpType: 'idir',
+        },
+        {
+          firstName: 'Bo',
+          lastName: 'Lee',
+          displayName: 'Bo Lee',
+          email: null,
+          idpType: 'bceidbusiness',
+        },
+      ])
+      expect(qb.innerJoin).toHaveBeenCalledWith(
+        'ssoUser.tenantUsers',
+        'tenantUser',
+        'tenantUser.tenant.id = :tenantId AND tenantUser.isDeleted = :isDeleted',
+        { tenantId: 'tenant-1', isDeleted: false },
+      )
+      expect(qb.innerJoin).toHaveBeenCalledWith(
+        GroupUser,
+        'groupUser',
+        'groupUser.tenantUser.id = tenantUser.id AND groupUser.group.id = :groupId AND groupUser.isDeleted = :isDeleted',
+        { groupId: 'group-1', isDeleted: false },
+      )
+      expect(qb.orderBy).toHaveBeenCalledWith('ssoUser.displayName', 'ASC')
+      expect(getManager).not.toHaveBeenCalled()
+    })
+
+    it('falls back to getManager when no manager is passed', async () => {
+      manager.createQueryBuilder.mockReturnValueOnce(createQueryBuilder())
+      ;(getManager as jest.Mock).mockReturnValueOnce(asManager(manager))
+
+      await expect(
+        repo.getGroupMembers({ tenantId: 'tenant-1', groupId: 'group-1' }),
+      ).resolves.toEqual([])
+      expect(getManager).toHaveBeenCalledTimes(1)
     })
   })
 
