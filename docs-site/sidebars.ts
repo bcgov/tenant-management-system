@@ -38,6 +38,7 @@ const sidebars: SidebarsConfig = {
         'connected-service-integration/authentication',
         'connected-service-integration/check-user-roles',
         'connected-service-integration/managing-access',
+        'connected-service-integration/service-accounts',
         'connected-service-integration/tenant-context-assertions',
         'connected-service-integration/troubleshooting-access',
       ],
