@@ -34,7 +34,16 @@ jobs:
       - name: Get PR Number From Event
         if: github.event_name == 'push'
         id: pr_no
-        uses: bcgov/action-get-pr@bfa713a9ab410c0f0c13126c35983934fc80d15b # v0.1.1
+        uses: bcgov/actions/image-tracker@d209bb08aabe15e5e69aca53b24d338a7b2843d5 # v0.12.0
+        with:
+          max_depth: 100
+          packages: |
+            migrations
+            backend
+            frontend
+          tags: |
+            latest
+
       - name: PR Number
         id: pr
         run: echo "pr=${{ steps.pr_no.outputs.pr || inputs.tag }}" >> "$GITHUB_OUTPUT"
