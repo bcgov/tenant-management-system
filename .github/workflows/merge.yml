@@ -54,11 +54,15 @@ jobs:
 
       - name: Deploy Tag
         id: tag
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          COMMIT_SHA: ${{ github.sha }}
+          INPUT_TAG: ${{ inputs.tag }}
         run: |
-          if [ "${{ github.event_name }}" = "push" ]; then
-            echo "tag=${{ github.sha }}" >> "$GITHUB_OUTPUT"
+          if [ "${EVENT_NAME}" = "push" ]; then
+            echo "tag=${COMMIT_SHA}" >> "$GITHUB_OUTPUT"
           else
-            echo "tag=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
+            echo "tag=${INPUT_TAG}" >> "$GITHUB_OUTPUT"
           fi
 
   deploys-gold-dev:
