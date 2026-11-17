@@ -19,11 +19,6 @@ global:
   staticAnalysis: false
   #-- the tag of the image, it can be latest, 1.0.0 etc..., or the sha256 hash
   tag: ~
-  #-- optional per-package digests; when set, deployment templates pull @<digest> instead of :<tag>
-  digests:
-    migrations: ~
-    backend: ~
-    frontend: ~
   #-- turn off autoscaling for the entire suite by setting this to false. default is true.
   autoscaling: false
   #-- global secrets, can be accessed by sub-charts.

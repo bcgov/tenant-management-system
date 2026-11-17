@@ -42,11 +42,6 @@ on:
         required: false
         type: string
         default: 'latest'
-      digests:
-        description: 'Optional JSON map of per-package image digests from image-tracker'
-        required: false
-        type: string
-        default: ''
       db_user:
         description: "database user; e.g. PR number or appproxy"
         required: false
@@ -83,7 +78,6 @@ jobs:
         --set global.domain="apps.gold.devops.gov.bc.ca"
         ${{ inputs.params }}
       tag: ${{ inputs.tag }}
-      digests: ${{ inputs.digests }}
 
   deploy-golddr-prod:
     name: Deploys Prod (Golddr)
@@ -112,4 +106,3 @@ jobs:
         --set backend.runMigrations=false
         ${{ inputs.params }}
       tag: ${{ inputs.tag }}
-      digests: ${{ inputs.digests }}
