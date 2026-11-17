@@ -1,33 +1,35 @@
----
-sidebar_position: 5
----
-
 # Tenant association
 
-A connected service can be set up in CSTAR without being available to every tenant.
+This page describes how a tenant starts using a connected service. It is intended for tenant owners and connected service teams.
 
-Tenant association connects a specific tenant to a connected service.
+## Definition
 
-## What association means
+**A connected service is not available to a tenant until a tenant owner associates it with the tenant.**
 
-When a tenant is associated with a connected service, CSTAR treats that service as available for that tenant.
+A connected service is set up once in CSTAR. Association records each tenant's decision to use it.
 
-After that, connected-service roles can be assigned to groups in the tenant.
+| Before association | After association |
+| --- | --- |
+| The service's roles cannot be assigned to groups in the tenant. | Tenant owners and user admins can assign the service's roles to groups. |
+| The service cannot read any information about the tenant. | The service can retrieve roles and other tenant information for users in the tenant. |
 
-## Before association
+## Associating a service
 
-Before a tenant is associated with a connected service, the service's roles cannot be assigned to groups in that tenant.
+**Only a tenant owner can associate a connected service with a tenant.**
 
-Connected-service access checks for that tenant will fail if the connected service is not associated with the tenant.
+Association is performed in the CSTAR web app. Only active connected services can be associated. A tenant can be associated with any number of connected services.
 
-## After association
+## Effect on the connected service
 
-After association, tenant owners and user admins can manage access to the connected service through groups and connected-service role assignments.
+**Association does not give a connected service access on its own.**
 
-The connected service can also call CSTAR APIs intended for connected-service access, as long as the request is for a tenant associated with that service. Authorization checks for the user ID provided in the token will apply (tenant membership etc.)
+Each request from the connected service is also checked against the signed-in user:
 
-## Role assignment
+- the user must be a member of the tenant
+- for any change, the user must hold the CSTAR role the change requires
 
-Connected-service roles are assigned to tenant groups.
+## Related pages
 
-Users receive connected-service roles through their group membership.
+- [Tenants](../tenant-management/tenants.md)
+- [Groups](../tenant-management/groups.md)
+- [Connected service setup](./connected-service-setup.md)

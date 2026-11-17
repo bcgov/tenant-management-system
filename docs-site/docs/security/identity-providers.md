@@ -1,33 +1,57 @@
----
-sidebar_position: 1
----
-
 # Identity providers
 
-CSTAR uses BC Government identity providers for authentication.
+This page describes the identity providers CSTAR supports and what each one permits. It is intended for tenant administrators and connected service teams.
 
-CSTAR does not authenticate users itself. Users sign in through a supported identity provider, and CSTAR uses the identity information from that sign-in when managing tenant access.
+## Authentication
+
+**CSTAR does not authenticate users itself.**
+
+Users sign in through BC Gov SSO with a supported identity provider. CSTAR uses the identity in the resulting token to determine who the user is.
+
+**Signing in does not give a user access to a tenant.**
+
+A user has access to a tenant only after a tenant owner or user admin adds them.
+
+## Supported identity providers
+
+| Identity provider | CSTAR web app | Connected services | CSTAR roles available |
+| --- | --- | --- | --- |
+| IDIR | Supported | Supported | Tenant owner, user admin, service user |
+| BCeID Business | Not supported | Supported | Service user only |
+| Basic BCeID | Not supported | Not supported | None |
 
 ## IDIR
 
-IDIR is used for CSTAR administration and tenant request workflows.
+**IDIR is the only identity provider accepted by the CSTAR web app.**
 
-Tenant requests are for IDIR users only. CSTAR operations admins are also expected to be IDIR users.
+Tenant owners, user admins and operations admins must use IDIR. Tenant requests can be submitted by IDIR users only.
+
+**Only IDIR users can manage access through a connected service.**
+
+See [Managing access from a connected service](../connected-service-integration/managing-access.md).
 
 ## BCeID Business
 
-BCeID Business users may be used in connected-service access flows where that identity type is supported.
+**BCeID Business users can hold the service user role only.**
 
-BCeID Business users are not used for CSTAR operations administration.
+A BCeID Business user can be a tenant user and a member of groups, and can receive connected-service roles through those groups. They cannot sign in to the CSTAR web app, and cannot be a tenant owner or user admin.
+
+A connected service that signs users in with both BCeID types is supported. CSTAR accepts the token when it identifies a BCeID Business user.
 
 ## Basic BCeID
 
-Basic BCeID is not supported.
+**Basic BCeID is not supported.**
 
-Users should not be onboarded to CSTAR with Basic BCeID, and connected-service role setup should not depend on Basic BCeID users.
+Basic BCeID users cannot be added to a tenant, and requests on their behalf are refused.
 
-## Identity provider and roles
+## Identity provider limits on roles
 
-The identity provider tells CSTAR who the user is.
+**A connected-service role can be limited to certain identity providers.**
 
-CSTAR roles and connected-service roles are still managed in CSTAR. Signing in with a supported identity provider does not automatically give a user tenant access or connected-service access.
+A role limited to IDIR users is not returned for a BCeID Business user, even if the user belongs to a group that holds the role. See [Connected service setup](../connected-service-integration/connected-service-setup.md).
+
+## Related pages
+
+- [Tenant users](../tenant-management/tenant-users.md)
+- [Authentication](../connected-service-integration/authentication.md)
+- [Authorization](./authorization.md)

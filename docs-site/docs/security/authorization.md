@@ -1,41 +1,59 @@
----
-sidebar_position: 2
----
-
 # Authorization
 
-Authentication confirms who is calling CSTAR. Authorization decides what that caller is allowed to do.
+This page describes the checks CSTAR makes before it allows a request. It is intended for connected service teams and for anyone reviewing how CSTAR controls access.
 
-CSTAR authorization depends on the API being called. Some APIs are for CSTAR administration. Some APIs are available to connected services. Tenant-scoped APIs also check access to the tenant.
+## Order of checks
 
-## Tenant access
+**CSTAR allows a request only if it passes every check that applies to it.**
 
-Tenant-scoped actions require access to the tenant.
+| # | Check | Applies to | Refused with |
+| --- | --- | --- | --- |
+| 1 | The token is valid, unexpired and issued by BC Gov SSO. | Every request except the health check and signing keys | 401 |
+| 2 | The `aud` claim is a single value that identifies the CSTAR web app or a connected service. | Every request | 401 or 403 |
+| 3 | The user's identity provider is accepted for the request. | Every request with a user | 401 or 403 |
+| 4 | The request is permitted for the type of token. | Every request | 403 |
+| 5 | Any user identifier in the path is the token's user. | Requests that include `{ssoUserId}` | 403 |
+| 6 | The calling connected service is associated with the tenant. | Tenant requests from a connected service | 403 |
+| 7 | The user is a member of the tenant. | Every tenant request | 403 |
+| 8 | The user holds the CSTAR role the action requires. | Changes within a tenant | 403 |
+| 9 | Any business rule for the action is met, such as keeping a tenant owner. | Changes | 409 |
 
-A user must belong to the tenant before CSTAR treats them as having tenant access. For administration actions, the user may also need a CSTAR role such as tenant owner or user admin.
+## Token type
 
-## CSTAR roles
+**The token's `aud` claim determines which requests are permitted.**
 
-CSTAR roles control what a user can do inside CSTAR.
+| Token type | Permitted requests |
+| --- | --- |
+| CSTAR token | All requests, subject to the user's CSTAR roles. |
+| Connected-service token | Read requests about tenants associated with the service. |
+| Connected-service token, with managing access permitted | The above, plus the changes listed in [Managing access from a connected service](../connected-service-integration/managing-access.md). |
 
-Tenant owner and user admin are tenant-level administration roles. They are used for actions such as managing tenant users, groups, and role assignments.
+See [Authentication](../connected-service-integration/authentication.md).
 
-Service user is not an administration role. It is used for tenant users that participate in connected-service access flows.
+## Tenant membership and CSTAR roles
+
+**Every tenant request requires the user to be a member of the tenant.**
+
+Viewing the tenant requires membership only. Changes require the tenant owner or user admin role, and some changes require the tenant owner role. See [CSTAR roles](../overview/cstar-roles.md).
 
 ## Operations admin
 
-Operations admin access is used for CSTAR-level administration.
+**Operations admin actions require a CSTAR token that carries the operations admin role.**
 
-Operations admins can perform actions such as reviewing tenant requests and managing connected-service setup. This access is not scoped to a single tenant.
+The role is read from the token, where it is assigned through the CSTAR client in BC Gov SSO. Operations admin actions cannot be performed with a connected-service token.
 
-## Connected-service access
+**The operations admin role gives no access inside a tenant.**
 
-Connected services can call CSTAR APIs that are intended for connected-service use.
+An operations admin who needs access to a tenant must be added to it as a tenant user.
 
-For tenant-scoped information, CSTAR checks that the connected service is associated with the tenant. A valid connected-service token does not automatically grant access to every tenant.
+## Connected-service roles
 
-## Effective roles
+**A connected service receives only its own roles, after identity provider limits are applied.**
 
-Effective roles come from group membership and connected-service role assignments.
+See [Check a user's roles](../connected-service-integration/check-user-roles.md).
 
-When a connected service asks CSTAR for a user's effective roles, CSTAR checks the tenant, the user, the user's groups, and the roles assigned to those groups for that connected service.
+## Related pages
+
+- [Core principles](../overview/core-principles.md)
+- [Identity providers](./identity-providers.md)
+- [Troubleshooting access](../connected-service-integration/troubleshooting-access.md)

@@ -1,0 +1,45 @@
+.figure {
+  margin: 1.5rem 0 2rem;
+}
+
+.flow {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.5rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0.75rem;
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-left: 4px solid var(--ifm-color-primary);
+  border-radius: 0.4rem;
+  background: var(--ifm-color-emphasis-100);
+}
+
+.label {
+  font-weight: 700;
+}
+
+.detail {
+  font-size: 0.85rem;
+  color: var(--ifm-color-emphasis-800);
+}
+
+.caption {
+  margin-top: 0.75rem;
+  font-size: 0.875rem;
+  color: var(--ifm-color-emphasis-700);
+}
+
+@media (max-width: 1200px) {
+  .flow {
+    grid-template-columns: 1fr;
+  }
+}
