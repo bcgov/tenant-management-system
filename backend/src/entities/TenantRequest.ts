@@ -39,7 +39,7 @@ export class TenantRequest {
   @JoinColumn({ name: 'requested_by' })
   requestedBy!: SSOUser
 
-  @CreateDateColumn({ type: 'date', name: 'requested_at' })
+  @CreateDateColumn({ type: 'timestamptz', name: 'requested_at' })
   requestedAt!: Date
 
   @Index()
@@ -47,7 +47,7 @@ export class TenantRequest {
   @JoinColumn({ name: 'decisioned_by' })
   decisionedBy!: SSOUser
 
-  @Column({ type: 'date', name: 'decisioned_at', nullable: true })
+  @Column({ type: 'timestamptz', name: 'decisioned_at', nullable: true })
   decisionedAt!: Date
 
   @Column({
@@ -58,10 +58,18 @@ export class TenantRequest {
   })
   rejectionReason!: string
 
-  @CreateDateColumn({ type: 'date', name: 'created_datetime', nullable: true })
+  @CreateDateColumn({
+    type: 'timestamptz',
+    name: 'created_datetime',
+    nullable: true,
+  })
   createdDateTime!: Date
 
-  @UpdateDateColumn({ type: 'date', name: 'updated_datetime', nullable: true })
+  @UpdateDateColumn({
+    type: 'timestamptz',
+    name: 'updated_datetime',
+    nullable: true,
+  })
   updatedDateTime!: Date
 
   @Column({ type: 'char', length: 32, name: 'created_by', nullable: true })

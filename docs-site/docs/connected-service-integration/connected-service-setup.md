@@ -1,46 +1,69 @@
----
-sidebar_position: 4
----
-
 # Connected service setup
 
-Connected services are set up in CSTAR by CSTAR operations admins.
+This page describes the information CSTAR holds about a connected service and how it is maintained. It is intended for connected service teams preparing for onboarding, and for operations admins.
 
-A connected service team should work with CSTAR operations admins before trying to integrate with CSTAR APIs.
+## Responsibility
 
-## Information needed
+**Only operations admins can set up or change a connected service.**
 
-To set up a connected service, CSTAR operations admins need:
+The connected service team provides the details below, and an operations admin enters them in each environment.
 
-- service name
-- display name
-- client identifier
-- landing page URL
-- description
-- roles
-- role descriptions
-- supported identity providers for role assignment
+## Service details
+
+| Field | Required | Limit | Description |
+| --- | --- | --- | --- |
+| Name | Yes | 30 characters | A short internal name, such as `notify`. |
+| Display name | Yes | 100 characters | The name shown to tenant administrators, such as `Notify`. |
+| Client identifier | Yes | 55 characters | The service's BC Gov SSO client ID. |
+| Landing page URL | Yes | 500 characters | The address users are sent to from CSTAR. |
+| Description | No | 500 characters | A short description shown to tenant administrators. |
+
+Names, display names and client identifiers must not start or end with a space.
 
 ## Client identifier
 
-The client identifier is used to recognize the connected service when it calls CSTAR.
+**CSTAR identifies the calling service by matching the token's `aud` claim to the client identifier.**
 
-It is important to get the client identifier correct. CSTAR uses it when authorizing connected-service API calls and checking whether the service is allowed to access tenant-scoped information.
+The two values must match exactly. Each environment has its own BC Gov SSO client, so the client identifier normally differs between environments.
+
+**A connected service cannot use the CSTAR web app's client ID.**
 
 ## Roles
 
-Connected services define their own roles.
+**A connected service has between 1 and 50 roles.**
 
-CSTAR stores those roles and lets tenant administrators assign them to groups.
+Roles can be added or changed after setup.
 
-## Identity providers for roles
+| Field | Required | Limit | Description |
+| --- | --- | --- | --- |
+| Name | Yes | 30 characters | The value the service receives, such as `form-designer`. |
+| Description | No | 255 characters | Shown to tenant administrators when they assign the role. |
+| Allowed identity providers | No | | Limits the role to IDIR, BCeID Business or both. If none are set, the role is available to users of any supported identity provider. |
 
-A role can be limited to specific identity providers.
+**Role names should not change once the connected service is in use.**
 
-For example, a role may be assignable only to IDIR users, only to BCeID Business users, or to more than one supported identity provider.
+The connected service checks role names in its code. Renaming a role breaks those checks.
 
-## After setup
+## Status
 
-After the connected service is set up, tenants can be associated with it.
+**A connected service is either active or inactive.**
 
-Once a tenant is associated, tenant administrators can assign the connected-service roles to groups.
+When a connected service is inactive:
+
+- its roles are not returned to it
+- tenants cannot associate it
+- it cannot manage access through CSTAR
+
+An operations admin can make a connected service inactive and active again without losing its setup or role assignments.
+
+## Managing access from the service
+
+**A connected service can only read from CSTAR unless an operations admin permits it to manage access.**
+
+This setting is off by default. See [Managing access from a connected service](./managing-access.md).
+
+## Related pages
+
+- [Getting started](./getting-started.md)
+- [Tenant association](./tenant-association.md)
+- [Authentication](./authentication.md)
