@@ -14,7 +14,7 @@ This page describes the checks CSTAR makes before it allows a request. It is int
 | 4 | The request is permitted for the type of token. | Every request | 403 |
 | 5 | Any user identifier in the path is the token's user. | Requests that include `{ssoUserId}` | 403 |
 | 6 | The calling connected service is associated with the tenant. | Tenant requests from a connected service | 403 |
-| 7 | The user is a member of the tenant. | Every tenant request | 403 |
+| 7 | The user is a member of the tenant. | Every tenant request with a user | 403 |
 | 8 | The user holds the CSTAR role the action requires. | Changes within a tenant | 403 |
 | 9 | Any business rule for the action is met, such as keeping a tenant owner. | Changes | 409 |
 
@@ -27,8 +27,25 @@ This page describes the checks CSTAR makes before it allows a request. It is int
 | CSTAR token | All requests, subject to the user's CSTAR roles. |
 | Connected-service token | Read requests about tenants associated with the service. |
 | Connected-service token, with managing access permitted | The above, plus the changes listed in [Managing access from a connected service](../connected-service-integration/managing-access.md). |
+| Service account token | Listing a tenant's groups and a group's members, in tenants associated with the service. |
 
 See [Authentication](../connected-service-integration/authentication.md).
+
+## Service accounts
+
+**A request from a service account passes a separate set of checks, because no user is involved.**
+
+| # | Check | Refused with |
+| --- | --- | --- |
+| 1 | The token is valid, unexpired and issued by BC Gov SSO. | 401 |
+| 2 | The `azp` claim matches a service account client ID recorded in CSTAR. | Not refused. The token is checked as a user token instead. |
+| 3 | The request is one that service accounts can make. | 403 |
+| 4 | The `aud` claim is a single value, equal to the service account client ID or to the CSTAR web app's client ID. | 401 |
+| 5 | The connected service is active and permitted to manage access and use service accounts. | 403 |
+| 6 | The request is a read request. | 403 |
+| 7 | The calling connected service is associated with the tenant. | 403 |
+
+Tenant membership and CSTAR roles are not checked. See [Service accounts](../connected-service-integration/service-accounts.md).
 
 ## Tenant membership and CSTAR roles
 

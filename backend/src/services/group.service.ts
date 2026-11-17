@@ -13,6 +13,7 @@ import {
   CreateGroupInputDto,
   GetEffectiveSharedServiceRolesInputDto,
   GetGroupInputDto,
+  GetGroupUsersInputDto,
   GetSharedServiceRolesForGroupInputDto,
   GetTenantGroupsInputDto,
   GetUserGroupsWithSharedServiceRolesInputDto,
@@ -349,7 +350,9 @@ export class GroupService {
   public async getTenantGroups(req: Request) {
     const audience =
       req.decodedJwt?.aud || req.decodedJwt?.audience || config.oidc.tmsAudience
-    const showAllGroups = await this.isHeadlessIdirCall(audience, req)
+    const showAllGroups =
+      req.isServiceAccountAccess ||
+      (await this.isHeadlessIdirCall(audience, req))
     const input: GetTenantGroupsInputDto = {
       tenantId: req.params.tenantId as string,
       ssoUserId: req.decodedJwt?.idir_user_guid,
@@ -358,9 +361,47 @@ export class GroupService {
     }
     const groups = await groupRepository.getTenantGroups(input)
 
+    if (req.isServiceAccountAccess) {
+      logger.info('Service account listed tenant groups', {
+        sharedService: req.headlessService?.name,
+        tenantId: input.tenantId,
+        groupCount: groups.length,
+      })
+    }
+
     return {
       data: {
         groups: groups,
+      },
+    }
+  }
+
+  public async getGroupUsers(req: Request) {
+    const input: GetGroupUsersInputDto = {
+      tenantId: req.params.tenantId as string,
+      groupId: req.params.groupId as string,
+    }
+
+    const group = await groupRepository.checkIfGroupExistsInTenant(
+      input.groupId,
+      input.tenantId,
+    )
+    if (!group) {
+      throw new NotFoundError(TMSConstants.GROUP_NOT_IN_TENANT)
+    }
+
+    const users = await groupRepository.getGroupMembers(input)
+
+    logger.info('Service account listed group members', {
+      sharedService: req.headlessService?.name,
+      tenantId: input.tenantId,
+      groupId: input.groupId,
+      memberCount: users.length,
+    })
+
+    return {
+      data: {
+        users,
       },
     }
   }

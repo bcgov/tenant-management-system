@@ -101,6 +101,19 @@ export interface GetSharedServiceRolesForGroupInputDto {
   groupId: string
 }
 
+export interface GetGroupUsersInputDto {
+  tenantId: string
+  groupId: string
+}
+
+export interface GroupMemberDto {
+  firstName: string
+  lastName: string
+  displayName: string
+  email: string | null
+  idpType: string
+}
+
 export interface GetSharedServiceRoleForGroupResultDto {
   id: string
   name: string

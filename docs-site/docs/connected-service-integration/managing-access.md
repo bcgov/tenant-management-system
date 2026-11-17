@@ -132,3 +132,4 @@ They are recorded in the same way as changes made in the CSTAR web app, and user
 - [Authentication](./authentication.md)
 - [CSTAR roles](../overview/cstar-roles.md)
 - [Groups](../tenant-management/groups.md)
+- [Service accounts](./service-accounts.md)

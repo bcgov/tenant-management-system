@@ -62,6 +62,17 @@ An operations admin can make a connected service inactive and active again witho
 
 This setting is off by default. See [Managing access from a connected service](./managing-access.md).
 
+## Service accounts
+
+**A connected service can read groups and their members without a signed-in user only if an operations admin permits it.**
+
+| Field | Required | Limit | Description |
+| --- | --- | --- | --- |
+| Allow service accounts | No | | Permits the service to use a service account. Off by default. Managing access must also be turned on. |
+| Service account client identifier | No | 55 characters | The BC Gov SSO client ID of the service account's own integration. It must differ from the service's client identifier and be unique across all connected services. |
+
+An operations admin sets these fields with the update connected service request, `PUT /v1/shared-services/{sharedServiceId}`. They are not shown in the CSTAR web app. See [Service accounts](./service-accounts.md).
+
 ## Related pages
 
 - [Getting started](./getting-started.md)

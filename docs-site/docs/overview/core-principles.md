@@ -69,7 +69,7 @@ A connected service has no need to know what a user may do in other connected se
 
 - A user's roles in other connected services are not returned to the calling service.
 - A list of a user's tenants includes only the tenants associated with the calling service.
-- A list of a tenant's groups includes only the groups that hold the calling service's roles, unless the service is permitted to manage access.
+- A list of a tenant's groups includes only the groups that hold the calling service's roles, unless the service is permitted to manage access or calls with a service account.
 
 ## 6. Token-derived identity
 
@@ -80,6 +80,7 @@ A user identifier in a request can be set to any value. The token is signed by B
 - A connected service can request information only about the user who owns the token.
 - A request that names a different user is refused.
 - Changes are attributed to the user identified in the token.
+- A request from a service account names no user. CSTAR identifies the calling service from the token's `azp` claim, which BC Gov SSO sets and the service cannot alter.
 
 ## 7. Minimum default access
 
@@ -90,6 +91,7 @@ Access that has not been granted cannot be misused. Extending access should be a
 - BCeID Business users can hold the service user role only.
 - A connected service can only read from CSTAR until an operations admin permits it to manage access.
 - People added to a tenant through a connected service receive the service user role only. Other CSTAR roles are assigned in the CSTAR web app.
+- Service accounts are off by default. When permitted, they can only read a tenant's groups and their members.
 
 ## 8. Consistent rules across channels
 
@@ -97,8 +99,9 @@ Access that has not been granted cannot be misused. Extending access should be a
 
 A user's permissions should not depend on the application they use to make a change.
 
-- Tenant membership and CSTAR roles are checked on every request, regardless of its source.
+- Tenant membership and CSTAR roles are checked on every request made on behalf of a user, regardless of its source.
 - A user cannot perform an action through a connected service that they cannot perform in the CSTAR web app.
+- Requests from a service account are the only requests made without a user. Because tenant membership cannot be checked, a service account can make two read requests only, in tenants associated with the service.
 - Tenant administration tasks, such as assigning tenant owners and approving tenant requests, are available in the CSTAR web app only.
 
 ## 9. Preventing unintended access to other connected services

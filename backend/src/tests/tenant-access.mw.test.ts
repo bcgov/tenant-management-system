@@ -222,6 +222,69 @@ describe('checkTenantAccess', () => {
     })
   })
 
+  describe('when a service account calls', () => {
+    const serviceAccountRequest = () =>
+      ({
+        params: { tenantId: 'tenant-1' },
+        decodedJwt: { azp: 'notify-sa-client', aud: 'notify-sa-client' },
+        isServiceAccountAccess: true,
+        headlessService: {
+          id: 'ss-2',
+          name: 'notify',
+          displayName: 'Notify',
+          clientIdentifier: 'notify-client',
+        },
+      }) as unknown as Request
+
+    it('lets it through when the tenant uses the service, without a member check', async () => {
+      mockRepository.checkIfTenantHasSharedServiceAccess.mockResolvedValue(true)
+
+      await checkTenantAccess([])(serviceAccountRequest(), res, next)
+
+      expect(
+        mockRepository.checkIfTenantHasSharedServiceAccess,
+      ).toHaveBeenCalledWith('tenant-1', 'notify-client')
+      expect(mockRepository.checkUserTenantAccess).not.toHaveBeenCalled()
+      expect(next).toHaveBeenCalledWith()
+    })
+
+    it('turns it away when the tenant does not use the service', async () => {
+      mockRepository.checkIfTenantHasSharedServiceAccess.mockResolvedValue(
+        false,
+      )
+
+      await checkTenantAccess([])(serviceAccountRequest(), res, next)
+
+      expect(res.status).toHaveBeenCalledWith(403)
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message:
+            'This tenant does not use Notify. A tenant owner can add Notify to the tenant in the CSTAR web app.',
+        }),
+      )
+      expect(next).not.toHaveBeenCalled()
+    })
+
+    it('turns it away from a route that needs a tenant role', async () => {
+      mockRepository.checkIfTenantHasSharedServiceAccess.mockResolvedValue(true)
+
+      await checkTenantAccess(['TMS.TENANT_OWNER'])(
+        serviceAccountRequest(),
+        res,
+        next,
+      )
+
+      expect(res.status).toHaveBeenCalledWith(403)
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message:
+            "This request cannot be made with a service account. Service accounts can only list a tenant's groups and a group's members.",
+        }),
+      )
+      expect(mockRepository.checkUserTenantAccess).not.toHaveBeenCalled()
+    })
+  })
+
   it('does not check the service link for CSTAR web app calls', async () => {
     mockRepository.checkUserTenantAccess.mockResolvedValue(true)
     const req = {
