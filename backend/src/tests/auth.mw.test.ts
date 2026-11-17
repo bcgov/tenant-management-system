@@ -770,6 +770,45 @@ describe('when a service account calls us', () => {
 
     expect(response.status).toBe(500)
   })
+
+  describe('on a route only for service accounts', () => {
+    const serviceAccountOnlyRoute = {
+      serviceAccountAccess: true,
+      serviceAccountOnly: true,
+    }
+    const callServiceAccountOnlyRoute = () =>
+      request(createApp('/members', serviceAccountOnlyRoute)).get('/members')
+
+    it('lets a switched on service account through', async () => {
+      const response = await callServiceAccountOnlyRoute()
+
+      expect(response.status).toBe(200)
+      expect(response.body.isServiceAccountAccess).toBe(true)
+    })
+
+    it.each([
+      ['a CSTAR web app user', { idir_user_guid: MY_USER_ID, idp: 'idir' }],
+      [
+        'a connected service user',
+        { aud: 'chefs-client', idir_user_guid: MY_USER_ID, idp: 'idir' },
+      ],
+      ['a token with no user that is not a service account', { aud: 'x' }],
+    ])('turns away %s', async (_case, token) => {
+      signedInAs(token)
+      mockFindServiceAccountService.mockResolvedValueOnce(null)
+
+      const response = await callServiceAccountOnlyRoute()
+
+      expect(response.status).toBe(403)
+      expect(response.body.message).toBe(
+        'Only service accounts can use this request. To see the members of a group as a signed-in user, get the group with expand=groupUsers.',
+      )
+      expect(mockLoggerError).toHaveBeenCalledWith(
+        'User token called a service account only route',
+        expect.objectContaining({ reason: 'service_account_only' }),
+      )
+    })
+  })
 })
 
 describe('how the token check is set up', () => {

@@ -450,6 +450,13 @@ export default {
     }).options({ abortEarly: false, convert: false }),
   },
 
+  getGroupUsers: {
+    params: Joi.object({
+      tenantId: Joi.string().guid().required(),
+      groupId: Joi.string().guid().required(),
+    }).options({ abortEarly: false, convert: false }),
+  },
+
   updateSharedServiceRolesForGroup: {
     params: Joi.object({
       tenantId: Joi.string().guid().required(),

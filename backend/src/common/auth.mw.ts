@@ -28,6 +28,7 @@ interface CheckJwtOptions {
   sharedServiceAccess?: boolean
   headlessAccess?: boolean
   serviceAccountAccess?: boolean
+  serviceAccountOnly?: boolean
   skipSsoUserParamMatch?: boolean
 }
 
@@ -396,6 +397,15 @@ const handleUserToken = (
   next: NextFunction,
   options: CheckJwtOptions,
 ) => {
+  if (options.serviceAccountOnly) {
+    logger.error('User token called a service account only route', {
+      reason: 'service_account_only',
+      route: req.route?.path,
+    })
+    sendForbidden(res, TMSConstants.SERVICE_ACCOUNT_ONLY)
+    return
+  }
+
   if (isNonTmsTokenOnWebAppRoute(req, options)) {
     void runOrPassError(next, () => refuseNonTmsToken(req, res))
     return

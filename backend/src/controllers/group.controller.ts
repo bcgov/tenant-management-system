@@ -61,6 +61,15 @@ export class GroupController {
     }
   }
 
+  public async getGroupUsers(req: Request, res: Response) {
+    try {
+      const groupUsersResponse = await groupService.getGroupUsers(req)
+      res.status(200).send(groupUsersResponse)
+    } catch (error: unknown) {
+      handleControllerError(res, error, 'Error occurred getting group users')
+    }
+  }
+
   public async getSharedServiceRolesForGroup(req: Request, res: Response) {
     try {
       const sharedServiceRolesResponse =

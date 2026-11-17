@@ -38,4 +38,8 @@ export class TMSConstants {
     "This request cannot be made with a service account. Service accounts can only list a tenant's groups and a group's members."
   public static readonly SERVICE_ACCOUNT_READ_ONLY =
     'Service accounts can only read data from CSTAR. Use a token for a signed-in user to make changes.'
+  public static readonly SERVICE_ACCOUNT_ONLY =
+    'Only service accounts can use this request. To see the members of a group as a signed-in user, get the group with expand=groupUsers.'
+  public static readonly GROUP_NOT_IN_TENANT =
+    'This group does not exist in this tenant. Check the group ID and the tenant ID.'
 }

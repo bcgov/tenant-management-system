@@ -207,6 +207,29 @@ describe('group validators', () => {
     })
   })
 
+  describe('getGroupUsers', () => {
+    const app = createApp(
+      'get',
+      '/:tenantId/groups/:groupId/users',
+      validator.getGroupUsers,
+    )
+
+    it('accepts valid tenant and group ids', async () => {
+      const response = await request(app).get(
+        `/${VALID_UUID}/groups/${VALID_UUID}/users`,
+      )
+      expect(response.status).toBe(200)
+    })
+
+    it.each([
+      ['tenant', `/not-a-uuid/groups/${VALID_UUID}/users`],
+      ['group', `/${VALID_UUID}/groups/not-a-uuid/users`],
+    ])('rejects an invalid %s id', async (_case, path) => {
+      const response = await request(app).get(path)
+      expect(response.status).toBe(400)
+    })
+  })
+
   describe('updateSharedServiceRolesForGroup', () => {
     const app = createApp(
       'put',

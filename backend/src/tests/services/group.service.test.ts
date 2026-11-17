@@ -9,6 +9,7 @@ import { notificationService } from '../../services/notification.service'
 import { config } from '../../services/config.service'
 import { sharedServiceRepository } from '../../repositories/shared-service.repository'
 import { ForbiddenError } from '../../errors/ForbiddenError'
+import { NotFoundError } from '../../errors/NotFoundError'
 
 jest.mock('../../repositories/group.repository')
 jest.mock('../../repositories/tenant.repository', () => ({
@@ -770,6 +771,69 @@ describe('GroupService', () => {
       expect(mockRepository.getGroup).toHaveBeenCalledWith(
         expect.objectContaining({ expand: ['groupUsers'] }),
       )
+    })
+  })
+
+  describe('getGroupUsers', () => {
+    const serviceAccountRequest = () =>
+      asRequest({
+        params: { tenantId: 'tenant-1', groupId: 'group-1' },
+        isServiceAccountAccess: true,
+        headlessService: {
+          id: 'ss-2',
+          name: 'notify',
+          displayName: 'Notify',
+          clientIdentifier: 'notify-client',
+        },
+      })
+    const member = {
+      firstName: 'Ada',
+      lastName: 'Lovelace',
+      displayName: 'Lovelace, Ada',
+      email: 'ada@gov.bc.ca',
+      idpType: 'idir',
+    }
+
+    it('returns the members of the group and logs the read', async () => {
+      mockRepository.checkIfGroupExistsInTenant.mockResolvedValueOnce({
+        id: 'group-1',
+      } as never)
+      mockRepository.getGroupMembers.mockResolvedValueOnce([member])
+
+      await expect(
+        service.getGroupUsers(serviceAccountRequest()),
+      ).resolves.toEqual({ data: { users: [member] } })
+      expect(mockRepository.checkIfGroupExistsInTenant).toHaveBeenCalledWith(
+        'group-1',
+        'tenant-1',
+      )
+      expect(mockRepository.getGroupMembers).toHaveBeenCalledWith({
+        tenantId: 'tenant-1',
+        groupId: 'group-1',
+      })
+      expect(logger.info).toHaveBeenCalledWith(
+        'Service account listed group members',
+        {
+          sharedService: 'notify',
+          tenantId: 'tenant-1',
+          groupId: 'group-1',
+          memberCount: 1,
+        },
+      )
+      expect(mockTransaction).not.toHaveBeenCalled()
+    })
+
+    it('says the group does not exist when it is not in the tenant', async () => {
+      mockRepository.checkIfGroupExistsInTenant.mockResolvedValueOnce(null)
+
+      await expect(
+        service.getGroupUsers(serviceAccountRequest()),
+      ).rejects.toThrow(
+        new NotFoundError(
+          'This group does not exist in this tenant. Check the group ID and the tenant ID.',
+        ),
+      )
+      expect(mockRepository.getGroupMembers).not.toHaveBeenCalled()
     })
   })
 

@@ -2602,6 +2602,94 @@ paths:
                 $ref: '#/components/schemas/InternalServerErrorResponse'
 
   /v1/tenants/{tenantId}/groups/{groupId}/users:
+    get:
+      summary: Get the members of a group
+      description: |
+        Authentication: Service account token only.
+
+        Returns the active members of a group, sorted by display name. Users removed from the tenant are not returned.
+
+        The service must have allowHeadlessOps and allowServiceAccounts enabled, the token azp must match its serviceAccountClientIdentifier, and the tenant must use the service. User tokens are refused with 403.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: tenantId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The unique identifier of the tenant
+        - name: groupId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The unique identifier of the group
+      responses:
+        '200':
+          description: Members of the group
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      users:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            firstName:
+                              type: string
+                              example: 'Ada'
+                            lastName:
+                              type: string
+                              example: 'Lovelace'
+                            displayName:
+                              type: string
+                              example: 'Lovelace, Ada CITZ:EX'
+                            email:
+                              type: string
+                              nullable: true
+                              example: 'ada.lovelace@gov.bc.ca'
+                            idpType:
+                              type: string
+                              enum: [idir, bceidbusiness]
+                              example: 'idir'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        '403':
+          description: Forbidden - Not a service account, service not allowed, or tenant does not use the service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        '404':
+          description: Group not found in the tenant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
     post:
       summary: Add a user to a group
       description: |

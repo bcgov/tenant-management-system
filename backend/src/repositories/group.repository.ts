@@ -20,6 +20,8 @@ import {
   GetEffectiveSharedServiceRolesInputDto,
   GetGroupInputDto,
   GetGroupResultDto,
+  GetGroupUsersInputDto,
+  GroupMemberDto,
   GetNewRolesFromOtherServicesInputDto,
   GetSharedServiceForGroupResultDto,
   GetSharedServiceRolesForGroupInputDto,
@@ -171,6 +173,47 @@ export class GroupRepository {
       .getOne()
 
     return existingGroup
+  }
+
+  public async getGroupMembers(
+    input: GetGroupUsersInputDto,
+    manager?: EntityManager,
+  ): Promise<GroupMemberDto[]> {
+    const em = manager ?? getManager()
+    const { tenantId, groupId } = input
+
+    const members = await em
+      .createQueryBuilder(SSOUser, 'ssoUser')
+      .innerJoin(
+        'ssoUser.tenantUsers',
+        'tenantUser',
+        'tenantUser.tenant.id = :tenantId AND tenantUser.isDeleted = :isDeleted',
+        { tenantId, isDeleted: false },
+      )
+      .innerJoin(
+        GroupUser,
+        'groupUser',
+        'groupUser.tenantUser.id = tenantUser.id AND groupUser.group.id = :groupId AND groupUser.isDeleted = :isDeleted',
+        { groupId, isDeleted: false },
+      )
+      .select([
+        'ssoUser.id',
+        'ssoUser.firstName',
+        'ssoUser.lastName',
+        'ssoUser.displayName',
+        'ssoUser.email',
+        'ssoUser.idpType',
+      ])
+      .orderBy('ssoUser.displayName', 'ASC')
+      .getMany()
+
+    return members.map((member) => ({
+      firstName: member.firstName,
+      lastName: member.lastName,
+      displayName: member.displayName,
+      email: member.email ?? null,
+      idpType: member.idpType,
+    }))
   }
 
   public async getTenantGroups(
