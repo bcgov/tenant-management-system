@@ -40,7 +40,11 @@ spec:
               type: RuntimeDefault
             capabilities:
               drop: [ "ALL" ]
+          {{- if ((.Values.global.digests).frontend) }}
+          image: "{{ .Values.global.registry }}/{{ .Values.global.repository }}/frontend@{{ .Values.global.digests.frontend }}"
+          {{- else }}
           image: "{{ .Values.global.registry }}/{{ .Values.global.repository }}/frontend:{{ .Values.global.tag | default .Chart.AppVersion }}"
+          {{- end }}
           imagePullPolicy: {{ default "Always" .Values.frontend.imagePullPolicy }}
           env:
             - name: BACKEND_URL

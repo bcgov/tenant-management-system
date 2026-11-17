@@ -40,7 +40,11 @@ spec:
             allowPrivilegeEscalation: false
             capabilities:
               drop: [ "ALL" ]
+          {{- if ((.Values.global.digests).migrations) }}
+          image: "{{ .Values.global.registry }}/{{ .Values.global.repository }}/migrations@{{ .Values.global.digests.migrations }}"
+          {{- else }}
           image: "{{ .Values.global.registry }}/{{ .Values.global.repository }}/migrations:{{ .Values.global.tag | default .Chart.AppVersion }}"
+          {{- end }}
           imagePullPolicy: {{ default "Always" .Values.backend.imagePullPolicy }}
           envFrom:
             - secretRef:
@@ -73,7 +77,11 @@ spec:
             allowPrivilegeEscalation: false
             capabilities:
               drop: [ "ALL" ]
+          {{- if ((.Values.global.digests).backend) }}
+          image: "{{ .Values.global.registry }}/{{ .Values.global.repository }}/backend@{{ .Values.global.digests.backend }}"
+          {{- else }}
           image: "{{ .Values.global.registry }}/{{ .Values.global.repository }}/backend:{{ .Values.global.tag | default .Chart.AppVersion }}"
+          {{- end }}
           imagePullPolicy: {{ default "Always" .Values.backend.imagePullPolicy }}
           envFrom:
             - secretRef:

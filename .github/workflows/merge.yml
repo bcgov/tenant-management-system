@@ -27,13 +27,18 @@ jobs:
     name: Set Variables
     outputs:
       pr: ${{ steps.pr.outputs.pr }}
+      digests: ${{ steps.pr_no.outputs.digests }}
     runs-on: ubuntu-26.04
     timeout-minutes: 5
     permissions:
+      contents: read
       packages: write
+      pull-requests: read
     steps:
-      # Get PR number for squash merges to main
+      # Resolve per-package digests for squash merges to main
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 100
       - name: Get PR Number From Event
         if: github.event_name == 'push'
         id: pr_no
@@ -52,14 +57,15 @@ jobs:
         run: echo "pr=${{ steps.pr_no.outputs.pr || inputs.tag }}" >> "$GITHUB_OUTPUT"
 
   deploys-gold-dev:
-    name: Deploys Gold Dev - (${{ needs.vars.outputs.pr }})
+    name: Deploys Gold Dev (${{ inputs.tag || 'digest' }})
     needs: [vars]
     uses: ./.github/workflows/gold-dev.yml
     secrets: inherit
     with:
       dr_enabled: true
       release_name: cstar-dev
-      tag: ${{ needs.vars.outputs.pr }}
+      tag: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || '' }}
+      digests: ${{ needs.vars.outputs.digests }}
       db_user: appproxy
       params: --set frontend.ingress.hosts[0].host=dev.connect.digital.gov.bc.ca
 
@@ -68,28 +74,57 @@ jobs:
     needs: [vars, deploys-gold-dev]
     runs-on: ubuntu-26.04
     permissions:
+      contents: read
       packages: write
-    strategy:
-      matrix:
-        package: [migrations, backend, frontend]
-    timeout-minutes: 1
+      pull-requests: read
+    timeout-minutes: 5
     steps:
-      - uses: shrink/actions-docker-registry-tag@e6aaef25c595b6e0edd18bf4c7dbfea3abd43299 # v5.0.0
+      - if: needs.vars.outputs.digests != ''
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 100
+          ref: ${{ github.sha }}
+      - if: needs.vars.outputs.digests != ''
+        uses: bcgov/actions/image-tracker@d209bb08aabe15e5e69aca53b24d338a7b2843d5 # v0.12.0
+        with:
+          revision: ${{ github.sha }}
+          max_depth: 100
+          packages: |
+            migrations
+            backend
+            frontend
+          tags: dev
+      - if: needs.vars.outputs.digests == ''
+        uses: shrink/actions-docker-registry-tag@e6aaef25c595b6e0edd18bf4c7dbfea3abd43299 # v5.0.0
         with:
           registry: ghcr.io
-          repository: ${{ github.repository }}/${{ matrix.package }}
+          repository: ${{ github.repository }}/migrations
+          target: ${{ needs.vars.outputs.pr }}
+          tags: dev
+      - if: needs.vars.outputs.digests == ''
+        uses: shrink/actions-docker-registry-tag@e6aaef25c595b6e0edd18bf4c7dbfea3abd43299 # v5.0.0
+        with:
+          registry: ghcr.io
+          repository: ${{ github.repository }}/backend
+          target: ${{ needs.vars.outputs.pr }}
+          tags: dev
+      - if: needs.vars.outputs.digests == ''
+        uses: shrink/actions-docker-registry-tag@e6aaef25c595b6e0edd18bf4c7dbfea3abd43299 # v5.0.0
+        with:
+          registry: ghcr.io
+          repository: ${{ github.repository }}/frontend
           target: ${{ needs.vars.outputs.pr }}
           tags: dev
 
-
   deploys-gold-test:
-    name: Deploys Gold Test - (${{ needs.vars.outputs.pr }})
+    name: Deploys Gold Test (${{ inputs.tag || 'digest' }})
     needs: [vars, promote-dev]
     uses: ./.github/workflows/gold-test.yml
     secrets: inherit
     with:
       release_name: cstar-test
-      tag: ${{ needs.vars.outputs.pr }}
+      tag: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || '' }}
+      digests: ${{ needs.vars.outputs.digests }}
       db_user: appproxy
       params: --set frontend.ingress.hosts[0].host=test.connect.digital.gov.bc.ca
 
@@ -98,28 +133,57 @@ jobs:
     needs: [vars, deploys-gold-test]
     runs-on: ubuntu-26.04
     permissions:
+      contents: read
       packages: write
-    strategy:
-      matrix:
-        package: [migrations, backend, frontend]
-    timeout-minutes: 1
+      pull-requests: read
+    timeout-minutes: 5
     steps:
-      - uses: shrink/actions-docker-registry-tag@e6aaef25c595b6e0edd18bf4c7dbfea3abd43299 # v5.0.0
+      - if: needs.vars.outputs.digests != ''
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 100
+          ref: ${{ github.sha }}
+      - if: needs.vars.outputs.digests != ''
+        uses: bcgov/actions/image-tracker@d209bb08aabe15e5e69aca53b24d338a7b2843d5 # v0.12.0
+        with:
+          revision: ${{ github.sha }}
+          max_depth: 100
+          packages: |
+            migrations
+            backend
+            frontend
+          tags: test
+      - if: needs.vars.outputs.digests == ''
+        uses: shrink/actions-docker-registry-tag@e6aaef25c595b6e0edd18bf4c7dbfea3abd43299 # v5.0.0
         with:
           registry: ghcr.io
-          repository: ${{ github.repository }}/${{ matrix.package }}
+          repository: ${{ github.repository }}/migrations
+          target: ${{ needs.vars.outputs.pr }}
+          tags: test
+      - if: needs.vars.outputs.digests == ''
+        uses: shrink/actions-docker-registry-tag@e6aaef25c595b6e0edd18bf4c7dbfea3abd43299 # v5.0.0
+        with:
+          registry: ghcr.io
+          repository: ${{ github.repository }}/backend
+          target: ${{ needs.vars.outputs.pr }}
+          tags: test
+      - if: needs.vars.outputs.digests == ''
+        uses: shrink/actions-docker-registry-tag@e6aaef25c595b6e0edd18bf4c7dbfea3abd43299 # v5.0.0
+        with:
+          registry: ghcr.io
+          repository: ${{ github.repository }}/frontend
           target: ${{ needs.vars.outputs.pr }}
           tags: test
 
-
   deploys-gold-prod:
-    name: Deploys Gold Prod - (${{ needs.vars.outputs.pr }})
+    name: Deploys Gold Prod (${{ inputs.tag || 'digest' }})
     needs: [vars, promote-test]
     uses: ./.github/workflows/gold-prod.yml
     secrets: inherit
     with:
       release_name: cstar-prod
-      tag: ${{ needs.vars.outputs.pr }}
+      tag: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || '' }}
+      digests: ${{ needs.vars.outputs.digests }}
       db_user: appproxy
       params: --set frontend.ingress.hosts[0].host=connect.digital.gov.bc.ca
 
@@ -128,15 +192,44 @@ jobs:
     needs: [vars, deploys-gold-prod]
     runs-on: ubuntu-26.04
     permissions:
+      contents: read
       packages: write
-    strategy:
-      matrix:
-        package: [migrations, backend, frontend]
-    timeout-minutes: 1
+      pull-requests: read
+    timeout-minutes: 5
     steps:
-      - uses: shrink/actions-docker-registry-tag@e6aaef25c595b6e0edd18bf4c7dbfea3abd43299 # v5.0.0
+      - if: needs.vars.outputs.digests != ''
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 100
+          ref: ${{ github.sha }}
+      - if: needs.vars.outputs.digests != ''
+        uses: bcgov/actions/image-tracker@d209bb08aabe15e5e69aca53b24d338a7b2843d5 # v0.12.0
+        with:
+          revision: ${{ github.sha }}
+          max_depth: 100
+          packages: |
+            migrations
+            backend
+            frontend
+          tags: prod
+      - if: needs.vars.outputs.digests == ''
+        uses: shrink/actions-docker-registry-tag@e6aaef25c595b6e0edd18bf4c7dbfea3abd43299 # v5.0.0
         with:
           registry: ghcr.io
-          repository: ${{ github.repository }}/${{ matrix.package }}
+          repository: ${{ github.repository }}/migrations
+          target: ${{ needs.vars.outputs.pr }}
+          tags: prod
+      - if: needs.vars.outputs.digests == ''
+        uses: shrink/actions-docker-registry-tag@e6aaef25c595b6e0edd18bf4c7dbfea3abd43299 # v5.0.0
+        with:
+          registry: ghcr.io
+          repository: ${{ github.repository }}/backend
+          target: ${{ needs.vars.outputs.pr }}
+          tags: prod
+      - if: needs.vars.outputs.digests == ''
+        uses: shrink/actions-docker-registry-tag@e6aaef25c595b6e0edd18bf4c7dbfea3abd43299 # v5.0.0
+        with:
+          registry: ghcr.io
+          repository: ${{ github.repository }}/frontend
           target: ${{ needs.vars.outputs.pr }}
           tags: prod

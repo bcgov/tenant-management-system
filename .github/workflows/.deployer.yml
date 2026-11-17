@@ -34,6 +34,11 @@ on:
         description: Specify a tag to deploy; defaults to PR number
         required: false
         type: string
+      digests:
+        description: Optional JSON map of per-package image digests from image-tracker
+        required: false
+        type: string
+        default: ''
       triggers:
         description: Paths used to trigger a deployment; e.g. ('./backend/' './frontend/')
         required: false
@@ -109,8 +114,11 @@ jobs:
           s3_endpoint: ${{ secrets.s3_endpoint }}
 
       # Variables
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - if: inputs.tag  == ''
+      - if: inputs.tag == '' && inputs.digests == ''
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 100
+      - if: inputs.tag == '' && inputs.digests == ''
         id: pr
         uses: bcgov/actions/image-tracker@d209bb08aabe15e5e69aca53b24d338a7b2843d5 # v0.12.0
         with:
@@ -119,32 +127,53 @@ jobs:
             migrations
             backend
             frontend
-          tags: |
-            latest
 
       - id: vars
+        env:
+          INPUT_TAG: ${{ inputs.tag }}
+          INPUT_DIGESTS: ${{ inputs.digests }}
+          TRACKED_DIGESTS: ${{ steps.pr.outputs.digests }}
+          TRACKED_PR: ${{ steps.pr.outputs.pr }}
+          INPUT_ENV: ${{ inputs.environment }}
+          INPUT_RELEASE_NAME: ${{ inputs.release_name }}
+          RUN_NUMBER: ${{ github.run_number }}
+          OC_SERVER: ${{ vars.OC_SERVER }}
         run: |
-          # Vars: tag and release
-
-          # Tag defaults to PR number, but can be overridden by inputs.tag
-          tag=${{ inputs.tag || steps.pr.outputs.pr }}
-
-          # Release name includes run numbers to ensure uniqueness
-          if [ -n "${{ inputs.release_name }}" ]; then
-            release=${{ inputs.release_name }}
+          # Vars: tag, digests, and release
+          digests_json="${INPUT_DIGESTS:-${TRACKED_DIGESTS}}"
+          migrations_digest=""
+          backend_digest=""
+          frontend_digest=""
+          if [ -n "${digests_json}" ]; then
+            migrations_digest=$(printf '%s' "${digests_json}" | jq -r '.migrations // empty')
+            backend_digest=$(printf '%s' "${digests_json}" | jq -r '.backend // empty')
+            frontend_digest=$(printf '%s' "${digests_json}" | jq -r '.frontend // empty')
+            if [ -z "${migrations_digest}" ] || [ -z "${backend_digest}" ] || [ -z "${frontend_digest}" ]; then
+              echo "::error::digests JSON must include migrations, backend, and frontend: ${digests_json}"
+              exit 1
+            fi
+            tag=""
           else
-            release=cstar-${{ inputs.environment || inputs.tag || steps.pr.outputs.pr }}
+            tag="${INPUT_TAG:-${TRACKED_PR}}"
+          fi
+
+          if [ -n "${INPUT_RELEASE_NAME}" ]; then
+            release="${INPUT_RELEASE_NAME}"
+          else
+            release="cstar-${INPUT_ENV:-${tag}}"
           fi
 
           # Version, to support helm packaging for non-pr based releases (workflow_dispatch). default to 1.0.0+github run number
-          version=1.0.0+${{ github.run_number }}
+          version="1.0.0+${RUN_NUMBER}"
 
           # Extract domain name for github host url
-          server=${{ vars.OC_SERVER }}
-          domain=$(echo "$server" | sed -E 's#https?://##; s#:[0-9]+##; s#^api\.#apps.#')
+          domain=$(echo "${OC_SERVER}" | sed -E 's#https?://##; s#:[0-9]+##; s#^api\.#apps.#')
 
           # Summary
           echo "tag=${tag}"
+          echo "migrations_digest=${migrations_digest}"
+          echo "backend_digest=${backend_digest}"
+          echo "frontend_digest=${frontend_digest}"
           echo "release=${release}"
           echo "version=${version}"
           echo "domain=${domain}"
@@ -152,6 +181,9 @@ jobs:
           # Output
           {
             echo "tag=${tag}"
+            echo "migrations_digest=${migrations_digest}"
+            echo "backend_digest=${backend_digest}"
+            echo "frontend_digest=${frontend_digest}"
             echo "release=${release}"
             echo "version=${version}"
             echo "domain=${domain}"
@@ -196,7 +228,11 @@ jobs:
 
             # Helm package
             sed -i 's/^name:.*/name: ${{ github.event.repository.name }}/' Chart.yaml
-            helm package -u . --app-version="tag-${{ steps.vars.outputs.tag }}_run-${{ github.run_number }}" --version=${{ steps.pr.outputs.pr || steps.vars.outputs.version }}
+            helm package -u . --app-version="tag-${{ steps.vars.outputs.tag || 'digest' }}_run-${{ github.run_number }}" --version=${{ steps.vars.outputs.version }}
+            DIGEST_ARGS=()
+            [ -z "${{ steps.vars.outputs.migrations_digest }}" ] || DIGEST_ARGS+=(--set-string "global.digests.migrations=${{ steps.vars.outputs.migrations_digest }}")
+            [ -z "${{ steps.vars.outputs.backend_digest }}" ] || DIGEST_ARGS+=(--set-string "global.digests.backend=${{ steps.vars.outputs.backend_digest }}")
+            [ -z "${{ steps.vars.outputs.frontend_digest }}" ] || DIGEST_ARGS+=(--set-string "global.digests.frontend=${{ steps.vars.outputs.frontend_digest }}")
             # print the values.yaml file to see the values being used
             # Helm upgrade/rollout
             helm upgrade \
@@ -224,6 +260,7 @@ jobs:
               --set-string frontend.link.workflow=${{ vars.LINK_WORKFLOW }} \
               --set-string global.repository=${{ github.repository }} \
               --set-string global.tag=${{ steps.vars.outputs.tag }} \
+              ${DIGEST_ARGS[@]+"${DIGEST_ARGS[@]}"} \
               --set-string global.config.databaseUser=${{ inputs.db_user }} \
               --set-string global.databaseAlias=${{ steps.deploy_crunchy.outputs.release }}-crunchy \
               --set-string global.loginProxy.clientId=${{ vars.LOGIN_PROXY_CLIENT_ID }} \
@@ -233,7 +270,7 @@ jobs:
               --install --wait ${{ inputs.atomic && '--atomic' || '' }} ${{ steps.vars.outputs.release }} \
               --timeout ${{ inputs.timeout-minutes }}m \
               --values ${{ inputs.values }} \
-              ./${{ github.event.repository.name }}-${{ steps.pr.outputs.pr || steps.vars.outputs.version }}.tgz
+              ./${{ github.event.repository.name }}-${{ steps.vars.outputs.version }}.tgz
 
             # Helm release history
             helm history ${{ steps.vars.outputs.release }}
