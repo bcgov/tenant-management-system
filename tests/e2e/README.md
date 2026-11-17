@@ -4,10 +4,15 @@ Playwright-based end-to-end tests for CSTAR.
 
 ## Isolated local tests (recommended)
 
-Open a terminal in the repository root, either inside the Dev Container or on
-your local machine. Inside the Dev Container, Docker in Docker must be available.
-On your local machine, Docker Desktop must be running and Node 24/npm must be
-installed. Run:
+Open a terminal in the repository root, either inside the Dev Container or in
+your local Linux environment. Inside the Dev Container, Docker in Docker must be
+available. For local runs, use Docker Engine (`docker.io`) with Docker Compose
+and Node 24/npm installed. If you use `docker.io` in WSL, run the commands from
+the WSL terminal.
+
+Check that `docker info` can reach the Docker daemon and that
+`docker compose version` reports an installed Compose version. Then run the
+tests.
 
 ```bash
 cd tests/e2e

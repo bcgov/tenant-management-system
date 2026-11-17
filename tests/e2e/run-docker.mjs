@@ -9,12 +9,12 @@ const isDown = process.argv[2] === 'down'
 const dockerLocations = {
   linux: ['/usr/bin/docker', '/usr/local/bin/docker'],
   darwin: ['/Applications/Docker.app/Contents/Resources/bin/docker'],
-  win32: ['C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe'],
+  win32: [String.raw`C:\Program Files\Docker\Docker\resources\bin\docker.exe`],
 }
 const fixedPaths = {
   linux: '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin',
   darwin: '/Applications/Docker.app/Contents/Resources/bin:/usr/bin:/bin:/usr/sbin:/sbin',
-  win32: 'C:\\Program Files\\Docker\\Docker\\resources\\bin;C:\\Windows\\System32;C:\\Windows',
+  win32: String.raw`C:\Program Files\Docker\Docker\resources\bin;C:\Windows\System32;C:\Windows`,
 }
 const dockerExecutable = dockerLocations[process.platform]?.find(existsSync)
 if (!dockerExecutable) {
