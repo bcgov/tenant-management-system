@@ -51,6 +51,7 @@ jobs:
       target: ${{ github.event.number || inputs.target }}
 
   cleanup-golddr-dev:
+    if: github.event_name != 'pull_request'
     name: Cleanup and Image Promotion - Golddr
     uses: ./.github/workflows/.pr-close.yml
     permissions:
@@ -86,6 +87,7 @@ jobs:
           oc_server: ${{ env.oc_server }}
 
   cleanup-db-golddr-dev: # TODO move it off to another action later.
+    if: github.event_name != 'pull_request'
     name: Remove DB User from Crunchy
     environment: golddr-dev
     runs-on: ubuntu-26.04
