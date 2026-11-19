@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Tenancy Management System API for BC Gov",
   "devDependencies": {
-    "@tsconfig/node24": "^24.0.5",
+    "@tsconfig/node26": "^26.0.0",
     "@types/cors": "^2.8.10",
     "@types/express": "^5.0.6",
     "@types/jest": "^30.0.0",
