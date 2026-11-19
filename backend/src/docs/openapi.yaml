@@ -396,12 +396,15 @@ paths:
           required: false
           schema:
             type: string
-            pattern: '^(groups|roles|sharedServices)(,(groups|roles|sharedServices))*$'
+            pattern: '^(groups|roles|sharedServices|groupSharedServices)(,(groups|roles|sharedServices|groupSharedServices))*$'
           description: |
             Comma-separated list of relations to expand. Valid values:
             - groups: Include groups the user belongs to
             - roles: Include tenant roles assigned to the user
             - sharedServices: Include shared services with their roles linked via user's groups
+            - groupSharedServices: Include groups the user belongs to, each with its shared services and roles
+
+            Only active shared services that the tenant uses are included. Headless calls only include the calling shared service.
 
             Multiple values can be provided as a comma-separated list (e.g., `groups,roles`).
             If not provided, returns only the basic tenant user information.
@@ -424,8 +427,16 @@ paths:
                               groups:
                                 type: array
                                 items:
-                                  $ref: '#/components/schemas/Group'
-                                description: Present only when expand=groups. List of groups the user belongs to.
+                                  allOf:
+                                    - $ref: '#/components/schemas/Group'
+                                    - type: object
+                                      properties:
+                                        sharedServices:
+                                          type: array
+                                          items:
+                                            $ref: '#/components/schemas/TenantUserSharedService'
+                                          description: Present only when expand=groupSharedServices. Shared services and roles the group gives.
+                                description: Present when expand=groups or expand=groupSharedServices. List of groups the user belongs to.
                               roles:
                                 type: array
                                 items:
@@ -434,60 +445,7 @@ paths:
                               sharedServices:
                                 type: array
                                 items:
-                                  type: object
-                                  properties:
-                                    id:
-                                      type: string
-                                      format: uuid
-                                      example: '5066c803-631d-4771-90f4-95f6393b11c1'
-                                    name:
-                                      type: string
-                                      example: 'Connected Service 3'
-                                    displayName:
-                                      type: string
-                                      example: 'Connected Service 3'
-                                    description:
-                                      type: string
-                                      nullable: true
-                                      example: 'Test Connected Service 22222222'
-                                    clientIdentifier:
-                                      type: string
-                                      example: 'chefs-frontend-5299'
-                                    landingPageUrl:
-                                      type: string
-                                      format: uri
-                                      example: 'https://chefs.gov.bc.ca'
-                                    isActive:
-                                      type: boolean
-                                      example: true
-                                    sharedServiceRoles:
-                                      type: array
-                                      items:
-                                        type: object
-                                        properties:
-                                          id:
-                                            type: string
-                                            format: uuid
-                                            example: 'cae96cec-a693-4b16-b051-f7e56d310137'
-                                          name:
-                                            type: string
-                                            example: 'Role3'
-                                          description:
-                                            type: string
-                                            nullable: true
-                                            example: 'Role3'
-                                          allowedIdentityProviders:
-                                            type: array
-                                            items:
-                                              type: string
-                                              enum:
-                                                [
-                                                  'idir',
-                                                  'azureidir',
-                                                  'bceidbusiness',
-                                                ]
-                                            nullable: true
-                                            example: ['bceidbusiness']
+                                  $ref: '#/components/schemas/TenantUserSharedService'
                                 description: Present only when expand=sharedServices. List of shared services the user has access to through group memberships, with their associated roles.
         '400':
           description: Invalid input or expand values
@@ -3739,6 +3697,61 @@ paths:
 
 components:
   schemas:
+    TenantUserSharedService:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: '5066c803-631d-4771-90f4-95f6393b11c1'
+        name:
+          type: string
+          example: 'Connected Service 3'
+        displayName:
+          type: string
+          example: 'Connected Service 3'
+        description:
+          type: string
+          nullable: true
+          example: 'Test Connected Service 22222222'
+        clientIdentifier:
+          type: string
+          example: 'chefs-frontend-5299'
+        landingPageUrl:
+          type: string
+          format: uri
+          example: 'https://chefs.gov.bc.ca'
+        isActive:
+          type: boolean
+          example: true
+        sharedServiceRoles:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+                example: 'cae96cec-a693-4b16-b051-f7e56d310137'
+              name:
+                type: string
+                example: 'Role3'
+              description:
+                type: string
+                nullable: true
+                example: 'Role3'
+              allowedIdentityProviders:
+                type: array
+                items:
+                  type: string
+                  enum:
+                    [
+                      'idir',
+                      'azureidir',
+                      'bceidbusiness',
+                    ]
+                nullable: true
+                example: ['bceidbusiness']
     BasicUser:
       type: object
       required:

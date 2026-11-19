@@ -505,7 +505,7 @@ export default {
       expand: Joi.string()
         .optional()
         .pattern(
-          /^(groups|roles|sharedServices)(,(groups|roles|sharedServices))*$/,
+          /^(groups|roles|sharedServices|groupSharedServices)(,(groups|roles|sharedServices|groupSharedServices))*$/,
         ),
     }).optional(),
   },
