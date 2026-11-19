@@ -26,6 +26,7 @@ import {
   GetSharedServiceForGroupResultDto,
   GetSharedServiceRolesForGroupInputDto,
   GetTenantGroupsInputDto,
+  GetTenantUserSharedServiceRolesInputDto,
   GetUserGroupsWithSharedServiceRolesInputDto,
   GetUserGroupsWithSharedServiceRoleResultDto,
   GetUserGroupsWithSharedServiceRolesResultDto,
@@ -58,10 +59,48 @@ type SharedServiceRoleResult = Omit<
 type SharedServiceResult = {
   id: string
   name: string
+  displayName: string
   description: string | null
   clientIdentifier: string
+  landingPageUrl: string
   isActive: boolean
   sharedServiceRoles: SharedServiceRoleResult[]
+}
+
+type TenantUserGroupWithSharedServicesResult = TenantUserGroupResult & {
+  sharedServices: SharedServiceResult[]
+}
+
+const toSharedServiceResults = (
+  groupSharedServiceRoles: GroupSharedServiceRole[],
+): SharedServiceResult[] => {
+  const sharedServiceMap = new Map<string, SharedServiceResult>()
+  for (const { sharedServiceRole } of groupSharedServiceRoles) {
+    const sharedService = sharedServiceRole.sharedService
+    const serviceEntry = sharedServiceMap.get(sharedService.id) ?? {
+      id: sharedService.id,
+      name: sharedService.name,
+      displayName: sharedService.displayName,
+      description: sharedService.description,
+      clientIdentifier: sharedService.clientIdentifier,
+      landingPageUrl: sharedService.landingPageUrl,
+      isActive: sharedService.isActive,
+      sharedServiceRoles: [],
+    }
+    sharedServiceMap.set(sharedService.id, serviceEntry)
+    const roleExists = serviceEntry.sharedServiceRoles.some(
+      (existingRole) => existingRole.id === sharedServiceRole.id,
+    )
+    if (!roleExists) {
+      serviceEntry.sharedServiceRoles.push({
+        id: sharedServiceRole.id,
+        name: sharedServiceRole.name,
+        description: sharedServiceRole.description,
+        allowedIdentityProviders: sharedServiceRole.allowedIdentityProviders,
+      })
+    }
+  }
+  return Array.from(sharedServiceMap.values())
 }
 
 export class GroupRepository {
@@ -329,73 +368,73 @@ export class GroupRepository {
   }
 
   public async getTenantUserSharedServiceRoles(
-    tenantUserId: string,
+    input: GetTenantUserSharedServiceRolesInputDto,
     manager?: EntityManager,
   ) {
     const em = manager ?? getManager()
-    const sharedServiceRoles = await em
-      .createQueryBuilder(GroupUser, 'groupUser')
-      .leftJoinAndSelect('groupUser.group', 'group')
-      .leftJoinAndSelect(
-        'group.sharedServiceRoles',
-        'gssr',
-        'gssr.isDeleted = :isDeleted',
-        { isDeleted: false },
+    const groupSharedServiceRoles =
+      await this.findTenantUserGroupSharedServiceRoles(input, em)
+    return toSharedServiceResults(groupSharedServiceRoles)
+  }
+
+  public async getTenantUserGroupsWithSharedServices(
+    input: GetTenantUserSharedServiceRolesInputDto,
+    manager?: EntityManager,
+  ) {
+    const em = manager ?? getManager()
+    const [groups, groupSharedServiceRoles] = await Promise.all([
+      this.getTenantUserGroups(input.tenantUserId, em),
+      this.findTenantUserGroupSharedServiceRoles(input, em),
+    ])
+    return groups.map(
+      (group): TenantUserGroupWithSharedServicesResult => ({
+        ...group,
+        sharedServices: toSharedServiceResults(
+          groupSharedServiceRoles.filter((gssr) => gssr.group.id === group.id),
+        ),
+      }),
+    )
+  }
+
+  private async findTenantUserGroupSharedServiceRoles(
+    input: GetTenantUserSharedServiceRolesInputDto,
+    em: EntityManager,
+  ) {
+    const { tenantUserId, sharedServiceId } = input
+    const query = em
+      .createQueryBuilder(GroupSharedServiceRole, 'gssr')
+      .innerJoinAndSelect('gssr.group', 'group')
+      .innerJoin(
+        GroupUser,
+        'groupUser',
+        'groupUser.group.id = group.id AND groupUser.isDeleted = :isDeleted',
       )
-      .leftJoinAndSelect('gssr.sharedServiceRole', 'sharedServiceRole')
-      .leftJoinAndSelect('sharedServiceRole.sharedService', 'sharedService')
+      .innerJoinAndSelect(
+        'gssr.sharedServiceRole',
+        'sharedServiceRole',
+        'sharedServiceRole.isDeleted = :isDeleted',
+      )
+      .innerJoinAndSelect(
+        'sharedServiceRole.sharedService',
+        'sharedService',
+        'sharedService.isActive = :isActive',
+      )
+      .innerJoin(
+        TenantSharedService,
+        'tss',
+        'tss.tenant.id = group.tenant.id AND tss.sharedService.id = sharedService.id AND tss.isDeleted = :isDeleted',
+      )
       .where('groupUser.tenantUser.id = :tenantUserId', { tenantUserId })
-      .andWhere('groupUser.isDeleted = :isDeleted', { isDeleted: false })
-      .andWhere('sharedServiceRole.isDeleted = :isDeleted', {
+      .andWhere('gssr.isDeleted = :isDeleted', {
         isDeleted: false,
+        isActive: true,
       })
-      .getMany()
 
-    const sharedServiceMap = new Map<string, SharedServiceResult>()
+    if (sharedServiceId) {
+      query.andWhere('sharedService.id = :sharedServiceId', { sharedServiceId })
+    }
 
-    sharedServiceRoles.forEach((groupUser) => {
-      if (groupUser.group?.sharedServiceRoles) {
-        groupUser.group.sharedServiceRoles.forEach((gssr) => {
-          if (gssr.sharedServiceRole?.sharedService) {
-            const sharedService = gssr.sharedServiceRole.sharedService
-            const role = gssr.sharedServiceRole
-            const serviceId = sharedService.id
-
-            if (!sharedServiceMap.has(serviceId)) {
-              sharedServiceMap.set(serviceId, {
-                id: serviceId,
-                name: sharedService.name,
-                description: sharedService.description,
-                clientIdentifier: sharedService.clientIdentifier,
-                isActive: sharedService.isActive,
-                sharedServiceRoles: [],
-              })
-            }
-
-            const serviceEntry = sharedServiceMap.get(serviceId)
-            if (!serviceEntry) {
-              throw new UnexpectedStateError(
-                `Shared service aggregation failed for service: ${serviceId}`,
-              )
-            }
-            const roleExists = serviceEntry.sharedServiceRoles.some(
-              (existingRole) => existingRole.id === role.id,
-            )
-            if (!roleExists) {
-              const roleWithoutExcludedFields: SharedServiceRoleResult = {
-                id: role.id,
-                name: role.name,
-                description: role.description,
-                allowedIdentityProviders: role.allowedIdentityProviders,
-              }
-              serviceEntry.sharedServiceRoles.push(roleWithoutExcludedFields)
-            }
-          }
-        })
-      }
-    })
-
-    return Array.from(sharedServiceMap.values())
+    return query.orderBy('sharedServiceRole.name', 'ASC').getMany()
   }
 
   public async checkIfUserExistsInGroup(

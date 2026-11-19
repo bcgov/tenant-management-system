@@ -449,7 +449,17 @@ export class TenantService {
     const tenantUser: GetTenantUserResultDto =
       await tenantRepository.getTenantUser(input)
 
-    if (expand.includes('groups')) {
+    const rolesInput = {
+      tenantUserId: tenantUser.id,
+      sharedServiceId: req.isHeadlessAccess
+        ? req.headlessService?.id
+        : undefined,
+    }
+
+    if (expand.includes('groupSharedServices')) {
+      tenantUser.groups =
+        await groupRepository.getTenantUserGroupsWithSharedServices(rolesInput)
+    } else if (expand.includes('groups')) {
       tenantUser.groups = await groupRepository.getTenantUserGroups(
         tenantUser.id,
       )
@@ -457,7 +467,7 @@ export class TenantService {
 
     if (expand.includes('sharedServices')) {
       tenantUser.sharedServices =
-        await groupRepository.getTenantUserSharedServiceRoles(tenantUser.id)
+        await groupRepository.getTenantUserSharedServiceRoles(rolesInput)
     }
 
     return {

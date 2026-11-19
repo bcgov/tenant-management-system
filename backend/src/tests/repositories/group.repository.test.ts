@@ -783,48 +783,91 @@ describe('GroupRepository', () => {
   })
 
   describe('getTenantUserSharedServiceRoles', () => {
+    const sharedService = {
+      id: 'ss-1',
+      name: 'reporting',
+      displayName: 'Reporting',
+      description: null,
+      clientIdentifier: 'reporting-client',
+      landingPageUrl: 'https://reporting.gov.bc.ca',
+      isActive: true,
+    }
+    const viewerRole = {
+      id: 'ssr-1',
+      name: 'Viewer',
+      description: 'Can view',
+      allowedIdentityProviders: null,
+      sharedService,
+    }
+
     it("doesn't list the same shared service role twice when it comes from two groups", async () => {
-      const sharedServiceRole = {
-        id: 'ssr-1',
-        name: 'Viewer',
-        description: 'Can view',
-        allowedIdentityProviders: null,
-        sharedService: {
-          id: 'ss-1',
-          name: 'Reporting',
-          description: null,
-          clientIdentifier: 'reporting-client',
-          isActive: true,
-        },
-      }
       manager.createQueryBuilder.mockReturnValueOnce(
         createQueryBuilder({
           getMany: [
-            {
-              group: {
-                sharedServiceRoles: [{ sharedServiceRole }],
-              },
-            },
-            {
-              group: {
-                sharedServiceRoles: [{ sharedServiceRole }],
-              },
-            },
+            { group: { id: 'group-1' }, sharedServiceRole: viewerRole },
+            { group: { id: 'group-2' }, sharedServiceRole: viewerRole },
           ],
         }),
       )
 
       const result = await repo.getTenantUserSharedServiceRoles(
-        'tu-1',
+        { tenantUserId: 'tu-1' },
         asManager(manager),
       )
 
       expect(result).toEqual([
-        expect.objectContaining({
-          id: 'ss-1',
-          sharedServiceRoles: [expect.objectContaining({ id: 'ssr-1' })],
-        }),
+        {
+          ...sharedService,
+          sharedServiceRoles: [
+            {
+              id: 'ssr-1',
+              name: 'Viewer',
+              description: 'Can view',
+              allowedIdentityProviders: null,
+            },
+          ],
+        },
       ])
+    })
+
+    it('only includes active shared services the tenant still uses', async () => {
+      const qb = createQueryBuilder({ getMany: [] })
+      manager.createQueryBuilder.mockReturnValueOnce(qb)
+
+      await repo.getTenantUserSharedServiceRoles(
+        { tenantUserId: 'tu-1' },
+        asManager(manager),
+      )
+
+      expect(qb.innerJoinAndSelect).toHaveBeenCalledWith(
+        'sharedServiceRole.sharedService',
+        'sharedService',
+        'sharedService.isActive = :isActive',
+      )
+      expect(qb.innerJoin).toHaveBeenCalledWith(
+        expect.anything(),
+        'tss',
+        expect.stringContaining('tss.isDeleted = :isDeleted'),
+      )
+      expect(qb.andWhere).not.toHaveBeenCalledWith(
+        'sharedService.id = :sharedServiceId',
+        expect.anything(),
+      )
+    })
+
+    it('only includes the calling shared service when one is given', async () => {
+      const qb = createQueryBuilder({ getMany: [] })
+      manager.createQueryBuilder.mockReturnValueOnce(qb)
+
+      await repo.getTenantUserSharedServiceRoles(
+        { tenantUserId: 'tu-1', sharedServiceId: 'ss-1' },
+        asManager(manager),
+      )
+
+      expect(qb.andWhere).toHaveBeenCalledWith(
+        'sharedService.id = :sharedServiceId',
+        { sharedServiceId: 'ss-1' },
+      )
     })
 
     it('returns nothing for a user with no shared service access', async () => {
@@ -833,11 +876,110 @@ describe('GroupRepository', () => {
       )
 
       const result = await repo.getTenantUserSharedServiceRoles(
-        'tu-1',
+        { tenantUserId: 'tu-1' },
         asManager(manager),
       )
 
       expect(result).toEqual([])
+    })
+  })
+
+  describe('getTenantUserGroupsWithSharedServices', () => {
+    const groupRow = (id: string, name: string) => ({
+      group: {
+        id,
+        name,
+        description: null,
+        createdDateTime: new Date('2026-01-01'),
+        updatedDateTime: new Date('2026-01-02'),
+        createdBy: 'sso-1',
+        updatedBy: 'sso-1',
+      },
+    })
+    const roleRow = (groupId: string, roleId: string, roleName: string) => ({
+      group: { id: groupId },
+      sharedServiceRole: {
+        id: roleId,
+        name: roleName,
+        description: null,
+        allowedIdentityProviders: null,
+        sharedService: {
+          id: 'ss-1',
+          name: 'chefs',
+          displayName: 'CHEFS',
+          description: null,
+          clientIdentifier: 'chefs-client',
+          landingPageUrl: 'https://chefs.gov.bc.ca',
+          isActive: true,
+        },
+      },
+    })
+
+    it('lists each group with the shared services and roles it gives', async () => {
+      manager.createQueryBuilder
+        .mockReturnValueOnce(
+          createQueryBuilder({
+            getMany: [
+              groupRow('group-1', 'Designers'),
+              groupRow('group-2', 'Reviewers'),
+            ],
+          }),
+        )
+        .mockReturnValueOnce(
+          createQueryBuilder({
+            getMany: [
+              roleRow('group-1', 'ssr-1', 'designer'),
+              roleRow('group-2', 'ssr-2', 'reviewer'),
+            ],
+          }),
+        )
+
+      const result = await repo.getTenantUserGroupsWithSharedServices(
+        { tenantUserId: 'tu-1' },
+        asManager(manager),
+      )
+
+      expect(result).toEqual([
+        expect.objectContaining({
+          id: 'group-1',
+          name: 'Designers',
+          sharedServices: [
+            expect.objectContaining({
+              displayName: 'CHEFS',
+              sharedServiceRoles: [
+                expect.objectContaining({ name: 'designer' }),
+              ],
+            }),
+          ],
+        }),
+        expect.objectContaining({
+          id: 'group-2',
+          sharedServices: [
+            expect.objectContaining({
+              sharedServiceRoles: [
+                expect.objectContaining({ name: 'reviewer' }),
+              ],
+            }),
+          ],
+        }),
+      ])
+    })
+
+    it('keeps groups that give no roles, with no shared services', async () => {
+      manager.createQueryBuilder
+        .mockReturnValueOnce(
+          createQueryBuilder({ getMany: [groupRow('group-1', 'Empty')] }),
+        )
+        .mockReturnValueOnce(createQueryBuilder({ getMany: [] }))
+
+      const result = await repo.getTenantUserGroupsWithSharedServices(
+        { tenantUserId: 'tu-1' },
+        asManager(manager),
+      )
+
+      expect(result).toEqual([
+        expect.objectContaining({ id: 'group-1', sharedServices: [] }),
+      ])
     })
   })
 

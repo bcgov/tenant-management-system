@@ -630,9 +630,69 @@ describe('TenantService', () => {
       )
       expect(
         mockGroupRepository.getTenantUserSharedServiceRoles,
-      ).toHaveBeenCalledWith('tu-1')
+      ).toHaveBeenCalledWith({
+        tenantUserId: 'tu-1',
+        sharedServiceId: undefined,
+      })
       expect(result.data.tenantUser.groups).toEqual([{ id: 'group-1' }])
       expect(result.data.tenantUser.sharedServices).toEqual([{ id: 'ssr-1' }])
+    })
+
+    it('expands groups with their shared services when requested', async () => {
+      mockRepository.getTenantUser.mockResolvedValue({ id: 'tu-1' } as never)
+      mockGroupRepository.getTenantUserGroupsWithSharedServices.mockResolvedValue(
+        [{ id: 'group-1', sharedServices: [] }] as never,
+      )
+
+      const result = await service.getTenantUser(
+        asRequest({
+          params: { tenantId: 'tenant-1', tenantUserId: 'tu-1' },
+          query: { expand: 'roles,groupSharedServices,groups' },
+        }),
+      )
+
+      expect(
+        mockGroupRepository.getTenantUserGroupsWithSharedServices,
+      ).toHaveBeenCalledWith({
+        tenantUserId: 'tu-1',
+        sharedServiceId: undefined,
+      })
+      expect(mockGroupRepository.getTenantUserGroups).not.toHaveBeenCalled()
+      expect(result.data.tenantUser.groups).toEqual([
+        { id: 'group-1', sharedServices: [] },
+      ])
+    })
+
+    it('only returns the calling shared service roles for headless calls', async () => {
+      mockRepository.getTenantUser.mockResolvedValue({ id: 'tu-1' } as never)
+      mockGroupRepository.getTenantUserGroupsWithSharedServices.mockResolvedValue(
+        [] as never,
+      )
+      mockGroupRepository.getTenantUserSharedServiceRoles.mockResolvedValue(
+        [] as never,
+      )
+
+      await service.getTenantUser(
+        asRequest({
+          params: { tenantId: 'tenant-1', tenantUserId: 'tu-1' },
+          query: { expand: 'groupSharedServices,sharedServices' },
+          isHeadlessAccess: true,
+          headlessService: {
+            id: 'ss-notify',
+            name: 'notify',
+            displayName: 'Notify',
+            clientIdentifier: 'notify-client',
+          },
+        }),
+      )
+
+      const expected = { tenantUserId: 'tu-1', sharedServiceId: 'ss-notify' }
+      expect(
+        mockGroupRepository.getTenantUserGroupsWithSharedServices,
+      ).toHaveBeenCalledWith(expected)
+      expect(
+        mockGroupRepository.getTenantUserSharedServiceRoles,
+      ).toHaveBeenCalledWith(expected)
     })
   })
 })
