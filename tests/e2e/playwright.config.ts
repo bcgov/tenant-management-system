@@ -1,9 +1,11 @@
 import { defineConfig, devices } from '@playwright/test'
+import { mockSsoEnvironment } from './sso-env.mjs'
 
 const baseURL = process.env.BASE_URL || 'http://localhost:5173/'
 const baseUrl = new URL(baseURL)
+const isIsolatedRun = process.env.E2E_ISOLATED === 'true'
 const isLocalRun =
-  !process.env.CI &&
+  (isIsolatedRun || !process.env.CI) &&
   (baseUrl.hostname === 'localhost' || baseUrl.hostname === '127.0.0.1')
 const e2eKeycloakUrl = process.env.E2E_KEYCLOAK_URL ?? 'http://localhost:8082'
 const e2eKeycloakRealm = process.env.E2E_KEYCLOAK_REALM ?? 'standard'
@@ -11,8 +13,9 @@ const e2eAuthMode =
   process.env.E2E_AUTH_MODE ??
   (process.env.E2E_KEYCLOAK_USERNAME ? 'keycloak' : 'idir')
 
-const localBackendEnv: Record<string, string> =
-  e2eAuthMode === 'keycloak'
+const localBackendEnv: Record<string, string> = {
+  ...mockSsoEnvironment,
+  ...(e2eAuthMode === 'keycloak'
     ? {
         ISSUER: new URL(`/realms/${e2eKeycloakRealm}`, e2eKeycloakUrl).href,
         JWKS_URI: new URL(
@@ -21,7 +24,8 @@ const localBackendEnv: Record<string, string> =
         ).href,
         TMS_AUDIENCE: process.env.TMS_AUDIENCE ?? 'cstar-e2e',
       }
-    : {}
+    : {}),
+}
 
 export default defineConfig({
   testDir: './playwright_tests',
@@ -39,7 +43,7 @@ export default defineConfig({
           command: 'npm run dev',
           cwd: '../../backend',
           url: 'http://localhost:4144/v1/health',
-          reuseExistingServer: !process.env.CI,
+          reuseExistingServer: !isIsolatedRun && !process.env.CI,
           timeout: 120_000,
           env: localBackendEnv,
         },
@@ -47,7 +51,7 @@ export default defineConfig({
           command: 'npm run dev -- --host 0.0.0.0',
           cwd: '../../frontend',
           url: baseURL,
-          reuseExistingServer: !process.env.CI,
+          reuseExistingServer: !isIsolatedRun && !process.env.CI,
           timeout: 120_000,
         },
       ]

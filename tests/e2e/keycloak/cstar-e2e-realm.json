@@ -96,7 +96,7 @@
           "consentRequired": false,
           "config": {
             "claim.name": "idir_username",
-            "claim.value": "cstar-e2e-user",
+            "claim.value": "CHEFS.Testing",
             "jsonType.label": "String",
             "access.token.claim": "true",
             "id.token.claim": "true",
@@ -120,16 +120,16 @@
   },
   "users": [
     {
-      "username": "cstar-e2e-user",
+      "username": "CHEFS.Testing@gov.bc.ca",
       "enabled": true,
-      "email": "cstar-e2e@example.com",
+      "email": "chefs.testing@gov.bc.ca",
       "emailVerified": false,
-      "firstName": "CSTAR",
-      "lastName": "E2E User",
+      "firstName": "CHEFS",
+      "lastName": "Testing",
       "attributes": {
         "idir_user_guid": ["2363A17E91694DC1B8312794946417C3"],
         "identity_provider": ["idir"],
-        "display_name": ["CSTAR E2E User"]
+        "display_name": ["CHEFS Testing"]
       },
       "credentials": [
         {

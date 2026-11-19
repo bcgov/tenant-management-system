@@ -1,0 +1,14 @@
+**/node_modules
+**/.env
+**/.env.*
+**/dist
+**/coverage
+**/playwright-report
+**/test-results
+tests/e2e/support/user.json
+tests/e2e/support/e2e-user.json
+.git
+.aws
+.agents
+.codex
+**/*.log
