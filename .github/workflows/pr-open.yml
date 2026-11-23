@@ -12,6 +12,28 @@ concurrency:
 permissions: {}
 
 jobs:
+  changes:
+    name: Changes
+    permissions:
+      contents: read
+    runs-on: ubuntu-26.04
+    outputs:
+      triggered: ${{ steps.diff.outputs.triggered }}
+    steps:
+      - id: diff
+        uses: bcgov/actions/diff-triggers@6c8ac0469fcf0d826533bc526c90119b8f149884 # v0.13.0
+        with:
+          triggers: |
+            backend/
+            frontend/
+            migrations/
+            charts/
+            tests/
+            .github/workflows/pr-open.yml
+            .github/workflows/gold-dev.yml
+            .github/workflows/.deployer.yml
+            .github/workflows/.tests.yml
+
   builds:
     name: Builds
     permissions:
@@ -34,7 +56,8 @@ jobs:
 
   deploys-gold-dev:
     name: Deploys (${{ github.event.number }})
-    needs: [builds]
+    needs: [changes, builds]
+    if: needs.changes.outputs.triggered == 'true'
     uses: ./.github/workflows/gold-dev.yml
     secrets: inherit
     with:
@@ -86,7 +109,7 @@ jobs:
 
   results:
     name: PR Results
-    needs: [builds, deploys-gold-dev, tests, zap]
+    needs: [changes, builds, deploys-gold-dev, tests, zap]
     if: always()
     runs-on: ubuntu-26.04
     steps:
