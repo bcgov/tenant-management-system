@@ -68,5 +68,17 @@
   "engines": {
     "node": "26",
     "npm": "11"
-  }
+  },
+  "packageRules": [
+    {
+      "description": "Prevent renovate from bumping npm to latest; use engines",
+      "enabled": false,
+      "matchDepTypes": [
+        "engines"
+      ],
+      "matchPackageNames": [
+        "npm"
+      ]
+    }
+  ]
 }
