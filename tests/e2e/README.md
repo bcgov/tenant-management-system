@@ -7,7 +7,7 @@ Playwright-based end-to-end tests for CSTAR.
 Open a terminal in the repository root, either inside the Dev Container or in
 your local Linux environment. Inside the Dev Container, Docker in Docker must be
 available. For local runs, use Docker Engine (`docker.io`) with Docker Compose
-and Node 24/npm installed. If you use `docker.io` in WSL, run the commands from
+and Node/npm installed. If you use `docker.io` in WSL, run the commands from
 the WSL terminal.
 
 Check that `docker info` can reach the Docker daemon and that

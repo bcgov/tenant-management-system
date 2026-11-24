@@ -1,4 +1,4 @@
-FROM node:24.22.1-trixie
+FROM node:26.13.1-trixie
 
 # Keep installed browsers accessible after switching to the runtime user.
 ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
