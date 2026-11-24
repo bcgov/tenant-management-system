@@ -4,9 +4,9 @@ This page describes how a connected service can manage tenant users and groups o
 
 ## Overview
 
-**When this capability is turned on, a connected service can make changes in CSTAR on behalf of its signed-in user.**
+**When this capability is turned on, a connected service can view and change tenant users and groups in CSTAR on behalf of its signed-in user.**
 
-Without it, a connected service can only read from CSTAR. With it, the service can also make changes, such as adding a user to the tenant or to a group. The service sends the signed-in user's own token.
+Every request listed under [Available actions](#available-actions) requires the capability, including the requests that only view information. Without it, a connected service can make only the requests listed under [Connected-service token permissions](./authentication.md#connected-service-token-permissions). The service sends the signed-in user's own token.
 
 **CSTAR applies the same checks as in the CSTAR web app.**
 
@@ -33,7 +33,7 @@ CSTAR checks the connected service's setup on every request.
 | View the tenant | `GET /v1/tenants/{tenantId}` | Any tenant member. |
 | View the tenant's connected services | `GET /v1/tenants/{tenantId}/shared-services` | Any tenant member. |
 | View a group | `GET /v1/tenants/{tenantId}/groups/{groupId}` | Any tenant member. |
-| View a tenant user | `GET /v1/tenants/{tenantId}/users/{tenantUserId}` | Tenant owner or user admin. |
+| View a tenant user | `GET /v1/tenants/{tenantId}/users/{tenantUserId}` | Tenant owner or user admin. See [Tenant user details](#tenant-user-details). |
 | View a user's CSTAR roles | `GET /v1/tenants/{tenantId}/users/{tenantUserId}/roles` | Any tenant member. |
 | Search for people | `GET /v1/users/bcgovssousers/idir/search` and `/bceid/search` | Tenant owner or user admin. The `tenantId` query parameter is required. |
 | Add a user to the tenant | `POST /v1/tenants/{tenantId}/users` | Tenant owner or user admin. The new user receives the service user role only. |
@@ -50,6 +50,23 @@ The user is added to groups one at a time with the add group member request.
 **The group list includes every group in the tenant.**
 
 Once the capability is turned on, `GET /v1/tenants/{tenantId}/groups` returns every group in the tenant for IDIR users, not only the groups that hold the calling service's roles. The service can then offer the full list when adding a user to a group.
+
+## Tenant user details
+
+**A tenant user's details can include their groups and roles.**
+
+The `expand` query parameter of `GET /v1/tenants/{tenantId}/users/{tenantUserId}` accepts the following values, separated by commas.
+
+| Value | Adds |
+| --- | --- |
+| `roles` | The user's CSTAR roles. |
+| `groups` | The groups the user belongs to. |
+| `groupSharedServices` | The groups the user belongs to, each with the connected services and connected-service roles it gives. Replaces `groups` when both are requested. |
+| `sharedServices` | The user's connected-service roles from all of their groups combined. |
+
+**Only the calling service's roles are included.**
+
+Through a connected service, `groupSharedServices` and `sharedServices` include the calling service's roles only. In all cases, only active connected services that are associated with the tenant are included.
 
 ## Roles in other connected services
 

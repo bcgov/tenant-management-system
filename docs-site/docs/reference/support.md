@@ -15,6 +15,7 @@ The CSTAR web app is available at [https://connect.digital.gov.bc.ca/](https://c
 | Onboarding a connected service | The answers to the questions in [Getting started](../connected-service-integration/getting-started.md#preparation). |
 | Changing a connected service or its roles | The service name, the environment and the change required. |
 | Allowing a connected service to manage access | The service name, the environment and the reason. See [Managing access from a connected service](../connected-service-integration/managing-access.md). |
+| Allowing a connected service to use a service account | The service name, the environment and the service account's client ID. The client secret must never be included. See [Service accounts](../connected-service-integration/service-accounts.md). |
 | A tenant request that has not been decided | The tenant name and the date of the request. |
 | An unexpected error | See [Reporting an error](#reporting-an-error). |
 

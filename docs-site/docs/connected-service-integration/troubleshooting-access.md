@@ -51,8 +51,7 @@ The error for a mismatched user ID currently uses a different format: `{ "error"
 | `cannot be performed from a connected service` | The action is available in the CSTAR web app only. | Perform the action in the CSTAR web app. |
 | `required role: TMS.OPERATIONS_ADMIN` | The action is for operations admins only. | Contact the [CSTAR team](../reference/support.md). |
 | `not allowed to call CSTAR with a service account` | The service has not been permitted to use service accounts, or is inactive. | See [Service accounts](./service-accounts.md). |
-| `cannot be made with a service account` | Service accounts cannot make this request. | Use one of the requests listed in [Service accounts](./service-accounts.md#available-requests). |
-| `Service accounts can only read data` | A service account attempted a change. | Make the change on behalf of a signed-in user. |
+| `cannot be made with a service account` | Service accounts cannot make this request, including any request that would make a change. | Use one of the requests listed in [Service accounts](./service-accounts.md#available-requests), or make the change on behalf of a signed-in user. |
 | `Only service accounts can use this request` | The group members request was sent with a user token. | Get the group with `expand=groupUsers` instead. |
 
 ## A user has no roles

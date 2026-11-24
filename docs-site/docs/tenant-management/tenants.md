@@ -16,7 +16,7 @@ Separate tenants are appropriate only when two groups of people must be administ
 
 | Field | Required | Limit |
 | --- | --- | --- |
-| Name | Yes | 255 characters |
+| Name | Yes | 255 characters. Must not start or end with a space. |
 | Ministry name | Yes | 100 characters |
 | Description | No | 500 characters |
 
@@ -31,6 +31,10 @@ CSTAR refuses to create or rename a tenant if another tenant has the same name i
 **A tenant is created when an operations admin approves a tenant request.**
 
 The person who submitted the request becomes the first tenant owner. See [Tenant requests](./tenant-approval-workflow.md).
+
+**An operations admin can also create a tenant directly.**
+
+No tenant request is needed. The operations admin names the person who becomes the first tenant owner.
 
 ## Tenant owners
 

@@ -31,12 +31,13 @@ The connected service defines its roles, CSTAR stores them, and tenant owners an
 
 ## Optional capabilities
 
-**Two further capabilities are available when a connected service requires them.**
+**Three further capabilities are available when a connected service requires them.**
 
 | Capability | Purpose | Page |
 | --- | --- | --- |
 | Managing access from a connected service | Lets the service manage users and groups in its own screens, instead of directing administrators to the CSTAR web app. | [Managing access from a connected service](./managing-access.md) |
 | Tenant context assertions | Lets the service prove to another connected service which tenant a call is for. | [Tenant context assertions](./tenant-context-assertions.md) |
+| Service accounts | Lets the service read a tenant's groups and their members without a signed-in user. | [Service accounts](./service-accounts.md) |
 
 ## Related pages
 

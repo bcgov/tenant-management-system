@@ -12,7 +12,7 @@ The health check and the public signing keys are the only exceptions.
 Authorization: Bearer <access token>
 ```
 
-CSTAR checks the token's signature, issuer and expiry. It then reads two things from the token:
+CSTAR checks the token's signature, issuer and expiry. It then reads three claims from the token:
 
 | Claim | Used for |
 | --- | --- |

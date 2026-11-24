@@ -46,6 +46,10 @@ The person who requested the tenant receives the tenant owner, user admin and se
 
 CSTAR refuses to remove the tenant owner role from the last tenant owner, and refuses to remove the last tenant owner from the tenant.
 
+**Every tenant user holds at least one CSTAR role.**
+
+CSTAR refuses to remove a user's last CSTAR role.
+
 **BCeID Business users can hold the service user role only.**
 
 A BCeID Business user cannot be a tenant owner or user admin.
