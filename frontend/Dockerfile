@@ -15,7 +15,7 @@ RUN npm run build
 
 # -----------------------------------------------------------------------------
 
-FROM caddy:2.11.7-alpine
+FROM caddy:2.11.9-alpine
 
 RUN setcap -r /usr/bin/caddy
 
