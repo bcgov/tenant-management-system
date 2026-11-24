@@ -40,6 +40,7 @@ export const makeGroup = (overrides: Partial<Group> = {}): Group => {
     createdBy: overrides.createdBy ?? 'test-group-created-by',
     createdDate: overrides.createdDate ?? 'test-group-created-date',
     description: overrides.description ?? 'test-group-description',
+    groupServices: overrides.groupServices ?? [makeGroupService()],
     groupUsers: overrides.groupUsers ?? [makeGroupUser()],
     id: overrides.id ?? toGroupId('test-group-id'),
     name: overrides.name ?? 'test-group-name',
@@ -384,6 +385,7 @@ export const makeTenantRequestDetailFields = (
 
 export const makeUser = (overrides: Partial<User> = {}): User => {
   return new User({
+    groups: overrides.groups ?? [], // Leave empty, prevent recursion.
     id: overrides.id ?? toUserId('test-user-id'),
     roles: overrides.roles ?? [makeRole()],
     ssoUser: overrides.ssoUser ?? makeSsoUser(),
@@ -394,6 +396,7 @@ export const makeUserApiData = (
   overrides: Partial<UserApiData> = {},
 ): UserApiData => {
   return {
+    groups: overrides.groups ?? [], // Leave empty, prevent recursion.
     id: overrides.id ?? toUserId('api-user-id'),
     roles: overrides.roles ?? [makeRoleApiData()],
     ssoUser: overrides.ssoUser ?? makeSsoUserApiData(),

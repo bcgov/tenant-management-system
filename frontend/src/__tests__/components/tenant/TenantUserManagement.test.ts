@@ -21,7 +21,7 @@ import { toUserId, type User } from '@/models/user.model'
 const vuetify = createVuetify({ components, directives })
 
 const tenantUserTableStub = {
-  emits: ['remove-role', 'remove-user', 'roles-changed'],
+  emits: ['remove-role', 'remove-user', 'roles-changed', 'show-user-details'],
   name: 'TenantUserTable',
   props: ['isUserAdmin', 'roles', 'users'],
   template: `
@@ -32,6 +32,9 @@ const tenantUserTableStub = {
       <button @click="$emit('remove-user', users[0])">stub-remove-user</button>
       <button @click="$emit('roles-changed', users[0], ['roleId2', 'roleId3'], ['roleId1'])">
         stub-roles-changed
+      </button>
+      <button @click="$emit('show-user-details', users[0].id)">
+        stub-show-user-details
       </button>
     </div>
   `,
@@ -120,6 +123,23 @@ describe('TenantUserManagement', () => {
 
       expect(emitted()['remove-role']).toHaveLength(1)
       expect(emitted()['remove-role'][0]).toEqual(['userId1', 'roleId1'])
+    })
+
+    it('show-user-details event is forwarded', async () => {
+      const user = userEvent.setup()
+      const users = [makeUser({ id: toUserId('userId1') })]
+
+      const { emitted } = renderComponent({
+        isUserAdmin: true,
+        tenant: makeTenant({ users }),
+      })
+
+      await user.click(
+        screen.getByRole('button', { name: 'stub-show-user-details' }),
+      )
+
+      expect(emitted()['show-user-details']).toHaveLength(1)
+      expect(emitted()['show-user-details'][0]).toEqual(['userId1'])
     })
 
     it('add another user opens search', async () => {

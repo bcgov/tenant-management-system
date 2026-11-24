@@ -1,6 +1,11 @@
+import { Group } from '@/models/group.model'
 import { Role } from '@/models/role.model'
 import { SsoUser } from '@/models/ssouser.model'
-import { isIdpBceidBusiness, isIdpIdir } from '@/utils/identityProvider'
+import {
+  identityProviderToDisplay,
+  isIdpBceidBusiness,
+  isIdpIdir,
+} from '@/utils/identityProvider'
 
 export type UserId = string & { readonly __brand: 'UserId' }
 export const toUserId = (id: string): UserId => id as UserId
@@ -9,6 +14,7 @@ export const toUserId = (id: string): UserId => id as UserId
  * Configuration options required to instantiate a Service.
  */
 export type UserConfig = {
+  groups?: Group[]
   id: UserId
   roles: Role[]
   ssoUser: SsoUser
@@ -18,6 +24,11 @@ export type UserConfig = {
  * Represents a user in the system.
  */
 export class User {
+  /**
+   * The groups the user belongs to.
+   */
+  groups: Group[]
+
   /**
    * The unique identifier for the user.
    */
@@ -40,9 +51,20 @@ export class User {
    * @returns A new User instance.
    */
   constructor(config: UserConfig) {
+    this.groups = config.groups ?? []
     this.id = config.id
     this.roles = config.roles
     this.ssoUser = config.ssoUser
+  }
+
+  /**
+   * Gets the displayable name of the user's identity provider. For example,
+   * "IDIR" rather than "azureidir".
+   *
+   * @returns The user's identity provider, suitable for display.
+   */
+  getIdentityProvider(): string {
+    return identityProviderToDisplay(this.ssoUser.idpType)
   }
 
   /**

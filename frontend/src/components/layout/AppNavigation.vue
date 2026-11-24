@@ -3,6 +3,7 @@ import {
   mdiAccountGroupOutline,
   mdiAccountLockOutline,
   mdiAccountOutline,
+  mdiCardAccountDetailsOutline,
   mdiChevronLeft,
   mdiChevronRight,
   mdiCogOutline,
@@ -37,11 +38,13 @@ const railManual = ref<boolean | null>(null)
 const isRouteGroup = computed(() => !!routeGroupId.value)
 const isRouteSettings = computed(() => route.path.startsWith('/settings'))
 const isRouteTenant = computed(() => !!routeTenantId.value)
+const isRouteTenantUser = computed(() => !!routeTenantUserId.value)
 
 const rail = computed(() => railManual.value ?? mobile.value)
 
 const routeGroupId = computed(() => route.params.groupId)
 const routeTenantId = computed(() => route.params.tenantId)
+const routeTenantUserId = computed(() => route.params.userId)
 
 // --- Watchers and Effects ----------------------------------------------------
 
@@ -98,6 +101,14 @@ watch(mobile, () => {
           :to="`/tenants/${routeTenantId}/users`"
           title="Tenant users"
         />
+        <template v-if="isRouteTenantUser">
+          <v-list-item
+            :class="{ 'pl-10': !rail }"
+            :prepend-icon="mdiCardAccountDetailsOutline"
+            :to="`/tenants/${routeTenantId}/users/${routeTenantUserId}`"
+            title="User details"
+          />
+        </template>
         <v-list-item
           :class="{ 'pl-6': !rail }"
           :prepend-icon="mdiAccountGroupOutline"

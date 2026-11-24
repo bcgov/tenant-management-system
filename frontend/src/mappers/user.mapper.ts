@@ -1,9 +1,11 @@
+import { type GroupApiData, groupMapper } from '@/mappers/group.mapper'
 import { type RoleApiData, roleMapper } from '@/mappers/role.mapper'
 import { ssoUserMapper, type SsoUserApiData } from '@/mappers/ssouser.mapper'
 import { SsoUser, toSsoUserId } from '@/models/ssouser.model'
 import { User, type UserId, toUserId } from '@/models/user.model'
 import { type ApiEnvelope, type ApiEnvelopeUnkeyed } from '@/services/api'
 
+export type TenantUserApiEnvelope = ApiEnvelope<'tenantUser', UserApiData>
 export type UserApiEnvelope = ApiEnvelope<'user', UserApiData>
 export type UserListApiEnvelope = ApiEnvelope<'users', UserApiData[]>
 export type UserSearchListApiEnvelope = ApiEnvelopeUnkeyed<UserSearchApiData[]>
@@ -12,6 +14,11 @@ export type UserSearchListApiEnvelope = ApiEnvelopeUnkeyed<UserSearchApiData[]>
  * The shape of the data that comes from the API.
  */
 export type UserApiData = {
+  /**
+   * The greps the user is a member of, which may be undefined.
+   */
+  groups?: GroupApiData[]
+
   /**
    * Unique identifier for the user.
    */
@@ -66,13 +73,16 @@ export const userMapper = {
    * @returns A new User instance.
    */
   fromApiData: (apiData: UserApiData): User => {
+    const groups = Array.isArray(apiData.groups)
+      ? apiData.groups.map(groupMapper.fromApiData)
+      : []
     const roles = Array.isArray(apiData.roles)
       ? apiData.roles.map(roleMapper.fromApiData)
       : []
     const ssoUser = ssoUserMapper.fromApiData(apiData.ssoUser)
     const userId = apiData.id
 
-    return new User({ id: userId, roles, ssoUser: ssoUser })
+    return new User({ groups, id: userId, roles, ssoUser: ssoUser })
   },
 
   /**

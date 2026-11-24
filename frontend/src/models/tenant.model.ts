@@ -1,5 +1,5 @@
 import { type SsoUserId } from '@/models/ssouser.model'
-import { User } from '@/models/user.model'
+import { User, type UserId } from '@/models/user.model'
 import { ROLES } from '@/utils/constants'
 
 export type TenantId = string & { readonly __brand: 'TenantId' }
@@ -92,6 +92,16 @@ export class Tenant {
    */
   findUser(ssoUserId: SsoUserId): User | undefined {
     return this.users.find((user) => user.ssoUser.ssoUserId === ssoUserId)
+  }
+
+  /**
+   * Finds a user in the tenant's users array by their User ID.
+   *
+   * @param userId - The User ID of the user to find.
+   * @returns The User if found, or undefined if not found.
+   */
+  findUserById(userId: UserId): User | undefined {
+    return this.users.find((user) => user.id === userId)
   }
 
   /**
