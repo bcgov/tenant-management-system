@@ -49,15 +49,20 @@ When updating the Node version, all locations should be updated in the same PR. 
 | Backend build       | [Dockerfile](/backend/Dockerfile#L1)                     |
 | Backend runtime     | [Dockerfile](/backend/Dockerfile#L19)                    |
 | Frontend build      | [Dockerfile](/frontend/Dockerfile#L1)                    |
+| E2E tests           | [Dockerfile](/tests/e2e/Dockerfile#L1)                   |
 | Integration tests   | [Dockerfile](/tests/integration/mock-jwks/Dockerfile#L1) |
 
-When major version changes happen it is also necessary to update the backend for:
+When major version changes happen it is also necessary to update the backend and frontend for:
 
-| Use               | Location                                    |
-| ----------------- | ------------------------------------------- |
-| @tsconfig/nodeXX  | [package.json](/backend/package.json)       |
-| @types/node       | [package.json](/backend/package.json)       |
-| TypeScript config | [tsconfig.json](/backend/tsconfig.json#L14) |
+| Use               | Location                                                        |
+| ----------------- | --------------------------------------------------------------- |
+| @tsconfig/nodeXX  | Backend [package.json](/backend/package.json)                   |
+| @types/node       | Backend [package.json](/backend/package.json)                   |
+| engines           | Backend [package.json](/backend/package.json)                   |
+| TypeScript config | Backend [tsconfig.json](/backend/tsconfig.json#L15)             |
+| @tsconfig/nodeXX  | Frontend [package.json](/frontend/package.json)                 |
+| @types/node       | Frontend [package.json](/frontend/package.json)                 |
+| TypeScript config | Frontend [tsconfig.node.json](/frontend/tsconfig.node.json#L10) |
 
 ## Repository Configuration
 
