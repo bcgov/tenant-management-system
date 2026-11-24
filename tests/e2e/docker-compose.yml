@@ -2,7 +2,7 @@ name: cstar-e2e
 
 services:
   postgres:
-    image: postgres:17.10-bookworm
+    image: postgres:17.11-bookworm
     environment:
       POSTGRES_DB: cstar_e2e
       POSTGRES_USER: cstar_e2e
