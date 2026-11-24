@@ -138,5 +138,3 @@ export const createAppRouter = (
 
   return router
 }
-
-export default createAppRouter

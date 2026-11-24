@@ -3,10 +3,6 @@ import { GroupUser } from '@/models/groupuser.model'
 import { type ApiEnvelope } from '@/services/api'
 
 export type GroupUserApiEnvelope = ApiEnvelope<'groupUser', GroupUserApiData>
-export type GroupUserListApiEnvelope = ApiEnvelope<
-  'groupUsers',
-  GroupUserApiData[]
->
 
 import { type GroupUserId } from '@/models/groupuser.model'
 
