@@ -5,6 +5,7 @@ import { Role } from '../entities/Role'
 import { EntityManager, FindManyOptions, In } from 'typeorm'
 import { IdpType, TMSConstants } from '../common/tms.constants'
 import { TenantUserRole } from '../entities/TenantUserRole'
+import { GroupUser } from '../entities/GroupUser'
 import { NotFoundError } from '../errors/NotFoundError'
 import { ConflictError } from '../errors/ConflictError'
 import { UnexpectedStateError } from '../errors/UnexpectedStateError'
@@ -218,6 +219,11 @@ export class TenantRepository {
 
         const restoredTenantUser: TenantUser =
           await manager.save(softDeletedUser)
+        await this.clearPreviousAccess(
+          restoredTenantUser.id,
+          updatedBy,
+          manager,
+        )
 
         const restoredTenantUserWithRelations = await manager
           .createQueryBuilder(TenantUser, 'tu')
@@ -1170,6 +1176,11 @@ export class TenantRepository {
           softDeletedUser.updatedDateTime = new Date()
 
           existingTenantUser = await manager.save(softDeletedUser)
+          await this.clearPreviousAccess(
+            existingTenantUser.id,
+            updatedBy,
+            manager,
+          )
 
           const serviceUserRole = await this.findRoles(
             [TMSConstants.SERVICE_USER],
@@ -1311,6 +1322,28 @@ export class TenantRepository {
         updatedBy: deletedBy,
       })
       .where('id = :tenantUserId', { tenantUserId })
+      .execute()
+  }
+
+  private async clearPreviousAccess(
+    tenantUserId: string,
+    updatedBy: string,
+    manager: EntityManager,
+  ) {
+    await manager
+      .createQueryBuilder()
+      .update(TenantUserRole)
+      .set({ isDeleted: true, updatedBy })
+      .where('tenantUser.id = :tenantUserId', { tenantUserId })
+      .andWhere('isDeleted = :isDeleted', { isDeleted: false })
+      .execute()
+
+    await manager
+      .createQueryBuilder()
+      .update(GroupUser)
+      .set({ isDeleted: true, updatedBy })
+      .where('tenantUser.id = :tenantUserId', { tenantUserId })
+      .andWhere('isDeleted = :isDeleted', { isDeleted: false })
       .execute()
   }
 }

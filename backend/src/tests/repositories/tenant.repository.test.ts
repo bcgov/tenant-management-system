@@ -6,6 +6,8 @@ import { UnexpectedStateError } from '../../errors/UnexpectedStateError'
 import { getManager } from '../../common/db.connection'
 import { TMSConstants } from '../../common/tms.constants'
 import { SSOUser } from '../../entities/SSOUser'
+import { TenantUserRole } from '../../entities/TenantUserRole'
+import { GroupUser } from '../../entities/GroupUser'
 
 jest.mock('../../common/db.connection', () => ({
   getManager: jest.fn(),
@@ -286,11 +288,15 @@ describe('TenantRepository', () => {
       expect(result.roleAssignments.length).toBe(1)
     })
 
-    it('restores a soft-deleted tenant user when the tenant does not have an active membership', async () => {
+    it('restores a soft-deleted tenant user without their earlier roles and groups', async () => {
+      const clearRoles = createQueryBuilder()
+      const clearGroups = createQueryBuilder()
       manager.createQueryBuilder = jest
         .fn()
         .mockReturnValueOnce(createQueryBuilder({ getOne: null })) // getTenantIfUserDoesNotExistForTenant -> tenant is null
         .mockReturnValueOnce(createQueryBuilder({ getOne: { id: 'tu-1' } })) // findSoftDeletedTenantUser
+        .mockReturnValueOnce(clearRoles)
+        .mockReturnValueOnce(clearGroups)
         .mockReturnValueOnce(createQueryBuilder({ getOne: { id: 'tu-1' } })) // restoredTenantUserWithRelations
         .mockReturnValueOnce(createQueryBuilder({ getOne: null })) // assignUserRoles: getExistingRolesForUser
         .mockReturnValueOnce(createQueryBuilder({ getMany: [] })) // softDeletedRoleAssignments
@@ -304,6 +310,12 @@ describe('TenantRepository', () => {
       const result = await repo.addTenantUsers(input, asManager(manager))
 
       expect(result.tenantUserId).toBe('tu-1')
+      expect(clearRoles.update).toHaveBeenCalledWith(TenantUserRole)
+      expect(clearGroups.update).toHaveBeenCalledWith(GroupUser)
+      expect(clearGroups.where).toHaveBeenCalledWith(
+        'tenantUser.id = :tenantUserId',
+        { tenantUserId: 'tu-1' },
+      )
     })
 
     it('throws ConflictError when the user is already an active member', async () => {
@@ -1231,13 +1243,18 @@ describe('TenantRepository', () => {
       expect(result).toBeDefined()
     })
 
-    it('restores a soft-deleted membership and re-assigns the SERVICE_USER role', async () => {
+    it('restores a soft-deleted membership without earlier access and re-assigns the SERVICE_USER role', async () => {
+      const clearRoles = createQueryBuilder()
+      const clearGroups = createQueryBuilder()
+      manager.save.mockImplementationOnce(async (entity: unknown) => entity)
       manager.createQueryBuilder
         .mockReturnValueOnce(createQueryBuilder({ getOne: null })) // getTenantIfUserDoesNotExistForTenant -> null (membership exists or existed)
         .mockReturnValueOnce(createQueryBuilder({ getOne: null })) // getTenantUserBySsoId -> no active user
         .mockReturnValueOnce(
           createQueryBuilder({ getOne: { id: 'tu-1', isDeleted: true } }),
         ) // findSoftDeletedTenantUser
+        .mockReturnValueOnce(clearRoles)
+        .mockReturnValueOnce(clearGroups)
       manager.find.mockResolvedValueOnce([{ id: 'service-user-role' }])
       manager.createQueryBuilder
         .mockReturnValueOnce(createQueryBuilder({ getOne: null }))
@@ -1258,6 +1275,12 @@ describe('TenantRepository', () => {
       )
 
       expect(result).toBeDefined()
+      expect(clearRoles.update).toHaveBeenCalledWith(TenantUserRole)
+      expect(clearGroups.update).toHaveBeenCalledWith(GroupUser)
+      expect(clearGroups.set).toHaveBeenCalledWith({
+        isDeleted: true,
+        updatedBy: 'admin-1',
+      })
     })
 
     it('returns the existing active tenant user unchanged', async () => {
