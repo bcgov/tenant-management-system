@@ -6,16 +6,18 @@ import {
   openTenantsPage,
   openTenantServicesPage,
   openTenantUsersPage,
+  sharedPageVideoOptions,
   submitIdirSearch,
 } from '../support/tenant.fixture'
 
 let sharedPage: Page
 let sharedContext: BrowserContext
 
-test.beforeAll(async ({ browser }) => {
+test.beforeAll(async ({ browser }, testInfo) => {
   test.setTimeout(90_000)
   sharedContext = await browser.newContext({
     storageState: 'support/user.json',
+    ...sharedPageVideoOptions(testInfo),
   })
   await configureSsoSearch(sharedContext)
   sharedPage = await sharedContext.newPage()
@@ -83,24 +85,45 @@ test.describe.serial('Landing page tests', () => {
   test('Checks group creation && member addition && member removal', async () => {
     test.setTimeout(90_000)
     const page = sharedPage
-    await sharedPage.getByRole('link', { name: 'Groups', exact: true }).click()
-    await expect(sharedPage).toHaveURL(/\/tenants\/[^/]+\/groups$/, {
+    const groupName = `My Test Group ${Date.now()}`
+    await page.getByRole('link', { name: 'Groups', exact: true }).click()
+    await expect(page).toHaveURL(/\/tenants\/[^/]+\/groups$/, {
       timeout: 30_000,
     })
-    await sharedPage.getByRole('button', { name: 'Create a group' }).click()
-    await sharedPage
+    const groupsPath = new URL(page.url()).pathname
+    await page.getByRole('button', { name: 'Create a group' }).click()
+    const createDialog = page.getByRole('dialog')
+    await createDialog
       .getByRole('textbox', { name: 'Group name' })
-      .fill('My Test Group')
-    await sharedPage
+      .fill(groupName)
+    await createDialog
       .getByRole('textbox', { name: 'Group description' })
       .fill('Automation Test Group Description')
-    await sharedPage.getByLabel('Add me as a user to this group').check()
+    await createDialog.getByLabel('Add me as a user to this group').check()
     await expect(
-      sharedPage.getByRole('button', { name: 'Cancel' }),
+      createDialog.getByRole('button', { name: 'Cancel' }),
     ).toBeVisible()
-    await sharedPage.getByRole('button', { name: 'Create group' }).click()
-    await expect(sharedPage.getByText('My Test Group')).toBeVisible()
-    await sharedPage.getByText('My Test Group').click()
+    const [createResponse] = await Promise.all([
+      page.waitForResponse(
+        (response) =>
+          response.request().method() === 'POST' &&
+          new URL(response.url()).pathname.endsWith(groupsPath),
+        { timeout: 30_000 },
+      ),
+      createDialog.getByRole('button', { name: 'Create group' }).click(),
+    ])
+    expect(
+      createResponse.ok(),
+      `Create group returned HTTP ${createResponse.status()}`,
+    ).toBeTruthy()
+    await expect(createDialog).toBeHidden()
+    await expect(
+      page.getByRole('alert').filter({ hasText: /^Member added$/i }),
+    ).toBeVisible({ timeout: 15_000 })
+
+    const groupLink = page.getByRole('link', { name: groupName, exact: true })
+    await expect(groupLink).toBeVisible()
+    await groupLink.click()
     const rows = sharedPage.locator('tr.v-data-table__tr')
     await expect(rows).toHaveCount(1)
     await expect(rows.first()).toContainText('CHEFS')
