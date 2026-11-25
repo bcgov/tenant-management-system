@@ -147,7 +147,7 @@ const saveChanges = async () => {
     ...service,
     roles: service.roles.map((role) => ({
       ...role,
-      isEnabled: draft.value.get(role.id) ?? role.isEnabled,
+      isEnabled: draft.value.get(role.id),
     })),
   }))
 
