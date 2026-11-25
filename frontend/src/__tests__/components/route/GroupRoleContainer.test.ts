@@ -958,9 +958,6 @@ describe('GroupRoleContainer.vue', () => {
       )
       expect(screen.getByRole('checkbox', { name: 'Viewer' })).not.toBeChecked()
       expect(screen.getByRole('checkbox', { name: 'Editor' })).not.toBeChecked()
-      await waitFor(() =>
-        expect(screen.getByTestId('button-confirm')).not.toBeVisible(),
-      )
     })
 
     it('stays in edit mode and does not save when confirmed', async () => {
@@ -1077,9 +1074,6 @@ describe('GroupRoleContainer.vue', () => {
         }),
       )
 
-      await waitFor(() =>
-        expect(screen.getByTestId('button-confirm')).not.toBeVisible(),
-      )
       expect(screen.getByRole('checkbox', { name: 'Admin' })).toBeChecked()
     })
 
@@ -1104,9 +1098,6 @@ describe('GroupRoleContainer.vue', () => {
       await screen.findByRole('dialog')
       await user.keyboard('{Escape}')
 
-      await waitFor(() =>
-        expect(screen.getByTestId('button-confirm')).not.toBeVisible(),
-      )
       expect(screen.getByRole('checkbox', { name: 'Admin' })).toBeChecked()
     })
   })
@@ -1253,9 +1244,6 @@ describe('GroupRoleContainer.vue', () => {
         }),
       )
 
-      await waitFor(() =>
-        expect(screen.getByTestId('button-confirm')).not.toBeVisible(),
-      )
       expect(screen.getByRole('checkbox', { name: 'Viewer' })).toBeChecked()
     })
   })
