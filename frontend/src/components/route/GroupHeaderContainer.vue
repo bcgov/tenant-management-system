@@ -96,7 +96,7 @@ const init = async () => {
   }
 
   if (groupServicesResult.status === 'rejected') {
-    notification.error('Failed to load group servicess')
+    notification.error('Failed to load group services')
   }
 
   initialized.value = true

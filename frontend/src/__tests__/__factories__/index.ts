@@ -160,9 +160,7 @@ export const makeRoleApiData = (
   }
 }
 
-export const makeRoleOperationsAdmin = (
-  overrides: Partial<Role> = {},
-): Role => {
+const makeRoleOperationsAdmin = (overrides: Partial<Role> = {}): Role => {
   return makeRole({
     description: ROLES.OPERATIONS_ADMIN.title,
     name: ROLES.OPERATIONS_ADMIN.value,
