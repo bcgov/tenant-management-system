@@ -42,7 +42,7 @@ const dismiss = () => {
  * - Multiple notification types (success, error, warning, info)
  * - Manual removal capability
  */
-export const notification = {
+const notification = {
   /**
    * All current notification messages.
    *
