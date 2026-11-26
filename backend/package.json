@@ -10,7 +10,7 @@
     "@types/js-yaml": "^4.0.9",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^26.6.6",
-    "@types/supertest": "^2.0.11",
+    "@types/supertest": "^7.0.0",
     "@types/swagger-ui-express": "^4.1.2",
     "@typescript-eslint/eslint-plugin": "^8.57.1",
     "@typescript-eslint/parser": "^8.57.1",
@@ -27,7 +27,7 @@
     "typescript-7": "npm:typescript@7.0.2"
   },
   "dependencies": {
-    "@types/express-jwt": "^6.0.4",
+    "@types/express-jwt": "^7.0.0",
     "cls-rtracer": "^2.6.4",
     "cors": "^2.8.5",
     "express": "^5.2.1",
