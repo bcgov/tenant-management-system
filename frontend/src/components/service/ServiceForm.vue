@@ -102,7 +102,7 @@ const handleRemoveServiceRole = async (index: number) => {
 const handleSubmit = async () => {
   const [formResult, rolesValid] = await Promise.all([
     form.value?.validate(),
-    serviceRoleList.value?.validate() ?? Promise.resolve(true),
+    serviceRoleList.value?.validate(),
   ])
 
   if (formResult?.valid && rolesValid) {
@@ -140,7 +140,6 @@ const handleUpdateServiceRole = (
       <v-col cols="12" md="6">
         <v-text-field
           v-model="formData.name"
-          :maxlength="30"
           :rules="[rules.required, rules.maxLength(30), rules.notDuplicated]"
           required
         >
@@ -150,7 +149,6 @@ const handleUpdateServiceRole = (
       <v-col cols="12" md="6">
         <v-text-field
           v-model="formData.displayName"
-          :maxlength="100"
           :rules="[rules.required, rules.maxLength(100)]"
           required
         >
