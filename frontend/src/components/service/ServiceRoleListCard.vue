@@ -9,13 +9,13 @@ import { type ServiceRoleDetailFields } from '@/models/servicerole.model'
 
 const props = defineProps<{
   isDuplicateName: boolean
-  modelValue: ServiceRoleDetailFields
 }>()
 
 const emit = defineEmits<{
   (event: 'remove-role'): void
-  (event: 'update:modelValue', fields: ServiceRoleDetailFields): void
 }>()
+
+const model = defineModel<ServiceRoleDetailFields>({ required: true })
 
 // --- Component State ---------------------------------------------------------
 
@@ -43,21 +43,16 @@ watch(
 // --- Computed Values ---------------------------------------------------------
 
 const displayName = computed(() => {
-  return localData.value.name ? localData.value.name : 'New role'
+  return model.value.name ? model.value.name : 'New role'
 })
 
 const isComplete = computed(() => {
   return (
-    localData.value.description &&
-    localData.value.identityProviders.length > 0 &&
-    localData.value.name &&
+    model.value.description &&
+    model.value.identityProviders.length > 0 &&
+    model.value.name &&
     !props.isDuplicateName
   )
-})
-
-const localData = computed({
-  get: () => props.modelValue,
-  set: (value) => emit('update:modelValue', value),
 })
 
 // --- Validation Rules --------------------------------------------------------
@@ -88,16 +83,34 @@ const handleRemoveRole = () => {
 }
 
 const idpClearAll = () => {
-  localData.value.identityProviders = []
+  model.value = { ...model.value, identityProviders: [] }
 }
 
 const idpSelectAll = () => {
-  localData.value.identityProviders = IDENTITY_PROVIDERS.map((p) => p.value)
+  model.value = {
+    ...model.value,
+    identityProviders: IDENTITY_PROVIDERS.map((p) => p.value),
+  }
+}
+
+const updateName = (value: string) => {
+  model.value = { ...model.value, name: value }
+}
+
+const updateDescription = (value: string) => {
+  model.value = { ...model.value, description: value }
+}
+
+const updateIdentityProviders = (value: string[] | null) => {
+  model.value = {
+    ...model.value,
+    identityProviders: value as string[],
+  }
 }
 
 const validate = async () => {
   const result = await form.value?.validate()
-  const valid = result?.valid ?? false
+  const valid = !!result?.valid
 
   if (!valid) {
     isExpanded.value = true
@@ -147,15 +160,15 @@ defineExpose({ validate })
             <v-row>
               <v-text-field
                 ref="nameField"
-                v-model="localData.name"
                 :maxlength="30"
+                :model-value="model.name"
                 :rules="[
                   rules.required,
                   rules.maxLength(30),
                   rules.notDuplicated,
                 ]"
                 required
-                @update:model-value="localData = { ...localData, name: $event }"
+                @update:model-value="updateName"
               >
                 <template #label>
                   Role name <span class="text-error">*</span>
@@ -165,15 +178,13 @@ defineExpose({ validate })
 
             <v-row>
               <v-textarea
-                v-model="localData.description"
+                :model-value="model.description"
                 :rules="[rules.required, rules.maxLength(500)]"
                 counter="500"
                 rows="1"
                 auto-grow
                 required
-                @update:model-value="
-                  localData = { ...localData, description: $event }
-                "
+                @update:model-value="updateDescription"
               >
                 <template #label>
                   Description <span class="text-error">*</span>
@@ -185,7 +196,7 @@ defineExpose({ validate })
             <p>Choose which identity providers can use this role.</p>
 
             <v-input
-              :model-value="localData.identityProviders"
+              :model-value="model.identityProviders"
               :rules="[rules.idpRequired]"
               hide-details="auto"
             />
@@ -210,14 +221,12 @@ defineExpose({ validate })
             <v-checkbox
               v-for="provider in IDENTITY_PROVIDERS"
               :key="provider.value"
-              v-model="localData.identityProviders"
               :label="provider.label"
+              :model-value="model.identityProviders"
               :value="provider.value"
               density="comfortable"
               hide-details
-              @update:model-value="
-                localData = { ...localData, identityProviders: $event ?? [] }
-              "
+              @update:model-value="updateIdentityProviders"
             />
           </v-form>
         </v-card-text>

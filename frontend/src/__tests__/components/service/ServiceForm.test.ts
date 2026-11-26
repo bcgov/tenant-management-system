@@ -147,6 +147,20 @@ describe('ServiceForm.vue', () => {
       expect(await screen.findByText('Must be a valid URL')).toBeInTheDocument()
     })
 
+    it('shows an error when a field exceeds its maximum length', async () => {
+      const user = userEvent.setup()
+      renderComponent()
+
+      await fillServiceFields(user, { name: 'a'.repeat(31) })
+      await addRole(user)
+      await fillRole(user, 0, { description: 'Admins', name: 'Admin' })
+      await submit(user)
+
+      expect(
+        await screen.findByText('Must be 30 characters or less'),
+      ).toBeInTheDocument()
+    })
+
     it('shows an error when a field is only spaces', async () => {
       const user = userEvent.setup()
       renderComponent()
