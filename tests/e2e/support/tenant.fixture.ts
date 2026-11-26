@@ -1,16 +1,35 @@
 import {
   expect,
   test as base,
+  type BrowserContextOptions,
   type Locator,
   type Page,
   type Request,
+  type TestInfo,
 } from '@playwright/test'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
-import { join } from 'node:path'
+import { basename, join } from 'node:path'
 import { MINISTRIES } from '../../../frontend/src/utils/constants'
 
 type TenantFixtures = {
   getOrCreateApprovedTenant: (page: Page) => Promise<string>
+}
+
+export function sharedPageVideoOptions(
+  testInfo: TestInfo,
+): BrowserContextOptions {
+  if (!process.env.CI) return {}
+
+  // Playwright's video setting only applies to contexts it creates for tests.
+  return {
+    recordVideo: {
+      dir: join(
+        testInfo.project.outputDir,
+        'videos',
+        basename(testInfo.file, '.spec.ts'),
+      ),
+    },
+  }
 }
 
 export async function submitIdirSearch(page: Page): Promise<void> {
