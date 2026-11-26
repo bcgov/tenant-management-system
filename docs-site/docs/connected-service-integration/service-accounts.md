@@ -80,7 +80,7 @@ BC Gov SSO sets `azp` to the client that requested the token, and the connected 
 
 **Every other request is refused.**
 
-A request that would make a change is refused as read only. Any other request is refused with a message that lists the requests a service account can make.
+Any other request, including any request that would make a change, is refused with a message that lists the requests a service account can make.
 
 **The group members request is available to service accounts only.**
 
@@ -146,8 +146,7 @@ Member names and email addresses are personal information. This includes members
 | --- | --- | --- |
 | 401 | `Error occurred during authentication` | The token is invalid or expired, or the `aud` claim is not the service account client ID or the CSTAR web app's client ID. |
 | 403 | `This connected service is not allowed to call CSTAR with a service account. ...` | Ask an operations admin to turn on managing access and service accounts, or confirm the service is active. |
-| 403 | `Service accounts can only read data from CSTAR. ...` | The request would make a change. |
-| 403 | `This request cannot be made with a service account. ...` | Use one of the [available requests](#available-requests). |
+| 403 | `This request cannot be made with a service account. ...` | The request is not one of the [available requests](#available-requests). Changes are made on behalf of a signed-in user. |
 | 403 | `This tenant does not use {service}. ...` | A tenant owner associates the service with the tenant. |
 | 403 | `Only service accounts can use this request. ...` | The group members request was sent with a user token. |
 | 404 | `This group does not exist in this tenant. ...` | Check the group ID and the tenant ID. |

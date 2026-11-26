@@ -1,18 +1,20 @@
 import { describe, expect, it } from 'vitest'
 
-import { makeGroupUser } from '@/__tests__/__factories__'
+import { makeGroupService, makeGroupUser } from '@/__tests__/__factories__'
 
 import { Group, toGroupId } from '@/models/group.model'
 
 describe('Group model', () => {
   describe('constructor', () => {
     it('assigns properties', () => {
+      const groupServices = [makeGroupService()]
       const groupUsers = [makeGroupUser()]
 
       const group = new Group({
         createdBy: 'createdBy',
         createdDate: 'createdDate',
         description: 'description',
+        groupServices,
         groupUsers,
         id: toGroupId('id'),
         name: 'name',
@@ -21,6 +23,7 @@ describe('Group model', () => {
       expect(group.createdBy).toBe('createdBy')
       expect(group.createdDate).toBe('createdDate')
       expect(group.description).toBe('description')
+      expect(group.groupServices).toBe(groupServices)
       expect(group.groupUsers).toBe(groupUsers)
       expect(group.id).toBe('id')
       expect(group.name).toBe('name')
@@ -31,8 +34,9 @@ describe('Group model', () => {
         createdBy: 'createdBy',
         createdDate: 'createdDate',
         description: 'description',
-        id: toGroupId('id'),
+        groupServices: [],
         groupUsers: [],
+        id: toGroupId('id'),
         name: 'name',
       })
 

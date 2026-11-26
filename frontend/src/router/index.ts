@@ -67,14 +67,12 @@ const routes = [
             path: 'members',
             component: () =>
               import('@/components/route/GroupMemberContainer.vue'),
-
             props: true,
           },
           {
             path: 'roles',
             component: () =>
               import('@/components/route/GroupRoleContainer.vue'),
-
             props: true,
           },
         ],
@@ -88,6 +86,12 @@ const routes = [
       {
         path: 'users',
         component: () => import('@/components/route/TenantUserContainer.vue'),
+        props: true,
+      },
+      {
+        path: 'users/:userId',
+        component: () =>
+          import('@/components/route/TenantUserDetailsContainer.vue'),
         props: true,
       },
     ],

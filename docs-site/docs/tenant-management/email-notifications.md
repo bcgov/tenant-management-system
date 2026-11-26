@@ -24,6 +24,7 @@ This page lists the emails CSTAR sends and who receives them. It is intended for
 - the connected-service roles held by a group change
 - a group is created or renamed
 - a connected service is associated with a tenant
+- a person removes themselves from a tenant, or adds or removes themselves from a group
 
 **One action produces one email.**
 

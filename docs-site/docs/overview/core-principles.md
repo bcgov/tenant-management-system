@@ -16,7 +16,7 @@ Terms used on this page are defined in the [Glossary](../reference/glossary.md).
 | 6 | Token-derived identity | CSTAR identifies the user from the signed token, not from the request. |
 | 7 | Minimum default access | Users and connected services receive the least access until it is extended. |
 | 8 | Consistent rules across channels | The same access rules apply in the CSTAR web app and through a connected service. |
-| 9 | Confirmation of cross-service access | Granting roles in other connected services through a connected service requires confirmation. |
+| 9 | Preventing unintended access to other connected services | Adding a user to a group through a connected service requires confirmation when it would give the user roles in other connected services. |
 | 10 | Tenant ownership continuity | Every tenant has at least one tenant owner at all times. |
 | 11 | Immediate effect of changes | Changes made in CSTAR apply to the next request. |
 | 12 | Notification and accountability | Users are notified of changes to their access, and each change is recorded against the person who made it. |
@@ -142,7 +142,7 @@ When access is removed, it should stop being effective as soon as possible.
 
 Users should be aware of changes to their own access. Administrators and auditors must be able to determine who made a change.
 
-- Users receive an email when they are added to or removed from a tenant or a group.
+- Users receive an email when another person adds them to or removes them from a tenant or a group.
 - Changes made through a connected service are recorded against the signed-in user, not the connected service.
 - Emails are sent after a change is saved. A failure to send an email does not prevent the change.
 

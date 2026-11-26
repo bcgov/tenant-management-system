@@ -59,52 +59,6 @@ beforeEach(() => {
 })
 
 describe('TenantUserTable', () => {
-  describe('Actions column', () => {
-    it('is displayed for user admin', () => {
-      const users = [
-        makeUserIdir({
-          ssoUser: makeSsoUser({
-            firstName: 'firstName',
-            lastName: 'lastName',
-          }),
-        }),
-      ]
-
-      renderComponent({ isUserAdmin: true, users })
-
-      expect(
-        screen.getByRole('columnheader', { name: 'Actions' }),
-      ).toBeInTheDocument()
-      expect(
-        screen.getByRole('button', {
-          name: 'Open menu for firstName lastName',
-        }),
-      ).toBeInTheDocument()
-    })
-
-    it('is not displayed for not user admin', () => {
-      const users = [
-        makeUserIdir({
-          ssoUser: makeSsoUser({
-            firstName: 'firstName',
-            lastName: 'lastName',
-          }),
-        }),
-      ]
-
-      renderComponent({ isUserAdmin: false, users })
-
-      expect(
-        screen.queryByRole('columnheader', { name: 'Actions' }),
-      ).not.toBeInTheDocument()
-      expect(
-        screen.queryByRole('button', {
-          name: 'Open menu for firstName lastName',
-        }),
-      ).not.toBeInTheDocument()
-    })
-  })
-
   describe('Table data', () => {
     it("renders a row with each user's details", () => {
       const users = [
@@ -403,6 +357,36 @@ describe('TenantUserTable', () => {
       expect(isVuetifyDisabled(removeItem)).toBe(false)
     })
 
+    it('is disabled when not a user admin', async () => {
+      const user = userEvent.setup()
+      const users = [
+        makeUserIdir({
+          roles: [makeRoleTenantOwner()],
+          ssoUser: makeSsoUser({
+            firstName: 'firstNameA',
+            lastName: 'lastNameA',
+          }),
+        }),
+        makeUserIdir({
+          roles: [makeRoleTenantOwner()],
+          ssoUser: makeSsoUser({
+            firstName: 'firstNameB',
+            lastName: 'lastNameB',
+          }),
+        }),
+      ]
+
+      renderComponent({ isUserAdmin: false, users: users })
+      await user.click(
+        screen.getByLabelText('Open menu for firstNameA lastNameA'),
+      )
+
+      const removeItem = screen.getByLabelText(
+        'Remove user firstNameA lastNameA',
+      )
+      expect(isVuetifyDisabled(removeItem)).toBe(true)
+    })
+
     it('is disabled when the user is the sole tenant owner', async () => {
       const user = userEvent.setup()
       const users = [
@@ -632,6 +616,208 @@ describe('TenantUserTable', () => {
 
       expect(screen.getByTestId('role-dialog')).toBeInTheDocument()
       expect(emitted()['roles-changed']).toBeUndefined()
+    })
+  })
+
+  describe('View user details action', () => {
+    it('is enabled for user admin', async () => {
+      const user = userEvent.setup()
+      const users = [
+        makeUserIdir({
+          roles: [makeRoleTenantOwner()],
+          ssoUser: makeSsoUser({
+            firstName: 'firstName',
+            lastName: 'lastName',
+          }),
+        }),
+      ]
+
+      renderComponent({ isUserAdmin: true, users: users })
+      await user.click(
+        screen.getByLabelText('Open menu for firstName lastName'),
+      )
+
+      const showDetailsItem = screen.getByLabelText(
+        'View user details for firstName lastName',
+      )
+      expect(isVuetifyDisabled(showDetailsItem)).toBe(false)
+    })
+
+    it('is enabled for non-user admin', async () => {
+      const user = userEvent.setup()
+      const users = [
+        makeUserIdir({
+          roles: [makeRoleTenantOwner()],
+          ssoUser: makeSsoUser({
+            firstName: 'firstName',
+            lastName: 'lastName',
+          }),
+        }),
+      ]
+
+      renderComponent({ isUserAdmin: false, users: users })
+      await user.click(
+        screen.getByLabelText('Open menu for firstName lastName'),
+      )
+
+      const showDetailsItem = screen.getByLabelText(
+        'View user details for firstName lastName',
+      )
+      expect(isVuetifyDisabled(showDetailsItem)).toBe(false)
+    })
+
+    describe('View user details action', () => {
+      it('is enabled for user admin', async () => {
+        const user = userEvent.setup()
+        const users = [
+          makeUserIdir({
+            roles: [makeRoleTenantOwner()],
+            ssoUser: makeSsoUser({
+              firstName: 'firstName',
+              lastName: 'lastName',
+            }),
+          }),
+        ]
+
+        renderComponent({ isUserAdmin: true, users })
+        await user.click(
+          screen.getByLabelText('Open menu for firstName lastName'),
+        )
+
+        const showDetailsItem = screen.getByLabelText(
+          'View user details for firstName lastName',
+        )
+        expect(isVuetifyDisabled(showDetailsItem)).toBe(false)
+      })
+
+      it('is enabled for non-user admin', async () => {
+        const user = userEvent.setup()
+        const users = [
+          makeUserIdir({
+            roles: [makeRoleTenantOwner()],
+            ssoUser: makeSsoUser({
+              firstName: 'firstName',
+              lastName: 'lastName',
+            }),
+          }),
+        ]
+
+        renderComponent({ isUserAdmin: false, users })
+        await user.click(
+          screen.getByLabelText('Open menu for firstName lastName'),
+        )
+
+        const showDetailsItem = screen.getByLabelText(
+          'View user details for firstName lastName',
+        )
+        expect(isVuetifyDisabled(showDetailsItem)).toBe(false)
+      })
+
+      it('emits show-user-details with the selected user id', async () => {
+        const user = userEvent.setup()
+        const users = [
+          makeUserIdir({
+            id: toUserId('a'),
+            roles: [makeRoleTenantOwner()],
+            ssoUser: makeSsoUser({
+              firstName: 'firstNameA',
+              lastName: 'lastNameA',
+            }),
+          }),
+          makeUserIdir({
+            id: toUserId('b'),
+            roles: [makeRoleUserAdmin()],
+            ssoUser: makeSsoUser({
+              firstName: 'firstNameB',
+              lastName: 'lastNameB',
+            }),
+          }),
+        ]
+
+        const { emitted } = renderComponent({ isUserAdmin: true, users })
+        await user.click(
+          screen.getByLabelText('Open menu for firstNameB lastNameB'),
+        )
+        await user.click(
+          screen.getByLabelText('View user details for firstNameB lastNameB'),
+        )
+
+        expect(emitted()['show-user-details']).toHaveLength(1)
+        expect(emitted()['show-user-details'][0]).toEqual([toUserId('b')])
+      })
+
+      it('emits show-user-details for a non-user admin', async () => {
+        const user = userEvent.setup()
+        const users = [
+          makeUserIdir({
+            id: toUserId('a'),
+            roles: [makeRoleServiceUser()],
+            ssoUser: makeSsoUser({
+              firstName: 'firstName',
+              lastName: 'lastName',
+            }),
+          }),
+        ]
+
+        const { emitted } = renderComponent({ isUserAdmin: false, users })
+        await user.click(
+          screen.getByLabelText('Open menu for firstName lastName'),
+        )
+        await user.click(
+          screen.getByLabelText('View user details for firstName lastName'),
+        )
+
+        expect(emitted()['show-user-details']).toHaveLength(1)
+        expect(emitted()['show-user-details'][0]).toEqual([toUserId('a')])
+      })
+
+      it('does not emit any events just by opening the menu', async () => {
+        const user = userEvent.setup()
+        const users = [
+          makeUserIdir({
+            roles: [makeRoleUserAdmin()],
+            ssoUser: makeSsoUser({
+              firstName: 'firstName',
+              lastName: 'lastName',
+            }),
+          }),
+        ]
+
+        const { emitted } = renderComponent({ isUserAdmin: true, users })
+        await user.click(
+          screen.getByLabelText('Open menu for firstName lastName'),
+        )
+
+        expect(emitted()['show-user-details']).toBeUndefined()
+        expect(emitted()['remove-user']).toBeUndefined()
+        expect(emitted()['roles-changed']).toBeUndefined()
+      })
+
+      it('does not open the role dialog or a confirmation dialog', async () => {
+        const user = userEvent.setup()
+        const users = [
+          makeUserIdir({
+            roles: [makeRoleUserAdmin()],
+            ssoUser: makeSsoUser({
+              firstName: 'firstName',
+              lastName: 'lastName',
+            }),
+          }),
+        ]
+
+        renderComponent({ isUserAdmin: true, users })
+        await user.click(
+          screen.getByLabelText('Open menu for firstName lastName'),
+        )
+        await user.click(
+          screen.getByLabelText('View user details for firstName lastName'),
+        )
+
+        expect(screen.queryByTestId('role-dialog')).not.toBeInTheDocument()
+        expect(
+          screen.queryByText('Confirm user removal'),
+        ).not.toBeInTheDocument()
+      })
     })
   })
 })

@@ -1,28 +1,20 @@
 <script setup lang="ts">
 import {
+  mdiAccountCircleOutline,
   mdiClose,
   mdiDeleteOutline,
   mdiDotsVertical,
   mdiMagnify,
-  mdiPencil,
+  mdiPencilOutline,
 } from '@mdi/js'
 import { computed, ref } from 'vue'
 
 import RoleDialog from '@/components/tenant/RoleDialog.vue'
 import SimpleDialog from '@/components/ui/SimpleDialog.vue'
 import { type Role, type RoleId } from '@/models/role.model'
-import { type User } from '@/models/user.model'
+import { type User, type UserId } from '@/models/user.model'
 import { ROLES } from '@/utils/constants'
 import { identityProviderToDisplay } from '@/utils/identityProvider'
-
-// --- Types & Interfaces ------------------------------------------------------
-
-type TableHeaderItem = {
-  align?: 'center' | 'end' | 'start'
-  key: string
-  sortable?: boolean
-  title: string
-}
 
 // --- Component Interface -----------------------------------------------------
 
@@ -37,6 +29,7 @@ const emit = defineEmits<{
   'remove-role': [User, Role]
   'remove-user': [User]
   'roles-changed': [User, RoleId[], RoleId[]]
+  'show-user-details': [UserId]
 }>()
 
 // --- Component State ---------------------------------------------------------
@@ -61,52 +54,6 @@ const userFilterField = ref<{ focus: () => void } | null>(null)
 
 // --- Computed Values ---------------------------------------------------------
 
-const headers = computed(() => {
-  const tableHeaderItems: TableHeaderItem[] = [
-    {
-      align: 'start',
-      key: 'ssoUser.firstName',
-      sortable: true,
-      title: 'First name',
-    },
-    {
-      align: 'start',
-      key: 'ssoUser.lastName',
-      sortable: true,
-      title: 'Last name',
-    },
-    {
-      align: 'start',
-      key: 'ssoUser.email',
-      sortable: true,
-      title: 'Email',
-    },
-    {
-      align: 'start',
-      key: 'ssoUser.idpType',
-      sortable: false,
-      title: 'Identity provider',
-    },
-    {
-      align: 'start',
-      key: 'roles',
-      sortable: false,
-      title: 'Tenant roles',
-    },
-  ]
-
-  if (isUserAdmin) {
-    tableHeaderItems.push({
-      align: 'center',
-      key: 'actions',
-      sortable: false,
-      title: 'Actions',
-    })
-  }
-
-  return tableHeaderItems
-})
-
 const moreThanOneTenantOwner = computed(() => {
   return (
     users.filter((user) =>
@@ -116,6 +63,10 @@ const moreThanOneTenantOwner = computed(() => {
 })
 
 // --- Component Methods -------------------------------------------------------
+
+const canEditRoles = (): boolean => {
+  return isUserAdmin
+}
 
 const canRemoveRole = (item: User, role: Role): boolean => {
   if (item.roles.length <= 1) {
@@ -136,6 +87,10 @@ const canRemoveRole = (item: User, role: Role): boolean => {
 }
 
 const canRemoveUser = (user: User): boolean => {
+  if (!isUserAdmin) {
+    return false
+  }
+
   return (
     moreThanOneTenantOwner.value ||
     !user.roles.some((r: Role) => r.name === ROLES.TENANT_OWNER.value)
@@ -175,6 +130,10 @@ const handleRolesChanged = (
   rolesToRemove: RoleId[],
 ) => {
   emit('roles-changed', user, rolesToAdd, rolesToRemove)
+}
+
+const handleShowUserDetails = (userId: UserId) => {
+  emit('show-user-details', userId)
 }
 
 const handleUserFilterClear = () => {
@@ -228,7 +187,44 @@ const showRemoveUserDialog = (user: User) => {
 
   <v-data-table
     :header-props="{ class: 'bg-surface-light font-weight-bold' }"
-    :headers="headers"
+    :headers="[
+      {
+        align: 'start',
+        key: 'ssoUser.firstName',
+        sortable: true,
+        title: 'First name',
+      },
+      {
+        align: 'start',
+        key: 'ssoUser.lastName',
+        sortable: true,
+        title: 'Last name',
+      },
+      {
+        align: 'start',
+        key: 'ssoUser.email',
+        sortable: true,
+        title: 'Email',
+      },
+      {
+        align: 'start',
+        key: 'ssoUser.idpType',
+        sortable: false,
+        title: 'Identity provider',
+      },
+      {
+        align: 'start',
+        key: 'roles',
+        sortable: false,
+        title: 'Tenant roles',
+      },
+      {
+        align: 'center',
+        key: 'actions',
+        sortable: false,
+        title: 'Actions',
+      },
+    ]"
     :items="users"
     :search="userFilter"
     :sort-by="[{ key: 'ssoUser.firstName' }]"
@@ -279,10 +275,11 @@ const showRemoveUserDialog = (user: User) => {
         <v-list>
           <v-list-item
             :aria-label="`Edit tenant roles for ${item.getName()}`"
+            :disabled="!canEditRoles()"
             @click="showEditRolesDialog(item)"
           >
             <v-list-item-title>
-              <v-icon :icon="mdiPencil" />
+              <v-icon :icon="mdiPencilOutline" />
               Edit tenant roles
             </v-list-item-title>
           </v-list-item>
@@ -307,6 +304,16 @@ const showRemoveUserDialog = (user: User) => {
               </span>
             </template>
           </v-tooltip>
+
+          <v-list-item
+            :aria-label="`View user details for ${item.getName()}`"
+            @click="handleShowUserDetails(item.id)"
+          >
+            <v-list-item-title>
+              <v-icon :icon="mdiAccountCircleOutline" />
+              View user details
+            </v-list-item-title>
+          </v-list-item>
         </v-list>
       </v-menu>
     </template>

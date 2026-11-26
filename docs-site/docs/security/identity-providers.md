@@ -26,6 +26,10 @@ A user has access to a tenant only after a tenant owner or user admin adds them.
 
 Tenant owners, user admins and operations admins must use IDIR. Tenant requests can be submitted by IDIR users only.
 
+**IDIR includes Azure IDIR.**
+
+A user who signs in through BC Gov SSO with Azure IDIR is treated as an IDIR user throughout CSTAR.
+
 **Only IDIR users can manage access through a connected service.**
 
 See [Managing access from a connected service](../connected-service-integration/managing-access.md).

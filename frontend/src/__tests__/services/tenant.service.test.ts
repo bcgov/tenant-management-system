@@ -291,6 +291,57 @@ describe('tenantService', () => {
     })
   })
 
+  describe('getUser', () => {
+    it('should correctly call the api', async () => {
+      mockGet.mockResolvedValueOnce({ data: {} })
+
+      await tenantService.getUser(toTenantId('tenantId'), toUserId('userId'))
+
+      expect(mockGet).toHaveBeenCalledWith(
+        '/tenants/tenantId/users/userId?expand=groups,groupSharedServices,roles',
+      )
+    })
+
+    it('should correctly return data', async () => {
+      const tenantUser = {
+        id: toUserId('userId'),
+        roles: [
+          makeRoleApiData({
+            description: 'roleDescription',
+            id: toRoleId('roleId'),
+            name: 'roleName',
+          }),
+        ],
+        ssoUser: makeSsoUserApiData({
+          displayName: 'ssoUserDisplayName',
+          ssoUserId: toSsoUserId('ssoUserId'),
+        }),
+      }
+      mockGet.mockResolvedValueOnce({ data: { tenantUser } })
+
+      const result = await tenantService.getUser(
+        toTenantId('tenantId'),
+        toUserId('userId'),
+      )
+
+      expect(result).toBe(tenantUser)
+    })
+
+    it('should log and rethrow errors', async () => {
+      const error = new Error('User not found in tenant')
+      mockGet.mockRejectedValueOnce(error)
+
+      await expect(
+        tenantService.getUser(toTenantId('tenantId'), toUserId('userId')),
+      ).rejects.toThrow(error)
+
+      expect(mockedUtils.logApiError).toHaveBeenCalledWith(
+        'Error getting tenant users',
+        error,
+      )
+    })
+  })
+
   describe('getUserRoles', () => {
     it('should correctly call the api', async () => {
       mockGet.mockResolvedValueOnce({ data: {} })

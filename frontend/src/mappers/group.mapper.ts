@@ -1,4 +1,8 @@
 import {
+  type GroupServiceApiData,
+  groupServiceMapper,
+} from '@/mappers/groupservice.mapper'
+import {
   type GroupUserApiData,
   groupUserMapper,
 } from '@/mappers/groupuser.mapper'
@@ -47,6 +51,11 @@ export type GroupApiData = {
   /**
    * The array of group users associated with this group, may be undefined.
    */
+  sharedServices?: GroupServiceApiData[]
+
+  /**
+   * The array of group users associated with this group, may be undefined.
+   */
   users?: GroupUserApiData[]
 }
 
@@ -64,6 +73,9 @@ export const groupMapper = {
    * @returns A new Group instance.
    */
   fromApiData: (apiData: GroupApiData): Group => {
+    const groupServices = Array.isArray(apiData.sharedServices)
+      ? apiData.sharedServices.map(groupServiceMapper.fromApiData)
+      : []
     const groupUsers = Array.isArray(apiData.users)
       ? apiData.users.map(groupUserMapper.fromApiData)
       : []
@@ -72,6 +84,7 @@ export const groupMapper = {
       createdBy: apiData.createdByDisplayName || apiData.createdBy,
       createdDate: apiData.createdDateTime,
       description: apiData.description,
+      groupServices,
       groupUsers,
       id: apiData.id,
       name: apiData.name,

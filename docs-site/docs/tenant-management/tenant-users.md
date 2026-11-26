@@ -21,7 +21,7 @@ A person who signs in to CSTAR or to a connected service has no access to a tena
 
 **Tenant owners and user admins add users to the tenant.**
 
-The person is found in the BC Gov SSO directory. IDIR users can be found by first name, last name or email. BCeID Business users can be found by display name or username.
+The person is found in the BC Gov SSO directory. IDIR users can be found by first name, last name or email. BCeID Business users can be found by display name, username or email.
 
 - An IDIR user must be given at least one CSTAR role when they are added.
 - A BCeID Business user always receives the service user role.
@@ -37,7 +37,7 @@ The person receives an email listing the tenant, their CSTAR roles and any group
 
 **Tenant owners and user admins can assign and remove CSTAR roles at any time.**
 
-CSTAR refuses to remove the tenant owner role from the last tenant owner.
+CSTAR refuses to remove the tenant owner role from the last tenant owner. CSTAR also refuses to remove a user's last CSTAR role, because every tenant user holds at least one CSTAR role.
 
 **CSTAR roles do not affect access to connected services.**
 
@@ -51,9 +51,13 @@ Removing a user:
 
 - removes them from every group in the tenant
 - removes all of their access to the tenant's connected services
-- sends them an email confirming the removal
+- sends them an email confirming the removal, unless they removed themselves
 
-CSTAR refuses to remove the last tenant owner. A removed user can be added to the tenant again later.
+CSTAR refuses to remove the last tenant owner.
+
+**A removed user can be added to the tenant again.**
+
+Adding the user again does not restore their earlier CSTAR roles, groups or connected-service access. The CSTAR roles and groups are chosen again when the user is added.
 
 ## Related pages
 

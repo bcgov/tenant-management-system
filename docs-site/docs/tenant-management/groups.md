@@ -37,7 +37,7 @@ Adding a user to such a group gives them access in every one of those connected 
 
 - Adding a person who is not yet a tenant user also adds them to the tenant, with the service user role.
 - Adding a user who is already a member is refused.
-- The person receives an email when they are added to or removed from a group. See [Email notifications](./email-notifications.md).
+- The person receives an email when another person adds them to or removes them from a group. See [Email notifications](./email-notifications.md).
 
 **Removing a user from a group removes only the roles that group provided.**
 

@@ -33,6 +33,7 @@ const emit = defineEmits<{
   'remove-user': [UserId]
   'roles-changed': [User, RoleId[], RoleId[]]
   search: [IdirSearchType, string]
+  'show-user-details': [UserId]
 }>()
 
 // --- Component State ---------------------------------------------------------
@@ -110,6 +111,10 @@ const handleSearch = (searchType: IdirSearchType, searchText: string) => {
   emit('search', searchType, searchText)
 }
 
+const handleShowUserDetails = (userId: UserId) => {
+  emit('show-user-details', userId)
+}
+
 const handleUserSelected = (user: User | null) => {
   selectedUser.value = user
 }
@@ -133,6 +138,7 @@ const toggleSearch = () => {
     @remove-role="handleRemoveRole"
     @remove-user="handleRemoveUser"
     @roles-changed="handleRolesChanged"
+    @show-user-details="handleShowUserDetails"
   />
 
   <v-row v-if="isUserAdmin && !showSearch">

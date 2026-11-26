@@ -5,6 +5,7 @@ import { createApp } from 'vue'
 import App from '@/App.vue'
 import '@/assets/styles/global.css'
 import { useNotification } from '@/composables/useNotification'
+import { NotFoundError } from '@/errors/domain/NotFoundError'
 import vuetify from '@/plugins/vuetify'
 import { createAppRouter } from '@/router'
 import { ConfigError, loadConfig } from '@/services/config.service'
@@ -20,13 +21,20 @@ export const initializeApp = async () => {
   app.use(vuetify)
 
   app.config.errorHandler = (error) => {
-    // Log the error for debugging, as it could be something unexpected like a
-    // change in what the API is returning.
-    logger.error('Application Error', error)
-
     // Display a notification to the user.
     const notification = useNotification()
-    notification.error('An unexpected error occurred')
+
+    if (error instanceof NotFoundError) {
+      // If the error is due to an entity not being found, the user message will
+      // be defined.
+      logger.error('Not Found Error', error)
+      notification.error(error.userMessage)
+    } else {
+      // Log the error for debugging, as it could be something unexpected like a
+      // change in what the API is returning.
+      logger.error('Application Error', error)
+      notification.error('An unexpected error occurred')
+    }
   }
 
   const authStore = useAuthStore()
