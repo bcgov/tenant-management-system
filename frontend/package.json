@@ -31,7 +31,7 @@
     "@testing-library/user-event": "14.6.13",
     "@testing-library/vue": "8.1.0",
     "@tsconfig/node26": "26.0.2",
-    "@types/jsdom": "21.1.7",
+    "@types/jsdom": "30.0.0",
     "@types/node": "26.6.6",
     "@typescript-eslint/eslint-plugin": "8.73.0",
     "@typescript-eslint/parser": "8.73.0",
