@@ -6,16 +6,18 @@ import {
   openTenantsPage,
   openTenantServicesPage,
   openTenantUsersPage,
+  sharedPageVideoOptions,
   submitIdirSearch,
 } from '../support/tenant.fixture'
 
 let sharedPage: Page
 let sharedContext: BrowserContext
 
-test.beforeAll(async ({ browser }) => {
+test.beforeAll(async ({ browser }, testInfo) => {
   test.setTimeout(90_000)
   sharedContext = await browser.newContext({
     storageState: 'support/user.json',
+    ...sharedPageVideoOptions(testInfo),
   })
   await configureSsoSearch(sharedContext)
   sharedPage = await sharedContext.newPage()

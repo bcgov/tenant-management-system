@@ -148,7 +148,18 @@ jobs:
         if: failure()
         with:
           name: playwright-screenshots
-          path: tests/e2e/test-results
+          path: |
+            tests/e2e/test-results
+            !tests/e2e/test-results/**/*.webm
+          retention-days: 7
+
+      - name: Upload Playwright videos
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: playwright-videos
+          path: tests/e2e/test-results/**/*.webm
+          if-no-files-found: ignore
           retention-days: 7
 
   load-tests:

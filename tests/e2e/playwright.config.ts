@@ -77,7 +77,7 @@ export default defineConfig({
         baseURL,
         headless: true,
         storageState: 'support/user.json',
-        video: 'retain-on-failure',
+        video: process.env.CI ? 'on' : 'retain-on-failure',
         screenshot: 'only-on-failure',
         trace: 'retain-on-failure',
         ignoreHTTPSErrors: true,

@@ -1,13 +1,18 @@
 import { test, expect, type Page, type BrowserContext } from '@playwright/test'
-import { openAppPage, openTenantsPage } from '../support/tenant.fixture'
+import {
+  openAppPage,
+  openTenantsPage,
+  sharedPageVideoOptions,
+} from '../support/tenant.fixture'
 
 let sharedPage: Page
 let sharedContext: BrowserContext
 
-test.beforeAll(async ({ browser }) => {
+test.beforeAll(async ({ browser }, testInfo) => {
   test.setTimeout(90_000)
   sharedContext = await browser.newContext({
     storageState: 'support/user.json',
+    ...sharedPageVideoOptions(testInfo),
   })
   sharedPage = await sharedContext.newPage()
   await openTenantsPage(sharedPage)
@@ -67,6 +72,16 @@ test.describe.serial('Landing page tests', () => {
       .getByText(/tenant request submitted/i)
       .click()
     await expect(snackbarTenantRequestSubmitted).toBeHidden()
+
+    const pendingRequestCard = sharedPage.locator('.v-card').filter({
+      has: sharedPage.getByText(tenantNameValue, { exact: true }),
+    })
+    await expect(
+      sharedPage.getByRole('heading', { name: 'Pending tenant requests' }),
+    ).toBeVisible()
+    await expect(
+      pendingRequestCard.getByText('Pending Approval', { exact: true }),
+    ).toBeVisible()
 
     await openAppPage(
       sharedPage,
