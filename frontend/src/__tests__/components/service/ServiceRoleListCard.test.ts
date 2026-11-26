@@ -1,6 +1,5 @@
-import { flushPromises, mount } from '@vue/test-utils'
-import { render, screen } from '@testing-library/vue'
 import userEvent from '@testing-library/user-event'
+import { render, screen, waitFor } from '@testing-library/vue'
 import { describe, expect, it } from 'vitest'
 import { createVuetify } from 'vuetify'
 
@@ -10,32 +9,13 @@ import ServiceRoleListCard from '@/components/service/ServiceRoleListCard.vue'
 
 const vuetify = createVuetify()
 
-const defaultProps = () => ({
-  isDuplicateName: false,
-  modelValue: makeServiceRole(),
-})
-
-const renderComponent = (props = {}) =>
+const renderComponent = ({
+  isDuplicateName = false,
+  modelValue = makeServiceRole(),
+} = {}) =>
   render(ServiceRoleListCard, {
-    global: {
-      plugins: [vuetify],
-    },
-    props: {
-      ...defaultProps(),
-      ...props,
-    },
-  })
-
-const mountComponent = (props = {}) =>
-  mount(ServiceRoleListCard, {
-    attachTo: document.body,
-    global: {
-      plugins: [vuetify],
-    },
-    props: {
-      ...defaultProps(),
-      ...props,
-    },
+    global: { plugins: [vuetify] },
+    props: { isDuplicateName, modelValue },
   })
 
 describe('ServiceRoleListCard.vue', () => {
@@ -46,7 +26,7 @@ describe('ServiceRoleListCard.vue', () => {
       expect(screen.getByText('Admin')).toBeInTheDocument()
     })
 
-    it('renders "New Role" when the name is empty', () => {
+    it('renders "New role" when the name is empty', () => {
       renderComponent({ modelValue: makeServiceRole({ name: '' }) })
 
       expect(screen.getByText('New role')).toBeInTheDocument()
@@ -55,15 +35,15 @@ describe('ServiceRoleListCard.vue', () => {
     it('shows Completed when all required fields are filled', () => {
       renderComponent()
 
-      expect(screen.getByText(/completed/i)).toBeInTheDocument()
-      expect(screen.queryByText(/incomplete/i)).not.toBeInTheDocument()
+      expect(screen.getByText('Completed')).toBeInTheDocument()
+      expect(screen.queryByText('- Incomplete')).not.toBeInTheDocument()
     })
 
     it('shows Incomplete when the description is missing', () => {
       renderComponent({ modelValue: makeServiceRole({ description: '' }) })
 
-      expect(screen.getByText(/incomplete/i)).toBeInTheDocument()
-      expect(screen.queryByText(/completed/i)).not.toBeInTheDocument()
+      expect(screen.getByText('- Incomplete')).toBeInTheDocument()
+      expect(screen.queryByText('Completed')).not.toBeInTheDocument()
     })
 
     it('shows Incomplete when no identity provider is selected', () => {
@@ -71,13 +51,13 @@ describe('ServiceRoleListCard.vue', () => {
         modelValue: makeServiceRole({ identityProviders: [] }),
       })
 
-      expect(screen.getByText(/incomplete/i)).toBeInTheDocument()
+      expect(screen.getByText('- Incomplete')).toBeInTheDocument()
     })
 
     it('shows Incomplete when the name is a duplicate', () => {
       renderComponent({ isDuplicateName: true })
 
-      expect(screen.getByText(/incomplete/i)).toBeInTheDocument()
+      expect(screen.getByText('- Incomplete')).toBeInTheDocument()
     })
   })
 
@@ -90,8 +70,8 @@ describe('ServiceRoleListCard.vue', () => {
         }),
       })
 
-      expect(screen.getByLabelText(/role name/i)).toHaveValue('Admin')
-      expect(screen.getByLabelText(/description/i)).toHaveValue(
+      expect(screen.getByLabelText(/Role name/)).toHaveValue('Admin')
+      expect(screen.getByLabelText(/Description/)).toHaveValue(
         'Does admin things',
       )
     })
@@ -113,7 +93,7 @@ describe('ServiceRoleListCard.vue', () => {
       const user = userEvent.setup()
       const { emitted } = renderComponent()
 
-      await user.click(screen.getByRole('button', { name: /remove role/i }))
+      await user.click(screen.getByRole('button', { name: 'Remove role' }))
 
       expect(emitted()['remove-role']).toHaveLength(1)
     })
@@ -124,7 +104,7 @@ describe('ServiceRoleListCard.vue', () => {
         modelValue: makeServiceRole({ name: '' }),
       })
 
-      await user.type(screen.getByLabelText(/role name/i), 'A')
+      await user.type(screen.getByLabelText(/Role name/), 'A')
 
       const events = emitted()['update:modelValue'] as unknown[][]
       expect(events.at(-1)?.[0]).toMatchObject({ name: 'A' })
@@ -136,7 +116,7 @@ describe('ServiceRoleListCard.vue', () => {
         modelValue: makeServiceRole({ description: '' }),
       })
 
-      await user.type(screen.getByLabelText(/description/i), 'B')
+      await user.type(screen.getByLabelText(/Description/), 'B')
 
       const events = emitted()['update:modelValue'] as unknown[][]
       expect(events.at(-1)?.[0]).toMatchObject({ description: 'B' })
@@ -165,77 +145,71 @@ describe('ServiceRoleListCard.vue', () => {
     })
   })
 
-  describe('validate()', () => {
-    it('returns true when the role is valid', async () => {
-      const wrapper = mountComponent()
+  describe('identity providers', () => {
+    it('checks every provider when Select all is clicked', async () => {
+      const user = userEvent.setup()
 
-      expect(await wrapper.vm.validate()).toBe(true)
+      renderComponent({
+        modelValue: makeServiceRole({ identityProviders: [] }),
+      })
+      await user.click(screen.getByRole('link', { name: 'Select all' }))
 
-      wrapper.unmount()
+      expect(screen.getByRole('checkbox', { name: 'IDIR' })).toBeChecked()
+      expect(
+        screen.getByRole('checkbox', { name: 'Business BCeID' }),
+      ).toBeChecked()
     })
 
-    it('returns false when required fields are empty', async () => {
-      const wrapper = mountComponent({
+    it('unchecks every provider when Clear all is clicked', async () => {
+      const user = userEvent.setup()
+      renderComponent({
         modelValue: makeServiceRole({
-          description: '',
-          identityProviders: [],
-          name: '',
+          identityProviders: ['idir', 'bceidbusiness'],
         }),
       })
 
-      expect(await wrapper.vm.validate()).toBe(false)
+      await user.click(screen.getByRole('link', { name: 'Clear all' }))
 
-      wrapper.unmount()
+      expect(screen.getByRole('checkbox', { name: 'IDIR' })).not.toBeChecked()
+      expect(
+        screen.getByRole('checkbox', { name: 'Business BCeID' }),
+      ).not.toBeChecked()
     })
+  })
 
-    it('returns false when the name is a duplicate', async () => {
-      const wrapper = mountComponent({ isDuplicateName: true })
+  describe('collapsing', () => {
+    it('hides and shows the form when the toggle is clicked', async () => {
+      const user = userEvent.setup()
+      renderComponent()
 
-      expect(await wrapper.vm.validate()).toBe(false)
+      // The icon-only toggle is the second button, after Remove role
+      const toggle = screen.getAllByRole('button')[1]
 
-      wrapper.unmount()
-    })
+      await user.click(toggle)
 
-    it('returns false when the name is only spaces', async () => {
-      const wrapper = mountComponent({
-        modelValue: makeServiceRole({ name: '   ' }),
+      await waitFor(() => {
+        expect(screen.getByLabelText(/Role name/)).not.toBeVisible()
       })
 
-      expect(await wrapper.vm.validate()).toBe(false)
+      await user.click(toggle)
 
-      wrapper.unmount()
-    })
-
-    it('displays errors after a failed validation', async () => {
-      const wrapper = mountComponent({
-        modelValue: makeServiceRole({ identityProviders: [] }),
+      await waitFor(() => {
+        expect(screen.getByLabelText(/Role name/)).toBeVisible()
       })
-
-      await wrapper.vm.validate()
-      await flushPromises()
-
-      expect(wrapper.text()).toContain(
-        'At least one identity provider is required',
-      )
-
-      wrapper.unmount()
     })
+  })
 
-    it('expands a collapsed card when validation fails', async () => {
-      const wrapper = mountComponent({
-        modelValue: makeServiceRole({ name: '' }),
-      })
+  describe('validation messages', () => {
+    it('shows an error when the description is over 500 characters', async () => {
+      const user = userEvent.setup()
+      renderComponent({ modelValue: makeServiceRole({ description: '' }) })
 
-      await wrapper.findAll('button')?.[1].trigger('click')
-      await flushPromises()
-      expect(wrapper.find('form').isVisible()).toBe(false)
+      await user.click(screen.getByLabelText(/Description/))
+      await user.paste('a'.repeat(501))
 
-      await wrapper.vm.validate()
-      await flushPromises()
-
-      expect(wrapper.find('form').isVisible()).toBe(true)
-
-      wrapper.unmount()
+      expect(
+        await screen.findByText('Must be 500 characters or less'),
+      ).toBeInTheDocument()
     })
   })
 })

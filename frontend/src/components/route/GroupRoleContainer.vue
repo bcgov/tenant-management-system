@@ -5,9 +5,7 @@ import { useRouter } from 'vue-router'
 import ButtonPrimary from '@/components/ui/ButtonPrimary.vue'
 import ButtonSecondary from '@/components/ui/ButtonSecondary.vue'
 import ButtonTertiary from '@/components/ui/ButtonTertiary.vue'
-import SimpleDialog, {
-  type DialogButton,
-} from '@/components/ui/SimpleDialog.vue'
+import SimpleDialog from '@/components/ui/SimpleDialog.vue'
 import { useNotification } from '@/composables/useNotification'
 import { type GroupId } from '@/models/group.model'
 import { type GroupService } from '@/models/groupservice.model'
@@ -36,57 +34,10 @@ const tenantStore = useTenantStore()
 
 const draft = ref<Map<GroupServiceRoleId, boolean>>(new Map())
 const editing = ref(false)
-const promptAction = ref<'undo' | 'clear' | null>(null)
-const promptToContinue = ref(false)
+const showClearAllDialog = ref(false)
+const showRevertDialog = ref(false)
 
 // --- Computed Values ---------------------------------------------------------
-
-const dialogButtons = computed(() => {
-  const buttons: DialogButton[] = [
-    {
-      action: 'cancel',
-      text: 'Cancel',
-      type: 'secondary',
-    },
-    {
-      action: 'confirm',
-      text: promptAction.value === 'clear' ? 'Clear all' : 'Revert',
-      type: 'primary',
-    },
-  ]
-
-  return buttons
-})
-
-const dialogText = computed(() => {
-  if (promptAction.value === 'undo') {
-    return (
-      "You're about to undo your current selections and restore the " +
-      'previously assigned roles. Are you sure you want to continue?'
-    )
-  } else if (promptAction.value === 'clear') {
-    return (
-      "You're about to delete all of your current role selections. Are " +
-      'you sure you want to continue?'
-    )
-  }
-
-  return ''
-})
-
-const dialogTitle = computed(() => {
-  if (promptAction.value === 'undo') {
-    return 'Revert to previous roles?'
-  } else if (promptAction.value === 'clear') {
-    return 'Delete all selections?'
-  }
-
-  return ''
-})
-
-const expanded = computed(() =>
-  groupStore.groupServices.map((service) => service.displayName.toLowerCase()),
-)
 
 const groupServices = computed(() => groupStore.groupServices)
 
@@ -121,25 +72,32 @@ const clearAll = () => {
   }
 }
 
-const handleDialogButtonClick = (action: string) => {
-  if (action === 'confirm') {
-    if (promptAction.value === 'undo') {
-      undoChanges()
-    } else if (promptAction.value === 'clear') {
-      clearAll()
-    }
+const handleClearAllDialogButtonClick = (action: string) => {
+  if (action === 'clear') {
+    clearAll()
   }
-  promptToContinue.value = false
-  promptAction.value = null
+
+  showClearAllDialog.value = false
+}
+
+const handleRevertDialogButtonClick = (action: string) => {
+  if (action === 'revert') {
+    undoChanges()
+  }
+
+  showRevertDialog.value = false
 }
 
 const navigateToServices = () => {
   void router.push(`/tenants/${tenantId}/services`)
 }
 
-const openDialog = (action: 'undo' | 'clear') => {
-  promptAction.value = action
-  promptToContinue.value = true
+const openClearAllDialog = () => {
+  showClearAllDialog.value = true
+}
+
+const openRevertDialog = () => {
+  showRevertDialog.value = true
 }
 
 const saveChanges = async () => {
@@ -147,7 +105,7 @@ const saveChanges = async () => {
     ...service,
     roles: service.roles.map((role) => ({
       ...role,
-      isEnabled: draft.value.get(role.id) ?? role.isEnabled,
+      isEnabled: draft.value.get(role.id),
     })),
   }))
 
@@ -242,11 +200,14 @@ const undoChanges = () => {
 
       <!-- Checkbox panels -->
       <v-col
-        v-for="(service, serviceIndex) in groupServices"
+        v-for="service in groupServices"
         :key="`col-service-${service.id}`"
         cols="6"
       >
-        <v-expansion-panels v-model="expanded[serviceIndex]" class="mb-4">
+        <v-expansion-panels
+          :model-value="service.displayName.toLowerCase()"
+          class="mb-4"
+        >
           <v-expansion-panel :value="service.displayName.toLowerCase()">
             <v-expansion-panel-title>{{
               service.displayName
@@ -261,7 +222,7 @@ const undoChanges = () => {
                 :model-value="editing ? draft.get(role.id) : role.isEnabled"
                 density="compact"
                 @update:model-value="
-                  (val: boolean | null) => draft.set(role.id, val ?? false)
+                  (val: boolean | null) => draft.set(role.id, !!val)
                 "
               />
             </v-expansion-panel-text>
@@ -283,7 +244,7 @@ const undoChanges = () => {
           :variant="editing ? 'outlined' : 'flat'"
           base-color="secondary"
           border="sm opacity-100"
-          @click="openDialog('clear')"
+          @click="openClearAllDialog"
         >
           Clear all
         </v-btn>
@@ -292,7 +253,7 @@ const undoChanges = () => {
           :disabled="!editing"
           class="mr-2"
           text="Undo changes"
-          @click="openDialog('undo')"
+          @click="openRevertDialog"
         />
 
         <ButtonPrimary :disabled="!editing" text="Save" @click="saveChanges" />
@@ -300,16 +261,27 @@ const undoChanges = () => {
     </v-row>
 
     <SimpleDialog
-      :buttons="dialogButtons"
-      :message="dialogText"
-      :model-value="promptToContinue"
-      :title="dialogTitle"
-      @button-click="handleDialogButtonClick"
-      @update:model-value="
-        (val: boolean) => {
-          promptToContinue = val
-        }
-      "
+      v-model="showClearAllDialog"
+      :buttons="[
+        { action: 'cancel', text: 'Cancel', type: 'secondary' },
+        { action: 'clear', text: 'Clear all', type: 'primary' },
+      ]"
+      message="You're about to delete all of your current role selections. Are
+        you sure you want to continue?"
+      title="Delete all selections?"
+      @button-click="handleClearAllDialogButtonClick"
+    />
+
+    <SimpleDialog
+      v-model="showRevertDialog"
+      :buttons="[
+        { action: 'cancel', text: 'Cancel', type: 'secondary' },
+        { action: 'revert', text: 'Revert', type: 'primary' },
+      ]"
+      message="You're about to undo your current selections and restore the
+        previously assigned roles. Are you sure you want to continue?"
+      title="Revert to previous roles?"
+      @button-click="handleRevertDialogButtonClick"
     />
   </v-container>
 </template>
