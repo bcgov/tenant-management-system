@@ -6,15 +6,15 @@ import { config } from './config.service'
 const REQUEST_TIMEOUT_MS = 5000
 const TOKEN_EXPIRY_BUFFER_MS = 30000
 
-export const NOTIFICATION_FROM_EMAIL = 'CSTAR@gov.bc.ca'
+const NOTIFICATION_FROM_EMAIL = 'CSTAR@gov.bc.ca'
 
-export interface ChesEmail {
+interface ChesEmail {
   to: string[]
   subject: string
   body: string
 }
 
-export interface ChesSendResult {
+interface ChesSendResult {
   msgId?: string
   txId?: string
 }

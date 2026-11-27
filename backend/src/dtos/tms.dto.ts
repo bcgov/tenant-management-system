@@ -117,7 +117,7 @@ export interface UpdateTenantRequestStatusInputDto {
   }
 }
 
-export interface UpdateTenantRequestTenantResultDto {
+interface UpdateTenantRequestTenantResultDto {
   id: string
   name: string
   ministryName: string
@@ -151,7 +151,7 @@ export interface UpdateTenantRequestStatusResultDto {
   tenant?: UpdateTenantRequestTenantResultDto
 }
 
-export interface UpdateTenantRequestStatusResponseTenantRequestDto {
+interface UpdateTenantRequestStatusResponseTenantRequestDto {
   id: string
   name?: string
   ministryName?: string
@@ -206,7 +206,7 @@ export interface GetUserTenantsInputDto {
   jwtAudience?: string
 }
 
-export type TenantRequestStatus = 'NEW' | 'APPROVED' | 'REJECTED'
+type TenantRequestStatus = 'NEW' | 'APPROVED' | 'REJECTED'
 
 export type GetTenantRequestsInputDto =
   | {
@@ -294,36 +294,6 @@ export interface GetTenantUserResultDto {
   sharedServices?: unknown[]
 }
 
-export interface SaveTenantRequestResultDto {
-  id?: string
-  name?: string
-  ministryName?: string
-  description?: string
-  status?: string
-  requestedBy?: {
-    displayName?: string
-  }
-  createdBy?: string
-  updatedBy?: string
-  createdDateTime?: Date
-  updatedDateTime?: Date
-}
-
-export interface SaveSharedServiceResultDto {
-  id?: string
-  name?: string
-  displayName?: string
-  clientIdentifier?: string
-  landingPageUrl?: string
-  description?: string | null
-  isActive?: boolean
-  sharedServiceRoles?: unknown[]
-  createdDateTime?: Date
-  updatedDateTime?: Date
-  createdBy?: string
-  updatedBy?: string
-}
-
 export interface CreateAssertionInputDto {
   tenantId: string
   audience: string
@@ -334,11 +304,6 @@ export interface CreateAssertionInputDto {
 export interface CreateAssertionResultDto {
   assertion: string
   expiresAt: Date
-}
-
-export interface VerifyAssertionInputDto {
-  assertion: string
-  callingService: string
 }
 
 export interface VerifyAssertionResultDto {

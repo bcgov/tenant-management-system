@@ -5,9 +5,9 @@ export class ConfigError extends Error {
   }
 }
 
-export type LogLevel = 'error' | 'info' | 'debug'
+type LogLevel = 'error' | 'info' | 'debug'
 
-export interface AppConfig {
+interface AppConfig {
   allowedOrigins: string[]
   assertion: {
     issuer: string

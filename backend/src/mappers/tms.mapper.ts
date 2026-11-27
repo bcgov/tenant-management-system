@@ -30,7 +30,7 @@ export interface SSOUserDto {
   updatedBy: string
 }
 
-export interface TenantUserDto {
+interface TenantUserDto {
   id: string
   ssoUser: SSOUserDto | undefined
   isDeleted: boolean
@@ -41,7 +41,7 @@ export interface TenantUserDto {
   roles: RoleDto[]
 }
 
-export interface TenantDto {
+interface TenantDto {
   id: string
   name: string
   ministryName: string
