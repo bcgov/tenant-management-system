@@ -20,6 +20,8 @@ jobs:
       - name: Validate PR
         uses: bcgov/actions/pr-validate@01c3fa1c94c8ccea526ce718b40d8a93bb0a2279 # v0.16.0
         with:
+          runner_labels: |
+            bcgov-azure-lz-live-github-managed-runner
           markdown: |
             ---
 
