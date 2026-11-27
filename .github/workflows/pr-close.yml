@@ -76,7 +76,7 @@ jobs:
       oc_token: ${{ secrets.OC_TOKEN }}
       oc_server: ${{ vars.OC_SERVER }}
     steps:
-      - uses: bcgov/actions-openshift/crunchy@45d8c7f7d0d5e3b15786cb99a83f410e01547133 # v0.9.0
+      - uses: bcgov/actions-openshift/crunchy@47805d2fc4e919382757c1fbeb68d39313abe64f # v0.11.0
         name: Remove PR Specific User
         with:
           release_name: cstar-db
@@ -96,7 +96,7 @@ jobs:
       oc_token: ${{ secrets.OC_TOKEN }}
       oc_server: ${{ vars.OC_SERVER }}
     steps:
-      - uses: bcgov/actions-openshift/crunchy@45d8c7f7d0d5e3b15786cb99a83f410e01547133 # v0.9.0
+      - uses: bcgov/actions-openshift/crunchy@47805d2fc4e919382757c1fbeb68d39313abe64f # v0.11.0
         name: Remove PR Specific User
         with:
           release_name: cstar-db
