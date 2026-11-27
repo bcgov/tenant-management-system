@@ -10,7 +10,7 @@ const USER_REMOVED_FROM_TENANT = 'user_removed_from_tenant'
 const USER_ADDED_TO_GROUP = 'user_added_to_group'
 const USER_REMOVED_FROM_GROUP = 'user_removed_from_group'
 
-export interface NotifiableTenantRequest {
+interface NotifiableTenantRequest {
   id?: string
   name?: string
   ministryName?: string
@@ -23,14 +23,14 @@ export interface NotifiableTenantRequest {
   decisionedBy?: { displayName?: string }
 }
 
-export interface NotifiableTenantUser {
+interface NotifiableTenantUser {
   createdDateTime?: Date | string
   updatedDateTime?: Date | string
   ssoUser?: { email?: string }
   tenant?: { id?: string; name?: string; ministryName?: string }
 }
 
-export interface NotifiableGroupUser {
+interface NotifiableGroupUser {
   createdDateTime?: Date | string
   updatedDateTime?: Date | string
   group?: {
@@ -41,11 +41,11 @@ export interface NotifiableGroupUser {
   tenantUser?: { ssoUser?: { email?: string; ssoUserId?: string } }
 }
 
-export interface NotifiableGroup {
+interface NotifiableGroup {
   name?: string
 }
 
-export interface NotifiableRoleAssignment {
+interface NotifiableRoleAssignment {
   role?: { name?: string; description?: string }
 }
 

@@ -15,7 +15,7 @@ export class HttpError extends Error {
   }
 }
 
-export interface JsonRequest {
+interface JsonRequest {
   method?: string
   headers?: Record<string, string>
   body?: URLSearchParams | string

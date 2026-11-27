@@ -119,7 +119,7 @@ export interface GroupMemberDto {
   idpType: string
 }
 
-export interface GetSharedServiceRoleForGroupResultDto {
+interface GetSharedServiceRoleForGroupResultDto {
   id: string
   name: string
   description: string | null
@@ -142,12 +142,12 @@ export interface GetSharedServiceForGroupResultDto {
   sharedServiceRoles: GetSharedServiceRoleForGroupResultDto[]
 }
 
-export interface UpdateSharedServiceRolesForGroupRoleInputDto {
+interface UpdateSharedServiceRolesForGroupRoleInputDto {
   id: string
   enabled: boolean
 }
 
-export interface UpdateSharedServiceRolesForGroupSharedServiceInputDto {
+interface UpdateSharedServiceRolesForGroupSharedServiceInputDto {
   id: string
   sharedServiceRoles: UpdateSharedServiceRolesForGroupRoleInputDto[]
 }
@@ -166,7 +166,7 @@ export interface GetEffectiveSharedServiceRolesInputDto {
   idpType: string
 }
 
-export interface GetEffectiveSharedServiceRoleGroupResultDto {
+interface GetEffectiveSharedServiceRoleGroupResultDto {
   id: string
   name: string
 }
@@ -198,7 +198,7 @@ export interface GetUserGroupsWithSharedServiceRoleResultDto {
   updatedBy: string
 }
 
-export interface GetUserGroupsWithSharedServiceGroupResultDto {
+interface GetUserGroupsWithSharedServiceGroupResultDto {
   id: string
   name: string
   description: string | null

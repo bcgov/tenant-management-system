@@ -34,7 +34,7 @@ export function sendErrorResponse(
   res.status(httpResponseCode).json({ ...responseBody, ...details })
 }
 
-export class ErrorHandler {
+class ErrorHandler {
   public generalError(
     res: Response,
     name: string,
@@ -58,7 +58,7 @@ export class ErrorHandler {
   }
 }
 
-export const errorHandler = new ErrorHandler()
+const errorHandler = new ErrorHandler()
 
 export function handleControllerError(
   res: Response,
