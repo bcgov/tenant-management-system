@@ -87,7 +87,7 @@ jobs:
     environment:
       name: ${{ inputs.environment || 'dev' }}
       url: 'https://${{ steps.vars.outputs.release }}.${{ steps.vars.outputs.domain }}'
-    runs-on: ubuntu-26.04
+    runs-on: bcgov-azure-lz-live-github-managed-runner
     outputs:
       tag: ${{ inputs.tag || steps.pr.outputs.pr }}
       triggered: ${{ steps.deploy.outputs.triggered }}
